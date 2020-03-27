@@ -1,0 +1,7 @@
+FROM ubuntu:18.04
+
+RUN apt-get -y update && apt-get -y install --no-install-recommends \
+      openjdk-8-jre-headless \
+      wget && \
+      sh -c 'wget -qO- https://get.nextflow.io | bash' && \
+      mv nextflow /usr/local/bin
