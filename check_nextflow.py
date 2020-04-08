@@ -24,10 +24,33 @@ Execute a Nextflow workflow from a crate and check results.
 
 import argparse
 import configparser
+import json
 import os
 import shutil
 import subprocess
 import tempfile
+
+METADATA_BASENAME = "ro-crate-metadata.jsonld"
+
+
+# https://github.com/workflowhub-eu/about/wiki/Workflow-RO-Crate
+# https://researchobject.github.io/ro-crate/1.0/
+def parse_metadata(crate_dir):
+    fn = os.path.join(crate_dir, METADATA_BASENAME)
+    if not os.path.isfile(fn):
+        raise RuntimeError(f"{METADATA_BASENAME} not found in {crate_dir}")
+    with open(fn, "rt") as f:
+        json_data = json.load(f)
+    entities = {_["@id"]: _ for _ in json_data["@graph"]}
+    md_desc = entities[METADATA_BASENAME]
+    root = entities[md_desc["about"]["@id"]]
+    main = entities[root["mainEntity"]["@id"]]
+    assert main["@type"] == ["File", "SoftwareSourceCode", "Workflow"]
+    # Dataset @id SHOULD end with /
+    return {
+        "main": main["@id"],
+        "test": "test" in [_.rstrip("/") for _ in entities]
+    }
 
 
 def read_params(fname):
@@ -66,11 +89,15 @@ def check_workflow(wf_fn, config):
 
 
 def main(args):
-    # TODO: get this info from the JSON-LD file
+    metadata = parse_metadata(args.crate_dir)
+    wf_fn = os.path.join(args.crate_dir, metadata["main"])
     test_dir = os.path.join(args.crate_dir, "test")
-    wf_fn = os.path.join(args.crate_dir, "main.nf")
     if not os.path.isdir(test_dir):
-        raise RuntimeError("test dir not found")
+        if metadata["test"]:
+            raise RuntimeError("test dir not found")
+        else:
+            print("crate has no tests, nothing to do")
+            return
     cfg_fn = os.path.join(test_dir, "params.cfg")
     config = read_params(cfg_fn)
     check_workflow(wf_fn, config)
