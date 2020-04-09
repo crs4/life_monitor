@@ -55,7 +55,7 @@ def parse_metadata(crate_dir):
 
 def read_params(fname):
     config = configparser.ConfigParser()
-    parser.optionxform = str  # preserve key case
+    config.optionxform = str  # preserve key case
     config.read(fname)
     d = os.path.abspath(os.path.dirname(fname))
     # assumes inputs and outputs are filesystem paths
