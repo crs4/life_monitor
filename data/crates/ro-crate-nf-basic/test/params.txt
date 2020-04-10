@@ -1,2 +1,0 @@
-in=inputs/sample.fa
-out=outputs/sample_rev.fa
