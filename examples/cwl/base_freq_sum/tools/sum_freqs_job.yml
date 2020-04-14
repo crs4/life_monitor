@@ -1,0 +1,4 @@
+freqs:
+  class: File
+  path: freqs.tsv
+freqs_sum: freqs_sum.tsv
