@@ -1,0 +1,4 @@
+seqs:
+  class: File
+  path: seqs.fa
+freqs: freqs.tsv
