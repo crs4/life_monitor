@@ -1,0 +1,77 @@
+openapi: "3.0.0"
+info:
+  version: "0.0.1"
+  title: "Life Monitor API"
+  description: "Workflow sustainability service"
+
+paths:
+  /workflows:
+    get:
+      operationId: "api.workflows_get"
+      summary: "Get all known workflows"
+      responses:
+        '200':
+          description: A JSON array of Workflow objects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Workflow'
+
+    post:
+      operationId: "api.workflows_post"
+      summary: "Register a workflow"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Workflow'
+      responses:
+        '201':
+          description: Workflow created
+
+  /workflows/{wf_id}:
+    get:
+      operationId: "api.workflows_get_by_id"
+      summary: "Get information about a single workflow"
+      parameters:
+        - $ref: '#/components/parameters/wf_id'
+      responses:
+        '200':
+          description: A Workflow object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+        '404':
+          description: Not found
+
+    delete:
+      operationId: "api.workflows_delete"
+      summary: "Delete a workflow"
+      parameters:
+        - $ref: '#/components/parameters/wf_id'
+      responses:
+        '204':
+          description: Deleted
+
+components:
+  parameters:
+    wf_id:
+      name: "wf_id"
+      description: "Workflow's Unique identifier"
+      in: path
+      schema:
+        type: string
+      required: true
+
+  schemas:
+    Workflow:
+      type: object
+      properties:
+        name:
+          type: string
+      required:
+        - name
