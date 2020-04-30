@@ -23,7 +23,6 @@ Execute a Nextflow workflow from a crate and check results.
 """
 
 import argparse
-import configparser
 import json
 import os
 import shutil
@@ -54,13 +53,15 @@ def parse_metadata(crate_dir):
 
 
 def read_params(fname):
-    config = configparser.ConfigParser()
-    config.optionxform = str  # preserve key case
-    config.read(fname)
     d = os.path.abspath(os.path.dirname(fname))
-    # assumes inputs and outputs are filesystem paths
-    inputs = {k: os.path.join(d, v) for k, v in config["inputs"].items()}
-    outputs = {k: os.path.join(d, v) for k, v in config["outputs"].items()}
+    with open(fname, "rt") as f:
+        json_data = json.load(f)
+    entities = {_["@id"]: _ for _ in json_data["@graph"]}
+    inputs, outputs = {}, {}
+    for p in entities["inputs"]["hasPart"]:
+        inputs[p["name"]] = os.path.join(d, p["@id"])
+    for p in entities["outputs"]["hasPart"]:
+        outputs[p["name"]] = os.path.join(d, p["@id"])
     return {"inputs": inputs, "outputs": outputs}
 
 
@@ -98,7 +99,7 @@ def main(args):
         else:
             print("crate has no tests, nothing to do")
             return
-    cfg_fn = os.path.join(test_dir, "params.cfg")
+    cfg_fn = os.path.join(test_dir, "params.jsonld")
     config = read_params(cfg_fn)
     check_workflow(wf_fn, config)
 
