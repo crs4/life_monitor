@@ -6,8 +6,18 @@
 	    "hasPart": [
 		{
 		    "@id": "inputs/seqs.fa",
-		    "name": "in",
+		    "name": "fasta_in",
 		    "@type": "File"
+		},
+		{
+		    "@id": "freqs.tsv",
+		    "name": "freqs_file_name",
+		    "@type": "Text"
+		},
+		{
+		    "@id": "freqs_sum.tsv",
+		    "name": "freqs_sum_file_name",
+		    "@type": "Text"
 		}
 	    ]
 	},
@@ -17,7 +27,7 @@
 	    "hasPart": [
 		{
 		    "@id": "outputs/freqs_sum.tsv",
-		    "name": "out",
+		    "name": "freqs_sum",
 		    "@type": "File"
 		}
 	    ]
@@ -27,6 +37,7 @@
         "hasPart": "http://schema.org/hasPart",
         "name": "http://schema.org/name",
         "Dataset": "http://schema.org/Dataset",
-        "File": "http://schema.org/MediaObject"
+        "File": "http://schema.org/MediaObject",
+        "Text": "http://schema.org/Text"
     }
 }
