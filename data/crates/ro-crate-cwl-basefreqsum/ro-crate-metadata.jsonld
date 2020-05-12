@@ -51,10 +51,6 @@
 	    "name": "basefreqsum"
 	},
 	{
-	    "@id": "workflows/base_freq_sum.cwl",
-	    "@type": "File"
-	},
-	{
 	    "@id": "tools/base_freqs.cwl",
 	    "@type": "File"
 	},
