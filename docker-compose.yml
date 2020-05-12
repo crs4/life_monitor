@@ -1,0 +1,37 @@
+version: "3"
+
+services:
+
+  db:
+    # Docker image docs: https://github.com/bitnami/bitnami-docker-postgresql
+    image: bitnami/postgresql:12
+    ports:
+      - "5432"
+    env_file: &env_file
+      - settings.conf
+    environment:
+      - 'ALLOW_EMPTY_PASSWORD=yes'
+    restart: "always"
+    healthcheck:
+        test: [ "CMD", "pg_isready" ]
+        interval: "15s"
+        retries: 5
+    volumes:
+      - 'lifemonitor_db:/bitnami/postgresql'
+
+  lm:
+    # Remember that this service is using its default configuration
+    # to access the database, so the settings must match the environment
+    # configuration set for db above.
+    image: crs4/lifemonitor
+    depends_on:
+      - "db"
+    ports:
+      - "8080:8080"
+    #DEV user: USER_UID:USER_GID
+    environment: *env_file
+    #DEV volumes:
+    #DEV - "LOCAL_PATH/lifemonitor:/lm/lifemonitor"
+ 
+volumes:
+  lifemonitor_db:
