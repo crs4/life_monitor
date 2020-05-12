@@ -32,7 +32,7 @@ def workflows_delete(wf_id):
 
 def main():
     my_dir = os.path.abspath(os.path.dirname(__file__))
-    app = connexion.App('LM', specification_dir=my_dir)
+    app = connexion.FlaskApp('LM', specification_dir=my_dir)
     app.add_api('api.yaml', validate_responses=True)
     app.run(port=8080)
 
