@@ -7,6 +7,7 @@ this_dir=$(cd -P -- "$(dirname -- "${this}")" && pwd -P)
 
 names=(
     ro-crate-nf-basic
+    ro-crate-cwl-basefreqsum
 )
 
 for n in "${names[@]}"; do
