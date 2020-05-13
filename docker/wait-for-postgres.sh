@@ -4,8 +4,15 @@
 
 set -e
 
-until PGPASSWORD=${POSTGRESQL_PASSWORD} psql -h "${POSTGRESQL_HOST}" -U "${POSTGRESQL_USERNAME}" ${POSTGRESQL_DATABASE} -c '\q'; do 
-  >&2 echo "PostgreSQL is unavailable -- sleep 2 seconds and retry" ;
-  sleep 2 ;
-done ;
+echo "Verifying that db is ready..."
+
+until PGPASSWORD=${POSTGRESQL_PASSWORD} psql \
+    "--host=${POSTGRESQL_HOST}" \
+    "--username=${POSTGRESQL_USERNAME}" \
+    "--dbname=${POSTGRESQL_DATABASE}" \
+    '--command=\q'; do 
+  >&2 echo "PostgreSQL is unavailable -- sleeping 2 seconds then retrying"
+  sleep 2
+done
+
 echo "PostgreSQL ready"

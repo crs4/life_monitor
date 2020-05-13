@@ -4,13 +4,15 @@ services:
 
   db:
     # Docker image docs: https://github.com/bitnami/bitnami-docker-postgresql
-    image: bitnami/postgresql:12
+    # We use PgSQL 11 instead of 12 since that's the newest version of the client
+    # available in the Python image we're using for the application
+    image: bitnami/postgresql:11
     ports:
       - "5432"
     env_file: &env_file
       - settings.conf
     environment:
-      - 'ALLOW_EMPTY_PASSWORD=yes'
+      - 'ALLOW_EMPTY_PASSWORD=no'
     restart: "always"
     healthcheck:
         test: [ "CMD", "pg_isready" ]
@@ -29,7 +31,9 @@ services:
     ports:
       - "8080:8080"
     #DEV user: USER_UID:USER_GID
-    environment: *env_file
+    env_file: *env_file
+    environment:
+      - "DEV=false"
     #DEV volumes:
     #DEV - "LOCAL_PATH/lifemonitor:/lm/lifemonitor"
  
