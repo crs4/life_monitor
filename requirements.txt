@@ -1,1 +1,2 @@
 connexion[swagger-ui]==2.6.0
+Flask-SQLAlchemy

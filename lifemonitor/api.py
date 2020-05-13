@@ -1,21 +1,29 @@
 #!/usr/bin/env python3
 
-import connexion
 import logging
-import os
 import uuid
 
+from lifemonitor import config, models
+from lifemonitor.config import logger, db
 
 WORK = {}
 
 def workflows_get():
-    return [ v for v in WORK.values() ]
+    results = models.Workflow.query.all()
+    logger.debug("workflows_get. Got %s workflows", len(results))
+    return results
 
 
 def workflows_post(body):
-    w = { 'id': str(uuid.uuid4()), 'name': body['name'] }
-    WORK[w['id']] = w
-    return w['id'], 201
+    w = models.Workflow(
+        workflow_id=uuid.uuid4(),
+        name=body['name'])
+    logger.debug("workflows_post. Created workflow with name '%s'", w.name)
+    db.session.add(w)
+    db.session.commit()
+    logger.debug("Added and committed to DB")
+
+    return str(w.workflow_id), 201
 
 
 def workflows_get_by_id(wf_id):
@@ -31,10 +39,13 @@ def workflows_delete(wf_id):
 
 
 def main():
-    my_dir = os.path.abspath(os.path.dirname(__file__))
-    app = connexion.FlaskApp('LM', specification_dir=my_dir)
-    app.add_api('api.yaml', validate_responses=True)
-    app.run(port=8080)
+    logger.info("Starting application")
+    logger.debug(
+        "REMOVE THIS LOG CALL - it includes the password! DB URI: %s",
+        config.flask_app.config['SQLALCHEMY_DATABASE_URI'])
+    db.create_all()
+    config.connex_app.add_api('api.yaml', validate_responses=True)
+    config.connex_app.run(port=8080)
 
 
 if __name__ == '__main__':
