@@ -1,9 +1,16 @@
+
+# vim: set et sw=2
+
 openapi: "3.0.0"
 info:
   version: "0.0.1"
   title: "Life Monitor API"
   description: "Workflow sustainability service"
 
+servers:
+    - url: /
+      description: Version 0.0 of API.  Add version prefix (e.g, /v1.0) once we have something useful
+ 
 paths:
   /workflows:
     get:
@@ -45,8 +52,25 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Workflow'
+        '400':
+          description: Invalid input
         '404':
           description: Not found
+
+    put:
+      operationId: "api.workflows_put"
+      summary: "Modify an existing workflow"
+      parameters:
+        - $ref: '#/components/parameters/wf_id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Workflow'
+      responses:
+        '200':
+          description: Workflow updated
 
     delete:
       operationId: "api.workflows_delete"
@@ -54,8 +78,12 @@ paths:
       parameters:
         - $ref: '#/components/parameters/wf_id'
       responses:
+        '200':
+          description: Does not exist
         '204':
           description: Deleted
+        '400':
+          description: Invalid input
 
 components:
   parameters:
