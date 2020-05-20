@@ -7,10 +7,15 @@ Workflow testing service
 
 Basic actions are implemented as Makefile rules.
 
-
+| Purpose | command |
+|---------|---------|
 | Building docker images | make |
 | Launch the docker-compose | make start |
 | Stop the docker-compose | make stop |
+| Launch docker-compose in development mode | make startdev |
+| Stop docker-compose in development mode | make stopdev |
+
+The development mode mount the life monitor directory within the container and runs flask in development mode.  Thus, local changes to the code are immediately picked up.
 
 
 ## Connecting to the docker-compose
