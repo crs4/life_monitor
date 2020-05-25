@@ -13,9 +13,9 @@ def db_uri():
         uri = os.getenv('DATABASE_URI')
     else:
         uri = "postgresql://{user}:{passwd}@{host}/{dbname}".format(
-            user=os.getenv('POSTGRESQL_USERNAME', 'lm'),
+            user=os.getenv('POSTGRESQL_USERNAME'),
             passwd=os.getenv('POSTGRESQL_PASSWORD', ''),
-            host=os.getenv('POSTGRESQL_HOST', 'db'),
+            host=os.getenv('POSTGRESQL_HOST'),
             dbname=os.getenv('POSTGRESQL_DATABASE'))
     return uri
 
