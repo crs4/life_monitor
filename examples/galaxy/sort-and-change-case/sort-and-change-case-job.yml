@@ -1,0 +1,3 @@
+bed_input:
+  class: File
+  path: input.bed
