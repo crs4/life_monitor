@@ -1,0 +1,5 @@
+- doc: test with a small input
+  job: sort-and-change-case-job.yml
+  outputs:
+    uppercase_bed:
+      path: output_exp.bed
