@@ -70,21 +70,18 @@ def read_params(fname):
     return {"inputs": inputs, "outputs": outputs}
 
 
-def write_job_file(config, fn):
-    with open(fn, "wt") as f:
-        for k, v in config["inputs"].items():
-            if v["@type"] == "File":
-                f.write(f"{k}:\n")
-                f.write("  class: File\n")
-                f.write(f"  path: {v['@id']}\n")
-            else:
-                raise RuntimeError("Unknown parameter type: {v['@type']}")
-
-
-def write_test_file(config, job_fn, out_fn):
+def write_test_file(config, out_fn):
     with open(out_fn, "wt") as f:
         f.write("- doc: galaxy workflow tests\n")
-        f.write(f"  job: {job_fn}\n")
+        f.write("  job:\n")
+        # embed job in the test file
+        for k, v in config["inputs"].items():
+            if v["@type"] == "File":
+                f.write(f"    {k}:\n")
+                f.write("      class: File\n")
+                f.write(f"      path: {v['@id']}\n")
+            else:
+                raise RuntimeError("Unknown parameter type: {v['@type']}")
         f.write("  outputs:\n")
         for k, v in config["outputs"].items():
             if v["@type"] == "File":
@@ -101,10 +98,8 @@ def check_workflow(wf_fn, config):
     wf_tmp_fn = os.path.join(wd, wf_bn)
     shutil.copy2(wf_fn, wf_tmp_fn)
     head, tail = os.path.splitext(wf_bn)
-    job_fn = os.path.join(wd, f"{head}-job.yml")
     test_fn = os.path.join(wd, f"{head}-test.yml")
-    write_job_file(config, job_fn)
-    write_test_file(config, os.path.basename(job_fn), test_fn)
+    write_test_file(config, test_fn)
     cmd = ["planemo", "test", "--engine", "docker_galaxy",
            "--docker_galaxy_image", GALAXY_IMG, wf_tmp_fn]
     p = subprocess.run(cmd)
