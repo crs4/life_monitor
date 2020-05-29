@@ -1,27 +1,27 @@
 {
     "@graph": [
-	{
-	    "@id": "inputs",
-	    "@type": "Dataset",
-	    "hasPart": [
-		{
-		    "@id": "inputs/sample.fa",
-		    "name": "in",
-		    "@type": "File"
-		}
-	    ]
-	},
-	{
-	    "@id": "outputs",
-	    "@type": "Dataset",
-	    "hasPart": [
-		{
-		    "@id": "outputs/sample_rev.fa",
-		    "name": "out",
-		    "@type": "File"
-		}
-	    ]
-	}
+    {
+        "@id": "inputs",
+        "@type": "Dataset",
+        "hasPart": [
+        {
+            "@id": "inputs/sample.fa",
+            "name": "in",
+            "@type": "File"
+        }
+        ]
+    },
+    {
+        "@id": "outputs",
+        "@type": "Dataset",
+        "hasPart": [
+        {
+            "@id": "outputs/sample_rev.fa",
+            "name": "out",
+            "@type": "File"
+        }
+        ]
+    }
     ],
     "@context": {
         "hasPart": "http://schema.org/hasPart",
