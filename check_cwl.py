@@ -29,6 +29,8 @@ import shutil
 import subprocess
 import tempfile
 
+import lifemonitor.test_params as tp
+
 METADATA_BASENAME = "ro-crate-metadata.jsonld"
 
 
@@ -52,23 +54,6 @@ def parse_metadata(crate_dir):
     }
 
 
-def read_params(fname):
-    d = os.path.abspath(os.path.dirname(fname))
-    with open(fname, "rt") as f:
-        json_data = json.load(f)
-    entities = {_["@id"]: _ for _ in json_data["@graph"]}
-    inputs, outputs = {}, {}
-    for p in entities["inputs"]["hasPart"]:
-        if p["@type"] == "File":
-            p["@id"] = os.path.join(d, p["@id"])
-        inputs[p["name"]] = p
-    for p in entities["outputs"]["hasPart"]:
-        if p["@type"] == "File":
-            p["@id"] = os.path.join(d, p["@id"])
-        outputs[p["name"]] = p
-    return {"inputs": inputs, "outputs": outputs}
-
-
 def compare_outputs(out_map):
     for out, exp_out in out_map.items():
         # simple byte-by-byte equality, also assumes "small" files
@@ -77,39 +62,50 @@ def compare_outputs(out_map):
                 raise RuntimeError(f"outputs {out} and {exp_out} differ")
 
 
-def write_job_file(config, fn):
-    with open(fn, "wt") as f:
-        for k, v in config["inputs"].items():
-            if v["@type"] == "File":
-                f.write(f"{k}:\n")
-                f.write(f"  class: File\n")
-                f.write(f"  path: {v['@id']}\n")
-            elif v["@type"] == "Text":
-                f.write(f"{k}: {v['@id']}\n")
+def write_test_file(config, out_fn):
+    with open(out_fn, "wt") as f:
+        f.write("- doc: cwl workflow tests\n")
+        f.write("  job:\n")
+        # embed job in the test file
+        for k, v in config.inputs.parts_map.items():
+            if v.type == "File":
+                f.write(f"    {k}:\n")
+                f.write("      class: File\n")
+                f.write(f"      path: {v.id}\n")
+            elif v.type == "Text":
+                f.write(f"    {k}: {v.id}\n")
             else:
-                raise RuntimeError("Unknown parameter type: {v['@type']}")
+                raise RuntimeError("Unknown parameter type: {v.type}")
+        f.write("  outputs:\n")
+        for k, v in config.outputs.parts_map.items():
+            if v.type == "File":
+                f.write(f"    {k}:\n")
+                f.write(f"      path: {v.id}\n")
+            else:
+                raise RuntimeError("Unknown parameter type: {v.type}")
 
 
-# pip install cwlref-runner
-def check_workflow(wf_fn, config):
+# pip install planemo
+def check_workflow(crate_dir, metadata, config):
     wd = tempfile.mkdtemp(prefix="check_cwl_")
-    job_fn = os.path.join(wd, "job.yml")
-    write_job_file(config, job_fn)
-    cmd = ["cwl-runner", "--outdir", wd, wf_fn, job_fn]
-    # The output matching is more or less hardcoded here. It should be
-    # inferred from the workflow definition in some way
-    output = os.path.join(wd, config["inputs"]["freqs_sum_file_name"]["@id"])
-    exp_output = config["outputs"]["freqs_sum"]["@id"]
-    out_map = {output: exp_output}
-    subprocess.run(cmd)
-    compare_outputs(out_map)
+    crate_dir_bn = os.path.basename(crate_dir)
+    tmp_crate_dir = os.path.join(wd, crate_dir_bn)
+    wf_fn = os.path.join(tmp_crate_dir, metadata["main"])
+    wf_bn = os.path.basename(wf_fn)
+    shutil.copytree(crate_dir, tmp_crate_dir)
+    head, tail = os.path.splitext(wf_bn)
+    wf_dir = os.path.dirname(wf_fn)
+    test_fn = os.path.join(wf_dir, f"{head}_test.yml")
+    write_test_file(config, test_fn)
+    cmd = ["planemo", "test", "--engine", "cwltool", wf_fn]
+    p = subprocess.run(cmd)
+    p.check_returncode()
     shutil.rmtree(wd)
     print("OK")
 
 
 def main(args):
     metadata = parse_metadata(args.crate_dir)
-    wf_fn = os.path.join(args.crate_dir, metadata["main"])
     test_dir = os.path.join(args.crate_dir, "test")
     if not os.path.isdir(test_dir):
         if metadata["test"]:
@@ -118,9 +114,8 @@ def main(args):
             print("crate has no tests, nothing to do")
             return
     cfg_fn = os.path.join(test_dir, "params.jsonld")
-    config = read_params(cfg_fn)
-
-    check_workflow(wf_fn, config)
+    config = tp.read_params(cfg_fn, abs_paths=True)
+    check_workflow(args.crate_dir, metadata, config)
 
 
 if __name__ == "__main__":
