@@ -55,36 +55,15 @@ def parse_metadata(crate_dir):
     }
 
 
-def write_test_file(config, out_fn):
-    with open(out_fn, "wt") as f:
-        f.write("- doc: galaxy workflow tests\n")
-        f.write("  job:\n")
-        # embed job in the test file
-        for k, v in config.inputs.parts_map.items():
-            if v.type == "File":
-                f.write(f"    {k}:\n")
-                f.write("      class: File\n")
-                f.write(f"      path: {v.id}\n")
-            else:
-                raise RuntimeError("Unknown parameter type: {v.type}")
-        f.write("  outputs:\n")
-        for k, v in config.outputs.parts_map.items():
-            if v.type == "File":
-                f.write(f"    {k}:\n")
-                f.write(f"      path: {v.id}\n")
-            else:
-                raise RuntimeError("Unknown parameter type: {v.type}")
-
-
 # pip install planemo
-def check_workflow(wf_fn, config):
+def check_workflow(wf_fn, tests):
     wd = tempfile.mkdtemp(prefix="check_galaxy_")
     wf_bn = os.path.basename(wf_fn)
     wf_tmp_fn = os.path.join(wd, wf_bn)
     shutil.copy2(wf_fn, wf_tmp_fn)
     head, tail = os.path.splitext(wf_bn)
     test_fn = os.path.join(wd, f"{head}-test.yml")
-    write_test_file(config, test_fn)
+    tp.write_planemo_tests(tests, test_fn, doc="galaxy workflow tests")
     cmd = ["planemo", "test", "--engine", "docker_galaxy",
            "--docker_galaxy_image", GALAXY_IMG, wf_tmp_fn]
     p = subprocess.run(cmd)
@@ -105,7 +84,7 @@ def main(args):
             return
     cfg_fn = os.path.join(test_dir, "params.jsonld")
     config = tp.read_params(cfg_fn, abs_paths=True)
-    check_workflow(wf_fn, config)
+    check_workflow(wf_fn, [config])
 
 
 if __name__ == "__main__":

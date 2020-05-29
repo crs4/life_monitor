@@ -25,6 +25,7 @@ Handle Workflow RO-Crate test parameters.
 import itertools
 import json
 import os
+import yaml
 
 
 class Part:
@@ -62,6 +63,27 @@ class Test:
         self.inputs = inputs
         self.outputs = outputs
 
+    def cwl_job(self):
+        job = {}
+        for name, part in self.inputs.parts_map.items():
+            if part.type == "File":
+                v = {"class": "File", "path": part.id}
+            elif part.type == "Text":
+                v = part.id
+            else:
+                raise RuntimeError(f"Unsupported parameter type: {part.type}")
+            job[name] = v
+        return job
+
+    def to_planemo(self, doc="tests"):
+        test = {"doc": doc, "job": self.cwl_job()}
+        for name, part in self.outputs.parts_map.items():
+            if part.type == "File":
+                test[name] = {"path": part.id}
+            else:
+                raise RuntimeError(f"Unsupported parameter type: {part.type}")
+        return test
+
 
 def read_params(fname, abs_paths=False):
     with open(fname, "rt") as f:
@@ -73,3 +95,11 @@ def read_params(fname, abs_paths=False):
             if p.type == "File":
                 p.id = os.path.join(d, p.id)
     return t
+
+
+def write_planemo_tests(tests, fname, doc=None):
+    if doc is None:
+        doc = os.path.splitext(os.path.basename(fname))[0]
+    data = [_.to_planemo(doc=doc) for _ in tests]
+    with open(fname, "wt") as f:
+        yaml.dump(data, f)
