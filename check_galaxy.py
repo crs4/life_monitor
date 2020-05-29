@@ -83,8 +83,8 @@ def main(args):
             print("crate has no tests, nothing to do")
             return
     cfg_fn = os.path.join(test_dir, "params.jsonld")
-    config = tp.read_params(cfg_fn, abs_paths=True)
-    check_workflow(wf_fn, [config])
+    tests = tp.read_params(cfg_fn, abs_paths=True)
+    check_workflow(wf_fn, tests)
 
 
 if __name__ == "__main__":

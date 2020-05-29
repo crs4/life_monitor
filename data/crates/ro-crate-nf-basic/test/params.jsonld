@@ -1,24 +1,32 @@
 {
     "@graph": [
     {
-        "@id": "inputs",
+        "@id": "test1",
         "@type": "Dataset",
         "hasPart": [
         {
-            "@id": "inputs/sample.fa",
-            "name": "in",
-            "@type": "File"
-        }
-        ]
-    },
-    {
-        "@id": "outputs",
-        "@type": "Dataset",
-        "hasPart": [
+            "@id": "test1/inputs",
+            "name": "inputs",
+            "@type": "Dataset",
+            "hasPart": [
+            {
+                "@id": "test1/inputs/sample.fa",
+                "name": "in",
+                "@type": "File"
+            }
+            ]
+        },
         {
-            "@id": "outputs/sample_rev.fa",
-            "name": "out",
-            "@type": "File"
+            "@id": "test1/outputs",
+            "name": "outputs",
+            "@type": "Dataset",
+            "hasPart": [
+            {
+                "@id": "test1/outputs/sample_rev.fa",
+                "name": "out",
+                "@type": "File"
+            }
+            ]
         }
         ]
     }

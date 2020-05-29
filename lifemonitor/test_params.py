@@ -55,7 +55,7 @@ class Test:
 
     @classmethod
     def from_json(cls, data):
-        entities = {_["@id"]: _ for _ in data["@graph"]}
+        entities = {_["name"]: _ for _ in data}
         return cls(Dataset.from_json(entities["inputs"]),
                    Dataset.from_json(entities["outputs"]))
 
@@ -86,20 +86,24 @@ class Test:
 
 
 def read_params(fname, abs_paths=False):
+    tests = []
     with open(fname, "rt") as f:
         json_data = json.load(f)
-    t = Test.from_json(json_data)
-    if abs_paths:
-        d = os.path.abspath(os.path.dirname(fname))
-        for p in itertools.chain(t.inputs.parts, t.outputs.parts):
-            if p.type == "File":
-                p.id = os.path.join(d, p.id)
-    return t
+    test_map = {_["@id"]: _ for _ in json_data["@graph"]}
+    for t in test_map.values():
+        t = Test.from_json(t["hasPart"])
+        if abs_paths:
+            d = os.path.abspath(os.path.dirname(fname))
+            for p in itertools.chain(t.inputs.parts, t.outputs.parts):
+                if p.type == "File":
+                    p.id = os.path.join(d, p.id)
+        tests.append(t)
+    return tests
 
 
 def write_planemo_tests(tests, fname, doc=None):
     if doc is None:
         doc = os.path.splitext(os.path.basename(fname))[0]
-    data = [_.to_planemo(doc=doc) for _ in tests]
+    data = [t.to_planemo(doc=f"{doc} {i}") for i, t in enumerate(tests)]
     with open(fname, "wt") as f:
         yaml.dump(data, f)
