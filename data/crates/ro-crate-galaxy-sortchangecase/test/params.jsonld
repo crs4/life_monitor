@@ -1,27 +1,35 @@
 {
     "@graph": [
-	{
-	    "@id": "inputs",
-	    "@type": "Dataset",
-	    "hasPart": [
-		{
-		    "@id": "inputs/input.bed",
-		    "name": "bed_input",
-		    "@type": "File"
-		}
-	    ]
-	},
-	{
-	    "@id": "outputs",
-	    "@type": "Dataset",
-	    "hasPart": [
-		{
-		    "@id": "outputs/output_exp.bed",
-		    "name": "uppercase_bed",
-		    "@type": "File"
-		}
-	    ]
-	}
+    {
+        "@id": "test1",
+        "@type": "Dataset",
+        "hasPart": [
+        {
+            "@id": "test1/inputs",
+            "name": "inputs",
+            "@type": "Dataset",
+            "hasPart": [
+            {
+                "@id": "test1/inputs/input.bed",
+                "name": "bed_input",
+                "@type": "File"
+            }
+            ]
+        },
+        {
+            "@id": "test1/outputs",
+            "name": "outputs",
+            "@type": "Dataset",
+            "hasPart": [
+            {
+                "@id": "test1/outputs/output_exp.bed",
+                "name": "uppercase_bed",
+                "@type": "File"
+            }
+            ]
+        }
+        ]
+    }
     ],
     "@context": {
         "hasPart": "http://schema.org/hasPart",

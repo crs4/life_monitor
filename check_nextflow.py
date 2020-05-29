@@ -56,7 +56,7 @@ def read_params(fname):
     d = os.path.abspath(os.path.dirname(fname))
     with open(fname, "rt") as f:
         json_data = json.load(f)
-    entities = {_["@id"]: _ for _ in json_data["@graph"]}
+    entities = {_["name"]: _ for _ in json_data["@graph"][0]["hasPart"]}
     inputs, outputs = {}, {}
     for p in entities["inputs"]["hasPart"]:
         inputs[p["name"]] = os.path.join(d, p["@id"])

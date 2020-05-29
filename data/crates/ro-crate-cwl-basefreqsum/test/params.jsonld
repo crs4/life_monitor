@@ -1,37 +1,85 @@
 {
     "@graph": [
-	{
-	    "@id": "inputs",
-	    "@type": "Dataset",
-	    "hasPart": [
-		{
-		    "@id": "inputs/seqs.fa",
-		    "name": "fasta_in",
-		    "@type": "File"
-		},
-		{
-		    "@id": "freqs.tsv",
-		    "name": "freqs_file_name",
-		    "@type": "Text"
-		},
-		{
-		    "@id": "freqs_sum.tsv",
-		    "name": "freqs_sum_file_name",
-		    "@type": "Text"
-		}
-	    ]
-	},
-	{
-	    "@id": "outputs",
-	    "@type": "Dataset",
-	    "hasPart": [
-		{
-		    "@id": "outputs/freqs_sum.tsv",
-		    "name": "freqs_sum",
-		    "@type": "File"
-		}
-	    ]
-	}
+    {
+        "@id": "test1",
+        "@type": "Dataset",
+        "hasPart": [
+        {
+            "@id": "test1/inputs",
+            "name": "inputs",
+            "@type": "Dataset",
+            "hasPart": [
+            {
+                "@id": "test1/inputs/seqs.fa",
+                "name": "fasta_in",
+                "@type": "File"
+            },
+            {
+                "@id": "freqs1.tsv",
+                "name": "freqs_file_name",
+                "@type": "Text"
+            },
+            {
+                "@id": "freqs_sum1.tsv",
+                "name": "freqs_sum_file_name",
+                "@type": "Text"
+            }
+            ]
+        },
+        {
+            "@id": "test1/outputs",
+            "name": "outputs",
+            "@type": "Dataset",
+            "hasPart": [
+            {
+                "@id": "test1/outputs/freqs_sum.tsv",
+                "name": "freqs_sum",
+                "@type": "File"
+            }
+            ]
+        }
+        ]
+    },
+    {
+        "@id": "test2",
+        "@type": "Dataset",
+        "hasPart": [
+        {
+            "@id": "test2/inputs",
+            "name": "inputs",
+            "@type": "Dataset",
+            "hasPart": [
+            {
+                "@id": "test2/inputs/seqs.fa",
+                "name": "fasta_in",
+                "@type": "File"
+            },
+            {
+                "@id": "freqs2.tsv",
+                "name": "freqs_file_name",
+                "@type": "Text"
+            },
+            {
+                "@id": "freqs_sum2.tsv",
+                "name": "freqs_sum_file_name",
+                "@type": "Text"
+            }
+            ]
+        },
+        {
+            "@id": "test2/outputs",
+            "name": "outputs",
+            "@type": "Dataset",
+            "hasPart": [
+            {
+                "@id": "test2/outputs/freqs_sum.tsv",
+                "name": "freqs_sum",
+                "@type": "File"
+            }
+            ]
+        }
+        ]
+    }
     ],
     "@context": {
         "hasPart": "http://schema.org/hasPart",

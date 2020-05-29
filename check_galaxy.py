@@ -29,6 +29,8 @@ import shutil
 import subprocess
 import tempfile
 
+import lifemonitor.test_params as tp
+
 METADATA_BASENAME = "ro-crate-metadata.jsonld"
 GALAXY_IMG = "bgruening/galaxy-stable:20.05"
 
@@ -53,53 +55,15 @@ def parse_metadata(crate_dir):
     }
 
 
-def read_params(fname):
-    d = os.path.abspath(os.path.dirname(fname))
-    with open(fname, "rt") as f:
-        json_data = json.load(f)
-    entities = {_["@id"]: _ for _ in json_data["@graph"]}
-    inputs, outputs = {}, {}
-    for p in entities["inputs"]["hasPart"]:
-        if p["@type"] == "File":
-            p["@id"] = os.path.join(d, p["@id"])
-        inputs[p["name"]] = p
-    for p in entities["outputs"]["hasPart"]:
-        if p["@type"] == "File":
-            p["@id"] = os.path.join(d, p["@id"])
-        outputs[p["name"]] = p
-    return {"inputs": inputs, "outputs": outputs}
-
-
-def write_test_file(config, out_fn):
-    with open(out_fn, "wt") as f:
-        f.write("- doc: galaxy workflow tests\n")
-        f.write("  job:\n")
-        # embed job in the test file
-        for k, v in config["inputs"].items():
-            if v["@type"] == "File":
-                f.write(f"    {k}:\n")
-                f.write("      class: File\n")
-                f.write(f"      path: {v['@id']}\n")
-            else:
-                raise RuntimeError("Unknown parameter type: {v['@type']}")
-        f.write("  outputs:\n")
-        for k, v in config["outputs"].items():
-            if v["@type"] == "File":
-                f.write(f"    {k}:\n")
-                f.write(f"      path: {v['@id']}\n")
-            else:
-                raise RuntimeError("Unknown parameter type: {v['@type']}")
-
-
 # pip install planemo
-def check_workflow(wf_fn, config):
+def check_workflow(wf_fn, tests):
     wd = tempfile.mkdtemp(prefix="check_galaxy_")
     wf_bn = os.path.basename(wf_fn)
     wf_tmp_fn = os.path.join(wd, wf_bn)
     shutil.copy2(wf_fn, wf_tmp_fn)
     head, tail = os.path.splitext(wf_bn)
     test_fn = os.path.join(wd, f"{head}-test.yml")
-    write_test_file(config, test_fn)
+    tp.write_planemo_tests(tests, test_fn, doc="galaxy workflow tests")
     cmd = ["planemo", "test", "--engine", "docker_galaxy",
            "--docker_galaxy_image", GALAXY_IMG, wf_tmp_fn]
     p = subprocess.run(cmd)
@@ -119,8 +83,8 @@ def main(args):
             print("crate has no tests, nothing to do")
             return
     cfg_fn = os.path.join(test_dir, "params.jsonld")
-    config = read_params(cfg_fn)
-    check_workflow(wf_fn, config)
+    tests = tp.read_params(cfg_fn, abs_paths=True)
+    check_workflow(wf_fn, tests)
 
 
 if __name__ == "__main__":
