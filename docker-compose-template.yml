@@ -30,7 +30,7 @@ services:
       - "db"
     ports:
       - "8080:8080"
-    #DEV user: USER_UID:USER_GID
+    #DEV user: "USER_UID:USER_GID"
     env_file: *env_file
     environment:
       - "DEV=false"
