@@ -37,7 +37,7 @@ services:
       - "POSTGRESQL_HOST=db"
     #DEV   - "HOME=/lm"
     #DEV volumes:
-    #DEV - "LOCAL_PATH/lifemonitor:/lm/lifemonitor"
+    #DEV   - "LOCAL_PATH/lifemonitor:/lm/lifemonitor"
  
 volumes:
   lifemonitor_db:
