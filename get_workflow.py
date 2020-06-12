@@ -8,7 +8,10 @@ LM now can connect to the Workflow Hub at http://wfhub:3000 (a real wf hub
 would have a public address).
 
 Create a user, enable workflows and upload a workflow via the wf hub GUI as
-explained in the ro_crate_test.ipynb notebook. Run this on the LM container.
+explained in the ro_crate_test.ipynb notebook. Enable public view and download
+in the "New Workflow" page while registering the workflow.
+
+Run this on the LM container.
 """
 
 from lifemonitor.wfhub import Client
