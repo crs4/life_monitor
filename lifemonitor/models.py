@@ -63,6 +63,8 @@ class Workflow(db.Model):
     version = db.Column(db.Text)
     name = db.Column(db.Text, nullable=True)
     roc_metadata = db.Column(JSONB, nullable=True)
+    testing_projects = db.relationship("TestingProject", back_populates="workflow",
+                                       cascade="all, delete")
     # additional relational specs
     __tablename__ = "workflow"
     __table_args__ = tuple(
@@ -94,7 +96,10 @@ class Test(object):
 class TestingProject(db.Model):
     uuid = db.Column(UUID(as_uuid=True), primary_key=True, default=_uuid.uuid4)
     _workflow_id = db.Column("workflow_id", db.Integer, db.ForeignKey(Workflow._id), nullable=False)
+    workflow = db.relationship("Workflow", back_populates="testing_projects")
     test_definition = db.Column(JSONB, nullable=True)
+    test_instances = db.relationship("TestInstance", back_populates="testing_project",
+                                     cascade="all, delete")
     # additional relational specs
     __table_args__ = tuple(
         # db.ForeignKeyConstraint([workflow_uuid, workflow_version], [Workflow.uuid, Workflow.version])
@@ -111,6 +116,11 @@ class TestInstance(db.Model):
     test_name = db.Column(db.Text, nullable=False)
     test_instance_name = db.Column(db.Text, nullable=True)
     url = db.Column(db.Text, nullable=True)
+    parameters = db.Column(JSONB, nullable=True)
+    # configure relationships
+    testing_project = db.relationship("TestingProject", back_populates="test_instances")
+    testing_service = db.relationship("TestingService", uselist=False, back_populates="test_instance",
+                                      cascade="all, delete")
 class TestingServiceToken(object):
     def __init__(self, key, secret):
         self.key = key
@@ -137,6 +147,12 @@ class TestingService(db.Model):
     _key = db.Column("key", db.Text, nullable=True)
     _secret = db.Column("secret", db.Text, nullable=True)
     url = db.Column(db.Text, nullable=False)
+    # configure nested object
+    token = db.composite(TestingServiceToken, _key, _secret)
+    # configure relationships
+    test_instance = db.relationship("TestInstance", back_populates="testing_service",
+                                    cascade="all, delete")
+
     __mapper_args__ = {
         'polymorphic_on': _type,
         'polymorphic_identity': 'testing_service'
