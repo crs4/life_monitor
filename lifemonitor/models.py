@@ -102,8 +102,8 @@ class TestSuite(db.Model):
     _workflow_id = db.Column("workflow_id", db.Integer, db.ForeignKey(Workflow._id), nullable=False)
     workflow = db.relationship("Workflow", back_populates="test_suites")
     test_definition = db.Column(JSONB, nullable=True)
-    test_instances = db.relationship("TestInstance", back_populates="testing_suite",
-                                     cascade="all, delete")
+    test_configurations = db.relationship("TestConfiguration",
+                                          back_populates="testing_suite", cascade="all, delete")
     # additional relational specs
     __table_args__ = tuple(
         # db.ForeignKeyConstraint([workflow_uuid, workflow_version], [Workflow.uuid, Workflow.version])
@@ -119,7 +119,7 @@ class TestSuite(db.Model):
 
 
 
-class TestInstance(db.Model):
+class TestConfiguration(db.Model):
     uuid = db.Column(UUID(as_uuid=True), primary_key=True, default=_uuid.uuid4)
     _test_suite_uuid = \
         db.Column("test_suite_uuid", UUID(as_uuid=True), db.ForeignKey(TestSuite.uuid), nullable=False)
@@ -128,8 +128,8 @@ class TestInstance(db.Model):
     url = db.Column(db.Text, nullable=True)
     parameters = db.Column(JSONB, nullable=True)
     # configure relationships
-    testing_suite = db.relationship("TestSuite", back_populates="test_instances")
-    testing_service = db.relationship("TestingService", uselist=False, back_populates="test_instance",
+    testing_suite = db.relationship("TestSuite", back_populates="test_configurations")
+    testing_service = db.relationship("TestingService", uselist=False, back_populates="test_configuration",
                                       cascade="all, delete")
 
     def __init__(self, testing_suite: TestSuite,
@@ -162,7 +162,7 @@ class TestingServiceToken(object):
 
 
 class TestingService(db.Model):
-    uuid = db.Column("uuid", UUID(as_uuid=True), db.ForeignKey(TestInstance.uuid), primary_key=True)
+    uuid = db.Column("uuid", UUID(as_uuid=True), db.ForeignKey(TestConfiguration.uuid), primary_key=True)
     _type = db.Column("type", db.String, nullable=False)
     _key = db.Column("key", db.Text, nullable=True)
     _secret = db.Column("secret", db.Text, nullable=True)
@@ -170,20 +170,20 @@ class TestingService(db.Model):
     # configure nested object
     token = db.composite(TestingServiceToken, _key, _secret)
     # configure relationships
-    test_instance = db.relationship("TestInstance", back_populates="testing_service",
-                                    cascade="all, delete")
+    test_configuration = db.relationship("TestConfiguration", back_populates="testing_service",
+                                         cascade="all, delete")
 
     __mapper_args__ = {
         'polymorphic_on': _type,
         'polymorphic_identity': 'testing_service'
     }
 
-    def __init__(self, test_instance: TestInstance, url: str) -> None:
-        self.test_instance = test_instance
+    def __init__(self, test_configuration: TestConfiguration, url: str) -> None:
+        self.test_configuration = test_configuration
         self.url = url
 
     def __repr__(self):
-        return '<TestingService {} for the TestInstance {}>'.format(self.uuid, self.test_instance.uuid)
+        return '<TestingService {} for the TestConfiguration {}>'.format(self.uuid, self.test_configuration.uuid)
 class JenkinsTestingService(TestingService):
     __mapper_args__ = {
         'polymorphic_identity': 'jenkins_testing_service'
