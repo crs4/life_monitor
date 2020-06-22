@@ -71,6 +71,12 @@ class Workflow(db.Model):
         db.UniqueConstraint(uuid, version)
     )
 
+    def __init__(self, uuid, version, roc_metadata=None, name=None) -> None:
+        self.uuid = uuid
+        self.version = version
+        self.roc_metadata = roc_metadata
+        self.name = name
+        self.repository = WorkflowRepository.get_instance()
     def __repr__(self):
         return '<Workflow ({:r}, {:r}); name: {:r}; link: {:r}>'.format(
             self.workflow_id, self.version,
@@ -105,6 +111,9 @@ class TestingProject(db.Model):
         # db.ForeignKeyConstraint([workflow_uuid, workflow_version], [Workflow.uuid, Workflow.version])
     )
 
+    def __init__(self, w: Workflow, test_definition: object = None) -> None:
+        self.workflow = w
+        self.test_definition = test_definition
 
 
 
@@ -121,6 +130,13 @@ class TestInstance(db.Model):
     testing_project = db.relationship("TestingProject", back_populates="test_instances")
     testing_service = db.relationship("TestingService", uselist=False, back_populates="test_instance",
                                       cascade="all, delete")
+
+    def __init__(self, testing_project: TestingProject,
+                 test_name, test_instance_name=None, url: str = None) -> None:
+        self.testing_project = testing_project
+        self.test_name = test_name
+        self.test_instance_name = test_instance_name
+        self.url = url
 class TestingServiceToken(object):
     def __init__(self, key, secret):
         self.key = key
@@ -157,6 +173,10 @@ class TestingService(db.Model):
         'polymorphic_on': _type,
         'polymorphic_identity': 'testing_service'
     }
+
+    def __init__(self, test_instance: TestInstance, url: str) -> None:
+        self.test_instance = test_instance
+        self.url = url
 class JenkinsTestingService(TestingService):
     __mapper_args__ = {
         'polymorphic_identity': 'jenkins_testing_service'
