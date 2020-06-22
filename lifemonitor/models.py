@@ -58,12 +58,7 @@ class TestingProject(db.Model):
     )
 
 
-class TestServiceType(db.Model):
-    service_type = db.Column(db.Text(), primary_key=True)
 
-# Lower 
-db.Index('test_service_type_lower_service_type_idx',
-   db.func.lower(TestServiceType.service_type), unique=True)
 
 
 class TestInstance(db.Model):
