@@ -95,6 +95,24 @@ class TestInstance(db.Model):
     test_name = db.Column(db.Text, nullable=False)
     test_instance_name = db.Column(db.Text, nullable=True)
     url = db.Column(db.Text, nullable=True)
+class TestingServiceToken(object):
+    def __init__(self, key, secret):
+        self.key = key
+        self.secret = secret
+
+    def __composite_values__(self):
+        return self.key, self.secret
+
+    def __repr__(self):
+        return "<TestingServiceToken (key=%r, secret=****)>" % self.key
+
+    def __eq__(self, other):
+        return isinstance(other, TestingServiceToken) and \
+               other.key == self.key and \
+               other.secret == self.secret
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
 
 class TestingService(db.Model):
