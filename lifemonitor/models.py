@@ -70,11 +70,6 @@ class TestInstance(db.Model):
     instance_parameters = db.Column(JSONB(), nullable=True)
 
 
-class TestInstanceToken(db.Model):
-    testing_instance_id = db.Column(UUID(as_uuid=True),
-        db.ForeignKey(TestInstance.test_instance_id), primary_key=True)
-    key = db.Column(db.Text(), nullable=False)
-    secret = db.Column(db.Text(), nullable=False)
 class TestingService(db.Model):
     uuid = db.Column("uuid", UUID(as_uuid=True), db.ForeignKey(TestInstance.uuid), primary_key=True)
     _type = db.Column("type", db.String, nullable=False)
