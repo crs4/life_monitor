@@ -31,11 +31,16 @@ def config_db_access(flask_app):
 
 
 class Workflow(db.Model):
-    workflow_id = db.Column(UUID(as_uuid=True))
-    version = db.Column(db.Text())
-    name = db.Column(db.Text(), nullable=True)
+    _id = db.Column('id', db.Integer, primary_key=True)
+    uuid = db.Column(UUID)
+    version = db.Column(db.Text)
+    name = db.Column(db.Text, nullable=True)
+    roc_metadata = db.Column(JSONB, nullable=True)
+    # additional relational specs
+    __tablename__ = "workflow"
     __table_args__ = tuple(
-        db.PrimaryKeyConstraint(workflow_id, version))
+        db.UniqueConstraint(uuid, version)
+    )
 
     def __repr__(self):
         return '<Workflow ({:r}, {:r}); name: {:r}; link: {:r}>'.format(
