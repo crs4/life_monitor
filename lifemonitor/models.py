@@ -63,8 +63,7 @@ class Workflow(db.Model):
     version = db.Column(db.Text)
     name = db.Column(db.Text, nullable=True)
     roc_metadata = db.Column(JSONB, nullable=True)
-    testing_projects = db.relationship("TestingProject", back_populates="workflow",
-                                       cascade="all, delete")
+    test_suites = db.relationship("TestSuite", back_populates="workflow", cascade="all, delete")
     # additional relational specs
     __tablename__ = "workflow"
     __table_args__ = tuple(
@@ -83,7 +82,7 @@ class Workflow(db.Model):
 class Test(object):
 
     def __init__(self,
-                 project: TestingProject,
+                 project: TestSuite,
                  name: str, specification: object) -> None:
         self.name = name
         self.project = project
@@ -98,12 +97,12 @@ class Test(object):
         return self.project.get_test_instance_by_name(self.name)
 
 
-class TestingProject(db.Model):
+class TestSuite(db.Model):
     uuid = db.Column(UUID(as_uuid=True), primary_key=True, default=_uuid.uuid4)
     _workflow_id = db.Column("workflow_id", db.Integer, db.ForeignKey(Workflow._id), nullable=False)
-    workflow = db.relationship("Workflow", back_populates="testing_projects")
+    workflow = db.relationship("Workflow", back_populates="test_suites")
     test_definition = db.Column(JSONB, nullable=True)
-    test_instances = db.relationship("TestInstance", back_populates="testing_project",
+    test_instances = db.relationship("TestInstance", back_populates="testing_suite",
                                      cascade="all, delete")
     # additional relational specs
     __table_args__ = tuple(
@@ -115,33 +114,33 @@ class TestingProject(db.Model):
         self.test_definition = test_definition
 
     def __repr__(self):
-        return '<TestingProject {} of workflow {} (version {})>'.format(
+        return '<TestSuite {} of workflow {} (version {})>'.format(
             self.uuid, self.workflow.uuid, self.workflow.version)
 
 
 
 class TestInstance(db.Model):
     uuid = db.Column(UUID(as_uuid=True), primary_key=True, default=_uuid.uuid4)
-    _testing_project_uuid = \
-        db.Column("testing_project_uuid", UUID(as_uuid=True), db.ForeignKey(TestingProject.uuid), nullable=False)
+    _test_suite_uuid = \
+        db.Column("test_suite_uuid", UUID(as_uuid=True), db.ForeignKey(TestSuite.uuid), nullable=False)
     test_name = db.Column(db.Text, nullable=False)
     test_instance_name = db.Column(db.Text, nullable=True)
     url = db.Column(db.Text, nullable=True)
     parameters = db.Column(JSONB, nullable=True)
     # configure relationships
-    testing_project = db.relationship("TestingProject", back_populates="test_instances")
+    testing_suite = db.relationship("TestSuite", back_populates="test_instances")
     testing_service = db.relationship("TestingService", uselist=False, back_populates="test_instance",
                                       cascade="all, delete")
 
-    def __init__(self, testing_project: TestingProject,
+    def __init__(self, testing_suite: TestSuite,
                  test_name, test_instance_name=None, url: str = None) -> None:
-        self.testing_project = testing_project
+        self.testing_suite = testing_suite
         self.test_name = test_name
         self.test_instance_name = test_instance_name
         self.url = url
 
     def __repr__(self):
-        return '<TestInstance {} of TestProject {}>'.format(self.uuid, self.testing_project.uuid)
+        return '<TestConfiguration {} on TestSuite {}>'.format(self.uuid, self.testing_suite.uuid)
 class TestingServiceToken(object):
     def __init__(self, key, secret):
         self.key = key
