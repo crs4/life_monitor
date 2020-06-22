@@ -81,3 +81,11 @@ class TestingService(db.Model):
     _key = db.Column("key", db.Text, nullable=True)
     _secret = db.Column("secret", db.Text, nullable=True)
     url = db.Column(db.Text, nullable=False)
+    __mapper_args__ = {
+        'polymorphic_on': _type,
+        'polymorphic_identity': 'testing_service'
+    }
+class JenkinsTestingService(TestingService):
+    __mapper_args__ = {
+        'polymorphic_identity': 'jenkins_testing_service'
+    }
