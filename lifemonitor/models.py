@@ -62,12 +62,12 @@ class TestingProject(db.Model):
 
 
 class TestInstance(db.Model):
-    test_instance_id = db.Column(UUID(as_uuid=True), primary_key=True)
-    test_proj_id = \
-       db.Column(UUID(as_uuid=True), db.ForeignKey(TestingProject.testing_project_id), nullable=False)
-    url = db.Column(db.Text(), nullable=False)
-    service_type = db.Column(db.Text(), db.ForeignKey(TestServiceType.service_type), nullable=False)
-    instance_parameters = db.Column(JSONB(), nullable=True)
+    uuid = db.Column(UUID(as_uuid=True), primary_key=True, default=_uuid.uuid4)
+    _testing_project_uuid = \
+        db.Column("testing_project_uuid", UUID(as_uuid=True), db.ForeignKey(TestingProject.uuid), nullable=False)
+    test_name = db.Column(db.Text, nullable=False)
+    test_instance_name = db.Column(db.Text, nullable=True)
+    url = db.Column(db.Text, nullable=True)
 
 
 class TestingService(db.Model):
