@@ -73,6 +73,22 @@ class Workflow(db.Model):
         return '<Workflow ({:r}, {:r}); name: {:r}; link: {:r}>'.format(
             self.workflow_id, self.version,
             self.name, self.roc_link)
+class Test(object):
+
+    def __init__(self,
+                 project: TestingProject,
+                 name: str, specification: object) -> None:
+        self.name = name
+        self.project = project
+        self.specification = specification
+
+    def __repr__(self):
+        return '<Test {} of testing project {} (workflow {}, version {})>'.format(
+            self.name, self.project, self.project.workflow.uuid, self.project.workflow.version)
+
+    @property
+    def instances(self) -> list:
+        return self.project.get_test_instance_by_name(self.name)
 
 
 class TestingProject(db.Model):
