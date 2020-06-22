@@ -49,12 +49,12 @@ class Workflow(db.Model):
 
 
 class TestingProject(db.Model):
-    testing_project_id = db.Column(UUID(as_uuid=True), primary_key=True)
-    workflow_id = db.Column(UUID(as_uuid=True), nullable=False)
-    version = db.Column(db.Text(), nullable=False)
-    test_definition = db.Column(JSONB(), nullable=True)
+    uuid = db.Column(UUID(as_uuid=True), primary_key=True, default=_uuid.uuid4)
+    _workflow_id = db.Column("workflow_id", db.Integer, db.ForeignKey(Workflow._id), nullable=False)
+    # additional relational specs
     __table_args__ = tuple(
-        db.ForeignKeyConstraint( [workflow_id, version], [Workflow.workflow_id, Workflow.version] )) 
+        # db.ForeignKeyConstraint([workflow_uuid, workflow_version], [Workflow.uuid, Workflow.version])
+    )
 
 
 class TestServiceType(db.Model):
