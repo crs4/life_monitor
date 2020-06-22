@@ -30,6 +30,33 @@ def config_db_access(flask_app):
     db.create_all()
 
 
+class WorkflowRepository(object):
+    __instance = None
+
+    @classmethod
+    def get_instance(cls) -> WorkflowRepository:
+        if not cls.__instance:
+            cls.__instance = cls()
+        return cls.__instance
+
+    def __init__(self):
+        if self.__instance:
+            raise Exception("WorkflowRepository instance already exists!")
+        self.__instance = self
+        self._url = os.environ["WORKFLOW_REPOSITORY_URL"]
+        self._token = os.environ["WORKFLOW_REPOSITORY_TOKEN"]
+
+    @property
+    def url(self):
+        return self._url
+
+    def build_ro_link(self, w: Workflow) -> str:
+        return "{}?version={}".format(os.path.join(self._url, "workflow", w.uuid), w.version)
+
+    def download_url(self, url, target_path=None):
+        return download_url(url, target_path, self._token)
+
+
 class Workflow(db.Model):
     _id = db.Column('id', db.Integer, primary_key=True)
     uuid = db.Column(UUID)
