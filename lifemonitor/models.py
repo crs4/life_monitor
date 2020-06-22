@@ -78,9 +78,8 @@ class Workflow(db.Model):
         self.name = name
         self.repository = WorkflowRepository.get_instance()
     def __repr__(self):
-        return '<Workflow ({:r}, {:r}); name: {:r}; link: {:r}>'.format(
-            self.workflow_id, self.version,
-            self.name, self.roc_link)
+        return '<Workflow ({}, {}); name: {}; link: {}>'.format(
+            self.uuid, self.version, self.name, self.roc_link)
 class Test(object):
 
     def __init__(self,
@@ -115,6 +114,9 @@ class TestingProject(db.Model):
         self.workflow = w
         self.test_definition = test_definition
 
+    def __repr__(self):
+        return '<TestingProject {} of workflow {} (version {})>'.format(
+            self.uuid, self.workflow.uuid, self.workflow.version)
 
 
 
@@ -137,6 +139,9 @@ class TestInstance(db.Model):
         self.test_name = test_name
         self.test_instance_name = test_instance_name
         self.url = url
+
+    def __repr__(self):
+        return '<TestInstance {} of TestProject {}>'.format(self.uuid, self.testing_project.uuid)
 class TestingServiceToken(object):
     def __init__(self, key, secret):
         self.key = key
@@ -177,6 +182,9 @@ class TestingService(db.Model):
     def __init__(self, test_instance: TestInstance, url: str) -> None:
         self.test_instance = test_instance
         self.url = url
+
+    def __repr__(self):
+        return '<TestingService {} for the TestInstance {}>'.format(self.uuid, self.test_instance.uuid)
 class JenkinsTestingService(TestingService):
     __mapper_args__ = {
         'polymorphic_identity': 'jenkins_testing_service'
