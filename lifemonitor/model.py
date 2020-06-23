@@ -119,13 +119,13 @@ class Workflow(db.Model):
                     return False
         return True
 
-    def to_dict(self, test_output=False):
+    def to_dict(self, test_suite=False, test_output=False):
         return {
             'uuid': str(self.uuid),
             'version': self.version,
             'name': self.name,
             'isHealthy': self.is_healthy,
-            'test_suite': [s.to_dict(test_output) for s in self.test_suites]
+            'test_suite': [s.to_dict(test_output) for s in self.test_suites] if test_suite else None
         }
 
     def save(self):
