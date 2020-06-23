@@ -351,7 +351,7 @@ class TestBuild(ABC):
 
     @property
     def metadata(self):
-        return self.metadata
+        return self._metadata
 
     @property
     @abstractmethod
