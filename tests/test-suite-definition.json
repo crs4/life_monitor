@@ -1,0 +1,24 @@
+{
+  "@context": "https://w3id.org/ro/crate/1.0/context",
+  "@id": "test-project-metadata.jsonld",
+  "@type": "CreativeWork",
+  "workflow": "a reference to the workflow",
+  "test": [
+    {
+      "name": "dtests",
+      "instance": [
+        {
+          "name": "dtests",
+          "url": "http://jenkins.172.30.10.100.nip.io/job/dtests/",
+          "service": {
+            "type": "jenkins",
+            "url": "http://jenkins.172.30.10.100.nip.io"
+          }
+        }
+      ],
+      "specification": {
+
+      }
+    }
+  ]
+}
