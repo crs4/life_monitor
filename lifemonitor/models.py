@@ -359,7 +359,73 @@ class TestBuild(ABC):
     def url(self) -> str:
         pass
 
+
+class JenkinsTestBuild(TestBuild):
+
+    @property
+    def build_number(self) -> int:
+        return self.metadata['number']
+
+    @property
+    def last_built_revision(self):
+        rev_info = list(map(lambda x: x["lastBuiltRevision"],
+                            filter(lambda x: "lastBuiltRevision" in x, self.metadata["actions"])))
+        return rev_info[0] if len(rev_info) == 1 else None
+
+    @property
+    def duration(self) -> int:
+        return self.metadata['duration']
+
+    @property
+    def output(self) -> str:
+        return self.testing_service.get_test_build_output(self.build_number)
+
+    @property
+    def result(self) -> TestBuild.Result:
+        return TestBuild.Result.SUCCESS \
+            if self.metadata["result"] == "SUCCESS" else TestBuild.Result.FAILED
+
+    @property
+    def url(self) -> str:
+        return self.metadata['url']
+
+
 class JenkinsTestingService(TestingService):
     __mapper_args__ = {
         'polymorphic_identity': 'jenkins_testing_service'
     }
+
+    def __init__(self, test_configuration: TestConfiguration, url: str) -> None:
+        super().__init__(test_configuration, url)
+        self._server = jenkins.Jenkins(url)
+
+    def is_workflow_healthy(self) -> bool:
+        return self.last_test_build().is_successful()
+
+    def last_test_build(self) -> TestBuild:
+        return self.get_test_build(self.metadata['lastBuild']['number'])
+
+    def last_successful_test_build(self) -> TestBuild:
+        return self.get_test_build(self.metadata['lastSuccessfulBuild']['number'])
+
+    def last_failed_test_build(self) -> TestBuild:
+        return self.get_test_build(self.metadata['lastFailedBuild']['number'])
+
+    def all_test_builds(self) -> list:
+        builds = []
+        for build_info in self.metadata['builds']:
+            builds.append(self.get_test_build(build_info['number']))
+        return builds
+
+    def get_test_build(self, build_number) -> JenkinsTestBuild:
+        try:
+            build_metadata = self._server.get_build_info(self.test_instance_name, build_number)
+            return JenkinsTestBuild(self, build_metadata)
+        except jenkins.JenkinsException as e:
+            raise LifeMonitorException(e)
+
+    def get_test_build_output(self, build_number):
+        try:
+            return self._server.get_build_console_output(self.test_instance_name, build_number)
+        except jenkins.JenkinsException as e:
+            raise LifeMonitorException(e)
