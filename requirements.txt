@@ -1,2 +1,10 @@
 connexion[swagger-ui]==2.6.0
-Flask-SQLAlchemy
+flask-restful
+Flask-SQLAlchemy==2.4.3
+python-jenkins==1.7.0
+pytest==5.4.3
+#psycopg2==2.8.5
+python-dotenv~=0.13.0
+SQLAlchemy~=1.3.17
+requests~=2.23.0
+PyYAML~=5.3.1
