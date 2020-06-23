@@ -16,6 +16,9 @@ from lifemonitor.utils import download_url, to_camel_case
 
 db = SQLAlchemy()
 
+# set module level logger
+logger = logging.getLogger(__name__)
+
 
 def db_uri():
     if os.getenv('DATABASE_URI'):
