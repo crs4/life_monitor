@@ -1,4 +1,3 @@
-
 # vim: set et sw=2
 
 openapi: "3.0.0"
@@ -8,9 +7,9 @@ info:
   description: "Workflow sustainability service"
 
 servers:
-    - url: /
-      description: Version 0.0 of API.  Add version prefix (e.g, /v1.0) once we have something useful
- 
+  - url: /
+    description: Version 0.0 of API.  Add version prefix (e.g, /v1.0) once we have something useful
+
 paths:
   /workflows:
     get:
@@ -39,12 +38,13 @@ paths:
         '201':
           description: Workflow created
 
-  /workflows/{wf_id}:
+  /workflows/{wf_uuid}/{wf_version}:
     get:
       operationId: "api.workflows_get_by_id"
       summary: "Get information about a single workflow"
       parameters:
-        - $ref: '#/components/parameters/wf_id'
+        - $ref: '#/components/parameters/wf_uuid'
+        - $ref: '#/components/parameters/wf_version'
       responses:
         '200':
           description: A Workflow object
@@ -61,7 +61,8 @@ paths:
       operationId: "api.workflows_put"
       summary: "Modify an existing workflow"
       parameters:
-        - $ref: '#/components/parameters/wf_id'
+        - $ref: '#/components/parameters/wf_uuid'
+        - $ref: '#/components/parameters/wf_version'
       requestBody:
         required: true
         content:
@@ -76,7 +77,58 @@ paths:
       operationId: "api.workflows_delete"
       summary: "Delete a workflow"
       parameters:
-        - $ref: '#/components/parameters/wf_id'
+        - $ref: '#/components/parameters/wf_uuid'
+        - $ref: '#/components/parameters/wf_version'
+      responses:
+        '200':
+          description: Does not exist
+        '204':
+          description: Deleted
+        '400':
+          description: Invalid input
+
+  /workflows/{wf_uuid}/{wf_version}/suites:
+    post:
+      operationId: "api.suites_post"
+      summary: "Register a test suite"
+      parameters:
+        - $ref: '#/components/parameters/wf_uuid'
+        - $ref: '#/components/parameters/wf_version'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestSuite'
+      responses:
+        '201':
+          description: TestSuite created
+
+  /workflows/{wf_uuid}/{wf_version}/health_status:
+    get:
+      operationId: "api.workflows_check_health_status"
+      summary: "Get the health status of a registered workflow"
+      parameters:
+        - $ref: '#/components/parameters/wf_uuid'
+        - $ref: '#/components/parameters/wf_version'
+      responses:
+        '200':
+          description: Workflow health status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+        '400':
+          description: Invalid input
+        '404':
+          description: Not found
+
+  /suites/{suite_uuid}:
+    delete:
+      operationId: "api.suites_delete"
+      summary: "Delete a test suite"
+      parameters:
+        - $ref: '#/components/parameters/suite_uuid'
       responses:
         '200':
           description: Does not exist
@@ -87,9 +139,23 @@ paths:
 
 components:
   parameters:
-    wf_id:
-      name: "wf_id"
+    wf_uuid:
+      name: "wf_uuid"
       description: "Workflow's Unique identifier"
+      in: path
+      schema:
+        type: string
+      required: true
+    wf_version:
+      name: "wf_version"
+      description: "Workflow's version"
+      in: path
+      schema:
+        type: string
+      required: true
+    suite_uuid:
+      name: "suite_uuid"
+      description: "TestSuite's Unique identifier"
       in: path
       schema:
         type: string
@@ -99,7 +165,23 @@ components:
     Workflow:
       type: object
       properties:
+        uuid:
+          type: string
+        version:
+          type: string
+        roc_link:
+          type: string
         name:
           type: string
       required:
-        - name
+        - uuid
+        - version
+        - roc_link
+
+    TestSuite:
+      type: object
+      properties:
+        test_suite_metadata:
+          type: object
+      required:
+        - test_suite_metadata
