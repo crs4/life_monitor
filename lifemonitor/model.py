@@ -54,21 +54,21 @@ def config_db_access(flask_app):
     db.create_all()
 
 
-class WorkflowRepository(object):
+class WorkflowRegistry(object):
     __instance = None
 
     @classmethod
-    def get_instance(cls) -> WorkflowRepository:
+    def get_instance(cls) -> WorkflowRegistry:
         if not cls.__instance:
             cls.__instance = cls()
         return cls.__instance
 
     def __init__(self):
         if self.__instance:
-            raise Exception("WorkflowRepository instance already exists!")
+            raise Exception("WorkflowRegistry instance already exists!")
         self.__instance = self
-        self._url = os.environ["WORKFLOW_REPOSITORY_URL"]
-        self._token = os.environ["WORKFLOW_REPOSITORY_TOKEN"]
+        self._url = os.environ["WORKFLOW_REGISTRY_URL"]
+        self._token = os.environ["WORKFLOW_REPOSITORY_URL"]
 
     @property
     def url(self):
@@ -88,6 +88,7 @@ class Workflow(db.Model):
     name = db.Column(db.Text, nullable=True)
     roc_metadata = db.Column(JSONB, nullable=True)
     test_suites = db.relationship("TestSuite", back_populates="workflow", cascade="all, delete")
+    _registry = None
     # additional relational specs
     __tablename__ = "workflow"
     __table_args__ = tuple(
@@ -99,11 +100,18 @@ class Workflow(db.Model):
         self.version = version
         self.roc_metadata = roc_metadata
         self.name = name
-        self.repository = WorkflowRepository.get_instance()
+        self._registry = None
+
+    @property
+    def registry(self):
+        if not self._registry:
+            self._registry = WorkflowRegistry.get_instance()
+        return self._registry
 
     @property
     def roc_link(self):
-        # return self.repository.build_ro_link(self) if "repository" in self else None
+        if self.registry:
+            return self.registry.build_ro_link(self)
         return ""
 
     def __repr__(self):

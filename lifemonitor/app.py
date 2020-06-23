@@ -8,7 +8,7 @@ from lifemonitor import config
 from lifemonitor.common import EntityNotFoundException
 from lifemonitor.model import (
     config_db_access,
-    WorkflowRepository, Workflow, TestSuite,
+    WorkflowRegistry, Workflow, TestSuite,
     TestConfiguration, TestingService,
 )
 from lifemonitor.utils import extract_zip, load_ro_crate_metadata
@@ -44,7 +44,7 @@ class LifeMonitor(connexion.App):
         # archive_path = tempfile.NamedTemporaryFile(dir="/tmp", suffix=".zip")
         with tempfile.NamedTemporaryFile(dir="/tmp") as archive_path:
             logger.info("Downloading RO Crate @ %s", archive_path.name)
-            wr = WorkflowRepository.get_instance()
+            wr = WorkflowRegistry.get_instance()
             wr.download_url(roc_link, target_path=archive_path.name)
             with tempfile.TemporaryDirectory() as roc_path:
                 logger.info("Extracting RO Crate @ %s", roc_path)
