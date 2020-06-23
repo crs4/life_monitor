@@ -124,6 +124,7 @@ class Workflow(db.Model):
             'uuid': str(self.uuid),
             'version': self.version,
             'name': self.name,
+            'roc_link': self.roc_link,
             'isHealthy': self.is_healthy,
             'test_suite': [s.to_dict(test_output) for s in self.test_suites] if test_suite else None
         }
