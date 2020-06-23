@@ -1,7 +1,11 @@
-
+import os
 import logging
 
 logger = logging.getLogger('lm')
+
+
+def is_debug_mode_enabled():
+    return os.environ.get("DEBUG", False)
 
 
 def configure_logging(app):

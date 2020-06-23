@@ -1,18 +1,16 @@
 #!/usr/bin/env python3
-
-import os
-import uuid
-
+import logging
 import connexion
-import sqlalchemy
+from lifemonitor import config
+from lifemonitor.app import LifeMonitor
+from lifemonitor.common import EntityNotFoundException
 
-from lifemonitor import config, models
-from lifemonitor.config import logger
-from lifemonitor.models import db
+# Initialize a reference to the LifeMonitor instance
+lm = LifeMonitor.get_instance()
 
-WORK = {}
+# Config a module level logger
+logger = logging.getLogger(__name__)
 
-connex_app = None
 
 def _row_to_dict(row):
     d = {}
@@ -22,78 +20,92 @@ def _row_to_dict(row):
 
 
 def workflows_get():
-    results = models.Workflow.query.all()
-    logger.debug("workflows_get. Got %s workflows", len(results))
-    return [ _row_to_dict(row) for row in results ]
+    workflows = lm.get_registered_workflows()
+    logger.debug("workflows_get. Got %s workflows", len(workflows))
+    return [w.to_dict(test_suite=False, test_output=False) for w in workflows]
 
 
 def workflows_post(body):
-    w = models.Workflow(
-        workflow_id=uuid.uuid4(),
-        name=body['name'])
+    w = lm.register_workflow(
+        workflow_uuid=body['uuid'],
+        workflow_version=body['version'],
+        roc_link=body['roc_link'],
+        name=body['name']
+    )
     logger.debug("workflows_post. Created workflow with name '%s'", w.name)
-    db.session.add(w)
-    db.session.commit()
-    logger.debug("Added and committed to DB")
-
-    return str(w.workflow_id), 201
+    return {'wf_uuid': str(w.uuid), 'version': w.version}, 201
 
 
-def workflows_put(wf_id, body):
-    logger.debug("PUT called for wf_id %s", wf_id)
+def workflows_put(wf_uuid, wf_version, body):
+    # TODO: to be implemented
+    logger.debug("PUT called for workflow (%s,%s)", wf_uuid, wf_version)
+    # try:
+    #     wf = model.Workflow.query.get(wf_id)
+    # except sqlalchemy.exc.DataError:
+    #     return "Invalid ID", 400
+    # wf.name = body['name']
+    # db.session.commit()
+    # return connexion.NoContent, 200
+    return connexion.NoContent, 501
+
+
+def workflows_get_by_id(wf_uuid, wf_version):
     try:
-        wf = models.Workflow.query.get(wf_id)
-    except sqlalchemy.exc.DataError:
-        return "Invalid ID", 400
-    wf.name = body['name']
-    db.session.commit()
-    return connexion.NoContent, 200
-
-
-def workflows_get_by_id(wf_id):
-    try:
-        wf = models.Workflow.query.get(wf_id)
-    except sqlalchemy.exc.DataError:
+        wf = lm.get_registered_workflow(wf_uuid, wf_version)
+    except EntityNotFoundException:
         return "Invalid ID", 400
 
     if wf is not None:
         # Once we customize the JSON encoder or implement a smarter serialization
         # with Marshmellow we could simply return the value
-        return _row_to_dict(wf)
+        return wf.to_dict(test_suite=False, test_output=False)
 
     return connexion.NoContent, 404
 
 
-def workflows_delete(wf_id):
+def workflows_check_health_status(wf_uuid, wf_version):
     try:
-        wf = models.Workflow.query.get(wf_id)
-    except sqlalchemy.exc.DataError:
+        wf = lm.get_workflow_health_status(wf_uuid, wf_version)
+    except EntityNotFoundException:
         return "Invalid ID", 400
 
-    if wf is None:
-        return connexion.NoContent, 200
+    if wf is not None:
+        # Once we customize the JSON encoder or implement a smarter serialization
+        # with Marshmellow we could simply return the value
+        return wf.to_dict(test_suite=False, test_output=False)
 
-    db.session.delete(wf)
-    db.session.commit()
-    logger.debug("Committed")
+    return connexion.NoContent, 404
+
+
+def workflows_delete(wf_uuid, wf_version):
+    try:
+        lm.deregister_workflow(wf_uuid, wf_version)
+    except EntityNotFoundException:
+        return "Invalid ID", 400
+
     return connexion.NoContent, 204
 
 
-def create_app():
-    base_dir = os.path.abspath(os.path.dirname(__file__))
-    global connex_app
-    connex_app = connexion.App('LM', specification_dir=base_dir)
-    flask_app = connex_app.app
+def suites_post(wf_uuid, wf_version, body):
+    suite = lm.register_test_suite(
+        workflow_uuid=wf_uuid,
+        workflow_version=wf_version,
+        test_suite_metadata=body['test_suite_metadata']
+    )
+    logger.debug("suite_post. Created test suite with name '%s'", suite.uuid)
+    return {'wf_uuid': str(suite.uuid)}, 201
 
-    with flask_app.app_context():
-        config.configure_logging(flask_app)
-        logger.info("Starting application")
 
-        models.config_db_access(flask_app)
+def suites_delete(suite_uuid):
+    try:
+        lm.deregister_test_suite(suite_uuid)
+    except EntityNotFoundException:
+        return "Invalid ID", 400
 
-    connex_app.add_api('api.yaml', validate_responses=True)
-    connex_app.run(port=8080)
+    return connexion.NoContent, 204
 
 
 if __name__ == '__main__':
-    create_app()
+    lm = LifeMonitor.get_instance()
+    lm.add_api('api.yaml', validate_responses=True)
+    lm.run(port=8000, debug=config.is_debug_mode_enabled())
