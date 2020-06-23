@@ -85,6 +85,25 @@ class Workflow(db.Model):
     def __repr__(self):
         return '<Workflow ({}, {}); name: {}; link: {}>'.format(
             self.uuid, self.version, self.name, self.roc_link)
+
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
+
+    @classmethod
+    def all(cls):
+        return cls.query.all()
+
+    @classmethod
+    def find_by_id(cls, uuid, version):
+        return cls.query.filter(Workflow.uuid == uuid) \
+            .filter(Workflow.version == version).first()
+
+
 class Test(object):
 
     def __init__(self,
@@ -143,6 +162,23 @@ class TestSuite(db.Model):
                                         test["specification"] if "specification" in test else None)
         return result
 
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
+
+    @classmethod
+    def all(cls):
+        return cls.query.all()
+
+    @classmethod
+    def find_by_id(cls, uuid) -> TestSuite:
+        return cls.query.get(uuid)
+
+
 class TestConfiguration(db.Model):
     uuid = db.Column(UUID(as_uuid=True), primary_key=True, default=_uuid.uuid4)
     _test_suite_uuid = \
@@ -171,6 +207,24 @@ class TestConfiguration(db.Model):
         if not self.test_suite:
             raise EntityNotFoundException(Test)
         return self.test_suite.tests[self.test_name]
+
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
+
+    @classmethod
+    def all(cls):
+        return cls.query.all()
+
+    @classmethod
+    def find_by_id(cls, uuid) -> TestConfiguration:
+        return cls.query.get(uuid)
+
+
 class TestingServiceToken(object):
     def __init__(self, key, secret):
         self.key = key
@@ -233,6 +287,30 @@ class TestingService(db.Model):
 
     def all_test_builds(self) -> list:
         raise NotImplementedException()
+
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
+
+    @classmethod
+    def all(cls):
+        return cls.query.all()
+
+    @classmethod
+    def find_by_id(cls, uuid) -> TestingService:
+        return cls.query.get(uuid)
+
+    @classmethod
+    def new_instance(cls, test_instance: TestConfiguration, service_type, url: str):
+        try:
+            service_class = globals()["{}TestingService".format(to_camel_case(service_type))]
+            return service_class(test_instance, url)
+        except Exception as e:
+            raise TestingServiceNotSupportedException(e)
 class JenkinsTestingService(TestingService):
     __mapper_args__ = {
         'polymorphic_identity': 'jenkins_testing_service'
