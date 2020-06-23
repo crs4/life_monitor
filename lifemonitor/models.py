@@ -110,6 +110,14 @@ class Workflow(db.Model):
         return '<Workflow ({}, {}); name: {}; link: {}>'.format(
             self.uuid, self.version, self.name, self.roc_link)
 
+    @property
+    def is_healthy(self) -> bool:
+        for suite in self.test_suites:
+            for test_configuration in suite.test_configurations:
+                testing_service = test_configuration.testing_service
+                if not testing_service.last_test_build.is_successful():
+                    return False
+        return True
     def save(self):
         db.session.add(self)
         db.session.commit()
