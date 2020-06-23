@@ -76,6 +76,12 @@ class Workflow(db.Model):
         self.roc_metadata = roc_metadata
         self.name = name
         self.repository = WorkflowRepository.get_instance()
+
+    @property
+    def roc_link(self):
+        # return self.repository.build_ro_link(self) if "repository" in self else None
+        return ""
+
     def __repr__(self):
         return '<Workflow ({}, {}); name: {}; link: {}>'.format(
             self.uuid, self.version, self.name, self.roc_link)
@@ -117,7 +123,25 @@ class TestSuite(db.Model):
         return '<TestSuite {} of workflow {} (version {})>'.format(
             self.uuid, self.workflow.uuid, self.workflow.version)
 
+    def get_test_instance_by_name(self, name) -> list:
+        result = []
+        for ti in self.test_configurations:
+            if ti.name == name:
+                result.append(ti)
+        return result
 
+    @property
+    def tests(self) -> Optional[dict]:
+        if not self.test_definition:
+            raise SpecificationNotDefinedException('Not test definition for the test suite {}'.format(self.uuid))
+        if "test" not in self.test_definition:
+            raise SpecificationNotValidException("'test' property not found")
+        # TODO: implement a caching mechanism: with a custom setter for the test_definition collection
+        result = {}
+        for test in self.test_definition["test"]:
+            result[test["name"]] = Test(self, test["name"],
+                                        test["specification"] if "specification" in test else None)
+        return result
 
 class TestConfiguration(db.Model):
     uuid = db.Column(UUID(as_uuid=True), primary_key=True, default=_uuid.uuid4)
@@ -141,6 +165,12 @@ class TestConfiguration(db.Model):
 
     def __repr__(self):
         return '<TestConfiguration {} on TestSuite {}>'.format(self.uuid, self.test_suite.uuid)
+
+    @property
+    def test(self):
+        if not self.test_suite:
+            raise EntityNotFoundException(Test)
+        return self.test_suite.tests[self.test_name]
 class TestingServiceToken(object):
     def __init__(self, key, secret):
         self.key = key
@@ -184,6 +214,25 @@ class TestingService(db.Model):
 
     def __repr__(self):
         return '<TestingService {} for the TestConfiguration {}>'.format(self.uuid, self.test_configuration.uuid)
+
+    @property
+    def test_instance_name(self):
+        return self.test_configuration.test_instance_name
+
+    def is_workflow_healthy(self) -> bool:
+        raise NotImplementedException()
+
+    def last_test_build(self) -> TestBuild:
+        raise NotImplementedException()
+
+    def last_successful_test_build(self) -> TestBuild:
+        raise NotImplementedException()
+
+    def last_failed_test_build(self) -> TestBuild:
+        raise NotImplementedException()
+
+    def all_test_builds(self) -> list:
+        raise NotImplementedException()
 class JenkinsTestingService(TestingService):
     __mapper_args__ = {
         'polymorphic_identity': 'jenkins_testing_service'
