@@ -118,6 +118,16 @@ class Workflow(db.Model):
                 if not testing_service.last_test_build.is_successful():
                     return False
         return True
+
+    def to_dict(self, test_output=False):
+        return {
+            'uuid': str(self.uuid),
+            'version': self.version,
+            'name': self.name,
+            'isHealthy': self.is_healthy,
+            'test_suite': [s.to_dict(test_output) for s in self.test_suites]
+        }
+
     def save(self):
         db.session.add(self)
         db.session.commit()
@@ -181,6 +191,12 @@ class TestSuite(db.Model):
                 result.append(ti)
         return result
 
+    def to_dict(self, test_output=False) -> dict:
+        return {
+            'uuid': str(self.uuid),
+            'test': [t.to_dict(test_output) for t in self.test_configurations]
+        }
+
     @property
     def tests(self) -> Optional[dict]:
         if not self.test_definition:
@@ -239,6 +255,15 @@ class TestConfiguration(db.Model):
         if not self.test_suite:
             raise EntityNotFoundException(Test)
         return self.test_suite.tests[self.test_name]
+
+    def to_dict(self, test_output=False):
+        return {
+            'uuid': str(self.uuid),
+            'name': self.test_instance_name or self.test_name,
+            'url': self.url,
+            'parameters': self.parameters,
+            'testing_service': self.testing_service.to_dict(test_output)
+        }
 
     def save(self):
         db.session.add(self)
@@ -305,20 +330,41 @@ class TestingService(db.Model):
     def test_instance_name(self):
         return self.test_configuration.test_instance_name
 
+    @property
     def is_workflow_healthy(self) -> bool:
         raise NotImplementedException()
 
+    @property
     def last_test_build(self) -> TestBuild:
         raise NotImplementedException()
 
+    @property
     def last_successful_test_build(self) -> TestBuild:
         raise NotImplementedException()
 
+    @property
     def last_failed_test_build(self) -> TestBuild:
         raise NotImplementedException()
 
-    def all_test_builds(self) -> list:
+    @property
+    def test_builds(self) -> list:
         raise NotImplementedException()
+
+    def to_dict(self, test_output=False) -> dict:
+        last_test_build = self.last_test_build
+        last_successful_test_build = self.last_successful_test_build
+        last_failed_test_build = self.last_failed_test_build
+        return {
+            'uuid': str(self.uuid),
+            'url': self.url,
+            'workflow_healthy': self.is_workflow_healthy,
+            'last_test_build': last_test_build.to_dict(test_output) if last_test_build else None,
+            'last_successful_test_build':
+                last_successful_test_build.to_dict(test_output) if last_successful_test_build else None,
+            'last_failed_test_build':
+                last_failed_test_build.to_dict(test_output) if last_failed_test_build else None,
+            "test_builds": [t.to_dict(test_output) for t in self.test_builds]
+        }
 
     def save(self):
         db.session.add(self)
@@ -390,6 +436,15 @@ class TestBuild(ABC):
     @abstractmethod
     def url(self) -> str:
         pass
+
+    def to_dict(self, test_output=False) -> dict:
+        return {
+            'success': self.is_successful(),
+            'build_number': self.build_number,
+            'last_build_revision': self.last_built_revision,
+            'duration': self.duration,
+            'output': self.output if test_output else ''
+        }
 
 
 class JenkinsTestBuild(TestBuild):
