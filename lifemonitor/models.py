@@ -129,8 +129,8 @@ class TestConfiguration(db.Model):
     parameters = db.Column(JSONB, nullable=True)
     # configure relationships
     test_suite = db.relationship("TestSuite", back_populates="test_configurations")
-    test_service = db.relationship("TestServiceConfiguration", uselist=False, back_populates="test_configuration",
-                                   cascade="all, delete")
+    testing_service = db.relationship("TestingService", uselist=False, back_populates="test_configuration",
+                                      cascade="all, delete")
 
     def __init__(self, testing_suite: TestSuite,
                  test_name, test_instance_name=None, url: str = None) -> None:
@@ -161,7 +161,7 @@ class TestingServiceToken(object):
         return not self.__eq__(other)
 
 
-class TestServiceConfiguration(db.Model):
+class TestingService(db.Model):
     uuid = db.Column("uuid", UUID(as_uuid=True), db.ForeignKey(TestConfiguration.uuid), primary_key=True)
     _type = db.Column("type", db.String, nullable=False)
     _key = db.Column("key", db.Text, nullable=True)
@@ -170,12 +170,12 @@ class TestServiceConfiguration(db.Model):
     # configure nested object
     token = db.composite(TestingServiceToken, _key, _secret)
     # configure relationships
-    test_configuration = db.relationship("TestConfiguration", back_populates="test_service",
+    test_configuration = db.relationship("TestConfiguration", back_populates="testing_service",
                                          cascade="all, delete")
 
     __mapper_args__ = {
         'polymorphic_on': _type,
-        'polymorphic_identity': 'test_service'
+        'polymorphic_identity': 'testing_service'
     }
 
     def __init__(self, test_configuration: TestConfiguration, url: str) -> None:
@@ -183,8 +183,8 @@ class TestServiceConfiguration(db.Model):
         self.url = url
 
     def __repr__(self):
-        return '<TestServiceConfiguration {} for the TestConfiguration {}>'.format(self.uuid, self.test_configuration.uuid)
-class JenkinsTestServiceConfiguration(TestServiceConfiguration):
+        return '<TestingService {} for the TestConfiguration {}>'.format(self.uuid, self.test_configuration.uuid)
+class JenkinsTestingService(TestingService):
     __mapper_args__ = {
         'polymorphic_identity': 'jenkins_testing_service'
     }
