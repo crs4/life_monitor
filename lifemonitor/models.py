@@ -14,6 +14,7 @@ from lifemonitor.common import (SpecificationNotValidException, EntityNotFoundEx
                                 NotImplementedException, LifeMonitorException)
 from lifemonitor.utils import download_url, to_camel_case
 
+# set DB instance
 db = SQLAlchemy()
 
 # set module level logger
@@ -21,18 +22,28 @@ logger = logging.getLogger(__name__)
 
 
 def db_uri():
+    """
+    Build URI to connect to the DataBase
+    :return:
+    """
     if os.getenv('DATABASE_URI'):
         uri = os.getenv('DATABASE_URI')
     else:
-        uri = "postgresql://{user}:{passwd}@{host}/{dbname}".format(
+        uri = "postgresql://{user}:{passwd}@{host}:{port}/{dbname}".format(
             user=os.getenv('POSTGRESQL_USERNAME'),
             passwd=os.getenv('POSTGRESQL_PASSWORD', ''),
             host=os.getenv('POSTGRESQL_HOST'),
+            port=os.getenv('POSTGRESQL_PORT'),
             dbname=os.getenv('POSTGRESQL_DATABASE'))
     return uri
 
 
 def config_db_access(flask_app):
+    """
+    Initialize DB
+    :param flask_app:
+    :return:
+    """
     flask_app.config['SQLALCHEMY_DATABASE_URI'] = db_uri()
     # FSADeprecationWarning: SQLALCHEMY_TRACK_MODIFICATIONS adds significant
     # overhead and will be disabled by default in the future.  Set it to True
