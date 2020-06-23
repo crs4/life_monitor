@@ -438,33 +438,51 @@ class JenkinsTestingService(TestingService):
             self._server = jenkins.Jenkins(self.url)
         return self._server
 
+    @property
     def is_workflow_healthy(self) -> bool:
-        return self.last_test_build().is_successful()
+        return self.last_test_build.is_successful()
 
-    def last_test_build(self) -> TestBuild:
-        return self.get_test_build(self.metadata['lastBuild']['number'])
+    @property
+    def last_test_build(self) -> Optional[JenkinsTestBuild]:
+        if self.project_metadata['lastBuild']:
+            return self.get_test_build(self.project_metadata['lastBuild']['number'])
+        return None
 
-    def last_successful_test_build(self) -> TestBuild:
-        return self.get_test_build(self.metadata['lastSuccessfulBuild']['number'])
+    @property
+    def last_successful_test_build(self) -> Optional[JenkinsTestBuild]:
+        if self.project_metadata['lastSuccessfulBuild']:
+            return self.get_test_build(self.project_metadata['lastSuccessfulBuild']['number'])
+        return None
 
-    def last_failed_test_build(self) -> TestBuild:
-        return self.get_test_build(self.metadata['lastFailedBuild']['number'])
+    @property
+    def last_failed_test_build(self) -> Optional[JenkinsTestBuild]:
+        if self.project_metadata['lastFailedBuild']:
+            return self.get_test_build(self.project_metadata['lastFailedBuild']['number'])
+        return None
 
-    def all_test_builds(self) -> list:
+    @property
+    def test_builds(self) -> list:
         builds = []
-        for build_info in self.metadata['builds']:
+        for build_info in self.project_metadata['builds']:
             builds.append(self.get_test_build(build_info['number']))
         return builds
 
+    @property
+    def project_metadata(self):
+        try:
+            return self.server.get_job_info(self.test_instance_name)
+        except jenkins.JenkinsException as e:
+            raise LifeMonitorException(e)
+
     def get_test_build(self, build_number) -> JenkinsTestBuild:
         try:
-            build_metadata = self._server.get_build_info(self.test_instance_name, build_number)
+            build_metadata = self.server.get_build_info(self.test_instance_name, build_number)
             return JenkinsTestBuild(self, build_metadata)
         except jenkins.JenkinsException as e:
             raise LifeMonitorException(e)
 
     def get_test_build_output(self, build_number):
         try:
-            return self._server.get_build_console_output(self.test_instance_name, build_number)
+            return self.server.get_build_console_output(self.test_instance_name, build_number)
         except jenkins.JenkinsException as e:
             raise LifeMonitorException(e)
