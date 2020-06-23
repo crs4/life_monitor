@@ -65,16 +65,9 @@ def workflows_get_by_id(wf_uuid, wf_version):
 
 def workflows_check_health_status(wf_uuid, wf_version):
     try:
-        wf = lm.get_workflow_health_status(wf_uuid, wf_version)
+        return lm.get_workflow_health_status(wf_uuid, wf_version)
     except EntityNotFoundException:
         return "Invalid ID", 400
-
-    if wf is not None:
-        # Once we customize the JSON encoder or implement a smarter serialization
-        # with Marshmellow we could simply return the value
-        return wf.to_dict(test_suite=False, test_output=False)
-
-    return connexion.NoContent, 404
 
 
 def workflows_delete(wf_uuid, wf_version):

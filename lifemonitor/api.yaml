@@ -120,8 +120,6 @@ paths:
                 $ref: '#/components/schemas/Workflow'
         '400':
           description: Invalid input
-        '404':
-          description: Not found
 
   /suites/{suite_uuid}:
     delete:
