@@ -423,13 +423,20 @@ class JenkinsTestBuild(TestBuild):
 
 
 class JenkinsTestingService(TestingService):
+    _server = None
     __mapper_args__ = {
         'polymorphic_identity': 'jenkins_testing_service'
     }
 
     def __init__(self, test_configuration: TestConfiguration, url: str) -> None:
         super().__init__(test_configuration, url)
-        self._server = jenkins.Jenkins(url)
+        self._server = jenkins.Jenkins(self.url)
+
+    @property
+    def server(self):
+        if not self._server:
+            self._server = jenkins.Jenkins(self.url)
+        return self._server
 
     def is_workflow_healthy(self) -> bool:
         return self.last_test_build().is_successful()
