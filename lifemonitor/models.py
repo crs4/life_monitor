@@ -311,6 +311,54 @@ class TestingService(db.Model):
             return service_class(test_instance, url)
         except Exception as e:
             raise TestingServiceNotSupportedException(e)
+
+
+class TestBuild(ABC):
+    class Result(Enum):
+        SUCCESS = 0
+        FAILED = 1
+
+    def __init__(self, testing_service: TestingService, metadata) -> None:
+        self.testing_service = testing_service
+        self._metadata = metadata
+
+    def is_successful(self):
+        return self.result == TestBuild.Result.SUCCESS
+
+    @property
+    def metadata(self):
+        return self.metadata
+
+    @property
+    @abstractmethod
+    def build_number(self) -> int:
+        pass
+
+    @property
+    @abstractmethod
+    def last_built_revision(self):
+        pass
+
+    @property
+    @abstractmethod
+    def duration(self) -> int:
+        pass
+
+    @property
+    @abstractmethod
+    def output(self) -> str:
+        pass
+
+    @property
+    @abstractmethod
+    def result(self) -> TestBuild.Result:
+        pass
+
+    @property
+    @abstractmethod
+    def url(self) -> str:
+        pass
+
 class JenkinsTestingService(TestingService):
     __mapper_args__ = {
         'polymorphic_identity': 'jenkins_testing_service'
