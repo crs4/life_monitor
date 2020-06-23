@@ -68,7 +68,7 @@ class WorkflowRegistry(object):
             raise Exception("WorkflowRegistry instance already exists!")
         self.__instance = self
         self._url = os.environ["WORKFLOW_REGISTRY_URL"]
-        self._token = os.environ["WORKFLOW_REPOSITORY_URL"]
+        self._token = os.environ["WORKFLOW_REGISTRY_TOKEN"]
 
     @property
     def url(self):
