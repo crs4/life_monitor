@@ -183,11 +183,7 @@ class TestSuite(db.Model):
     test_definition = db.Column(JSONB, nullable=True)
     test_configurations = db.relationship("TestConfiguration",
                                           back_populates="test_suite", cascade="all, delete")
-    # additional relational specs
-    __table_args__ = tuple(
-        # db.ForeignKeyConstraint([workflow_uuid, workflow_version], [Workflow.uuid, Workflow.version])
-    )
-
+    
     def __init__(self, w: Workflow, test_definition: object = None) -> None:
         self.workflow = w
         self.test_definition = test_definition
