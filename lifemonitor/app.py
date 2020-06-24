@@ -106,9 +106,3 @@ class LifeMonitor(connexion.App):
     def get_registered_workflows(cls) -> list:
         return Workflow.all()
 
-    @classmethod
-    def get_workflow_health_status(cls, workflow_uuid, workflow_version, test_outputs=False):
-        workflow = Workflow.find_by_id(workflow_uuid, workflow_version)
-        if not workflow:
-            raise EntityNotFoundException(Workflow, (workflow_uuid, workflow_version))
-        return workflow.to_dict(test_suite=True, test_output=True)

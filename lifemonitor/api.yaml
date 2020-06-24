@@ -104,23 +104,6 @@ paths:
         '201':
           description: TestSuite created
 
-  /workflows/{wf_uuid}/{wf_version}/health_status:
-    get:
-      operationId: "api.workflows_check_health_status"
-      summary: "Get the health status of a registered workflow"
-      parameters:
-        - $ref: '#/components/parameters/wf_uuid'
-        - $ref: '#/components/parameters/wf_version'
-      responses:
-        '200':
-          description: Workflow health status
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Workflow'
-        '400':
-          description: Invalid input
-
   /suites/{suite_uuid}:
     delete:
       operationId: "api.suites_delete"
