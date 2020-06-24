@@ -250,7 +250,7 @@ class TestConfiguration(db.Model):
     # configure relationships
     test_suite = db.relationship("TestSuite", back_populates="test_configurations")
     testing_service = db.relationship("TestingService", uselist=False, back_populates="test_configuration",
-                                      cascade="all, delete")
+                                      cascade="all, delete", lazy='joined')
 
     def __init__(self, testing_suite: TestSuite,
                  test_name, test_instance_name=None, url: str = None) -> None:
@@ -327,7 +327,7 @@ class TestingService(db.Model):
     token = db.composite(TestingServiceToken, _key, _secret)
     # configure relationships
     test_configuration = db.relationship("TestConfiguration", back_populates="testing_service",
-                                         cascade="all, delete")
+                                         cascade="all, delete", lazy='joined')
 
     __mapper_args__ = {
         'polymorphic_on': _type,
