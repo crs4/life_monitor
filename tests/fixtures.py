@@ -17,7 +17,7 @@ base_path = os.path.dirname(__file__)
 sys.path.extend((base_path, os.path.abspath("lifemonitor")))
 
 # load env
-env_path = os.path.join(base_path, 'settings_test.conf')
+env_path = os.path.join(base_path, 'settings.conf')
 env = load_dotenv(dotenv_path=env_path)
 
 # global test data
