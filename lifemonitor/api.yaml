@@ -45,6 +45,9 @@ paths:
       parameters:
         - $ref: '#/components/parameters/wf_uuid'
         - $ref: '#/components/parameters/wf_version'
+        - $ref: '#/components/parameters/test_suite'
+        - $ref: '#/components/parameters/test_build'
+        - $ref: '#/components/parameters/test_output'
       responses:
         '200':
           description: A Workflow object
@@ -134,6 +137,27 @@ components:
       schema:
         type: string
       required: true
+    test_suite:
+      name: "test_suite"
+      description: "Flag to retrieve test suites info of the workflow"
+      in: query
+      schema:
+        type: boolean
+      required: false
+    test_build:
+      name: "test_build"
+      description: "Flag to retrieve test build info of test suites"
+      in: query
+      schema:
+        type: boolean
+      required: false
+    test_output:
+      name: "test_output"
+      description: "Flag to retrieve output of workflow tests"
+      in: query
+      schema:
+        type: boolean
+      required: false
     suite_uuid:
       name: "suite_uuid"
       description: "TestSuite's Unique identifier"

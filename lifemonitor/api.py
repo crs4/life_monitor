@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import logging
 import connexion
+from flask import request
 from lifemonitor import config
 from lifemonitor.app import LifeMonitor
 from lifemonitor.common import EntityNotFoundException
@@ -50,6 +51,12 @@ def workflows_put(wf_uuid, wf_version, body):
 
 
 def workflows_get_by_id(wf_uuid, wf_version):
+    test_suite = request.args.get('test_suite', False, type=bool)
+    test_build = request.args.get('test_build', False, type=bool)
+    test_output = request.args.get('test_output', False, type=bool)
+    logger.debug("test_suites => %r %r", test_suite, type(test_suite))
+    logger.debug("test_build => %r %r", test_build, type(test_build))
+    logger.debug("test_output => %r %r", test_output, type(test_output))
     try:
         wf = lm.get_registered_workflow(wf_uuid, wf_version)
     except EntityNotFoundException:
@@ -58,7 +65,7 @@ def workflows_get_by_id(wf_uuid, wf_version):
     if wf is not None:
         # Once we customize the JSON encoder or implement a smarter serialization
         # with Marshmellow we could simply return the value
-        return wf.to_dict(test_suite=False, test_output=False)
+        return wf.to_dict(test_suite=test_suite, test_build=test_build, test_output=test_output)
 
     return connexion.NoContent, 404
 
