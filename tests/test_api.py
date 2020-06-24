@@ -49,12 +49,22 @@ def test_suite_registration(client, test_suite_metadata):
     assert response.status_code == 201, "Status code different from 201"
 
 
-def test_workflow_health_status(client):
+def test_workflow_with_test_builds(client):
     response = client.get(
-        os.path.join("/workflows", workflow_uuid, workflow_version, "health_status"))
+        os.path.join("/workflows", workflow_uuid, workflow_version),
+        query_string={'test_suite': True, 'test_build': True, 'test_output': True}
+    )
     assert response.status_code == 200, "Status code different from 200"
     data = json.loads(response.data)
-    logger.debug("Workflow health report: %r", data)
+    logger.debug("Workflow info: %r", data)
+    assert len(data["test_suite"]) == 1, "Test suite should not be empty"
+    test_suite = data["test_suite"][0]
+    if "test" in test_suite and len(test_suite["test"]) > 0:
+        test_conf = test_suite["test"][0]
+        if len(test_conf["test_builds"]) > 0:
+            test = test_conf["test_builds"][0]
+            logger.debug("Test output: %r", test["output"])
+            assert test["output"], "No test output found"
 
 
 def test_suite_deregistration(client, suite_uuid):
