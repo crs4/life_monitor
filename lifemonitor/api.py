@@ -63,13 +63,6 @@ def workflows_get_by_id(wf_uuid, wf_version):
     return connexion.NoContent, 404
 
 
-def workflows_check_health_status(wf_uuid, wf_version):
-    try:
-        return lm.get_workflow_health_status(wf_uuid, wf_version)
-    except EntityNotFoundException:
-        return "Invalid ID", 400
-
-
 def workflows_delete(wf_uuid, wf_version):
     try:
         lm.deregister_workflow(wf_uuid, wf_version)
