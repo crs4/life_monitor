@@ -127,15 +127,18 @@ class Workflow(db.Model):
                     return False
         return True
 
-    def to_dict(self, test_suite=False, test_output=False):
-        return {
+    def to_dict(self, test_suite=False, test_build=False, test_output=False):
+        data = {
             'uuid': str(self.uuid),
             'version': self.version,
             'name': self.name,
             'roc_link': self.roc_link,
-            'isHealthy': self.is_healthy,
-            'test_suite': [s.to_dict(test_output) for s in self.test_suites] if test_suite else None
+            'isHealthy': self.is_healthy
         }
+        if test_suite:
+            data['test_suite'] = [s.to_dict(test_build=test_build, test_output=test_output)
+                                  for s in self.test_suites]
+        return data
 
     def save(self):
         db.session.add(self)
@@ -200,10 +203,10 @@ class TestSuite(db.Model):
                 result.append(ti)
         return result
 
-    def to_dict(self, test_output=False) -> dict:
+    def to_dict(self, test_build=False, test_output=False) -> dict:
         return {
             'uuid': str(self.uuid),
-            'test': [t.to_dict(test_output) for t in self.test_configurations]
+            'test': [t.to_dict(test_build=test_build, test_output=test_output) for t in self.test_configurations]
         }
 
     @property
@@ -265,14 +268,17 @@ class TestConfiguration(db.Model):
             raise EntityNotFoundException(Test)
         return self.test_suite.tests[self.test_name]
 
-    def to_dict(self, test_output=False):
-        return {
+    def to_dict(self, test_build=False, test_output=False):
+        data = {
             'uuid': str(self.uuid),
             'name': self.test_instance_name or self.test_name,
             'url': self.url,
             'parameters': self.parameters,
-            'testing_service': self.testing_service.to_dict(test_output)
+            'testing_service': self.testing_service.to_dict(test_builds=False)
         }
+        if test_build:
+            data.update(self.testing_service.get_test_builds_as_dict(test_output=test_output))
+        return data
 
     def save(self):
         db.session.add(self)
@@ -359,14 +365,11 @@ class TestingService(db.Model):
     def test_builds(self) -> list:
         raise NotImplementedException()
 
-    def to_dict(self, test_output=False) -> dict:
+    def get_test_builds_as_dict(self, test_output):
         last_test_build = self.last_test_build
         last_successful_test_build = self.last_successful_test_build
         last_failed_test_build = self.last_failed_test_build
         return {
-            'uuid': str(self.uuid),
-            'url': self.url,
-            'workflow_healthy': self.is_workflow_healthy,
             'last_test_build': last_test_build.to_dict(test_output) if last_test_build else None,
             'last_successful_test_build':
                 last_successful_test_build.to_dict(test_output) if last_successful_test_build else None,
@@ -374,6 +377,16 @@ class TestingService(db.Model):
                 last_failed_test_build.to_dict(test_output) if last_failed_test_build else None,
             "test_builds": [t.to_dict(test_output) for t in self.test_builds]
         }
+
+    def to_dict(self, test_builds=False, test_output=False) -> dict:
+        data = {
+            'uuid': str(self.uuid),
+            'testing_service_url': self.url,
+            'workflow_healthy': self.is_workflow_healthy,
+        }
+        if test_builds:
+            data["test_build"] = self.get_test_builds_as_dict(test_output=test_output)
+        return data
 
     def save(self):
         db.session.add(self)
@@ -447,13 +460,15 @@ class TestBuild(ABC):
         pass
 
     def to_dict(self, test_output=False) -> dict:
-        return {
+        data = {
             'success': self.is_successful(),
             'build_number': self.build_number,
             'last_build_revision': self.last_built_revision,
-            'duration': self.duration,
-            'output': self.output if test_output else ''
+            'duration': self.duration
         }
+        if test_output:
+            data['output'] = self.output
+        return data
 
 
 class JenkinsTestBuild(TestBuild):
