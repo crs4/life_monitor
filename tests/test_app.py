@@ -51,12 +51,10 @@ def test_jenkins_service_type(client):
     assert service.server is not None, "Not found _server property"
 
 
-def test_workflow_health_status(client):
+def test_workflow_info(client):
     lm = LifeMonitor.get_instance()
-    status = lm.get_workflow_health_status(workflow_uuid, workflow_version, True)
-    logger.debug("Status: %r", status)
-    with open("health_status.json", "w") as out:
-        out.write(json.dumps(status, indent=2))
+    w = lm.get_registered_workflow(workflow_uuid, workflow_version)
+    assert isinstance(w, Workflow), "Object is not an instance of Workflow"
 
 
 def test_project_deregistration(client):
