@@ -33,9 +33,10 @@ services:
     #DEV user: "USER_UID:USER_GID"
     env_file: *env_file
     environment:
-      - "DEV=false"
       - "POSTGRESQL_HOST=db"
       - "POSTGRESQL_PORT=5432"
+      - "DEV=false"
+    #DEV   - "FLASK_ENV=development"
     #DEV   - "HOME=/lm"
     #DEV volumes:
     #DEV   - "LOCAL_PATH/lifemonitor:/lm/lifemonitor"
