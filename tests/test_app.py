@@ -1,5 +1,5 @@
+import os
 import json
-import uuid
 import logging
 from .fixtures import client, clean_db
 from lifemonitor.app import LifeMonitor
@@ -8,10 +8,14 @@ from lifemonitor.model import (
     TestingService, JenkinsTestingService
 )
 
+THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+
 logger = logging.getLogger()
 
-roc_link = "http://172.30.10.100:3000/workflows/2/ro_crate?version=1"
-workflow_uuid = str(uuid.uuid4())
+# FIXME this is hardwired
+roc_link = "http://172.30.10.90:3000/workflows/1/ro_crate?version=1"
+
+workflow_uuid = "af908a70-586c-4f24-bd27-4d00af31724f"
 workflow_version = "1.0"
 
 workflow = None
@@ -26,7 +30,7 @@ def test_workflow_registration(client, clean_db):
 def test_suite_registration(client):
     global workflow, project
     lm = LifeMonitor.get_instance()
-    with open("test-definition.json") as td:
+    with open(os.path.join(THIS_DIR, "test-suite-definition.json")) as td:
         test_definition = json.load(td)
     logger.debug("TestDefinition: %r", test_definition)
     project = lm.register_test_suite(workflow_uuid, workflow_version, test_definition)
@@ -59,6 +63,7 @@ def test_workflow_info(client):
 
 def test_project_deregistration(client):
     global project
+    # FIXME this test cannot be run in isolation
     assert project, "Project not initialized!"
     logger.debug("The current TestinProject: %r", project)
     lm = LifeMonitor.get_instance()
