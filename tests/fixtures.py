@@ -1,7 +1,6 @@
 import json
 import os
 import sys
-import uuid
 import connexion
 import pytest
 import logging
@@ -21,10 +20,12 @@ env_path = os.path.join(base_path, 'settings.conf')
 env = load_dotenv(dotenv_path=env_path)
 
 # global test data
-workflow_uuid = str(uuid.uuid4())
+workflow_uuid = "af908a70-586c-4f24-bd27-4d00af31724f"
 workflow_version = "1.0"
 workflow_name = "Test Workflow"
-workflow_roc_link = "http://172.30.10.100:3000/workflows/2/ro_crate?version=1"
+
+# FIXME this is hardwired
+workflow_roc_link = "http://172.30.10.90:3000/workflows/1/ro_crate?version=1"
 
 
 @pytest.fixture

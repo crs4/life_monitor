@@ -9,10 +9,10 @@
       "instance": [
         {
           "name": "dtests",
-          "url": "http://jenkins.172.30.10.100.nip.io/job/dtests/",
+          "url": "http://172.30.10.90:8080/job/dtests/",
           "service": {
             "type": "jenkins",
-            "url": "http://jenkins.172.30.10.100.nip.io"
+            "url": "http://172.30.10.90:8080/"
           }
         }
       ],
