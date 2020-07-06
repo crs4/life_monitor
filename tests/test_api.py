@@ -3,7 +3,7 @@ import json
 import logging
 from .fixtures import (
     client, clean_db, headers,
-    workflow_uuid, workflow_version, workflow_roc_link, workflow_name,
+    workflow_uuid, workflow_version, workflow_name,
     test_suite_metadata, suite_uuid
 )
 
@@ -24,7 +24,7 @@ def test_workflow_registration(client):
         'uuid': workflow_uuid,
         'version': workflow_version,
         'name': workflow_name,
-        'roc_link': workflow_roc_link,
+        'roc_link': os.getenv("WORKFLOW_ROC_LINK"),
     })
     assert response.status_code == 201, "Status code different from 200"
     data = json.loads(response.data)
