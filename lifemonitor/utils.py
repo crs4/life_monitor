@@ -20,16 +20,16 @@ def to_camel_case(snake_str) -> str:
 
 
 def download_url(url, target_path=None, token=None):
-    session = requests.Session()
-    headers = {}
-    if not target_path:
-        target_path = tempfile.mktemp()
-    if token:
-        headers['Authorization'] = 'Bearer {}'.format(token)
-    session.headers.update(headers)
-    r = session.get(url)
-    with open(target_path, 'wb') as fd:
-        fd.write(r.content)
+    headers = {'Authorization': f'Bearer {token}'} if token else {}
+    with requests.Session() as session:
+        session.headers.update(headers)
+        with session.get(url, stream=True) as r:
+            r.raise_for_status()
+            if not target_path:
+                target_path = tempfile.mktemp()
+            with open(target_path, 'wb') as fd:
+                for chunk in r.iter_content(chunk_size=8192):
+                    fd.write(chunk)
     return target_path
 
 
