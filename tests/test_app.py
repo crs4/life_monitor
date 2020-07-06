@@ -1,12 +1,8 @@
 import os
 import json
 import logging
-from .fixtures import client, clean_db
 from lifemonitor.app import LifeMonitor
-from lifemonitor.model import (
-    Workflow, TestSuite, TestConfiguration,
-    TestingService, JenkinsTestingService
-)
+from lifemonitor.model import Workflow, JenkinsTestingService
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 

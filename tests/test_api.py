@@ -1,13 +1,12 @@
 import os
 import json
 import logging
-from .fixtures import (
-    client, clean_db, headers,
-    workflow_uuid, workflow_version, workflow_name,
-    test_suite_metadata, suite_uuid
-)
 
 logger = logging.getLogger()
+
+workflow_uuid = "af908a70-586c-4f24-bd27-4d00af31724f"
+workflow_version = "1.0"
+workflow_name = "Test Workflow"
 
 
 def test_empty_workflows(client, clean_db):
