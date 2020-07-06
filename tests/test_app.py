@@ -12,9 +12,6 @@ THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
 logger = logging.getLogger()
 
-# FIXME this is hardwired
-roc_link = "http://172.30.10.90:3000/workflows/1/ro_crate?version=1"
-
 workflow_uuid = "af908a70-586c-4f24-bd27-4d00af31724f"
 workflow_version = "1.0"
 
@@ -24,7 +21,8 @@ project = None
 
 def test_workflow_registration(client, clean_db):
     lm = LifeMonitor.get_instance()
-    lm.register_workflow(workflow_uuid, workflow_version, roc_link, "prova")
+    lm.register_workflow(workflow_uuid, workflow_version,
+                         os.getenv("WORKFLOW_ROC_LINK"), "prova")
 
 
 def test_suite_registration(client):

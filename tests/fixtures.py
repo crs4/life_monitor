@@ -17,15 +17,12 @@ sys.path.extend((base_path, os.path.abspath("lifemonitor")))
 
 # load env
 env_path = os.path.join(base_path, 'settings.conf')
-env = load_dotenv(dotenv_path=env_path)
+load_dotenv(dotenv_path=env_path)
 
 # global test data
 workflow_uuid = "af908a70-586c-4f24-bd27-4d00af31724f"
 workflow_version = "1.0"
 workflow_name = "Test Workflow"
-
-# FIXME this is hardwired
-workflow_roc_link = "http://172.30.10.90:3000/workflows/1/ro_crate?version=1"
 
 
 @pytest.fixture
