@@ -19,11 +19,6 @@ sys.path.extend((base_path, os.path.abspath("lifemonitor")))
 env_path = os.path.join(base_path, 'settings.conf')
 load_dotenv(dotenv_path=env_path)
 
-# global test data
-workflow_uuid = "af908a70-586c-4f24-bd27-4d00af31724f"
-workflow_version = "1.0"
-workflow_name = "Test Workflow"
-
 
 @pytest.fixture
 def clean_db():
