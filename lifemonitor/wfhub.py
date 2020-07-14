@@ -1,6 +1,5 @@
 import os
 from urllib.parse import urlsplit
-from urllib.request import urlretrieve
 
 import requests
 
@@ -12,13 +11,25 @@ HEADERS = {
 }
 
 
-# no authentication for now, get only public items
 class Client():
 
-    def __init__(self, url):
+    def __init__(self, url, token=None):
         self.url = url.rstrip("/")
         self.session = requests.Session()
-        self.session.headers.update(HEADERS)
+        headers = HEADERS.copy()
+        # with no authentication, client will only get public items
+        if token:
+            headers['Authorization'] = f'Bearer {token}'
+        self.session.headers.update(headers)
+
+    def close(self):
+        self.session.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.close()
 
     def get_workflows(self):
         r = self.session.get(f"{self.url}/workflows")
@@ -38,5 +49,9 @@ class Client():
         data = r.json()["data"]
         file_url = self.url + data["links"]["download"]
         out_path = os.path.join(out_dir, blob["original_filename"])
-        urlretrieve(file_url, out_path)
+        with self.session.get(file_url, stream=True) as r:
+            r.raise_for_status()
+            with open(out_path, 'wb') as fd:
+                for chunk in r.iter_content(chunk_size=8192):
+                    fd.write(chunk)
         return out_path
