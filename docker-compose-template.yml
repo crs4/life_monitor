@@ -2,6 +2,17 @@ version: "3"
 
 services:
 
+  nginx:
+    image: bitnami/nginx:1.19-debian-10
+    depends_on:
+      - "lm"
+    ports:
+      - "8443:8443"
+    restart: "always"
+    volumes:
+    - "./certs:/nginx/certs"
+    - "./docker/nginx.conf:/opt/bitnami/nginx/conf/server_blocks/lm.conf"
+
   db:
     # Docker image docs: https://github.com/bitnami/bitnami-docker-postgresql
     # We use PgSQL 11 instead of 12 since that's the newest version of the client
