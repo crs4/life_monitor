@@ -98,7 +98,11 @@ def suites_delete(suite_uuid):
     return connexion.NoContent, 204
 
 
+def create_app():
+    app = LifeMonitor.get_instance()
+    app.add_api('api.yaml', validate_responses=True)
+    return app
+
+
 if __name__ == '__main__':
-    lm = LifeMonitor.get_instance()
-    lm.add_api('api.yaml', validate_responses=True)
-    lm.run(port=8000, debug=config.is_debug_mode_enabled())
+    create_app().run(port=8000, debug=config.is_debug_mode_enabled())
