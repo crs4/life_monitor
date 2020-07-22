@@ -5,6 +5,17 @@ all: images
 
 images: lifemonitor
 
+certs:
+	if [[ ! -d "certs" ]]; then \
+		mkdir certs; \
+		openssl req -x509 -nodes -days 365 \
+				-subj "/C=IT/ST=Sardinia/O=CRS4/CN=lm.org" \
+				-addext "subjectAltName=DNS:lm.org" \
+				-newkey rsa:2048 \
+				-keyout certs/lm.key \
+				-out certs/lm.crt; \
+	fi
+
 lifemonitor: docker/lifemonitor.Dockerfile
 	docker build -f docker/lifemonitor.Dockerfile -t crs4/lifemonitor .
 
@@ -24,13 +35,13 @@ docker-compose.yml: docker-compose-template.yml
 	    -e "s^USER_GID^$$(id -g)^" \
 	    < docker-compose-template.yml > docker-compose.yml
 
-startdev: docker-compose-dev.yml images
+startdev: docker-compose-dev.yml images certs
 	docker-compose -f ./docker-compose-dev.yml up -d
 
 stopdev:
 	docker-compose -f ./docker-compose-dev.yml down
 
-start: images docker-compose.yml images
+start: images docker-compose.yml images certs
 	docker-compose -f ./docker-compose.yml up -d
 
 stop:
@@ -38,4 +49,4 @@ stop:
 
 clean: stop
 
-.PHONY: all images lifemonitor start stop startdev stopdev clean
+.PHONY: all images certs lifemonitor start stop startdev stopdev clean
