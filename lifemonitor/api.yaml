@@ -13,7 +13,7 @@ servers:
 paths:
   /workflows:
     get:
-      operationId: "api.workflows_get"
+      operationId: "lifemonitor.api.workflows_get"
       summary: "Get all known workflows"
       responses:
         '200':
@@ -26,7 +26,7 @@ paths:
                   $ref: '#/components/schemas/Workflow'
 
     post:
-      operationId: "api.workflows_post"
+      operationId: "lifemonitor.api.workflows_post"
       summary: "Register a workflow"
       requestBody:
         required: true
@@ -40,7 +40,7 @@ paths:
 
   /workflows/{wf_uuid}/{wf_version}:
     get:
-      operationId: "api.workflows_get_by_id"
+      operationId: "lifemonitor.api.workflows_get_by_id"
       summary: "Get information about a single workflow"
       parameters:
         - $ref: '#/components/parameters/wf_uuid'
@@ -61,7 +61,7 @@ paths:
           description: Not found
 
     put:
-      operationId: "api.workflows_put"
+      operationId: "lifemonitor.api.workflows_put"
       summary: "Modify an existing workflow"
       parameters:
         - $ref: '#/components/parameters/wf_uuid'
@@ -77,7 +77,7 @@ paths:
           description: Workflow updated
 
     delete:
-      operationId: "api.workflows_delete"
+      operationId: "lifemonitor.api.workflows_delete"
       summary: "Delete a workflow"
       parameters:
         - $ref: '#/components/parameters/wf_uuid'
@@ -92,7 +92,7 @@ paths:
 
   /workflows/{wf_uuid}/{wf_version}/suites:
     post:
-      operationId: "api.suites_post"
+      operationId: "lifemonitor.api.suites_post"
       summary: "Register a test suite"
       parameters:
         - $ref: '#/components/parameters/wf_uuid'
@@ -109,7 +109,7 @@ paths:
 
   /suites/{suite_uuid}:
     delete:
-      operationId: "api.suites_delete"
+      operationId: "lifemonitor.api.suites_delete"
       summary: "Delete a test suite"
       parameters:
         - $ref: '#/components/parameters/suite_uuid'
