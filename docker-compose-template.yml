@@ -49,8 +49,8 @@ services:
       - "DEV=false"
     #DEV   - "FLASK_ENV=development"
     #DEV   - "HOME=/lm"
-    #DEV volumes:
+    volumes:
     #DEV   - "LOCAL_PATH/lifemonitor:/lm/lifemonitor"
- 
+      - "./certs:/certs"
 volumes:
   lifemonitor_db:
