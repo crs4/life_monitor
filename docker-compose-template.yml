@@ -10,8 +10,8 @@ services:
       - "8443:8443"
     restart: "always"
     volumes:
-    - "./certs:/nginx/certs"
-    - "./docker/nginx.conf:/opt/bitnami/nginx/conf/server_blocks/lm.conf"
+      - "./certs:/nginx/certs"
+      - "./docker/nginx.conf:/opt/bitnami/nginx/conf/server_blocks/lm.conf"
 
   db:
     # Docker image docs: https://github.com/bitnami/bitnami-docker-postgresql
@@ -26,9 +26,9 @@ services:
       - 'ALLOW_EMPTY_PASSWORD=no'
     restart: "always"
     healthcheck:
-        test: [ "CMD", "pg_isready" ]
-        interval: "15s"
-        retries: 5
+      test: [ "CMD", "pg_isready" ]
+      interval: "15s"
+      retries: 5
     volumes:
       - 'lifemonitor_db:/bitnami/postgresql'
 
