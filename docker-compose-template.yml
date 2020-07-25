@@ -9,6 +9,8 @@ services:
     ports:
       - "8443:8443"
     restart: "always"
+    networks:
+      - life_monitor
     volumes:
       - "./certs:/nginx/certs"
       - "./docker/nginx.conf:/opt/bitnami/nginx/conf/server_blocks/lm.conf"
@@ -29,6 +31,8 @@ services:
       test: [ "CMD", "pg_isready" ]
       interval: "15s"
       retries: 5
+    networks:
+      - life_monitor
     volumes:
       - 'lifemonitor_db:/bitnami/postgresql'
 
@@ -52,5 +56,11 @@ services:
     volumes:
     #DEV   - "LOCAL_PATH/lifemonitor:/lm/lifemonitor"
       - "./certs:/certs"
+    networks:
+      - life_monitor
+
 volumes:
   lifemonitor_db:
+
+networks:
+  life_monitor:
