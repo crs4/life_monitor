@@ -64,3 +64,5 @@ volumes:
 
 networks:
   life_monitor:
+  #DEV   name: seek_default
+  #DEV   external: true
