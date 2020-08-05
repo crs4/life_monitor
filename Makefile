@@ -7,13 +7,14 @@ images: lifemonitor
 
 certs:
 	if [[ ! -d "certs" ]]; then \
-		mkdir certs; \
+		mkdir certs && \
 		openssl req -x509 -nodes -days 365 \
 				-subj "/C=IT/ST=Sardinia/O=CRS4/CN=lm.org" \
 				-addext "subjectAltName=DNS:lm.org" \
 				-newkey rsa:2048 \
 				-keyout certs/lm.key \
-				-out certs/lm.crt; \
+				-out certs/lm.crt && \
+		chmod 644 certs/lm.{key,crt}; \
 	fi
 
 lifemonitor: docker/lifemonitor.Dockerfile
@@ -48,5 +49,6 @@ stop:
 	docker-compose -f ./docker-compose.yml down
 
 clean: stop
+	rm -rf certs
 
 .PHONY: all images certs lifemonitor start stop startdev stopdev clean
