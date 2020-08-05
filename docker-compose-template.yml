@@ -64,5 +64,13 @@ volumes:
 
 networks:
   life_monitor:
-  #DEV   name: seek_default
-  #DEV   external: true
+  # You can easily connect this docker-compose with a
+  # local instance of the Seek/WorkflowHub docker-compose by putting them
+  # both on the same Docker network.  The configuration below will
+  # instantiate the life monitor services on a docker network called
+  # `seek_default` (the default name used by seek) which is managed externally
+  # (presumably by the docker-compose you used to start Seek).
+  # See the docker-compose network configuration reference for more details.
+
+  #   name: seek_default
+  #   external: true
