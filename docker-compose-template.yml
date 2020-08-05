@@ -28,9 +28,9 @@ services:
       - 'ALLOW_EMPTY_PASSWORD=no'
     restart: "always"
     healthcheck:
-      test: [ "CMD", "pg_isready" ]
-      interval: "15s"
-      retries: 5
+      test: "pg_isready -U $${POSTGRESQL_USERNAME}"
+      interval: "10s"
+      retries: 6
     networks:
       - life_monitor
     volumes:
