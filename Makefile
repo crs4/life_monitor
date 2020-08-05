@@ -40,15 +40,19 @@ startdev: docker-compose-dev.yml images certs
 	docker-compose -f ./docker-compose-dev.yml up -d
 
 stopdev:
-	docker-compose -f ./docker-compose-dev.yml down
+	if [[ -f "./docker-compose-dev.yml" ]]; then \
+		docker-compose -f ./docker-compose-dev.yml down; \
+	fi
 
 start: images docker-compose.yml images certs
 	docker-compose -f ./docker-compose.yml up -d
 
 stop:
-	docker-compose -f ./docker-compose.yml down
+	if [[ -f "./docker-compose.yml" ]]; then \
+		docker-compose -f ./docker-compose.yml down; \
+	fi
 
-clean: stop
-	rm -rf certs
+clean: stop stopdev
+	rm -rf certs docker-compose.yml docker-compose-dev.yml
 
 .PHONY: all images certs lifemonitor start stop startdev stopdev clean
