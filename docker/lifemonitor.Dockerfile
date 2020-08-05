@@ -19,7 +19,9 @@ RUN pip3 install --no-cache-dir -r /lm/requirements.txt
 
 WORKDIR /lm
 ENV FLASK_DEBUG=1 \
-    FLASK_RUN_HOST=0.0.0.0
+    FLASK_RUN_HOST=0.0.0.0 \
+    GUNICORN_WORKERS=1 \
+    GUNICORN_THREADS=2
 
 ENTRYPOINT /usr/local/bin/lm_entrypoint.sh
 

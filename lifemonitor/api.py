@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import ssl
 import logging
 import connexion
 from flask import request
@@ -98,7 +99,12 @@ def suites_delete(suite_uuid):
     return connexion.NoContent, 204
 
 
-if __name__ == '__main__':
-    lm = LifeMonitor.get_instance()
+def create_app():
     lm.add_api('api.yaml', validate_responses=True)
-    lm.run(port=8000, debug=config.is_debug_mode_enabled())
+    return lm
+
+
+if __name__ == '__main__':
+    context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    context.load_cert_chain('/certs/lm.crt', '/certs/lm.key')
+    create_app().run(port=8000, debug=config.is_debug_mode_enabled(), ssl_context=context)

@@ -1,6 +1,19 @@
-version: "3"
+version: "3.5"
 
 services:
+
+  nginx:
+    image: bitnami/nginx:1.19-debian-10
+    depends_on:
+      - "lm"
+    ports:
+      - "8443:8443"
+    restart: "always"
+    networks:
+      - life_monitor
+    volumes:
+      - "./certs:/nginx/certs:ro"
+      - "./docker/nginx.conf:/opt/bitnami/nginx/conf/server_blocks/lm.conf:ro"
 
   db:
     # Docker image docs: https://github.com/bitnami/bitnami-docker-postgresql
@@ -8,16 +21,18 @@ services:
     # available in the Python image we're using for the application
     image: bitnami/postgresql:11
     ports:
-      - "32768:5432"
+      - "5432"
     env_file: &env_file
       - settings.conf
     environment:
       - 'ALLOW_EMPTY_PASSWORD=no'
     restart: "always"
     healthcheck:
-        test: [ "CMD", "pg_isready" ]
-        interval: "15s"
-        retries: 5
+      test: "pg_isready -U $${POSTGRESQL_USERNAME}"
+      interval: "10s"
+      retries: 6
+    networks:
+      - life_monitor
     volumes:
       - 'lifemonitor_db:/bitnami/postgresql'
 
@@ -28,8 +43,8 @@ services:
     image: crs4/lifemonitor
     depends_on:
       - "db"
-    ports:
-      - "8080:8000"
+    #DEV ports:
+    #DEV  - "8000:8000"
     #DEV user: "USER_UID:USER_GID"
     env_file: *env_file
     environment:
@@ -38,8 +53,24 @@ services:
       - "DEV=false"
     #DEV   - "FLASK_ENV=development"
     #DEV   - "HOME=/lm"
-    #DEV volumes:
+    volumes:
     #DEV   - "LOCAL_PATH/lifemonitor:/lm/lifemonitor"
- 
+      - "./certs:/certs:ro"
+    networks:
+      - life_monitor
+
 volumes:
   lifemonitor_db:
+
+networks:
+  life_monitor:
+  # You can easily connect this docker-compose with a
+  # local instance of the Seek/WorkflowHub docker-compose by putting them
+  # both on the same Docker network.  The configuration below will
+  # instantiate the life monitor services on a docker network called
+  # `seek_default` (the default name used by seek) which is managed externally
+  # (presumably by the docker-compose you used to start Seek).
+  # See the docker-compose network configuration reference for more details.
+
+  #   name: seek_default
+  #   external: true

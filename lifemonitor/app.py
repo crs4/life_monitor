@@ -32,6 +32,9 @@ class LifeMonitor(connexion.App):
             raise LifeMonitor("LifeMonitor instance already exists!")
         # Initializing app
         super().__init__(import_name, server, **kwargs)
+        # Add a random secret (required to enable HTTP sessions)
+        self.app.secret_key = os.urandom(24)
+        # Initialize DB
         with self.app.app_context():
             config.configure_logging(self.app)
             logger.debug("Initializing DB...")
