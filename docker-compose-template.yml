@@ -12,8 +12,8 @@ services:
     networks:
       - life_monitor
     volumes:
-      - "./certs:/nginx/certs"
-      - "./docker/nginx.conf:/opt/bitnami/nginx/conf/server_blocks/lm.conf"
+      - "./certs:/nginx/certs:ro"
+      - "./docker/nginx.conf:/opt/bitnami/nginx/conf/server_blocks/lm.conf:ro"
 
   db:
     # Docker image docs: https://github.com/bitnami/bitnami-docker-postgresql
@@ -55,7 +55,7 @@ services:
     #DEV   - "HOME=/lm"
     volumes:
     #DEV   - "LOCAL_PATH/lifemonitor:/lm/lifemonitor"
-      - "./certs:/certs"
+      - "./certs:/certs:ro"
     networks:
       - life_monitor
 
