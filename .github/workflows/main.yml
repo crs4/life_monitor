@@ -27,7 +27,8 @@ jobs:
     - name: Publish
       uses: peaceiris/actions-gh-pages@v3
       with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
+        # https://github.com/marketplace/actions/github-pages-action
+        github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./html
-        destination_dir: spec_html 
+        # this attribute is still in beta -> destination_dir: spec_html 
   
