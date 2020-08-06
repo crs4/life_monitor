@@ -1,9 +1,20 @@
 # Life Monitor
 
-Workflow testing service
+Workflow testing and monitoring service.
+
+Life Monitor aims to facilitate the execution, monitoring and sharing of tests
+for workflows over time, ensuring that deviations from correct operation are
+detected and communicated to the workflow authors so that they might be
+solved, thus extending the useful life of the workflow.
+
+See the [wiki](wiki) for additional information.
+
+Life Monitor is being developed as part of the [EOSC-Life project](https://www.eosc-life.eu/).
 
 
 ## Developing
+
+Look over `settings.conf` and verify/customize the default settings.
 
 Basic actions are implemented as Makefile rules.
 
@@ -15,74 +26,97 @@ Basic actions are implemented as Makefile rules.
 | Launch docker-compose in development mode | make startdev |
 | Stop docker-compose in development mode | make stopdev |
 
-The development mode mount the life monitor directory within the container and runs flask in development mode.  Thus, local changes to the code are immediately picked up.
+The development mode mount the life monitor directory within the container and
+runs flask in development mode.  Thus, local changes to the code are immediately
+picked up.
 
 
-## Connecting to the docker-compose
+### Connecting to the docker-compose
 
-By default, the `lm` service listens on port 8080:
+After starting the docker-compose, by default the https proxy for the `lm`
+service listens on port 8443:
 
-    $ curl http://localhost:8080/workflows
+    $ curl --insecure https://localhost:8443/workflows
     []
+
+
+The `--insecure` (also `-k`) option will be required unless you're using your own signed
+certificates.
 
 
 ## Exploring API / User interface
 
 The web service has a built-in Swagger UI (thanks to
 [connexion](https://connexion.readthedocs.io/en/latest/)).  When the
-docker-compose is running, you can access the UI at `/ui`.
+docker-compose is running, you can access the UI at `/ui`.  The full OpenAPI
+specification is always in the source code repository under
+[lifemonitor/api.yaml](lifemonitor/api.yaml).
+
+
+## Connecting with WorkflowHub
+
+You can run an instance of the WorkflowHub and LifeMonitor on the same host,
+each in their own docker-compose.  See the `docker-compose-template.yml` file to
+set the name of the docker network the WHub docker-compose created, then the LM
+containers will be created attached to that same network and the services will
+see each other.  You will also neet to set `WORKFLOW_REGISTRY_URL` appropriately
+in `settings.conf`.
 
 
 ## Simple example with cURL
 
+Before starting the development environment, you can configure a static
+authentication token of your liking in `settings.conf`.  You'll be able to use
+it to authenticate your requests.
 
+These examples are 
 ```
-$ curl -H 'Content-Type: application/json' -d '{ "name": "test1" }' http://localhost:8080/workflows
-"7338d1b9-215f-4b68-be50-d3b94a345343"
+$ curl -k -H 'Authorization: bearer mytoken' \
+          -H 'Content-Type: application/json' \
+          -d '{ "name": "nf-kmer-similarity", \
+                "uuid": "8ad80dc7-dfb8-4fa5-b443-664689714bdb", \
+                "version": "1", \
+                "roc_link": "https://dev.workflowhub.eu/workflows/21/ro_crate?version=1" }' \
+          https://localhost:8443/workflows
+{
+  "version": "1",
+  "wf_uuid": "8ad80dc7-dfb8-4fa5-b443-664689714bdb"
+}
 
-$ curl -H 'Content-Type: application/json' -d '{ "name": "test2" }' http://localhost:8080/workflows
-"e0274c6b-47bc-4d7f-87c6-7a7a7a9b846d"
 
-$ curl http://localhost:8080/workflows
+$ curl -k https://localhost:8443/workflows
 [
   {
+    "isHealthy": true,
     "name": "test1",
-    "workflow_id": "7338d1b9-215f-4b68-be50-d3b94a345343"
-  },
-  {
-    "name": "test2",
-    "workflow_id": "e0274c6b-47bc-4d7f-87c6-7a7a7a9b846d"
+    "roc_link": "\"http://172.30.10.90:3000\"/workflow/8ad80dc7-dfb8-4fa5-b443-664689714bdb?version=1",
+    "uuid": "8ad80dc7-dfb8-4fa5-b443-664689714bdb",
+    "version": "1"
   }
 ]
 
-$ curl http://localhost:8080/workflows/e0274c6b-47bc-4d7f-87c6-7a7a7a9b846d
+$ curl -k https://localhost:8443/workflows/8ad80dc7-dfb8-4fa5-b443-664689714bdb/1
 {
-  "name": "test2",
-  "workflow_id": "e0274c6b-47bc-4d7f-87c6-7a7a7a9b846d"
+  "isHealthy": true,
+  "name": "test1",
+  "roc_link": "\"http://172.30.10.90:3000\"/workflow/8ad80dc7-dfb8-4fa5-b443-664689714bdb?version=1",
+  "uuid": "8ad80dc7-dfb8-4fa5-b443-664689714bdb",
+  "version": "1"
 }
 
-$ curl -X DELETE http://localhost:8080/workflows/e0274c6b-47bc-4d7f-87c6-7a7a7a9b846d
 
-$ curl -i http://localhost:8080/workflows/e0274c6b-47bc-4d7f-87c6-7a7a7a9b846d
+$ curl -k -H 'Authorization: bearer mytoken' \
+       -X DELETE https://localhost:8443/workflows/8ad80dc7-dfb8-4fa5-b443-664689714bdb/1
+
+$ curl -k -i https://localhost:8443/workflows/8ad80dc7-dfb8-4fa5-b443-664689714bdb/1
 HTTP/1.0 404 NOT FOUND
 Content-Type: application/json
 Content-Length: 0
 Server: Werkzeug/1.0.1 Python/3.7.7
 Date: Wed, 20 May 2020 16:28:36 GMT
 
-$ curl -X DELETE http://localhost:8080/workflows/7338d1b9-215f-4b68-be50-d3b94a345343
-HTTP/1.0 204 NO CONTENT
-Content-Type: application/json
-Server: Werkzeug/1.0.1 Python/3.7.7
-Date: Wed, 20 May 2020 16:30:52 GMT
-
-$ curl -i http://localhost:8080/workflows
-HTTP/1.0 200 OK
-Content-Type: application/json
-Content-Length: 3
-Server: Werkzeug/1.0.1 Python/3.7.7
-Date: Wed, 20 May 2020 16:31:50 GMT
-
+$ curl -k https://localhost:8443/workflows
 []
-
+ 
 ```
+
