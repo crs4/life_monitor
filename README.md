@@ -7,7 +7,7 @@ for workflows over time, ensuring that deviations from correct operation are
 detected and communicated to the workflow authors so that they might be
 solved, thus extending the useful life of the workflow.
 
-See the [wiki](wiki) for additional information.
+See the [wiki](https://github.com/crs4/life_monitor/wiki) for additional information.
 
 Life Monitor is being developed as part of the [EOSC-Life project](https://www.eosc-life.eu/).
 
