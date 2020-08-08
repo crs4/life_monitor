@@ -15,7 +15,6 @@ if [[ "${DEV}" == "true" ]]; then
 else
   gunicorn --workers "${GUNICORN_WORKERS}"  \
            --threads "${GUNICORN_THREADS}" \
-           --certfile=/certs/lm.crt --keyfile=/certs/lm.key \
            -b "0.0.0.0:8000" \
            "lifemonitor.api:create_app()"
 fi

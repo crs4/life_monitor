@@ -105,6 +105,4 @@ def create_app():
 
 
 if __name__ == '__main__':
-    context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-    context.load_cert_chain('/certs/lm.crt', '/certs/lm.key')
-    create_app().run(port=8000, debug=config.is_debug_mode_enabled(), ssl_context=context)
+    create_app().run(port=8000, debug=config.is_debug_mode_enabled())
