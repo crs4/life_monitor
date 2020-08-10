@@ -2,6 +2,8 @@
 .DS_Store
 .idea
 .vscode
+.cache
+.local
 *env
 **/__pycache__
 certs
