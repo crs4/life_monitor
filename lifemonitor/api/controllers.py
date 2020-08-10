@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-import ssl
 import logging
 import connexion
 from flask import request
 from lifemonitor import config
-from lifemonitor.services import LifeMonitor
+from lifemonitor.api.services import LifeMonitor
 from lifemonitor.common import EntityNotFoundException
 
 # Initialize a reference to the LifeMonitor instance
