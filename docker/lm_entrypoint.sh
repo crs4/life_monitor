@@ -11,10 +11,10 @@ wait-for-postgres.sh
 printf "DB is ready.  Starting application\n" >&2
 if [[ "${DEV}" == "true" ]]; then
   printf "Staring app in DEV mode (Flask built-in web server with auto reloading)"
-  python "${HOME}/lifemonitor/api.py"
+  python "${HOME}/run.py"
 else
   gunicorn --workers "${GUNICORN_WORKERS}"  \
            --threads "${GUNICORN_THREADS}" \
            -b "0.0.0.0:8000" \
-           "lifemonitor.api:create_app()"
+           "lifemonitor.app:create_app()"
 fi
