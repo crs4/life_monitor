@@ -1,12 +1,11 @@
 from __future__ import annotations
 import os
-import json
 import logging
 import tempfile
 import connexion
 from lifemonitor import config
 from lifemonitor.common import EntityNotFoundException
-from lifemonitor.model import (
+from lifemonitor.api.models import (
     config_db_access,
     WorkflowRegistry, Workflow, TestSuite,
     TestConfiguration, TestingService,
