@@ -6,7 +6,6 @@ import connexion
 from lifemonitor import config
 from lifemonitor.common import EntityNotFoundException
 from lifemonitor.api.models import (
-    config_db_access,
     WorkflowRegistry, Workflow, TestSuite,
     TestConfiguration, TestingService,
 )
@@ -15,30 +14,18 @@ from lifemonitor.utils import extract_zip, load_ro_crate_metadata
 logger = logging.getLogger()
 
 
-class LifeMonitor(connexion.App):
+class LifeMonitor(object):
     __instance = None
 
     @classmethod
     def get_instance(cls) -> LifeMonitor:
         if not cls.__instance:
-            logger.debug("Creating application instance")
-            base_dir = os.path.abspath(os.path.dirname(__file__))
-            cls.__instance = cls('LM', specification_dir=base_dir)
+            cls.__instance = cls()
         return cls.__instance
 
-    def __init__(self, import_name, server='flask', **kwargs):
+    def __init__(self):
         if self.__instance:
-            raise LifeMonitor("LifeMonitor instance already exists!")
-        # Initializing app
-        super().__init__(import_name, server, **kwargs)
-        # Add a random secret (required to enable HTTP sessions)
-        self.app.secret_key = os.urandom(24)
-        # Initialize DB
-        with self.app.app_context():
-            config.configure_logging(self.app)
-            logger.debug("Initializing DB...")
-            config_db_access(self.app)
-        logger.debug("Starting application")
+            raise RuntimeError("LifeMonitor instance already exists!")
         self.__instance = self
 
     @classmethod
@@ -107,4 +94,3 @@ class LifeMonitor(connexion.App):
     @classmethod
     def get_registered_workflows(cls) -> list:
         return Workflow.all()
-
