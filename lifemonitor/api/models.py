@@ -7,51 +7,15 @@ from enum import Enum
 from typing import Optional
 
 import jenkins
-from flask_sqlalchemy import SQLAlchemy
+from lifemonitor.app import db
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from lifemonitor.common import (SpecificationNotValidException, EntityNotFoundException,
                                 SpecificationNotDefinedException, TestingServiceNotSupportedException,
                                 NotImplementedException, LifeMonitorException)
 from lifemonitor.utils import download_url, to_camel_case
 
-# set DB instance
-db = SQLAlchemy()
-
 # set module level logger
 logger = logging.getLogger(__name__)
-
-
-def db_uri():
-    """
-    Build URI to connect to the DataBase
-    :return:
-    """
-    if os.getenv('DATABASE_URI'):
-        uri = os.getenv('DATABASE_URI')
-    else:
-        uri = "postgresql://{user}:{passwd}@{host}:{port}/{dbname}".format(
-            user=os.getenv('POSTGRESQL_USERNAME'),
-            passwd=os.getenv('POSTGRESQL_PASSWORD', ''),
-            host=os.getenv('POSTGRESQL_HOST'),
-            port=os.getenv('POSTGRESQL_PORT'),
-            dbname=os.getenv('POSTGRESQL_DATABASE'))
-    return uri
-
-
-def config_db_access(flask_app):
-    """
-    Initialize DB
-    :param flask_app:
-    :return:
-    """
-    flask_app.config['SQLALCHEMY_DATABASE_URI'] = db_uri()
-    # FSADeprecationWarning: SQLALCHEMY_TRACK_MODIFICATIONS adds significant
-    # overhead and will be disabled by default in the future.  Set it to True
-    # or False to suppress this warning.
-    flask_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-    db.init_app(flask_app)
-    db.create_all()
 
 
 class WorkflowRegistry(object):
@@ -183,7 +147,7 @@ class TestSuite(db.Model):
     test_definition = db.Column(JSONB, nullable=True)
     test_configurations = db.relationship("TestConfiguration",
                                           back_populates="test_suite", cascade="all, delete")
-    
+
     def __init__(self, w: Workflow, test_definition: object = None) -> None:
         self.workflow = w
         self.test_definition = test_definition
