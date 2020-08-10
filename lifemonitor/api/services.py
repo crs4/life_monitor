@@ -1,9 +1,6 @@
 from __future__ import annotations
-import os
 import logging
 import tempfile
-import connexion
-from lifemonitor import config
 from lifemonitor.common import EntityNotFoundException
 from lifemonitor.api.models import (
     WorkflowRegistry, Workflow, TestSuite,
