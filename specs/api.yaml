@@ -13,7 +13,8 @@ servers:
 paths:
   /workflows:
     get:
-      operationId: "lifemonitor.api.workflows_get"
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "workflows_get"
       summary: "Get all known workflows"
       responses:
         '200':
@@ -26,7 +27,8 @@ paths:
                   $ref: '#/components/schemas/Workflow'
 
     post:
-      operationId: "lifemonitor.api.workflows_post"
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "workflows_post"
       summary: "Register a workflow"
       requestBody:
         required: true
@@ -40,7 +42,8 @@ paths:
 
   /workflows/{wf_uuid}/{wf_version}:
     get:
-      operationId: "lifemonitor.api.workflows_get_by_id"
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "workflows_get_by_id"
       summary: "Get information about a single workflow"
       parameters:
         - $ref: '#/components/parameters/wf_uuid'
@@ -61,7 +64,8 @@ paths:
           description: Not found
 
     put:
-      operationId: "lifemonitor.api.workflows_put"
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "workflows_put"
       summary: "Modify an existing workflow"
       parameters:
         - $ref: '#/components/parameters/wf_uuid'
@@ -77,7 +81,8 @@ paths:
           description: Workflow updated
 
     delete:
-      operationId: "lifemonitor.api.workflows_delete"
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "workflows_delete"
       summary: "Delete a workflow"
       parameters:
         - $ref: '#/components/parameters/wf_uuid'
@@ -92,7 +97,8 @@ paths:
 
   /workflows/{wf_uuid}/{wf_version}/suites:
     post:
-      operationId: "lifemonitor.api.suites_post"
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "suites_post"
       summary: "Register a test suite"
       parameters:
         - $ref: '#/components/parameters/wf_uuid'
@@ -109,7 +115,8 @@ paths:
 
   /suites/{suite_uuid}:
     delete:
-      operationId: "lifemonitor.api.suites_delete"
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "suites_delete"
       summary: "Delete a test suite"
       parameters:
         - $ref: '#/components/parameters/suite_uuid'
