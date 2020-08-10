@@ -4,7 +4,7 @@ import logging
 import connexion
 from flask import request
 from lifemonitor import config
-from lifemonitor.app import LifeMonitor
+from lifemonitor.services import LifeMonitor
 from lifemonitor.common import EntityNotFoundException
 
 # Initialize a reference to the LifeMonitor instance
