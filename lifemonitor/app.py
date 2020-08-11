@@ -18,12 +18,12 @@ def create_app(env=None):
     :param env:
     :return:
     """
-
+    # set app env
+    app_env = env or os.environ.get("FLASK_ENV", "production")
     # create Flask app instance
-    app = Flask(__name__)
-    # Add a random secret (required to enable HTTP sessions)
-    app.secret_key = os.urandom(24)
-
+    app = Flask(__name__, instance_relative_config=True)
+    # set config object
+    app.config.from_object(config.get_config_by_name(app_env))
     # configure logging
     config.configure_logging(app)
 
