@@ -24,6 +24,8 @@ def create_app(env=None):
     app = Flask(__name__, instance_relative_config=True)
     # set config object
     app.config.from_object(config.get_config_by_name(app_env))
+    # load instance configuration
+    app.config.from_pyfile('config.py')
     # configure logging
     config.configure_logging(app)
 
