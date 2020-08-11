@@ -96,12 +96,3 @@ def suites_delete(suite_uuid):
         return "Invalid ID", 400
 
     return connexion.NoContent, 204
-
-
-def create_app():
-    lm.add_api('api.yaml', validate_responses=True)
-    return lm
-
-
-if __name__ == '__main__':
-    create_app().run(port=8000, debug=config.is_debug_mode_enabled())

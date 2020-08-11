@@ -28,10 +28,8 @@ def create_app(env=None):
     app.config.from_pyfile('config.py')
     # configure logging
     config.configure_logging(app)
-
     # configure app routes
     register_routes(app)
-
     # logger.debug("Initializing DB...")
     with app.app_context():
         config.config_db_access(app, db)

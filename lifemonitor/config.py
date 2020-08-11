@@ -55,7 +55,7 @@ class DevelopmentConfig(BaseConfig):
     CONFIG_NAME = "development"
     # Add a random secret (required to enable HTTP sessions)
     SECRET_KEY = os.getenv(
-        "DEV_SECRET_KEY", "You can't see California without Marlon Widgeto's eyes"
+        "DEV_SECRET_KEY", "LifeMonitor Development Secret Key"
     )
     DEBUG = True
     LOG_LEVEL = "DEBUG"
@@ -64,7 +64,7 @@ class DevelopmentConfig(BaseConfig):
 
 class ProductionConfig(BaseConfig):
     CONFIG_NAME = "production"
-    SECRET_KEY = os.getenv("PROD_SECRET_KEY", "I'm Ron Burgundy?")
+    SECRET_KEY = os.getenv("PROD_SECRET_KEY", "LifeMonitor Production Secret Key")
     DEBUG = False
     TESTING = False
 
