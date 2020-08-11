@@ -4,6 +4,7 @@ from flask import Flask, jsonify
 from flask_sqlalchemy import SQLAlchemy
 import lifemonitor.config as config
 from lifemonitor.routes import register_routes
+from . import commands
 
 # set DB instance
 db = SQLAlchemy()
@@ -40,6 +41,8 @@ def create_app(env=None, instance_config_name=None):
     db.init_app(app)
     # configure app routes
     register_routes(app)
+    # register commands
+    commands.register_commands(app)
 
     # append routes to check app health
     @app.route("/health")
