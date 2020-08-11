@@ -12,9 +12,10 @@ db = SQLAlchemy()
 logger = logging.getLogger(__name__)
 
 
-def create_app(env=None):
+def create_app(env=None, instance_config_name=None):
     """
     App factory method
+    :param instance_config_name:
     :param env:
     :return:
     """
@@ -24,8 +25,15 @@ def create_app(env=None):
     app = Flask(__name__, instance_relative_config=True)
     # set config object
     app.config.from_object(config.get_config_by_name(app_env))
+    # load the file specified by the FLASK_APP_CONFIG_FILE environment variable
+    # variables defined here will override those in the default configuration
+    if os.environ.get("FLASK_APP_CONFIG_FILE", None):
+        app.config.from_envvar("FLASK_APP_CONFIG_FILE")
     # load instance configuration
-    app.config.from_pyfile('config.py')
+    # variables defined here will override those in the default configuration
+    # and in the FLASK_APP_CONFIG_FILE
+    if instance_config_name:
+        app.config.from_pyfile(instance_config_name)
     # configure logging
     config.configure_logging(app)
     # configure app routes
