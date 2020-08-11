@@ -27,20 +27,6 @@ def db_uri():
     return uri
 
 
-def config_db_access(flask_app, db):
-    """
-    Initialize DB
-    :param flask_app:
-    :param db:
-    :return:
-    """
-    flask_app.config['SQLALCHEMY_DATABASE_URI'] = db_uri()
-    # flask_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-    db.init_app(flask_app)
-    db.create_all()
-
-
 class BaseConfig:
     CONFIG_NAME = "base"
     USE_MOCK_EQUIVALENCY = False

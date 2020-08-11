@@ -36,11 +36,10 @@ def create_app(env=None, instance_config_name=None):
         app.config.from_pyfile(instance_config_name)
     # configure logging
     config.configure_logging(app)
+    # configure app DB
+    db.init_app(app)
     # configure app routes
     register_routes(app)
-    # logger.debug("Initializing DB...")
-    with app.app_context():
-        config.config_db_access(app, db)
 
     # append routes to check app health
     @app.route("/health")
