@@ -1,8 +1,12 @@
 import os
+import dotenv
 import logging
 from typing import List, Type
 
 basedir = os.path.abspath(os.path.dirname(__file__))
+
+# load "settings.conf" to the environment
+dotenv.load_dotenv(dotenv_path="settings.conf")
 
 
 def db_uri():
