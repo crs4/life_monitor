@@ -40,8 +40,8 @@ def config_db_access(flask_app, db):
 class BaseConfig:
     CONFIG_NAME = "base"
     USE_MOCK_EQUIVALENCY = False
-    DEBUG = False
-    LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO')
+    DEBUG = os.getenv("DEBUG", False)
+    LOG_LEVEL = os.environ.get('LOG_LEVEL', 'DEBUG' if os.getenv("DEBUG", False) else 'INFO')
     # Add a random secret (required to enable HTTP sessions)
     SECRET_KEY = os.urandom(24)
     SQLALCHEMY_DATABASE_URI = db_uri()
@@ -65,7 +65,6 @@ class DevelopmentConfig(BaseConfig):
 class ProductionConfig(BaseConfig):
     CONFIG_NAME = "production"
     SECRET_KEY = os.getenv("PROD_SECRET_KEY", "LifeMonitor Production Secret Key")
-    DEBUG = False
     TESTING = False
 
 
@@ -74,6 +73,7 @@ class TestingConfig(BaseConfig):
     SECRET_KEY = os.getenv("TEST_SECRET_KEY", "Thanos did nothing wrong")
     DEBUG = True
     TESTING = True
+    LOG_LEVEL = "DEBUG"
     SQLALCHEMY_DATABASE_URI = "sqlite:///{0}/app-test.db".format(basedir)
 
 

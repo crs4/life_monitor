@@ -24,7 +24,7 @@ docker-compose-dev.yml: docker-compose-template.yml
 	sed -e "s^LOCAL_PATH^$${PWD}^" \
 	    -e "s^USER_UID^$$(id -u)^" \
 	    -e "s^USER_GID^$$(id -g)^" \
-	    -e "s^DEV=false^DEV=true^" \
+	    -e "s^FLASK_ENV=production^FLASK_ENV=development^" \
 	    -e "s^ALLOW_EMPTY_PASSWORD=no^ALLOW_EMPTY_PASSWORD=yes^" \
 	    -e "s^#DEV ^^" \
 	    < docker-compose-template.yml > docker-compose-dev.yml

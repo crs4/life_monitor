@@ -50,8 +50,7 @@ services:
     environment:
       - "POSTGRESQL_HOST=db"
       - "POSTGRESQL_PORT=5432"
-      - "DEV=false"
-    #DEV   - "FLASK_ENV=development"
+      - "FLASK_ENV=production"
     #DEV   - "HOME=/lm"
     volumes:
     #DEV   - "LOCAL_PATH:/lm"
