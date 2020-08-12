@@ -43,6 +43,7 @@ services:
     image: crs4/lifemonitor
     depends_on:
       - "db"
+      - "init"
     #DEV ports:
     #DEV  - "8000:8000"
     #DEV user: "USER_UID:USER_GID"
@@ -55,6 +56,26 @@ services:
     volumes:
     #DEV   - "LOCAL_PATH:/lm"
       - "./certs:/certs:ro"
+    networks:
+      - life_monitor
+
+  init:
+    # Remember that this service is using its default configuration
+    # to access the database, so the settings must match the environment
+    # configuration set for db above.
+    image: crs4/lifemonitor
+    entrypoint: /bin/bash
+    command: |
+      -c "flask db init || exit 0"
+    depends_on:
+      - "db"
+    #DEV user: "USER_UID:USER_GID"
+    env_file: *env_file
+    environment:
+      - "POSTGRESQL_HOST=db"
+      - "POSTGRESQL_PORT=5432"
+      - "FLASK_ENV=production"
+    #DEV   - "HOME=/lm"
     networks:
       - life_monitor
 

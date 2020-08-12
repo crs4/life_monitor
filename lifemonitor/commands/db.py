@@ -19,3 +19,4 @@ def db_init():
     from lifemonitor.app import db
     logger.debug("Initializing DB...")
     db.create_all()
+    logger.info("DB initialized")
