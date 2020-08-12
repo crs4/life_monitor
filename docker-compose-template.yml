@@ -56,6 +56,7 @@ services:
     volumes:
     #DEV   - "LOCAL_PATH:/lm"
       - "./certs:/certs:ro"
+      - "./instance:/lm/instance:ro"
     networks:
       - life_monitor
 
@@ -76,6 +77,10 @@ services:
       - "POSTGRESQL_PORT=5432"
       - "FLASK_ENV=production"
     #DEV   - "HOME=/lm"
+    volumes:
+    #DEV   - "LOCAL_PATH:/lm"
+      - "./certs:/certs:ro"
+      - "./instance:/lm/instance:ro"
     networks:
       - life_monitor
 
