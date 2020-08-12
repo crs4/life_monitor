@@ -30,5 +30,7 @@ COPY --chown=root:root docker/wait-for-postgres.sh docker/lm_entrypoint.sh /usr/
 RUN chmod 755 /usr/local/bin/wait-for-postgres.sh /usr/local/bin/lm_entrypoint.sh
 
 USER lm
+COPY --chown=lm:lm app.py /lm/
+COPY --chown=lm:lm specs /lm/specs
 COPY --chown=lm:lm lifemonitor /lm/lifemonitor
 
