@@ -41,6 +41,7 @@ services:
     # to access the database, so the settings must match the environment
     # configuration set for db above.
     image: crs4/lifemonitor
+    restart: "always"
     depends_on:
       - "db"
       - "init"
