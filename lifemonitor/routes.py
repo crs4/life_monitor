@@ -6,6 +6,8 @@ def register_routes(app, specs_dir="./specs"):
     :param specs_dir: path to the specs folder
     :return:
     """
-    from .api import register_api
+    import lifemonitor.api as api
+    import lifemonitor.auth as auth
 
-    register_api(app, specs_dir)
+    api.register_api(app, specs_dir)
+    auth.register_api(app, specs_dir)
