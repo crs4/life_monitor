@@ -1,0 +1,10 @@
+{% import 'auth/macros.j2' as macros %}
+<!DOCTYPE html>
+<head>
+    <title>{% block title %}LifeMonitor{% endblock %}</title>
+    <link href="{{ url_for('auth.static', filename='auth/style.css') }}" rel="stylesheet">
+</head>
+<body>
+  {{ macros.messages() }}
+  {% block body %}{% endblock %}
+</body>
