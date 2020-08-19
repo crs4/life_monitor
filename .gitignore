@@ -4,7 +4,17 @@
 .vscode
 .cache
 .local
+.bash_history
+.bash_logout
+.bashrc
+.ipynb_checkpoints
+.ipython
+.profile
+.python_history
 instance
 *env
 **/__pycache__
+*.pyc
 certs
+docker-compose.yml
+docker-compose-dev.yml
