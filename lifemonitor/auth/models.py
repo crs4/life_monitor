@@ -1,7 +1,15 @@
 import bcrypt
-from flask_login import LoginManager, UserMixin
+from flask_login import LoginManager, UserMixin, AnonymousUserMixin
 
 from lifemonitor.app import db
+
+
+class Anonymous(AnonymousUserMixin):
+    def __init__(self):
+        self.username = 'Guest'
+
+    def get_user_id(self):
+        return None
 
 
 class User(UserMixin, db.Model):
@@ -33,6 +41,7 @@ class User(UserMixin, db.Model):
 # setup login manager
 login_manager = LoginManager()
 login_manager.login_view = "auth.login"
+login_manager.anonymous_user = Anonymous
 
 
 @login_manager.user_loader
