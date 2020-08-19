@@ -17,6 +17,9 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(256), unique=True, nullable=False)
     password_hash = db.Column(db.LargeBinary, nullable=True)
 
+    def get_user_id(self):
+        return self.id
+
     @property
     def password(self):
         raise AttributeError("password is not a readable attribute")
