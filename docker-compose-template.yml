@@ -57,7 +57,7 @@ services:
     #DEV  # Normally, OAuthLib will raise an InsecureTransportError if you attempt to use OAuth2 over HTTP,
     #DEV  # rather than HTTPS. Setting this environment variable will prevent this error from being raised.
     #DEV  # This is mostly useful for local testing, or automated tests. Never set this variable in production.
-    #DEV   - "OAUTHLIB_INSECURE_TRANSPORT=1"
+    #DEV   - "AUTHLIB_INSECURE_TRANSPORT=1"
     volumes:
     #DEV   - "LOCAL_PATH:/lm"
       - "./certs:/certs:ro"
@@ -84,7 +84,7 @@ services:
     #DEV  # Normally, OAuthLib will raise an InsecureTransportError if you attempt to use OAuth2 over HTTP,
     #DEV  # rather than HTTPS. Setting this environment variable will prevent this error from being raised.
     #DEV  # This is mostly useful for local testing, or automated tests. Never set this variable in production.
-    #DEV   - "OAUTHLIB_INSECURE_TRANSPORT=1"
+    #DEV   - "AUTHLIB_INSECURE_TRANSPORT=1"
     #DEV   - "HOME=/lm"
     volumes:
     #DEV   - "LOCAL_PATH:/lm"
