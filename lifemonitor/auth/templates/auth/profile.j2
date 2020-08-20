@@ -18,6 +18,14 @@
         <a href="{{ url_for("github.login") }}">Link GitHub account</a>
       {% endif %}
     </li>
+    <li>
+      {% if current_user.oauth["seek"] %}
+        You are <strong>{{ current_user.oauth["seek"].provider_user_login }}</strong> on Seek.
+      {% else %}
+        You have not linked a Seek account.
+        <a href="{{ url_for("seek.login") }}">Link Seek account</a>
+      {% endif %}
+    </li>
   </ul>
   <a href="{{ url_for("auth.logout") }}">Log out</a>
 {% else %}
