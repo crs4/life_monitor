@@ -8,7 +8,8 @@ info:
 
 servers:
   - url: /
-    description: Version 0.0 of API.  Add version prefix (e.g, /v1.0) once we have something useful
+    description: >
+      Version 0.0 of API.  Add version prefix (e.g, /v1.0) once we have something useful
 
 paths:
   /me:
@@ -71,9 +72,6 @@ paths:
       parameters:
         - $ref: '#/components/parameters/wf_uuid'
         - $ref: '#/components/parameters/wf_version'
-        - $ref: '#/components/parameters/test_suite'
-        - $ref: '#/components/parameters/test_build'
-        - $ref: '#/components/parameters/test_output'
       responses:
         '200':
           description: A Workflow object
@@ -82,9 +80,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Workflow'
         '400':
-          description: Invalid input
+          $ref: '#/components/responses/BadRequest'
         '404':
-          description: Not found
+          $ref: '#/components/responses/NotFound'
 
     put:
       x-openapi-router-controller: lifemonitor.api.controllers
@@ -104,7 +102,7 @@ paths:
               $ref: '#/components/schemas/Workflow'
       responses:
         '200':
-          description: Workflow updated
+          description: "Workflow updated"
 
     delete:
       x-openapi-router-controller: lifemonitor.api.controllers
@@ -122,9 +120,45 @@ paths:
         '204':
           description: Deleted
         '400':
-          description: Invalid input
+          $ref: '#/components/responses/BadRequest'
+
+  /workflows/{wf_uuid}/{wf_version}/status:
+    get:
+      summary: "Get test statuses of a single workflow"
+      parameters:
+        - $ref: '#/components/parameters/wf_uuid'
+        - $ref: '#/components/parameters/wf_version'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowStatus'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
 
   /workflows/{wf_uuid}/{wf_version}/suites:
+    get:
+      summary: "Get list of test suites associated with workflow"
+      parameters:
+        - $ref: '#/components/parameters/wf_uuid'
+        - $ref: '#/components/parameters/wf_version'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TestSuite'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
     post:
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "suites_post"
@@ -146,6 +180,21 @@ paths:
           description: TestSuite created
 
   /suites/{suite_uuid}:
+    get:
+      summary: "Get info about a single test suite."
+      parameters:
+        - $ref: '#/components/parameters/suite_uuid'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestSuite'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
     delete:
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "suites_delete"
@@ -161,7 +210,114 @@ paths:
         '204':
           description: Deleted
         '400':
-          description: Invalid input
+          $ref: '#/components/responses/BadRequest'
+
+  /suites/{suite_uuid}/status:
+    get:
+      summary: >
+        Get status of latest build for this test suite for each known instance
+      parameters:
+        - $ref: '#/components/parameters/suite_uuid'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestSuiteStatus'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /suites/{suite_uuid}/instances:
+    get:
+      summary: "Get list of instances of this suite present on testing services"
+      parameters:
+        - $ref: '#/components/parameters/suite_uuid'
+      responses:
+        '200':
+          description: "List of test instances for this test suite"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SuiteInstance'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+
+  /suites/{suite_uuid}/{instance_id}/latest-builds:
+    get:
+      summary: >
+        Get summaries of latest builds for this test suite, on this instance
+      parameters:
+        - $ref: '#/components/parameters/suite_uuid'
+        - $ref: '#/components/parameters/instance_id'
+        - $ref: '#/components/parameters/offset'
+        - $ref: '#/components/parameters/limit'
+      responses:
+        '200':
+          description: "Build summary list"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BuildSummary'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+
+  /suites/{suite_uuid}/{instance_id}/{build_id}:
+    get:
+      summary: "Get specific build info"
+      parameters:
+        - $ref: '#/components/parameters/suite_uuid'
+        - $ref: '#/components/parameters/instance_id'
+        - $ref: '#/components/parameters/build_id'
+      responses:
+        '200':
+          description: "Build data"
+          content:
+            application/json:
+              $ref: '#/components/schemas/Build'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /suites/{suite_uuid}/{instance_id}/{build_id}/logs:
+    get:
+      summary: "Get build logs"
+      parameters:
+        - $ref: '#/components/parameters/suite_uuid'
+        - $ref: '#/components/parameters/instance_id'
+        - $ref: '#/components/parameters/build_id'
+        - $ref: '#/components/parameters/offset'
+        - name: "limit"
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 4096
+            description: "Maximum number of log bytes to retrieve"
+      responses:
+        '200':
+          description: "Log data"
+          content:
+            application/json:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
 
 components:
   parameters:
@@ -179,27 +335,6 @@ components:
       schema:
         type: string
       required: true
-    test_suite:
-      name: "test_suite"
-      description: "Flag to retrieve test suites info of the workflow"
-      in: query
-      schema:
-        type: boolean
-      required: false
-    test_build:
-      name: "test_build"
-      description: "Flag to retrieve test build info of test suites"
-      in: query
-      schema:
-        type: boolean
-      required: false
-    test_output:
-      name: "test_output"
-      description: "Flag to retrieve output of workflow tests"
-      in: query
-      schema:
-        type: boolean
-      required: false
     suite_uuid:
       name: "suite_uuid"
       description: "TestSuite's Unique identifier"
@@ -207,6 +342,57 @@ components:
       schema:
         type: string
       required: true
+    instance_id:
+      name: "instance_id"
+      description: "Test service Instance Unique identifier"
+      in: path
+      schema:
+        type: string
+      required: true
+    build_id:
+      name: "build_id"
+      description: "Build identifier"
+      in: path
+      schema:
+        type: string
+      required: true
+    offset:
+      name: "offset"
+      in: query
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+    limit:
+      name: "limit"
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 10
+      description: "Maximum number of items to retrieve"
+
+  responses:
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    BadRequest:
+      description: The request is malformed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
 
   schemas:
     User:
@@ -239,13 +425,147 @@ components:
         - version
         - roc_link
 
+    WorkflowStatus:
+      type: object
+      properties:
+        workflow:
+          schema:
+            type: object
+            properties:
+              uuid:
+                type: string
+              version:
+                type: string
+              name:
+                type: string
+            required:
+              - uuid
+              - version
+        aggregate_test_status:
+          $ref: '#/components/schemas/WorkflowAggregateTestStatus'
+        latest_builds:
+          description: "Latest builds, one for each test instance"
+          type: array
+          items:
+            $ref: '#/components/schemas/BuildSummary'
+
+    WorkflowAggregateTestStatus:
+      type: string
+      enum:
+        - "all-passing"
+        - "some-passing"
+        - "all-failing"
+        - "not-available"
+
     TestSuite:
       type: object
       properties:
+        uuid:
+          type: string
         test_suite_metadata:
           type: object
+          description: "To be determined."
+        instances:
+          type: array
+          items:
+            $ref: '#/components/schemas/SuiteInstance'
       required:
+        - uuid
         - test_suite_metadata
+        - instances
+
+    TestSuiteStatus:
+      type: object
+      properties:
+        suite_uuid:
+          type: string
+        status:
+          $ref: '#/components/schemas/WorkflowAggregateTestStatus'
+        latest-builds:
+          type: array
+          items:
+            $ref: '#/components/schemas/BuildSummary'
+      required:
+        - suite_uuid
+        - status
+
+    BuildStatus:
+      type: string
+      enum:
+        - passed
+        - failed
+        - error
+        - running
+        - waiting
+
+    BuildSummary:
+      type: object
+      properties:
+        build_id:
+          type: string
+        suite_uuid:
+          type: string
+        status:
+          $ref: '#/components/schemas/BuildStatus'
+        instance:
+          $ref: '#/components/schemas/SuiteInstance'
+        lastlogs:
+          type: string
+          description: "Last few lines of build log, if available"
+      required:
+        - build_id
+        - suite_uuid
+        - instance
+
+    Build:
+      type: object
+      properties:
+        build_id:
+          type: string
+        suite_uuid:
+          type: string
+        status:
+          $ref: '#/components/schemas/BuildStatus'
+        instance:
+          $ref: '#/components/schemas/SuiteInstance'
+          # other things to be added
+      required:
+        - build_id
+        - suite_uuid
+        - status
+        - instance
+
+
+    SuiteInstance:
+      type: object
+      properties:
+        name:
+          type: string
+        service:
+          type: object
+          properties:
+            type:
+              type: string
+            url:
+              type: string
+            resource:
+              type: string
+          required:
+            - type
+            - url
+      required:
+        - service
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+      required:
+        - code
+        - message
 
   securitySchemes:
     api_key:
