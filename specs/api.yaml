@@ -435,6 +435,8 @@ components:
           type: object
       required:
         - id
+    Timestamp:
+      type: string
 
     Workflow:
       type: object
@@ -538,6 +540,8 @@ components:
           $ref: '#/components/schemas/BuildStatus'
         instance:
           $ref: '#/components/schemas/SuiteInstance'
+        timestamp:
+          $ref: '#components/schema/Timestamp'
         lastlogs:
           type: string
           description: "Last few lines of build log, if available"
@@ -545,6 +549,7 @@ components:
         - build_id
         - suite_uuid
         - instance
+        - timestamp
 
     Build:
       type: object
@@ -557,12 +562,15 @@ components:
           $ref: '#/components/schemas/BuildStatus'
         instance:
           $ref: '#/components/schemas/SuiteInstance'
+        timestamp:
+          $ref: '#components/schema/Timestamp'
           # other things to be added
       required:
         - build_id
         - suite_uuid
         - status
         - instance
+        - timestamp
 
 
     SuiteInstance:
