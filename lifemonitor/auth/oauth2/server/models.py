@@ -34,6 +34,14 @@ class Token(db.Model, OAuth2TokenMixin):
     )
     user = db.relationship('User')
 
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
+
     @classmethod
     def find(cls, access_token):
         return cls.query.filter(Token.access_token == access_token).first()
