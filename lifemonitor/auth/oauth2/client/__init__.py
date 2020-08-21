@@ -1,11 +1,12 @@
 import logging
-from .providers.github import blueprint as github_blueprint
-from .providers.seek import blueprint as seek_blueprint
+
+from .controllers import create_blueprint
+from .services import oauth2_registry
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
 
 
-def register_api(app, specs_dir):
-    app.register_blueprint(seek_blueprint, url_prefix="/login")
-    app.register_blueprint(github_blueprint, url_prefix="/login")
+def register_api(app, specs_dir, handle_authorize):
+    oauth2_registry.init_app(app)
+    app.register_blueprint(create_blueprint(handle_authorize), url_prefix="/oauth2")

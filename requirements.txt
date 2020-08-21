@@ -10,7 +10,6 @@ pyopenssl==19.1.0
 Flask~=1.1.2
 flask-restful==0.3.8
 Flask-SQLAlchemy==2.4.3
-Flask-Dance[sqla]==3.0.0
 flask-bcrypt==0.7.1
 Flask-Security-Too==3.4.4
 Authlib==0.14.3
