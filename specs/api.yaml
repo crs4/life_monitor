@@ -40,9 +40,14 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Workflow'
+                type: object
+                properties:
+                  list:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Workflow'
+                required:
+                  - list
 
     post:
       x-openapi-router-controller: lifemonitor.api.controllers
@@ -153,9 +158,14 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/TestSuite'
+                type: object
+                properties:
+                  list:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TestSuite'
+                required:
+                  - list
         '400':
           $ref: '#/components/responses/BadRequest'
         '404':
@@ -244,9 +254,14 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/SuiteInstance'
+                type: object
+                properties:
+                  list:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SuiteInstance'
+                required:
+                  - list
         '400':
           $ref: '#/components/responses/BadRequest'
         '404':
@@ -268,9 +283,18 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/BuildSummary'
+                type: object
+                properties:
+                  list:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/BuildSummary'
+                  limit:
+                    type: integer
+                  offset:
+                    type: integer
+                required:
+                  - list
         '400':
           $ref: '#/components/responses/BadRequest'
         '404':
