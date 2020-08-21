@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField
+from wtforms import StringField, PasswordField, HiddenField
 from wtforms.validators import DataRequired, EqualTo
 from sqlalchemy.exc import IntegrityError
 from .models import db, User
@@ -8,6 +8,7 @@ from .models import db, User
 class LoginForm(FlaskForm):
     username = StringField("Username", validators=[DataRequired()])
     password = PasswordField("Password", validators=[DataRequired()])
+    provider = HiddenField("Password", validators=[DataRequired()])
 
     def get_user(self):
         user = User.query.filter_by(username=self.username.data).first()
