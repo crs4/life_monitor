@@ -130,6 +130,7 @@ paths:
         - $ref: '#/components/parameters/wf_version'
       responses:
         '200':
+          description: Summary of status of the specified workflow's tests
           content:
             application/json:
               schema:
@@ -148,6 +149,7 @@ paths:
         - $ref: '#/components/parameters/wf_version'
       responses:
         '200':
+          description: List of TestSuites associated with the specified workflow version
           content:
             application/json:
               schema:
@@ -186,6 +188,7 @@ paths:
         - $ref: '#/components/parameters/suite_uuid'
       responses:
         '200':
+          description: TestSuite
           content:
             application/json:
               schema:
@@ -220,6 +223,7 @@ paths:
         - $ref: '#/components/parameters/suite_uuid'
       responses:
         '200':
+          description: TestSuiteStatus
           content:
             application/json:
               schema:
@@ -300,12 +304,12 @@ paths:
         - $ref: '#/components/parameters/build_id'
         - $ref: '#/components/parameters/offset'
         - name: "limit"
+          description: "Maximum number of log bytes to retrieve"
           in: query
           schema:
             type: integer
             minimum: 1
             default: 4096
-            description: "Maximum number of log bytes to retrieve"
       responses:
         '200':
           description: "Log data"
@@ -358,6 +362,7 @@ components:
       required: true
     offset:
       name: "offset"
+      description: "Number of items to skip while fetching the collection"
       in: query
       schema:
         type: integer
