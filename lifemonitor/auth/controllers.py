@@ -2,6 +2,7 @@ import logging
 
 import flask
 from authlib.integrations.base_client import RemoteApp
+
 from flask import Blueprint, request, redirect, url_for, flash, render_template, jsonify
 from flask_login import login_required, login_user, logout_user, current_user
 from sqlalchemy.orm.exc import NoResultFound
@@ -11,6 +12,7 @@ from .models import db, User, OAuthIdentity
 from .forms import RegisterForm, LoginForm, SetPasswordForm
 
 # Config a module level logger
+from .oauth2.client import oauth2_registry
 from .oauth2.client.models import OAuthUserProfile
 
 logger = logging.getLogger(__name__)
@@ -117,7 +119,7 @@ def handle_authorize(provider: RemoteApp, token, user_info: OAuthUserProfile):
     logger.debug("Acquired user_info: %r", user_info)
 
     try:
-        identity = OAuthIdentity.find(provider.name, user_info.sub)
+        identity = OAuthIdentity.find_by_provider(provider.name, user_info.sub)
         logger.debug("Found OAuth identity <%r,%r>: %r",
                      provider.name, user_info.sub, identity)
         # update identity with the last token and userinfo
