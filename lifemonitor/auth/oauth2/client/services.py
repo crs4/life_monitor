@@ -8,10 +8,12 @@ from authlib.oauth2.rfc6749 import OAuth2Token
 from flask import current_app
 from flask_login import current_user
 
+from lifemonitor.app import db
 from .providers.github import GitHub
 from .providers.seek import Seek
 # Config a module level logger
-from ...models import OAuthIdentity
+from .models import OAuthIdentity
+from ...models import User
 
 logger = logging.getLogger(__name__)
 
@@ -50,3 +52,17 @@ for backend in oauth2_backends:
 
 
     oauth2_registry.register(RemoteApp.NAME, overwrite=True, client_cls=RemoteApp)
+
+
+def merge_users(merge_into: User, merge_from: User, provider: str):
+    assert merge_into != merge_from
+    identity = merge_from.oauth_identity[provider]
+    del merge_from.oauth_identity[provider]
+    identity.user = merge_into
+    db.session.add(merge_into)
+    if len(merge_from.oauth_identity) == 0 and not merge_from.password_hash:
+        db.session.delete(merge_from)
+    else:
+        db.session.add(merge_from)
+    db.session.commit()
+    return merge_into
