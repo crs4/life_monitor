@@ -118,3 +118,54 @@ class OAuthIdentity(db.Model):
         return OAuthIdentity.query.filter_by(
             provider=provider, provider_user_id=provider_user_id
         ).one()
+
+
+class ApiKey(db.Model):
+    SCOPES = ["read", "write"]
+
+    key = db.Column(db.String, primary_key=True)
+    user_id = db.Column(
+        db.Integer, db.ForeignKey('user.id', ondelete='CASCADE')
+    )
+    user = db.relationship(
+        'User',
+        backref=db.backref("api_keys", cascade="all, delete-orphan"),
+    )
+    scope = db.Column(db.String, nullable=False)
+
+    def __init__(self, key=None, user=None, scope=None) -> None:
+        super().__init__()
+        self.key = key
+        self.user = user
+        self.scope = scope or ""
+
+    def __repr__(self) -> str:
+        return "ApiKey {} (scope: {})".format(self.key, self.scope)
+
+    def set_scope(self, scope):
+        if scope:
+            for s in scope.split(" "):
+                if s not in self.SCOPES:
+                    raise ValueError("Scope '%r' not valid".format(s))
+                self.scope = "{} {}".format(self.scope, s)
+
+    def check_scopes(self, scopes: list or str):
+        if isinstance(scopes, str):
+            scopes = scopes.split(" ")
+        supported_scopes = self.scope.split(" ")
+        for scope in scopes:
+            if scope not in supported_scopes:
+                return False
+        return True
+
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
+
+    @classmethod
+    def find(cls, api_key) -> ApiKey:
+        return cls.query.filter(ApiKey.key == api_key).first()
