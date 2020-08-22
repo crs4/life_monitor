@@ -4,6 +4,7 @@ import logging
 import requests
 import tempfile
 import zipfile
+import flask
 
 RO_CRATE_METADATA_FILENAME = "ro-crate-metadata.jsonld"
 
@@ -46,3 +47,20 @@ def load_ro_crate_metadata(roc_path):
     with open(file_path) as data_file:
         logger.info("Loading RO Crate Metadata @ %s", file_path)
         return json.load(data_file)
+
+
+def push_request_to_session(name):
+    flask.session[f'{name}_next_endpoint'] = flask.request.endpoint
+    flask.session[f'{name}_next_args'] = flask.request.args
+    flask.session[f'{name}_next_forms'] = flask.request.form
+
+
+def pop_request_from_session(name):
+    endpoint = flask.session.pop(f'{name}_next_endpoint', None)
+    if endpoint:
+        return {
+            "endpoint": endpoint,
+            "args": flask.session.pop(f'{name}_next_args'),
+            "form": flask.session.pop(f'{name}_next_forms')
+        }
+    return None

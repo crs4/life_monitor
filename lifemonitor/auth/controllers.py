@@ -164,4 +164,8 @@ def handle_authorize(provider: RemoteApp, token, user_info: OAuthUserProfile):
 
     logger.debug(user_info)
     next_url = flask.request.args.get('next')
+    if not next_url:
+        data = pop_request_from_session(provider.name)
+        if data:
+            next_url = url_for(data["endpoint"], **data["args"])
     return redirect(next_url or '/')

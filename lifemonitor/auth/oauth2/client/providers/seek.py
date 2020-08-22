@@ -29,3 +29,8 @@ class Seek(object):
         'userinfo_endpoint': 'https://rachk8s.me:3000/people/current?format=json',
         'userinfo_compliance_fix': normalize_userinfo,
     }
+
+
+def refresh_oauth2_token(func):
+    from . import refresh_oauth2_provider_token
+    return refresh_oauth2_provider_token(func, 'seek')
