@@ -1,15 +1,15 @@
 from __future__ import annotations
+
 import logging
 
-from authlib.integrations.flask_client import OAuth
 from authlib.integrations.flask_client import FlaskRemoteApp
+from authlib.integrations.flask_client import OAuth
 from authlib.oauth2.rfc6749 import OAuth2Token
-from flask_login import current_user
 from flask import current_app
+from flask_login import current_user
 
-from .providers.seek import Seek
 from .providers.github import GitHub
-
+from .providers.seek import Seek
 # Config a module level logger
 from ...models import OAuthIdentity
 
@@ -50,7 +50,3 @@ for backend in oauth2_backends:
 
 
     oauth2_registry.register(RemoteApp.NAME, overwrite=True, client_cls=RemoteApp)
-
-
-class OAuth2Registry(OAuth):
-    pass
