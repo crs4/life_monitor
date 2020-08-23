@@ -1,6 +1,6 @@
 import logging
 import lifemonitor.auth.oauth2 as oauth2
-from .models import login_manager
+from .services import login_manager
 from .controllers import blueprint as auth_blueprint
 
 # Config a module level logger

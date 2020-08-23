@@ -7,6 +7,7 @@ from .forms import RegisterForm, LoginForm, SetPasswordForm
 from .models import db, User
 from .oauth2.client import oauth2_registry
 from .oauth2.client.services import merge_users
+from .services import login_manager
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
@@ -15,6 +16,8 @@ blueprint = Blueprint("auth", __name__,
                       template_folder='templates',
                       static_folder="static", static_url_path='/static/auth')
 
+# Set the login view
+login_manager.login_view = "auth.login"
 
 @blueprint.route("/", methods=("GET",))
 def index():

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import bcrypt
-from flask_login import LoginManager, UserMixin, AnonymousUserMixin
+from flask_login import UserMixin, AnonymousUserMixin
 
 from lifemonitor.app import db
 
@@ -53,17 +53,6 @@ class User(UserMixin, db.Model):
     @staticmethod
     def find_by_username(username):
         return User.query.filter(User.username == username).first()
-
-
-# setup login manager
-login_manager = LoginManager()
-login_manager.login_view = "auth.login"
-login_manager.anonymous_user = Anonymous
-
-
-@login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id))
 
 
 class ApiKey(db.Model):

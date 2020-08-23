@@ -4,11 +4,20 @@ import logging
 import secrets
 
 from connexion.exceptions import OAuthProblem
-from flask_login import login_user
+from flask_login import login_user, LoginManager
 
-from lifemonitor.auth.models import ApiKey
+from lifemonitor.auth.models import ApiKey, User, Anonymous
 
 logger = logging.getLogger(__name__)
+
+# setup login manager
+login_manager = LoginManager()
+login_manager.anonymous_user = Anonymous
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
 
 
 def generate_new_api(user, scope, length=40) -> ApiKey:
