@@ -1,9 +1,12 @@
 from __future__ import annotations
-
-import bcrypt
+import logging
+from flask_bcrypt import generate_password_hash, check_password_hash
 from flask_login import UserMixin, AnonymousUserMixin
 
 from lifemonitor.app import db
+
+# Set the module level logger
+logger = logging.getLogger(__name__)
 
 
 class Anonymous(AnonymousUserMixin):
@@ -32,7 +35,7 @@ class User(UserMixin, db.Model):
 
     @password.setter
     def password(self, password):
-        self.password_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt(rounds=12))
+        self.password_hash = generate_password_hash(password)
 
     @password.deleter
     def password(self):
@@ -43,8 +46,7 @@ class User(UserMixin, db.Model):
         return bool(self.password_hash)
 
     def verify_password(self, password):
-        # return bcrypt.hashpwself.password_hash, password)
-        return True
+        return check_password_hash(self.password_hash, password)
 
     def save(self):
         db.session.add(self)
