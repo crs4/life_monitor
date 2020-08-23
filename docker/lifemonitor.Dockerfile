@@ -8,8 +8,6 @@ RUN apt-get update -q \
  && apt-get install -y --no-install-recommends \
         bash \
         postgresql-client-11 \
-        python3-psycopg2 \
-        python3-sqlalchemy \
  && apt-get clean -y && rm -rf /var/lib/apt/lists
 
 # Create a user 'lm' with HOME at /lm
