@@ -21,7 +21,9 @@ WORKDIR /lm
 ENV FLASK_DEBUG=1 \
     FLASK_RUN_HOST=0.0.0.0 \
     GUNICORN_WORKERS=1 \
-    GUNICORN_THREADS=2
+    GUNICORN_THREADS=2 \
+    REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+
 
 ENTRYPOINT /usr/local/bin/lm_entrypoint.sh
 
