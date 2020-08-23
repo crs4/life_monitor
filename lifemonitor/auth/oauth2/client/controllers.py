@@ -55,17 +55,22 @@ class AuthorizatonHandler(object):
         # Now, figure out what to do with this token. There are 2x2 options:
         # user login state and token link state.
         if current_user.is_anonymous:
-            # If the user is not logged in and the token is unlinked,
-            # create a new local user account and log that account in.
-            # This means that one person can make multiple accounts, but it's
-            # OK because they can merge those accounts later.
-            user = User.find_by_username(user_info.preferred_username)
-            if not user:
-                user = User(username=user_info.preferred_username)
-            identity.user = user
-            identity.save()
-            login_user(user)
-            flash("OAuth identity linked to the current user account.")
+            # If the user is not logged in and the token is linked,
+            # log the identity user
+            if identity.user:
+                login_user(identity.user)
+            else:
+                # If the user is not logged in and the token is unlinked,
+                # create a new local user account and log that account in.
+                # This means that one person can make multiple accounts, but it's
+                # OK because they can merge those accounts later.
+                user = User.find_by_username(user_info.preferred_username)
+                if not user:
+                    user = User(username=user_info.preferred_username)
+                identity.user = user
+                identity.save()
+                login_user(user)
+                flash("OAuth identity linked to the current user account.")
         else:
             if identity.user:
                 # If the user is logged in and the token is linked, check if these
