@@ -1,11 +1,8 @@
 from flask import request, render_template, redirect, Blueprint, jsonify
 from flask_login import current_user, login_required
-from .models import AuthorizationServer
 
-# Instantiate the OAuth server
+from .services import server
 from .utils import split_by_crlf
-
-server = AuthorizationServer()
 
 blueprint = Blueprint("oauth2_server", __name__,
                       template_folder='templates',

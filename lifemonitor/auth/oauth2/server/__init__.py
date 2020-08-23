@@ -1,9 +1,8 @@
 import logging
-from .controllers import blueprint, server
+from .controllers import blueprint
+from .services import server
 
 # Config a module level logger
-from .models import Token
-
 logger = logging.getLogger(__name__)
 
 

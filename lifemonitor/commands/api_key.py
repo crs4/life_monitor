@@ -6,7 +6,6 @@ from flask.cli import with_appcontext
 
 from lifemonitor.auth.services import generate_new_api
 from lifemonitor.auth.models import User, ApiKey
-from lifemonitor.auth.oauth2.server import Token
 
 # set module level logger
 logger = logging.getLogger(__name__)

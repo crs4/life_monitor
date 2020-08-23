@@ -3,10 +3,14 @@ import logging
 from connexion.exceptions import OAuthProblem
 from flask_login import login_user
 
-from lifemonitor.auth.oauth2.server import Token
+from lifemonitor.auth.oauth2.server.models import Token
+from lifemonitor.auth.oauth2.server.models import AuthorizationServer
 
 # Set the module level logger
 logger = logging.getLogger(__name__)
+
+# Instantiate the OAuth server
+server = AuthorizationServer()
 
 
 def get_token_scopes(access_token):

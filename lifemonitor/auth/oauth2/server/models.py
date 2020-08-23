@@ -15,8 +15,6 @@ from authlib.integrations.sqla_oauth2 import (
 )
 
 from lifemonitor.auth.models import User
-from lifemonitor.auth.oauth2.server.utils import split_by_crlf
-from lifemonitor.common import EntityNotFoundException
 
 
 class Client(db.Model, OAuth2ClientMixin):
