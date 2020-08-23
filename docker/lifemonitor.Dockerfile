@@ -23,15 +23,26 @@ ENV PYTHONPATH=/${LM_USER}:/usr/local/lib/python3.7/dist-packages:/usr/lib/pytho
     GUNICORN_THREADS=2 \
     REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
 
+# Copy requirements and certificates
+COPY --chown=${LM_USER}:${LM_USER} requirements.txt certs/*.crt /${LM_USER}/
 
-ENTRYPOINT /usr/local/bin/lm_entrypoint.sh
+# Install requirements and install certificates
 RUN pip3 install --no-cache-dir -r /${LM_USER}/requirements.txt
 
 # Set the final working directory
 WORKDIR /${LM_USER}
 
+# Copy utility scripts
 COPY --chown=root:root docker/wait-for-postgres.sh docker/lm_entrypoint.sh /usr/local/bin/
-RUN chmod 755 /usr/local/bin/wait-for-postgres.sh /usr/local/bin/lm_entrypoint.sh
+
+# Update permissions and install optional certificates
+RUN chmod 755 /usr/local/bin/wait-for-postgres.sh /usr/local/bin/lm_entrypoint.sh \
+    && certs=$(ls *.crt 2> /dev/null) \
+    && mv *.crt /usr/local/share/ca-certificates/ \
+    && update-ca-certificates || true
+
+# Set the container entrypoint
+ENTRYPOINT /usr/local/bin/lm_entrypoint.sh
 
 # Set the default user
 USER ${LM_USER}
