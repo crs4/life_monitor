@@ -6,8 +6,10 @@ from typing import List, Type
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 # load "settings.conf" to the environment
+settings = None
 if os.path.exists("settings.conf"):
-    dotenv.load_dotenv(dotenv_path="settings.conf")
+    settings = dotenv.dotenv_values(dotenv_path="settings.conf")
+    os.environ.update(settings)
 
 
 def db_uri():
@@ -78,7 +80,13 @@ _config_by_name = {cfg.CONFIG_NAME: cfg for cfg in _EXPORT_CONFIGS}
 
 def get_config_by_name(name):
     try:
-        return _config_by_name[name]
+        config = _config_by_name[name]
+        if settings:
+            # append properties from settings.conf
+            # to the default configuration
+            for k, v in settings.items():
+                setattr(config, k, v)
+        return config
     except KeyError:
         return ProductionConfig
 
