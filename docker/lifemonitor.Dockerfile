@@ -1,6 +1,9 @@
-
 FROM python:3.7-buster
 
+# Declare the default 'lifemonitor' user
+ARG LM_USER=lm
+
+# Install base requirements
 RUN apt-get update -q \
  && apt-get install -y --no-install-recommends \
         bash \
@@ -9,16 +12,12 @@ RUN apt-get update -q \
         python3-sqlalchemy \
  && apt-get clean -y && rm -rf /var/lib/apt/lists
 
-ENV PYTHONPATH=/usr/local/lib/python3.7/dist-packages:/usr/lib/python3/dist-packages
-
 # Create a user 'lm' with HOME at /lm
-RUN useradd -d /lm -m lm
+RUN useradd -d /${LM_USER} -m ${LM_USER}
 
-COPY --chown=lm:lm requirements.txt /lm
-RUN pip3 install --no-cache-dir -r /lm/requirements.txt
-
-WORKDIR /lm
-ENV FLASK_DEBUG=1 \
+# Update Environment
+ENV PYTHONPATH=/${LM_USER}:/usr/local/lib/python3.7/dist-packages:/usr/lib/python3/dist-packages:${PYTHONPATH} \
+    FLASK_DEBUG=1 \
     FLASK_RUN_HOST=0.0.0.0 \
     GUNICORN_WORKERS=1 \
     GUNICORN_THREADS=2 \
@@ -26,13 +25,19 @@ ENV FLASK_DEBUG=1 \
 
 
 ENTRYPOINT /usr/local/bin/lm_entrypoint.sh
+RUN pip3 install --no-cache-dir -r /${LM_USER}/requirements.txt
 
-ENV PYTHONPATH=/lm:${PYTHONPATH}
+# Set the final working directory
+WORKDIR /${LM_USER}
+
 COPY --chown=root:root docker/wait-for-postgres.sh docker/lm_entrypoint.sh /usr/local/bin/
 RUN chmod 755 /usr/local/bin/wait-for-postgres.sh /usr/local/bin/lm_entrypoint.sh
 
-USER lm
-COPY --chown=lm:lm app.py /lm/
-COPY --chown=lm:lm specs /lm/specs
-COPY --chown=lm:lm lifemonitor /lm/lifemonitor
+# Set the default user
+USER ${LM_USER}
+
+# Copy lifemonitor app
+COPY --chown=${LM_USER}:${LM_USER} app.py /${LM_USER}/
+COPY --chown=${LM_USER}:${LM_USER} specs /${LM_USER}/specs
+COPY --chown=${LM_USER}:${LM_USER} lifemonitor /${LM_USER}/lifemonitor
 
