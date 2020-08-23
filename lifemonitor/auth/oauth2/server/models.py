@@ -22,7 +22,13 @@ class Client(db.Model, OAuth2ClientMixin):
     user_id = db.Column(
         db.Integer, db.ForeignKey('user.id', ondelete='CASCADE')
     )
-    user = db.relationship('User')
+    user = db.relationship(
+        'User',
+        backref=db.backref(
+            "clients",
+            cascade="all, delete-orphan",
+        ),
+    )
 
 
 class Token(db.Model, OAuth2TokenMixin):

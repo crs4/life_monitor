@@ -54,15 +54,18 @@ for backend in oauth2_backends:
     oauth2_registry.register(RemoteApp.NAME, overwrite=True, client_cls=RemoteApp)
 
 
-def merge_users(merge_into: User, merge_from: User, provider: str):
+def merge_users(merge_from: User, merge_into: User, provider: str):
     assert merge_into != merge_from
-    identity = merge_from.oauth_identity[provider]
-    del merge_from.oauth_identity[provider]
-    identity.user = merge_into
-    db.session.add(merge_into)
-    if len(merge_from.oauth_identity) == 0 and not merge_from.password_hash:
-        db.session.delete(merge_from)
-    else:
-        db.session.add(merge_from)
+    logger.debug("Trying to merge %r, %r, %r", merge_into, merge_from, provider)
+    for identity in list(merge_from.oauth_identity.values()):
+        identity.user = merge_into
+        db.session.add(identity)
+    # TODO: Move all oauth clients to the new user
+    for client in list(merge_from.clients):
+        client.user = merge_into
+        db.session.add(client)
+    # TODO: Check for other links to move to the new user
+    # e.g., tokens, workflows, tests, ....
+    db.session.delete(merge_from)
     db.session.commit()
     return merge_into

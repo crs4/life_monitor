@@ -1,14 +1,18 @@
+import logging
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, HiddenField
-from wtforms.validators import DataRequired, EqualTo
+from wtforms.validators import DataRequired, Optional, EqualTo
 from sqlalchemy.exc import IntegrityError
 from .models import db, User
+
+# Set the module level logger
+logger = logging.getLogger(__name__)
 
 
 class LoginForm(FlaskForm):
     username = StringField("Username", validators=[DataRequired()])
     password = PasswordField("Password", validators=[DataRequired()])
-    provider = HiddenField("Password", validators=[DataRequired()])
+    provider = HiddenField("Provider", validators=[Optional()])
 
     def get_user(self):
         user = User.query.filter_by(username=self.username.data).first()
