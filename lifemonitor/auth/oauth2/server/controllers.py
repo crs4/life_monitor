@@ -6,7 +6,7 @@ from .utils import split_by_crlf
 
 blueprint = Blueprint("oauth2_server", __name__,
                       template_folder='templates',
-                      static_folder="static", static_url_path='/static/auth')
+                      static_folder="static", static_url_path='/static/auth2')
 
 
 @blueprint.route('/oauth/authorize', methods=['GET', 'POST'])
