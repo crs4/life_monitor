@@ -66,6 +66,36 @@ paths:
         '201':
           description: Workflow created
 
+  /workflows/{wf_uuid}:
+    get:
+      summary: "Get information about latest version of specified workflow"
+      parameters:
+        - $ref: '#/components/parameters/wf_uuid'
+      responses:
+        '200':
+          description: >
+            A Workflow object for the latest version of the specified workflow
+            and extended with the list of previous versions that are registered.
+            Information about the previous versions can be retrieved through the
+            `/workflows/{wf_uuid}/{wf_version}` resource.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Workflow'
+                  - type: object
+                    properties:
+                      previous_versions:
+                        type: array
+                        items:
+                          type: string
+                    required:
+                      - previous_versions
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
   /workflows/{wf_uuid}/{wf_version}:
     get:
       x-openapi-router-controller: lifemonitor.api.controllers
