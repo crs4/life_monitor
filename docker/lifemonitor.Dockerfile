@@ -13,6 +13,12 @@ RUN apt-get update -q \
 # Create a user 'lm' with HOME at /lm
 RUN useradd -d /${LM_USER} -m ${LM_USER}
 
+# Copy requirements and certificates
+COPY --chown=${LM_USER}:${LM_USER} requirements.txt certs/*.crt /${LM_USER}/
+
+# Install requirements and install certificates
+RUN pip3 install --no-cache-dir -r /${LM_USER}/requirements.txt
+
 # Update Environment
 ENV PYTHONPATH=/${LM_USER}:/usr/local/lib/python3.7/dist-packages:/usr/lib/python3/dist-packages:${PYTHONPATH} \
     FLASK_DEBUG=1 \
@@ -20,12 +26,6 @@ ENV PYTHONPATH=/${LM_USER}:/usr/local/lib/python3.7/dist-packages:/usr/lib/pytho
     GUNICORN_WORKERS=1 \
     GUNICORN_THREADS=2 \
     REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
-
-# Copy requirements and certificates
-COPY --chown=${LM_USER}:${LM_USER} requirements.txt certs/*.crt /${LM_USER}/
-
-# Install requirements and install certificates
-RUN pip3 install --no-cache-dir -r /${LM_USER}/requirements.txt
 
 # Set the final working directory
 WORKDIR /${LM_USER}
