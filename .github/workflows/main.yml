@@ -22,7 +22,7 @@ jobs:
 
     # Runs a single command using the runners shell
     - name: Gen docs
-      run: docker run -u $(id -u):$(id -g)  --rm -v "${PWD}:/local" openapitools/openapi-generator-cli generate -g html -i /local/lifemonitor/api.yaml -o /local/html/
+      run: docker run -u $(id -u):$(id -g)  --rm -v "${PWD}:/local" openapitools/openapi-generator-cli generate -g html -i /local/specs/api.yaml -o /local/html/
 
     - name: Publish
       uses: peaceiris/actions-gh-pages@v3
