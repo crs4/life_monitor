@@ -50,7 +50,7 @@ The web service has a built-in Swagger UI (thanks to
 [connexion](https://connexion.readthedocs.io/en/latest/)).  When the
 docker-compose is running, you can access the UI at `/ui`.  The full OpenAPI
 specification is always in the source code repository under
-[lifemonitor/api.yaml](lifemonitor/api.yaml) and a "beautified" html version is
+[lifemonitor/api.yaml](specs/api.yaml) and a "beautified" html version is
 available [here](https://crs4.github.io/life_monitor/).
 
 

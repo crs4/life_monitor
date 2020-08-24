@@ -9,13 +9,12 @@ export POSTGRESQL_DATABASE="${POSTGRESQL_DATABASE:-lm}"
 printf "Waiting for postgresql...\n" >&2
 wait-for-postgres.sh
 printf "DB is ready.  Starting application\n" >&2
-if [[ "${DEV}" == "true" ]]; then
+if [[ "${FLASK_ENV}" == "development" ]]; then
   printf "Staring app in DEV mode (Flask built-in web server with auto reloading)"
-  python "${HOME}/lifemonitor/api.py"
+  python "${HOME}/app.py"
 else
   gunicorn --workers "${GUNICORN_WORKERS}"  \
            --threads "${GUNICORN_THREADS}" \
-           --certfile=/certs/lm.crt --keyfile=/certs/lm.key \
            -b "0.0.0.0:8000" \
-           "lifemonitor.api:create_app()"
+           "app"
 fi
