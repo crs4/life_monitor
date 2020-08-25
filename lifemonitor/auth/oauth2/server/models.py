@@ -169,8 +169,7 @@ class RefreshTokenGrant(grants.RefreshTokenGrant):
         item = Token.query.filter_by(refresh_token=refresh_token).first()
         # define is_refresh_token_valid by yourself
         # usually, you should check if refresh token is expired and revoked
-        if item and item.is_refresh_token_valid():
-            return item
+        return item and item.is_refresh_token_valid()
 
     def authenticate_user(self, credential):
         return User.query.get(credential.user_id)
