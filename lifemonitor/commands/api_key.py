@@ -28,7 +28,7 @@ def api_key_create(username, scope="read", length=40):
     logger.debug("Finding User '%s'...", username)
     user = User.find_by_username(username)
     if not user:
-        print("User not found")
+        print("User not found", file=sys.stderr)
         sys.exit(99)
     logger.debug("User found: %r", user)
     api_key = generate_new_api(user, scope, length)
@@ -46,12 +46,12 @@ def api_key_list(username):
     logger.debug("Finding User '%s'...", username)
     user = User.find_by_username(username)
     if not user:
-        print("User not found")
+        print("User not found", file=sys.stderr)
         sys.exit(99)
     logger.debug("User found: %r", user)
-    print('-' * 82)
-    print("User '%s' ApiKeys" % user.username)
-    print('-' * 82)
+    logger.info('-' * 82)
+    logger.info("User '%s' ApiKeys", user.username)
+    logger.info('-' * 82)
     for key in user.api_keys:
         print(key)
 
@@ -66,7 +66,7 @@ def api_key_delete(api_key):
     logger.debug("Finding ApiKey '%s'...", api_key)
     key = ApiKey.find(api_key)
     if not key:
-        print("ApiKey not found")
+        print("ApiKey not found", file=sys.stderr)
         sys.exit(99)
     logger.debug("ApiKey found: %r", key)
     key.delete()
@@ -84,7 +84,7 @@ def api_key_clean(username):
     logger.debug("Finding User '%s'...", username)
     user = User.find_by_username(username)
     if not user:
-        print("User not found")
+        print("User not found", file=sys.stderr)
         sys.exit(99)
     logger.debug("User found: %r", user)
     count = 0
