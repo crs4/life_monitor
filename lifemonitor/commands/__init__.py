@@ -12,6 +12,7 @@ def register_commands(app):
     modules = ['{}.{}'.format(__name__, basename(f)[:-3])
                for f in modules_files if isfile(f) and not f.endswith('__init__.py')]
     # Load modules and register their blueprints
+    we_had_errors = False
     for m in modules:
         try:
             # Try to load the command module 'm'
@@ -24,6 +25,11 @@ def register_commands(app):
                 app.register_blueprint(blueprint)
                 logger.info("Registered %s commands.", m)
             except AttributeError:
-                logger.error("Unable to find the blueprint object on module %s", m)
-        except ModuleNotFoundError as e:
-            logger.error("Unable to load the module")
+                logger.error("Unable to find the 'blueprint' attribute in module %s", m)
+                we_had_errors = True
+        except ModuleNotFoundError:
+            logger.error("ModuleNotFoundError: Unable to load module %s", m)
+            we_had_errors = True
+    if we_had_errors:
+        logger.error("** There were some errors loading application modules.**")
+        logger.error("Some commands may not be available.")

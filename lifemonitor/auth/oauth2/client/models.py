@@ -10,7 +10,7 @@ from lifemonitor.app import db
 from lifemonitor.auth.models import User
 
 
-class OAuthUserProfile(object):
+class OAuthUserProfile:
 
     def __init__(self, sub=None, name=None, email=None, preferred_username=None,
                  profile=None, picture=None, website=None) -> None:

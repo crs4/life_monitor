@@ -8,9 +8,9 @@ from typing import Optional
 
 import jenkins
 
-from lifemonitor.app import db
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 
+from lifemonitor.app import db
 from lifemonitor.auth.oauth2.client.services import RemoteApp
 from lifemonitor.common import (SpecificationNotValidException, EntityNotFoundException,
                                 SpecificationNotDefinedException, TestingServiceNotSupportedException,
@@ -22,7 +22,7 @@ from lifemonitor.auth.oauth2.client import oauth2_registry
 logger = logging.getLogger(__name__)
 
 
-class WorkflowRegistry(object):
+class WorkflowRegistry:
     __instance = None
 
     @classmethod
@@ -135,7 +135,7 @@ class Workflow(db.Model):
             .filter(Workflow.version == version).first()
 
 
-class Test(object):
+class Test:
 
     def __init__(self,
                  project: TestSuite,
@@ -270,7 +270,7 @@ class TestConfiguration(db.Model):
         return cls.query.get(uuid)
 
 
-class TestingServiceToken(object):
+class TestingServiceToken:
     def __init__(self, key, secret):
         self.key = key
         self.secret = secret

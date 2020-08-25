@@ -28,7 +28,7 @@ def normalize_userinfo(client, data):
     return params
 
 
-class GitHub(object):
+class GitHub:
     NAME = 'github'
     OAUTH_CONFIG = {
         'api_base_url': 'https://api.github.com/',
