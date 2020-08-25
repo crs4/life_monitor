@@ -35,14 +35,16 @@ def create_app(env=None, instance_config_name=None):
     # and in the FLASK_APP_CONFIG_FILE
     if instance_config_name:
         app.config.from_pyfile(instance_config_name)
-    # configure logging
-    config.configure_logging(app)
-    # configure app DB
-    db.init_app(app)
-    # configure app routes
-    register_routes(app)
-    # register commands
-    commands.register_commands(app)
+    # initialize the application
+    with app.app_context():
+        # configure logging
+        config.configure_logging(app)
+        # configure app DB
+        db.init_app(app)
+        # configure app routes
+        register_routes(app)
+        # register commands
+        commands.register_commands(app)
 
     # append routes to check app health
     @app.route("/health")

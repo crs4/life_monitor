@@ -7,18 +7,22 @@ from enum import Enum
 from typing import Optional
 
 import jenkins
-from lifemonitor.app import db
+
 from sqlalchemy.dialects.postgresql import UUID, JSONB
+
+from lifemonitor.app import db
+from lifemonitor.auth.oauth2.client.services import RemoteApp
 from lifemonitor.common import (SpecificationNotValidException, EntityNotFoundException,
                                 SpecificationNotDefinedException, TestingServiceNotSupportedException,
                                 NotImplementedException, LifeMonitorException)
 from lifemonitor.utils import download_url, to_camel_case
+from lifemonitor.auth.oauth2.client import oauth2_registry
 
 # set module level logger
 logger = logging.getLogger(__name__)
 
 
-class WorkflowRegistry(object):
+class WorkflowRegistry:
     __instance = None
 
     @classmethod
@@ -31,18 +35,27 @@ class WorkflowRegistry(object):
         if self.__instance:
             raise Exception("WorkflowRegistry instance already exists!")
         self.__instance = self
-        self._url = os.environ["WORKFLOW_REGISTRY_URL"]
-        self._token = os.environ["WORKFLOW_REGISTRY_TOKEN"]
 
     @property
-    def url(self):
-        return self._url
+    def _client(self) -> RemoteApp:
+        try:
+            return oauth2_registry.seek
+        except AttributeError:
+            raise RuntimeError("Unable to find a OAuth2 client for the Seek service")
+
+    @property
+    def _url(self):
+        return self._client.api_base_url
+
+    @property
+    def _access_token(self):
+        return self._client.token["access_token"]
 
     def build_ro_link(self, w: Workflow) -> str:
         return "{}?version={}".format(os.path.join(self._url, "workflow", w.uuid), w.version)
 
     def download_url(self, url, target_path=None):
-        return download_url(url, target_path, self._token)
+        return download_url(url, target_path, self._access_token)
 
 
 class Workflow(db.Model):
@@ -122,7 +135,7 @@ class Workflow(db.Model):
             .filter(Workflow.version == version).first()
 
 
-class Test(object):
+class Test:
 
     def __init__(self,
                  project: TestSuite,
@@ -257,7 +270,7 @@ class TestConfiguration(db.Model):
         return cls.query.get(uuid)
 
 
-class TestingServiceToken(object):
+class TestingServiceToken:
     def __init__(self, key, secret):
         self.key = key
         self.secret = secret

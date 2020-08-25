@@ -1,13 +1,18 @@
 import os
-import dotenv
 import logging
 from typing import List, Type
+
+import dotenv
+
+from .utils import bool_from_string
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 # load "settings.conf" to the environment
+settings = None
 if os.path.exists("settings.conf"):
-    dotenv.load_dotenv(dotenv_path="settings.conf")
+    settings = dotenv.dotenv_values(dotenv_path="settings.conf")
+    os.environ.update(settings)
 
 
 def db_uri():
@@ -31,8 +36,8 @@ def db_uri():
 class BaseConfig:
     CONFIG_NAME = "base"
     USE_MOCK_EQUIVALENCY = False
-    DEBUG = os.getenv("DEBUG", False)
-    LOG_LEVEL = os.environ.get('LOG_LEVEL', 'DEBUG' if os.getenv("DEBUG", False) else 'INFO')
+    DEBUG = bool_from_string(os.getenv("DEBUG", "false"))
+    LOG_LEVEL = os.environ.get('LOG_LEVEL', 'DEBUG' if DEBUG else 'INFO')
     # Add a random secret (required to enable HTTP sessions)
     SECRET_KEY = os.urandom(24)
     SQLALCHEMY_DATABASE_URI = db_uri()
@@ -78,7 +83,13 @@ _config_by_name = {cfg.CONFIG_NAME: cfg for cfg in _EXPORT_CONFIGS}
 
 def get_config_by_name(name):
     try:
-        return _config_by_name[name]
+        config = _config_by_name[name]
+        if settings:
+            # append properties from settings.conf
+            # to the default configuration
+            for k, v in settings.items():
+                setattr(config, k, v)
+        return config
     except KeyError:
         return ProductionConfig
 

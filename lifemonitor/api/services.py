@@ -11,7 +11,7 @@ from lifemonitor.utils import extract_zip, load_ro_crate_metadata
 logger = logging.getLogger()
 
 
-class LifeMonitor(object):
+class LifeMonitor:
     __instance = None
 
     @classmethod
