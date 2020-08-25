@@ -20,7 +20,7 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 
-def generate_new_api(user, scope, length=40) -> ApiKey:
+def generate_new_api_key(user, scope, length=40) -> ApiKey:
     api_key = ApiKey(key=secrets.token_urlsafe(length), user=user, scope=scope)
     api_key.save()
     return api_key
