@@ -503,14 +503,14 @@ components:
               - uuid
               - version
         aggregate_test_status:
-          $ref: '#/components/schemas/WorkflowAggregateTestStatus'
+          $ref: '#/components/schemas/AggregateTestStatus'
         latest_builds:
           description: "Latest builds, one for each test instance"
           type: array
           items:
             $ref: '#/components/schemas/BuildSummary'
 
-    WorkflowAggregateTestStatus:
+    AggregateTestStatus:
       type: string
       enum:
         - "all-passing"
@@ -541,7 +541,7 @@ components:
         suite_uuid:
           type: string
         status:
-          $ref: '#/components/schemas/WorkflowAggregateTestStatus'
+          $ref: '#/components/schemas/AggregateTestStatus'
         latest-builds:
           type: array
           items:
