@@ -27,7 +27,7 @@ def create_client(username, client_name, client_uri, client_redirect_uri, scope)
     """
     user = User.find_by_username(username)
     if not user:
-        print("User not found")
+        print("User not found", file=sys.stderr)
         sys.exit(99)
     logger.debug("User found: %r", user)
     client = server.create_client(user,
@@ -56,7 +56,7 @@ def token_invalidate(username):
     logger.debug("Finding User '%s'...", username)
     user = User.find_by_username(username)
     if not user:
-        print("User not found")
+        print("User not found", file=sys.stderr)
         sys.exit(99)
     logger.debug("User found: %r", user)
     count = 0
@@ -65,5 +65,5 @@ def token_invalidate(username):
         identity.save()
         print("Token invalidated: %r !" % identity.token)
         count += 1
-    print("%d Token invalidated!" % count)
+    print("%d Token invalidated!" % count, file=sys.stderr)
     logger.debug("Token of User '%s' invalidated!", user.username)
