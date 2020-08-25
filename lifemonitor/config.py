@@ -1,7 +1,10 @@
 import os
-import dotenv
 import logging
 from typing import List, Type
+
+import dotenv
+
+from .utils import bool_from_string
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
@@ -33,8 +36,8 @@ def db_uri():
 class BaseConfig:
     CONFIG_NAME = "base"
     USE_MOCK_EQUIVALENCY = False
-    DEBUG = os.getenv("DEBUG", False)
-    LOG_LEVEL = os.environ.get('LOG_LEVEL', 'DEBUG' if os.getenv("DEBUG", False) else 'INFO')
+    DEBUG = bool_from_string(os.getenv("DEBUG", "false"))
+    LOG_LEVEL = os.environ.get('LOG_LEVEL', 'DEBUG' if DEBUG else 'INFO')
     # Add a random secret (required to enable HTTP sessions)
     SECRET_KEY = os.urandom(24)
     SQLALCHEMY_DATABASE_URI = db_uri()
