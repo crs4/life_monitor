@@ -1,7 +1,8 @@
-import sys
-import click
 import logging
-from flask import Blueprint, current_app, g
+import sys
+
+import click
+from flask import Blueprint
 from flask.cli import with_appcontext
 
 from lifemonitor.auth.services import generate_new_api
@@ -24,7 +25,6 @@ def api_key_create(username, scope="read", length=40):
     """
     Create an API Key for a given user (identified by username)
     """
-    from lifemonitor.app import db
     logger.debug("Finding User '%s'...", username)
     user = User.find_by_username(username)
     if not user:
@@ -43,7 +43,6 @@ def api_key_list(username):
     """
     Create an API Key for a given user (identified by username)
     """
-    from lifemonitor.app import db
     logger.debug("Finding User '%s'...", username)
     user = User.find_by_username(username)
     if not user:
@@ -64,7 +63,6 @@ def api_key_delete(api_key):
     """
     Create an API Key for a given user (identified by username)
     """
-    from lifemonitor.app import db
     logger.debug("Finding ApiKey '%s'...", api_key)
     key = ApiKey.find(api_key)
     if not key:
@@ -83,7 +81,6 @@ def api_key_clean(username):
     """
     Create an API Key for a given user (identified by username)
     """
-    from lifemonitor.app import db
     logger.debug("Finding User '%s'...", username)
     user = User.find_by_username(username)
     if not user:
@@ -95,5 +92,5 @@ def api_key_clean(username):
         key.delete()
         print("ApiKey '%s' deleted!" % key.key)
         count += 1
-    print("%d ApiKeys deleted!" % count)
+    print("%d ApiKeys deleted!" % count, file=sys.stderr)
     logger.debug("ApiKeys of User '%s' deleted!", user.username)

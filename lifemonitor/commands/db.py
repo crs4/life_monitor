@@ -1,5 +1,5 @@
 import logging
-from flask import Blueprint, current_app, g
+from flask import Blueprint
 from flask.cli import with_appcontext
 
 # set module level logger

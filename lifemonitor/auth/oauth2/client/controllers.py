@@ -3,11 +3,13 @@ from __future__ import annotations
 import logging
 
 import flask
+
 from authlib.integrations.base_client import RemoteApp
 from flask import flash, url_for, redirect
 from flask_login import current_user, login_user
 from loginpass import create_flask_blueprint
 from sqlalchemy.orm.exc import NoResultFound
+
 from lifemonitor.auth.models import User
 from lifemonitor.utils import pop_request_from_session
 from .models import OAuthUserProfile, OAuthIdentity
@@ -26,7 +28,7 @@ def create_blueprint(merge_identity_view):
     return create_flask_blueprint([], oauth2_registry, _handle_authorize)
 
 
-class AuthorizatonHandler(object):
+class AuthorizatonHandler:
 
     def __init__(self, merge_view="auth.merge") -> None:
         self.merge_view = merge_view

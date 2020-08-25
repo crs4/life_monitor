@@ -2,7 +2,6 @@
 import logging
 import connexion
 from flask import request
-from lifemonitor import config
 from lifemonitor.api.services import LifeMonitor
 from lifemonitor.common import EntityNotFoundException
 

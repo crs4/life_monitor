@@ -21,6 +21,7 @@ class SpecificationNotValidException(LifeMonitorException):
 class EntityNotFoundException(LifeMonitorException):
 
     def __init__(self, entity_class, entity_id=None) -> None:
+        super().__init__()
         self.entity_class = entity_class
         self.entity_id = entity_id
 

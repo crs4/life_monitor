@@ -1,19 +1,19 @@
 from __future__ import annotations
 import time
-from lifemonitor.app import db
-from werkzeug.security import gen_salt
-from authlib.integrations.sqla_oauth2 import OAuth2ClientMixin
-from authlib.integrations.sqla_oauth2 import OAuth2TokenMixin
+
 from authlib.integrations.flask_oauth2 import AuthorizationServer as OAuth2AuthorizationServer
 from authlib.oauth2.rfc6749 import grants
 from authlib.common.security import generate_token
-from authlib.integrations.sqla_oauth2 import OAuth2AuthorizationCodeMixin
-
 from authlib.integrations.sqla_oauth2 import (
+    OAuth2AuthorizationCodeMixin,
+    OAuth2ClientMixin,
+    OAuth2TokenMixin,
     create_query_client_func,
     create_save_token_func
 )
+from werkzeug.security import gen_salt
 
+from lifemonitor.app import db
 from lifemonitor.auth.models import User
 
 
