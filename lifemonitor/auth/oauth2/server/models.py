@@ -2,7 +2,7 @@ from __future__ import annotations
 import time
 
 from authlib.integrations.flask_oauth2 import AuthorizationServer as OAuth2AuthorizationServer
-from authlib.oauth2.rfc6749 import grants
+from authlib.oauth2.rfc6749 import grants, InvalidRequestError
 from authlib.common.security import generate_token
 from authlib.integrations.sqla_oauth2 import (
     OAuth2AuthorizationCodeMixin,
@@ -146,8 +146,11 @@ class PasswordGrant(grants.ResourceOwnerPasswordCredentialsGrant):
 
     def authenticate_user(self, username, password):
         user = User.query.filter_by(username=username).first()
-        if user.check_password(password):
-            return user
+        if not user:
+            raise InvalidRequestError("Username %s not found".format(username))
+        if not user.check_password(password):
+            return InvalidRequestError("Password not valid!")
+        return user
 
 
 class ClientCredentialsGrant(grants.ClientCredentialsGrant):
