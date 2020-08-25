@@ -40,7 +40,7 @@ class OAuthIdentity(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey(User.id), nullable=False)
     provider_user_id = db.Column(db.String(256), nullable=False)
-    provider = db.Column(db.String(50), nullable=False)
+    provider = db.Column(db.String, nullable=False)
     created_at = db.Column(DateTime, default=datetime.utcnow, nullable=False)
     token = db.Column(JSONB, nullable=True)
     user_info = db.Column(JSONB, nullable=True)
