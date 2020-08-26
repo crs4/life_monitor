@@ -283,7 +283,6 @@ paths:
       parameters:
         - $ref: '#/components/parameters/suite_uuid'
         - $ref: '#/components/parameters/instance_id'
-        - $ref: '#/components/parameters/offset'
         - $ref: '#/components/parameters/limit'
       responses:
         '200':
@@ -323,14 +322,8 @@ paths:
         - $ref: '#/components/parameters/suite_uuid'
         - $ref: '#/components/parameters/instance_id'
         - $ref: '#/components/parameters/build_id'
-        - $ref: '#/components/parameters/offset'
-        - name: "limit"
-          description: "Maximum number of log bytes to retrieve"
-          in: query
-          schema:
-            type: integer
-            minimum: 1
-            default: 4096
+        - $ref: '#/components/parameters/offset_bytes'
+        - $ref: '#/components/parameters/limit_bytes'
       responses:
         '200':
           description: "Log data"
@@ -381,14 +374,6 @@ components:
       schema:
         type: string
       required: true
-    offset:
-      name: "offset"
-      description: "Number of items to skip while fetching the collection"
-      in: query
-      schema:
-        type: integer
-        minimum: 0
-        default: 0
     limit:
       name: "limit"
       in: query
@@ -397,6 +382,22 @@ components:
         minimum: 1
         default: 10
       description: "Maximum number of items to retrieve"
+    limit_bytes:
+      name: "limit_bytes"
+      description: "Maximum number of log bytes to retrieve"
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 131072 # 128 kB
+    offset_bytes:
+      name: "offset_bytes"
+      description: "Number of bytes to skip while fetching the collection"
+      in: query
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
 
   responses:
     NotFound:
@@ -490,10 +491,10 @@ components:
     AggregateTestStatus:
       type: string
       enum:
-        - "all-passing"
-        - "some-passing"
-        - "all-failing"
-        - "not-available"
+        - "all_passing"
+        - "some_passing"
+        - "all_failing"
+        - "not_available"
 
     TestSuite:
       type: object
@@ -529,7 +530,7 @@ components:
           type: string
         status:
           $ref: '#/components/schemas/AggregateTestStatus'
-        latest-builds:
+        latest_builds:
           type: array
           items:
             $ref: '#/components/schemas/BuildSummary'
