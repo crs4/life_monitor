@@ -44,6 +44,52 @@ The `--insecure` (also `-k`) option will be required unless you're using your ow
 certificates.
 
 
+## Authenticating
+
+LifeMonitor supports Oauth2 for authentication and authorization and currently
+supports using identities from WorkflowHub and GitHub (for both of these to work
+on a new deployment, the application must be appropriately configured and
+registered with the respective identity provider).
+
+For testing and development, LifeMonitor provides a simple web-based
+authentication interface:
+
+  * https://localhost:8443/register --> register a new user on your instance
+  * https://localhost:8443/login
+
+
+To authenticate API access, you're best off creating an API key using the
+provided CLI:
+
+    flask api-key create <username>
+
+The API key will be printed on the console.  See the
+[CLI](#Command-line-interface) section for pointers on how to call it.
+
+
+
+## Command line interface
+
+To access the command line interface, you need to execute `flask ...` from the
+base LifeMonitor repository directory.  Rather than installing the dependencies
+on your system, you might prefer to use the pre-built docker images, either by:
+
+a. starting a new container:
+
+     docker run --rm -it crs4/lifemonitor flask --help
+
+b. if the docker compose is up, you can run commands inside that container:
+
+    docker-compose exec lm flask --help
+
+As you can see from the help message, the CLI provides various commands.  The
+most relevant ones for non-developers might be the following.
+
+
+| flask api-key | api-key management |
+| flask db init | init the schema in a new database |
+
+
 ## Exploring API / User interface
 
 The web service has a built-in Swagger UI (thanks to
@@ -62,62 +108,4 @@ set the name of the docker network the WHub docker-compose created, then the LM
 containers will be created attached to that same network and the services will
 see each other.  You will also neet to set `WORKFLOW_REGISTRY_URL` appropriately
 in `settings.conf`.
-
-
-## Simple example with cURL
-
-Before starting the development environment, you can configure a static
-authentication token of your liking in `settings.conf`.  You'll be able to use
-it to authenticate your requests.
-
-These examples are 
-```
-$ curl -k -H 'Authorization: bearer mytoken' \
-          -H 'Content-Type: application/json' \
-          -d '{ "name": "nf-kmer-similarity", \
-                "uuid": "8ad80dc7-dfb8-4fa5-b443-664689714bdb", \
-                "version": "1", \
-                "roc_link": "https://dev.workflowhub.eu/workflows/21/ro_crate?version=1" }' \
-          https://localhost:8443/workflows
-{
-  "version": "1",
-  "wf_uuid": "8ad80dc7-dfb8-4fa5-b443-664689714bdb"
-}
-
-
-$ curl -k https://localhost:8443/workflows
-[
-  {
-    "isHealthy": true,
-    "name": "test1",
-    "roc_link": "\"http://172.30.10.90:3000\"/workflow/8ad80dc7-dfb8-4fa5-b443-664689714bdb?version=1",
-    "uuid": "8ad80dc7-dfb8-4fa5-b443-664689714bdb",
-    "version": "1"
-  }
-]
-
-$ curl -k https://localhost:8443/workflows/8ad80dc7-dfb8-4fa5-b443-664689714bdb/1
-{
-  "isHealthy": true,
-  "name": "test1",
-  "roc_link": "\"http://172.30.10.90:3000\"/workflow/8ad80dc7-dfb8-4fa5-b443-664689714bdb?version=1",
-  "uuid": "8ad80dc7-dfb8-4fa5-b443-664689714bdb",
-  "version": "1"
-}
-
-
-$ curl -k -H 'Authorization: bearer mytoken' \
-       -X DELETE https://localhost:8443/workflows/8ad80dc7-dfb8-4fa5-b443-664689714bdb/1
-
-$ curl -k -i https://localhost:8443/workflows/8ad80dc7-dfb8-4fa5-b443-664689714bdb/1
-HTTP/1.0 404 NOT FOUND
-Content-Type: application/json
-Content-Length: 0
-Server: Werkzeug/1.0.1 Python/3.7.7
-Date: Wed, 20 May 2020 16:28:36 GMT
-
-$ curl -k https://localhost:8443/workflows
-[]
- 
-```
 
