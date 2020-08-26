@@ -72,7 +72,7 @@ services:
     image: crs4/lifemonitor
     entrypoint: /bin/bash
     command: |
-      -c "flask db init || exit 0"
+      -c "wait-for-postgres.sh && flask db init"
     depends_on:
       - "db"
     #DEV user: "USER_UID:USER_GID"
