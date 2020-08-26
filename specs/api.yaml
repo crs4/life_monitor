@@ -209,6 +209,8 @@ components:
       x-tokenInfoFunc: lifemonitor.auth.oauth2.server.services.get_token_scopes
       flows:
         authorizationCode:
+          tokenUrl: "oauth/token"
+          authorizationUrl: "oauth/authorize"
           scopes:
             read: Read data and metadata (including that of private resources)
             write: Write data and metadata of private resources
