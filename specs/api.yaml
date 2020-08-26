@@ -40,14 +40,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  list:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Workflow'
-                required:
-                  - list
+                $ref: '#components/schema/ListOfWorkflow'
 
     post:
       x-openapi-router-controller: lifemonitor.api.controllers
@@ -188,14 +181,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  list:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/TestSuite'
-                required:
-                  - list
+                $ref: '#/components/schemas/ListOfTestSuite'
         '400':
           $ref: '#/components/responses/BadRequest'
         '404':
@@ -283,15 +269,7 @@ paths:
           description: "List of test instances for this test suite"
           content:
             application/json:
-              schema:
-                type: object
-                properties:
-                  list:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/SuiteInstance'
-                required:
-                  - list
+              $ref: '#/components/schemas/ListOfSuiteInstance'
         '400':
           $ref: '#/components/responses/BadRequest'
         '404':
@@ -313,18 +291,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  list:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/BuildSummary'
-                  limit:
-                    type: integer
-                  offset:
-                    type: integer
-                required:
-                  - list
+                $ref: '#/components/schemas/ListOfBuildSummary'
         '400':
           $ref: '#/components/responses/BadRequest'
         '404':
@@ -486,6 +453,16 @@ components:
         - version
         - roc_link
 
+    ListOfWorkflow:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Workflow'
+      required:
+        - items
+
     WorkflowStatus:
       type: object
       properties:
@@ -535,6 +512,16 @@ components:
         - test_suite_metadata
         - instances
 
+    ListOfTestSuite:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/TestSuite'
+      required:
+        - items
+
     TestSuiteStatus:
       type: object
       properties:
@@ -581,6 +568,16 @@ components:
         - instance
         - timestamp
 
+    ListOfBuildSummary:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/BuildSummary'
+      required:
+        - items
+
     Build:
       type: object
       properties:
@@ -622,6 +619,16 @@ components:
             - url
       required:
         - service
+
+    ListOfSuiteInstance:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SuiteInstance'
+      required:
+        - items
 
     Error:
       type: object
