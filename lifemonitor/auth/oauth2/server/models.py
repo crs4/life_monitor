@@ -149,7 +149,7 @@ class PasswordGrant(grants.ResourceOwnerPasswordCredentialsGrant):
         if not user:
             raise InvalidRequestError("Username %s not found".format(username))
         if not user.check_password(password):
-            return InvalidRequestError("Password not valid!")
+            raise InvalidRequestError("Password not valid!")
         return user
 
 
