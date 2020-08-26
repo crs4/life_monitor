@@ -1,20 +1,20 @@
 import logging
 
 import flask
+from flask import flash, url_for, request, render_template, redirect
 from flask_login import login_required, login_user, logout_user, current_user
 
 from .forms import RegisterForm, LoginForm, SetPasswordForm
-from .models import db, User
-from .oauth2.client import oauth2_registry
+from .models import db
 from .oauth2.client.services import merge_users
 from .services import login_manager
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
 
-blueprint = Blueprint("auth", __name__,
-                      template_folder='templates',
-                      static_folder="static", static_url_path='/static/auth')
+blueprint = flask.Blueprint("auth", __name__,
+                            template_folder='templates',
+                            static_folder="static", static_url_path='/static/auth')
 
 # Set the login view
 login_manager.login_view = "auth.login"

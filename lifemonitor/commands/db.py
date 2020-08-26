@@ -14,7 +14,6 @@ blueprint = Blueprint('db', __name__)
 def db_init():
     """
     Initialize the DB
-    :return:
     """
     from lifemonitor.app import db
     logger.debug("Initializing DB...")

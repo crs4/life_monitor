@@ -31,7 +31,7 @@ def api_key_create(username, scope="read", length=40):
         print("User not found", file=sys.stderr)
         sys.exit(99)
     logger.debug("User found: %r", user)
-    api_key = generate_new_api(user, scope, length)
+    api_key = generate_new_api_key(user, scope, length)
     print("%r" % api_key)
     logger.debug("ApiKey created")
 
