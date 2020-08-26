@@ -172,6 +172,10 @@ paths:
   /workflows/{wf_uuid}/{wf_version}/suites:
     get:
       summary: "Get list of test suites associated with workflow"
+      description: >
+        Get collection of test suites associated with workflow.  Test suites
+        are collected from the RO-crate received with the creation of a new
+        version of a workflow.
       parameters:
         - $ref: '#/components/parameters/wf_uuid'
         - $ref: '#/components/parameters/wf_version'
@@ -186,26 +190,6 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '404':
           $ref: '#/components/responses/NotFound'
-
-    post:
-      x-openapi-router-controller: lifemonitor.api.controllers
-      operationId: "suites_post"
-      summary: "Register a test suite"
-      security:
-        - api_key: ['read', 'write']
-        - oauth2: ['read', 'write']
-      parameters:
-        - $ref: '#/components/parameters/wf_uuid'
-        - $ref: '#/components/parameters/wf_version'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TestSuite'
-      responses:
-        '201':
-          description: TestSuite created
 
   /suites/{suite_uuid}:
     get:
