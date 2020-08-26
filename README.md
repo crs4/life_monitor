@@ -85,7 +85,8 @@ b. if the docker compose is up, you can run commands inside that container:
 As you can see from the help message, the CLI provides various commands.  The
 most relevant ones for non-developers might be the following.
 
-
+| command       |               |
+|---------------|---------------|
 | flask api-key | api-key management |
 | flask db init | init the schema in a new database |
 
