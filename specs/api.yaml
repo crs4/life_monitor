@@ -275,6 +275,36 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+    post:
+      summary: "Register or add an instance that executes this test suite"
+      description: |
+        POSTing this resource results in the creation of a new test suite
+        instance.  That is, a specific test suite hosted and executed on a
+        specific testing service.
+
+        Two types of test instances can be created:  managed and unmanaged.
+        A *managed* test instance is managed is managed by LifeMonitor on its
+        own testing infrastructure.
+        An *unmanaged" test instance is hosted on an external testing service
+        and LifeMonitor can only monitor it (query information about test
+        results through the service's API).
+      parameters:
+        - $ref: '#/components/parameters/suite_uuid'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - properties:
+                    managed:
+                      type: boolean
+                  required:
+                    - managed
+                - anyOf:
+                  - $ref: '#/components/schemas/SuiteInstance'
+                  - $ref: '#/components/schemas/ManagedSuiteInstanceCreationData'
+
 
   /suites/{suite_uuid}/{instance_id}/latest-builds:
     get:
@@ -630,6 +660,12 @@ components:
             $ref: '#/components/schemas/SuiteInstance'
       required:
         - items
+
+    ManagedSuiteInstanceCreationData:
+      type: object
+      description: |
+        This object collects the information to be provided for the creation of
+        a managed test instance.  At the moment it's empty.
 
     Error:
       type: object
