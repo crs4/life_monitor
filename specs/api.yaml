@@ -267,7 +267,7 @@ paths:
         specific testing service.
 
         Two types of test instances can be created:  managed and unmanaged.
-        A *managed* test instance is managed is managed by LifeMonitor on its
+        A *managed* test instance is managed by LifeMonitor on its
         own testing infrastructure.
         An *unmanaged" test instance is hosted on an external testing service
         and LifeMonitor can only monitor it (query information about test
@@ -406,7 +406,7 @@ components:
         default: 131072 # 128 kB
     offset_bytes:
       name: "offset_bytes"
-      description: "Number of bytes to skip while fetching the collection"
+      description: "Number of bytes to skip while fetching the log"
       in: query
       schema:
         type: integer
