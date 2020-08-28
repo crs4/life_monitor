@@ -46,7 +46,7 @@ certificates.
 
 ## Authenticating
 
-LifeMonitor supports Oauth2 for authentication and authorization and currently
+LifeMonitor supports OAuth2 for authentication and authorization and currently
 supports using identities from WorkflowHub and GitHub (for both of these to work
 on a new deployment, the application must be appropriately configured and
 registered with the respective identity provider).
@@ -66,6 +66,19 @@ provided CLI:
 The API key will be printed on the console.  See the
 [CLI](#Command-line-interface) section for pointers on how to call it.
 
+
+### Registering LifeMonitor as a client application on WorkflowHub
+
+On the WorkflowHub web interface, click on the user name on the top right,
+then go to "My Profile"; on the profile page, click "Actions" on the right,
+then choose "API Applications"; now click on "New Application" on the right
+and fill out the form. Choose a name, set Redirect URI to
+https://localhost:8443/oauth2/auth/seek, activate Confidential and Scopes >
+Read.
+
+This can be done for any user (e.g., create a service user on the
+WorkflowHub), all that matters to LifeMonitor is the OAuth params (Client ID,
+Client Secret, etc.) provided after registration.
 
 
 ## Command line interface
