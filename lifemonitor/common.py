@@ -27,7 +27,8 @@ class EntityNotFoundException(LifeMonitorException):
 
     def __str__(self):
         if self.entity_id:
-            return "{} with id {} not found".format(self.entity_class.__name__, self.entity_id)
+            return "{} with id {} not found".format(
+                self.entity_class.__name__, self.entity_id)
         return "{} not found".format(self.entity_class.__name__)
 
 

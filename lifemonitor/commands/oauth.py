@@ -21,7 +21,8 @@ blueprint = Blueprint('oauth', __name__)
 @click.argument("client_redirect_uri")
 @click.argument("scope")
 @with_appcontext
-def create_client(username, client_name, client_uri, client_redirect_uri, scope):
+def create_client(username, client_name, client_uri, client_redirect_uri,
+                  scope):
     """
     Create a OAuth2 client with 'authorization_code' grant
     """

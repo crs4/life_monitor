@@ -16,11 +16,13 @@ server = AuthorizationServer()
 def get_token_scopes(access_token):
     """
     The referenced function accepts a token string as argument and
-    should return a dict containing a scope field that is either a space-separated list of scopes
+    should return a dict containing a scope field that is either a
+    space-separated list of scopes
     belonging to the supplied token.
 
     :param access_token:
-    :return: a dict containing a scope field that is either a space-separated list of scopes
+    :return: a dict containing a scope field that is either a space-separated
+      list of scopes
     belonging to the supplied token.
     """
     token = Token.find(access_token)

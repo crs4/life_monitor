@@ -14,4 +14,5 @@ def register_api(app, specs_dir, merge_identity_view):
     with app.app_context():
         g.oauth2_registry = oauth2_registry
     # Register the '/oauth2' endpoint
-    app.register_blueprint(create_blueprint(merge_identity_view), url_prefix="/oauth2")
+    app.register_blueprint(create_blueprint(merge_identity_view),
+                           url_prefix="/oauth2")

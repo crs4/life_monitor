@@ -14,10 +14,12 @@ logger = logging.getLogger(__name__)
 
 blueprint = flask.Blueprint("auth", __name__,
                             template_folder='templates',
-                            static_folder="static", static_url_path='/static/auth')
+                            static_folder="static",
+                            static_url_path='/static/auth')
 
 # Set the login view
 login_manager.login_view = "auth.login"
+
 
 @blueprint.route("/", methods=("GET",))
 def index():

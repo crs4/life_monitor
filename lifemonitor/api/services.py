@@ -26,7 +26,8 @@ class LifeMonitor:
         self.__instance = self
 
     @classmethod
-    def register_workflow(cls, workflow_uuid, workflow_version, roc_link, name=None):
+    def register_workflow(cls, workflow_uuid, workflow_version, roc_link,
+                          name=None):
         # archive_path = tempfile.NamedTemporaryFile(dir="/tmp", suffix=".zip")
         with tempfile.NamedTemporaryFile(dir="/tmp") as archive_path:
             logger.info("Downloading RO Crate @ %s", archive_path.name)
@@ -37,7 +38,8 @@ class LifeMonitor:
                 extract_zip(archive_path.name, target_path=roc_path)
                 metadata = load_ro_crate_metadata(roc_path)
                 logger.info(metadata)
-                w = Workflow(workflow_uuid, workflow_version, roc_metadata=metadata, name=name)
+                w = Workflow(workflow_uuid, workflow_version,
+                             roc_metadata=metadata, name=name)
                 w.save()
 
                 # TODO: check RO Crate to find TestProject Definitions
@@ -51,26 +53,32 @@ class LifeMonitor:
     def deregister_workflow(cls, workflow_uuid, workflow_version):
         workflow = Workflow.find_by_id(workflow_uuid, workflow_version)
         if not workflow:
-            raise EntityNotFoundException(Workflow, (workflow_uuid, workflow_version))
+            raise EntityNotFoundException(Workflow, (workflow_uuid,
+                                                     workflow_version))
         workflow.delete()
-        logger.debug("Deleted workflow wf_uuid: %r - version: %r", workflow_uuid, workflow_version)
+        logger.debug("Deleted workflow wf_uuid: %r - version: %r",
+                     workflow_uuid, workflow_version)
         return workflow_uuid, workflow_version
 
     @classmethod
-    def register_test_suite(cls, workflow_uuid, workflow_version, test_suite_metadata) -> TestSuite:
+    def register_test_suite(cls, workflow_uuid, workflow_version,
+                            test_suite_metadata) -> TestSuite:
         workflow = Workflow.find_by_id(workflow_uuid, workflow_version)
         if not workflow:
-            raise EntityNotFoundException(Workflow, (workflow_uuid, workflow_version))
+            raise EntityNotFoundException(Workflow, (workflow_uuid,
+                                                     workflow_version))
         suite = TestSuite(workflow, test_suite_metadata)
         for test in test_suite_metadata["test"]:
             for instance_data in test["instance"]:
                 logger.debug("Instance_data: %r", instance_data)
                 test_configuration = TestConfiguration(suite, test["name"],
-                                                       instance_data["name"], instance_data["url"])
+                                                       instance_data["name"],
+                                                       instance_data["url"])
                 testing_service_data = instance_data["service"]
-                testing_service = TestingService.new_instance(test_configuration,
-                                                              testing_service_data["type"],
-                                                              testing_service_data["url"])
+                testing_service = TestingService.new_instance(
+                    test_configuration, testing_service_data["type"],
+                    testing_service_data["url"]
+                )
                 logger.debug("Created TestService: %r", testing_service)
         suite.save()
         return suite

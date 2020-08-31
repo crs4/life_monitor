@@ -12,9 +12,11 @@ from sqlalchemy.dialects.postgresql import UUID, JSONB
 
 from lifemonitor.app import db
 from lifemonitor.auth.oauth2.client.services import RemoteApp
-from lifemonitor.common import (SpecificationNotValidException, EntityNotFoundException,
-                                SpecificationNotDefinedException, TestingServiceNotSupportedException,
-                                NotImplementedException, LifeMonitorException)
+from lifemonitor.common import (
+    SpecificationNotValidException, EntityNotFoundException,
+    SpecificationNotDefinedException, TestingServiceNotSupportedException,
+    NotImplementedException, LifeMonitorException
+)
 from lifemonitor.utils import download_url, to_camel_case
 from lifemonitor.auth.oauth2.client import oauth2_registry
 
@@ -41,7 +43,8 @@ class WorkflowRegistry:
         try:
             return oauth2_registry.seek
         except AttributeError:
-            raise RuntimeError("Unable to find a OAuth2 client for the Seek service")
+            raise RuntimeError(
+                "Unable to find a OAuth2 client for the Seek service")
 
     @property
     def _url(self):
@@ -52,7 +55,8 @@ class WorkflowRegistry:
         return self._client.token["access_token"]
 
     def build_ro_link(self, w: Workflow) -> str:
-        return "{}?version={}".format(os.path.join(self._url, "workflow", w.uuid), w.version)
+        return "{}?version={}".format(os.path.join(self._url, "workflow",
+                                                   w.uuid), w.version)
 
     def download_url(self, url, target_path=None):
         return download_url(url, target_path, self._access_token)
@@ -64,7 +68,8 @@ class Workflow(db.Model):
     version = db.Column(db.Text)
     name = db.Column(db.Text, nullable=True)
     roc_metadata = db.Column(JSONB, nullable=True)
-    test_suites = db.relationship("TestSuite", back_populates="workflow", cascade="all, delete")
+    test_suites = db.relationship("TestSuite", back_populates="workflow",
+                                  cascade="all, delete")
     _registry = None
     # additional relational specs
     __tablename__ = "workflow"
@@ -113,7 +118,8 @@ class Workflow(db.Model):
             'isHealthy': self.is_healthy
         }
         if test_suite:
-            data['test_suite'] = [s.to_dict(test_build=test_build, test_output=test_output)
+            data['test_suite'] = [s.to_dict(test_build=test_build,
+                                            test_output=test_output)
                                   for s in self.test_suites]
         return data
 
@@ -145,8 +151,10 @@ class Test:
         self.specification = specification
 
     def __repr__(self):
-        return '<Test {} of testing project {} (workflow {}, version {})>'.format(
-            self.name, self.project, self.project.workflow.uuid, self.project.workflow.version)
+        templ = '<Test {} of testing project {} (workflow {}, version {})>'
+        return templ.format(self.name, self.project,
+                            self.project.workflow.uuid,
+                            self.project.workflow.version)
 
     @property
     def instances(self) -> list:
@@ -155,11 +163,13 @@ class Test:
 
 class TestSuite(db.Model):
     uuid = db.Column(UUID(as_uuid=True), primary_key=True, default=_uuid.uuid4)
-    _workflow_id = db.Column("workflow_id", db.Integer, db.ForeignKey(Workflow._id), nullable=False)
+    _workflow_id = db.Column("workflow_id", db.Integer, db.ForeignKey(
+        Workflow._id), nullable=False)
     workflow = db.relationship("Workflow", back_populates="test_suites")
     test_definition = db.Column(JSONB, nullable=True)
     test_configurations = db.relationship("TestConfiguration",
-                                          back_populates="test_suite", cascade="all, delete")
+                                          back_populates="test_suite",
+                                          cascade="all, delete")
 
     def __init__(self, w: Workflow, test_definition: object = None) -> None:
         self.workflow = w
@@ -179,20 +189,24 @@ class TestSuite(db.Model):
     def to_dict(self, test_build=False, test_output=False) -> dict:
         return {
             'uuid': str(self.uuid),
-            'test': [t.to_dict(test_build=test_build, test_output=test_output) for t in self.test_configurations]
+            'test': [t.to_dict(test_build=test_build, test_output=test_output)
+                     for t in self.test_configurations]
         }
 
     @property
     def tests(self) -> Optional[dict]:
         if not self.test_definition:
-            raise SpecificationNotDefinedException('Not test definition for the test suite {}'.format(self.uuid))
+            raise SpecificationNotDefinedException(
+                'Not test definition for the test suite {}'.format(self.uuid))
         if "test" not in self.test_definition:
             raise SpecificationNotValidException("'test' property not found")
-        # TODO: implement a caching mechanism: with a custom setter for the test_definition collection
+        # TODO: implement a caching mechanism with a custom setter for the
+        # test_definition collection
         result = {}
         for test in self.test_definition["test"]:
             result[test["name"]] = Test(self, test["name"],
-                                        test["specification"] if "specification" in test else None)
+                                        test["specification"]
+                                        if "specification" in test else None)
         return result
 
     def save(self):
@@ -215,14 +229,17 @@ class TestSuite(db.Model):
 class TestConfiguration(db.Model):
     uuid = db.Column(UUID(as_uuid=True), primary_key=True, default=_uuid.uuid4)
     _test_suite_uuid = \
-        db.Column("test_suite_uuid", UUID(as_uuid=True), db.ForeignKey(TestSuite.uuid), nullable=False)
+        db.Column("test_suite_uuid", UUID(as_uuid=True), db.ForeignKey(
+            TestSuite.uuid), nullable=False)
     test_name = db.Column(db.Text, nullable=False)
     test_instance_name = db.Column(db.Text, nullable=True)
     url = db.Column(db.Text, nullable=True)
     parameters = db.Column(JSONB, nullable=True)
     # configure relationships
-    test_suite = db.relationship("TestSuite", back_populates="test_configurations")
-    testing_service = db.relationship("TestingService", uselist=False, back_populates="test_configuration",
+    test_suite = db.relationship("TestSuite",
+                                 back_populates="test_configurations")
+    testing_service = db.relationship("TestingService", uselist=False,
+                                      back_populates="test_configuration",
                                       cascade="all, delete", lazy='joined')
 
     def __init__(self, testing_suite: TestSuite,
@@ -233,7 +250,8 @@ class TestConfiguration(db.Model):
         self.url = url
 
     def __repr__(self):
-        return '<TestConfiguration {} on TestSuite {}>'.format(self.uuid, self.test_suite.uuid)
+        return '<TestConfiguration {} on TestSuite {}>'.format(
+            self.uuid, self.test_suite.uuid)
 
     @property
     def test(self):
@@ -250,7 +268,8 @@ class TestConfiguration(db.Model):
             'testing_service': self.testing_service.to_dict(test_builds=False)
         }
         if test_build:
-            data.update(self.testing_service.get_test_builds_as_dict(test_output=test_output))
+            data.update(self.testing_service.get_test_builds_as_dict(
+                test_output=test_output))
         return data
 
     def save(self):
@@ -283,15 +302,16 @@ class TestingServiceToken:
 
     def __eq__(self, other):
         return isinstance(other, TestingServiceToken) and \
-               other.key == self.key and \
-               other.secret == self.secret
+            other.key == self.key and \
+            other.secret == self.secret
 
     def __ne__(self, other):
         return not self.__eq__(other)
 
 
 class TestingService(db.Model):
-    uuid = db.Column("uuid", UUID(as_uuid=True), db.ForeignKey(TestConfiguration.uuid), primary_key=True)
+    uuid = db.Column("uuid", UUID(as_uuid=True), db.ForeignKey(
+        TestConfiguration.uuid), primary_key=True)
     _type = db.Column("type", db.String, nullable=False)
     _key = db.Column("key", db.Text, nullable=True)
     _secret = db.Column("secret", db.Text, nullable=True)
@@ -299,7 +319,8 @@ class TestingService(db.Model):
     # configure nested object
     token = db.composite(TestingServiceToken, _key, _secret)
     # configure relationships
-    test_configuration = db.relationship("TestConfiguration", back_populates="testing_service",
+    test_configuration = db.relationship("TestConfiguration",
+                                         back_populates="testing_service",
                                          cascade="all, delete", lazy='joined')
 
     __mapper_args__ = {
@@ -307,12 +328,14 @@ class TestingService(db.Model):
         'polymorphic_identity': 'testing_service'
     }
 
-    def __init__(self, test_configuration: TestConfiguration, url: str) -> None:
+    def __init__(self, test_configuration: TestConfiguration,
+                 url: str) -> None:
         self.test_configuration = test_configuration
         self.url = url
 
     def __repr__(self):
-        return '<TestingService {} for the TestConfiguration {}>'.format(self.uuid, self.test_configuration.uuid)
+        templ = '<TestingService {} for the TestConfiguration {}>'
+        return templ.format(self.uuid, self.test_configuration.uuid)
 
     @property
     def test_instance_name(self):
@@ -343,11 +366,14 @@ class TestingService(db.Model):
         last_successful_test_build = self.last_successful_test_build
         last_failed_test_build = self.last_failed_test_build
         return {
-            'last_test_build': last_test_build.to_dict(test_output) if last_test_build else None,
+            'last_test_build':
+            last_test_build.to_dict(test_output) if last_test_build else None,
             'last_successful_test_build':
-                last_successful_test_build.to_dict(test_output) if last_successful_test_build else None,
+            last_successful_test_build.to_dict(test_output)
+            if last_successful_test_build else None,
             'last_failed_test_build':
-                last_failed_test_build.to_dict(test_output) if last_failed_test_build else None,
+            last_failed_test_build.to_dict(test_output)
+            if last_failed_test_build else None,
             "test_builds": [t.to_dict(test_output) for t in self.test_builds]
         }
 
@@ -358,7 +384,8 @@ class TestingService(db.Model):
             'workflow_healthy': self.is_workflow_healthy,
         }
         if test_builds:
-            data["test_build"] = self.get_test_builds_as_dict(test_output=test_output)
+            data["test_build"] = self.get_test_builds_as_dict(
+                test_output=test_output)
         return data
 
     def save(self):
@@ -378,9 +405,11 @@ class TestingService(db.Model):
         return cls.query.get(uuid)
 
     @classmethod
-    def new_instance(cls, test_instance: TestConfiguration, service_type, url: str):
+    def new_instance(cls, test_instance: TestConfiguration, service_type,
+                     url: str):
         try:
-            service_class = globals()["{}TestingService".format(to_camel_case(service_type))]
+            service_class = globals()["{}TestingService".format(
+                to_camel_case(service_type))]
             return service_class(test_instance, url)
         except Exception as e:
             raise TestingServiceNotSupportedException(e)
@@ -453,7 +482,8 @@ class JenkinsTestBuild(TestBuild):
     @property
     def last_built_revision(self):
         rev_info = list(map(lambda x: x["lastBuiltRevision"],
-                            filter(lambda x: "lastBuiltRevision" in x, self.metadata["actions"])))
+                            filter(lambda x: "lastBuiltRevision" in x,
+                                   self.metadata["actions"])))
         return rev_info[0] if len(rev_info) == 1 else None
 
     @property
@@ -466,8 +496,9 @@ class JenkinsTestBuild(TestBuild):
 
     @property
     def result(self) -> TestBuild.Result:
-        return TestBuild.Result.SUCCESS \
-            if self.metadata["result"] == "SUCCESS" else TestBuild.Result.FAILED
+        return (TestBuild.Result.SUCCESS
+                if self.metadata["result"] == "SUCCESS"
+                else TestBuild.Result.FAILED)
 
     @property
     def url(self) -> str:
@@ -480,7 +511,8 @@ class JenkinsTestingService(TestingService):
         'polymorphic_identity': 'jenkins_testing_service'
     }
 
-    def __init__(self, test_configuration: TestConfiguration, url: str) -> None:
+    def __init__(self, test_configuration: TestConfiguration,
+                 url: str) -> None:
         super().__init__(test_configuration, url)
         self._server = jenkins.Jenkins(self.url)
 
@@ -497,19 +529,22 @@ class JenkinsTestingService(TestingService):
     @property
     def last_test_build(self) -> Optional[JenkinsTestBuild]:
         if self.project_metadata['lastBuild']:
-            return self.get_test_build(self.project_metadata['lastBuild']['number'])
+            return self.get_test_build(
+                self.project_metadata['lastBuild']['number'])
         return None
 
     @property
     def last_successful_test_build(self) -> Optional[JenkinsTestBuild]:
         if self.project_metadata['lastSuccessfulBuild']:
-            return self.get_test_build(self.project_metadata['lastSuccessfulBuild']['number'])
+            return self.get_test_build(
+                self.project_metadata['lastSuccessfulBuild']['number'])
         return None
 
     @property
     def last_failed_test_build(self) -> Optional[JenkinsTestBuild]:
         if self.project_metadata['lastFailedBuild']:
-            return self.get_test_build(self.project_metadata['lastFailedBuild']['number'])
+            return self.get_test_build(
+                self.project_metadata['lastFailedBuild']['number'])
         return None
 
     @property
@@ -528,13 +563,15 @@ class JenkinsTestingService(TestingService):
 
     def get_test_build(self, build_number) -> JenkinsTestBuild:
         try:
-            build_metadata = self.server.get_build_info(self.test_instance_name, build_number)
+            build_metadata = self.server.get_build_info(
+                self.test_instance_name, build_number)
             return JenkinsTestBuild(self, build_metadata)
         except jenkins.JenkinsException as e:
             raise LifeMonitorException(e)
 
     def get_test_build_output(self, build_number):
         try:
-            return self.server.get_build_console_output(self.test_instance_name, build_number)
+            return self.server.get_build_console_output(
+                self.test_instance_name, build_number)
         except jenkins.JenkinsException as e:
             raise LifeMonitorException(e)

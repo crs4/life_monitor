@@ -27,7 +27,8 @@ def generate_new_api_key(user, scope, length=40) -> ApiKey:
 
 
 def check_api_key(api_key, required_scopes):
-    logger.debug("The API Key: %r; scopes required: %r", api_key, required_scopes)
+    logger.debug("The API Key: %r; scopes required: %r", api_key,
+                 required_scopes)
     api_key = ApiKey.find(api_key)
     # start an UnAuthorized exception if the ApiKey is not registered
     if not api_key:

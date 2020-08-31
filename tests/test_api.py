@@ -28,12 +28,14 @@ def test_workflow_registration(client):
     assert response.status_code == 201, "Status code different from 200"
     data = json.loads(response.data)
     logger.debug("Response data: %r", data)
-    assert data['wf_uuid'] == workflow_uuid and data['version'] == workflow_version, \
+    assert data['wf_uuid'] == workflow_uuid and data['version'] == \
+        workflow_version, \
         "Response should be equal to the workflow UUID"
 
 
 def test_get_workflow(client):
-    response = client.get(os.path.join("/workflows", workflow_uuid, workflow_version))
+    response = client.get(os.path.join(
+        "/workflows", workflow_uuid, workflow_version))
     logger.debug(response.data)
     assert response.status_code == 200, "Status code different from 200"
     data = json.loads(response.data)
@@ -42,7 +44,8 @@ def test_get_workflow(client):
 
 def test_suite_registration(client, test_suite_metadata):
     response = client.post(
-        os.path.join("/workflows", workflow_uuid, workflow_version, 'suites'), json={
+        os.path.join("/workflows", workflow_uuid, workflow_version, 'suites'),
+        json={
             'test_suite_metadata': test_suite_metadata
         })
     assert response.status_code == 201, "Status code different from 201"
@@ -51,7 +54,8 @@ def test_suite_registration(client, test_suite_metadata):
 def test_workflow_with_test_builds(client):
     response = client.get(
         os.path.join("/workflows", workflow_uuid, workflow_version),
-        query_string={'test_suite': True, 'test_build': True, 'test_output': True}
+        query_string={'test_suite': True, 'test_build': True,
+                      'test_output': True}
     )
     assert response.status_code == 200, "Status code different from 200"
     data = json.loads(response.data)
@@ -72,5 +76,6 @@ def test_suite_deregistration(client, suite_uuid):
 
 
 def test_workflow_deregistration(client):
-    response = client.delete(os.path.join("/workflows", workflow_uuid, workflow_version))
+    response = client.delete(os.path.join("/workflows", workflow_uuid,
+                                          workflow_version))
     assert response.status_code == 204, "Status code different from 204"

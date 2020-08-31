@@ -23,7 +23,9 @@ def create_blueprint(merge_identity_view):
     authorization_handler = AuthorizatonHandler(merge_identity_view)
 
     def _handle_authorize(provider: RemoteApp, token, user_info):
-        return authorization_handler.handle_authorize(provider, token, OAuthUserProfile.from_dict(user_info))
+        return authorization_handler.handle_authorize(
+            provider, token, OAuthUserProfile.from_dict(user_info)
+        )
 
     return create_flask_blueprint([], oauth2_registry, _handle_authorize)
 
@@ -33,20 +35,23 @@ class AuthorizatonHandler:
     def __init__(self, merge_view="auth.merge") -> None:
         self.merge_view = merge_view
 
-    def handle_authorize(self, provider: RemoteApp, token, user_info: OAuthUserProfile):
+    def handle_authorize(self, provider: RemoteApp, token,
+                         user_info: OAuthUserProfile):
         logger.debug("Remote: %r", provider.name)
         logger.debug("Acquired token: %r", token)
         logger.debug("Acquired user_info: %r", user_info)
 
         try:
-            identity = OAuthIdentity.find_by_provider(provider.name, user_info.sub)
+            identity = OAuthIdentity.find_by_provider(provider.name,
+                                                      user_info.sub)
             logger.debug("Found OAuth identity <%r,%r>: %r",
                          provider.name, user_info.sub, identity)
             # update identity with the last token and userinfo
             identity.user_info = user_info.to_dict()
             identity.token = token
         except NoResultFound:
-            logger.debug("Not found OAuth identity <%r,%r>", provider.name, user_info.sub)
+            logger.debug("Not found OAuth identity <%r,%r>", provider.name,
+                         user_info.sub)
             identity = OAuthIdentity(
                 provider_user_id=user_info.sub,
                 provider=provider.name,
@@ -64,8 +69,8 @@ class AuthorizatonHandler:
             else:
                 # If the user is not logged in and the token is unlinked,
                 # create a new local user account and log that account in.
-                # This means that one person can make multiple accounts, but it's
-                # OK because they can merge those accounts later.
+                # This means that one person can make multiple accounts, but
+                # it's OK because they can merge those accounts later.
                 user = User.find_by_username(user_info.preferred_username)
                 if not user:
                     user = User(username=user_info.preferred_username)
@@ -75,10 +80,11 @@ class AuthorizatonHandler:
                 flash("OAuth identity linked to the current user account.")
         else:
             if identity.user:
-                # If the user is logged in and the token is linked, check if these
-                # accounts are the same!
+                # If the user is logged in and the token is linked, check if
+                # these accounts are the same!
                 if current_user != identity.user:
-                    # Account collision! Ask user if they want to merge accounts.
+                    # Account collision! Ask user if they want to merge
+                    # accounts.
                     return redirect(url_for(self.merge_view,
                                             provider=identity.provider,
                                             username=identity.user.username))

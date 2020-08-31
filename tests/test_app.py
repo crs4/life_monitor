@@ -27,17 +27,22 @@ def test_suite_registration(client):
     with open(os.path.join(THIS_DIR, "test-suite-definition.json")) as td:
         test_definition = json.load(td)
     logger.debug("TestDefinition: %r", test_definition)
-    project = lm.register_test_suite(workflow_uuid, workflow_version, test_definition)
+    project = lm.register_test_suite(workflow_uuid, workflow_version,
+                                     test_definition)
     assert len(project.workflow.test_suites) == 1, \
-        "Unexpected number of test_suites for the workflow {}".format(project.workflow.uuid)
+        "Unexpected number of test_suites for the workflow {}".format(
+            project.workflow.uuid)
     logger.debug("Project: %r", project)
-    assert len(project.tests) == 1, "Unexpected number of tests for the testing project {}".format(project)
+    assert len(project.tests) == 1, \
+        "Unexpected number of tests for the testing project {}".format(project)
     for t in project.tests:
         logger.debug("- test: %r", t)
-    assert len(project.test_configurations) == 1, "Unexpected number of test_configurations " \
-                                                  "for the testing project {}".format(project)
+    assert len(project.test_configurations) == 1, \
+        "Unexpected number of test_configurations " \
+        "for the testing project {}".format(project)
     for t in project.test_configurations:
-        logger.debug("- test instance: %r --> Service: %r,%s", t, t.testing_service, t.testing_service.url)
+        logger.debug("- test instance: %r --> Service: %r,%s", t,
+                     t.testing_service, t.testing_service.url)
 
 
 def test_jenkins_service_type(client):
@@ -45,7 +50,8 @@ def test_jenkins_service_type(client):
     suite = w.test_suites[0]
     conf = suite.test_configurations[0]
     service = conf.testing_service
-    assert isinstance(service, JenkinsTestingService), "Unexpected type for service"
+    assert isinstance(service, JenkinsTestingService), \
+        "Unexpected type for service"
     assert service.server is not None, "Not found _server property"
 
 

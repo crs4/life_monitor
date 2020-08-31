@@ -16,7 +16,8 @@ def refresh_oauth2_provider_token(func, name):
         if token.is_expired():
             logger.info("Token expired!!!")
             push_request_to_session(name)
-            return redirect(url_for('loginpass.login', name=name, next=request.endpoint))
+            return redirect(url_for('loginpass.login', name=name,
+                                    next=request.endpoint))
         return func(*args, **kwargs)
 
     return decorated_view

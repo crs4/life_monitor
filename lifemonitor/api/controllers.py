@@ -62,9 +62,10 @@ def workflows_get_by_id(wf_uuid, wf_version):
         return "Invalid ID", 400
 
     if wf is not None:
-        # Once we customize the JSON encoder or implement a smarter serialization
-        # with Marshmellow we could simply return the value
-        return wf.to_dict(test_suite=test_suite, test_build=test_build, test_output=test_output)
+        # Once we customize the JSON encoder or implement a smarter
+        # serialization with Marshmellow we can simply return the value
+        return wf.to_dict(test_suite=test_suite, test_build=test_build,
+                          test_output=test_output)
 
     return connexion.NoContent, 404
 

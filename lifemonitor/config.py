@@ -60,7 +60,8 @@ class DevelopmentConfig(BaseConfig):
 
 class ProductionConfig(BaseConfig):
     CONFIG_NAME = "production"
-    SECRET_KEY = os.getenv("PROD_SECRET_KEY", "LifeMonitor Production Secret Key")
+    SECRET_KEY = os.getenv("PROD_SECRET_KEY",
+                           "LifeMonitor Production Secret Key")
     TESTING = False
 
 
@@ -105,6 +106,8 @@ def configure_logging(app):
 
     logging.basicConfig(level=level_value)
     if error:
-        app.logger.error("LOG_LEVEL value %s is invalid. Defaulting to INFO", level_str)
+        app.logger.error("LOG_LEVEL value %s is invalid. Defaulting to INFO",
+                         level_str)
 
-    app.logger.info('Logging is active. Log level: %s', logging.getLevelName(app.logger.getEffectiveLevel()))
+    app.logger.info('Logging is active. Log level: %s',
+                    logging.getLevelName(app.logger.getEffectiveLevel()))

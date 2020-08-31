@@ -23,7 +23,8 @@ def fetch_token(name):
     logger.debug("CURRENT APP: %r", current_app.config)
     api_key = current_app.config.get("{}_API_KEY".format(name.upper()), None)
     if api_key:
-        logger.debug("FOUND an API KEY for the OAuth Service '%s': %s", name, api_key)
+        logger.debug("FOUND an API KEY for the OAuth Service '%s': %s", name,
+                     api_key)
         return {"access_token": api_key}
     identity = OAuthIdentity.find_by_user_provider(current_user.id, name)
     logger.debug("The token: %r", identity.token)
@@ -49,14 +50,14 @@ oauth2_backends = [GitHub, Seek]
 for backend in oauth2_backends:
     class RemoteApp(backend, FlaskRemoteApp):
         OAUTH_APP_CONFIG = backend.OAUTH_CONFIG
-
-
-    oauth2_registry.register(RemoteApp.NAME, overwrite=True, client_cls=RemoteApp)
+    oauth2_registry.register(RemoteApp.NAME, overwrite=True,
+                             client_cls=RemoteApp)
 
 
 def merge_users(merge_from: User, merge_into: User, provider: str):
     assert merge_into != merge_from
-    logger.debug("Trying to merge %r, %r, %r", merge_into, merge_from, provider)
+    logger.debug("Trying to merge %r, %r, %r", merge_into, merge_from,
+                 provider)
     for identity in list(merge_from.oauth_identity.values()):
         identity.user = merge_into
         db.session.add(identity)

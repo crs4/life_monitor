@@ -1,7 +1,8 @@
 from __future__ import annotations
 import time
 
-from authlib.integrations.flask_oauth2 import AuthorizationServer as OAuth2AuthorizationServer
+from authlib.integrations.flask_oauth2 import AuthorizationServer \
+    as OAuth2AuthorizationServer
 from authlib.oauth2.rfc6749 import grants, InvalidRequestError
 from authlib.common.security import generate_token
 from authlib.integrations.sqla_oauth2 import (
@@ -55,7 +56,8 @@ class AuthorizationServer(OAuth2AuthorizationServer):
 
     def __init__(self, app=None):
         super().__init__(app,
-                         query_client=create_query_client_func(db.session, Client),
+                         query_client=create_query_client_func(db.session,
+                                                               Client),
                          save_token=create_save_token_func(db.session, Token))
         # register it to grant endpoint
         self.register_grant(AuthorizationCodeGrant)
@@ -147,7 +149,7 @@ class PasswordGrant(grants.ResourceOwnerPasswordCredentialsGrant):
     def authenticate_user(self, username, password):
         user = User.query.filter_by(username=username).first()
         if not user:
-            raise InvalidRequestError("Username %s not found".format(username))
+            raise InvalidRequestError("Username {} not found".format(username))
         if not user.check_password(password):
             raise InvalidRequestError("Password not valid!")
         return user
