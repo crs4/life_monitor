@@ -6,7 +6,7 @@ all: images
 images: lifemonitor
 
 certs:
-	if [[ ! -d "certs" ]]; then \
+		rm -rf certs && \
 		mkdir certs && \
 		openssl req -x509 -nodes -days 365 \
 				-subj "/C=IT/ST=Sardinia/O=CRS4/CN=lm.org" \
@@ -14,8 +14,7 @@ certs:
 				-newkey rsa:2048 \
 				-keyout certs/lm.key \
 				-out certs/lm.crt && \
-		chmod 644 certs/lm.{key,crt}; \
-	fi
+		chmod 644 certs/lm.{key,crt}
 
 lifemonitor: docker/lifemonitor.Dockerfile
 	docker build -f docker/lifemonitor.Dockerfile -t crs4/lifemonitor .
