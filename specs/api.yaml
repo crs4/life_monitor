@@ -289,6 +289,13 @@ paths:
                 - anyOf:
                   - $ref: '#/components/schemas/SuiteInstance'
                   - $ref: '#/components/schemas/ManagedSuiteInstanceCreationData'
+      responses:
+        '201':
+          description: Instance created
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
 
 
   /suites/{suite_uuid}/{instance_id}/latest-builds:
