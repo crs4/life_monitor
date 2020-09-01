@@ -40,7 +40,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#components/schema/ListOfWorkflow'
+                $ref: '#/components/schemas/ListOfWorkflow'
 
     post:
       x-openapi-router-controller: lifemonitor.api.controllers
@@ -573,7 +573,7 @@ components:
         instance:
           $ref: '#/components/schemas/SuiteInstance'
         timestamp:
-          $ref: '#components/schema/Timestamp'
+          $ref: '#/components/schemas/Timestamp'
         lastlogs:
           type: string
           description: "Last few lines of build log, if available"
@@ -605,7 +605,7 @@ components:
         instance:
           $ref: '#/components/schemas/SuiteInstance'
         timestamp:
-          $ref: '#components/schema/Timestamp'
+          $ref: '#/components/schemas/Timestamp'
           # other things to be added
       required:
         - build_id
