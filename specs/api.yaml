@@ -331,7 +331,8 @@ paths:
           description: "Build data"
           content:
             application/json:
-              $ref: '#/components/schemas/Build'
+              schema:
+                $ref: '#/components/schemas/Build'
         '400':
           $ref: '#/components/responses/BadRequest'
         '404':
