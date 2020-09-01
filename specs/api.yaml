@@ -482,18 +482,17 @@ components:
       type: object
       properties:
         workflow:
-          schema:
-            type: object
-            properties:
-              uuid:
-                type: string
-              version:
-                type: string
-              name:
-                type: string
-            required:
-              - uuid
-              - version
+          type: object
+          properties:
+            uuid:
+              type: string
+            version:
+              type: string
+            name:
+              type: string
+          required:
+            - uuid
+            - version
         aggregate_test_status:
           $ref: '#/components/schemas/AggregateTestStatus'
         latest_builds:
