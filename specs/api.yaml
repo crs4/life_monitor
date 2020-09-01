@@ -253,7 +253,8 @@ paths:
           description: "List of test instances for this test suite"
           content:
             application/json:
-              $ref: '#/components/schemas/ListOfSuiteInstance'
+              schema:
+                $ref: '#/components/schemas/ListOfSuiteInstance'
         '400':
           $ref: '#/components/responses/BadRequest'
         '404':
