@@ -37,7 +37,7 @@ class Seek(object):
         'client_kwargs': {'scope': 'read'},
         'userinfo_compliance_fix': normalize_userinfo,
     }
-	# append the API urls to the configuration
+    # append the API urls to the configuration
     for url in _api_urls:
         OAUTH_CONFIG[url[0].lower()] = current_app.config.get(
             "{}_{}".format(NAME.upper(), url[0]), url[1])

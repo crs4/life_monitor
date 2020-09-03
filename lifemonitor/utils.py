@@ -15,9 +15,9 @@ logger = logging.getLogger()
 def bool_from_string(s) -> bool:
     if s is None or s == "":
         return None
-    if s.lower() in { 't', 'true', '1' }:
+    if s.lower() in {'t', 'true', '1'}:
         return True
-    if  s.lower() in { 'f', 'false', '0' }:
+    if s.lower() in {'f', 'false', '0'}:
         return False
     raise ValueError(f"Invalid string value for boolean. Got '{s}'")
 

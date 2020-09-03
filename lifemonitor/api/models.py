@@ -282,9 +282,7 @@ class TestingServiceToken:
         return "<TestingServiceToken (key=%r, secret=****)>" % self.key
 
     def __eq__(self, other):
-        return isinstance(other, TestingServiceToken) and \
-               other.key == self.key and \
-               other.secret == self.secret
+        return isinstance(other, TestingServiceToken) and other.key == self.key and other.secret == self.secret
 
     def __ne__(self, other):
         return not self.__eq__(other)

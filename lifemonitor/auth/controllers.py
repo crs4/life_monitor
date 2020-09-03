@@ -19,6 +19,7 @@ blueprint = flask.Blueprint("auth", __name__,
 # Set the login view
 login_manager.login_view = "auth.login"
 
+
 @blueprint.route("/", methods=("GET",))
 def index():
     return render_template("auth/profile.j2")

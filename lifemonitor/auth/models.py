@@ -83,7 +83,7 @@ class ApiKey(db.Model):
         if scope:
             for s in scope.split(" "):
                 if s not in self.SCOPES:
-                    raise ValueError("Scope '%r' not valid".format(s))
+                    raise ValueError("Scope '{}' not valid".format(s))
                 self.scope = "{} {}".format(self.scope, s)
 
     def check_scopes(self, scopes: list or str):
