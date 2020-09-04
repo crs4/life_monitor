@@ -2,6 +2,7 @@
 import logging
 import connexion
 from flask import request
+from flask_login import login_required
 from lifemonitor.api.services import LifeMonitor
 from lifemonitor.common import EntityNotFoundException
 
@@ -25,6 +26,7 @@ def workflows_get():
     return [w.to_dict(test_suite=False, test_output=False) for w in workflows]
 
 
+@login_required
 def workflows_post(body):
     w = lm.register_workflow(
         workflow_uuid=body['uuid'],
