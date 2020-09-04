@@ -26,6 +26,8 @@ Basic actions are implemented as Makefile rules.
 | Launch docker-compose in development mode | make startdev |
 | Stop docker-compose in development mode | make stopdev |
 
+Note that `docker/lifemonitor.Dockerfile` depends on the presence of a `certs` directory at the top level (i.e., the repository root) containing the SSL certificates. If this directory is not found, the Makefile will create it and populate it with self-signed certificates (note that if you have an empty `certs` directory the image will build but it will be broken due to missing certificates).
+
 The development mode mount the life monitor directory within the container and
 runs flask in development mode.  Thus, local changes to the code are immediately
 picked up.
