@@ -34,22 +34,21 @@ class LifeMonitor:
                 zip_archive = wr.download_url(roc_link, target_path=archive_path.name)
                 logger.debug("ZIP Archive: %s", zip_archive)
                 with tempfile.TemporaryDirectory() as roc_path:
-                    roc_path = tempfile.TemporaryDirectory()
                     logger.info("Extracting RO Crate @ %s", roc_path)
-                    extract_zip(archive_path.name, target_path=roc_path.name)
-                    metadata = load_ro_crate_metadata(roc_path.name)
-
+                    extract_zip(archive_path.name, target_path=roc_path)
+                    metadata = load_ro_crate_metadata(roc_path)
+                    # create a new Workflow instance with the loaded metadata
                     w = Workflow(workflow_uuid, workflow_version, roc_metadata=metadata, name=name)
-
-                    # TODO: check RO Crate to find TestProject Definitions
-                    #       and associate them to the workflow
-                    test_definition_file = search_for_test_definition(roc_path.name, metadata)
+                    # load test_definition_file and if it exists associate a test_suite the workflow
+                    test_definition_file = search_for_test_definition(roc_path, metadata)
+                    logger.debug("The test definition file: %r", test_definition_file)
                     if test_definition_file:
                         logger.debug("Loaded test definition file: %r", test_definition_file)
                         cls.add_test_suite(w, test_definition_file)
-                        
                     w.save()
                     return w
+        # FIXME: we need to properly handle exception
+        #  and map them to appropriate error codes
         except Exception as e:
             logger.exception(e)
 
