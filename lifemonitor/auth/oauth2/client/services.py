@@ -49,8 +49,6 @@ oauth2_backends = [GitHub, Seek]
 for backend in oauth2_backends:
     class RemoteApp(backend, FlaskRemoteApp):
         OAUTH_APP_CONFIG = backend.OAUTH_CONFIG
-
-
     oauth2_registry.register(RemoteApp.NAME, overwrite=True, client_cls=RemoteApp)
 
 

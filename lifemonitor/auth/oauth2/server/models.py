@@ -147,7 +147,7 @@ class PasswordGrant(grants.ResourceOwnerPasswordCredentialsGrant):
     def authenticate_user(self, username, password):
         user = User.query.filter_by(username=username).first()
         if not user:
-            raise InvalidRequestError("Username %s not found".format(username))
+            raise InvalidRequestError("Username {} not found".format(username))
         if not user.check_password(password):
             raise InvalidRequestError("Password not valid!")
         return user
