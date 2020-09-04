@@ -12,7 +12,6 @@ logger = logging.getLogger(__name__)
 # Instantiate the OAuth server
 server = AuthorizationServer()
 
-
 def get_token_scopes(access_token):
     """
     The referenced function accepts a token string as argument and
@@ -33,3 +32,4 @@ def get_token_scopes(access_token):
     return {
         "scope": token.scope
     }
+
