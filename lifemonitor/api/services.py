@@ -6,7 +6,7 @@ from lifemonitor.api.models import (
     WorkflowRegistry, Workflow, TestSuite,
     TestConfiguration, TestingService,
 )
-from lifemonitor.utils import extract_zip, load_ro_crate_metadata
+from lifemonitor.utils import extract_zip, load_ro_crate_metadata, search_for_test_definition
 
 logger = logging.getLogger()
 
@@ -27,25 +27,31 @@ class LifeMonitor:
 
     @classmethod
     def register_workflow(cls, workflow_uuid, workflow_version, roc_link, name=None):
-        # archive_path = tempfile.NamedTemporaryFile(dir="/tmp", suffix=".zip")
-        with tempfile.NamedTemporaryFile(dir="/tmp") as archive_path:
-            logger.info("Downloading RO Crate @ %s", archive_path.name)
-            wr = WorkflowRegistry.get_instance()
-            wr.download_url(roc_link, target_path=archive_path.name)
-            with tempfile.TemporaryDirectory() as roc_path:
-                logger.info("Extracting RO Crate @ %s", roc_path)
-                extract_zip(archive_path.name, target_path=roc_path)
-                metadata = load_ro_crate_metadata(roc_path)
-                logger.info(metadata)
-                w = Workflow(workflow_uuid, workflow_version, roc_metadata=metadata, name=name)
-                w.save()
+        try:
+            with tempfile.NamedTemporaryFile(dir="/tmp") as archive_path:
+                logger.info("Downloading RO Crate @ %s", archive_path.name)
+                wr = WorkflowRegistry.get_instance()
+                zip_archive = wr.download_url(roc_link, target_path=archive_path.name)
+                logger.debug("ZIP Archive: %s", zip_archive)
+                with tempfile.TemporaryDirectory() as roc_path:
+                    roc_path = tempfile.TemporaryDirectory()
+                    logger.info("Extracting RO Crate @ %s", roc_path)
+                    extract_zip(archive_path.name, target_path=roc_path.name)
+                    metadata = load_ro_crate_metadata(roc_path.name)
 
-                # TODO: check RO Crate to find TestProject Definitions
-                #       and associate them to the workflow
-                # i.e., for every tp in test_projects_files:
-                #           json_data = load the tdf
-                #           register_test_project(w, json_data)
-                return w
+                    w = Workflow(workflow_uuid, workflow_version, roc_metadata=metadata, name=name)
+
+                    # TODO: check RO Crate to find TestProject Definitions
+                    #       and associate them to the workflow
+                    test_definition_file = search_for_test_definition(roc_path.name, metadata)
+                    if test_definition_file:
+                        logger.debug("Loaded test definition file: %r", test_definition_file)
+                        cls.add_test_suite(w, test_definition_file)
+                        
+                    w.save()
+                    return w
+        except Exception as e:
+            logger.exception(e)
 
     @classmethod
     def deregister_workflow(cls, workflow_uuid, workflow_version):
@@ -61,6 +67,12 @@ class LifeMonitor:
         workflow = Workflow.find_by_id(workflow_uuid, workflow_version)
         if not workflow:
             raise EntityNotFoundException(Workflow, (workflow_uuid, workflow_version))
+        suite = cls.add_test_suite(workflow, test_suite_metadata)
+        suite.save()
+        return suite
+
+    @classmethod
+    def add_test_suite(cls, workflow, test_suite_metadata) -> TestSuite:
         suite = TestSuite(workflow, test_suite_metadata)
         for test in test_suite_metadata["test"]:
             for instance_data in test["instance"]:
@@ -72,7 +84,6 @@ class LifeMonitor:
                                                               testing_service_data["type"],
                                                               testing_service_data["url"])
                 logger.debug("Created TestService: %r", testing_service)
-        suite.save()
         return suite
 
     @classmethod
