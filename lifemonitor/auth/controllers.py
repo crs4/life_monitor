@@ -20,6 +20,14 @@ blueprint = flask.Blueprint("auth", __name__,
 login_manager.login_view = "auth.login"
 
 
+@login_required
+def show_current_user_profile():
+    try:
+        return jsonify(current_user.to_dict())
+    except Exception as e:
+        logger.exception(e)
+
+
 @blueprint.route("/", methods=("GET",))
 def index():
     return render_template("auth/profile.j2")

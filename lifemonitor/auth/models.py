@@ -56,6 +56,15 @@ class User(UserMixin, db.Model):
     def find_by_username(username):
         return User.query.filter(User.username == username).first()
 
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "username": self.username,
+            "identities": {
+                n: i.user_info for n, i in self.oauth_identity.items()
+            }
+        }
+
 
 class ApiKey(db.Model):
     SCOPES = ["read", "write"]

@@ -11,6 +11,20 @@ servers:
     description: Version 0.0 of API.  Add version prefix (e.g, /v1.0) once we have something useful
 
 paths:
+  /me:
+    get:
+      x-openapi-router-controller: lifemonitor.auth.controllers
+      operationId: "show_current_user_profile"
+      summary: "Get the profile of the current logged user"
+      responses:
+        '200':
+          description: User profile info
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+
   /workflows:
     get:
       x-openapi-router-controller: lifemonitor.api.controllers
@@ -174,6 +188,18 @@ components:
       required: true
 
   schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        username:
+          type: string
+        identities:
+          type: object
+      required:
+        - id
+
     Workflow:
       type: object
       properties:
