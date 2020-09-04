@@ -55,10 +55,7 @@ class WorkflowRegistry:
         return "{}?version={}".format(os.path.join(self._url, "workflow", w.uuid), w.version)
 
     def download_url(self, url, target_path=None):
-        # NOTE: we can download a resource from Seek only if the resource is publicly accessible
-        # API Tokens and OAuth Tokens do not allow to download resources
-        # if they are not publicly accessible
-        return download_url(url, target_path)
+        return download_url(url, target_path, self._access_token)
 
 
 class Workflow(db.Model):

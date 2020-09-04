@@ -34,9 +34,9 @@ def to_camel_case(snake_str) -> str:
 
 
 def download_url(url, target_path=None, token=None):
-    headers = {'Authorization': f'Bearer {token}'} if token else {}
     with requests.Session() as session:
-        session.headers.update(headers)
+        if token:
+            session.headers['Authorization'] = f'Bearer {token}'
         with session.get(url, stream=True) as r:
             r.raise_for_status()
             if not target_path:
@@ -59,7 +59,9 @@ def load_ro_crate_metadata(roc_path):
     file_path = os.path.join(roc_path, RO_CRATE_METADATA_FILENAME)
     with open(file_path) as data_file:
         logger.info("Loading RO Crate Metadata @ %s", file_path)
-        return json.load(data_file)
+        data = json.load(data_file)
+        logger.debug("RO Crate Metadata: %r", data)
+        return data
 
 
 def load_test_definition_filename(filename):
@@ -72,32 +74,7 @@ def search_for_test_definition(roc_path, ro_crate_metadata: dict):
     filename = os.path.join(roc_path, RO_CRATE_TEST_DEFINITION_FILENAME)
     if os.path.exists(filename):
         return load_test_definition_filename(filename)
-    # check for if there exists a ZIP archive as root Dataset containing the actual RO crate
-    graph = ro_crate_metadata.get("@graph", None)
-    if not graph:
-        return None
-
-    mid = main_entity = None
-    for node in graph:
-        nid = node.get("@id", None)
-        ntype = node.get("@type", None)
-        if nid and nid == "./" and ntype and ntype == "Dataset":
-            main_entity = node.get("mainEntity", None)
-            break
-
-    if main_entity:
-        mid = main_entity.get("@id", None)
-        if not mid:
-            return None
-
-    # check if the main_entity if a ZIP file
-    if not mid.endswith(".zip"):
-        return None
-    dataset_path = extract_zip(os.path.join(roc_path, mid))
-    print("Dataset path: %s", dataset_path)
-    dataset_metadata = load_ro_crate_metadata(dataset_path)
-    print("Dataset meatadata: %r", dataset_metadata)
-    return search_for_test_definition(dataset_path, dataset_metadata)
+    return None
 
 
 def push_request_to_session(name):
