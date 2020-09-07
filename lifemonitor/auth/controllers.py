@@ -1,7 +1,7 @@
 import logging
 
 import flask
-from flask import flash, url_for, request, render_template, redirect
+from flask import flash, url_for, request, render_template, redirect, jsonify
 from flask_login import login_required, login_user, logout_user, current_user
 
 from .forms import RegisterForm, LoginForm, SetPasswordForm
