@@ -32,4 +32,3 @@ def get_token_scopes(access_token):
     return {
         "scope": token.scope
     }
-
