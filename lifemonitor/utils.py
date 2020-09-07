@@ -6,7 +6,6 @@ import zipfile
 
 import flask
 import requests
-from flask import url_for
 
 RO_CRATE_METADATA_FILENAME = "ro-crate-metadata.jsonld"
 RO_CRATE_TEST_DEFINITION_FILENAME = "test-suite-definition.json"
