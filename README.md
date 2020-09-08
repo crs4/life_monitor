@@ -162,6 +162,7 @@ address (you can get it with `ifconfig` on Linux): suppose this is
 and put it on a network called `seek_default`.
 
 ```
+docker network create seek_default
 docker run -d --network seek_default -p 3000:3000 \
   -v /tmp/etc_nginx:/etc/nginx:ro -v /tmp/certs:/nginx/certs:ro \
   --add-host lm.org:192.168.1.167 --name wfhub fairdom/seek:workflow
