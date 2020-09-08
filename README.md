@@ -128,7 +128,7 @@ WorkflowHub Docker container.
 Apply the following modifications to the WorkflowHub `nginx.conf` file:
 
 
-```
+```diff
 @@ -63,7 +63,10 @@ http {
          # gzip_http_version 1.1;
  
@@ -200,15 +200,16 @@ SEEK_ACCESS_TOKEN_URL="https://lm.org:3000/oauth/token"
 In the LifeMonitor `docker-compose-template.yml`, in the `lm` service section,
 map the lm.org host to the above IP:
 
+```yaml
   lm:
     [...]
     extra_hosts:
       - "lm.org:192.168.1.167"
-
+```
 
 Set the network name to `seek_default`:
 
-```
+```yaml
 networks:
   life_monitor:
     name: seek_default
