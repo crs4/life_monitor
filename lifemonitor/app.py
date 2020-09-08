@@ -13,11 +13,12 @@ db = SQLAlchemy()
 logger = logging.getLogger(__name__)
 
 
-def create_app(env=None, instance_config_name=None):
+def create_app(env=None, instance_config_name=None, init_app=True):
     """
     App factory method
     :param instance_config_name:
     :param env:
+    :param init_app:
     :return:
     """
     # set app env
@@ -36,15 +37,9 @@ def create_app(env=None, instance_config_name=None):
     if instance_config_name:
         app.config.from_pyfile(instance_config_name)
     # initialize the application
-    with app.app_context():
-        # configure logging
-        config.configure_logging(app)
-        # configure app DB
-        db.init_app(app)
-        # configure app routes
-        register_routes(app)
-        # register commands
-        commands.register_commands(app)
+    if init_app:
+        with app.app_context() as ctx:
+            initialize_app(app, ctx)
 
     # append routes to check app health
     @app.route("/health")
@@ -52,3 +47,14 @@ def create_app(env=None, instance_config_name=None):
         return jsonify("healthy")
 
     return app
+
+
+def initialize_app(app, app_context):
+    # configure logging
+    config.configure_logging(app)
+    # configure app DB
+    db.init_app(app)
+    # configure app routes
+    register_routes(app)
+    # register commands
+    commands.register_commands(app)
