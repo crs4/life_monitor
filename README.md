@@ -151,7 +151,7 @@ Apply the following modifications to the WorkflowHub `nginx.conf` file:
 ```
 
 You can change `docker/nginx.conf` on the WorkflowHub git repo (currently on
-the "workflow" branch of git@github.com:seek4science/seek.git) and rebuild the
+the "workflow" branch of https://github.com/seek4science/seek) and rebuild the
 image locally, or overwrite the `/etc/nginx` dir on the WorkflowHub container
 with a bind mount. For instance, suppose you have copied the contents of
 `/etc/nginx` from the WorkflowHub container to `/tmp/etc_nginx`. Also suppose
