@@ -155,7 +155,7 @@ the "workflow" branch of https://github.com/seek4science/seek) and rebuild the
 image locally, or overwrite the `/etc/nginx` dir on the WorkflowHub container
 with a bind mount. For instance, suppose you have copied the contents of
 `/etc/nginx` from the WorkflowHub container to `/tmp/etc_nginx`. Also suppose
-our certificates are on /tmp/certs. Finally, we're going to map `lm.org` (the
+our certificates are on `/tmp/certs`. Finally, we're going to map `lm.org` (the
 hostname in the self-signed certificates) to the physical host's (internal) IP
 address (you can get it with `ifconfig` on Linux): suppose this is
 `192.168.1.167`. We're going to run WorkflowHub on a single Docker container,
