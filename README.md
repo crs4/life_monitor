@@ -227,5 +227,7 @@ the callback url for LifeMonitor. Confirm authorization on the next page. You
 should get an OAuth error. This is currently a [known
 bug](https://github.com/crs4/life_monitor/issues/30), so ignore it. Go to
 https://lm.org:8443, click on "Log in" and choose to log in with Seek. You
-should be redirected to https://lm.org:3000/login, where you can log in with
-your WorkflowHub username and password.
+should be redirected to a WorkflowHub page that asks you to authorize
+LifeMonitor to use your account. Click on "Authorize" and you should land on a
+LifeMonitor page that confirms you are logged in and displays your login
+details.
