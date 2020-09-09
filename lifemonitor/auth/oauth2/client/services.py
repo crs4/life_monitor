@@ -8,13 +8,12 @@ from authlib.oauth2.rfc6749 import OAuth2Token
 from flask import current_app
 from flask_login import current_user
 
-from .providers.github import GitHub
-from .providers.seek import Seek
 # Config a module level logger
 from .models import OAuthIdentity
 from ...models import User
 from lifemonitor.db import db
 
+# Config a module level logger
 logger = logging.getLogger(__name__)
 
 
@@ -44,12 +43,19 @@ def update_token(name, token, refresh_token=None, access_token=None):
 # Create an instance of OAuth registry for oauth clients.
 oauth2_registry = OAuth(fetch_token=fetch_token, update_token=update_token)
 
+
 # Register backend services
-oauth2_backends = [GitHub, Seek]
-for backend in oauth2_backends:
-    class RemoteApp(backend, FlaskRemoteApp):
-        OAUTH_APP_CONFIG = backend.OAUTH_CONFIG
-    oauth2_registry.register(RemoteApp.NAME, overwrite=True, client_cls=RemoteApp)
+def config_oauth2_registry(app):
+    from .providers.github import GitHub
+    from .providers.seek import Seek
+
+    oauth2_backends = [GitHub, Seek]
+    for backend in oauth2_backends:
+        class RemoteApp(backend, FlaskRemoteApp):
+            OAUTH_APP_CONFIG = backend.OAUTH_CONFIG
+
+        oauth2_registry.register(RemoteApp.NAME, overwrite=True, client_cls=RemoteApp)
+    oauth2_registry.init_app(app)
 
 
 def merge_users(merge_from: User, merge_into: User, provider: str):
