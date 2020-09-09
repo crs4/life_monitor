@@ -15,7 +15,7 @@ def db_init():
     """
     Initialize the DB
     """
-    from lifemonitor.app import db
+    from lifemonitor.db import db
     logger.debug("Initializing DB...")
     db.create_all()
     logger.info("DB initialized")

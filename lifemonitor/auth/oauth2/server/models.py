@@ -13,7 +13,7 @@ from authlib.integrations.sqla_oauth2 import (
 )
 from werkzeug.security import gen_salt
 
-from lifemonitor.app import db
+from lifemonitor.db import db
 from lifemonitor.auth.models import User
 
 

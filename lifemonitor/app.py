@@ -1,13 +1,11 @@
 import os
 import logging
 from flask import Flask, jsonify
-from flask_sqlalchemy import SQLAlchemy
+
+from .db import db
 import lifemonitor.config as config
 from lifemonitor.routes import register_routes
 from . import commands
-
-# set DB instance
-db = SQLAlchemy()
 
 # set module level logger
 logger = logging.getLogger(__name__)

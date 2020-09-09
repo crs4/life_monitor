@@ -5,8 +5,7 @@ from datetime import datetime
 from sqlalchemy import DateTime
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm.collections import attribute_mapped_collection
-
-from lifemonitor.app import db
+from lifemonitor.db import db
 from lifemonitor.auth.models import User
 
 

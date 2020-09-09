@@ -4,33 +4,24 @@ from typing import List, Type
 
 import dotenv
 
+from .db import db_uri
 from .utils import bool_from_string
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
+
 # load "settings.conf" to the environment
-settings = None
-if os.path.exists("settings.conf"):
-    settings = dotenv.dotenv_values(dotenv_path="settings.conf")
-    os.environ.update(settings)
+settings = {}
 
 
-def db_uri():
-    """
-    Build URI to connect to the DataBase
-    :return:
-    """
-    # "sqlite:///{0}/app-dev.db".format(basedir)
-    if os.getenv('DATABASE_URI'):
-        uri = os.getenv('DATABASE_URI')
-    else:
-        uri = "postgresql://{user}:{passwd}@{host}:{port}/{dbname}".format(
-            user=os.getenv('POSTGRESQL_USERNAME'),
-            passwd=os.getenv('POSTGRESQL_PASSWORD', ''),
-            host=os.getenv('POSTGRESQL_HOST'),
-            port=os.getenv('POSTGRESQL_PORT'),
-            dbname=os.getenv('POSTGRESQL_DATABASE'))
-    return uri
+def load_settings(file_path="settings.conf"):
+    result = None
+    if os.path.exists(file_path):
+        result = dotenv.dotenv_values(dotenv_path=file_path)
+        os.environ.update(result)
+        settings.update(result)
+    return result
+        
 
 
 class BaseConfig:

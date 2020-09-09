@@ -8,12 +8,12 @@ from authlib.oauth2.rfc6749 import OAuth2Token
 from flask import current_app
 from flask_login import current_user
 
-from lifemonitor.app import db
 from .providers.github import GitHub
 from .providers.seek import Seek
 # Config a module level logger
 from .models import OAuthIdentity
 from ...models import User
+from lifemonitor.db import db
 
 logger = logging.getLogger(__name__)
 

@@ -7,10 +7,10 @@ from enum import Enum
 from typing import Optional
 
 import jenkins
+from lifemonitor.db import db
 
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 
-from lifemonitor.app import db
 from lifemonitor.auth.oauth2.client.services import RemoteApp
 from lifemonitor.common import (SpecificationNotValidException, EntityNotFoundException,
                                 SpecificationNotDefinedException, TestingServiceNotSupportedException,
