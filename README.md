@@ -237,3 +237,11 @@ details.
 In order to get correct URLs from the WorkflowHub API, you need to set the base URL. Go to Server admin > Settings and set "Site base URL" to https://lm.org:3000.
 
 To enable workflows, go to Server admin > Enable/disable features and click on "Workflows enabled". You can set "CWL Viewer URL" to `https://view.commonwl.org/`.
+
+### WorkflowHub API calls with requests when using self-signed certificates
+
+If you are using [requests](https://requests.readthedocs.io/en/master/), note
+that to interact with the WorkflowHub configured with a self-signed
+certificate you need to add `verify=False` to the calls. See
+[this](https://stackoverflow.com/questions/30405867/how-to-get-python-requests-to-trust-a-self-signed-ssl-certificate)
+for instance.
