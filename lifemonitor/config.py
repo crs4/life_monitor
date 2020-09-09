@@ -36,7 +36,7 @@ class BaseConfig:
     # overhead and will be disabled by default in the future.  Set it to True
     # or False to suppress this warning.
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-
+    
 
 class DevelopmentConfig(BaseConfig):
     CONFIG_NAME = "development"
@@ -61,7 +61,7 @@ class TestingConfig(BaseConfig):
     DEBUG = True
     TESTING = True
     LOG_LEVEL = "DEBUG"
-    SQLALCHEMY_DATABASE_URI = "sqlite:///{0}/app-test.db".format(basedir)
+    #SQLALCHEMY_DATABASE_URI = "sqlite:///{0}/app-test.db".format(basedir)
 
 
 _EXPORT_CONFIGS: List[Type[BaseConfig]] = [
@@ -75,7 +75,11 @@ _config_by_name = {cfg.CONFIG_NAME: cfg for cfg in _EXPORT_CONFIGS}
 def get_config_by_name(name):
     try:
         config = _config_by_name[name]
+        # load additional 'testing' settings
+        if name == "testing":
+            load_settings('tests/settings.conf')
         if settings:
+            settings["SQLALCHEMY_DATABASE_URI"] = db_uri()
             # append properties from settings.conf
             # to the default configuration
             for k, v in settings.items():
