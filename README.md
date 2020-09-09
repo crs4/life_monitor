@@ -231,3 +231,9 @@ should be redirected to a WorkflowHub page that asks you to authorize
 LifeMonitor to use your account. Click on "Authorize" and you should land on a
 LifeMonitor page that confirms you are logged in and displays your login
 details.
+
+### Additional notes on WorkflowHub configuration
+
+In order to get correct URLs from the WorkflowHub API, you need to set the base URL. Go to Server admin > Settings and set "Site base URL" to https://lm.org:3000.
+
+To enable workflows, go to Server admin > Enable/disable features and click on "Workflows enabled". You can set "CWL Viewer URL" to `https://view.commonwl.org/`.
