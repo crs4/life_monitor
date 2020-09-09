@@ -1,22 +1,19 @@
 from __future__ import annotations
 import os
 import logging
+import jenkins
 import uuid as _uuid
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Optional
-
-import jenkins
-from lifemonitor.db import db
-
+from authlib.integrations.base_client import RemoteApp
 from sqlalchemy.dialects.postgresql import UUID, JSONB
-
-from lifemonitor.auth.oauth2.client.services import RemoteApp
+from lifemonitor.db import db
+from lifemonitor.auth.oauth2.client.services import oauth2_registry
 from lifemonitor.common import (SpecificationNotValidException, EntityNotFoundException,
                                 SpecificationNotDefinedException, TestingServiceNotSupportedException,
                                 NotImplementedException, LifeMonitorException)
 from lifemonitor.utils import download_url, to_camel_case
-from lifemonitor.auth.oauth2.client import oauth2_registry
 
 # set module level logger
 logger = logging.getLogger(__name__)
