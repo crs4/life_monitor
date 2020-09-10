@@ -24,19 +24,16 @@ class BaseConfig:
     LOG_LEVEL = os.environ.get('LOG_LEVEL', 'DEBUG' if DEBUG else 'INFO')
     # Add a random secret (required to enable HTTP sessions)
     SECRET_KEY = os.urandom(24)
-    SQLALCHEMY_DATABASE_URI = db_uri()
     # FSADeprecationWarning: SQLALCHEMY_TRACK_MODIFICATIONS adds significant
     # overhead and will be disabled by default in the future.  Set it to True
     # or False to suppress this warning.
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    
+
 
 class DevelopmentConfig(BaseConfig):
     CONFIG_NAME = "development"
     # Add a random secret (required to enable HTTP sessions)
-    SECRET_KEY = os.getenv(
-        "DEV_SECRET_KEY", "LifeMonitor Development Secret Key"
-    )
+    SECRET_KEY = os.getenv("DEV_SECRET_KEY", BaseConfig.SECRET_KEY)
     DEBUG = True
     LOG_LEVEL = "DEBUG"
     TESTING = False
@@ -44,17 +41,17 @@ class DevelopmentConfig(BaseConfig):
 
 class ProductionConfig(BaseConfig):
     CONFIG_NAME = "production"
-    SECRET_KEY = os.getenv("PROD_SECRET_KEY", "LifeMonitor Production Secret Key")
+    SECRET_KEY = os.getenv("PROD_SECRET_KEY", BaseConfig.SECRET_KEY)
     TESTING = False
 
 
 class TestingConfig(BaseConfig):
     CONFIG_NAME = "testing"
-    SECRET_KEY = os.getenv("TEST_SECRET_KEY", "Thanos did nothing wrong")
+    SECRET_KEY = os.getenv("TEST_SECRET_KEY", BaseConfig.SECRET_KEY)
     DEBUG = True
     TESTING = True
     LOG_LEVEL = "DEBUG"
-    #SQLALCHEMY_DATABASE_URI = "sqlite:///{0}/app-test.db".format(basedir)
+    # SQLALCHEMY_DATABASE_URI = "sqlite:///{0}/app-test.db".format(basedir)
 
 
 _EXPORT_CONFIGS: List[Type[BaseConfig]] = [
