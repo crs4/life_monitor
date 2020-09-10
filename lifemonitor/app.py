@@ -11,20 +11,23 @@ from . import commands
 logger = logging.getLogger(__name__)
 
 
-def create_app(env=None, instance_config_name=None, init_app=True):
+def create_app(env=None, settings=None, init_app=True, **kwargs):
     """
     App factory method
     :param instance_config_name:
     :param env:
+    :param settings:
     :param init_app:
     :return:
     """
     # set app env
     app_env = env or os.environ.get("FLASK_ENV", "production")
+    # load app config
+    app_config = config.get_config_by_name(app_env, settings=settings)
     # create Flask app instance
     app = Flask(__name__, instance_relative_config=True)
     # set config object
-    app.config.from_object(config.get_config_by_name(app_env))
+    app.config.from_object(app_config)
     # load the file specified by the FLASK_APP_CONFIG_FILE environment variable
     # variables defined here will override those in the default configuration
     if os.environ.get("FLASK_APP_CONFIG_FILE", None):

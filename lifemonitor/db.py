@@ -13,26 +13,31 @@ logger = logging.getLogger(__name__)
 db = SQLAlchemy()
 
 
-def db_connection_params():
+def get_db_connection_param(name, settings=None):
+    if settings and name in settings:
+        return settings.get(name)
+    return os.environ.get(name, None)
+
+
+def db_connection_params(settings=None):
     return {
-        'host': os.getenv("POSTGRESQL_HOST"),
-        'port': os.getenv("POSTGRESQL_PORT"),
-        'user': os.getenv("POSTGRESQL_USERNAME"),
-        'password': os.getenv("POSTGRESQL_PASSWORD"),
-        'dbname': os.getenv("POSTGRESQL_DATABASE")
+        'host': get_db_connection_param("POSTGRESQL_HOST", settings),
+        'port': get_db_connection_param("POSTGRESQL_PORT", settings),
+        'user': get_db_connection_param("POSTGRESQL_USERNAME", settings),
+        'password': get_db_connection_param("POSTGRESQL_PASSWORD", settings),
+        'dbname': get_db_connection_param("POSTGRESQL_DATABASE", settings)
     }
 
 
-def db_uri():
+def db_uri(settings=None):
     """
     Build URI to connect to the DataBase
     :return:
     """
     # "postgresql:///{0}/app-dev.db".format(basedir)
-    if os.getenv('DATABASE_URI'):
-        uri = os.getenv('DATABASE_URI')
-    else:
-        conn_params = db_connection_params()
+    uri = get_db_connection_param('DATABASE_URI', settings)
+    if uri is None:
+        conn_params = db_connection_params(settings)
         uri = "postgresql://{user}:{passwd}@{host}:{port}/{dbname}".format(
             user=conn_params['user'],
             passwd=conn_params['password'],
@@ -42,9 +47,9 @@ def db_uri():
     return uri
 
 
-def db_connect(conn_params=None, override_db_name=None):
+def db_connect(conn_params=None, settings=None, override_db_name=None):
     if conn_params is None:
-        conn_params = db_connection_params()
+        conn_params = db_connection_params(settings)
 
     actual_db_name = override_db_name if override_db_name else conn_params['dbname']
     con = psy.connect(
@@ -57,14 +62,14 @@ def db_connect(conn_params=None, override_db_name=None):
     return con
 
 
-def create_db(conn_params=None, drop=False):
+def create_db(conn_params=None, settings=None, drop=False):
     if conn_params is None:
-        conn_params = db_connection_params()
+        conn_params = db_connection_params(settings)
     logger.debug("Connection params: %r", conn_params)
 
     new_db_name = sql.Identifier(conn_params['dbname'])
 
-    con = db_connect(conn_params, 'postgres')
+    con = db_connect(conn_params=conn_params, settings=settings, override_db_name='postgres')
     try:
         con.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
         with con.cursor() as cur:
@@ -85,15 +90,15 @@ def create_db(conn_params=None, drop=False):
     logger.debug('DB %s created.', new_db_name.string)
 
 
-def drop_db(conn_params=None):
+def drop_db(conn_params=None, settings=None):
     """Clear existing data and create new tables."""
     if conn_params is None:
-        conn_params = db_connection_params()
+        conn_params = db_connection_params(settings=settings)
     logger.debug("Connection params: %r", conn_params)
 
     logger.debug('drop_db %s', conn_params)
 
-    con = db_connect(conn_params, 'postgres')
+    con = db_connect(conn_params=conn_params, settings=settings, override_db_name='postgres')
     try:
         con.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
         with con.cursor() as cur:

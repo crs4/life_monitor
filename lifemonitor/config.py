@@ -10,18 +10,11 @@ from .utils import bool_from_string
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 
-# load "settings.conf" to the environment
-settings = {}
-
-
 def load_settings(file_path="settings.conf"):
     result = None
     if os.path.exists(file_path):
         result = dotenv.dotenv_values(dotenv_path=file_path)
-        os.environ.update(result)
-        settings.update(result)
     return result
-        
 
 
 class BaseConfig:
@@ -72,18 +65,21 @@ _EXPORT_CONFIGS: List[Type[BaseConfig]] = [
 _config_by_name = {cfg.CONFIG_NAME: cfg for cfg in _EXPORT_CONFIGS}
 
 
-def get_config_by_name(name):
+def get_config_by_name(name, settings=None):
     try:
-        config = _config_by_name[name]
-        # load additional 'testing' settings
-        if name == "testing":
-            load_settings('tests/settings.conf')
-        if settings:
-            settings["SQLALCHEMY_DATABASE_URI"] = db_uri()
-            # append properties from settings.conf
-            # to the default configuration
-            for k, v in settings.items():
-                setattr(config, k, v)
+        config = type(f"AppConfigInstance{name}".title(), (_config_by_name[name],), {})
+        # load "settings.conf" to the environment
+        if settings is None:
+            settings = load_settings()
+        if settings and "SQLALCHEMY_DATABASE_URI" not in settings:
+            settings["SQLALCHEMY_DATABASE_URI"] = db_uri(settings)
+        # always set the FLASK_APP_CONFIG_FILE variable to the environment
+        if "FLASK_APP_CONFIG_FILE" in settings:
+            os.environ["FLASK_APP_CONFIG_FILE"] = settings["FLASK_APP_CONFIG_FILE"]
+        # append properties from settings.conf
+        # to the default configuration
+        for k, v in settings.items():
+            setattr(config, k, v)
         return config
     except KeyError:
         return ProductionConfig
