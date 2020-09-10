@@ -14,7 +14,6 @@ logger = logging.getLogger(__name__)
 def create_app(env=None, settings=None, init_app=True, **kwargs):
     """
     App factory method
-    :param instance_config_name:
     :param env:
     :param settings:
     :param init_app:
@@ -32,11 +31,6 @@ def create_app(env=None, settings=None, init_app=True, **kwargs):
     # variables defined here will override those in the default configuration
     if os.environ.get("FLASK_APP_CONFIG_FILE", None):
         app.config.from_envvar("FLASK_APP_CONFIG_FILE")
-    # load instance configuration
-    # variables defined here will override those in the default configuration
-    # and in the FLASK_APP_CONFIG_FILE
-    if instance_config_name:
-        app.config.from_pyfile(instance_config_name)
     # initialize the application
     if init_app:
         with app.app_context() as ctx:
