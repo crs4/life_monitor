@@ -23,8 +23,10 @@ def create_app(env=None, settings=None, init_app=True, **kwargs):
     app_env = env or os.environ.get("FLASK_ENV", "production")
     # load app config
     app_config = config.get_config_by_name(app_env, settings=settings)
+    # set the FlaskApp instance path
+    flask_app_instance_path = getattr(app_config, "FLASK_APP_INSTANCE_PATH", None)
     # create Flask app instance
-    app = Flask(__name__, instance_relative_config=True)
+    app = Flask(__name__, instance_relative_config=True, instance_path=flask_app_instance_path, **kwargs)
     # set config object
     app.config.from_object(app_config)
     # load the file specified by the FLASK_APP_CONFIG_FILE environment variable
