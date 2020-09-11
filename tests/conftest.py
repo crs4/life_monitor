@@ -97,7 +97,7 @@ def _get_app_settings(include_env=True):
     return settings
 
 
-@pytest.fixture  # (scope="session")
+@pytest.fixture(scope="session")
 def app_settings(request):
     if hasattr(request, 'param'):
         return _get_app_settings(request.param)
