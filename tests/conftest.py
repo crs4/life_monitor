@@ -394,3 +394,7 @@ def test_suite_metadata():
 @pytest.fixture
 def suite_uuid():
     return str(TestSuite.all()[0].uuid)
+
+
+def assert_status_code(expected, actual):
+    assert expected == actual, f"Expected status code {expected}, actual status code {actual}"
