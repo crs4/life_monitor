@@ -369,6 +369,23 @@ def workflow(app_context, registry_type, security_type):
 
 
 @pytest.fixture
+def registry_workflow(app_context, request):
+    """ Parametric fixture: available params are {wfhub}"""
+    try:
+        registry = request.param[0]
+        security = request.param[1]
+        wf_loader = globals()[f"{registry}_workflow".lower()]
+        return wf_loader(app_context.app, registry, security)
+    except KeyError as e:
+        logger.exception(e)
+        raise RuntimeError("Authorization provider {} is not supported".format(registry_type))
+    except AttributeError as e:
+        logger.exception(e)
+        raise RuntimeError("Parametrized fixture. "
+                           "You need to pass a provider type as request param")
+
+
+@pytest.fixture
 def test_suite_metadata():
     with open(os.path.join(base_path, "test-suite-definition.json")) as df:
         return json.load(df)
