@@ -9,7 +9,7 @@ import pytest
 import logging
 import requests
 
-from flask import current_app
+from flask import current_app, g
 
 from flask_login import login_user
 
@@ -130,6 +130,12 @@ def _clean_db():
     lm_db.db.session.commit()
 
 
+def auto_login():
+    if g.user:
+        logger.info("Login user: %r", g.user)
+        login_user(g.user)
+
+
 def _app_context(request_settings, init_db=True, clean_db=True, drop_db=False):
     try:
         os.environ.pop("FLASK_APP_CONFIG_FILE", None)
@@ -138,6 +144,7 @@ def _app_context(request_settings, init_db=True, clean_db=True, drop_db=False):
             lm_db.create_db(conn_params=conn_param)
             logger.debug("DB created (conn params=%r)", conn_param)
         flask_app = create_app(env="testing", settings=request_settings, init_app=False)
+        flask_app.before_request(auto_login)
         with flask_app.app_context() as ctx:
             logger.info("Starting application")
             initialize_app(flask_app, ctx)
@@ -146,7 +153,6 @@ def _app_context(request_settings, init_db=True, clean_db=True, drop_db=False):
                 lm_db.db.create_all()
                 logger.debug("DB initialized!")
             yield ctx
-
         # clean the database and
         # close all sessions and connections
         with flask_app.app_context() as ctx:
@@ -220,7 +226,7 @@ def provider_apikey(app_context, request):
                            "You need to provide a provider type as request param")
 
 
-def seek_user(application, security):
+def seek_user_session(application, security):
     with requests.session() as session:
         wfhub_url = application.config["SEEK_API_BASE_URL"]
         wfhub_people_details = os.path.join(wfhub_url, 'people/current')
@@ -236,24 +242,22 @@ def seek_user(application, security):
             application.config["SEEK_API_KEY"] = api_key
             user = User(username=wfhub_user_info['id'])
             user.save()
-            return user
+            return user, session
         elif security == SecurityType.OAUTH2.value:
             application.config.pop("SEEK_API_KEY", None)
             login_r = session.get(f"{application.config.get('BASE_URL')}/oauth2/login/seek")
             assert login_r.status_code == 200, "Login Error: status code {} !!!".format(login_r.status_code)
-            return User.find_by_username(wfhub_user_info['id'])
+            return User.find_by_username(wfhub_user_info['id']), session
 
 
-def _get_user(application, provider, security):
+def _get_user_session(application, provider, security):
     """ Parametric fixture: available params are {seek}"""
     try:
         logger.debug("SECURITY: %r", security)
-        user_loader = globals()[f"{provider}_user".lower()]
-        user = user_loader(application, security)
-        if user is None:
-            raise RuntimeError("User not found")
-        login_user(user)
-        return user
+        user_loader = globals()[f"{provider}_user_session".lower()]
+        user, session = user_loader(application, security)
+        logger.debug("USER SESSION: %r", session)
+        return user, session
     except KeyError as e:
         logger.exception(e)
         raise RuntimeError("Authorization provider {} is not supported".format(provider))
@@ -284,7 +288,16 @@ def security_type(request):
 def user(app_client, registry_type, security_type):
     """ Parametric fixture: available params are {seek}"""
     try:
-        return _get_user(app_client.application, registry_type, security_type)
+        user, session = _get_user_session(app_client.application, registry_type, security_type)
+        g.user = user  # store the user on g to allow the auto login
+        return user
+    except KeyError as e:
+        logger.exception(e)
+        raise RuntimeError("Authorization provider {} is not supported".format(registry_type))
+    except AttributeError as e:
+        logger.exception(e)
+        raise RuntimeError("Parametrized fixture. "
+                           "You need to pass a provider type as request param")
     except KeyError as e:
         logger.exception(e)
         raise RuntimeError("Authorization provider {} is not supported".format(registry_type))
