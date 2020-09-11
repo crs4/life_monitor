@@ -19,91 +19,121 @@
 # SOFTWARE.
 
 """\
-Handle Workflow RO-Crate test parameters.
+Test metadata support.
+
+Specs: https://github.com/crs4/life_monitor/wiki/Test-Metadata-Draft-Spec
 """
 
-import itertools
 import json
-import os
+from collections import Mapping
+from pathlib import Path
+
 import yaml
 
 
-class Part:
+YamlLoader = getattr(yaml, "CLoader", getattr(yaml, "Loader"))
+
+
+# TODO: check if this is a solved problem somewhere
+def norm_abs_path(path, ref_path):
+    """\
+    Convert `path` to absolute assuming it's relative to ref_path (file or dir).
+    """
+    path, ref_path = Path(path), Path(ref_path).absolute()
+    ref_dir = ref_path if ref_path.is_dir() else ref_path.parent
+    return ref_dir / path
+
+
+def paths_to_abs(data, ref_path):
+    if isinstance(data, dict):
+        for k, v in data.items():
+            if k == "path":
+                data[k] = str(norm_abs_path(v, ref_path))
+            else:
+                paths_to_abs(v, ref_path)
+    if isinstance(data, list):
+        for d in data:
+            paths_to_abs(d, ref_path)
+
+
+class TestEngine:
 
     @classmethod
     def from_json(cls, data):
-        return cls(data["@id"], data["name"], data["@type"])
+        return cls(data["type"], data["version"])
 
-    def __init__(self, id, name, type):
-        self.id = id
-        self.name = name
+    # TODO: handle version requirement
+    def __init__(self, type, version):
         self.type = type
+        self.version = version
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}{self.type, self.version}"
 
 
-class Dataset:
+class TestDefinition:
 
     @classmethod
     def from_json(cls, data):
-        return cls([Part.from_json(_) for _ in data["hasPart"]])
+        if not data:
+            return None
+        return cls(TestEngine.from_json(data["test_engine"]), data["path"])
 
-    def __init__(self, parts):
-        self.parts = parts
-        self.parts_map = {_.name: _ for _ in self.parts}
+    def __init__(self, engine, path):
+        self.engine = engine
+        self.path = path
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}{self.engine, self.path}"
 
 
 class Test:
 
     @classmethod
     def from_json(cls, data):
-        entities = {_["name"]: _ for _ in data}
-        return cls(Dataset.from_json(entities["inputs"]),
-                   Dataset.from_json(entities["outputs"]))
+        instance = None  # TODO: add support for instance
+        return cls(
+            data["name"],
+            instance,
+            TestDefinition.from_json(data["definition"])
+        )
 
-    def __init__(self, inputs, outputs):
-        self.inputs = inputs
-        self.outputs = outputs
+    def __init__(self, name, instance, definition):
+        self.name = name
+        self.instance = instance
+        self.definition = definition
 
-    def cwl_job(self):
-        job = {}
-        for name, part in self.inputs.parts_map.items():
-            if part.type == "File":
-                v = {"class": "File", "path": part.id}
-            elif part.type == "Text":
-                v = part.id
-            else:
-                raise RuntimeError(f"Unsupported parameter type: {part.type}")
-            job[name] = v
-        return job
-
-    def to_planemo(self, doc="tests"):
-        test = {"doc": doc, "job": self.cwl_job()}
-        for name, part in self.outputs.parts_map.items():
-            if part.type == "File":
-                test[name] = {"path": part.id}
-            else:
-                raise RuntimeError(f"Unsupported parameter type: {part.type}")
-        return test
+    def __repr__(self):
+        return f"{self.__class__.__name__}{self.name, self.instance, self.definition}"
 
 
-def read_params(fname, abs_paths=False):
+def read_tests(fname, abs_paths=True):
     tests = []
     with open(fname, "rt") as f:
         json_data = json.load(f)
-    test_map = {_["@id"]: _ for _ in json_data["@graph"]}
-    for t in test_map.values():
-        t = Test.from_json(t["hasPart"])
+    # TODO: handle id and format
+    for t in json_data["test"]:
+        t = Test.from_json(t)
         if abs_paths:
-            d = os.path.abspath(os.path.dirname(fname))
-            for p in itertools.chain(t.inputs.parts, t.outputs.parts):
-                if p.type == "File":
-                    p.id = os.path.join(d, p.id)
+            t.definition.path = str(norm_abs_path(t.definition.path, fname))
         tests.append(t)
     return tests
 
 
-def write_planemo_tests(tests, fname, doc=None):
-    if doc is None:
-        doc = os.path.splitext(os.path.basename(fname))[0]
-    data = [t.to_planemo(doc=f"{doc} {i}") for i, t in enumerate(tests)]
-    with open(fname, "wt") as f:
-        yaml.dump(data, f)
+def read_planemo(fname):
+    """\
+    Read Planemo test cases from file.
+
+    Normalizes all jobs to embedded form.
+    """
+    rval = []
+    with open(fname, "rt") as f:
+        cases = yaml.load(f, YamlLoader)
+    for c in cases:
+        if not isinstance(c["job"], Mapping):
+            job_path = norm_abs_path(c["job"], fname)
+            with open(job_path, "rt") as f:
+                job = yaml.load(f, YamlLoader)
+            c["job"] = job
+        rval.append(c)
+    return rval
