@@ -1,7 +1,7 @@
 import re
 import os
 import json
-
+import enum
 from base64 import b64encode
 
 import dotenv
@@ -38,10 +38,6 @@ env_settings = os.environ.copy()
 os.environ.pop("FLASK_APP_CONFIG_FILE", None)
 
 
-class Security:
-    BASIC = 0
-    API_KEY = 1
-    OAUTH2 = 2
 def get_headers(extra_data=None):
     data = {"Content-type": "application/vnd.api+json",
             "Accept": "application/vnd.api+json",
@@ -55,6 +51,22 @@ def get_headers(extra_data=None):
 def headers():
     return get_headers()
 
+
+class TestParam(enum.Enum):
+
+    @classmethod
+    def values(cls):
+        return [e.value for e in cls]
+
+
+class SecurityType(TestParam):
+    # BASIC = 'AuthBasic'
+    API_KEY = 'ApiKey'
+    OAUTH2 = 'Oauth2'
+
+
+class RegistryType(TestParam):
+    SEEK = "seek"
 
 
 @pytest.fixture
@@ -220,12 +232,12 @@ def seek_user(application, security):
             .format(user_info_r.status_code)
         wfhub_user_info = user_info_r.json()['data']
         logger.debug("WfHub user info: %r", wfhub_user_info)
-        if security == Security.API_KEY:
+        if security == SecurityType.API_KEY.value:
             application.config["SEEK_API_KEY"] = api_key
             user = User(username=wfhub_user_info['id'])
             user.save()
             return user
-        elif security == Security.OAUTH2:
+        elif security == SecurityType.OAUTH2.value:
             application.config.pop("SEEK_API_KEY", None)
             login_r = session.get(f"{application.config.get('BASE_URL')}/oauth2/login/seek")
             assert login_r.status_code == 200, "Login Error: status code {} !!!".format(login_r.status_code)
