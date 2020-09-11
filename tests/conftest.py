@@ -304,6 +304,17 @@ def user(app_client, registry_type, security_type):
         logger.exception(e)
         raise RuntimeError("Parametrized fixture. "
                            "You need to pass a provider type as request param")
+
+
+@pytest.fixture
+def registry_user(app_client, request):
+    """ Parametric fixture: available params are {seek}"""
+    try:
+        registry = request.param[0]
+        security = request.param[1]
+        user, session = _get_user_session(app_client.application, registry, security)
+        g.user = user  # store the user on g to allow the auto login
+        return user
     except KeyError as e:
         logger.exception(e)
         raise RuntimeError("Authorization provider {} is not supported".format(registry_type))
