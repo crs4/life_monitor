@@ -253,8 +253,10 @@ def seek_user_session(application, security):
         logger.debug("WfHub user info: %r", wfhub_user_info)
         if security == SecurityType.API_KEY.value:
             application.config["SEEK_API_KEY"] = api_key
-            user = User(username=wfhub_user_info['id'])
-            user.save()
+            user = User.find_by_username(wfhub_user_info['id'])
+            if user is None:
+                user = User(username=wfhub_user_info['id'])
+                user.save()
             return user, session
         elif security == SecurityType.OAUTH2.value:
             application.config.pop("SEEK_API_KEY", None)
