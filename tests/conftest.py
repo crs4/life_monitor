@@ -42,6 +42,19 @@ class Security:
     BASIC = 0
     API_KEY = 1
     OAUTH2 = 2
+def get_headers(extra_data=None):
+    data = {"Content-type": "application/vnd.api+json",
+            "Accept": "application/vnd.api+json",
+            "Accept-Charset": "ISO-8859-1"}
+    if extra_data:
+        data.update(extra_data)
+    return data
+
+
+@pytest.fixture
+def headers():
+    return get_headers()
+
 
 
 @pytest.fixture
@@ -197,16 +210,11 @@ def provider_apikey(app_context, request):
 
 def seek_user(application, security):
     with requests.session() as session:
-        headers = {
-            "Content-type": "application/vnd.api+json",
-            "Accept": "application/vnd.api+json",
-            "Accept-Charset": "ISO-8859-1"
-        }
         wfhub_url = application.config["SEEK_API_BASE_URL"]
         wfhub_people_details = os.path.join(wfhub_url, 'people/current')
         logger.debug("URL: %s", wfhub_people_details)
         api_key = application.config["API_KEYS"]["SEEK_API_KEY"]
-        headers.update({'Authorization': f'Bearer {api_key}'})
+        headers = get_headers({'Authorization': f'Bearer {api_key}'})
         user_info_r = session.get(wfhub_people_details, headers=headers)
         assert user_info_r.status_code == 200, "Unable to get user info from Workflow Hub: code {}" \
             .format(user_info_r.status_code)
@@ -247,8 +255,6 @@ def user(app_client, request):
 
 
 @pytest.fixture
-def headers():
-    return {'Content-type': 'application/json', 'Accept': 'text/plain'}
 
 
 @pytest.fixture
