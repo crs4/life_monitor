@@ -48,6 +48,18 @@ class WorkflowRegistry:
     def _access_token(self):
         return self._client.token["access_token"]
 
+    def get_workflows(self):
+        r = self._client.get("/workflows?format=json")
+        if r.status_code != 200:
+            raise RuntimeError("ERROR: unable to get workflows (status code: %r)".format(r.status_code))
+        return r.json()['data']
+
+    def get_workflow(self, workflow_id):
+        r = self._client.get(f"/workflows/{workflow_id}?format=json")
+        if r.status_code != 200:
+            raise RuntimeError("ERROR: unable to get workflows (status code: %r)".format(r.status_code))
+        return r.json()['data']
+
     def build_ro_link(self, w: Workflow) -> str:
         return "{}?version={}".format(os.path.join(self._url, "workflow", w.uuid), w.version)
 
