@@ -68,9 +68,13 @@ def load_test_definition_filename(filename):
         return json.load(f)
 
 
+def get_test_definition_path(roc_path):
+    return os.path.join(roc_path, "test", RO_CRATE_TEST_DEFINITION_FILENAME)
+
+
 def search_for_test_definition(roc_path, ro_crate_metadata: dict):
     # first search on the root roc_path for a test_definition file
-    filename = os.path.join(roc_path, RO_CRATE_TEST_DEFINITION_FILENAME)
+    filename = get_test_definition_path(roc_path)
     if os.path.exists(filename):
         return load_test_definition_filename(filename)
     return None
