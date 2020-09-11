@@ -387,7 +387,7 @@ def registry_workflow(app_context, request):
 
 @pytest.fixture
 def test_suite_metadata():
-    with open(os.path.join(base_path, "test-suite-definition.json")) as df:
+    with open(os.path.join(base_path, "data/test-metadata.json")) as df:
         return json.load(df)
 
 
