@@ -215,6 +215,19 @@ def app_client(app_context):
 
 
 @pytest.fixture
+def session_transaction(app_client):
+    with app_client.session_transaction() as s:
+        yield s
+
+
+@pytest.fixture
+def request_context(app_context, request):
+    request_path = request.param if hasattr(request, "param") else '/'
+    with app_context.app.test_request_context(request_path) as r:
+        yield r
+
+
+@pytest.fixture
 def provider_apikey(app_context, request):
     try:
         # the API_KEYS property is always set via the app_settings fixture
@@ -265,13 +278,6 @@ def _get_user_session(application, provider, security):
         logger.exception(e)
         raise RuntimeError("Parametrized fixture. "
                            "You need to pass a provider type as request param")
-
-
-@pytest.fixture
-def session_transaction(app_client):
-    with app_client.session_transaction() as s:
-        with current_app.test_request_context('/'):
-            yield s
 
 
 @pytest.fixture(params=RegistryType.values())
