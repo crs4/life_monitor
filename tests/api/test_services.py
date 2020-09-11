@@ -3,6 +3,8 @@ import json
 import pytest
 import logging
 import pathlib
+
+from lifemonitor.common import EntityNotFoundException
 from tests.conftest import RegistryType, SecurityType
 from lifemonitor.api.models import WorkflowRegistry, Workflow, JenkinsTestingService
 from lifemonitor.api.services import LifeMonitor
@@ -57,6 +59,13 @@ def test_suite_registration(app_context, user, workflow, test_suite_metadata):
         logger.debug("- test instance: %r --> Service: %r,%s", t, t.testing_service, t.testing_service.url)
 
 
+def test_suite_registration_exception(app_context, user, random_workflow_id, test_suite_metadata):
+    with pytest.raises(EntityNotFoundException):
+        LifeMonitor.get_instance().register_test_suite(random_workflow_id['uuid'],
+                                                       random_workflow_id['version'],
+                                                       test_suite_metadata)
+
+
 def test_suite_deregistration(app_context, user, workflow):
     lm = LifeMonitor.get_instance()
     w = lm.get_registered_workflow(workflow['uuid'], workflow['version'])
@@ -73,9 +82,20 @@ def test_suite_deregistration(app_context, user, workflow):
         "Unexpected number of test_suites for the workflow {}".format(w.uuid)
 
 
+def test_suite_deregistration_exception(app_context, user, random_valid_uuid):
+    with pytest.raises(EntityNotFoundException):
+        LifeMonitor.get_instance().deregister_test_suite(random_valid_uuid)
+
+
 @pytest.mark.parametrize("registry_user", [(RegistryType.SEEK.value, SecurityType.API_KEY.value)], indirect=True)
 @pytest.mark.parametrize("registry_workflow", [(RegistryType.SEEK.value, SecurityType.API_KEY.value)], indirect=True)
 def test_workflow_deregistration(app_context, registry_user, registry_workflow):
     lm = LifeMonitor.get_instance()
     lm.deregister_workflow(registry_workflow['uuid'], registry_workflow['version'])
     assert len(Workflow.all()) == 0, "Unexpected number of workflows"
+
+
+def test_workflow_deregistration_exception(app_context, user, random_workflow_id):
+    with pytest.raises(EntityNotFoundException):
+        LifeMonitor.get_instance().deregister_workflow(random_workflow_id['uuid'],
+                                                       random_workflow_id['version'])

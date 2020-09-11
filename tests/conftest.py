@@ -2,6 +2,8 @@ import re
 import os
 import json
 import enum
+import uuid
+import random
 from base64 import b64encode
 
 import dotenv
@@ -383,6 +385,19 @@ def registry_workflow(app_context, request):
         logger.exception(e)
         raise RuntimeError("Parametrized fixture. "
                            "You need to pass a provider type as request param")
+
+
+@pytest.fixture
+def random_workflow_id():
+    return {
+        'uuid': str(uuid.uuid4()),
+        'version': "{}.{}.{}".format(random.randint(1, 10), random.randint(1, 10), random.randint(1, 10))
+    }
+
+
+@pytest.fixture
+def random_valid_uuid():
+    return str(uuid.uuid4())
 
 
 @pytest.fixture
