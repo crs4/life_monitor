@@ -8,7 +8,7 @@ import flask
 import requests
 
 RO_CRATE_METADATA_FILENAME = "ro-crate-metadata.jsonld"
-RO_CRATE_TEST_DEFINITION_FILENAME = "test-suite-definition.json"
+RO_CRATE_TEST_DEFINITION_FILENAME = "test-metadata.json"
 
 logger = logging.getLogger()
 
