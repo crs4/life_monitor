@@ -1,5 +1,4 @@
 import logging
-from flask import g
 from .controllers import create_blueprint
 from .services import config_oauth2_registry
 

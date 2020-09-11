@@ -4,14 +4,13 @@ import json
 import enum
 import uuid
 import random
-from base64 import b64encode
 
 import dotenv
 import pytest
 import logging
 import requests
 
-from flask import current_app, g
+from flask import g
 
 from flask_login import login_user
 
@@ -198,7 +197,6 @@ def parametric_app_context(request):
 @pytest.fixture
 def fake_app_context(request):
     try:
-        app_config = lm_cfg.get_config_by_name("testing", settings=request.param)
         yield from _app_context(request.param, clean_db=False, init_db=False, drop_db=False)
     except AttributeError:
         raise RuntimeError("Parametrized fixture. "
