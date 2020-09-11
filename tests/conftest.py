@@ -151,7 +151,7 @@ def _app_context(request_settings, init_db=True, clean_db=True, drop_db=False):
         # close all sessions and connections
         with flask_app.app_context() as ctx:
             if clean_db:
-                _clean_db()
+                # _clean_db()
                 logger.debug("DB cleanup")
             if drop_db:
                 lm_db.db.close_all_sessions()
@@ -244,22 +244,19 @@ def seek_user(application, security):
             return User.find_by_username(wfhub_user_info['id'])
 
 
-@pytest.fixture
-def user(app_client, request):
-    """ Parametric fixture: available params are {wfhub}"""
+def _get_user(application, provider, security):
+    """ Parametric fixture: available params are {seek}"""
     try:
-        provider = request.param[0]
-        security = request.param[1]
         logger.debug("SECURITY: %r", security)
         user_loader = globals()[f"{provider}_user".lower()]
-        user = user_loader(app_client.application, security)
-        with app_client.session_transaction() as s:
-            with current_app.test_request_context('/'):
-                login_user(user)
-                yield user
+        user = user_loader(application, security)
+        if user is None:
+            raise RuntimeError("User not found")
+        login_user(user)
+        return user
     except KeyError as e:
         logger.exception(e)
-        raise RuntimeError("Authorization provider {} is not supported".format(request.param))
+        raise RuntimeError("Authorization provider {} is not supported".format(provider))
     except AttributeError as e:
         logger.exception(e)
         raise RuntimeError("Parametrized fixture. "
@@ -267,6 +264,76 @@ def user(app_client, request):
 
 
 @pytest.fixture
+def session_transaction(app_client):
+    with app_client.session_transaction() as s:
+        with current_app.test_request_context('/'):
+            yield s
+
+
+@pytest.fixture(params=RegistryType.values())
+def registry_type(request):
+    return request.param
+
+
+@pytest.fixture(params=SecurityType.values())
+def security_type(request):
+    return request.param
+
+
+@pytest.fixture
+def user(app_client, registry_type, security_type):
+    """ Parametric fixture: available params are {seek}"""
+    try:
+        return _get_user(app_client.application, registry_type, security_type)
+    except KeyError as e:
+        logger.exception(e)
+        raise RuntimeError("Authorization provider {} is not supported".format(registry_type))
+    except AttributeError as e:
+        logger.exception(e)
+        raise RuntimeError("Parametrized fixture. "
+                           "You need to pass a provider type as request param")
+
+
+def seek_workflow(application, provider, security):
+    # This function assumes that at least one workflow is already loaded on WfHub
+    # and accessible through the API Key user
+    with requests.session() as s:
+        wfhub_url = application.config["SEEK_API_BASE_URL"]
+        wfhub_workflows_url = os.path.join(wfhub_url, 'workflows')
+        api_key = application.config["API_KEYS"]["SEEK_API_KEY"]
+        headers = get_headers({'Authorization': f'Bearer {api_key}'})
+        wr = s.get(wfhub_workflows_url, headers=headers)
+        if wr.status_code != 200:
+            raise RuntimeError(f"ERROR {wr.status_code}: Unable to get workflows")
+        # pick the first and details
+        workflows = wr.json()["data"]
+        logger.debug("Seek workflows: %r", workflows)
+        wf_r = s.get(f"{wfhub_workflows_url}/{workflows[0]['id']}", headers=headers)
+        if wf_r.status_code != 200:
+            raise RuntimeError(f"ERROR {wf_r.status_code}: Unable to get workflow details")
+        logger.debug("workflow details: %r", wf_r)
+        workflow = wf_r.json()["data"]
+        return {
+            'uuid': workflow['meta']['uuid'],
+            'version': str(workflow["attributes"]["versions"][0]['version']),  # pick the first version
+            'name': workflow["attributes"]["title"],
+            'roc_link': f'{workflow["attributes"]["content_blobs"][0]["link"]}/download'
+        }
+
+
+@pytest.fixture
+def workflow(app_context, registry_type, security_type):
+    """ Parametric fixture: available params are {wfhub}"""
+    try:
+        wf_loader = globals()[f"{registry_type}_workflow".lower()]
+        return wf_loader(app_context.app, registry_type, security_type)
+    except KeyError as e:
+        logger.exception(e)
+        raise RuntimeError("Authorization provider {} is not supported".format(registry_type))
+    except AttributeError as e:
+        logger.exception(e)
+        raise RuntimeError("Parametrized fixture. "
+                           "You need to pass a provider type as request param")
 
 
 @pytest.fixture
