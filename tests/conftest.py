@@ -88,7 +88,7 @@ def _get_app_settings(include_env=True):
     settings.update(_load_settings(tests_settings_path))
     # remove API KEYS
     api_keys = {}
-    pattern = re.compile("((\w+)_API_KEY)")
+    pattern = re.compile("((\\w+)_API_KEY)")
     for k, v in settings.copy().items():
         m = pattern.match(k)
         if m:
