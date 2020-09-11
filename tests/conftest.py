@@ -15,7 +15,6 @@ from flask import g
 from flask_login import login_user
 
 import lifemonitor.db as lm_db
-import lifemonitor.config as lm_cfg
 from lifemonitor.api.models import TestSuite
 from lifemonitor.app import create_app, initialize_app
 
