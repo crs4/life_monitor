@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 
 import flask
+from authlib.integrations.flask_client import FlaskRemoteApp
 
 from flask import flash, url_for, redirect, request, session, Blueprint, current_app, abort
 from flask_login import current_user, login_user
@@ -83,7 +84,7 @@ class AuthorizatonHandler:
     def __init__(self, merge_view="auth.merge") -> None:
         self.merge_view = merge_view
 
-    def handle_authorize(self, provider: RemoteApp, token, user_info: OAuthUserProfile):
+    def handle_authorize(self, provider: FlaskRemoteApp, token, user_info: OAuthUserProfile):
         logger.debug("Remote: %r", provider.name)
         logger.debug("Acquired token: %r", token)
         logger.debug("Acquired user_info: %r", user_info)
