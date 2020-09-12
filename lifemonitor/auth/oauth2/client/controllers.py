@@ -4,19 +4,19 @@ import logging
 
 import flask
 
-from authlib.integrations.base_client import RemoteApp
-from flask import flash, url_for, redirect
+from flask import flash, url_for, redirect, request, session, Blueprint, current_app, abort
 from flask_login import current_user, login_user
-from loginpass import create_flask_blueprint
 from sqlalchemy.orm.exc import NoResultFound
 
 from lifemonitor.auth.models import User
-from lifemonitor.utils import pop_request_from_session
 from .models import OAuthUserProfile, OAuthIdentity
 from .services import oauth2_registry
+from authlib.integrations.base_client.errors import OAuthError
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
+
+_OAUTH2_NEXT_URL = "oauth2.next"
 
 
 def create_blueprint(merge_identity_view):
@@ -32,6 +32,10 @@ def create_blueprint(merge_identity_view):
         remote = oauth2_registry.create_client(name)
         if remote is None:
             abort(404)
+
+        next_url = flask.request.args.get('next')
+        if next_url:
+            return redirect(url_for(".login", name=name, next=next_url))
 
         try:
             id_token = request.values.get('id_token')
@@ -56,6 +60,22 @@ def create_blueprint(merge_identity_view):
         except OAuthError as e:
             logger.debug(e)
             return e.description, 401
+
+    @blueprint.route('/login/<name>')
+    def login(name):
+        remote = oauth2_registry.create_client(name)
+        if remote is None:
+            abort(404)
+        # save the 'next' parameter to allow automatic redirect after OAuth2 authorization
+        next_url = flask.request.args.get('next')
+        if next_url:
+            session[_OAUTH2_NEXT_URL] = next_url
+        redirect_uri = url_for('.authorize', name=name, _external=True)
+        conf_key = '{}_AUTHORIZE_PARAMS'.format(name.upper())
+        params = current_app.config.get(conf_key, {})
+        return remote.authorize_redirect(redirect_uri, **params)
+
+    return blueprint
 
 
 class AuthorizatonHandler:
@@ -118,10 +138,10 @@ class AuthorizatonHandler:
             identity.save()
             flash("Successfully linked GitHub account.")
 
-        logger.debug(user_info)
+        # Determine the right next hop
         next_url = flask.request.args.get('next')
+        logger.debug("Request redirect (next URL stored on the 'next' request param: %r)", next_url)
         if not next_url:
-            data = pop_request_from_session(provider.name)
-            if data:
-                next_url = url_for(data["endpoint"], **data["args"])
+            next_url = flask.session.pop(_OAUTH2_NEXT_URL, False)
+            logger.debug("Request redirect (next URL stored on session: %r)", next_url)
         return redirect(next_url or '/')
