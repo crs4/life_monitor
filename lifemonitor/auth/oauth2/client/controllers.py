@@ -22,10 +22,40 @@ logger = logging.getLogger(__name__)
 def create_blueprint(merge_identity_view):
     authorization_handler = AuthorizatonHandler(merge_identity_view)
 
-    def _handle_authorize(provider: RemoteApp, token, user_info):
+    def _handle_authorize(provider: FlaskRemoteApp, token, user_info):
         return authorization_handler.handle_authorize(provider, token, OAuthUserProfile.from_dict(user_info))
 
-    return create_flask_blueprint([], oauth2_registry, _handle_authorize)
+    blueprint = Blueprint('oauth2provider', __name__)
+
+    @blueprint.route('/authorize/<name>', methods=('GET', 'POST'))
+    def authorize(name):
+        remote = oauth2_registry.create_client(name)
+        if remote is None:
+            abort(404)
+
+        try:
+            id_token = request.values.get('id_token')
+            if request.values.get('code'):
+                token = remote.authorize_access_token()
+                if id_token:
+                    token['id_token'] = id_token
+            elif id_token:
+                token = {'id_token': id_token}
+            elif request.values.get('oauth_verifier'):
+                # OAuth 1
+                token = remote.authorize_access_token()
+            else:
+                # handle failed
+                return _handle_authorize(remote, None, None)
+            if 'id_token' in token:
+                user_info = remote.parse_id_token(token)
+            else:
+                remote.token = token
+                user_info = remote.userinfo(token=token)
+            return _handle_authorize(remote, token, user_info)
+        except OAuthError as e:
+            logger.debug(e)
+            return e.description, 401
 
 
 class AuthorizatonHandler:
