@@ -79,6 +79,7 @@ class TestDefinition:
             return None
         return cls(TestEngine.from_json(data["test_engine"]), data["path"])
 
+    # TODO: add support for payload
     def __init__(self, engine, path):
         self.engine = engine
         self.path = path

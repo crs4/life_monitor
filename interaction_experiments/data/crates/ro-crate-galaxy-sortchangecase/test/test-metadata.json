@@ -1,0 +1,18 @@
+{
+    "tmpformat": "ro/workflow/test-metadata/0.1",
+    "@id": "test-metadata.json",
+    "test": [
+        {
+            "name": "test1",
+            "instance": [
+            ],
+            "definition": {
+                "test_engine": {
+                    "type": "planemo",
+                    "version": ">=0.70"
+                },
+                "path": "test1/sort-and-change-case-test.yml"
+            }
+        }
+    ]
+}

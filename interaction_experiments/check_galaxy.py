@@ -29,8 +29,10 @@ import shutil
 import subprocess
 import tempfile
 
+import yaml
 import lifemonitor.test_params as tp
 
+YamlDumper = getattr(yaml, "CDumper", getattr(yaml, "Dumper"))
 METADATA_BASENAME = "ro-crate-metadata.jsonld"
 GALAXY_IMG = "bgruening/galaxy-stable:20.05"
 
@@ -63,13 +65,19 @@ def check_workflow(wf_fn, tests):
     shutil.copy2(wf_fn, wf_tmp_fn)
     head, tail = os.path.splitext(wf_bn)
     test_fn = os.path.join(wd, f"{head}-test.yml")
-    tp.write_planemo_tests(tests, test_fn, doc="galaxy workflow tests")
-    cmd = ["planemo", "test", "--engine", "docker_galaxy",
-           "--docker_galaxy_image", GALAXY_IMG, wf_tmp_fn]
-    p = subprocess.run(cmd)
-    p.check_returncode()
+    for t in tests:
+        print("RUNNING", t.name)
+        assert t.definition.engine.type == "planemo"
+        cases = tp.read_planemo(t.definition.path)
+        tp.paths_to_abs(cases, t.definition.path)
+        with open(test_fn, "wt") as f:
+            yaml.dump(cases, f, YamlDumper)
+        cmd = ["planemo", "test", "--engine", "docker_galaxy",
+               "--docker_galaxy_image", GALAXY_IMG, wf_tmp_fn]
+        p = subprocess.run(cmd)
+        p.check_returncode()
+        print(f"{t.name}: OK")
     shutil.rmtree(wd)
-    print("OK")
 
 
 def main(args):
@@ -82,8 +90,8 @@ def main(args):
         else:
             print("crate has no tests, nothing to do")
             return
-    cfg_fn = os.path.join(test_dir, "params.jsonld")
-    tests = tp.read_params(cfg_fn, abs_paths=True)
+    cfg_fn = os.path.join(test_dir, "test-metadata.json")
+    tests = tp.read_tests(cfg_fn, abs_paths=True)
     check_workflow(wf_fn, tests)
 
 
