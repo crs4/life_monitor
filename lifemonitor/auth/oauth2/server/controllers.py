@@ -31,7 +31,6 @@ def authorize():
 
 
 @blueprint.route('/oauth/token', methods=['POST'])
-@login_required
 def issue_token():
     return server.create_token_response()
 
