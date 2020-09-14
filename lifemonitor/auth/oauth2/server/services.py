@@ -28,8 +28,11 @@ def get_token_scopes(access_token):
         logger.debug("Access token %r not found", access_token)
         raise OAuthProblem("Invalid token")
     logger.debug("Found a token: %r", token)
-    # set token user as current logged user
-    login_user(token.user)
+
+    # only if the token has been issued to a user
+    # the user has to be automatically logged in
+    if token.user:
+        login_user(token.user)
     return {
         "scope": token.scope
     }
