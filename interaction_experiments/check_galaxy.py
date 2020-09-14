@@ -57,6 +57,19 @@ def parse_metadata(crate_dir):
     }
 
 
+def dump_instances(tests):
+    print("references to test instances:")
+    for t in tests:
+        print(t.name)
+        if t.instance:
+            for i in t.instance:
+                print("    name:", i.name)
+                print("    service:")
+                print("        type:", i.service.type)
+                print("        url:", i.service.url)
+                print("        resource:", i.service.resource)
+
+
 # pip install planemo
 def check_workflow(wf_fn, tests):
     wd = tempfile.mkdtemp(prefix="check_galaxy_")
@@ -92,6 +105,7 @@ def main(args):
             return
     cfg_fn = os.path.join(test_dir, "test-metadata.json")
     tests = tp.read_tests(cfg_fn, abs_paths=True)
+    dump_instances(tests)
     check_workflow(wf_fn, tests)
 
 

@@ -5,6 +5,14 @@
         {
             "name": "test1",
             "instance": [
+                {
+                    "name": "example_jenkins",
+                    "service": {
+                        "type": "jenkins",
+                        "url": "http://example.org/jenkins",
+                        "resource": "job/tests/"
+                    }
+                }
             ],
             "definition": {
                 "test_engine": {

@@ -56,6 +56,37 @@ def paths_to_abs(data, ref_path):
             paths_to_abs(d, ref_path)
 
 
+class Service:
+
+    @classmethod
+    def from_json(cls, data):
+        return cls(data["type"], data["url"], data["resource"])
+
+    def __init__(self, type, url, resource):
+        self.type = type
+        self.url = url
+        self.resource = resource
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}{self.type, self.url, self.resource}"
+
+
+class Instance:
+
+    @classmethod
+    def from_json(cls, data):
+        if not data:
+            return None
+        return cls(data["name"], Service.from_json(data["service"]))
+
+    def __init__(self, name, service):
+        self.name = name
+        self.service = service
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}{self.name, self.service}"
+
+
 class TestEngine:
 
     @classmethod
@@ -92,10 +123,9 @@ class Test:
 
     @classmethod
     def from_json(cls, data):
-        instance = None  # TODO: add support for instance
         return cls(
             data["name"],
-            instance,
+            [Instance.from_json(_) for _ in data["instance"]],
             TestDefinition.from_json(data["definition"])
         )
 
