@@ -60,6 +60,8 @@ def create_blueprint(merge_identity_view):
             return _handle_authorize(remote, token, user_info)
         except OAuthError as e:
             logger.debug(e)
+            if not request.args.get("state", False):
+                return redirect(url_for(".login", name=name, next=remote.api_base_url))
             return e.description, 401
 
     @blueprint.route('/login/<name>')
