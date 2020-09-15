@@ -30,7 +30,7 @@ import subprocess
 import tempfile
 
 import yaml
-import lifemonitor.test_params as tp
+import lifemonitor.test_metadata as tm
 
 YamlDumper = getattr(yaml, "CDumper", getattr(yaml, "Dumper"))
 METADATA_BASENAME = "ro-crate-metadata.jsonld"
@@ -70,8 +70,8 @@ def check_workflow(crate_dir, metadata, tests):
     for t in tests:
         print("RUNNING", t.name)
         assert t.definition.engine.type == "planemo"
-        cases = tp.read_planemo(t.definition.path)
-        tp.paths_to_abs(cases, t.definition.path)
+        cases = tm.read_planemo(t.definition.path)
+        tm.paths_to_abs(cases, t.definition.path)
         with open(test_fn, "wt") as f:
             yaml.dump(cases, f, YamlDumper)
         cmd = ["planemo", "test", "--engine", "cwltool", wf_fn]
@@ -91,7 +91,7 @@ def main(args):
             print("crate has no tests, nothing to do")
             return
     cfg_fn = os.path.join(test_dir, "test-metadata.json")
-    tests = tp.read_tests(cfg_fn, abs_paths=True)
+    tests = tm.read_tests(cfg_fn, abs_paths=True)
     check_workflow(args.crate_dir, metadata, tests)
 
 
