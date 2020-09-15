@@ -6,8 +6,7 @@ this="${BASH_SOURCE-$0}"
 this_dir=$(cd -P -- "$(dirname -- "${this}")" && pwd -P)
 
 names=(
-    ro-crate-cwl-basefreqsum
-    ro-crate-galaxy-sortchangecase
+    ro-crate-nf-basic
 )
 
 for n in "${names[@]}"; do
