@@ -1,5 +1,7 @@
 # Life Monitor
 
+<img src="/docs/life_monitor_logo.png" alt="LM logo" width="150px"  />
+
 Workflow testing and monitoring service.
 
 Life Monitor aims to facilitate the execution, monitoring and sharing of tests
