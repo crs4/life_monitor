@@ -19,6 +19,7 @@ from lifemonitor.auth.models import User
 
 class Client(db.Model, OAuth2ClientMixin):
     id = db.Column(db.Integer, primary_key=True)
+    client_id = db.Column(db.String(48), index=True, unique=True)
     user_id = db.Column(
         db.Integer, db.ForeignKey('user.id', ondelete='CASCADE')
     )
@@ -37,6 +38,9 @@ class Token(db.Model, OAuth2TokenMixin):
         db.Integer, db.ForeignKey('user.id', ondelete='CASCADE')
     )
     user = db.relationship('User')
+    client_id = db.Column(db.String,
+                          db.ForeignKey('client.client_id', ondelete='CASCADE'))
+    client = db.relationship('Client')
 
     def save(self):
         db.session.add(self)
