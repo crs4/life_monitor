@@ -7,12 +7,12 @@ from authlib.integrations.flask_client import FlaskRemoteApp
 
 from flask import flash, url_for, redirect, request, session, Blueprint, current_app, abort
 from flask_login import current_user, login_user
-from sqlalchemy.orm.exc import NoResultFound
 
 from lifemonitor.auth.models import User
 from .models import OAuthUserProfile, OAuthIdentity
 from .services import oauth2_registry
 from authlib.integrations.base_client.errors import OAuthError
+from lifemonitor.auth.oauth2.client.models import OAuthIdentityNotFoundException
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
@@ -98,7 +98,7 @@ class AuthorizatonHandler:
             # update identity with the last token and userinfo
             identity.user_info = user_info.to_dict()
             identity.token = token
-        except NoResultFound:
+        except OAuthIdentityNotFoundException:
             logger.debug("Not found OAuth identity <%r,%r>", provider.name, user_info.sub)
             identity = OAuthIdentity(
                 provider_user_id=user_info.sub,
