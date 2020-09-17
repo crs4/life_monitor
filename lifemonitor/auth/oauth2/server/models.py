@@ -54,6 +54,10 @@ class Token(db.Model, OAuth2TokenMixin):
     def find(cls, access_token):
         return cls.query.filter(Token.access_token == access_token).first()
 
+    @classmethod
+    def all(cls):
+        return cls.query.all()
+
 
 class AuthorizationServer(OAuth2AuthorizationServer):
 
