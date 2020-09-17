@@ -24,11 +24,15 @@ jobs:
     - name: Gen docs
       run: docker run -u $(id -u):$(id -g)  --rm -v "${PWD}:/local" openapitools/openapi-generator-cli generate -g html -i /local/specs/api.yaml -o /local/html/
 
+    - name: Setup assets
+      run: |
+        mkdir --parents public/openapi-html
+        mv html/* public/openapi-html
+
     - name: Publish
       uses: peaceiris/actions-gh-pages@v3
       with:
         # https://github.com/marketplace/actions/github-pages-action
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./html
-        # this attribute is still in beta -> destination_dir: spec_html 
-  
+        publish_dir: ./public
+        keep_files: true # keep existing files in gh-pages branch
