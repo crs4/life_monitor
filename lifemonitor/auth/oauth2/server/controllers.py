@@ -22,7 +22,7 @@ def authorize():
             grant=grant,
             user=current_user,
         )
-    confirmed = request.form['confirm']
+    confirmed = request.form.get('confirm', None) or request.values.get('confirm', None)
     if confirmed:
         # granted by resource owner
         return server.create_authorization_response(grant_user=current_user)
