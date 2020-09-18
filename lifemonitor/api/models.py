@@ -78,13 +78,16 @@ class Workflow(db.Model):
     _registry_id = \
         db.Column("registry_id", UUID(as_uuid=True),
                   db.ForeignKey(WorkflowRegistry.uuid), nullable=False)
+    external_id = db.Column(db.Integer, nullable=True)
     workflow_registry = db.relationship("WorkflowRegistry", uselist=False, back_populates="registered_workflows")
+    name = db.Column(db.Text, nullable=True)
     test_suites = db.relationship("TestSuite", back_populates="workflow", cascade="all, delete")
-    _registry = None
+
     # additional relational specs
     __tablename__ = "workflow"
-    __table_args__ = tuple(
-        db.UniqueConstraint(uuid, version)
+    __table_args__ = (
+        db.UniqueConstraint(uuid, version),
+        db.UniqueConstraint(_registry_id, external_id),
     )
 
     def __init__(self, registry: WorkflowRegistry, uuid, version, rock_link,
@@ -94,6 +97,7 @@ class Workflow(db.Model):
         self.roc_link = rock_link
         self.roc_metadata = roc_metadata
         self.name = name
+        self.external_id = external_id
         self.workflow_registry = registry
 
     def __repr__(self):
