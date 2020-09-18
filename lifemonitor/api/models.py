@@ -19,19 +19,6 @@ from lifemonitor.utils import download_url, to_camel_case
 logger = logging.getLogger(__name__)
 
 
-class WorkflowRegistry:
-    __instance = None
-
-    @classmethod
-    def get_instance(cls) -> WorkflowRegistry:
-        if not cls.__instance:
-            cls.__instance = cls()
-        return cls.__instance
-
-    def __init__(self):
-        if self.__instance:
-            raise Exception("WorkflowRegistry instance already exists!")
-        self.__instance = self
 
     @property
     def _client(self) -> RemoteApp:
@@ -62,11 +49,54 @@ class WorkflowRegistry:
 
     def build_ro_link(self, w: Workflow) -> str:
         return "{}?version={}".format(os.path.join(self._url, "workflow", w.uuid), w.version)
+class WorkflowRegistry(db.Model):
+
+    uuid = db.Column(UUID(as_uuid=True), primary_key=True, default=_uuid.uuid4)
+    name = db.Column(db.Text, unique=True)
+    uri = db.Column(db.Text, unique=True)
+    _client_id = db.Column(
+        db.Integer, db.ForeignKey('client.id', ondelete='CASCADE')
+    )
+    client_credentials = db.relationship("Client", uselist=False, cascade="all, delete")
     registered_workflows = db.relationship("Workflow",
                                            back_populates="workflow_registry", cascade="all, delete")
+    client_id = association_proxy('client_credentials', 'client_id')
+    _client = None
 
-    def download_url(self, url, target_path=None):
-        return download_url(url, target_path, self._access_token)
+    def __init__(self, name, client_credentials):
+        self.__instance = self
+        self.name = name
+        self.uri = client_credentials.client_metadata['client_uri']
+        self.client_credentials = client_credentials
+        self._client = None
+
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
+
+    @classmethod
+    def all(cls):
+        return cls.query.all()
+
+    @classmethod
+    def find_by_id(cls, uuid) -> WorkflowRegistry:
+        return cls.query.get(uuid)
+
+    @classmethod
+    def find_by_name(cls, name):
+        return cls.query.filter(WorkflowRegistry.name == name).first()
+
+    @classmethod
+    def find_by_uri(cls, uri):
+        return cls.query.filter(WorkflowRegistry.uri == uri).first()
+
+    @classmethod
+    def find_by_client_id(cls, client_id):
+        return cls.query.filter_by(client_id=client_id).first()
 
 
 class Workflow(db.Model):
