@@ -70,8 +70,8 @@ class WorkflowRegistry:
 class Workflow(db.Model):
     _id = db.Column('id', db.Integer, primary_key=True)
     uuid = db.Column(UUID)
-    version = db.Column(db.Text)
-    name = db.Column(db.Text, nullable=True)
+    version = db.Column(db.Text, nullable=False)
+    roc_link = db.Column(db.Text, nullable=False)
     roc_metadata = db.Column(JSONB, nullable=True)
     test_suites = db.relationship("TestSuite", back_populates="workflow", cascade="all, delete")
     _registry = None
@@ -84,6 +84,7 @@ class Workflow(db.Model):
     def __init__(self, uuid, version, roc_metadata=None, name=None) -> None:
         self.uuid = uuid
         self.version = version
+        self.roc_link = rock_link
         self.roc_metadata = roc_metadata
         self.name = name
         self._registry = None
@@ -94,11 +95,6 @@ class Workflow(db.Model):
             self._registry = WorkflowRegistry.get_instance()
         return self._registry
 
-    @property
-    def roc_link(self):
-        if self.registry:
-            return self.registry.build_ro_link(self)
-        return ""
 
     def __repr__(self):
         return '<Workflow ({}, {}); name: {}; link: {}>'.format(
