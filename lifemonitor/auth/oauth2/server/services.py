@@ -1,8 +1,8 @@
 import logging
-
+from flask import g
 from connexion.exceptions import OAuthProblem
 from flask_login import login_user
-
+from lifemonitor.api.models import WorkflowRegistry
 from lifemonitor.auth.oauth2.server.models import Token
 from lifemonitor.auth.oauth2.server.models import AuthorizationServer
 
@@ -31,8 +31,16 @@ def get_token_scopes(access_token):
 
     # only if the token has been issued to a user
     # the user has to be automatically logged in
+    logger.debug("The token user: %r", token.user)
     if token.user:
         login_user(token.user)
+    # store the current client
+    g.oauth2client = token.client
+    # if the client is a Registry, store it on the current session
+    registry = WorkflowRegistry.find_by_client_id(token.client.client_id)
+    logger.debug("Token issued to a WorkflowRegistry: %r", registry is not None)
+    if registry:
+        g.workflow_registry = registry
     return {
         "scope": token.scope
     }
