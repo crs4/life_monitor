@@ -3,52 +3,69 @@ import os
 import logging
 import jenkins
 import uuid as _uuid
+from importlib import import_module
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Optional
 from authlib.integrations.base_client import RemoteApp
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from lifemonitor.db import db
+from lifemonitor.auth.models import User
+from sqlalchemy.ext.associationproxy import association_proxy
 from lifemonitor.auth.oauth2.client.services import oauth2_registry
 from lifemonitor.common import (SpecificationNotValidException, EntityNotFoundException,
                                 SpecificationNotDefinedException, TestingServiceNotSupportedException,
                                 NotImplementedException, LifeMonitorException)
 from lifemonitor.utils import download_url, to_camel_case
+from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 
 # set module level logger
 logger = logging.getLogger(__name__)
 
 
+class WorkflowRegistryClient(ABC):
 
-    @property
-    def _client(self) -> RemoteApp:
+    def __init__(self, registry: WorkflowRegistry):
+        self._registry = registry
         try:
-            return oauth2_registry.seek
+            self._oauth2client: RemoteApp = getattr(oauth2_registry, self.registry.name)
         except AttributeError:
-            raise RuntimeError("Unable to find a OAuth2 client for the Seek service")
+            raise RuntimeError(f"Unable to find a OAuth2 client for the {self.name} service")
 
     @property
-    def _url(self):
-        return self._client.api_base_url
+    def registry(self):
+        return self._registry
 
-    @property
-    def _access_token(self):
-        return self._client.token["access_token"]
+    def _get_access_token(self, user_id):
+        # get the access token related with the user of this client registry
+        return OAuthIdentity.find_by_user_provider(user_id,
+                                                   self.registry.name).token
 
-    def get_workflows(self):
-        r = self._client.get("/workflows?format=json")
-        if r.status_code != 200:
-            raise RuntimeError(f"ERROR: unable to get workflows (status code: {r.status_code})")
-        return r.json()['data']
+    def _get(self, user, *args, **kwargs):
+        # update token
+        self._oauth2client.token = self._get_access_token(user.id)
+        return self._oauth2client.get(*args, **kwargs)
 
-    def get_workflow(self, workflow_id):
-        r = self._client.get(f"/workflows/{workflow_id}?format=json")
-        if r.status_code != 200:
-            raise RuntimeError(f"ERROR: unable to get workflow (status code: {r.status_code})")
-        return r.json()['data']
+    def download_url(self, url, user, target_path=None):
+        return download_url(url, target_path, self._get_access_token(user.id)["access_token"])
 
+    @abstractmethod
     def build_ro_link(self, w: Workflow) -> str:
-        return "{}?version={}".format(os.path.join(self._url, "workflow", w.uuid), w.version)
+        pass
+
+    @abstractmethod
+    def get_workflows_metadata(self, user):
+        pass
+
+    @abstractmethod
+    def get_workflow_metadata(self, user, workflow_uuid, workflow_version):
+        pass
+
+    @abstractmethod
+    def filter_by_user(workflows: list, user: User):
+        pass
+
+
 class WorkflowRegistry(db.Model):
 
     uuid = db.Column(UUID(as_uuid=True), primary_key=True, default=_uuid.uuid4)
@@ -70,6 +87,28 @@ class WorkflowRegistry(db.Model):
         self.client_credentials = client_credentials
         self._client = None
 
+    @property
+    def client(self) -> WorkflowRegistryClient:
+        if self._client is None:
+            m = f"lifemonitor.api.registry.{self.name}"
+            try:
+                mod = import_module(m)
+                self._client = getattr(mod, "WorkflowRegistryClient")(self)
+            except ModuleNotFoundError:
+                raise LifeMonitorException(f"ModuleNotFoundError: Unable to load module {m}")
+            except AttributeError:
+                raise LifeMonitorException(f"Unable to create an instance of WorkflowRegistryClient from module {m}")
+        return self._client
+
+    def build_ro_link(self, w: Workflow) -> str:
+        return self.client.build_ro_link(w)
+
+    def download_url(self, url, user, target_path=None):
+        return self.client.download_url(url, user, target_path=target_path)
+
+    def get_users(self):
+        pass
+
     def save(self):
         db.session.add(self)
         db.session.commit()
@@ -77,6 +116,15 @@ class WorkflowRegistry(db.Model):
     def delete(self):
         db.session.delete(self)
         db.session.commit()
+
+    def get_workflow(self, uuid, version):
+        try:
+            return Workflow.query.with_parent(self).filter(Workflow.uuid == uuid).filter(Workflow.version == version).one()
+        except Exception as e:
+            raise EntityNotFoundException(e)
+
+    def get_user_workflows(self, user: User):
+        return self.client.filter_by_user(self.registered_workflows, user)
 
     @classmethod
     def all(cls):
