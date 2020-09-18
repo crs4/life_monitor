@@ -10,6 +10,10 @@ class UnsupportedOperationException(LifeMonitorException):
     pass
 
 
+class NotAuthorizedException(LifeMonitorException):
+    pass
+
+
 class SpecificationNotDefinedException(LifeMonitorException):
     pass
 
