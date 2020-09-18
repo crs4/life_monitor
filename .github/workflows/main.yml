@@ -26,8 +26,8 @@ jobs:
 
     - name: Setup assets
       run: |
-        mkdir --parents public/openapi-html
-        mv html/* public/openapi-html
+        mkdir --parents public/lm-openapi-html
+        mv html/* public/lm-openapi-html
 
     - name: Publish
       uses: peaceiris/actions-gh-pages@v3
