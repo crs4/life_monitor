@@ -6,8 +6,8 @@ Initial web site for Life Monitor. Please refer to the
 
 ## API Specs
 
-* Formatted with RapiDoc:  [](lm-openapi-rapidoc.html)
-* Static page automatically created with openapi-generator: [](lm-openapi-html/index.html)
+* Formatted with RapiDoc:  [lm-openapi-rapidoc.html](./lm-openapi-rapidoc.html)
+* Static page automatically created with openapi-generator: [lm-openapi-html](./lm-openapi-html/index.html)
 
 You can find the raw YAML API specifications in [the source code repository](https://github.com/crs4/life_monitor/tree/master/specs).  
 
