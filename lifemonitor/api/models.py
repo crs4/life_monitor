@@ -62,6 +62,8 @@ class WorkflowRegistry:
 
     def build_ro_link(self, w: Workflow) -> str:
         return "{}?version={}".format(os.path.join(self._url, "workflow", w.uuid), w.version)
+    registered_workflows = db.relationship("Workflow",
+                                           back_populates="workflow_registry", cascade="all, delete")
 
     def download_url(self, url, target_path=None):
         return download_url(url, target_path, self._access_token)
@@ -73,6 +75,10 @@ class Workflow(db.Model):
     version = db.Column(db.Text, nullable=False)
     roc_link = db.Column(db.Text, nullable=False)
     roc_metadata = db.Column(JSONB, nullable=True)
+    _registry_id = \
+        db.Column("registry_id", UUID(as_uuid=True),
+                  db.ForeignKey(WorkflowRegistry.uuid), nullable=False)
+    workflow_registry = db.relationship("WorkflowRegistry", uselist=False, back_populates="registered_workflows")
     test_suites = db.relationship("TestSuite", back_populates="workflow", cascade="all, delete")
     _registry = None
     # additional relational specs
@@ -81,20 +87,14 @@ class Workflow(db.Model):
         db.UniqueConstraint(uuid, version)
     )
 
-    def __init__(self, uuid, version, roc_metadata=None, name=None) -> None:
+    def __init__(self, registry: WorkflowRegistry, uuid, version, rock_link,
+                 roc_metadata=None, external_id=None, name=None) -> None:
         self.uuid = uuid
         self.version = version
         self.roc_link = rock_link
         self.roc_metadata = roc_metadata
         self.name = name
-        self._registry = None
-
-    @property
-    def registry(self):
-        if not self._registry:
-            self._registry = WorkflowRegistry.get_instance()
-        return self._registry
-
+        self.workflow_registry = registry
 
     def __repr__(self):
         return '<Workflow ({}, {}); name: {}; link: {}>'.format(
