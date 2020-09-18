@@ -36,3 +36,4 @@ jobs:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./public
         keep_files: true # keep existing files in gh-pages branch
+        enable_jekyll: true # Make sure this is enabled or the action will be default turn off Jekyll
