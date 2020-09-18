@@ -1,37 +1,13 @@
-## Welcome to GitHub Pages
+# Welcome to Life Monitor
 
-You can use the [editor on GitHub](https://github.com/crs4/life_monitor/edit/gh-pages/index.md) to maintain and preview the content for your website in Markdown files.
+Initial web site for Life Monitor. Please refer to the
+[Life Monitor repository](https://github.com/crs4/life_monitor) and
+[its wiki](https://github.com/crs4/life_monitor/wiki) for additional information.
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+## API Specs
 
-### Markdown
+* Formatted with RapiDoc:  [](lm-openapi-rapidoc.html)
+* Static page automatically created with openapi-generator: [](lm-openapi-html/index.html)
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+You can find the raw YAML API specifications in [the source code repository](https://github.com/crs4/life_monitor/tree/master/specs).  
 
-```markdown
-Syntax highlighted code block
-
-# Header 1
-## Header 2
-### Header 3
-
-- Bulleted
-- List
-
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
-```
-
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
-
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/crs4/life_monitor/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://docs.github.com/categories/github-pages-basics/) or [contact support](https://github.com/contact) and we’ll help you sort it out.
