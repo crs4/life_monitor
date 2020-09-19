@@ -156,7 +156,7 @@ class Workflow(db.Model):
     _registry_id = \
         db.Column("registry_id", UUID(as_uuid=True),
                   db.ForeignKey(WorkflowRegistry.uuid), nullable=False)
-    external_id = db.Column(db.Integer, nullable=True)
+    external_id = db.Column(db.String, nullable=True)
     workflow_registry = db.relationship("WorkflowRegistry", uselist=False, back_populates="registered_workflows")
     name = db.Column(db.Text, nullable=True)
     test_suites = db.relationship("TestSuite", back_populates="workflow", cascade="all, delete")
