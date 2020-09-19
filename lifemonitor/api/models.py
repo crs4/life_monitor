@@ -114,6 +114,21 @@ class WorkflowRegistry(db.Model):
     def get_users(self):
         pass
 
+    def add_workflow(self, workflow_uuid, workflow_version,
+                     workflow_submitter: User,
+                     roc_link, roc_metadata=None,
+                     external_id=None, name=None):
+        if external_id is None:
+            try:
+                external_id = self.client.get_external_id(
+                    workflow_uuid, workflow_version, workflow_submitter)
+            except Exception as e:
+                logger.exception(e)
+
+        return Workflow(self, workflow_uuid, workflow_version, roc_link,
+                        roc_metadata=roc_metadata,
+                        external_id=external_id, name=name)
+
     def save(self):
         db.session.add(self)
         db.session.commit()

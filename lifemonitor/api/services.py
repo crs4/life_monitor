@@ -38,7 +38,7 @@ class LifeMonitor:
         return w
 
     @classmethod
-    def register_workflow(cls, workflow_registry, workflow_submitter,
+    def register_workflow(cls, workflow_registry: WorkflowRegistry, workflow_submitter: User,
                           workflow_uuid, workflow_version, roc_link, external_id=None, name=None):
         with tempfile.NamedTemporaryFile(dir="/tmp") as archive_path:
             logger.info("Downloading RO Crate @ %s", archive_path.name)
@@ -49,8 +49,11 @@ class LifeMonitor:
                 extract_zip(archive_path.name, target_path=roc_path)
                 metadata = load_ro_crate_metadata(roc_path)
                 # create a new Workflow instance with the loaded metadata
-                w = Workflow(workflow_registry, workflow_uuid, workflow_version, roc_link,
-                             roc_metadata=metadata, external_id=external_id, name=name)
+                w = workflow_registry.add_workflow(
+                    workflow_uuid, workflow_version, workflow_submitter,
+                    roc_link=roc_link, roc_metadata=metadata,
+                    external_id=external_id, name=name
+                )
                 # load test_definition_file and if it exists associate a test_suite the workflow
                 test_definition_file = search_for_test_definition(roc_path, metadata)
                 logger.debug("The test definition file: %r", test_definition_file)
