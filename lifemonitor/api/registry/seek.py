@@ -39,3 +39,11 @@ class WorkflowRegistryClient(_BaseRegistryClient):
             if str(w.external_id) in allowed:
                 result.append(w)
         return result
+
+    def get_external_id(self, uuid, version, user) -> str:
+        """ Return CSV of uuid and version"""
+        matches = [str(w['id']) for w in self.get_workflows_metadata(user, details=True)
+                   if w['meta']['uuid'] == str(uuid)]
+        if len(matches) != 1:
+            raise EntityNotFoundException(Workflow, f"{uuid}_{version}")
+        return matches[0]

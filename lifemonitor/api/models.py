@@ -50,6 +50,10 @@ class WorkflowRegistryClient(ABC):
     def download_url(self, url, user, target_path=None):
         return download_url(url, target_path, self._get_access_token(user.id)["access_token"])
 
+    def get_external_id(self, uuid, version, user: User) -> str:
+        """ Return CSV of uuid and version"""
+        return ",".join([str(uuid), str(version)])
+
     @abstractmethod
     def build_ro_link(self, w: Workflow) -> str:
         pass
