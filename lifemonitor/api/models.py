@@ -3,6 +3,7 @@ import os
 import logging
 import jenkins
 import uuid as _uuid
+from typing import Union
 from importlib import import_module
 from abc import ABC, abstractmethod
 from enum import Enum
@@ -54,11 +55,11 @@ class WorkflowRegistryClient(ABC):
         pass
 
     @abstractmethod
-    def get_workflows_metadata(self, user):
+    def get_workflows_metadata(self, user, details=False):
         pass
 
     @abstractmethod
-    def get_workflow_metadata(self, user, workflow_uuid, workflow_version):
+    def get_workflow_metadata(self, user, w: Union[Workflow, str]):
         pass
 
     @abstractmethod
