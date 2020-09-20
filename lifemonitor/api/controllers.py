@@ -75,6 +75,8 @@ def workflows_post(body):
         return f"Invalid request: {e.description}", 400
     except OAuthIdentityNotFoundException:
         return f"Unable to find OAuth2 credentials for user {body.get('user_id', None)}", 401
+    except NotValidROCrateException as e:
+        return f"{e.description}", 400
     except NotAuthorizedException as e:
         return f"{e.description}", 401
     except Exception as e:

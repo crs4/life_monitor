@@ -50,11 +50,14 @@ def download_url(url, target_path=None, token=None):
 
 
 def extract_zip(archive_path, target_path=None):
+    try:
     if not target_path:
         target_path = tempfile.mkdtemp()
     with zipfile.ZipFile(archive_path, "r") as zip_ref:
         zip_ref.extractall(target_path)
     return target_path
+    except Exception as e:
+        raise NotValidROCrateException(e)
 
 
 def load_ro_crate_metadata(roc_path):
