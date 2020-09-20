@@ -4,8 +4,7 @@ import tempfile
 from lifemonitor.auth.models import User
 from lifemonitor.common import EntityNotFoundException, NotAuthorizedException
 from lifemonitor.api.models import (
-    WorkflowRegistry, Workflow, TestSuite,
-    TestConfiguration, TestingService,
+    WorkflowRegistry, Workflow, TestSuite
 )
 from lifemonitor.utils import extract_zip, load_ro_crate_metadata, search_for_test_definition
 
@@ -59,10 +58,9 @@ class LifeMonitor:
                 logger.debug("The test definition file: %r", test_definition_file)
                 if test_definition_file:
                     logger.debug("Loaded test definition file: %r", test_definition_file)
-                    cls.add_test_suite(w, test_definition_file)
+                    w.add_test_suite(workflow_submitter, test_definition_file)
                 w.save()
                 return w
-
 
     @classmethod
     def deregister_workflow(cls, workflow_uuid, workflow_version, user: User):
@@ -77,27 +75,16 @@ class LifeMonitor:
         return workflow_uuid, workflow_version
 
     @classmethod
-    def register_test_suite(cls, workflow_uuid, workflow_version, test_suite_metadata) -> TestSuite:
+    def register_test_suite(cls, workflow_uuid, workflow_version,
+                            submitter: User, test_suite_metadata) -> TestSuite:
         workflow = Workflow.find_by_id(workflow_uuid, workflow_version)
         if not workflow:
             raise EntityNotFoundException(Workflow, (workflow_uuid, workflow_version))
-        suite = cls.add_test_suite(workflow, test_suite_metadata)
+        # For now only the workflow submitter can add test suites
+        if workflow.submitter != submitter:
+            raise NotAuthorizedException("Only the workflow submitter can add test suites")
+        suite = workflow.add_test_suite(submitter, test_suite_metadata)
         suite.save()
-        return suite
-
-    @classmethod
-    def add_test_suite(cls, workflow, test_suite_metadata) -> TestSuite:
-        suite = TestSuite(workflow, test_suite_metadata)
-        for test in test_suite_metadata["test"]:
-            for instance_data in test["instance"]:
-                logger.debug("Instance_data: %r", instance_data)
-                test_configuration = TestConfiguration(suite, test["name"],
-                                                       instance_data["name"], instance_data["url"])
-                testing_service_data = instance_data["service"]
-                testing_service = TestingService.new_instance(test_configuration,
-                                                              testing_service_data["type"],
-                                                              testing_service_data["url"])
-                logger.debug("Created TestService: %r", testing_service)
         return suite
 
     @classmethod

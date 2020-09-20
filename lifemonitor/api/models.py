@@ -218,6 +218,9 @@ class Workflow(db.Model):
                     return False
         return True
 
+    def add_test_suite(self, submitter: User, test_suite_metadata):
+        return TestSuite(self, submitter, test_suite_metadata)
+
     def to_dict(self, test_suite=False, test_build=False, test_output=False):
         data = {
             'uuid': str(self.uuid),
@@ -290,10 +293,30 @@ class TestSuite(db.Model):
         self.workflow = w
         self.submitter = submitter
         self.test_definition = test_definition
+        self._parse_test_definition()
 
     def __repr__(self):
         return '<TestSuite {} of workflow {} (version {})>'.format(
             self.uuid, self.workflow.uuid, self.workflow.version)
+
+    def _parse_test_definition(self):
+        try:
+            for test in self.test_definition["test"]:
+                for instance_data in test["instance"]:
+                    logger.debug("Instance_data: %r", instance_data)
+                    testing_service_data = instance_data["service"]
+                    testing_service = TestingService.new_instance(
+                        testing_service_data["type"], testing_service_data["url"])
+                    logger.debug("Created TestService: %r", testing_service)
+                    test_configuration = TestConfiguration(self, self.submitter,
+                                                           test["name"], testing_service,
+                                                           instance_data["name"],
+                                                           instance_data["url"])
+                    logger.debug("Created TestInstance: %r", test_configuration)
+        except KeyError as e:
+            raise SpecificationNotValidException(f"Missing property: {e}")
+        except Exception as e:
+            raise SpecificationNotValidException(f"{e}")
 
     def get_test_instance_by_name(self, name) -> list:
         result = []
@@ -305,8 +328,20 @@ class TestSuite(db.Model):
     def to_dict(self, test_build=False, test_output=False) -> dict:
         return {
             'uuid': str(self.uuid),
-            'test': [t.to_dict(test_build=test_build, test_output=test_output) for t in self.test_configurations]
+            'test': [t.to_dict(test_build=test_build, test_output=test_output)
+                     for t in self.test_configurations]
         }
+
+    def add_test_instance(self, submitter: User,
+                          test_name, instance_name, instance_url,
+                          testing_service_type, testing_service_url):
+        testing_service = \
+            TestingService.new_instance(testing_service_type, testing_service_url)
+        test_configuration = TestConfiguration(self, submitter,
+                                               test_name, instance_name, instance_url,
+                                               testing_service)
+        logger.debug("Created TestInstance: %r", test_configuration)
+        return test_configuration
 
     @property
     def tests(self) -> Optional[dict]:
@@ -355,11 +390,14 @@ class TestConfiguration(db.Model):
                                       cascade="all, delete", lazy='joined')
 
     def __init__(self, testing_suite: TestSuite, submitter: User,
+                 test_name, testing_service: TestingService,
+                 test_instance_name=None, url: str = None) -> None:
         self.test_suite = testing_suite
         self.submitter = submitter
         self.test_name = test_name
         self.test_instance_name = test_instance_name
         self.url = url
+        self.testing_service = testing_service
 
     def __repr__(self):
         return '<TestConfiguration {} on TestSuite {}>'.format(self.uuid, self.test_suite.uuid)
@@ -434,12 +472,11 @@ class TestingService(db.Model):
         'polymorphic_identity': 'testing_service'
     }
 
-    def __init__(self, test_configuration: TestConfiguration, url: str) -> None:
-        self.test_configuration = test_configuration
+    def __init__(self, url: str) -> None:
         self.url = url
 
     def __repr__(self):
-        return '<TestingService {} for the TestConfiguration {}>'.format(self.uuid, self.test_configuration.uuid)
+        return f'<TestingService {self.url}> ({self.uuid})'
 
     @property
     def test_instance_name(self):
@@ -505,10 +542,10 @@ class TestingService(db.Model):
         return cls.query.get(uuid)
 
     @classmethod
-    def new_instance(cls, test_instance: TestConfiguration, service_type, url: str):
+    def new_instance(cls, service_type, url: str):
         try:
             service_class = globals()["{}TestingService".format(to_camel_case(service_type))]
-            return service_class(test_instance, url)
+            return service_class(url)
         except Exception as e:
             raise TestingServiceNotSupportedException(e)
 
@@ -607,8 +644,8 @@ class JenkinsTestingService(TestingService):
         'polymorphic_identity': 'jenkins_testing_service'
     }
 
-    def __init__(self, test_configuration: TestConfiguration, url: str) -> None:
-        super().__init__(test_configuration, url)
+    def __init__(self, url: str) -> None:
+        super().__init__(url)
         self._server = jenkins.Jenkins(self.url)
 
     @property
