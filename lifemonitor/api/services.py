@@ -63,21 +63,15 @@ class LifeMonitor:
                 w.save()
                 return w
 
-    @classmethod
-    def deregister_workflow(cls, workflow_uuid, workflow_version):
-        workflow = Workflow.find_by_id(workflow_uuid, workflow_version)
-        if not workflow:
-            raise EntityNotFoundException(Workflow, (workflow_uuid, workflow_version))
-        workflow.delete()
-        logger.debug("Deleted workflow wf_uuid: %r - version: %r", workflow_uuid, workflow_version)
-        return workflow_uuid, workflow_version
 
     @classmethod
-    def deregister_user_workflow(cls, workflow_uuid, workflow_version, user: User):
+    def deregister_workflow(cls, workflow_uuid, workflow_version, user: User):
         workflow = cls._find_and_check_workflow(workflow_uuid, workflow_version, user)
         logger.debug("Workflow to delete: %r", workflow)
         if not workflow:
             raise EntityNotFoundException(Workflow, (workflow_uuid, workflow_version))
+        if workflow.submitter != user:
+            raise NotAuthorizedException("Only the workflow submitter can add test suites")
         workflow.delete()
         logger.debug("Deleted workflow wf_uuid: %r - version: %r", workflow_uuid, workflow_version)
         return workflow_uuid, workflow_version

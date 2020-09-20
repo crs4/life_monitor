@@ -123,7 +123,7 @@ def workflows_get_by_id(wf_uuid, wf_version):
 def workflows_delete(wf_uuid, wf_version):
     try:
         if current_user and not current_user.is_anonymous:
-            lm.deregister_user_workflow(wf_uuid, wf_version, current_user)
+            lm.deregister_workflow(wf_uuid, wf_version, current_user)
         elif "registry" in g:
             lm.deregister_workflow(wf_uuid, wf_version)
     except EntityNotFoundException as e:
