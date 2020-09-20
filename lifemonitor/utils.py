@@ -6,6 +6,7 @@ import zipfile
 
 import flask
 import requests
+from .common import NotAuthorizedException, NotValidROCrateException
 
 RO_CRATE_METADATA_FILENAME = "ro-crate-metadata.jsonld"
 RO_CRATE_TEST_DEFINITION_FILENAME = "test-metadata.json"
@@ -37,6 +38,8 @@ def download_url(url, target_path=None, token=None):
         if token:
             session.headers['Authorization'] = f'Bearer {token}'
         with session.get(url, stream=True) as r:
+            if r.status_code == 401 or r.status_code == 403:
+                raise NotAuthorizedException(r.content)
             r.raise_for_status()
             if not target_path:
                 target_path = tempfile.mktemp()

@@ -5,7 +5,7 @@ from flask import request, g
 from flask_login import current_user
 from lifemonitor.api.services import LifeMonitor
 from lifemonitor.api.models import WorkflowRegistry
-from lifemonitor.common import EntityNotFoundException, NotAuthorizedException
+from lifemonitor.common import EntityNotFoundException, NotAuthorizedException, NotValidROCrateException
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity, OAuthIdentityNotFoundException
 # Initialize a reference to the LifeMonitor instance
 lm = LifeMonitor.get_instance()
@@ -75,6 +75,8 @@ def workflows_post(body):
         return f"Invalid request: {e.description}", 400
     except OAuthIdentityNotFoundException:
         return f"Unable to find OAuth2 credentials for user {body.get('user_id', None)}", 401
+    except NotAuthorizedException as e:
+        return f"{e.description}", 401
     except Exception as e:
         logger.exception(e)
         return f"Internal Error: {e}", 500
