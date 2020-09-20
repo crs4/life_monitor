@@ -140,7 +140,8 @@ class WorkflowRegistry(db.Model):
 
     def get_workflow(self, uuid, version):
         try:
-            return Workflow.query.with_parent(self).filter(Workflow.uuid == uuid).filter(Workflow.version == version).one()
+            return Workflow.query.with_parent(self)\
+                .filter(Workflow.uuid == uuid).filter(Workflow.version == version).one()
         except Exception as e:
             raise EntityNotFoundException(e)
 
@@ -272,14 +273,22 @@ class Test:
 
 class TestSuite(db.Model):
     uuid = db.Column(UUID(as_uuid=True), primary_key=True, default=_uuid.uuid4)
-    _workflow_id = db.Column("workflow_id", db.Integer, db.ForeignKey(Workflow._id), nullable=False)
+    _workflow_id = db.Column("workflow_id", db.Integer,
+                             db.ForeignKey(Workflow._id), nullable=False)
     workflow = db.relationship("Workflow", back_populates="test_suites")
-    test_definition = db.Column(JSONB, nullable=True)
+    test_definition = db.Column(JSONB, nullable=False)
+    submitter_id = db.Column(db.Integer,
+                             db.ForeignKey(User.id), nullable=False)
+    submitter = db.relationship("User", uselist=False)
     test_configurations = db.relationship("TestConfiguration",
-                                          back_populates="test_suite", cascade="all, delete")
+                                          back_populates="test_suite",
+                                          cascade="all, delete")
 
-    def __init__(self, w: Workflow, test_definition: object = None) -> None:
+    def __init__(self,
+                 w: Workflow, submitter: User,
+                 test_definition: object) -> None:
         self.workflow = w
+        self.submitter = submitter
         self.test_definition = test_definition
 
     def __repr__(self):
@@ -337,14 +346,17 @@ class TestConfiguration(db.Model):
     test_instance_name = db.Column(db.Text, nullable=True)
     url = db.Column(db.Text, nullable=True)
     parameters = db.Column(JSONB, nullable=True)
+    submitter_id = db.Column(db.Integer,
+                             db.ForeignKey(User.id), nullable=False)
     # configure relationships
+    submitter = db.relationship("User", uselist=False)
     test_suite = db.relationship("TestSuite", back_populates="test_configurations")
     testing_service = db.relationship("TestingService", uselist=False, back_populates="test_configuration",
                                       cascade="all, delete", lazy='joined')
 
-    def __init__(self, testing_suite: TestSuite,
-                 test_name, test_instance_name=None, url: str = None) -> None:
+    def __init__(self, testing_suite: TestSuite, submitter: User,
         self.test_suite = testing_suite
+        self.submitter = submitter
         self.test_name = test_name
         self.test_instance_name = test_instance_name
         self.url = url
