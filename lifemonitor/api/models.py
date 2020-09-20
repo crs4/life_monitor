@@ -125,7 +125,8 @@ class WorkflowRegistry(db.Model):
             except Exception as e:
                 logger.exception(e)
 
-        return Workflow(self, workflow_uuid, workflow_version, roc_link,
+        return Workflow(self, workflow_submitter,
+                        workflow_uuid, workflow_version, roc_link,
                         roc_metadata=roc_metadata,
                         external_id=external_id, name=name)
 
@@ -173,6 +174,8 @@ class Workflow(db.Model):
     version = db.Column(db.Text, nullable=False)
     roc_link = db.Column(db.Text, nullable=False)
     roc_metadata = db.Column(JSONB, nullable=True)
+    submitter_id = db.Column(db.Integer,
+                             db.ForeignKey(User.id), nullable=False)
     _registry_id = \
         db.Column("registry_id", UUID(as_uuid=True),
                   db.ForeignKey(WorkflowRegistry.uuid), nullable=False)
@@ -180,6 +183,7 @@ class Workflow(db.Model):
     workflow_registry = db.relationship("WorkflowRegistry", uselist=False, back_populates="registered_workflows")
     name = db.Column(db.Text, nullable=True)
     test_suites = db.relationship("TestSuite", back_populates="workflow", cascade="all, delete")
+    submitter = db.relationship("User", uselist=False)
 
     # additional relational specs
     __tablename__ = "workflow"
@@ -188,7 +192,8 @@ class Workflow(db.Model):
         db.UniqueConstraint(_registry_id, external_id),
     )
 
-    def __init__(self, registry: WorkflowRegistry, uuid, version, rock_link,
+    def __init__(self, registry: WorkflowRegistry, submitter: User,
+                 uuid, version, rock_link,
                  roc_metadata=None, external_id=None, name=None) -> None:
         self.uuid = uuid
         self.version = version
@@ -197,6 +202,7 @@ class Workflow(db.Model):
         self.name = name
         self.external_id = external_id
         self.workflow_registry = registry
+        self.submitter = submitter
 
     def __repr__(self):
         return '<Workflow ({}, {}); name: {}; link: {}>'.format(
@@ -240,6 +246,10 @@ class Workflow(db.Model):
     def find_by_id(cls, uuid, version):
         return cls.query.filter(Workflow.uuid == uuid) \
             .filter(Workflow.version == version).first()
+
+    @classmethod
+    def find_by_submitter(cls, submitter: User):
+        return cls.query.filter(Workflow.submitter_id == submitter.id).first()
 
 
 class Test:
