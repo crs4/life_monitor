@@ -213,9 +213,9 @@ class Workflow(db.Model):
     def check_health(self) -> dict:
         health = {'healthy': True, 'issues': []}
         for suite in self.test_suites:
-            for test_configuration in suite.test_configurations:
+            for test_instance in suite.test_instances:
                 try:
-                    testing_service = test_configuration.testing_service
+                    testing_service = test_instance.testing_service
                     if not testing_service.last_test_build.is_successful():
                         health["healthy"] = False
                 except TestingServiceException as e:
@@ -294,9 +294,9 @@ class TestSuite(db.Model):
     submitter_id = db.Column(db.Integer,
                              db.ForeignKey(User.id), nullable=False)
     submitter = db.relationship("User", uselist=False)
-    test_configurations = db.relationship("TestConfiguration",
-                                          back_populates="test_suite",
-                                          cascade="all, delete")
+    test_instances = db.relationship("TestInstance",
+                                     back_populates="test_suite",
+                                     cascade="all, delete")
 
     def __init__(self,
                  w: Workflow, submitter: User,
@@ -320,15 +320,15 @@ class TestSuite(db.Model):
                         testing_service_data["type"],
                         testing_service_data["url"], testing_service_data["resource"])
                     logger.debug("Created TestService: %r", testing_service)
-                    test_configuration = TestConfiguration(self, self.submitter,
-                                                           test["name"], testing_service)
-                    logger.debug("Created TestInstance: %r", test_configuration)
+                    test_instance = TestInstance(self, self.submitter,
+                                                 test["name"], testing_service)
+                    logger.debug("Created TestInstance: %r", test_instance)
         except KeyError as e:
             raise SpecificationNotValidException(f"Missing property: {e}")
 
     def get_test_instance_by_name(self, name) -> list:
         result = []
-        for ti in self.test_configurations:
+        for ti in self.test_instances:
             if ti.name == name:
                 result.append(ti)
         return result
@@ -337,16 +337,16 @@ class TestSuite(db.Model):
         return {
             'uuid': str(self.uuid),
             'test': [t.to_dict(test_build=test_build, test_output=test_output)
-                     for t in self.test_configurations]
+                     for t in self.test_instances]
         }
 
     def add_test_instance(self, submitter: User,
                           test_name, testing_service_type, testing_service_url):
         testing_service = \
             TestingService.new_instance(testing_service_type, testing_service_url)
-        test_configuration = TestConfiguration(self, submitter, test_name, testing_service)
-        logger.debug("Created TestInstance: %r", test_configuration)
-        return test_configuration
+        test_instance = TestInstance(self, submitter, test_name, testing_service)
+        logger.debug("Created TestInstance: %r", test_instance)
+        return test_instance
 
     @property
     def tests(self) -> Optional[dict]:
@@ -378,7 +378,7 @@ class TestSuite(db.Model):
         return cls.query.get(uuid)
 
 
-class TestConfiguration(db.Model):
+class TestInstance(db.Model):
     uuid = db.Column(UUID(as_uuid=True), primary_key=True, default=_uuid.uuid4)
     _test_suite_uuid = \
         db.Column("test_suite_uuid", UUID(as_uuid=True), db.ForeignKey(TestSuite.uuid), nullable=False)
@@ -388,8 +388,8 @@ class TestConfiguration(db.Model):
                              db.ForeignKey(User.id), nullable=False)
     # configure relationships
     submitter = db.relationship("User", uselist=False)
-    test_suite = db.relationship("TestSuite", back_populates="test_configurations")
-    testing_service = db.relationship("TestingService", uselist=False, back_populates="test_configuration",
+    test_suite = db.relationship("TestSuite", back_populates="test_instances")
+    testing_service = db.relationship("TestingService", uselist=False, back_populates="test_instance",
                                       cascade="all, delete", lazy='joined')
 
     def __init__(self, testing_suite: TestSuite, submitter: User,
@@ -400,7 +400,7 @@ class TestConfiguration(db.Model):
         self.testing_service = testing_service
 
     def __repr__(self):
-        return '<TestConfiguration {} on TestSuite {}>'.format(self.uuid, self.test_suite.uuid)
+        return '<TestInstance {} on TestSuite {}>'.format(self.uuid, self.test_suite.uuid)
 
     @property
     def test(self):
@@ -432,7 +432,7 @@ class TestConfiguration(db.Model):
         return cls.query.all()
 
     @classmethod
-    def find_by_id(cls, uuid) -> TestConfiguration:
+    def find_by_id(cls, uuid) -> TestInstance:
         return cls.query.get(uuid)
 
 
@@ -455,7 +455,7 @@ class TestingServiceToken:
 
 
 class TestingService(db.Model):
-    uuid = db.Column("uuid", UUID(as_uuid=True), db.ForeignKey(TestConfiguration.uuid), primary_key=True)
+    uuid = db.Column("uuid", UUID(as_uuid=True), db.ForeignKey(TestInstance.uuid), primary_key=True)
     _type = db.Column("type", db.String, nullable=False)
     _key = db.Column("key", db.Text, nullable=True)
     _secret = db.Column("secret", db.Text, nullable=True)
@@ -464,8 +464,8 @@ class TestingService(db.Model):
     # configure nested object
     token = db.composite(TestingServiceToken, _key, _secret)
     # configure relationships
-    test_configuration = db.relationship("TestConfiguration", back_populates="testing_service",
-                                         cascade="all, delete", lazy='joined')
+    test_instance = db.relationship("TestInstance", back_populates="testing_service",
+                                    cascade="all, delete", lazy='joined')
 
     __mapper_args__ = {
         'polymorphic_on': _type,
@@ -481,7 +481,7 @@ class TestingService(db.Model):
 
     @property
     def test_instance_name(self):
-        return self.test_configuration.name
+        return self.test_instance.name
 
     @property
     def is_workflow_healthy(self) -> bool:
