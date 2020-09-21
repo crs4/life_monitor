@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import logging
 import jenkins
 import uuid as _uuid
@@ -16,7 +17,7 @@ from sqlalchemy.ext.associationproxy import association_proxy
 from lifemonitor.auth.oauth2.client.services import oauth2_registry
 from lifemonitor.common import (SpecificationNotValidException, EntityNotFoundException,
                                 SpecificationNotDefinedException, TestingServiceNotSupportedException,
-                                NotImplementedException, LifeMonitorException)
+                                NotImplementedException, TestingServiceException, LifeMonitorException)
 from lifemonitor.utils import download_url, to_camel_case
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 
@@ -449,6 +450,7 @@ class TestingService(db.Model):
     _key = db.Column("key", db.Text, nullable=True)
     _secret = db.Column("secret", db.Text, nullable=True)
     url = db.Column(db.Text, nullable=False)
+    resource = db.Column(db.Text, nullable=False)
     # configure nested object
     token = db.composite(TestingServiceToken, _key, _secret)
     # configure relationships
@@ -460,11 +462,12 @@ class TestingService(db.Model):
         'polymorphic_identity': 'testing_service'
     }
 
-    def __init__(self, url: str) -> None:
+    def __init__(self, url: str, resource: str) -> None:
         self.url = url
+        self.resource = resource
 
     def __repr__(self):
-        return f'<TestingService {self.url}> ({self.uuid})'
+        return f'<TestingService {self.url}, resource {self.resource} ({self.uuid})>'
 
     @property
     def test_instance_name(self):
@@ -530,12 +533,12 @@ class TestingService(db.Model):
         return cls.query.get(uuid)
 
     @classmethod
-    def new_instance(cls, service_type, url: str):
+    def new_instance(cls, service_type, url: str, resource: str):
         try:
             service_class = globals()["{}TestingService".format(to_camel_case(service_type))]
-            return service_class(url)
-        except Exception as e:
-            raise TestingServiceNotSupportedException(e)
+        except KeyError:
+            raise TestingServiceNotSupportedException(f"Not supported testing service type '{service_type}'")
+        return service_class(url, resource)
 
 
 class TestBuild(ABC):
@@ -628,19 +631,35 @@ class JenkinsTestBuild(TestBuild):
 
 class JenkinsTestingService(TestingService):
     _server = None
+    _job_name = None
     __mapper_args__ = {
         'polymorphic_identity': 'jenkins_testing_service'
     }
 
-    def __init__(self, url: str) -> None:
-        super().__init__(url)
+    def __init__(self, url: str, resource: str) -> None:
+        super().__init__(url, resource)
+        try:
         self._server = jenkins.Jenkins(self.url)
+        except Exception as e:
+            raise TestingServiceException(e)
 
     @property
     def server(self):
         if not self._server:
             self._server = jenkins.Jenkins(self.url)
         return self._server
+
+    @property
+    def job_name(self):
+        # extract the job name from the resource path
+        if self._job_name is None:
+            logger.debug(f"Getting project metadata - resource: {self.resource}")
+            self._job_name = re.sub("(?s:.*)/", "", self.resource.strip('/'))
+            logger.debug(f"The job name: {self._job_name}")
+            if not self._job_name or len(self._job_name) == 0:
+                raise TestingServiceException(
+                    f"Unable to get the Jenkins job from the resource {self._job_name}")
+        return self._job_name
 
     @property
     def is_workflow_healthy(self) -> bool:
@@ -674,19 +693,19 @@ class JenkinsTestingService(TestingService):
     @property
     def project_metadata(self):
         try:
-            return self.server.get_job_info(self.test_instance_name)
+            return self.server.get_job_info(self.job_name)
         except jenkins.JenkinsException as e:
-            raise LifeMonitorException(e)
+            raise TestingServiceException(f"{self}: {e}")
 
     def get_test_build(self, build_number) -> JenkinsTestBuild:
         try:
-            build_metadata = self.server.get_build_info(self.test_instance_name, build_number)
+            build_metadata = self.server.get_build_info(self.job_name, build_number)
             return JenkinsTestBuild(self, build_metadata)
         except jenkins.JenkinsException as e:
-            raise LifeMonitorException(e)
+            raise TestingServiceException(e)
 
     def get_test_build_output(self, build_number):
         try:
-            return self.server.get_build_console_output(self.test_instance_name, build_number)
+            return self.server.get_build_console_output(self.job_name, build_number)
         except jenkins.JenkinsException as e:
-            raise LifeMonitorException(e)
+            raise TestingServiceException(e)

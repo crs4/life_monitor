@@ -37,3 +37,5 @@ class EntityNotFoundException(LifeMonitorException):
 
 class TestingServiceNotSupportedException(LifeMonitorException):
     pass
+
+
