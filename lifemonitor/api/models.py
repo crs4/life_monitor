@@ -306,17 +306,14 @@ class TestSuite(db.Model):
                     logger.debug("Instance_data: %r", instance_data)
                     testing_service_data = instance_data["service"]
                     testing_service = TestingService.new_instance(
-                        testing_service_data["type"], testing_service_data["url"])
+                        testing_service_data["type"],
+                        testing_service_data["url"], testing_service_data["resource"])
                     logger.debug("Created TestService: %r", testing_service)
                     test_configuration = TestConfiguration(self, self.submitter,
-                                                           test["name"], testing_service,
-                                                           instance_data["name"],
-                                                           instance_data["url"])
+                                                           test["name"], testing_service)
                     logger.debug("Created TestInstance: %r", test_configuration)
         except KeyError as e:
             raise SpecificationNotValidException(f"Missing property: {e}")
-        except Exception as e:
-            raise SpecificationNotValidException(f"{e}")
 
     def get_test_instance_by_name(self, name) -> list:
         result = []
@@ -333,13 +330,10 @@ class TestSuite(db.Model):
         }
 
     def add_test_instance(self, submitter: User,
-                          test_name, instance_name, instance_url,
-                          testing_service_type, testing_service_url):
+                          test_name, testing_service_type, testing_service_url):
         testing_service = \
             TestingService.new_instance(testing_service_type, testing_service_url)
-        test_configuration = TestConfiguration(self, submitter,
-                                               test_name, instance_name, instance_url,
-                                               testing_service)
+        test_configuration = TestConfiguration(self, submitter, test_name, testing_service)
         logger.debug("Created TestInstance: %r", test_configuration)
         return test_configuration
 
@@ -377,9 +371,7 @@ class TestConfiguration(db.Model):
     uuid = db.Column(UUID(as_uuid=True), primary_key=True, default=_uuid.uuid4)
     _test_suite_uuid = \
         db.Column("test_suite_uuid", UUID(as_uuid=True), db.ForeignKey(TestSuite.uuid), nullable=False)
-    test_name = db.Column(db.Text, nullable=False)
-    test_instance_name = db.Column(db.Text, nullable=True)
-    url = db.Column(db.Text, nullable=True)
+    name = db.Column(db.Text, nullable=False)
     parameters = db.Column(JSONB, nullable=True)
     submitter_id = db.Column(db.Integer,
                              db.ForeignKey(User.id), nullable=False)
@@ -390,13 +382,10 @@ class TestConfiguration(db.Model):
                                       cascade="all, delete", lazy='joined')
 
     def __init__(self, testing_suite: TestSuite, submitter: User,
-                 test_name, testing_service: TestingService,
-                 test_instance_name=None, url: str = None) -> None:
+                 test_name, testing_service: TestingService) -> None:
         self.test_suite = testing_suite
         self.submitter = submitter
-        self.test_name = test_name
-        self.test_instance_name = test_instance_name
-        self.url = url
+        self.name = test_name
         self.testing_service = testing_service
 
     def __repr__(self):
@@ -406,13 +395,12 @@ class TestConfiguration(db.Model):
     def test(self):
         if not self.test_suite:
             raise EntityNotFoundException(Test)
-        return self.test_suite.tests[self.test_name]
+        return self.test_suite.tests[self.name]
 
     def to_dict(self, test_build=False, test_output=False):
         data = {
             'uuid': str(self.uuid),
-            'name': self.test_instance_name or self.test_name,
-            'url': self.url,
+            'name': self.name,
             'parameters': self.parameters,
             'testing_service': self.testing_service.to_dict(test_builds=False)
         }
@@ -480,7 +468,7 @@ class TestingService(db.Model):
 
     @property
     def test_instance_name(self):
-        return self.test_configuration.test_instance_name
+        return self.test_configuration.name
 
     @property
     def is_workflow_healthy(self) -> bool:
