@@ -210,25 +210,35 @@ class Workflow(db.Model):
         return '<Workflow ({}, {}); name: {}; link: {}>'.format(
             self.uuid, self.version, self.name, self.roc_link)
 
-    @property
-    def is_healthy(self) -> bool:
+    def check_health(self) -> dict:
+        health = {'healthy': True, 'issues': []}
         for suite in self.test_suites:
             for test_configuration in suite.test_configurations:
+                try:
                 testing_service = test_configuration.testing_service
                 if not testing_service.last_test_build.is_successful():
-                    return False
-        return True
+                        health["healthy"] = False
+                except TestingServiceException as e:
+                    health["issues"].append(str(e))
+                    health["healthy"] = "Unknown"
+        return health
+
+    @property
+    def is_healthy(self) -> Union[bool, str]:
+        return self.check_health()["healthy"]
 
     def add_test_suite(self, submitter: User, test_suite_metadata):
         return TestSuite(self, submitter, test_suite_metadata)
 
     def to_dict(self, test_suite=False, test_build=False, test_output=False):
+        health = self.check_health()
         data = {
             'uuid': str(self.uuid),
             'version': self.version,
             'name': self.name,
             'roc_link': self.roc_link,
-            'isHealthy': self.is_healthy
+            'isHealthy': health["healthy"],
+            'issues': health["issues"]
         }
         if test_suite:
             data['test_suite'] = [s.to_dict(test_build=test_build, test_output=test_output)
