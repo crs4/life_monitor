@@ -215,8 +215,8 @@ class Workflow(db.Model):
         for suite in self.test_suites:
             for test_configuration in suite.test_configurations:
                 try:
-                testing_service = test_configuration.testing_service
-                if not testing_service.last_test_build.is_successful():
+                    testing_service = test_configuration.testing_service
+                    if not testing_service.last_test_build.is_successful():
                         health["healthy"] = False
                 except TestingServiceException as e:
                     health["issues"].append(str(e))
@@ -649,7 +649,7 @@ class JenkinsTestingService(TestingService):
     def __init__(self, url: str, resource: str) -> None:
         super().__init__(url, resource)
         try:
-        self._server = jenkins.Jenkins(self.url)
+            self._server = jenkins.Jenkins(self.url)
         except Exception as e:
             raise TestingServiceException(e)
 
