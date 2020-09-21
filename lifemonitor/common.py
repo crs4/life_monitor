@@ -39,3 +39,9 @@ class TestingServiceNotSupportedException(LifeMonitorException):
     pass
 
 
+class NotValidROCrateException(Exception):
+    pass
+
+
+class TestingServiceException(Exception):
+    pass
