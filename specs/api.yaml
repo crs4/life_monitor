@@ -30,6 +30,9 @@ paths:
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "workflows_get"
       summary: "Get all known workflows"
+      security:
+        - api_key: ['read']
+        - oauth2: ['read']
       responses:
         '200':
           description: A JSON array of Workflow objects
@@ -44,6 +47,9 @@ paths:
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "workflows_post"
       summary: "Register a workflow"
+      security:
+        - api_key: ['read', 'write']
+        - oauth2: ['read', 'write']
       requestBody:
         required: true
         content:
@@ -59,6 +65,9 @@ paths:
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "workflows_get_by_id"
       summary: "Get information about a single workflow"
+      security:
+        - api_key: ['read']
+        - oauth2: ['read']
       parameters:
         - $ref: '#/components/parameters/wf_uuid'
         - $ref: '#/components/parameters/wf_version'
@@ -81,6 +90,9 @@ paths:
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "workflows_put"
       summary: "Modify an existing workflow"
+      security:
+        - api_key: ['read', 'write']
+        - oauth2: ['read', 'write']
       parameters:
         - $ref: '#/components/parameters/wf_uuid'
         - $ref: '#/components/parameters/wf_version'
@@ -98,6 +110,9 @@ paths:
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "workflows_delete"
       summary: "Delete a workflow"
+      security:
+        - api_key: ['read', 'write']
+        - oauth2: ['read', 'write']
       parameters:
         - $ref: '#/components/parameters/wf_uuid'
         - $ref: '#/components/parameters/wf_version'
@@ -114,6 +129,9 @@ paths:
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "suites_post"
       summary: "Register a test suite"
+      security:
+        - api_key: ['read', 'write']
+        - oauth2: ['read', 'write']
       parameters:
         - $ref: '#/components/parameters/wf_uuid'
         - $ref: '#/components/parameters/wf_version'
@@ -132,6 +150,9 @@ paths:
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "suites_delete"
       summary: "Delete a test suite"
+      security:
+        - api_key: ['read', 'write']
+        - oauth2: ['read', 'write']
       parameters:
         - $ref: '#/components/parameters/suite_uuid'
       responses:
