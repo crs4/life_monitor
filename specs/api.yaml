@@ -211,6 +211,8 @@ components:
           type: string
         name:
           type: string
+        submitter_id:
+          type: string
       required:
         - uuid
         - version
