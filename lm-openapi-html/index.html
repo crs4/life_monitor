@@ -200,6 +200,7 @@ font-style: italic;
   <div class="method-summary"></div>
   <h4><a href="#Default">Default</a></h4>
   <ul>
+  <li><a href="#showCurrentUserProfile"><code><span class="http-method">get</span> /me</code></a></li>
   <li><a href="#suitesDelete"><code><span class="http-method">delete</span> /suites/{suite_uuid}</code></a></li>
   <li><a href="#suitesPost"><code><span class="http-method">post</span> /workflows/{wf_uuid}/{wf_version}/suites</code></a></li>
   <li><a href="#workflowsDelete"><code><span class="http-method">delete</span> /workflows/{wf_uuid}/{wf_version}</code></a></li>
@@ -210,6 +211,48 @@ font-style: italic;
   </ul>
 
   <h1><a name="Default">Default</a></h1>
+  <div class="method"><a name="showCurrentUserProfile"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /me</code></pre></div>
+    <div class="method-summary">Get the profile of the current logged user (<span class="nickname">showCurrentUserProfile</span>)</div>
+    <div class="method-notes"></div>
+
+
+
+
+
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#User">User</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "identities" : "{}",
+  "id" : "id",
+  "username" : "username"
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    User profile info
+        <a href="#User">User</a>
+  </div> <!-- method -->
+  <hr/>
   <div class="method"><a name="suitesDelete"/>
     <div class="method-path">
     <a class="up" href="#__Methods">Up</a>
@@ -354,6 +397,7 @@ font-style: italic;
     <pre class="example"><code>{
   "roc_link" : "roc_link",
   "name" : "name",
+  "submitter_id" : "submitter_id",
   "uuid" : "uuid",
   "version" : "version"
 }</code></pre>
@@ -415,6 +459,7 @@ font-style: italic;
     <pre class="example"><code>{
   "roc_link" : "roc_link",
   "name" : "name",
+  "submitter_id" : "submitter_id",
   "uuid" : "uuid",
   "version" : "version"
 }</code></pre>
@@ -525,6 +570,7 @@ font-style: italic;
   <h3>Table of Contents</h3>
   <ol>
     <li><a href="#TestSuite"><code>TestSuite</code> - </a></li>
+    <li><a href="#User"><code>User</code> - </a></li>
     <li><a href="#Workflow"><code>Workflow</code> - </a></li>
   </ol>
 
@@ -536,6 +582,15 @@ font-style: italic;
     </div>  <!-- field-items -->
   </div>
   <div class="model">
+    <h3><a name="User"><code>User</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">id </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">username (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">identities (optional)</div><div class="param-desc"><span class="param-type"><a href="#">Object</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
     <h3><a name="Workflow"><code>Workflow</code> - </a> <a class="up" href="#__Models">Up</a></h3>
     <div class='model-description'></div>
     <div class="field-items">
@@ -543,6 +598,7 @@ font-style: italic;
 <div class="param">version </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
 <div class="param">roc_link </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
 <div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">submitter_id (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
     </div>  <!-- field-items -->
   </div>
   </body>
