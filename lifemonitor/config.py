@@ -4,33 +4,17 @@ from typing import List, Type
 
 import dotenv
 
+from .db import db_uri
 from .utils import bool_from_string
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
-# load "settings.conf" to the environment
-settings = None
-if os.path.exists("settings.conf"):
-    settings = dotenv.dotenv_values(dotenv_path="settings.conf")
-    os.environ.update(settings)
 
-
-def db_uri():
-    """
-    Build URI to connect to the DataBase
-    :return:
-    """
-    # "sqlite:///{0}/app-dev.db".format(basedir)
-    if os.getenv('DATABASE_URI'):
-        uri = os.getenv('DATABASE_URI')
-    else:
-        uri = "postgresql://{user}:{passwd}@{host}:{port}/{dbname}".format(
-            user=os.getenv('POSTGRESQL_USERNAME'),
-            passwd=os.getenv('POSTGRESQL_PASSWORD', ''),
-            host=os.getenv('POSTGRESQL_HOST'),
-            port=os.getenv('POSTGRESQL_PORT'),
-            dbname=os.getenv('POSTGRESQL_DATABASE'))
-    return uri
+def load_settings(file_path="settings.conf"):
+    result = None
+    if os.path.exists(file_path):
+        result = dotenv.dotenv_values(dotenv_path=file_path)
+    return result
 
 
 class BaseConfig:
@@ -40,7 +24,6 @@ class BaseConfig:
     LOG_LEVEL = os.environ.get('LOG_LEVEL', 'DEBUG' if DEBUG else 'INFO')
     # Add a random secret (required to enable HTTP sessions)
     SECRET_KEY = os.urandom(24)
-    SQLALCHEMY_DATABASE_URI = db_uri()
     # FSADeprecationWarning: SQLALCHEMY_TRACK_MODIFICATIONS adds significant
     # overhead and will be disabled by default in the future.  Set it to True
     # or False to suppress this warning.
@@ -50,9 +33,7 @@ class BaseConfig:
 class DevelopmentConfig(BaseConfig):
     CONFIG_NAME = "development"
     # Add a random secret (required to enable HTTP sessions)
-    SECRET_KEY = os.getenv(
-        "DEV_SECRET_KEY", "LifeMonitor Development Secret Key"
-    )
+    SECRET_KEY = os.getenv("DEV_SECRET_KEY", BaseConfig.SECRET_KEY)
     DEBUG = True
     LOG_LEVEL = "DEBUG"
     TESTING = False
@@ -60,17 +41,17 @@ class DevelopmentConfig(BaseConfig):
 
 class ProductionConfig(BaseConfig):
     CONFIG_NAME = "production"
-    SECRET_KEY = os.getenv("PROD_SECRET_KEY", "LifeMonitor Production Secret Key")
+    SECRET_KEY = os.getenv("PROD_SECRET_KEY", BaseConfig.SECRET_KEY)
     TESTING = False
 
 
 class TestingConfig(BaseConfig):
     CONFIG_NAME = "testing"
-    SECRET_KEY = os.getenv("TEST_SECRET_KEY", "Thanos did nothing wrong")
+    SECRET_KEY = os.getenv("TEST_SECRET_KEY", BaseConfig.SECRET_KEY)
     DEBUG = True
     TESTING = True
     LOG_LEVEL = "DEBUG"
-    SQLALCHEMY_DATABASE_URI = "sqlite:///{0}/app-test.db".format(basedir)
+    # SQLALCHEMY_DATABASE_URI = "sqlite:///{0}/app-test.db".format(basedir)
 
 
 _EXPORT_CONFIGS: List[Type[BaseConfig]] = [
@@ -81,14 +62,21 @@ _EXPORT_CONFIGS: List[Type[BaseConfig]] = [
 _config_by_name = {cfg.CONFIG_NAME: cfg for cfg in _EXPORT_CONFIGS}
 
 
-def get_config_by_name(name):
+def get_config_by_name(name, settings=None):
     try:
-        config = _config_by_name[name]
-        if settings:
-            # append properties from settings.conf
-            # to the default configuration
-            for k, v in settings.items():
-                setattr(config, k, v)
+        config = type(f"AppConfigInstance{name}".title(), (_config_by_name[name],), {})
+        # load "settings.conf" to the environment
+        if settings is None:
+            settings = load_settings()
+        if settings and "SQLALCHEMY_DATABASE_URI" not in settings:
+            settings["SQLALCHEMY_DATABASE_URI"] = db_uri(settings)
+        # always set the FLASK_APP_CONFIG_FILE variable to the environment
+        if "FLASK_APP_CONFIG_FILE" in settings:
+            os.environ["FLASK_APP_CONFIG_FILE"] = settings["FLASK_APP_CONFIG_FILE"]
+        # append properties from settings.conf
+        # to the default configuration
+        for k, v in settings.items():
+            setattr(config, k, v)
         return config
     except KeyError:
         return ProductionConfig

@@ -14,31 +14,6 @@ logger = logging.getLogger(__name__)
 blueprint = Blueprint('oauth', __name__)
 
 
-@blueprint.cli.command('create-client')
-@click.argument("username")
-@click.argument("client_name")
-@click.argument("client_uri")
-@click.argument("client_redirect_uri")
-@click.argument("scope")
-@with_appcontext
-def create_client(username, client_name, client_uri, client_redirect_uri, scope):
-    """
-    Create a OAuth2 client with 'authorization_code' grant
-    """
-    user = User.find_by_username(username)
-    if not user:
-        print("User not found", file=sys.stderr)
-        sys.exit(99)
-    logger.debug("User found: %r", user)
-    client = server.create_client(user,
-                                  client_name, client_uri,
-                                  ["authorization_code"], ["token"], scope,
-                                  client_redirect_uri)
-    print("CLIENT ID: %s" % client.client_id)
-    print("CLIENT SECRET: %s" % client.client_secret)
-    logger.debug("Client created")
-
-
 def invalidate_token(token):
     invalid_token = token.copy()
     invalid_token["expires_in"] = 10
@@ -67,3 +42,65 @@ def token_invalidate(username):
         count += 1
     print("%d Token invalidated!" % count, file=sys.stderr)
     logger.debug("Token of User '%s' invalidated!", user.username)
+
+
+@blueprint.cli.command('create-client-oauth-code')
+@click.argument("client_name")
+@click.argument("client_uri")
+@click.argument("client_redirect_uri")
+@click.argument("scope")
+@click.argument("client_auth_method",
+                type=click.Choice(['client_secret_basic', 'client_secret_post']),
+                default='client_secret_post')
+@click.option("--username", default="1")  # should be the "admin" username
+@with_appcontext
+def create_client_oauth_code(client_name, client_uri, client_redirect_uri,
+                             client_auth_method, scope, username):
+    """
+    Create a OAuth2 client with 'authorization_code' grant
+    """
+    user = User.find_by_username(username)
+    logger.debug("USERNAME: %r", username)
+    if not user:
+        print("User not found", file=sys.stderr)
+        sys.exit(99)
+    logger.debug("User found: %r", user)
+    client = server.create_client(user,
+                                  client_name, client_uri,
+                                  ['authorization_code', 'token', 'id_token'],
+                                  ["code", "token"], scope,
+                                  client_redirect_uri, client_auth_method)
+    print("CLIENT ID: %s" % client.client_id)
+    print("CLIENT SECRET: %s" % client.client_secret)
+    print("AUTHORIZATION URL: <LIFE_MONITOR_BASE_URL>/oauth/authorize")
+    print("ACCESS TOKEN URL: <LIFE_MONITOR_BASE_URL>/oauth/token")
+    logger.debug("Client created")
+
+
+@blueprint.cli.command('create-client-credentials')
+@click.argument("client_name")
+@click.argument("client_uri")
+@click.argument("scope")
+@click.argument("client_auth_method",
+                type=click.Choice(['client_secret_basic', 'client_secret_post']),
+                default='client_secret_post')
+@click.option("--username", default="1")  # should be the "admin" username
+@with_appcontext
+def create_client_credentials(client_name, client_uri, client_auth_method, scope, username):
+    """
+    Create a OAuth2 client with 'client_credentials' grant
+    """
+    user = User.find_by_username(username)
+    logger.debug("USERNAME: %r", username)
+    if not user:
+        print("User not found", file=sys.stderr)
+        sys.exit(99)
+    logger.debug("User found: %r", user)
+    client = server.create_client(user,
+                                  client_name, client_uri,
+                                  'client_credentials', ["token"], scope,
+                                  "", client_auth_method)
+    print("CLIENT ID: %s" % client.client_id)
+    print("CLIENT SECRET: %s" % client.client_secret)
+    print("ACCESS TOKEN URL: <LIFE_MONITOR_BASE_URL>/oauth/token")
+    logger.debug("Client created")

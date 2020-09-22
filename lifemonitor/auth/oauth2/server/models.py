@@ -13,12 +13,13 @@ from authlib.integrations.sqla_oauth2 import (
 )
 from werkzeug.security import gen_salt
 
-from lifemonitor.app import db
+from lifemonitor.db import db
 from lifemonitor.auth.models import User
 
 
 class Client(db.Model, OAuth2ClientMixin):
     id = db.Column(db.Integer, primary_key=True)
+    client_id = db.Column(db.String(48), index=True, unique=True)
     user_id = db.Column(
         db.Integer, db.ForeignKey('user.id', ondelete='CASCADE')
     )
@@ -37,6 +38,9 @@ class Token(db.Model, OAuth2TokenMixin):
         db.Integer, db.ForeignKey('user.id', ondelete='CASCADE')
     )
     user = db.relationship('User')
+    client_id = db.Column(db.String,
+                          db.ForeignKey('client.client_id', ondelete='CASCADE'))
+    client = db.relationship('Client')
 
     def save(self):
         db.session.add(self)
@@ -49,6 +53,10 @@ class Token(db.Model, OAuth2TokenMixin):
     @classmethod
     def find(cls, access_token):
         return cls.query.filter(Token.access_token == access_token).first()
+
+    @classmethod
+    def all(cls):
+        return cls.query.all()
 
 
 class AuthorizationServer(OAuth2AuthorizationServer):
@@ -112,6 +120,9 @@ class AuthorizationCode(db.Model, OAuth2AuthorizationCodeMixin):
 
 
 class AuthorizationCodeGrant(grants.AuthorizationCodeGrant):
+    TOKEN_ENDPOINT_AUTH_METHODS = [
+        'client_secret_basic', 'client_secret_post'
+    ]
 
     def create_authorization_code(self, client, grant_user, request):
         # you can use other method to generate this code

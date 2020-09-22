@@ -11,11 +11,28 @@ servers:
     description: Version 0.0 of API.  Add version prefix (e.g, /v1.0) once we have something useful
 
 paths:
+  /me:
+    get:
+      x-openapi-router-controller: lifemonitor.auth.controllers
+      operationId: "show_current_user_profile"
+      summary: "Get the profile of the current logged user"
+      responses:
+        '200':
+          description: User profile info
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+
   /workflows:
     get:
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "workflows_get"
       summary: "Get all known workflows"
+      security:
+        - api_key: ['read']
+        - oauth2: ['read']
       responses:
         '200':
           description: A JSON array of Workflow objects
@@ -30,6 +47,9 @@ paths:
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "workflows_post"
       summary: "Register a workflow"
+      security:
+        - api_key: ['read', 'write']
+        - oauth2: ['read', 'write']
       requestBody:
         required: true
         content:
@@ -45,6 +65,9 @@ paths:
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "workflows_get_by_id"
       summary: "Get information about a single workflow"
+      security:
+        - api_key: ['read']
+        - oauth2: ['read']
       parameters:
         - $ref: '#/components/parameters/wf_uuid'
         - $ref: '#/components/parameters/wf_version'
@@ -67,6 +90,9 @@ paths:
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "workflows_put"
       summary: "Modify an existing workflow"
+      security:
+        - api_key: ['read', 'write']
+        - oauth2: ['read', 'write']
       parameters:
         - $ref: '#/components/parameters/wf_uuid'
         - $ref: '#/components/parameters/wf_version'
@@ -84,6 +110,9 @@ paths:
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "workflows_delete"
       summary: "Delete a workflow"
+      security:
+        - api_key: ['read', 'write']
+        - oauth2: ['read', 'write']
       parameters:
         - $ref: '#/components/parameters/wf_uuid'
         - $ref: '#/components/parameters/wf_version'
@@ -100,6 +129,9 @@ paths:
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "suites_post"
       summary: "Register a test suite"
+      security:
+        - api_key: ['read', 'write']
+        - oauth2: ['read', 'write']
       parameters:
         - $ref: '#/components/parameters/wf_uuid'
         - $ref: '#/components/parameters/wf_version'
@@ -118,6 +150,9 @@ paths:
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "suites_delete"
       summary: "Delete a test suite"
+      security:
+        - api_key: ['read', 'write']
+        - oauth2: ['read', 'write']
       parameters:
         - $ref: '#/components/parameters/suite_uuid'
       responses:
@@ -174,6 +209,18 @@ components:
       required: true
 
   schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        username:
+          type: string
+        identities:
+          type: object
+      required:
+        - id
+
     Workflow:
       type: object
       properties:
@@ -184,6 +231,8 @@ components:
         roc_link:
           type: string
         name:
+          type: string
+        submitter_id:
           type: string
       required:
         - uuid

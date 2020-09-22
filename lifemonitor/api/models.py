@@ -1,116 +1,244 @@
 from __future__ import annotations
-import os
+
+import re
 import logging
+import jenkins
 import uuid as _uuid
+from typing import Union
+from importlib import import_module
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Optional
-
-import jenkins
-
+from authlib.integrations.base_client import RemoteApp
 from sqlalchemy.dialects.postgresql import UUID, JSONB
-
-from lifemonitor.app import db
-from lifemonitor.auth.oauth2.client.services import RemoteApp
+from lifemonitor.db import db
+from lifemonitor.auth.models import User
+from sqlalchemy.ext.associationproxy import association_proxy
+from lifemonitor.auth.oauth2.client.services import oauth2_registry
 from lifemonitor.common import (SpecificationNotValidException, EntityNotFoundException,
                                 SpecificationNotDefinedException, TestingServiceNotSupportedException,
-                                NotImplementedException, LifeMonitorException)
+                                NotImplementedException, TestingServiceException, LifeMonitorException)
 from lifemonitor.utils import download_url, to_camel_case
-from lifemonitor.auth.oauth2.client import oauth2_registry
+from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 
 # set module level logger
 logger = logging.getLogger(__name__)
 
 
-class WorkflowRegistry:
-    __instance = None
+class WorkflowRegistryClient(ABC):
 
-    @classmethod
-    def get_instance(cls) -> WorkflowRegistry:
-        if not cls.__instance:
-            cls.__instance = cls()
-        return cls.__instance
-
-    def __init__(self):
-        if self.__instance:
-            raise Exception("WorkflowRegistry instance already exists!")
-        self.__instance = self
-
-    @property
-    def _client(self) -> RemoteApp:
+    def __init__(self, registry: WorkflowRegistry):
+        self._registry = registry
         try:
-            return oauth2_registry.seek
+            self._oauth2client: RemoteApp = getattr(oauth2_registry, self.registry.name)
         except AttributeError:
-            raise RuntimeError("Unable to find a OAuth2 client for the Seek service")
+            raise RuntimeError(f"Unable to find a OAuth2 client for the {self.name} service")
 
     @property
-    def _url(self):
-        return self._client.api_base_url
+    def registry(self):
+        return self._registry
+
+    def _get_access_token(self, user_id):
+        # get the access token related with the user of this client registry
+        return OAuthIdentity.find_by_user_provider(user_id,
+                                                   self.registry.name).token
+
+    def _get(self, user, *args, **kwargs):
+        # update token
+        self._oauth2client.token = self._get_access_token(user.id)
+        return self._oauth2client.get(*args, **kwargs)
+
+    def download_url(self, url, user, target_path=None):
+        return download_url(url, target_path, self._get_access_token(user.id)["access_token"])
+
+    def get_external_id(self, uuid, version, user: User) -> str:
+        """ Return CSV of uuid and version"""
+        return ",".join([str(uuid), str(version)])
+
+    @abstractmethod
+    def build_ro_link(self, w: Workflow) -> str:
+        pass
+
+    @abstractmethod
+    def get_workflows_metadata(self, user, details=False):
+        pass
+
+    @abstractmethod
+    def get_workflow_metadata(self, user, w: Union[Workflow, str]):
+        pass
+
+    @abstractmethod
+    def filter_by_user(workflows: list, user: User):
+        pass
+
+
+class WorkflowRegistry(db.Model):
+
+    uuid = db.Column(UUID(as_uuid=True), primary_key=True, default=_uuid.uuid4)
+    name = db.Column(db.Text, unique=True)
+    uri = db.Column(db.Text, unique=True)
+    _client_id = db.Column(
+        db.Integer, db.ForeignKey('client.id', ondelete='CASCADE')
+    )
+    client_credentials = db.relationship("Client", uselist=False, cascade="all, delete")
+    registered_workflows = db.relationship("Workflow",
+                                           back_populates="workflow_registry", cascade="all, delete")
+    client_id = association_proxy('client_credentials', 'client_id')
+    _client = None
+
+    def __init__(self, name, client_credentials):
+        self.__instance = self
+        self.name = name
+        self.uri = client_credentials.client_metadata['client_uri']
+        self.client_credentials = client_credentials
+        self._client = None
 
     @property
-    def _access_token(self):
-        return self._client.token["access_token"]
+    def client(self) -> WorkflowRegistryClient:
+        if self._client is None:
+            m = f"lifemonitor.api.registry.{self.name}"
+            try:
+                mod = import_module(m)
+                self._client = getattr(mod, "WorkflowRegistryClient")(self)
+            except ModuleNotFoundError:
+                raise LifeMonitorException(f"ModuleNotFoundError: Unable to load module {m}")
+            except AttributeError:
+                raise LifeMonitorException(f"Unable to create an instance of WorkflowRegistryClient from module {m}")
+        return self._client
 
     def build_ro_link(self, w: Workflow) -> str:
-        return "{}?version={}".format(os.path.join(self._url, "workflow", w.uuid), w.version)
+        return self.client.build_ro_link(w)
 
-    def download_url(self, url, target_path=None):
-        return download_url(url, target_path, self._access_token)
+    def download_url(self, url, user, target_path=None):
+        return self.client.download_url(url, user, target_path=target_path)
+
+    def get_users(self):
+        pass
+
+    def add_workflow(self, workflow_uuid, workflow_version,
+                     workflow_submitter: User,
+                     roc_link, roc_metadata=None,
+                     external_id=None, name=None):
+        if external_id is None:
+            try:
+                external_id = self.client.get_external_id(
+                    workflow_uuid, workflow_version, workflow_submitter)
+            except Exception as e:
+                logger.exception(e)
+
+        return Workflow(self, workflow_submitter,
+                        workflow_uuid, workflow_version, roc_link,
+                        roc_metadata=roc_metadata,
+                        external_id=external_id, name=name)
+
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
+
+    def get_workflow(self, uuid, version):
+        try:
+            return Workflow.query.with_parent(self)\
+                .filter(Workflow.uuid == uuid).filter(Workflow.version == version).one()
+        except Exception as e:
+            raise EntityNotFoundException(e)
+
+    def get_user_workflows(self, user: User):
+        return self.client.filter_by_user(self.registered_workflows, user)
+
+    @classmethod
+    def all(cls):
+        return cls.query.all()
+
+    @classmethod
+    def find_by_id(cls, uuid) -> WorkflowRegistry:
+        return cls.query.get(uuid)
+
+    @classmethod
+    def find_by_name(cls, name):
+        return cls.query.filter(WorkflowRegistry.name == name).first()
+
+    @classmethod
+    def find_by_uri(cls, uri):
+        return cls.query.filter(WorkflowRegistry.uri == uri).first()
+
+    @classmethod
+    def find_by_client_id(cls, client_id):
+        return cls.query.filter_by(client_id=client_id).first()
 
 
 class Workflow(db.Model):
     _id = db.Column('id', db.Integer, primary_key=True)
     uuid = db.Column(UUID)
-    version = db.Column(db.Text)
-    name = db.Column(db.Text, nullable=True)
+    version = db.Column(db.Text, nullable=False)
+    roc_link = db.Column(db.Text, nullable=False)
     roc_metadata = db.Column(JSONB, nullable=True)
+    submitter_id = db.Column(db.Integer,
+                             db.ForeignKey(User.id), nullable=False)
+    _registry_id = \
+        db.Column("registry_id", UUID(as_uuid=True),
+                  db.ForeignKey(WorkflowRegistry.uuid), nullable=False)
+    external_id = db.Column(db.String, nullable=True)
+    workflow_registry = db.relationship("WorkflowRegistry", uselist=False, back_populates="registered_workflows")
+    name = db.Column(db.Text, nullable=True)
     test_suites = db.relationship("TestSuite", back_populates="workflow", cascade="all, delete")
-    _registry = None
+    submitter = db.relationship("User", uselist=False)
+
     # additional relational specs
     __tablename__ = "workflow"
-    __table_args__ = tuple(
-        db.UniqueConstraint(uuid, version)
+    __table_args__ = (
+        db.UniqueConstraint(uuid, version),
+        db.UniqueConstraint(_registry_id, external_id),
     )
 
-    def __init__(self, uuid, version, roc_metadata=None, name=None) -> None:
+    def __init__(self, registry: WorkflowRegistry, submitter: User,
+                 uuid, version, rock_link,
+                 roc_metadata=None, external_id=None, name=None) -> None:
         self.uuid = uuid
         self.version = version
+        self.roc_link = rock_link
         self.roc_metadata = roc_metadata
         self.name = name
-        self._registry = None
-
-    @property
-    def registry(self):
-        if not self._registry:
-            self._registry = WorkflowRegistry.get_instance()
-        return self._registry
-
-    @property
-    def roc_link(self):
-        if self.registry:
-            return self.registry.build_ro_link(self)
-        return ""
+        self.external_id = external_id
+        self.workflow_registry = registry
+        self.submitter = submitter
 
     def __repr__(self):
         return '<Workflow ({}, {}); name: {}; link: {}>'.format(
             self.uuid, self.version, self.name, self.roc_link)
 
-    @property
-    def is_healthy(self) -> bool:
+    def check_health(self) -> dict:
+        health = {'healthy': True, 'issues': []}
         for suite in self.test_suites:
-            for test_configuration in suite.test_configurations:
-                testing_service = test_configuration.testing_service
-                if not testing_service.last_test_build.is_successful():
-                    return False
-        return True
+            for test_instance in suite.test_instances:
+                try:
+                    testing_service = test_instance.testing_service
+                    if not testing_service.last_test_build.is_successful():
+                        health["healthy"] = False
+                except TestingServiceException as e:
+                    health["issues"].append(str(e))
+                    health["healthy"] = "Unknown"
+        return health
+
+    @property
+    def is_healthy(self) -> Union[bool, str]:
+        return self.check_health()["healthy"]
+
+    def add_test_suite(self, submitter: User, test_suite_metadata):
+        return TestSuite(self, submitter, test_suite_metadata)
 
     def to_dict(self, test_suite=False, test_build=False, test_output=False):
+        health = self.check_health()
         data = {
             'uuid': str(self.uuid),
             'version': self.version,
             'name': self.name,
             'roc_link': self.roc_link,
-            'isHealthy': self.is_healthy
+            'isHealthy': health["healthy"],
+            'issues': health["issues"]
         }
         if test_suite:
             data['test_suite'] = [s.to_dict(test_build=test_build, test_output=test_output)
@@ -134,6 +262,10 @@ class Workflow(db.Model):
         return cls.query.filter(Workflow.uuid == uuid) \
             .filter(Workflow.version == version).first()
 
+    @classmethod
+    def find_by_submitter(cls, submitter: User):
+        return cls.query.filter(Workflow.submitter_id == submitter.id).first()
+
 
 class Test:
 
@@ -155,23 +287,48 @@ class Test:
 
 class TestSuite(db.Model):
     uuid = db.Column(UUID(as_uuid=True), primary_key=True, default=_uuid.uuid4)
-    _workflow_id = db.Column("workflow_id", db.Integer, db.ForeignKey(Workflow._id), nullable=False)
+    _workflow_id = db.Column("workflow_id", db.Integer,
+                             db.ForeignKey(Workflow._id), nullable=False)
     workflow = db.relationship("Workflow", back_populates="test_suites")
-    test_definition = db.Column(JSONB, nullable=True)
-    test_configurations = db.relationship("TestConfiguration",
-                                          back_populates="test_suite", cascade="all, delete")
+    test_definition = db.Column(JSONB, nullable=False)
+    submitter_id = db.Column(db.Integer,
+                             db.ForeignKey(User.id), nullable=False)
+    submitter = db.relationship("User", uselist=False)
+    test_instances = db.relationship("TestInstance",
+                                     back_populates="test_suite",
+                                     cascade="all, delete")
 
-    def __init__(self, w: Workflow, test_definition: object = None) -> None:
+    def __init__(self,
+                 w: Workflow, submitter: User,
+                 test_definition: object) -> None:
         self.workflow = w
+        self.submitter = submitter
         self.test_definition = test_definition
+        self._parse_test_definition()
 
     def __repr__(self):
         return '<TestSuite {} of workflow {} (version {})>'.format(
             self.uuid, self.workflow.uuid, self.workflow.version)
 
+    def _parse_test_definition(self):
+        try:
+            for test in self.test_definition["test"]:
+                for instance_data in test["instance"]:
+                    logger.debug("Instance_data: %r", instance_data)
+                    testing_service_data = instance_data["service"]
+                    testing_service = TestingService.new_instance(
+                        testing_service_data["type"],
+                        testing_service_data["url"], testing_service_data["resource"])
+                    logger.debug("Created TestService: %r", testing_service)
+                    test_instance = TestInstance(self, self.submitter,
+                                                 test["name"], testing_service)
+                    logger.debug("Created TestInstance: %r", test_instance)
+        except KeyError as e:
+            raise SpecificationNotValidException(f"Missing property: {e}")
+
     def get_test_instance_by_name(self, name) -> list:
         result = []
-        for ti in self.test_configurations:
+        for ti in self.test_instances:
             if ti.name == name:
                 result.append(ti)
         return result
@@ -179,8 +336,17 @@ class TestSuite(db.Model):
     def to_dict(self, test_build=False, test_output=False) -> dict:
         return {
             'uuid': str(self.uuid),
-            'test': [t.to_dict(test_build=test_build, test_output=test_output) for t in self.test_configurations]
+            'test': [t.to_dict(test_build=test_build, test_output=test_output)
+                     for t in self.test_instances]
         }
+
+    def add_test_instance(self, submitter: User,
+                          test_name, testing_service_type, testing_service_url):
+        testing_service = \
+            TestingService.new_instance(testing_service_type, testing_service_url)
+        test_instance = TestInstance(self, submitter, test_name, testing_service)
+        logger.debug("Created TestInstance: %r", test_instance)
+        return test_instance
 
     @property
     def tests(self) -> Optional[dict]:
@@ -212,40 +378,40 @@ class TestSuite(db.Model):
         return cls.query.get(uuid)
 
 
-class TestConfiguration(db.Model):
+class TestInstance(db.Model):
     uuid = db.Column(UUID(as_uuid=True), primary_key=True, default=_uuid.uuid4)
     _test_suite_uuid = \
         db.Column("test_suite_uuid", UUID(as_uuid=True), db.ForeignKey(TestSuite.uuid), nullable=False)
-    test_name = db.Column(db.Text, nullable=False)
-    test_instance_name = db.Column(db.Text, nullable=True)
-    url = db.Column(db.Text, nullable=True)
+    name = db.Column(db.Text, nullable=False)
     parameters = db.Column(JSONB, nullable=True)
+    submitter_id = db.Column(db.Integer,
+                             db.ForeignKey(User.id), nullable=False)
     # configure relationships
-    test_suite = db.relationship("TestSuite", back_populates="test_configurations")
-    testing_service = db.relationship("TestingService", uselist=False, back_populates="test_configuration",
+    submitter = db.relationship("User", uselist=False)
+    test_suite = db.relationship("TestSuite", back_populates="test_instances")
+    testing_service = db.relationship("TestingService", uselist=False, back_populates="test_instance",
                                       cascade="all, delete", lazy='joined')
 
-    def __init__(self, testing_suite: TestSuite,
-                 test_name, test_instance_name=None, url: str = None) -> None:
+    def __init__(self, testing_suite: TestSuite, submitter: User,
+                 test_name, testing_service: TestingService) -> None:
         self.test_suite = testing_suite
-        self.test_name = test_name
-        self.test_instance_name = test_instance_name
-        self.url = url
+        self.submitter = submitter
+        self.name = test_name
+        self.testing_service = testing_service
 
     def __repr__(self):
-        return '<TestConfiguration {} on TestSuite {}>'.format(self.uuid, self.test_suite.uuid)
+        return '<TestInstance {} on TestSuite {}>'.format(self.uuid, self.test_suite.uuid)
 
     @property
     def test(self):
         if not self.test_suite:
             raise EntityNotFoundException(Test)
-        return self.test_suite.tests[self.test_name]
+        return self.test_suite.tests[self.name]
 
     def to_dict(self, test_build=False, test_output=False):
         data = {
             'uuid': str(self.uuid),
-            'name': self.test_instance_name or self.test_name,
-            'url': self.url,
+            'name': self.name,
             'parameters': self.parameters,
             'testing_service': self.testing_service.to_dict(test_builds=False)
         }
@@ -266,7 +432,7 @@ class TestConfiguration(db.Model):
         return cls.query.all()
 
     @classmethod
-    def find_by_id(cls, uuid) -> TestConfiguration:
+    def find_by_id(cls, uuid) -> TestInstance:
         return cls.query.get(uuid)
 
 
@@ -289,32 +455,33 @@ class TestingServiceToken:
 
 
 class TestingService(db.Model):
-    uuid = db.Column("uuid", UUID(as_uuid=True), db.ForeignKey(TestConfiguration.uuid), primary_key=True)
+    uuid = db.Column("uuid", UUID(as_uuid=True), db.ForeignKey(TestInstance.uuid), primary_key=True)
     _type = db.Column("type", db.String, nullable=False)
     _key = db.Column("key", db.Text, nullable=True)
     _secret = db.Column("secret", db.Text, nullable=True)
     url = db.Column(db.Text, nullable=False)
+    resource = db.Column(db.Text, nullable=False)
     # configure nested object
     token = db.composite(TestingServiceToken, _key, _secret)
     # configure relationships
-    test_configuration = db.relationship("TestConfiguration", back_populates="testing_service",
-                                         cascade="all, delete", lazy='joined')
+    test_instance = db.relationship("TestInstance", back_populates="testing_service",
+                                    cascade="all, delete", lazy='joined')
 
     __mapper_args__ = {
         'polymorphic_on': _type,
         'polymorphic_identity': 'testing_service'
     }
 
-    def __init__(self, test_configuration: TestConfiguration, url: str) -> None:
-        self.test_configuration = test_configuration
+    def __init__(self, url: str, resource: str) -> None:
         self.url = url
+        self.resource = resource
 
     def __repr__(self):
-        return '<TestingService {} for the TestConfiguration {}>'.format(self.uuid, self.test_configuration.uuid)
+        return f'<TestingService {self.url}, resource {self.resource} ({self.uuid})>'
 
     @property
     def test_instance_name(self):
-        return self.test_configuration.test_instance_name
+        return self.test_instance.name
 
     @property
     def is_workflow_healthy(self) -> bool:
@@ -376,12 +543,12 @@ class TestingService(db.Model):
         return cls.query.get(uuid)
 
     @classmethod
-    def new_instance(cls, test_instance: TestConfiguration, service_type, url: str):
+    def new_instance(cls, service_type, url: str, resource: str):
         try:
             service_class = globals()["{}TestingService".format(to_camel_case(service_type))]
-            return service_class(test_instance, url)
-        except Exception as e:
-            raise TestingServiceNotSupportedException(e)
+        except KeyError:
+            raise TestingServiceNotSupportedException(f"Not supported testing service type '{service_type}'")
+        return service_class(url, resource)
 
 
 class TestBuild(ABC):
@@ -474,19 +641,35 @@ class JenkinsTestBuild(TestBuild):
 
 class JenkinsTestingService(TestingService):
     _server = None
+    _job_name = None
     __mapper_args__ = {
         'polymorphic_identity': 'jenkins_testing_service'
     }
 
-    def __init__(self, test_configuration: TestConfiguration, url: str) -> None:
-        super().__init__(test_configuration, url)
-        self._server = jenkins.Jenkins(self.url)
+    def __init__(self, url: str, resource: str) -> None:
+        super().__init__(url, resource)
+        try:
+            self._server = jenkins.Jenkins(self.url)
+        except Exception as e:
+            raise TestingServiceException(e)
 
     @property
     def server(self):
         if not self._server:
             self._server = jenkins.Jenkins(self.url)
         return self._server
+
+    @property
+    def job_name(self):
+        # extract the job name from the resource path
+        if self._job_name is None:
+            logger.debug(f"Getting project metadata - resource: {self.resource}")
+            self._job_name = re.sub("(?s:.*)/", "", self.resource.strip('/'))
+            logger.debug(f"The job name: {self._job_name}")
+            if not self._job_name or len(self._job_name) == 0:
+                raise TestingServiceException(
+                    f"Unable to get the Jenkins job from the resource {self._job_name}")
+        return self._job_name
 
     @property
     def is_workflow_healthy(self) -> bool:
@@ -520,19 +703,19 @@ class JenkinsTestingService(TestingService):
     @property
     def project_metadata(self):
         try:
-            return self.server.get_job_info(self.test_instance_name)
+            return self.server.get_job_info(self.job_name)
         except jenkins.JenkinsException as e:
-            raise LifeMonitorException(e)
+            raise TestingServiceException(f"{self}: {e}")
 
     def get_test_build(self, build_number) -> JenkinsTestBuild:
         try:
-            build_metadata = self.server.get_build_info(self.test_instance_name, build_number)
+            build_metadata = self.server.get_build_info(self.job_name, build_number)
             return JenkinsTestBuild(self, build_metadata)
         except jenkins.JenkinsException as e:
-            raise LifeMonitorException(e)
+            raise TestingServiceException(e)
 
     def get_test_build_output(self, build_number):
         try:
-            return self.server.get_build_console_output(self.test_instance_name, build_number)
+            return self.server.get_build_console_output(self.job_name, build_number)
         except jenkins.JenkinsException as e:
-            raise LifeMonitorException(e)
+            raise TestingServiceException(e)

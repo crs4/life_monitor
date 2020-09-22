@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 import logging
 import connexion
-from flask import request
+from flask import request, g
+from flask_login import current_user
 from lifemonitor.api.services import LifeMonitor
-from lifemonitor.common import EntityNotFoundException
-
+from lifemonitor.api.models import WorkflowRegistry
+from lifemonitor.common import EntityNotFoundException, NotAuthorizedException, NotValidROCrateException
+from lifemonitor.auth.oauth2.client.models import OAuthIdentity, OAuthIdentityNotFoundException
 # Initialize a reference to the LifeMonitor instance
 lm = LifeMonitor.get_instance()
 
@@ -20,20 +22,66 @@ def _row_to_dict(row):
 
 
 def workflows_get():
-    workflows = lm.get_registered_workflows()
+    registry = g.workflow_registry if "workflow_registry" in g else None
+    workflows = []
+    if registry:
+        workflows.extend(lm.get_registry_workflows(registry))
+    elif not current_user.is_anonymous:
+        workflows.extend(lm.get_user_workflows(current_user))
+
     logger.debug("workflows_get. Got %s workflows", len(workflows))
     return [w.to_dict(test_suite=False, test_output=False) for w in workflows]
 
 
 def workflows_post(body):
-    w = lm.register_workflow(
-        workflow_uuid=body['uuid'],
-        workflow_version=body['version'],
-        roc_link=body['roc_link'],
-        name=body['name']
-    )
-    logger.debug("workflows_post. Created workflow with name '%s'", w.name)
-    return {'wf_uuid': str(w.uuid), 'version': w.version}, 201
+    registry = g.workflow_registry if "workflow_registry" in g else None
+    if not registry:
+        try:
+            registry = WorkflowRegistry.find_by_uri(body.get('registry_uri', None))
+        except EntityNotFoundException as e:
+            logger.debug(e)
+    if registry is None:
+        return "Unable to find a valid WorkflowRegistry", 404
+
+    submitter = None
+    logger.debug("Current user: %r --> anonymous: %r", current_user, current_user.is_anonymous)
+    if current_user and not current_user.is_anonymous:
+        submitter = current_user
+    else:
+        try:
+            submitter_id = body.get('submitter_id', None)
+            if submitter_id:
+                identity = OAuthIdentity.find_by_provider(registry.name, submitter_id)
+                submitter = identity.user
+        except NameError as e:
+            return f"Invalid request: {e.description}", 400
+        except OAuthIdentityNotFoundException as e:
+            logger.debug(e)
+    if submitter is None:
+        return "No valid submitter found", 404
+    try:
+        w = lm.register_workflow(
+            workflow_registry=registry,
+            workflow_submitter=submitter,
+            workflow_uuid=body['uuid'],
+            workflow_version=body['version'],
+            roc_link=body['roc_link'],
+            external_id=body.get("external_id", None),
+            name=body.get('name', None)
+        )
+        logger.debug("workflows_post. Created workflow with name '%s'", w.name)
+        return {'wf_uuid': str(w.uuid), 'version': w.version}, 201
+    except NameError as e:
+        return f"Invalid request: {e.description}", 400
+    except OAuthIdentityNotFoundException:
+        return f"Unable to find OAuth2 credentials for user {body.get('user_id', None)}", 401
+    except NotValidROCrateException as e:
+        return f"{e.description}", 400
+    except NotAuthorizedException as e:
+        return f"{e.description}", 401
+    except Exception as e:
+        logger.exception(e)
+        return f"Internal Error: {e}", 500
 
 
 def workflows_put(wf_uuid, wf_version, body):
@@ -57,7 +105,10 @@ def workflows_get_by_id(wf_uuid, wf_version):
     logger.debug("test_build => %r %r", test_build, type(test_build))
     logger.debug("test_output => %r %r", test_output, type(test_output))
     try:
-        wf = lm.get_registered_workflow(wf_uuid, wf_version)
+        if current_user and not current_user.is_anonymous:
+            wf = lm.get_user_workflow(wf_uuid, wf_version, current_user)
+        else:
+            wf = lm.get_registry_workflow(wf_uuid, wf_version)
     except EntityNotFoundException:
         return "Invalid ID", 400
 
@@ -71,9 +122,19 @@ def workflows_get_by_id(wf_uuid, wf_version):
 
 def workflows_delete(wf_uuid, wf_version):
     try:
-        lm.deregister_workflow(wf_uuid, wf_version)
-    except EntityNotFoundException:
+        if current_user and not current_user.is_anonymous:
+            lm.deregister_workflow(wf_uuid, wf_version, current_user)
+        elif "registry" in g:
+            lm.deregister_workflow(wf_uuid, wf_version)
+    except EntityNotFoundException as e:
+        logger.exception(e)
         return "Invalid ID", 400
+    except NotAuthorizedException as e:
+        logger.exception(e)
+        return "Invalid credentials", 401
+    except Exception as e:
+        logger.exception(e)
+        return "Internal Error", 500
 
     return connexion.NoContent, 204
 

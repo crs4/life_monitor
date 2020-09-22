@@ -10,6 +10,10 @@ class UnsupportedOperationException(LifeMonitorException):
     pass
 
 
+class NotAuthorizedException(LifeMonitorException):
+    pass
+
+
 class SpecificationNotDefinedException(LifeMonitorException):
     pass
 
@@ -32,4 +36,12 @@ class EntityNotFoundException(LifeMonitorException):
 
 
 class TestingServiceNotSupportedException(LifeMonitorException):
+    pass
+
+
+class NotValidROCrateException(Exception):
+    pass
+
+
+class TestingServiceException(Exception):
     pass

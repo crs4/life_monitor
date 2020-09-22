@@ -1,7 +1,7 @@
 import logging
 
 import flask
-from flask import flash, url_for, request, render_template, redirect
+from flask import flash, url_for, request, render_template, redirect, jsonify
 from flask_login import login_required, login_user, logout_user, current_user
 
 from .forms import RegisterForm, LoginForm, SetPasswordForm
@@ -18,6 +18,14 @@ blueprint = flask.Blueprint("auth", __name__,
 
 # Set the login view
 login_manager.login_view = "auth.login"
+
+
+@login_required
+def show_current_user_profile():
+    try:
+        return jsonify(current_user.to_dict())
+    except Exception as e:
+        logger.exception(e)
 
 
 @blueprint.route("/", methods=("GET",))

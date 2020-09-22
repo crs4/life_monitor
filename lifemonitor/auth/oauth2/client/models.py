@@ -5,9 +5,16 @@ from datetime import datetime
 from sqlalchemy import DateTime
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm.collections import attribute_mapped_collection
-
-from lifemonitor.app import db
+from sqlalchemy.orm.exc import NoResultFound
+from lifemonitor.db import db
 from lifemonitor.auth.models import User
+from lifemonitor.common import EntityNotFoundException
+
+
+class OAuthIdentityNotFoundException(EntityNotFoundException):
+    def __init__(self, entity_id=None) -> None:
+        super().__init__(entity_class=self.__class__)
+        self.entity_id = entity_id
 
 
 class OAuthUserProfile:
@@ -74,12 +81,22 @@ class OAuthIdentity(db.Model):
 
     @staticmethod
     def find_by_user_provider(user_id, provider) -> OAuthIdentity:
-        return OAuthIdentity.query.filter_by(
-            user_id=user_id, provider=provider
-        ).one()
+        try:
+            return OAuthIdentity.query.filter_by(
+                user_id=user_id, provider=provider
+            ).one()
+        except NoResultFound:
+            raise OAuthIdentityNotFoundException(f"{user_id}_{provider}")
 
     @staticmethod
     def find_by_provider(provider, provider_user_id) -> OAuthIdentity:
-        return OAuthIdentity.query.filter_by(
-            provider=provider, provider_user_id=provider_user_id
-        ).one()
+        try:
+            return OAuthIdentity.query.filter_by(
+                provider=provider, provider_user_id=provider_user_id
+            ).one()
+        except NoResultFound:
+            raise OAuthIdentityNotFoundException(f"{provider}_{provider_user_id}")
+
+    @classmethod
+    def all(cls):
+        return cls.query.all()

@@ -2,8 +2,7 @@ from __future__ import annotations
 import logging
 from flask_bcrypt import generate_password_hash, check_password_hash
 from flask_login import UserMixin, AnonymousUserMixin
-
-from lifemonitor.app import db
+from lifemonitor.db import db
 
 # Set the module level logger
 logger = logging.getLogger(__name__)
@@ -55,6 +54,15 @@ class User(UserMixin, db.Model):
     @staticmethod
     def find_by_username(username):
         return User.query.filter(User.username == username).first()
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "username": self.username,
+            "identities": {
+                n: i.user_info for n, i in self.oauth_identity.items()
+            }
+        }
 
 
 class ApiKey(db.Model):

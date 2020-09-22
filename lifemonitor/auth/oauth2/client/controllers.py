@@ -3,29 +3,82 @@ from __future__ import annotations
 import logging
 
 import flask
+from authlib.integrations.flask_client import FlaskRemoteApp
 
-from authlib.integrations.base_client import RemoteApp
-from flask import flash, url_for, redirect
+from flask import flash, url_for, redirect, request, session, Blueprint, current_app, abort
 from flask_login import current_user, login_user
-from loginpass import create_flask_blueprint
-from sqlalchemy.orm.exc import NoResultFound
 
 from lifemonitor.auth.models import User
-from lifemonitor.utils import pop_request_from_session
 from .models import OAuthUserProfile, OAuthIdentity
 from .services import oauth2_registry
+from authlib.integrations.base_client.errors import OAuthError
+from lifemonitor.auth.oauth2.client.models import OAuthIdentityNotFoundException
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
+
+_OAUTH2_NEXT_URL = "oauth2.next"
 
 
 def create_blueprint(merge_identity_view):
     authorization_handler = AuthorizatonHandler(merge_identity_view)
 
-    def _handle_authorize(provider: RemoteApp, token, user_info):
+    def _handle_authorize(provider: FlaskRemoteApp, token, user_info):
         return authorization_handler.handle_authorize(provider, token, OAuthUserProfile.from_dict(user_info))
 
-    return create_flask_blueprint([], oauth2_registry, _handle_authorize)
+    blueprint = Blueprint('oauth2provider', __name__)
+
+    @blueprint.route('/authorize/<name>', methods=('GET', 'POST'))
+    def authorize(name):
+        remote = oauth2_registry.create_client(name)
+        if remote is None:
+            abort(404)
+
+        next_url = flask.request.args.get('next')
+        if next_url:
+            return redirect(url_for(".login", name=name, next=next_url))
+
+        try:
+            id_token = request.values.get('id_token')
+            if request.values.get('code'):
+                token = remote.authorize_access_token()
+                if id_token:
+                    token['id_token'] = id_token
+            elif id_token:
+                token = {'id_token': id_token}
+            elif request.values.get('oauth_verifier'):
+                # OAuth 1
+                token = remote.authorize_access_token()
+            else:
+                # handle failed
+                return _handle_authorize(remote, None, None)
+            if 'id_token' in token:
+                user_info = remote.parse_id_token(token)
+            else:
+                remote.token = token
+                user_info = remote.userinfo(token=token)
+            return _handle_authorize(remote, token, user_info)
+        except OAuthError as e:
+            logger.debug(e)
+            if not request.args.get("state", False):
+                return redirect(url_for(".login", name=name, next=remote.api_base_url))
+            return e.description, 401
+
+    @blueprint.route('/login/<name>')
+    def login(name):
+        remote = oauth2_registry.create_client(name)
+        if remote is None:
+            abort(404)
+        # save the 'next' parameter to allow automatic redirect after OAuth2 authorization
+        next_url = flask.request.args.get('next')
+        if next_url:
+            session[_OAUTH2_NEXT_URL] = next_url
+        redirect_uri = url_for('.authorize', name=name, _external=True)
+        conf_key = '{}_AUTHORIZE_PARAMS'.format(name.upper())
+        params = current_app.config.get(conf_key, {})
+        return remote.authorize_redirect(redirect_uri, **params)
+
+    return blueprint
 
 
 class AuthorizatonHandler:
@@ -33,7 +86,7 @@ class AuthorizatonHandler:
     def __init__(self, merge_view="auth.merge") -> None:
         self.merge_view = merge_view
 
-    def handle_authorize(self, provider: RemoteApp, token, user_info: OAuthUserProfile):
+    def handle_authorize(self, provider: FlaskRemoteApp, token, user_info: OAuthUserProfile):
         logger.debug("Remote: %r", provider.name)
         logger.debug("Acquired token: %r", token)
         logger.debug("Acquired user_info: %r", user_info)
@@ -45,7 +98,7 @@ class AuthorizatonHandler:
             # update identity with the last token and userinfo
             identity.user_info = user_info.to_dict()
             identity.token = token
-        except NoResultFound:
+        except OAuthIdentityNotFoundException:
             logger.debug("Not found OAuth identity <%r,%r>", provider.name, user_info.sub)
             identity = OAuthIdentity(
                 provider_user_id=user_info.sub,
@@ -88,10 +141,10 @@ class AuthorizatonHandler:
             identity.save()
             flash("Successfully linked GitHub account.")
 
-        logger.debug(user_info)
+        # Determine the right next hop
         next_url = flask.request.args.get('next')
+        logger.debug("Request redirect (next URL stored on the 'next' request param: %r)", next_url)
         if not next_url:
-            data = pop_request_from_session(provider.name)
-            if data:
-                next_url = url_for(data["endpoint"], **data["args"])
+            next_url = flask.session.pop(_OAUTH2_NEXT_URL, False)
+            logger.debug("Request redirect (next URL stored on session: %r)", next_url)
         return redirect(next_url or '/')
