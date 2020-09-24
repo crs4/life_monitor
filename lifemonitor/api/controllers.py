@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 import logging
 import connexion
-from flask import request, g
+from flask import g
 from flask_login import current_user
 from lifemonitor.api.services import LifeMonitor
 from lifemonitor.api.models import WorkflowRegistry
-from lifemonitor.common import EntityNotFoundException, NotAuthorizedException, NotValidROCrateException
+from lifemonitor.api import serializers
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity, OAuthIdentityNotFoundException
 # Initialize a reference to the LifeMonitor instance
 lm = LifeMonitor.get_instance()
@@ -30,7 +30,7 @@ def workflows_get():
         workflows.extend(lm.get_user_workflows(current_user))
 
     logger.debug("workflows_get. Got %s workflows", len(workflows))
-    return [w.to_dict(test_suite=False, test_output=False) for w in workflows]
+    return serializers.WorkflowSchema().dump(workflows, many=True)
 
 
 def workflows_post(body):
@@ -98,12 +98,6 @@ def workflows_put(wf_uuid, wf_version, body):
 
 
 def workflows_get_by_id(wf_uuid, wf_version):
-    test_suite = request.args.get('test_suite', False, type=bool)
-    test_build = request.args.get('test_build', False, type=bool)
-    test_output = request.args.get('test_output', False, type=bool)
-    logger.debug("test_suites => %r %r", test_suite, type(test_suite))
-    logger.debug("test_build => %r %r", test_build, type(test_build))
-    logger.debug("test_output => %r %r", test_output, type(test_output))
     try:
         if current_user and not current_user.is_anonymous:
             wf = lm.get_user_workflow(wf_uuid, wf_version, current_user)
@@ -113,9 +107,7 @@ def workflows_get_by_id(wf_uuid, wf_version):
         return "Invalid ID", 400
 
     if wf is not None:
-        # Once we customize the JSON encoder or implement a smarter serialization
-        # with Marshmellow we could simply return the value
-        return wf.to_dict(test_suite=test_suite, test_build=test_build, test_output=test_output)
+        return serializers.WorkflowSchema().dump(wf)
 
     return connexion.NoContent, 404
 
