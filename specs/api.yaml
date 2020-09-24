@@ -472,6 +472,7 @@ components:
           type: string
         submitter_id:
           type: string
+          writeOnly: true
       required:
         - uuid
         - version
