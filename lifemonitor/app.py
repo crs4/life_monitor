@@ -3,6 +3,7 @@ import logging
 from flask import Flask, jsonify
 
 from .db import db
+from .serializers import ma
 import lifemonitor.config as config
 from lifemonitor.routes import register_routes
 from . import commands
@@ -51,6 +52,8 @@ def initialize_app(app, app_context):
     config.configure_logging(app)
     # configure app DB
     db.init_app(app)
+    # configure serializer engine (Flask Marshmallow)
+    ma.init_app(app)
     # configure app routes
     register_routes(app)
     # register commands
