@@ -62,6 +62,8 @@ paths:
   /workflows/{wf_uuid}:
     get:
       summary: "Get information about latest version of specified workflow"
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "workflows_get_latest_by_id"
       parameters:
         - $ref: '#/components/parameters/wf_uuid'
       responses:

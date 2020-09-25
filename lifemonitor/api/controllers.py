@@ -6,6 +6,7 @@ from flask_login import current_user
 from lifemonitor.api.services import LifeMonitor
 from lifemonitor.api.models import WorkflowRegistry
 from lifemonitor.api import serializers
+from lifemonitor.common import EntityNotFoundException, NotAuthorizedException, NotValidROCrateException
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity, OAuthIdentityNotFoundException
 # Initialize a reference to the LifeMonitor instance
 lm = LifeMonitor.get_instance()
@@ -108,6 +109,29 @@ def workflows_get_by_id(wf_uuid, wf_version):
 
     if wf is not None:
         return serializers.WorkflowSchema().dump(wf)
+
+    return connexion.NoContent, 404
+
+
+
+
+def workflows_get_status(wf_uuid, wf_version):
+    try:
+        logger.debug("Current user: %r", current_user)
+        if current_user and not current_user.is_anonymous:
+            wf = lm.get_user_workflow(wf_uuid, wf_version, current_user)
+        else:
+            registry = g.workflow_registry if "workflow_registry" in g else None
+            if registry is None:
+                return "Unable to find a valid WorkflowRegistry", 404
+            wf = lm.get_registry_workflow(wf_uuid, wf_version, registry)
+    except EntityNotFoundException:
+        return "Invalid ID", 400
+
+    if wf is not None:
+        result = serializers.WorkflowStatusSchema().dump(wf.status)
+        logger.debug(result)
+        return result
 
     return connexion.NoContent, 404
 
