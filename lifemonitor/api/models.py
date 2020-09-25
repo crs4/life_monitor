@@ -731,7 +731,7 @@ class JenkinsTestBuild(TestBuild):
         return self.metadata['number']
 
     def is_running(self) -> bool:
-        return self.metadata['building'] == True
+        return self.metadata['building'] is True
 
     @property
     def status(self) -> str:

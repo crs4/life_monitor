@@ -103,7 +103,10 @@ def workflows_get_by_id(wf_uuid, wf_version):
         if current_user and not current_user.is_anonymous:
             wf = lm.get_user_workflow(wf_uuid, wf_version, current_user)
         else:
-            wf = lm.get_registry_workflow(wf_uuid, wf_version)
+            registry = g.workflow_registry if "workflow_registry" in g else None
+            if registry is None:
+                return "Unable to find a valid WorkflowRegistry", 404
+            wf = lm.get_registry_workflow(wf_uuid, wf_version, registry)
     except EntityNotFoundException:
         return "Invalid ID", 400
 
@@ -113,6 +116,20 @@ def workflows_get_by_id(wf_uuid, wf_version):
     return connexion.NoContent, 404
 
 
+def workflows_get_latest_by_id(wf_uuid):
+    # try:
+    #     if current_user and not current_user.is_anonymous:
+    #         wf = lm.get_user_workflow(wf_uuid, wf_version, current_user)
+    #     else:
+    #         wf = lm.get_registry_workflow(wf_uuid, wf_version)
+    # except EntityNotFoundException:
+    #     return "Invalid ID", 400
+
+    # if wf is not None:
+    #     return serializers.WorkflowSchema().dump(wf)
+
+    # return connexion.NoContent, 404
+    return connexion.problem(title="Not implemented", status=501)
 
 
 def workflows_get_status(wf_uuid, wf_version):
@@ -156,9 +173,14 @@ def workflows_delete(wf_uuid, wf_version):
 
 
 def suites_post(wf_uuid, wf_version, body):
+    if current_user and not current_user.is_anonymous:
+        submitter = current_user
+    if submitter is None:
+        return "No valid submitter found", 404
     suite = lm.register_test_suite(
         workflow_uuid=wf_uuid,
         workflow_version=wf_version,
+        workflow_submitter=submitter,
         test_suite_metadata=body['test_suite_metadata']
     )
     logger.debug("suite_post. Created test suite with name '%s'", suite.uuid)
