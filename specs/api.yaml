@@ -154,7 +154,12 @@ paths:
 
   /workflows/{wf_uuid}/{wf_version}/status:
     get:
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "workflows_get_status"
       summary: "Get test statuses of a single workflow"
+      security:
+        - api_key: ['read']
+        - oauth2: ['read']
       parameters:
         - $ref: '#/components/parameters/wf_uuid'
         - $ref: '#/components/parameters/wf_version'
@@ -256,7 +261,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListOfSuiteInstance'
+                $ref: '#/components/schemas/ListOfTestInstance'
         '400':
           $ref: '#/components/responses/BadRequest'
         '404':
@@ -289,8 +294,8 @@ paths:
                   required:
                     - managed
                 - anyOf:
-                  - $ref: '#/components/schemas/SuiteInstance'
-                  - $ref: '#/components/schemas/ManagedSuiteInstanceCreationData'
+                  - $ref: '#/components/schemas/TestInstance'
+                  - $ref: '#/components/schemas/ManagedTestInstanceCreationData'
       responses:
         '201':
           description: Instance created
@@ -472,6 +477,7 @@ components:
           type: string
         name:
           type: string
+          nullable: true
         submitter_id:
           type: string
           writeOnly: true
