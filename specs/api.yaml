@@ -532,7 +532,7 @@ components:
         instances:
           type: array
           items:
-            $ref: '#/components/schemas/SuiteInstance'
+            $ref: '#/components/schemas/TestInstance'
       required:
         - uuid
         - test_suite_metadata
@@ -582,10 +582,10 @@ components:
         status:
           $ref: '#/components/schemas/BuildStatus'
         instance:
-          $ref: '#/components/schemas/SuiteInstance'
+          $ref: '#/components/schemas/TestInstance'
         timestamp:
           $ref: '#/components/schemas/Timestamp'
-        lastlogs:
+        last_logs:
           type: string
           description: "Last few lines of build log, if available"
       required:
@@ -614,7 +614,7 @@ components:
         status:
           $ref: '#/components/schemas/BuildStatus'
         instance:
-          $ref: '#/components/schemas/SuiteInstance'
+          $ref: '#/components/schemas/TestInstance'
         timestamp:
           $ref: '#/components/schemas/Timestamp'
           # other things to be added
@@ -626,7 +626,7 @@ components:
         - timestamp
 
 
-    SuiteInstance:
+    TestInstance:
       type: object
       properties:
         name:
@@ -646,17 +646,17 @@ components:
       required:
         - service
 
-    ListOfSuiteInstance:
+    ListOfTestInstance:
       type: object
       properties:
         items:
           type: array
           items:
-            $ref: '#/components/schemas/SuiteInstance'
+            $ref: '#/components/schemas/TestInstance'
       required:
         - items
 
-    ManagedSuiteInstanceCreationData:
+    ManagedTestInstanceCreationData:
       type: object
       description: |
         This object collects the information to be provided for the creation of
