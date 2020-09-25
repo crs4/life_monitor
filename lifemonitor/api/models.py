@@ -170,6 +170,89 @@ class WorkflowRegistry(db.Model):
         return cls.query.filter_by(client_id=client_id).first()
 
 
+class AggregateTestStatus:
+    ALL_PASSING = "all_passing"
+    SOME_PASSING = "some_passing"
+    ALL_FAILING = "all_failing"
+    NOT_AVAILABLE = "not_available"
+
+
+class WorkflowStatus:
+
+    def __init__(self, workflow: Workflow) -> None:
+        self.workflow = workflow
+        self._status = AggregateTestStatus.NOT_AVAILABLE
+        self._latest_builds = None
+        self._availability_issues = None
+        self.check_current_status()
+
+    @property
+    def aggregated_status(self):
+        return self._status
+
+    @property
+    def latest_builds(self):
+        return self._latest_builds.copy()
+
+    @property
+    def availability_issues(self):
+        return self._availability_issues.copy()
+
+    @staticmethod
+    def _update_status(current_status, build_passing):
+        status = current_status
+        if status == AggregateTestStatus.NOT_AVAILABLE:
+            if build_passing:
+                status = AggregateTestStatus.ALL_PASSING
+            elif not build_passing:
+                status = AggregateTestStatus.ALL_FAILING
+        elif status == AggregateTestStatus.ALL_PASSING:
+            if not build_passing:
+                status = AggregateTestStatus.SOME_PASSING
+        elif status == AggregateTestStatus.ALL_FAILING:
+            if build_passing:
+                status = AggregateTestStatus.SOME_PASSING
+        return status
+
+    def check_current_status(self):
+        status = AggregateTestStatus.NOT_AVAILABLE
+        latest_builds = []
+        availability_issues = []
+
+        if len(self.workflow.test_suites) == 0:
+            availability_issues.append({
+                "issue": f"No test suite configured for workflow {self.workflow}"
+            })
+        for suite in self.workflow.test_suites:
+            if len(suite.test_instances) == 0:
+                availability_issues.append({
+                    "issue": f"No test instances configured for suite {suite} of workflow {self.workflow}"
+                })
+            for test_instance in suite.test_instances:
+                try:
+                    testing_service = test_instance.testing_service
+                    latest_build = testing_service.last_test_build
+                    if latest_build is None:
+                        availability_issues.append({
+                            "service": testing_service.uri,
+                            "instance": test_instance,  # WHAT?
+                            "issue": "No build found"
+                        })
+                    else:
+                        latest_builds.append(latest_build)
+                        status = WorkflowStatus._update_status(status, latest_build.is_successful())
+                except TestingServiceException as e:
+                    availability_issues.append({
+                        "service": testing_service.uri,
+                        "issue": str(e)
+                    })
+                    logger.exception(e)
+        # update the current status
+        self._status = status
+        self._latest_builds = latest_builds
+        self._availability_issues = availability_issues
+
+
 class Workflow(db.Model):
     _id = db.Column('id', db.Integer, primary_key=True)
     uuid = db.Column(UUID)
@@ -224,11 +307,21 @@ class Workflow(db.Model):
         return health
 
     @property
+    def status(self) -> WorkflowStatus:
+        return WorkflowStatus(self)
+
+    @property
     def is_healthy(self) -> Union[bool, str]:
         return self.check_health()["healthy"]
 
     def add_test_suite(self, submitter: User, test_suite_metadata):
         return TestSuite(self, submitter, test_suite_metadata)
+
+    @property
+    def submitter_identity(self):
+        # Return the submitter identity wrt the registry
+        identity = OAuthIdentity.find_by_user_provider(self.submitter.id, self.workflow_registry.name)
+        return identity.provider_user_id
 
     def to_dict(self, test_suite=False, test_build=False, test_output=False):
         health = self.check_health()
@@ -551,6 +644,15 @@ class TestingService(db.Model):
         return service_class(url, resource)
 
 
+class BuildStatus:
+    PASSED = "passed"
+    FAILED = "failed"
+    ERROR = "error"
+    RUNNING = "running"
+    WAITING = "waiting"
+    ABORTED = "aborted"
+
+
 class TestBuild(ABC):
     class Result(Enum):
         SUCCESS = 0
@@ -562,6 +664,10 @@ class TestBuild(ABC):
 
     def is_successful(self):
         return self.result == TestBuild.Result.SUCCESS
+
+    @property
+    def status(self):
+        pass
 
     @property
     def metadata(self):
@@ -579,6 +685,11 @@ class TestBuild(ABC):
 
     @property
     @abstractmethod
+    def timestamp(self) -> int:
+        pass
+
+    @property
+    @abstractmethod
     def duration(self) -> int:
         pass
 
@@ -586,6 +697,10 @@ class TestBuild(ABC):
     @abstractmethod
     def output(self) -> str:
         pass
+
+    @property
+    def last_logs(self) -> str:
+        return self.output
 
     @property
     @abstractmethod
@@ -615,11 +730,31 @@ class JenkinsTestBuild(TestBuild):
     def build_number(self) -> int:
         return self.metadata['number']
 
+    def is_running(self) -> bool:
+        return self.metadata['building'] == True
+
+    @property
+    def status(self) -> str:
+        if self.is_running():
+            return BuildStatus.RUNNING
+        if self.metadata['result']:
+            if self.metadata['result'] == 'SUCCESS':
+                return BuildStatus.PASSED
+            elif self.metadata['result'] == 'ABORTED':
+                return BuildStatus.ABORTED
+            elif self.metadata['result'] == 'FAILURE':
+                return BuildStatus.FAILED
+        return BuildStatus.ERROR
+
     @property
     def last_built_revision(self):
         rev_info = list(map(lambda x: x["lastBuiltRevision"],
                             filter(lambda x: "lastBuiltRevision" in x, self.metadata["actions"])))
         return rev_info[0] if len(rev_info) == 1 else None
+
+    @property
+    def timestamp(self) -> int:
+        return self.metadata['timestamp']
 
     @property
     def duration(self) -> int:
