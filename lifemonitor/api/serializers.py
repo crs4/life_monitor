@@ -32,7 +32,7 @@ class TestServiceSchema(BaseSchema):
 
 
 class TestInstanceSchema(BaseSchema):
-    __envelope__ = {"single": None, "many": "items"}
+    __envelope__ = {"single": None, "many": None}
     __model__ = models.TestInstance
 
     class Meta:
