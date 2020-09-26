@@ -179,6 +179,8 @@ paths:
   /workflows/{wf_uuid}/{wf_version}/suites:
     get:
       summary: "Get list of test suites associated with workflow"
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "workflows_get_suites"
       description: >
         Get collection of test suites associated with workflow.  Test suites
         are collected from the RO-crate received with the creation of a new
