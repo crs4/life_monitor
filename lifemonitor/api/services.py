@@ -123,3 +123,7 @@ class LifeMonitor:
         for registry in registries:
             workflows.extend(registry.get_user_workflows(user))
         return workflows
+
+    @classmethod
+    def get_suite(cls, suite_uuid) -> TestSuite:
+        return TestSuite.find_by_id(suite_uuid)

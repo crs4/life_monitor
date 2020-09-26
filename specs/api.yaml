@@ -203,6 +203,8 @@ paths:
   /suites/{suite_uuid}:
     get:
       summary: "Get info about a single test suite."
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "suites_get_by_uuid"
       parameters:
         - $ref: '#/components/parameters/suite_uuid'
       responses:
