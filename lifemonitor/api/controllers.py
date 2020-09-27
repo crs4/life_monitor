@@ -278,3 +278,32 @@ def suites_delete(suite_uuid):
         return "Invalid ID", 400
 
     return connexion.NoContent, 204
+
+
+def _instances_get_by_id(instance_uuid):
+    try:
+        instance = lm.get_test_instance(instance_uuid)
+        if not instance:
+            return {"code": "404", "message": "Resource not found"}, 404
+        if current_user and not current_user.is_anonymous:
+            user_workflows = lm.get_user_workflows(current_user)
+            if instance.test_suite.workflow not in user_workflows:
+                return f"The user cannot access suite {instance}", 401
+        else:
+            registry = g.workflow_registry if "workflow_registry" in g else None
+            if registry is None:
+                return "Unable to find a valid WorkflowRegistry", 404
+            if instance.test_suite.workflow not in registry.registered_workflows:
+                return f"The registry cannot access suite {instance}", 401
+    except EntityNotFoundException:
+        return "Invalid ID", 400
+
+    return instance
+
+
+def instances_get_by_id(instance_uuid):
+    instance = _instances_get_by_id(instance_uuid)
+    if not isinstance(instance, TestInstance):
+        return instance
+    return serializers.TestInstanceSchema().dump(instance)
+

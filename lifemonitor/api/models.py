@@ -518,6 +518,10 @@ class TestInstance(db.Model):
             raise EntityNotFoundException(Test)
         return self.test_suite.tests[self.name]
 
+    @property
+    def test_builds(self):
+        return self.testing_service.test_builds
+
     def to_dict(self, test_build=False, test_output=False):
         data = {
             'uuid': str(self.uuid),
@@ -683,6 +687,11 @@ class TestBuild(ABC):
         return self.result == TestBuild.Result.SUCCESS
 
     @property
+    @abstractmethod
+    def id(self) -> int:
+        pass
+
+    @property
     def status(self):
         pass
 
@@ -742,6 +751,10 @@ class TestBuild(ABC):
 
 
 class JenkinsTestBuild(TestBuild):
+
+    @property
+    def id(self) -> str:
+        return str(self.metadata['number'])
 
     @property
     def build_number(self) -> int:

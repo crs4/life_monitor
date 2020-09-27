@@ -4,7 +4,7 @@ import tempfile
 from lifemonitor.auth.models import User
 from lifemonitor.common import EntityNotFoundException, NotAuthorizedException
 from lifemonitor.api.models import (
-    WorkflowRegistry, Workflow, TestSuite
+    WorkflowRegistry, Workflow, TestSuite, TestInstance
 )
 from lifemonitor.utils import extract_zip, load_ro_crate_metadata, search_for_test_definition
 
@@ -127,3 +127,7 @@ class LifeMonitor:
     @classmethod
     def get_suite(cls, suite_uuid) -> TestSuite:
         return TestSuite.find_by_id(suite_uuid)
+
+    @classmethod
+    def get_test_instance(cls, instance_uuid) -> TestInstance:
+        return TestInstance.find_by_id(instance_uuid)

@@ -316,6 +316,25 @@ paths:
         "501":
           description: Not implemented
 
+  /instances/{instance_uuid}:
+    get:
+      summary: >
+        Get summary of a test instance
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "instances_get_by_id"
+      parameters:
+        - $ref: "#/components/parameters/instance_uuid"
+      responses:
+        "200":
+          description: "Build summary list"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestInstance"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /suites/{suite_uuid}/{instance_id}/latest-builds:
     get:
