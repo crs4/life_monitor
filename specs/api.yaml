@@ -259,6 +259,8 @@ paths:
   /suites/{suite_uuid}/instances:
     get:
       summary: "Get list of instances of this suite present on testing services"
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "suites_get_instances"
       parameters:
         - $ref: '#/components/parameters/suite_uuid'
       responses:

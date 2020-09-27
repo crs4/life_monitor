@@ -92,3 +92,9 @@ class SuiteStatusSchema(BaseSchema):
     suite_uuid = fields.String(attribute="suite.uuid")
     status = fields.String(attribute="aggregated_status")
     latest_builds = fields.Nested(BuildSummarySchema(), many=True)
+
+
+class ListOfTestInstancesSchema(BaseSchema):
+    __envelope__ = {"single": None, "many": "items"}
+
+    items = fields.Nested(TestInstanceSchema(), attribute="test_instances", many=True)
