@@ -422,8 +422,8 @@ components:
       schema:
         type: string
       required: true
-    instance_id:
-      name: "instance_id"
+    instance_uuid:
+      name: "instance_uuid"
       description: "Test service Instance Unique identifier"
       in: path
       schema:
