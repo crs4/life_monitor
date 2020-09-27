@@ -177,14 +177,12 @@ class AggregateTestStatus:
     NOT_AVAILABLE = "not_available"
 
 
-class WorkflowStatus:
+class Status:
 
-    def __init__(self, workflow: Workflow) -> None:
-        self.workflow = workflow
+    def __init__(self) -> None:
         self._status = AggregateTestStatus.NOT_AVAILABLE
         self._latest_builds = None
         self._availability_issues = None
-        self.check_current_status()
 
     @property
     def aggregated_status(self):
@@ -214,16 +212,13 @@ class WorkflowStatus:
                 status = AggregateTestStatus.SOME_PASSING
         return status
 
-    def check_current_status(self):
+    @staticmethod
+    def check_status(suites):
         status = AggregateTestStatus.NOT_AVAILABLE
         latest_builds = []
         availability_issues = []
 
-        if len(self.workflow.test_suites) == 0:
-            availability_issues.append({
-                "issue": f"No test suite configured for workflow {self.workflow}"
-            })
-        for suite in self.workflow.test_suites:
+        for suite in suites:
             if len(suite.test_instances) == 0:
                 availability_issues.append({
                     "issue": f"No test instances configured for suite {suite} of workflow {self.workflow}"
@@ -248,9 +243,27 @@ class WorkflowStatus:
                     })
                     logger.exception(e)
         # update the current status
-        self._status = status
-        self._latest_builds = latest_builds
-        self._availability_issues = availability_issues
+        return status, latest_builds, availability_issues
+
+
+class WorkflowStatus(Status):
+
+    def __init__(self, workflow: Workflow) -> None:
+        self.workflow = workflow
+        if len(self.workflow.test_suites) == 0:
+            return [{
+                "issue": f"No test suite configured for workflow {self.workflow}"
+            }]
+        self._status, self._latest_builds, self._availability_issues = \
+            WorkflowStatus.check_status(self.workflow.test_suites)
+
+
+class SuiteStatus(Status):
+
+    def __init__(self, suite: TestSuite) -> None:
+        self.suite = suite
+        self._status, self._latest_builds, self._availability_issues = \
+            Status.check_status([suite])
 
 
 class Workflow(db.Model):
@@ -418,6 +431,10 @@ class TestSuite(db.Model):
                     logger.debug("Created TestInstance: %r", test_instance)
         except KeyError as e:
             raise SpecificationNotValidException(f"Missing property: {e}")
+
+    @property
+    def status(self) -> SuiteStatus:
+        return SuiteStatus(self)
 
     def get_test_instance_by_name(self, name) -> list:
         result = []
