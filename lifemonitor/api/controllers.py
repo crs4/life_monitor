@@ -315,3 +315,15 @@ def instances_get_builds(instance_uuid, limit):
     # TODO: implement pagination using 'limit' param
     return serializers.ListOfTestBuildsSchema().dump(instance)
 
+
+def instances_builds_get_by_id(instance_uuid, build_id):
+    instance = _instances_get_by_id(instance_uuid)
+    if not isinstance(instance, TestInstance):
+        return instance
+    # TODO: implement pagination using 'limit_bytes' param
+    for build in instance.test_builds:
+        if build.id == build_id:
+            return serializers.BuildSummarySchema().dump(build)
+    return "Test Build not found", 404
+
+

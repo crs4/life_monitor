@@ -357,24 +357,25 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
-  /suites/{suite_uuid}/{instance_id}/{build_id}:
+  /instances/{instance_uuid}/builds/{build_id}:
     get:
-      summary: "Get specific build info"
+      summary: "Get summary of a build for this test suite"
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "instances_builds_get_by_id"
       parameters:
-        - $ref: '#/components/parameters/suite_uuid'
-        - $ref: '#/components/parameters/instance_id'
-        - $ref: '#/components/parameters/build_id'
+        - $ref: "#/components/parameters/instance_uuid"
+        - $ref: "#/components/parameters/build_id"
       responses:
-        '200':
-          description: "Build data"
+        "200":
+          description: "Log data"
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Build'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
+                $ref: "#/components/schemas/BuildSummary"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /suites/{suite_uuid}/{instance_id}/{build_id}/logs:
     get:
