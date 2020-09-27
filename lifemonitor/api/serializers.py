@@ -80,3 +80,15 @@ class SuiteSchema(BaseSchema):
     test_suite_metadata = fields.Dict(attribute="test_definition")  # TODO: rename the property to metadata
     instances = fields.Nested(TestInstanceSchema(),
                               attribute="test_instances", many=True)
+
+
+class SuiteStatusSchema(BaseSchema):
+    __envelope__ = {"single": None, "many": "items"}
+    __model__ = models.SuiteStatus
+
+    class Meta:
+        model = models.SuiteStatus
+
+    suite_uuid = fields.String(attribute="suite.uuid")
+    status = fields.String(attribute="aggregated_status")
+    latest_builds = fields.Nested(BuildSummarySchema(), many=True)
