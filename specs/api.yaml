@@ -377,27 +377,27 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
-  /suites/{suite_uuid}/{instance_id}/{build_id}/logs:
+  /instances/{instance_uuid}/builds/{build_id}/logs:
     get:
       summary: "Get build logs"
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "instances_builds_get_logs"
       parameters:
-        - $ref: '#/components/parameters/suite_uuid'
-        - $ref: '#/components/parameters/instance_id'
-        - $ref: '#/components/parameters/build_id'
-        - $ref: '#/components/parameters/offset_bytes'
-        - $ref: '#/components/parameters/limit_bytes'
+        - $ref: "#/components/parameters/instance_uuid"
+        - $ref: "#/components/parameters/build_id"
+        - $ref: "#/components/parameters/offset_bytes"
+        - $ref: "#/components/parameters/limit_bytes"
       responses:
-        '200':
+        "200":
           description: "Log data"
           content:
             application/json:
               schema:
                 type: string
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
 components:
   parameters:

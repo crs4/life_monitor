@@ -327,3 +327,12 @@ def instances_builds_get_by_id(instance_uuid, build_id):
     return "Test Build not found", 404
 
 
+def instances_builds_get_logs(instance_uuid, build_id, offset_bytes, limit_bytes):
+    instance = _instances_get_by_id(instance_uuid)
+    if not isinstance(instance, TestInstance):
+        return instance
+    # TODO: implement pagination using 'limit_bytes' param
+    for build in instance.test_builds:
+        if build.id == build_id:
+            return build.output
+    return "Test Build not found", 404
