@@ -240,6 +240,8 @@ paths:
     get:
       summary: >
         Get status of latest build for this test suite for each known instance
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "suites_get_status"
       parameters:
         - $ref: '#/components/parameters/suite_uuid'
       responses:
