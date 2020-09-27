@@ -133,6 +133,8 @@ paths:
       responses:
         '200':
           description: "Workflow updated"
+        "501":
+          description: Not implemented
 
     delete:
       x-openapi-router-controller: lifemonitor.api.controllers
@@ -235,6 +237,8 @@ paths:
           description: Deleted
         '400':
           $ref: '#/components/responses/BadRequest'
+        "501":
+          description: Not implemented
 
   /suites/{suite_uuid}/status:
     get:
@@ -277,6 +281,8 @@ paths:
 
     post:
       summary: "Register or add an instance that executes this test suite"
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "suites_post_instance"
       description: |
         POSTing this resource results in the creation of a new test suite
         instance.  That is, a specific test suite hosted and executed on a
@@ -307,10 +313,8 @@ paths:
       responses:
         '201':
           description: Instance created
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
+        "501":
+          description: Not implemented
 
 
   /suites/{suite_uuid}/{instance_id}/latest-builds:
