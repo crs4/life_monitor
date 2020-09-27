@@ -336,26 +336,26 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
-  /suites/{suite_uuid}/{instance_id}/latest-builds:
+  /instances/{instance_uuid}/latest-builds:
     get:
       summary: >
         Get summaries of latest builds for this test suite, on this instance
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "instances_get_builds"
       parameters:
-        - $ref: '#/components/parameters/suite_uuid'
-        - $ref: '#/components/parameters/instance_id'
-        - $ref: '#/components/parameters/limit'
+        - $ref: "#/components/parameters/instance_uuid"
+        - $ref: "#/components/parameters/limit"
       responses:
-        '200':
+        "200":
           description: "Build summary list"
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListOfBuildSummary'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
+                $ref: "#/components/schemas/ListOfBuildSummary"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /suites/{suite_uuid}/{instance_id}/{build_id}:
     get:

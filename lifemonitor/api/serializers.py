@@ -38,6 +38,7 @@ class TestInstanceSchema(BaseSchema):
     class Meta:
         model = models.TestInstance
 
+    uuid = ma.auto_field()
     name = ma.auto_field()
     service = ma.Nested(TestServiceSchema(), attribute="testing_service")
 
@@ -98,3 +99,9 @@ class ListOfTestInstancesSchema(BaseSchema):
     __envelope__ = {"single": None, "many": "items"}
 
     items = fields.Nested(TestInstanceSchema(), attribute="test_instances", many=True)
+
+
+class ListOfTestBuildsSchema(BaseSchema):
+    __envelope__ = {"single": None, "many": "items"}
+
+    items = fields.Nested(BuildSummarySchema(), attribute="test_builds", many=True)

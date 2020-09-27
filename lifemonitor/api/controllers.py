@@ -4,7 +4,7 @@ import connexion
 from flask import g
 from flask_login import current_user
 from lifemonitor.api.services import LifeMonitor
-from lifemonitor.api.models import WorkflowRegistry
+from lifemonitor.api.models import WorkflowRegistry, TestInstance
 from lifemonitor.api import serializers
 from lifemonitor.common import EntityNotFoundException, NotAuthorizedException, NotValidROCrateException
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity, OAuthIdentityNotFoundException
@@ -306,4 +306,12 @@ def instances_get_by_id(instance_uuid):
     if not isinstance(instance, TestInstance):
         return instance
     return serializers.TestInstanceSchema().dump(instance)
+
+
+def instances_get_builds(instance_uuid, limit):
+    instance = _instances_get_by_id(instance_uuid)
+    if not isinstance(instance, TestInstance):
+        return instance
+    # TODO: implement pagination using 'limit' param
+    return serializers.ListOfTestBuildsSchema().dump(instance)
 
