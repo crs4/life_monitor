@@ -1,6 +1,7 @@
 import logging
 from flask import Response, request, current_app
 from lifemonitor import serializers
+from werkzeug.exceptions import HTTPException
 
 logger = logging.getLogger(__name__)
 
@@ -122,6 +123,10 @@ def handle_exception(e: Exception):
         return Response(response=e.to_json(),
                         status=e.status,
                         mimetype="application/problem+json")
+    if isinstance(e, HTTPException):
+        return report_problem(status=e.code,
+                              title=e.__class__.__name__,
+                              detail=getattr(e, "description", None))
     else:
         return report_problem(status=500,
                               title="Internal Server Error",
