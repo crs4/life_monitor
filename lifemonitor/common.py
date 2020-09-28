@@ -1,23 +1,26 @@
-from flask import Response, request
+import logging
+from flask import Response, request, current_app
 from lifemonitor import serializers
+
+logger = logging.getLogger(__name__)
 
 
 class LifeMonitorException(Exception):
 
-    def __init__(self, title=None, detail="",
+    def __init__(self, title=None, detail=None,
                  type="about:blank", status=500, instance=None, **kwargs):
         self.title = title
         self.detail = detail
         self.type = type
         self.status = status
         self.instance = instance
-        self.extra_info = kwargs
-
+        if len(kwargs) > 0:
+            self.extra_info = kwargs
         if instance is None:
             try:
                 self.instance = request.url
             except Exception:
-    pass
+                pass
 
     def to_json(self):
         return serializers.ProblemDetailsSchema().dumps(self)
@@ -25,7 +28,7 @@ class LifeMonitorException(Exception):
 
 class NotImplementedException(LifeMonitorException):
 
-    def __init__(self, title="Not Implemented", detail="",
+    def __init__(self, title="Not Implemented", detail=None,
                  type="about:blank", status=501, instance=None, **kwargs):
         super().__init__(title, detail, type, status, instance, **kwargs)
 
@@ -39,14 +42,14 @@ class UnsupportedOperationException(LifeMonitorException):
 
 
 class NotAuthorizedException(LifeMonitorException):
-    def __init__(self, detail="",
+    def __init__(self, detail=None,
                  type="about:blank", status=401, instance=None, **kwargs):
         super().__init__(title="Unauthorized",
                          detail=detail, status=status, **kwargs)
 
 
 class Forbidden(LifeMonitorException):
-    def __init__(self, detail="",
+    def __init__(self, detail=None,
                  type="about:blank", status=403, instance=None, **kwargs):
         super().__init__(title="Forbidden",
                          detail=detail, status=status, **kwargs)
@@ -113,6 +116,8 @@ class TestingServiceException(LifeMonitorException):
 def handle_exception(e: Exception):
     """Return JSON instead of HTML for HTTP errors."""
     # start with the correct headers and status code from the error
+    if current_app and current_app.config['DEBUG']:
+        logger.exception(e)
     if isinstance(e, LifeMonitorException):
         return Response(response=e.to_json(),
                         status=e.status,
@@ -120,24 +125,30 @@ def handle_exception(e: Exception):
     else:
         return report_problem(status=500,
                               title="Internal Server Error",
-                              detail=getattr(e, "description", None))
+                              detail=getattr(e, "description", None),
+                              extra_info={
+                                  "exception_type": e.__class__.__name__,
+                                  "exception_value": str(e)
+                              })
 
 
-def report_problem(status, title, detail, type=None, instance=None, extra_info=None):
+def report_problem(status, title, detail=None, type=None, instance=None, extra_info=None):
     """
     Returns a `Problem Details <https://tools.ietf.org/html/draft-ietf-appsawg-http-problem-00>`_ error response.
     """
     if not type:
         type = 'about:blank'
 
-    problem_response = {'type': type, 'title': title, 'detail': detail, 'status': status}
+    problem_response = {'type': type, 'title': title, 'status': status}
+    if detail:
+        problem_response['detail'] = detail
     if instance:
         problem_response['instance'] = instance
     else:
         try:
             problem_response['instance'] = request.url
         except Exception:
-    pass
+            pass
     if extra_info:
         problem_response['extra_info'] = extra_info
 
