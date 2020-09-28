@@ -221,7 +221,7 @@ class Status:
         for suite in suites:
             if len(suite.test_instances) == 0:
                 availability_issues.append({
-                    "issue": f"No test instances configured for suite {suite} of workflow {self.workflow}"
+                    "issue": f"No test instances configured for suite {suite}"
                 })
             for test_instance in suite.test_instances:
                 try:
