@@ -218,6 +218,11 @@ class Status:
         latest_builds = []
         availability_issues = []
 
+        if len(suites) == 0:
+            availability_issues.append({
+                "issue": "No test suite configured for this workflow"
+            })
+
         for suite in suites:
             if len(suite.test_instances) == 0:
                 availability_issues.append({
@@ -250,20 +255,14 @@ class WorkflowStatus(Status):
 
     def __init__(self, workflow: Workflow) -> None:
         self.workflow = workflow
-        if len(self.workflow.test_suites) == 0:
-            return [{
-                "issue": f"No test suite configured for workflow {self.workflow}"
-            }]
-        self._status, self._latest_builds, self._availability_issues = \
-            WorkflowStatus.check_status(self.workflow.test_suites)
+        self._status, self._latest_builds, self._availability_issues = WorkflowStatus.check_status(self.workflow.test_suites)
 
 
 class SuiteStatus(Status):
 
     def __init__(self, suite: TestSuite) -> None:
         self.suite = suite
-        self._status, self._latest_builds, self._availability_issues = \
-            Status.check_status([suite])
+        self._status, self._latest_builds, self._availability_issues = Status.check_status([suite])
 
 
 class Workflow(db.Model):
