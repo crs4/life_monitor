@@ -7,7 +7,7 @@ from lifemonitor.api.models import (
     WorkflowRegistry, Workflow, TestSuite, TestInstance
 )
 from lifemonitor.utils import extract_zip, load_ro_crate_metadata, search_for_test_definition
-
+from lifemonitor.auth.oauth2.client.models import OAuthIdentity, OAuthIdentityNotFoundException
 
 logger = logging.getLogger()
 
@@ -97,6 +97,15 @@ class LifeMonitor:
         return test_suite_uuid
 
     @classmethod
+    def get_workflow_registry_by_uri(registry_uri) -> WorkflowRegistry:
+        try:
+            r = WorkflowRegistry.find_by_uri(registry_uri)
+            if not r:
+                raise EntityNotFoundException(WorkflowRegistry, registry_uri)
+        except Exception:
+            raise EntityNotFoundException(WorkflowRegistry, registry_uri)
+
+    @classmethod
     def get_workflow(cls, uuid, version) -> Workflow:
         return Workflow.find_by_id(uuid, version)
 
@@ -131,3 +140,12 @@ class LifeMonitor:
     @classmethod
     def get_test_instance(cls, instance_uuid) -> TestInstance:
         return TestInstance.find_by_id(instance_uuid)
+
+    @classmethod
+    def find_registry_user_identity(registry: WorkflowRegistry,
+                                    internal_id=None, external_id=None) -> OAuthIdentity:
+        if not internal_id and not external_id:
+            raise ValueError("external_id and internal_id cannot be both None")
+        if internal_id:
+            return OAuthIdentity.find_by_user_id(internal_id, registry.name)
+        return OAuthIdentity.find_by_user_provider_id(external_id, registry.name)
