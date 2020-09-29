@@ -12,6 +12,10 @@ class Anonymous(AnonymousUserMixin):
     def __init__(self):
         self.username = 'Guest'
 
+    @property
+    def id(self):
+        return None
+
     def get_user_id(self):
         return None
 
