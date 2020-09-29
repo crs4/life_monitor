@@ -67,7 +67,7 @@ def workflows_post(body):
         identity = lm.find_registry_user_identity(registry,
                                                   internal_id=current_user.id,
                                                   external_id=submitter_id)
-                submitter = identity.user
+        submitter = identity.user
         w = lm.register_workflow(
             workflow_registry=registry,
             workflow_submitter=submitter,

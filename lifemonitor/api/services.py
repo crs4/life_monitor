@@ -7,7 +7,7 @@ from lifemonitor.api.models import (
     WorkflowRegistry, Workflow, TestSuite, TestInstance
 )
 from lifemonitor.utils import extract_zip, load_ro_crate_metadata, search_for_test_definition
-from lifemonitor.auth.oauth2.client.models import OAuthIdentity, OAuthIdentityNotFoundException
+from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 
 logger = logging.getLogger()
 
