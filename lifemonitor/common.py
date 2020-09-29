@@ -76,8 +76,8 @@ class EntityNotFoundException(LifeMonitorException):
 
     def __init__(self, entity_class, detail=None, entity_id=None, **kwargs) -> None:
         if not detail:
-        detail = f"{entity_class.__name__} with id {entity_id} not found" \
-            if entity_id else f"{entity_class.__name__} not found"
+            detail = f"{entity_class.__name__} with id {entity_id} not found" \
+                if entity_id else f"{entity_class.__name__} not found"
         kwargs["resource_type"] = entity_class.__name__
         if entity_id:
             kwargs["resource_identifier"] = entity_id
