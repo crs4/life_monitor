@@ -92,7 +92,7 @@ class AuthorizatonHandler:
         logger.debug("Acquired user_info: %r", user_info)
 
         try:
-            identity = OAuthIdentity.find_by_provider(provider.name, user_info.sub)
+            identity = OAuthIdentity.find_by_provider_user_id(user_info.sub, provider.name)
             logger.debug("Found OAuth identity <%r,%r>: %r",
                          provider.name, user_info.sub, identity)
             # update identity with the last token and userinfo

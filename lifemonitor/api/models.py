@@ -40,8 +40,7 @@ class WorkflowRegistryClient(ABC):
 
     def _get_access_token(self, user_id):
         # get the access token related with the user of this client registry
-        return OAuthIdentity.find_by_user_provider(user_id,
-                                                   self.registry.name).token
+        return OAuthIdentity.find_by_user_id(user_id, self.registry.name).token
 
     def _get(self, user, *args, **kwargs):
         # update token
@@ -332,7 +331,7 @@ class Workflow(db.Model):
     @property
     def submitter_identity(self):
         # Return the submitter identity wrt the registry
-        identity = OAuthIdentity.find_by_user_provider(self.submitter.id, self.workflow_registry.name)
+        identity = OAuthIdentity.find_by_user_id(self.submitter.id, self.workflow_registry.name)
         return identity.provider_user_id
 
     def to_dict(self, test_suite=False, test_build=False, test_output=False):

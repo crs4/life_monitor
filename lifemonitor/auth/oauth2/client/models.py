@@ -80,7 +80,7 @@ class OAuthIdentity(db.Model):
         db.session.commit()
 
     @staticmethod
-    def find_by_user_provider(user_id, provider) -> OAuthIdentity:
+    def find_by_user_id(user_id, provider) -> OAuthIdentity:
         try:
             return OAuthIdentity.query.filter_by(
                 user_id=user_id, provider=provider
@@ -89,7 +89,7 @@ class OAuthIdentity(db.Model):
             raise OAuthIdentityNotFoundException(f"{user_id}_{provider}")
 
     @staticmethod
-    def find_by_provider(provider, provider_user_id) -> OAuthIdentity:
+    def find_by_provider_user_id(provider_user_id, provider) -> OAuthIdentity:
         try:
             return OAuthIdentity.query.filter_by(
                 provider=provider, provider_user_id=provider_user_id

@@ -24,14 +24,14 @@ def fetch_token(name):
     if api_key:
         logger.debug("FOUND an API KEY for the OAuth Service '%s': %s", name, api_key)
         return {"access_token": api_key}
-    identity = OAuthIdentity.find_by_user_provider(current_user.id, name)
+    identity = OAuthIdentity.find_by_user_id(current_user.id, name)
     logger.debug("The token: %r", identity.token)
     return OAuth2Token(identity.token)
 
 
 def update_token(name, token, refresh_token=None, access_token=None):
     if access_token or refresh_token:
-        identity = OAuthIdentity.find_by_user_provider(current_user.id, name)
+        identity = OAuthIdentity.find_by_user_id(current_user.id, name)
     else:
         return
 
