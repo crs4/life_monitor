@@ -28,6 +28,9 @@ class LifeMonitor:
 
     @classmethod
     def _find_and_check_workflow(cls, uuid, version, user: User):
+        if not version:
+            w = Workflow.find_latest_by_id(uuid)
+        else:
         w = Workflow.find_by_id(uuid, version)
         if w is None:
             raise EntityNotFoundException(Workflow, f"{uuid}_{version}")
@@ -115,7 +118,7 @@ class LifeMonitor:
         return Workflow.all()
 
     @classmethod
-    def get_registry_workflow(cls, uuid, version, registry: WorkflowRegistry) -> Workflow:
+    def get_registry_workflow(cls, registry: WorkflowRegistry, uuid, version=None) -> Workflow:
         return registry.get_workflow(uuid, version)
 
     @classmethod
@@ -123,7 +126,7 @@ class LifeMonitor:
         return registry.registered_workflows
 
     @classmethod
-    def get_user_workflow(cls, uuid, version, user: User) -> Workflow:
+    def get_user_workflow(cls, user: User, uuid, version=None) -> Workflow:
         return cls._find_and_check_workflow(uuid, version, user)
 
     @classmethod
