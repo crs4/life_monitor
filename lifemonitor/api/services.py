@@ -97,11 +97,12 @@ class LifeMonitor:
         return test_suite_uuid
 
     @classmethod
-    def get_workflow_registry_by_uri(registry_uri) -> WorkflowRegistry:
+    def get_workflow_registry_by_uri(cls, registry_uri) -> WorkflowRegistry:
         try:
             r = WorkflowRegistry.find_by_uri(registry_uri)
             if not r:
                 raise EntityNotFoundException(WorkflowRegistry, registry_uri)
+            return r
         except Exception:
             raise EntityNotFoundException(WorkflowRegistry, registry_uri)
 
@@ -142,10 +143,10 @@ class LifeMonitor:
         return TestInstance.find_by_id(instance_uuid)
 
     @classmethod
-    def find_registry_user_identity(registry: WorkflowRegistry,
+    def find_registry_user_identity(cls, registry: WorkflowRegistry,
                                     internal_id=None, external_id=None) -> OAuthIdentity:
         if not internal_id and not external_id:
             raise ValueError("external_id and internal_id cannot be both None")
         if internal_id:
             return OAuthIdentity.find_by_user_id(internal_id, registry.name)
-        return OAuthIdentity.find_by_user_provider_id(external_id, registry.name)
+        return OAuthIdentity.find_by_provider_user_id(external_id, registry.name)
