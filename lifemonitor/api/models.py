@@ -285,7 +285,7 @@ class Workflow(db.Model):
     __tablename__ = "workflow"
     __table_args__ = (
         db.UniqueConstraint(uuid, version),
-        db.UniqueConstraint(_registry_id, external_id),
+        db.UniqueConstraint(_registry_id, external_id, version),
     )
 
     def __init__(self, registry: WorkflowRegistry, submitter: User,
