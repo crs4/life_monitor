@@ -1,3 +1,4 @@
+from functools import wraps
 import logging
 
 # Config a module level logger
@@ -54,6 +55,7 @@ current_user = flask_login.current_user
 
 
 def authorized(func):
+    @wraps(func)
     def wrapper(*args, **kwargs):
         if not current_registry and current_user.is_anonymous:
             raise NotAuthorizedException(detail="No user nor registry found in the current session")
