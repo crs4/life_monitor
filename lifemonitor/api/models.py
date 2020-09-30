@@ -138,10 +138,21 @@ class WorkflowRegistry(db.Model):
         db.session.delete(self)
         db.session.commit()
 
-    def get_workflow(self, uuid, version):
+    def get_workflow(self, uuid, version=None):
         try:
+            if not version:
             return Workflow.query.with_parent(self)\
-                .filter(Workflow.uuid == uuid).filter(Workflow.version == version).one()
+                    .filter(Workflow.uuid == uuid).order_by(Workflow.version.desc()).first()
+            return Workflow.query.with_parent(self)\
+                .filter(Workflow.uuid == uuid).filter(Workflow.version == version).first()
+        except Exception as e:
+            raise EntityNotFoundException(e)
+
+    def get_workflow_versions(self, uuid):
+        try:
+            workflows = Workflow.query.with_parent(self)\
+                .filter(Workflow.uuid == uuid).order_by(Workflow.version.desc())
+            return {w.version: w for w in workflows}
         except Exception as e:
             raise EntityNotFoundException(e)
 
@@ -318,6 +329,16 @@ class Workflow(db.Model):
         return health
 
     @property
+    def previous_versions(self):
+        return list(self.previous_workflow_versions.keys())
+
+    @property
+    def previous_workflow_versions(self):
+        return {k: v
+                for k, v in self.workflow_registry.get_workflow_versions(self.uuid).items()
+                if k != self.version}
+
+    @property
     def status(self) -> WorkflowStatus:
         return WorkflowStatus(self)
 
@@ -365,6 +386,11 @@ class Workflow(db.Model):
     def find_by_id(cls, uuid, version):
         return cls.query.filter(Workflow.uuid == uuid) \
             .filter(Workflow.version == version).first()
+
+    @classmethod
+    def find_latest_by_id(cls, uuid):
+        return cls.query.filter(Workflow.uuid == uuid) \
+            .order_by(Workflow.version.desc()).first()
 
     @classmethod
     def find_by_submitter(cls, submitter: User):
