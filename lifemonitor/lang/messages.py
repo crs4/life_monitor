@@ -7,3 +7,4 @@ no_user_oauth_identity_on_registry = "Unable to link the identity of user '{}' o
 not_authorized_registry_access = "User not authorized to access the registry '{}'"
 input_data_missing = "One or more input data are missing"
 invalid_ro_crate = "RO Crate processing exception"
+workflow_not_found = "Workflow '{}' (ver.{}) not found"
