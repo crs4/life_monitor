@@ -31,7 +31,7 @@ class LifeMonitor:
         if not version:
             w = Workflow.find_latest_by_id(uuid)
         else:
-        w = Workflow.find_by_id(uuid, version)
+            w = Workflow.find_by_id(uuid, version)
         if w is None:
             raise EntityNotFoundException(Workflow, f"{uuid}_{version}")
         allowed = w.workflow_registry.get_user_workflows(user)

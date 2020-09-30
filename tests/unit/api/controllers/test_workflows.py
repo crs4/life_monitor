@@ -1,5 +1,6 @@
 import pytest
 import logging
+
 import lifemonitor.auth as auth
 import lifemonitor.common as common
 import lifemonitor.api.models as models
@@ -10,6 +11,7 @@ from lifemonitor.auth.models import User
 from unittest.mock import MagicMock, patch
 from tests.conftest import assert_status_code
 from lifemonitor.auth.oauth2.client.models import OAuthIdentityNotFoundException
+
 
 logger = logging.getLogger(__name__)
 
@@ -246,3 +248,52 @@ def test_post_workflow_by_registry_not_authorized(m, base_request_context, regis
     assert_status_code(response.status_code, 403)
     assert messages.not_authorized_registry_access\
         .format(registry.name) in response.data.decode()
+
+
+@patch("lifemonitor.api.controllers.lm")
+def test_get_workflow_by_id_error_not_found(m, base_request_context, registry):
+    assert auth.current_user.is_anonymous, "Unexpected user in session"
+    assert auth.current_registry, "Unexpected registry in session"
+    m.get_registry_workflow.side_effect = common.EntityNotFoundException(models.Workflow)
+    response = controllers.workflows_get_by_id(wf_uuid="12345", wf_version="1")
+    logger.debug("Response: %r", response)
+    assert_status_code(response.status_code, 404)
+    assert messages.workflow_not_found\
+        .format("12345", "1") in response.data.decode()
+    # test when the service return None
+    m.get_registry_workflow.return_value = None
+    response = controllers.workflows_get_by_id(wf_uuid="12345", wf_version="1")
+    logger.debug("Response: %r", response)
+    assert_status_code(response.status_code, 404)
+    assert messages.workflow_not_found\
+        .format("12345", "1") in response.data.decode()
+
+
+@patch("lifemonitor.api.controllers.lm")
+def test_get_workflow_by_id(m, base_request_context, registry):
+    assert auth.current_user.is_anonymous, "Unexpected user in session"
+    assert auth.current_registry, "Unexpected registry in session"
+    data = {"uuid": "12345", "version": "2", "roc_link": "https://somelink", "previous_versions": ["1"]}
+    m.get_registry_workflow.return_value = data
+    response = controllers.workflows_get_by_id(data['uuid'], data['version'])
+    m.get_registry_workflow.assert_called_once_with(registry, data['uuid'], data['version'])
+    logger.debug("Response: %r", response)
+    assert isinstance(response, dict), "Unexpected response"
+    assert response['uuid'] == data['uuid'], "Unexpected workflow UUID"
+    assert response['version'] == data['version'], "Unexpected workflow version"
+    assert 'previous_versions' not in response, "Unexpected list of previous versions"
+
+
+@patch("lifemonitor.api.controllers.lm")
+def test_get_latest_workflow_version_by_id(m, base_request_context, registry):
+    assert auth.current_user.is_anonymous, "Unexpected user in session"
+    assert auth.current_registry, "Unexpected registry in session"
+    data = {"uuid": "12345", "version": "2", "roc_link": "https://somelink", "previous_versions": ["1"]}
+    m.get_registry_workflow.return_value = data
+    response = controllers.workflows_get_latest_version_by_id(data['uuid'])
+    m.get_registry_workflow.assert_called_once_with(registry, data['uuid'])
+    logger.debug("Response: %r", response)
+    assert isinstance(response, dict), "Unexpected response"
+    assert response['uuid'] == data['uuid'], "Unexpected workflow UUID"
+    assert response['version'] == data['version'], "Unexpected workflow version"
+    assert response['previous_versions'] == data['previous_versions'], "Unexpected list of previous versions"

@@ -141,7 +141,7 @@ class WorkflowRegistry(db.Model):
     def get_workflow(self, uuid, version=None):
         try:
             if not version:
-            return Workflow.query.with_parent(self)\
+                return Workflow.query.with_parent(self)\
                     .filter(Workflow.uuid == uuid).order_by(Workflow.version.desc()).first()
             return Workflow.query.with_parent(self)\
                 .filter(Workflow.uuid == uuid).filter(Workflow.version == version).first()
