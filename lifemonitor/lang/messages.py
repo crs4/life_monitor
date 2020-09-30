@@ -8,3 +8,6 @@ not_authorized_registry_access = "User not authorized to access the registry '{}
 input_data_missing = "One or more input data are missing"
 invalid_ro_crate = "RO Crate processing exception"
 workflow_not_found = "Workflow '{}' (ver.{}) not found"
+suite_not_found = "Suite '{}' not found"
+unauthorized_user_suite_access = "The user '{}' cannot access suite '{}'"
+unauthorized_registry_suite_access = "The registry '{}' cannot access suite '{}'"
