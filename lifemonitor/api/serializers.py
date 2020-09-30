@@ -18,6 +18,10 @@ class WorkflowSchema(BaseSchema):
     name = ma.auto_field()
 
 
+class LatestWorkflowSchema(WorkflowSchema):
+    previous_versions = fields.List(fields.String, attribute="previous_versions")
+
+
 class TestServiceSchema(BaseSchema):
     __envelope__ = {"single": None, "many": "items"}
     __model__ = models.TestingService

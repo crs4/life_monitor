@@ -98,6 +98,7 @@ def workflows_post(body):
         raise LifeMonitorException(title="Internal Error", detail=str(e))
 
 
+@authorized
 def workflows_put(wf_uuid, wf_version, body):
     # TODO: to be implemented
     logger.debug("PUT called for workflow (%s,%s)", wf_uuid, wf_version)
@@ -111,50 +112,56 @@ def workflows_put(wf_uuid, wf_version, body):
     raise http_exceptions.NotImplemented()
 
 
+@authorized
 def workflows_get_by_id(wf_uuid, wf_version):
     try:
+        wf = None
         if current_user and not current_user.is_anonymous:
-            wf = lm.get_user_workflow(wf_uuid, wf_version, current_user)
+            wf = lm.get_user_workflow(current_user, wf_uuid, wf_version)
+        elif current_registry:
+            wf = lm.get_registry_workflow(current_registry, wf_uuid, wf_version)
         else:
-            registry = g.workflow_registry if "workflow_registry" in g else None
-            if registry is None:
-                return "Unable to find a valid WorkflowRegistry", 404
-            wf = lm.get_registry_workflow(wf_uuid, wf_version, registry)
-    except EntityNotFoundException:
-        return "Invalid ID", 400
-
-    if wf is not None:
+            return report_problem(403, "Forbidden",
+                                  detail=messages.no_user_in_session)
+        if wf is None:
+            return report_problem(404, "Not Found",
+                                  detail=messages.workflow_not_found.format(wf_uuid, wf_version))
         return serializers.WorkflowSchema().dump(wf)
+    except EntityNotFoundException as e:
+        return report_problem(404, "Not Found", extra_info={"exception": str(e)},
+                              detail=messages.workflow_not_found.format(wf_uuid, wf_version))
 
-    return connexion.NoContent, 404
 
-
-def workflows_get_latest_by_id(wf_uuid):
-    # try:
-    #     if current_user and not current_user.is_anonymous:
-    #         wf = lm.get_user_workflow(wf_uuid, wf_version, current_user)
-    #     else:
-    #         wf = lm.get_registry_workflow(wf_uuid, wf_version)
-    # except EntityNotFoundException:
-    #     return "Invalid ID", 400
-
-    # if wf is not None:
-    #     return serializers.WorkflowSchema().dump(wf)
-
-    # return connexion.NoContent, 404
-    return connexion.problem(title="Not implemented", status=501)
+@authorized
+def workflows_get_latest_version_by_id(wf_uuid):
+    try:
+        wf = None
+        if current_user and not current_user.is_anonymous:
+            wf = lm.get_user_workflow(current_user, wf_uuid)
+        elif current_registry:
+            wf = lm.get_registry_workflow(current_registry, wf_uuid)
+        else:
+            return report_problem(403, "Forbidden",
+                                  detail=messages.no_user_in_session)
+        if wf is None:
+            return report_problem(404, "Not Found",
+                                  detail=messages.workflow_not_found.format(wf_uuid, "latest"))
+        return serializers.LatestWorkflowSchema().dump(wf)
+    except EntityNotFoundException as e:
+        return report_problem(404, "Not Found", extra_info={"exception": str(e)},
+                              detail=messages.workflow_not_found.format(wf_uuid, "latest"))
 
 
 def workflows_get_status(wf_uuid, wf_version):
     try:
         logger.debug("Current user: %r", current_user)
         if current_user and not current_user.is_anonymous:
-            wf = lm.get_user_workflow(wf_uuid, wf_version, current_user)
+            wf = lm.get_user_workflow(current_user, wf_uuid, wf_version)
         else:
             registry = g.workflow_registry if "workflow_registry" in g else None
             if registry is None:
                 return "Unable to find a valid WorkflowRegistry", 404
-            wf = lm.get_registry_workflow(wf_uuid, wf_version, registry)
+            wf = lm.get_registry_workflow(registry, wf_uuid, wf_version)
     except EntityNotFoundException:
         return "Invalid ID", 400
 
@@ -189,12 +196,12 @@ def workflows_get_suites(wf_uuid, wf_version):
     try:
         logger.debug("Current user: %r", current_user)
         if current_user and not current_user.is_anonymous:
-            wf = lm.get_user_workflow(wf_uuid, wf_version, current_user)
+            wf = lm.get_user_workflow(current_user, wf_uuid, wf_version)
         else:
             registry = g.workflow_registry if "workflow_registry" in g else None
             if registry is None:
                 return "Unable to find a valid WorkflowRegistry", 404
-            wf = lm.get_registry_workflow(wf_uuid, wf_version, registry)
+            wf = lm.get_registry_workflow(registry, wf_uuid, wf_version)
     except EntityNotFoundException:
         return "Invalid ID", 400
 
