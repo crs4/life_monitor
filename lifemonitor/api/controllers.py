@@ -181,67 +181,44 @@ def workflows_get_suites(wf_uuid, wf_version):
         else serializers.SuiteSchema().dump(response.test_suites, many=True)
 
 
+def _get_suite_or_problem(suite_uuid):
+    try:
+        suite = lm.get_suite(suite_uuid)
+        if not suite:
+            return report_problem(404, "Not Found", detail=messages.suite_not_found.format(suite_uuid))
+        if current_user and not current_user.is_anonymous:
+            user_workflows = lm.get_user_workflows(current_user)
+            if suite.workflow not in user_workflows:
+                return report_problem(403, "Forbidden", detail=messages.unauthorized_user_suite_access
+                                      .format(current_user.username, suite_uuid))
+        elif current_registry:
+            if suite.workflow not in current_registry.registered_workflows:
+                return report_problem(403, "Forbidden", detail=messages.unauthorized_registry_suite_access
+                                      .format(current_registry.name, suite_uuid))
+        return suite
+    except EntityNotFoundException:
+        return report_problem(404, "Not Found", detail=messages.suite_not_found.format(suite_uuid))
+
+
+@authorized
 def suites_get_by_uuid(suite_uuid):
-    try:
-        suite = lm.get_suite(suite_uuid)
-        if not suite:
-            return {"code": "404", "message": "Resource not found"}, 404
-        if current_user and not current_user.is_anonymous:
-            user_workflows = lm.get_user_workflows(current_user)
-            if suite.workflow not in user_workflows:
-                return f"The user cannot access suite {suite}", 401
-        else:
-            registry = g.workflow_registry if "workflow_registry" in g else None
-            if registry is None:
-                return "Unable to find a valid WorkflowRegistry", 404
-            if suite.workflow not in registry.registered_workflows:
-                return f"The registry cannot access suite {suite}", 401
-    except EntityNotFoundException:
-        return "Invalid ID", 400
-
-    return serializers.SuiteSchema().dump(suite)
+    response = _get_suite_or_problem(suite_uuid)
+    return response if isinstance(response, Response) \
+        else serializers.SuiteSchema().dump(response)
 
 
+@authorized
 def suites_get_status(suite_uuid):
-    try:
-        suite = lm.get_suite(suite_uuid)
-        if not suite:
-            return {"code": "404", "message": "Resource not found"}, 404
-        if current_user and not current_user.is_anonymous:
-            user_workflows = lm.get_user_workflows(current_user)
-            if suite.workflow not in user_workflows:
-                return f"The user cannot access suite {suite}", 401
-        else:
-            registry = g.workflow_registry if "workflow_registry" in g else None
-            if registry is None:
-                return "Unable to find a valid WorkflowRegistry", 404
-            if suite.workflow not in registry.registered_workflows:
-                return f"The registry cannot access suite {suite}", 401
-    except EntityNotFoundException:
-        return "Invalid ID", 400
-
-    return serializers.SuiteStatusSchema().dump(suite.status)
+    response = _get_suite_or_problem(suite_uuid)
+    return response if isinstance(response, Response) \
+        else serializers.SuiteStatusSchema().dump(response.status)
 
 
+@authorized
 def suites_get_instances(suite_uuid):
-    try:
-        suite = lm.get_suite(suite_uuid)
-        if not suite:
-            return {"code": "404", "message": "Resource not found"}, 404
-        if current_user and not current_user.is_anonymous:
-            user_workflows = lm.get_user_workflows(current_user)
-            if suite.workflow not in user_workflows:
-                return f"The user cannot access suite {suite}", 401
-        else:
-            registry = g.workflow_registry if "workflow_registry" in g else None
-            if registry is None:
-                return "Unable to find a valid WorkflowRegistry", 404
-            if suite.workflow not in registry.registered_workflows:
-                return f"The registry cannot access suite {suite}", 401
-    except EntityNotFoundException:
-        return "Invalid ID", 400
-
-    return serializers.ListOfTestInstancesSchema().dump(suite)
+    response = _get_suite_or_problem(suite_uuid)
+    return response if isinstance(response, Response) \
+        else serializers.ListOfTestInstancesSchema().dump(response)
 
 
 def suites_post_instance(suite_uuid):
