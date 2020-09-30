@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import logging
 import connexion
-from flask import g
+from flask import g, Response
 from lifemonitor.lang import messages
 from lifemonitor.auth import current_user, current_registry, authorized
 from lifemonitor.api.services import LifeMonitor
@@ -23,19 +23,6 @@ def _row_to_dict(row):
     for column in row.__table__.columns:
         d[column.name] = getattr(row, column.name)
     return d
-
-
-@authorized
-def workflows_get():
-    workflows = []
-    if current_registry:
-        workflows.extend(lm.get_registry_workflows(current_registry))
-    elif not current_user.is_anonymous:
-        workflows.extend(lm.get_user_workflows(current_user))
-    else:
-        return report_problem(401, "Unauthorized", detail=messages.no_user_in_session)
-    logger.debug("workflows_get. Got %s workflows", len(workflows))
-    return serializers.WorkflowSchema().dump(workflows, many=True)
 
 
 @authorized
@@ -113,7 +100,41 @@ def workflows_put(wf_uuid, wf_version, body):
 
 
 @authorized
-def workflows_get_by_id(wf_uuid, wf_version):
+def workflows_delete(wf_uuid, wf_version):
+    try:
+        if current_user and not current_user.is_anonymous:
+            lm.deregister_user_workflow(wf_uuid, wf_version, current_user)
+        elif current_registry:
+            lm.deregister_registry_workflow(wf_uuid, wf_version, current_registry)
+        else:
+            return report_problem(403, "Forbidden",
+                                  detail=messages.no_user_in_session)
+        return connexion.NoContent, 204
+    except EntityNotFoundException as e:
+        return report_problem(404, "Not Found", extra_info={"exception": str(e)},
+                              detail=messages.workflow_not_found.format(wf_uuid, wf_version))
+    except OAuthIdentityNotFoundException as e:
+        return report_problem(401, "Unauthorized", extra_info={"exception": str(e)})
+    except NotAuthorizedException as e:
+        return report_problem(403, "Forbidden", extra_info={"exception": str(e)})
+    except Exception as e:
+        raise LifeMonitorException(title="Internal Error", detail=str(e))
+
+
+@authorized
+def workflows_get():
+    workflows = []
+    if current_registry:
+        workflows.extend(lm.get_registry_workflows(current_registry))
+    elif not current_user.is_anonymous:
+        workflows.extend(lm.get_user_workflows(current_user))
+    else:
+        return report_problem(401, "Unauthorized", detail=messages.no_user_in_session)
+    logger.debug("workflows_get. Got %s workflows", len(workflows))
+    return serializers.WorkflowSchema().dump(workflows, many=True)
+
+
+def _get_workflow_or_problem(wf_uuid, wf_version):
     try:
         wf = None
         if current_user and not current_user.is_anonymous:
@@ -126,91 +147,38 @@ def workflows_get_by_id(wf_uuid, wf_version):
         if wf is None:
             return report_problem(404, "Not Found",
                                   detail=messages.workflow_not_found.format(wf_uuid, wf_version))
-        return serializers.WorkflowSchema().dump(wf)
+        return wf
     except EntityNotFoundException as e:
         return report_problem(404, "Not Found", extra_info={"exception": str(e)},
                               detail=messages.workflow_not_found.format(wf_uuid, wf_version))
 
 
 @authorized
+def workflows_get_by_id(wf_uuid, wf_version):
+    response = _get_workflow_or_problem(wf_uuid, wf_version)
+    return response if isinstance(response, Response) \
+        else serializers.WorkflowSchema().dump(response)
+
+
+@authorized
 def workflows_get_latest_version_by_id(wf_uuid):
-    try:
-        wf = None
-        if current_user and not current_user.is_anonymous:
-            wf = lm.get_user_workflow(current_user, wf_uuid)
-        elif current_registry:
-            wf = lm.get_registry_workflow(current_registry, wf_uuid)
-        else:
-            return report_problem(403, "Forbidden",
-                                  detail=messages.no_user_in_session)
-        if wf is None:
-            return report_problem(404, "Not Found",
-                                  detail=messages.workflow_not_found.format(wf_uuid, "latest"))
-        return serializers.LatestWorkflowSchema().dump(wf)
-    except EntityNotFoundException as e:
-        return report_problem(404, "Not Found", extra_info={"exception": str(e)},
-                              detail=messages.workflow_not_found.format(wf_uuid, "latest"))
+    response = _get_workflow_or_problem(wf_uuid, None)
+    return response if isinstance(response, Response) \
+        else serializers.LatestWorkflowSchema().dump(response)
 
 
+@authorized
 def workflows_get_status(wf_uuid, wf_version):
-    try:
-        logger.debug("Current user: %r", current_user)
-        if current_user and not current_user.is_anonymous:
-            wf = lm.get_user_workflow(current_user, wf_uuid, wf_version)
-        else:
-            registry = g.workflow_registry if "workflow_registry" in g else None
-            if registry is None:
-                return "Unable to find a valid WorkflowRegistry", 404
-            wf = lm.get_registry_workflow(registry, wf_uuid, wf_version)
-    except EntityNotFoundException:
-        return "Invalid ID", 400
-
-    if wf is not None:
-        result = serializers.WorkflowStatusSchema().dump(wf.status)
-        logger.debug(result)
-        return result
-
-    return connexion.NoContent, 404
+    response = _get_workflow_or_problem(wf_uuid, wf_version)
+    return response if isinstance(response, Response) \
+        else serializers.WorkflowStatusSchema().dump(response.status)
 
 
-def workflows_delete(wf_uuid, wf_version):
-    try:
-        if current_user and not current_user.is_anonymous:
-            lm.deregister_workflow(wf_uuid, wf_version, current_user)
-        elif "registry" in g:
-            lm.deregister_workflow(wf_uuid, wf_version)
-    except EntityNotFoundException as e:
-        logger.exception(e)
-        return "Invalid ID", 400
-    except NotAuthorizedException as e:
-        logger.exception(e)
-        return "Invalid credentials", 401
-    except Exception as e:
-        logger.exception(e)
-        return "Internal Error", 500
-
-    return connexion.NoContent, 204
-
-
+@authorized
 def workflows_get_suites(wf_uuid, wf_version):
-    try:
-        logger.debug("Current user: %r", current_user)
-        if current_user and not current_user.is_anonymous:
-            wf = lm.get_user_workflow(current_user, wf_uuid, wf_version)
-        else:
-            registry = g.workflow_registry if "workflow_registry" in g else None
-            if registry is None:
-                return "Unable to find a valid WorkflowRegistry", 404
-            wf = lm.get_registry_workflow(registry, wf_uuid, wf_version)
-    except EntityNotFoundException:
-        return "Invalid ID", 400
-
-    if wf is not None:
-        result = serializers.SuiteSchema().dump(wf.test_suites, many=True)
-        logger.debug(result)
-        return result
-
-    return connexion.NoContent, 404
+    response = _get_workflow_or_problem(wf_uuid, wf_version)
+    return response if isinstance(response, Response) \
+        else serializers.SuiteSchema().dump(response.test_suites, many=True)
 
 
 def suites_get_by_uuid(suite_uuid):
