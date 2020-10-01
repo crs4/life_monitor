@@ -239,11 +239,16 @@ def suites_post(wf_uuid, wf_version, body):
 
 def suites_delete(suite_uuid):
     try:
-        lm.deregister_test_suite(suite_uuid)
-    except EntityNotFoundException:
-        return "Invalid ID", 400
-
+        response = _get_suite_or_problem(suite_uuid)
+        if isinstance(response, Response):
+            return response
+        if lm.deregister_test_suite(response) == suite_uuid:
     return connexion.NoContent, 204
+        return report_problem(500, "Internal Error",
+                              detail=messages.unable_to_delete_suite.format(suite_uuid))
+    except Exception as e:
+        return report_problem(500, "Internal Error", extra_info={"exception": str(e)},
+                              detail=messages.unable_to_delete_suite.format(suite_uuid))
 
 
 def suites_post_instance(suite_uuid):

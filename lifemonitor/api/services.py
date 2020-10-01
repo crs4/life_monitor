@@ -1,6 +1,7 @@
 from __future__ import annotations
 import logging
 import tempfile
+from typing import Union
 from lifemonitor.auth.models import User
 from lifemonitor.common import EntityNotFoundException, NotAuthorizedException
 from lifemonitor.api.models import (
@@ -101,13 +102,15 @@ class LifeMonitor:
         return suite
 
     @classmethod
-    def deregister_test_suite(cls, test_suite_uuid) -> str:
-        project = TestSuite.find_by_id(test_suite_uuid)
-        if not project:
-            raise EntityNotFoundException(TestSuite, test_suite_uuid)
-        project.delete()
-        logger.debug("Deleted TestSuite: %r", project.uuid)
-        return test_suite_uuid
+    def deregister_test_suite(cls, test_suite: Union[TestSuite, str]) -> str:
+        suite = test_suite
+        if not isinstance(test_suite, TestSuite):
+            suite = TestSuite.find_by_id(test_suite)
+            if not test_suite:
+                raise EntityNotFoundException(TestSuite, test_suite)
+        suite.delete()
+        logger.debug("Deleted TestSuite: %r", suite.uuid)
+        return suite.uuid
 
     @classmethod
     def get_workflow_registry_by_uri(cls, registry_uri) -> WorkflowRegistry:
