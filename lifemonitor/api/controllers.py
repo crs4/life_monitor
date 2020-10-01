@@ -221,28 +221,8 @@ def suites_get_instances(suite_uuid):
         else serializers.ListOfTestInstancesSchema().dump(response)
 
 
-def suites_post_instance(suite_uuid):
-    try:
-        suite = lm.get_suite(suite_uuid)
-        if not suite:
-            return {"code": "404", "message": "Resource not found"}, 404
-        if current_user and not current_user.is_anonymous:
-            user_workflows = lm.get_user_workflows(current_user)
-            if suite.workflow not in user_workflows:
-                return f"The user cannot access suite {suite}", 401
-        else:
-            registry = g.workflow_registry if "workflow_registry" in g else None
-            if registry is None:
-                return "Unable to find a valid WorkflowRegistry", 404
-            if suite.workflow not in registry.registered_workflows:
-                return f"The registry cannot access suite {suite}", 401
-    except EntityNotFoundException:
-        return "Invalid ID", 400
-
-    return "Not implemented", 501
-
-
 def suites_post(wf_uuid, wf_version, body):
+    # A the moment, this controller is not linked to the API specs
     if current_user and not current_user.is_anonymous:
         submitter = current_user
     if submitter is None:
@@ -264,6 +244,27 @@ def suites_delete(suite_uuid):
         return "Invalid ID", 400
 
     return connexion.NoContent, 204
+
+
+def suites_post_instance(suite_uuid):
+    try:
+        suite = lm.get_suite(suite_uuid)
+        if not suite:
+            return {"code": "404", "message": "Resource not found"}, 404
+        if current_user and not current_user.is_anonymous:
+            user_workflows = lm.get_user_workflows(current_user)
+            if suite.workflow not in user_workflows:
+                return f"The user cannot access suite {suite}", 401
+        else:
+            registry = g.workflow_registry if "workflow_registry" in g else None
+            if registry is None:
+                return "Unable to find a valid WorkflowRegistry", 404
+            if suite.workflow not in registry.registered_workflows:
+                return f"The registry cannot access suite {suite}", 401
+    except EntityNotFoundException:
+        return "Invalid ID", 400
+
+    return "Not implemented", 501
 
 
 def _instances_get_by_id(instance_uuid):
@@ -306,7 +307,6 @@ def instances_builds_get_by_id(instance_uuid, build_id):
     instance = _instances_get_by_id(instance_uuid)
     if not isinstance(instance, TestInstance):
         return instance
-    # TODO: implement pagination using 'limit_bytes' param
     for build in instance.test_builds:
         if build.id == build_id:
             return serializers.BuildSummarySchema().dump(build)
