@@ -40,6 +40,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ListOfWorkflow"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
 
     post:
       x-openapi-router-controller: lifemonitor.api.controllers
@@ -57,12 +59,20 @@ paths:
       responses:
         "201":
           description: Workflow created
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /workflows/{wf_uuid}:
     get:
       summary: "Get information about latest version of specified workflow"
       x-openapi-router-controller: lifemonitor.api.controllers
-      operationId: "workflows_get_latest_by_id"
+      operationId: "workflows_get_latest_version_by_id"
       parameters:
         - $ref: "#/components/parameters/wf_uuid"
       responses:
@@ -87,6 +97,10 @@ paths:
                       - previous_versions
         "400":
           $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
 
@@ -110,6 +124,10 @@ paths:
                 $ref: "#/components/schemas/Workflow"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
 
@@ -130,8 +148,16 @@ paths:
             schema:
               $ref: "#/components/schemas/Workflow"
       responses:
-        "200":
+        "204":
           description: "Workflow updated"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
         "501":
           description: "Not implemented"
 
@@ -146,12 +172,16 @@ paths:
         - $ref: "#/components/parameters/wf_uuid"
         - $ref: "#/components/parameters/wf_version"
       responses:
-        "200":
-          description: Does not exist
         "204":
           description: Deleted
         "400":
           $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /workflows/{wf_uuid}/{wf_version}/status:
     get:
@@ -173,6 +203,10 @@ paths:
                 $ref: "#/components/schemas/WorkflowStatus"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
 
@@ -181,6 +215,9 @@ paths:
       summary: "Get list of test suites associated with workflow"
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "workflows_get_suites"
+      security:
+        - api_key: ["read"]
+        - oauth2: ["read"]
       description: >
         Get collection of test suites associated with workflow.  Test suites
         are collected from the RO-crate received with the creation of a new
@@ -197,6 +234,10 @@ paths:
                 $ref: "#/components/schemas/ListOfTestSuite"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
 
@@ -205,6 +246,9 @@ paths:
       summary: "Get info about a single test suite."
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "suites_get_by_uuid"
+      security:
+        - api_key: ["read"]
+        - oauth2: ["read"]
       parameters:
         - $ref: "#/components/parameters/suite_uuid"
       responses:
@@ -216,6 +260,10 @@ paths:
                 $ref: "#/components/schemas/TestSuite"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
 
@@ -229,12 +277,16 @@ paths:
       parameters:
         - $ref: "#/components/parameters/suite_uuid"
       responses:
-        "200":
-          description: Does not exist
         "204":
           description: Deleted
         "400":
           $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
         "501":
           description: "Not implemented"
 
@@ -244,6 +296,9 @@ paths:
         Get status of latest build for this test suite for each known instance
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "suites_get_status"
+      security:
+        - api_key: ["read"]
+        - oauth2: ["read"]
       parameters:
         - $ref: "#/components/parameters/suite_uuid"
       responses:
@@ -263,6 +318,9 @@ paths:
       summary: "Get list of instances of this suite present on testing services"
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "suites_get_instances"
+      security:
+        - api_key: ["read"]
+        - oauth2: ["read"]
       parameters:
         - $ref: "#/components/parameters/suite_uuid"
       responses:
@@ -274,6 +332,10 @@ paths:
                 $ref: "#/components/schemas/ListOfTestInstance"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
 
@@ -281,6 +343,9 @@ paths:
       summary: "Register or add an instance that executes this test suite"
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "suites_post_instance"
+      security:
+        - api_key: ["read", "write"]
+        - oauth2: ["read", "write"]
       description: |
         POSTing this resource results in the creation of a new test suite
         instance.  That is, a specific test suite hosted and executed on a
@@ -313,6 +378,10 @@ paths:
           description: Instance created
         "400":
           $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "501":
@@ -324,6 +393,9 @@ paths:
         Get summary of a test instance
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "instances_get_by_id"
+      security:
+        - api_key: ["read"]
+        - oauth2: ["read"]
       parameters:
         - $ref: "#/components/parameters/instance_uuid"
       responses:
@@ -335,6 +407,10 @@ paths:
                 $ref: "#/components/schemas/TestInstance"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
 
@@ -344,6 +420,9 @@ paths:
         Get summaries of latest builds for this test suite, on this instance
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "instances_get_builds"
+      security:
+        - api_key: ["read"]
+        - oauth2: ["read"]
       parameters:
         - $ref: "#/components/parameters/instance_uuid"
         - $ref: "#/components/parameters/limit"
@@ -356,6 +435,10 @@ paths:
                 $ref: "#/components/schemas/ListOfBuildSummary"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
 
@@ -364,6 +447,9 @@ paths:
       summary: "Get summary of a build for this test suite"
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "instances_builds_get_by_id"
+      security:
+        - api_key: ["read"]
+        - oauth2: ["read"]
       parameters:
         - $ref: "#/components/parameters/instance_uuid"
         - $ref: "#/components/parameters/build_id"
@@ -376,6 +462,10 @@ paths:
                 $ref: "#/components/schemas/BuildSummary"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
 
@@ -384,6 +474,9 @@ paths:
       summary: "Get build logs"
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "instances_builds_get_logs"
+      security:
+        - api_key: ["read"]
+        - oauth2: ["read"]
       parameters:
         - $ref: "#/components/parameters/instance_uuid"
         - $ref: "#/components/parameters/build_id"
@@ -398,6 +491,10 @@ paths:
                 type: string
         "400":
           $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
 
@@ -473,6 +570,13 @@ components:
 
     Unauthorized:
       description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+    Forbidden:
+      description: Forbidden
       content:
         application/json:
           schema:
@@ -760,3 +864,7 @@ components:
           scopes:
             read: Read data and metadata (including that of private resources)
             write: Write data and metadata of private resources
+
+  examples:
+    test_metadata:
+      externalValue: "examples/test-metadata.json"
