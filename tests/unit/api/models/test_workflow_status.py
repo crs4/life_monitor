@@ -190,7 +190,7 @@ def test_status_some_build_passing(workflow, suite):
 
 
 @pytest.mark.parametrize("suite", [(3, 2, 1)], indirect=True)
-def test_status_some_build_passing(workflow, suite, error_description):
+def test_status_some_build_passing_check_issues(workflow, suite, error_description):
     assert len(workflow.test_suites) == 0, "Number of suites different from 0"
     assert len(suite.test_instances) == 6, "Unexpected number of test instances"
     status = workflow.status
