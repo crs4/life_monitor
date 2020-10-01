@@ -27,8 +27,8 @@ class LifeMonitor:
             raise RuntimeError("LifeMonitor instance already exists!")
         self.__instance = self
 
-    @classmethod
-    def _find_and_check_workflow(cls, uuid, version, user: User):
+    @staticmethod
+    def _find_and_check_workflow(uuid, version, user: User):
         if not version:
             w = Workflow.find_latest_by_id(uuid)
         else:
@@ -40,8 +40,8 @@ class LifeMonitor:
             raise NotAuthorizedException(f"User {user.username} is not allowed to access workflow")
         return w
 
-    @classmethod
-    def register_workflow(cls, workflow_registry: WorkflowRegistry, workflow_submitter: User,
+    @staticmethod
+    def register_workflow(workflow_registry: WorkflowRegistry, workflow_submitter: User,
                           workflow_uuid, workflow_version, roc_link, external_id=None, name=None):
         with tempfile.NamedTemporaryFile(dir="/tmp") as archive_path:
             logger.info("Downloading RO Crate @ %s", archive_path.name)
@@ -78,8 +78,8 @@ class LifeMonitor:
         logger.debug("Deleted workflow wf_uuid: %r - version: %r", workflow_uuid, workflow_version)
         return workflow_uuid, workflow_version
 
-    @classmethod
-    def deregister_registry_workflow(cls, workflow_uuid, workflow_version, registry: WorkflowRegistry):
+    @staticmethod
+    def deregister_registry_workflow(workflow_uuid, workflow_version, registry: WorkflowRegistry):
         workflow = registry.get_workflow(workflow_uuid, workflow_version)
         logger.debug("Workflow to delete: %r", workflow)
         if not workflow:
@@ -88,8 +88,8 @@ class LifeMonitor:
         logger.debug("Deleted workflow wf_uuid: %r - version: %r", workflow_uuid, workflow_version)
         return workflow_uuid, workflow_version
 
-    @classmethod
-    def register_test_suite(cls, workflow_uuid, workflow_version,
+    @staticmethod
+    def register_test_suite(workflow_uuid, workflow_version,
                             submitter: User, test_suite_metadata) -> TestSuite:
         workflow = Workflow.find_by_id(workflow_uuid, workflow_version)
         if not workflow:
@@ -101,19 +101,19 @@ class LifeMonitor:
         suite.save()
         return suite
 
-    @classmethod
-    def deregister_test_suite(cls, test_suite: Union[TestSuite, str]) -> str:
+    @staticmethod
+    def deregister_test_suite(test_suite: Union[TestSuite, str]) -> str:
         suite = test_suite
         if not isinstance(test_suite, TestSuite):
             suite = TestSuite.find_by_id(test_suite)
-            if not test_suite:
+            if not suite:
                 raise EntityNotFoundException(TestSuite, test_suite)
         suite.delete()
         logger.debug("Deleted TestSuite: %r", suite.uuid)
         return suite.uuid
 
-    @classmethod
-    def get_workflow_registry_by_uri(cls, registry_uri) -> WorkflowRegistry:
+    @staticmethod
+    def get_workflow_registry_by_uri(registry_uri) -> WorkflowRegistry:
         try:
             r = WorkflowRegistry.find_by_uri(registry_uri)
             if not r:
@@ -122,44 +122,44 @@ class LifeMonitor:
         except Exception:
             raise EntityNotFoundException(WorkflowRegistry, registry_uri)
 
-    @classmethod
-    def get_workflow(cls, uuid, version) -> Workflow:
+    @staticmethod
+    def get_workflow(uuid, version) -> Workflow:
         return Workflow.find_by_id(uuid, version)
 
-    @classmethod
-    def get_workflows(cls) -> list:
+    @staticmethod
+    def get_workflows() -> list:
         return Workflow.all()
 
-    @classmethod
-    def get_registry_workflow(cls, registry: WorkflowRegistry, uuid, version=None) -> Workflow:
+    @staticmethod
+    def get_registry_workflow(registry: WorkflowRegistry, uuid, version=None) -> Workflow:
         return registry.get_workflow(uuid, version)
 
-    @classmethod
-    def get_registry_workflows(cls, registry: WorkflowRegistry) -> list:
+    @staticmethod
+    def get_registry_workflows(registry: WorkflowRegistry) -> list:
         return registry.registered_workflows
 
     @classmethod
     def get_user_workflow(cls, user: User, uuid, version=None) -> Workflow:
         return cls._find_and_check_workflow(uuid, version, user)
 
-    @classmethod
-    def get_user_workflows(cls, user: User) -> list:
+    @staticmethod
+    def get_user_workflows(user: User) -> list:
         workflows = []
         registries = WorkflowRegistry.all()
         for registry in registries:
             workflows.extend(registry.get_user_workflows(user))
         return workflows
 
-    @classmethod
-    def get_suite(cls, suite_uuid) -> TestSuite:
+    @staticmethod
+    def get_suite(suite_uuid) -> TestSuite:
         return TestSuite.find_by_id(suite_uuid)
 
-    @classmethod
-    def get_test_instance(cls, instance_uuid) -> TestInstance:
+    @staticmethod
+    def get_test_instance(instance_uuid) -> TestInstance:
         return TestInstance.find_by_id(instance_uuid)
 
-    @classmethod
-    def find_registry_user_identity(cls, registry: WorkflowRegistry,
+    @staticmethod
+    def find_registry_user_identity(registry: WorkflowRegistry,
                                     internal_id=None, external_id=None) -> OAuthIdentity:
         if not internal_id and not external_id:
             raise ValueError("external_id and internal_id cannot be both None")
