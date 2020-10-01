@@ -4,7 +4,6 @@ from flask import Response
 import lifemonitor.auth as auth
 import lifemonitor.api.controllers as controllers
 
-from lifemonitor.lang import messages
 from lifemonitor.auth.models import User
 from unittest.mock import MagicMock, patch
 from tests.conftest import assert_status_code

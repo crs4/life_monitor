@@ -5,7 +5,6 @@ from flask import g, Response
 from lifemonitor.lang import messages
 from lifemonitor.auth import current_user, current_registry, authorized
 from lifemonitor.api.services import LifeMonitor
-from lifemonitor.api.models import TestInstance
 from lifemonitor.api import serializers
 import werkzeug.exceptions as http_exceptions
 from lifemonitor.common import EntityNotFoundException, NotAuthorizedException, NotValidROCrateException, LifeMonitorException
