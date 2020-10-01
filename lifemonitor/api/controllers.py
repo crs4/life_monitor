@@ -243,7 +243,7 @@ def suites_delete(suite_uuid):
         if isinstance(response, Response):
             return response
         if lm.deregister_test_suite(response) == suite_uuid:
-    return connexion.NoContent, 204
+            return connexion.NoContent, 204
         return report_problem(500, "Internal Error",
                               detail=messages.unable_to_delete_suite.format(suite_uuid))
     except Exception as e:
@@ -272,58 +272,62 @@ def suites_post_instance(suite_uuid):
     return "Not implemented", 501
 
 
-def _instances_get_by_id(instance_uuid):
+def _get_instances_or_problem(instance_uuid):
     try:
         instance = lm.get_test_instance(instance_uuid)
         if not instance:
-            return {"code": "404", "message": "Resource not found"}, 404
+            return report_problem(404, "Not Found",
+                                  detail=messages.suite_not_found.format(instance_uuid))
         if current_user and not current_user.is_anonymous:
             user_workflows = lm.get_user_workflows(current_user)
             if instance.test_suite.workflow not in user_workflows:
-                return f"The user cannot access suite {instance}", 401
-        else:
-            registry = g.workflow_registry if "workflow_registry" in g else None
-            if registry is None:
-                return "Unable to find a valid WorkflowRegistry", 404
-            if instance.test_suite.workflow not in registry.registered_workflows:
-                return f"The registry cannot access suite {instance}", 401
+                return report_problem(403, "Forbidden", detail=messages.unauthorized_user_instance_access
+                                      .format(current_user.username, instance_uuid))
+        elif current_registry:
+            if instance.test_suite.workflow not in current_registry.registered_workflows:
+                return report_problem(403, "Forbidden", detail=messages.unauthorized_registry_instance_access
+                                      .format(current_registry.name, instance_uuid))
+        return instance
     except EntityNotFoundException:
-        return "Invalid ID", 400
-
-    return instance
+        return report_problem(404, "Not Found", detail=messages.instance_not_found.format(instance_uuid))
 
 
+@authorized
 def instances_get_by_id(instance_uuid):
-    instance = _instances_get_by_id(instance_uuid)
-    if not isinstance(instance, TestInstance):
-        return instance
-    return serializers.TestInstanceSchema().dump(instance)
+    response = _get_instances_or_problem(instance_uuid)
+    return response if isinstance(response, Response) \
+        else serializers.TestInstanceSchema().dump(response)
 
 
+@authorized
 def instances_get_builds(instance_uuid, limit):
-    instance = _instances_get_by_id(instance_uuid)
-    if not isinstance(instance, TestInstance):
-        return instance
     # TODO: implement pagination using 'limit' param
-    return serializers.ListOfTestBuildsSchema().dump(instance)
+    response = _get_instances_or_problem(instance_uuid)
+    return response if isinstance(response, Response) \
+        else serializers.ListOfTestBuildsSchema().dump(response)
 
 
+@authorized
 def instances_builds_get_by_id(instance_uuid, build_id):
-    instance = _instances_get_by_id(instance_uuid)
-    if not isinstance(instance, TestInstance):
-        return instance
-    for build in instance.test_builds:
+    response = _get_instances_or_problem(instance_uuid)
+    if isinstance(response, Response):
+        return response
+    for build in response.test_builds:
         if build.id == build_id:
+            # TODO: limit logs to few lines
             return serializers.BuildSummarySchema().dump(build)
-    return "Test Build not found", 404
+    return report_problem(404, "Not Found",
+                          detail=messages.instance_build_not_found.format(build_id, instance_uuid))
 
 
+@authorized
 def instances_builds_get_logs(instance_uuid, build_id, offset_bytes, limit_bytes):
-    instance = _instances_get_by_id(instance_uuid)
-    if not isinstance(instance, TestInstance):
-        return instance
-    # TODO: implement pagination using 'limit_bytes' param
-    for build in instance.test_builds:
+    response = _get_instances_or_problem(instance_uuid)
+    if isinstance(response, Response):
+        return response
+    for build in response.test_builds:
         if build.id == build_id:
+            # TODO: implement pagination using 'limit_bytes' param
             return build.output
-    return "Test Build not found", 404
+    return report_problem(404, "Not Found",
+                          detail=messages.instance_build_not_found.format(build_id, instance_uuid))
