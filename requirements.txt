@@ -19,3 +19,5 @@ Authlib==0.14.3
 email-validator==1.1.1
 connexion[swagger-ui]==2.7.0
 python-jenkins==1.7.0
+pytest-mock==3.3.1
+flask-shell-ipython==0.4.1
