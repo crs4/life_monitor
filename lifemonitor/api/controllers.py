@@ -129,7 +129,7 @@ def workflows_get():
         workflows.extend(lm.get_user_workflows(current_user))
     else:
         return report_problem(401, "Unauthorized", detail=messages.no_user_in_session)
-    logger.debug("workflows_get. Got %s workflows", len(workflows))
+    logger.debug("workflows_get. Got %s workflows (user: %s)", len(workflows), current_user)
     return serializers.WorkflowSchema().dump(workflows, many=True)
 
 
