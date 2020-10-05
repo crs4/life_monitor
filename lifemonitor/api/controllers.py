@@ -110,7 +110,7 @@ def workflows_delete(wf_uuid, wf_version):
                                   detail=messages.no_user_in_session)
         return connexion.NoContent, 204
     except EntityNotFoundException as e:
-        return report_problem(404, "Not Found", extra_info={"exception": str(e)},
+        return report_problem(404, "Not Found", extra_info={"exception": str(e.detail)},
                               detail=messages.workflow_not_found.format(wf_uuid, wf_version))
     except OAuthIdentityNotFoundException as e:
         return report_problem(401, "Unauthorized", extra_info={"exception": str(e)})
