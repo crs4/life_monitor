@@ -3,35 +3,15 @@ import logging
 from flask import Response
 import lifemonitor.auth as auth
 import lifemonitor.api.controllers as controllers
-
-from lifemonitor.auth.models import User
 from unittest.mock import MagicMock, patch
-from tests.conftest import assert_status_code
+from tests.utils import assert_status_code
 
 
 logger = logging.getLogger(__name__)
 
 
-@pytest.fixture
-def user():
-    u = User()
-    u.username = "lifemonitor_user"
-    auth.login_user(u)
-    yield u
-    auth.logout_user()
-
-
-@pytest.fixture
-def registry():
-    r = MagicMock()
-    r.name = "WorkflowRegistry"
-    auth.login_registry(r)
-    yield r
-    auth.logout_registry()
-
-
 @patch("lifemonitor.api.controllers.lm")
-def test_get_instances_no_authorization(m, base_request_context):
+def test_get_instances_no_authorization(m, request_context):
     assert auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry is not None, "Unexpected registry in session"
     with pytest.raises(auth.NotAuthorizedException):
@@ -39,7 +19,7 @@ def test_get_instances_no_authorization(m, base_request_context):
 
 
 @patch("lifemonitor.api.controllers.lm")
-def test_get_instance_error_not_found(m, base_request_context, user):
+def test_get_instance_error_not_found(m, request_context, mock_user):
     assert not auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry is not None, "Unexpected registry in session"
     m.get_test_instance.return_value = None
@@ -49,7 +29,7 @@ def test_get_instance_error_not_found(m, base_request_context, user):
 
 
 @patch("lifemonitor.api.controllers.lm")
-def test_get_instance_by_user_error_forbidden(m, base_request_context, user):
+def test_get_instance_by_user_error_forbidden(m, request_context, mock_user):
     assert not auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry is not None, "Unexpected registry in session"
     workflow = {"uuid": "1111-222"}
@@ -65,7 +45,7 @@ def test_get_instance_by_user_error_forbidden(m, base_request_context, user):
 
 
 @patch("lifemonitor.api.controllers.lm")
-def test_get_instance_by_user(m, base_request_context, user):
+def test_get_instance_by_user(m, request_context, mock_user):
     assert not auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry is not None, "Unexpected registry in session"
     workflow = {"uuid": "1111-222"}
@@ -82,7 +62,7 @@ def test_get_instance_by_user(m, base_request_context, user):
 
 
 @patch("lifemonitor.api.controllers.lm")
-def test_get_instance_build_by_user_error_not_found(m, base_request_context, user):
+def test_get_instance_build_by_user_error_not_found(m, request_context, mock_user):
     assert not auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry is not None, "Unexpected registry in session"
     workflow = {"uuid": "1111-222"}
@@ -100,7 +80,7 @@ def test_get_instance_build_by_user_error_not_found(m, base_request_context, use
 
 
 @patch("lifemonitor.api.controllers.lm")
-def test_get_instance_build_by_user(m, base_request_context, user):
+def test_get_instance_build_by_user(m, request_context, mock_user):
     assert not auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry is not None, "Unexpected registry in session"
     workflow = {"uuid": "1111-222"}
@@ -119,7 +99,7 @@ def test_get_instance_build_by_user(m, base_request_context, user):
 
 
 @patch("lifemonitor.api.controllers.lm")
-def test_get_instance_by_registry_error_forbidden(m, base_request_context, registry):
+def test_get_instance_by_registry_error_forbidden(m, request_context, mock_registry):
     assert auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry, "Unexpected registry in session"
     workflow = {"uuid": "1111-222"}
@@ -127,7 +107,7 @@ def test_get_instance_by_registry_error_forbidden(m, base_request_context, regis
     instance.uuid = '12345'
     instance.test_suite.workflow = workflow
     m.get_test_instance.return_value = instance
-    registry.registered_workflows = []
+    mock_registry.registered_workflows = []
     response = controllers.instances_get_by_id(instance['uuid'])
     m.get_test_instance.assert_called_once()
     assert isinstance(response, Response), "Unexpected response type"
@@ -135,7 +115,7 @@ def test_get_instance_by_registry_error_forbidden(m, base_request_context, regis
 
 
 @patch("lifemonitor.api.controllers.lm")
-def test_get_instance_by_registry_error_not_found(m, base_request_context, registry):
+def test_get_instance_by_registry_error_not_found(m, request_context, mock_registry):
     assert auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry, "Unexpected registry in session"
     workflow = {"uuid": "1111-222"}
@@ -143,14 +123,14 @@ def test_get_instance_by_registry_error_not_found(m, base_request_context, regis
     instance.uuid = '12345'
     instance.test_suite.workflow = workflow
     m.get_test_instance.return_value = instance
-    registry.registered_workflows = [workflow]
+    mock_registry.registered_workflows = [workflow]
     response = controllers.instances_get_by_id(instance['uuid'])
     m.get_test_instance.assert_called_once()
     assert isinstance(response, dict), "Unexpected response type"
 
 
 @patch("lifemonitor.api.controllers.lm")
-def test_get_instance_build_by_registry_error_not_found(m, base_request_context, registry):
+def test_get_instance_build_by_registry_error_not_found(m, request_context, mock_registry):
     assert auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry, "Unexpected registry in session"
     build = MagicMock()
@@ -161,7 +141,7 @@ def test_get_instance_build_by_registry_error_not_found(m, base_request_context,
     instance.test_builds = [build]
     instance.test_suite.workflow = workflow
     m.get_test_instance.return_value = instance
-    registry.registered_workflows = [workflow]
+    mock_registry.registered_workflows = [workflow]
     response = controllers.instances_builds_get_by_id(instance['uuid'], '2222')
     m.get_test_instance.assert_called_once()
     assert isinstance(response, Response), "Unexpected response type"
@@ -169,7 +149,7 @@ def test_get_instance_build_by_registry_error_not_found(m, base_request_context,
 
 
 @patch("lifemonitor.api.controllers.lm")
-def test_get_instance_build_by_registry(m, base_request_context, registry):
+def test_get_instance_build_by_registry(m, request_context, mock_registry):
     assert auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry, "Unexpected registry in session"
     build = MagicMock()
@@ -180,7 +160,7 @@ def test_get_instance_build_by_registry(m, base_request_context, registry):
     instance.test_builds = [build]
     instance.test_suite.workflow = workflow
     m.get_test_instance.return_value = instance
-    registry.registered_workflows = [workflow]
+    mock_registry.registered_workflows = [workflow]
     response = controllers.instances_builds_get_by_id(instance['uuid'], build.id)
     m.get_test_instance.assert_called_once()
     assert isinstance(response, dict), "Unexpected response type"

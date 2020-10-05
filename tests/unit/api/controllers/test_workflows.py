@@ -9,32 +9,16 @@ import lifemonitor.api.serializers as serializers
 from lifemonitor.lang import messages
 from lifemonitor.auth.models import User
 from unittest.mock import MagicMock, patch
-from tests.conftest import assert_status_code
+from tests.utils import assert_status_code
 from lifemonitor.auth.oauth2.client.models import OAuthIdentityNotFoundException
 
 
 logger = logging.getLogger(__name__)
 
 
-@pytest.fixture
-def user():
-    u = User()
-    auth.login_user(u)
-    yield u
-    auth.logout_user()
-
-
-@pytest.fixture
-def registry():
-    r = MagicMock()
-    r.name = "WorkflowRegistry"
-    auth.login_registry(r)
-    yield r
-    auth.logout_registry()
-
 
 @patch("lifemonitor.api.controllers.lm")
-def test_get_workflows_no_authorization(m, base_request_context):
+def test_get_workflows_no_authorization(m, request_context):
     assert auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry is not None, "Unexpected registry in session"
     with pytest.raises(auth.NotAuthorizedException):
@@ -42,10 +26,10 @@ def test_get_workflows_no_authorization(m, base_request_context):
 
 
 @patch("lifemonitor.api.controllers.lm")
-def test_get_workflows_with_user(m, base_request_context, user):
+def test_get_workflows_with_user(m, request_context, mock_user):
     # add one user to the current session
     assert not auth.current_user.is_anonymous, "Unexpected user in session"
-    assert auth.current_user == user, "Unexpected user in session"
+    assert auth.current_user == mock_user, "Unexpected user in session"
     logger.debug("Current registry: %r", auth.current_registry)
     assert not auth.current_registry, "Unexpected registry in session"
     # add one fake workflow
@@ -58,7 +42,7 @@ def test_get_workflows_with_user(m, base_request_context, user):
 
 
 @patch("lifemonitor.api.controllers.lm")
-def test_get_workflows_with_registry(m, base_request_context, registry):
+def test_get_workflows_with_registry(m, request_context, mock_registry):
     assert auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry, "Unexpected registry in session"
     # add one fake workflow
@@ -71,7 +55,7 @@ def test_get_workflows_with_registry(m, base_request_context, registry):
 
 
 @patch("lifemonitor.api.controllers.lm")
-def test_post_workflows_no_authorization(m, base_request_context):
+def test_post_workflows_no_authorization(m, request_context):
     assert auth.current_user.is_anonymous, "Unexpected user in session"
     assert not auth.current_registry, "Unexpected registry in session"
     with pytest.raises(auth.NotAuthorizedException):
@@ -79,9 +63,9 @@ def test_post_workflows_no_authorization(m, base_request_context):
 
 
 @patch("lifemonitor.api.controllers.lm")
-def test_post_workflow_by_user_error_no_registry_uri(m, base_request_context, user):
+def test_post_workflow_by_user_error_no_registry_uri(m, request_context, mock_user):
     assert not auth.current_user.is_anonymous, "Unexpected user in session"
-    assert auth.current_user == user, "Unexpected user in session"
+    assert auth.current_user == mock_user, "Unexpected user in session"
     assert not auth.current_registry, "Unexpected registry in session"
     response = controllers.workflows_post(body={})
     assert response.status_code == 400, "Expected a Bad Request"
@@ -90,9 +74,9 @@ def test_post_workflow_by_user_error_no_registry_uri(m, base_request_context, us
 
 
 @patch("lifemonitor.api.controllers.lm")
-def test_post_workflow_by_user_error_invalid_registry_uri(m, base_request_context, user):
+def test_post_workflow_by_user_error_invalid_registry_uri(m, request_context, mock_user):
     assert not auth.current_user.is_anonymous, "Unexpected user in session"
-    assert auth.current_user == user, "Unexpected user in session"
+    assert auth.current_user == mock_user, "Unexpected user in session"
     assert not auth.current_registry, "Unexpected registry in session"
     # add one fake workflow
     data = {"registry_uri": "123456"}
@@ -105,9 +89,9 @@ def test_post_workflow_by_user_error_invalid_registry_uri(m, base_request_contex
 
 
 @patch("lifemonitor.api.controllers.lm")
-def test_post_workflow_by_user_error_missing_input_data(m, base_request_context, user):
+def test_post_workflow_by_user_error_missing_input_data(m, request_context, mock_user):
     assert not auth.current_user.is_anonymous, "Unexpected user in session"
-    assert auth.current_user == user, "Unexpected user in session"
+    assert auth.current_user == mock_user, "Unexpected user in session"
     assert not auth.current_registry, "Unexpected registry in session"
     # add one fake workflow
     data = {"registry_uri": "123456"}
@@ -120,9 +104,9 @@ def test_post_workflow_by_user_error_missing_input_data(m, base_request_context,
 
 
 @patch("lifemonitor.api.controllers.lm")
-def test_post_workflow_by_user(m, base_request_context, user):
+def test_post_workflow_by_user(m, request_context, mock_user):
     assert not auth.current_user.is_anonymous, "Unexpected user in session"
-    assert auth.current_user == user, "Unexpected user in session"
+    assert auth.current_user == mock_user, "Unexpected user in session"
     assert not auth.current_registry, "Unexpected registry in session"
     # add one fake workflow
     data = {
@@ -145,7 +129,7 @@ def test_post_workflow_by_user(m, base_request_context, user):
 
 
 @patch("lifemonitor.api.controllers.lm")
-def test_post_workflow_by_registry_error_registry_uri(m, base_request_context, registry):
+def test_post_workflow_by_registry_error_registry_uri(m, request_context, mock_registry):
     assert auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry, "Unexpected registry in session"
     # add one fake workflow
@@ -158,7 +142,7 @@ def test_post_workflow_by_registry_error_registry_uri(m, base_request_context, r
 
 
 @patch("lifemonitor.api.controllers.lm")
-def test_post_workflow_by_registry_error_missing_submitter_id(m, base_request_context, registry):
+def test_post_workflow_by_registry_error_missing_submitter_id(m, request_context, mock_registry):
     assert auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry, "Unexpected registry in session"
     # add one fake workflow
@@ -171,7 +155,7 @@ def test_post_workflow_by_registry_error_missing_submitter_id(m, base_request_co
 
 
 @patch("lifemonitor.api.controllers.lm")
-def test_post_workflow_by_registry_error_submitter_not_found(m, base_request_context, registry):
+def test_post_workflow_by_registry_error_submitter_not_found(m, request_context, mock_registry):
     assert auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry, "Unexpected registry in session"
     # add one fake workflow
@@ -181,12 +165,12 @@ def test_post_workflow_by_registry_error_submitter_not_found(m, base_request_con
     logger.debug("Response: %r, %r", response, str(response.data))
     assert_status_code(response.status_code, 401)
     assert messages.no_user_oauth_identity_on_registry \
-        .format(data["submitter_id"], registry.name) in response.data.decode(),\
+        .format(data["submitter_id"], mock_registry.name) in response.data.decode(),\
         "Unexpected error message"
 
 
 @patch("lifemonitor.api.controllers.lm")
-def test_post_workflow_by_registry(m, base_request_context, registry):
+def test_post_workflow_by_registry(m, request_context, mock_registry):
     assert auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry, "Unexpected registry in session"
     # add one fake workflow
@@ -208,7 +192,7 @@ def test_post_workflow_by_registry(m, base_request_context, registry):
 
 
 @patch("lifemonitor.api.controllers.lm")
-def test_post_workflow_by_registry_invalid_rocrate(m, base_request_context, registry):
+def test_post_workflow_by_registry_invalid_rocrate(m, request_context, mock_registry):
     assert auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry, "Unexpected registry in session"
     # add one fake workflow
@@ -229,7 +213,7 @@ def test_post_workflow_by_registry_invalid_rocrate(m, base_request_context, regi
 
 
 @patch("lifemonitor.api.controllers.lm")
-def test_post_workflow_by_registry_not_authorized(m, base_request_context, registry):
+def test_post_workflow_by_registry_not_authorized(m, request_context, mock_registry):
     assert auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry, "Unexpected registry in session"
     # add one fake workflow
@@ -247,11 +231,11 @@ def test_post_workflow_by_registry_not_authorized(m, base_request_context, regis
     logger.debug("Response: %r", response)
     assert_status_code(response.status_code, 403)
     assert messages.not_authorized_registry_access\
-        .format(registry.name) in response.data.decode()
+        .format(mock_registry.name) in response.data.decode()
 
 
 @patch("lifemonitor.api.controllers.lm")
-def test_get_workflow_by_id_error_not_found(m, base_request_context, registry):
+def test_get_workflow_by_id_error_not_found(m, request_context, mock_registry):
     assert auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry, "Unexpected registry in session"
     m.get_registry_workflow.side_effect = common.EntityNotFoundException(models.Workflow)
@@ -270,13 +254,13 @@ def test_get_workflow_by_id_error_not_found(m, base_request_context, registry):
 
 
 @patch("lifemonitor.api.controllers.lm")
-def test_get_workflow_by_id(m, base_request_context, registry):
+def test_get_workflow_by_id(m, request_context, mock_registry):
     assert auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry, "Unexpected registry in session"
     data = {"uuid": "12345", "version": "2", "roc_link": "https://somelink", "previous_versions": ["1"]}
     m.get_registry_workflow.return_value = data
     response = controllers.workflows_get_by_id(data['uuid'], data['version'])
-    m.get_registry_workflow.assert_called_once_with(registry, data['uuid'], data['version'])
+    m.get_registry_workflow.assert_called_once_with(mock_registry, data['uuid'], data['version'])
     logger.debug("Response: %r", response)
     assert isinstance(response, dict), "Unexpected response"
     assert response['uuid'] == data['uuid'], "Unexpected workflow UUID"
@@ -285,13 +269,13 @@ def test_get_workflow_by_id(m, base_request_context, registry):
 
 
 @patch("lifemonitor.api.controllers.lm")
-def test_get_latest_workflow_version_by_id(m, base_request_context, registry):
+def test_get_latest_workflow_version_by_id(m, request_context, mock_registry):
     assert auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry, "Unexpected registry in session"
     data = {"uuid": "12345", "version": "2", "roc_link": "https://somelink", "previous_versions": ["1"]}
     m.get_registry_workflow.return_value = data
     response = controllers.workflows_get_latest_version_by_id(data['uuid'])
-    m.get_registry_workflow.assert_called_once_with(registry, data['uuid'])
+    m.get_registry_workflow.assert_called_once_with(mock_registry, data['uuid'], None)
     logger.debug("Response: %r", response)
     assert isinstance(response, dict), "Unexpected response"
     assert response['uuid'] == data['uuid'], "Unexpected workflow UUID"
