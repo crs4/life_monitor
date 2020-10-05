@@ -44,9 +44,9 @@ def test_config_params(app_client, client_auth_method, user1, user1_auth):
                 token = Token.find(app_client_headers['Authorization'].replace("Bearer ", ""))
             logger.info("Token: %r [user: %r]", token, token.user_id)
             if client_auth_method == ClientAuthenticationMethod.CLIENT_CREDENTIALS:
-                assert token.user_id is None, f"Token MUST be not related with the current user {app_client_user}"
+                assert token.user_id is None, f"Token MUST be not related with the current user {user1}"
             else:
-                assert token.user_id == user1['user'].id, f"Token MUST be issued to the current user {app_client_user}"
+                assert token.user_id == user1['user'].id, f"Token MUST be issued to the current user {user1}"
 
         logger.debug("WORKFLOWS: %r", user1["workflows"])
 

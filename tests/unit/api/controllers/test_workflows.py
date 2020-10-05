@@ -7,14 +7,12 @@ import lifemonitor.api.models as models
 import lifemonitor.api.controllers as controllers
 import lifemonitor.api.serializers as serializers
 from lifemonitor.lang import messages
-from lifemonitor.auth.models import User
 from unittest.mock import MagicMock, patch
 from tests.utils import assert_status_code
 from lifemonitor.auth.oauth2.client.models import OAuthIdentityNotFoundException
 
 
 logger = logging.getLogger(__name__)
-
 
 
 @patch("lifemonitor.api.controllers.lm")
