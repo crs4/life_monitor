@@ -10,8 +10,12 @@ from .utils import bool_from_string
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 
-def load_settings(file_path="settings.conf"):
+def load_settings(config=None):
     result = None
+    if config:
+        file_path = config.SETTINGS_FILE
+    else:
+        file_path = "settings.conf"
     if os.path.exists(file_path):
         result = dotenv.dotenv_values(dotenv_path=file_path)
     return result
@@ -19,6 +23,7 @@ def load_settings(file_path="settings.conf"):
 
 class BaseConfig:
     CONFIG_NAME = "base"
+    SETTINGS_FILE = "settings.conf"
     USE_MOCK_EQUIVALENCY = False
     DEBUG = bool_from_string(os.getenv("DEBUG", "false"))
     LOG_LEVEL = os.environ.get('LOG_LEVEL', 'DEBUG' if DEBUG else 'INFO')
@@ -47,6 +52,7 @@ class ProductionConfig(BaseConfig):
 
 class TestingConfig(BaseConfig):
     CONFIG_NAME = "testing"
+    SETTINGS_FILE = "tests/settings.conf"
     SECRET_KEY = os.getenv("TEST_SECRET_KEY", BaseConfig.SECRET_KEY)
     DEBUG = True
     TESTING = True
@@ -67,16 +73,17 @@ def get_config_by_name(name, settings=None):
         config = type(f"AppConfigInstance{name}".title(), (_config_by_name[name],), {})
         # load "settings.conf" to the environment
         if settings is None:
-            settings = load_settings()
+            settings = load_settings(config)
         if settings and "SQLALCHEMY_DATABASE_URI" not in settings:
             settings["SQLALCHEMY_DATABASE_URI"] = db_uri(settings)
         # always set the FLASK_APP_CONFIG_FILE variable to the environment
-        if "FLASK_APP_CONFIG_FILE" in settings:
+        if settings and "FLASK_APP_CONFIG_FILE" in settings:
             os.environ["FLASK_APP_CONFIG_FILE"] = settings["FLASK_APP_CONFIG_FILE"]
         # append properties from settings.conf
         # to the default configuration
-        for k, v in settings.items():
-            setattr(config, k, v)
+        if settings:
+            for k, v in settings.items():
+                setattr(config, k, v)
         return config
     except KeyError:
         return ProductionConfig
