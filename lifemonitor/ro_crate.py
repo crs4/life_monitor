@@ -33,6 +33,8 @@ from pathlib import Path
 
 METADATA_BASENAME = "ro-crate-metadata.json"  # since RO-Crate 1.1
 LEGACY_METADATA_BASENAME = "ro-crate-metadata.jsonld"
+WORKFLOW_TYPES = {"File", "SoftwareSourceCode", "ComputationalWorkflow"}
+LEGACY_WORKFLOW_TYPES = {"File", "SoftwareSourceCode", "Workflow"}
 
 
 def find_root_entity(entity_map):
@@ -58,6 +60,32 @@ def find_root_entity(entity_map):
     raise ValueError("root data entity not found in crate")
 
 
+def find_main_workflow(entity_map, root=None):
+    if root is None:
+        root = find_root_entity(entity_map)
+    try:
+        main_wf = entity_map[root["mainEntity"]["@id"]]
+    except (KeyError, TypeError):
+        raise ValueError("main workflow not found in crate")
+    if not WORKFLOW_TYPES.issubset(main_wf["@type"]):
+        if not LEGACY_WORKFLOW_TYPES.issubset(main_wf["@type"]):
+            raise ValueError("main workflow does not have the required types")
+    return main_wf
+
+
+def find_test_dir(entity_map):
+    for id_, e in entity_map.items():
+        t = e["@type"]
+        t = set(t) if isinstance(t, list) else set([t])
+        if "Dataset" not in t:
+            continue
+        # Dataset @id SHOULD end with '/'
+        # Path automatically strips trailing '/' and leading './'
+        if str(Path(id_)) == "test":
+            return id_
+    return None
+
+
 def parse_metadata(crate_dir):
     crate_dir = Path(crate_dir)
     metadata_path = crate_dir / METADATA_BASENAME
@@ -68,12 +96,13 @@ def parse_metadata(crate_dir):
     with open(metadata_path, "rt") as f:
         json_data = json.load(f)
     entities = {_["@id"]: _ for _ in json_data["@graph"]}
-    root = find_root_entity(entities)
-    print("root:", root)
-    main = entities[root["mainEntity"]["@id"]]
-    assert main["@type"] == ["File", "SoftwareSourceCode", "Workflow"]
-    # Dataset @id SHOULD end with /
-    return {
-        "main": main["@id"],
-        "test": "test" in [_.rstrip("/") for _ in entities]
-    }
+    main_wf = find_main_workflow(entities)
+    test_dir = find_test_dir(entities)
+    main_wf_path = crate_dir / main_wf["@id"]
+    if not main_wf_path.is_file():
+        raise ValueError(f"main workflow {main_wf_path} not found")
+    if test_dir is not None:
+        test_dir = crate_dir / test_dir
+        if not test_dir.is_dir():
+            raise ValueError(f"test directory {test_dir} not found")
+    return main_wf_path, test_dir

@@ -73,19 +73,14 @@ def check_workflow(wf_fn, tests):
 
 
 def main(args):
-    metadata = roc.parse_metadata(args.crate_dir)
-    wf_fn = os.path.join(args.crate_dir, metadata["main"])
-    test_dir = os.path.join(args.crate_dir, "test")
-    if not os.path.isdir(test_dir):
-        if metadata["test"]:
-            raise RuntimeError("test dir not found")
-        else:
-            print("crate has no tests, nothing to do")
-            return
+    wf_path, test_dir = roc.parse_metadata(args.crate_dir)
+    if not test_dir:
+        print("crate has no tests, nothing to do")
+        return
     cfg_fn = os.path.join(test_dir, "test-metadata.json")
     tests = tm.read_tests(cfg_fn, abs_paths=True)
     dump_instances(tests)
-    check_workflow(wf_fn, tests)
+    check_workflow(wf_path, tests)
 
 
 if __name__ == "__main__":

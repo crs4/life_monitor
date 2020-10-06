@@ -36,11 +36,11 @@ YamlDumper = getattr(yaml, "CDumper", getattr(yaml, "Dumper"))
 
 
 # pip install planemo
-def check_workflow(crate_dir, metadata, tests):
+def check_workflow(crate_dir, wf_path, tests):
     wd = tempfile.mkdtemp(prefix="check_cwl_")
     crate_dir_bn = os.path.basename(crate_dir)
     tmp_crate_dir = os.path.join(wd, crate_dir_bn)
-    wf_fn = os.path.join(tmp_crate_dir, metadata["main"])
+    wf_fn = os.path.join(tmp_crate_dir, wf_path.relative_to(crate_dir))
     wf_bn = os.path.basename(wf_fn)
     shutil.copytree(crate_dir, tmp_crate_dir)
     head, tail = os.path.splitext(wf_bn)
@@ -61,17 +61,13 @@ def check_workflow(crate_dir, metadata, tests):
 
 
 def main(args):
-    metadata = roc.parse_metadata(args.crate_dir)
-    test_dir = os.path.join(args.crate_dir, "test")
-    if not os.path.isdir(test_dir):
-        if metadata["test"]:
-            raise RuntimeError("test dir not found")
-        else:
-            print("crate has no tests, nothing to do")
-            return
+    wf_path, test_dir = roc.parse_metadata(args.crate_dir)
+    if not test_dir:
+        print("crate has no tests, nothing to do")
+        return
     cfg_fn = os.path.join(test_dir, "test-metadata.json")
     tests = tm.read_tests(cfg_fn, abs_paths=True)
-    check_workflow(args.crate_dir, metadata, tests)
+    check_workflow(args.crate_dir, wf_path, tests)
 
 
 if __name__ == "__main__":
