@@ -9,8 +9,8 @@
                     "name": "example_jenkins",
                     "service": {
                         "type": "jenkins",
-                        "url": "http://0.0.0.0:67890/",
-                        "resource": "job/dtests/"
+                        "url": "http://127.0.0.1:67890/",
+                        "resource": "job/test/"
                     }
                 }
             ],

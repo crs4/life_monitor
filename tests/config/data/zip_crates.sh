@@ -15,7 +15,9 @@ names=(
 for n in "${names[@]}"; do
     echo -en "\n*** ${n} ***\n"
     pushd "${this_dir}/crates/${n}"
-    zip -r "${n}.crate.zip" *
-    mv "${n}.crate.zip" ..
+    zip_file="${n}.crate.zip"
+    rm -f "${zip_file}"
+    zip -r "${zip_file}" *
+    mv "${zip_file}" ..
     popd
 done

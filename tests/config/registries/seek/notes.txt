@@ -5,12 +5,8 @@ admin
 ---------------------
 username: admin
 password: workflowhub
+api-key: ZRBhqf9eeRasjqMw90pgEeMpTZ7__-w_571S7__D
 
-jenkins
-------------------------------------------------
-username: admin
-password: jenkins
-configureSecurity: Allow anonymous read access
 
 user1
 ------------------------------------------------
@@ -18,7 +14,7 @@ username: user1
 password: workflowhub
 project: Default, SharedProject, User1Project
 institutions: Default
-api-key: i6QV0pgTRtRjs1djN05gjxNjnreNhKTW7T_vxld6
+api-key: S9_41Cb2Wm8Ho9qOd0FDjs4zhJNwhSESe-dfwqt-
 
 
 user2
@@ -27,5 +23,5 @@ username: user2
 password: workflowhub
 projects: Default, SharedProject 
 institutions: Default
-api-token: b7cBBArF23QwoHdKmBk4C_Oh6Pmhb9cnSGxPJwKt
+api-token: 30GcRIdyV7uGvfXYa1squEW6IT3-n1zCjYxQY4Tt
 

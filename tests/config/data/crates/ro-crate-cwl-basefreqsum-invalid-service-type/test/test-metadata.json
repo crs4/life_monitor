@@ -9,8 +9,8 @@
                 "name": "example_jenkins",
                 "service": {
                     "type": "jenkinsx",
-                    "url": "http://jenkins:8899/",
-                    "resource": "job/dtests/"
+                    "url": "http://jenkins:8080/",
+                    "resource": "job/test/"
                 }
             }
   	    ],

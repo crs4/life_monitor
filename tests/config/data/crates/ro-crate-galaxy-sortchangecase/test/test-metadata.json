@@ -10,7 +10,7 @@
                     "service": {
                         "type": "jenkins",
                         "url": "http://jenkins:8080/",
-                        "resource": "job/dtests/"
+                        "resource": "job/test/"
                     }
                 }
             ],
