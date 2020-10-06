@@ -8,13 +8,13 @@ images: lifemonitor
 certs:
 	if [[ ! -d "certs" ]]; then \
 		mkdir certs && \
-		openssl req -x509 -nodes -days 365 \
-				-subj "/C=IT/ST=Sardinia/O=CRS4/CN=lm.org" \
-				-addext "subjectAltName=DNS:lm.org" \
-				-newkey rsa:2048 \
-				-keyout certs/lm.key \
-				-out certs/lm.crt && \
-		chmod 644 certs/lm.{key,crt}; \
+		bash -x ./utils/certs/gencerts.sh && \
+		cp utils/certs/data/ca.* certs/ && \
+		cp utils/certs/data/lm/*.pem certs/ && \
+		mv certs/ca.pem certs/lifemonitor.ca.crt && \
+		mv certs/cert.pem certs/lm.crt && \
+		mv certs/key.pem certs/lm.key && \
+		chmod 644 certs/*.{key,crt}; \
 	fi
 
 lifemonitor: docker/lifemonitor.Dockerfile
