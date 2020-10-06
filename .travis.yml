@@ -2,9 +2,13 @@ language: python
 python: "3.7"
 cache: pip
 
+services:
+  - docker
+
 before_install:
   - pip install flake8 openapi-spec-validator
 
 script:
   - flake8 -v .
   - openapi-spec-validator specs/api.yaml
+  - make tests
