@@ -55,7 +55,7 @@ start_test_env: docker-compose-test.yml test_images images
 	docker-compose -f ./docker-compose-test.yml up -d ; 
 
 runtests: start_test_env
-	docker-compose -f ./docker-compose-test.yml exec -T lm /bin/bash -c "tests/wait-for-it.sh seek:3000 -- pytest -r ."
+	docker-compose -f ./docker-compose-test.yml exec -T lm /bin/bash -c "tests/wait-for-it.sh seek:3000 -- pytest tests"
 
 stop_test_env:
 	if [[ -f "./docker-compose-test.yml" ]]; then \
