@@ -16,7 +16,7 @@ cmd="minica -ca-cert \"${CA_NAME}.pem\" -ca-key \"${CA_NAME}.key\" -domains \"${
 docker build -f ${current_path}/Dockerfile -t ${IMAGE_NAME} ${current_path}
 
 # generate certs
-mkdir -p data
+mkdir -p "${current_path}/data"
 docker run -it --rm \
     --user $(id -u):$(id -g) \
     -v "${current_path}/data:/certs" ${IMAGE_NAME} \
