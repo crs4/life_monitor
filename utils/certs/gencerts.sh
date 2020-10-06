@@ -17,7 +17,7 @@ docker build -f ${current_path}/Dockerfile -t ${IMAGE_NAME} ${current_path}
 
 # generate certs
 mkdir -p "${current_path}/data"
-docker run -it --rm \
+docker run --rm \
     --user $(id -u):$(id -g) \
     -v "${current_path}/data:/certs" ${IMAGE_NAME} \
     /bin/bash -c "${cmd}"
