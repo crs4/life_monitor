@@ -21,7 +21,6 @@ RUN pip3 install --no-cache-dir -r /${LM_USER}/requirements.txt
 
 # Update Environment
 ENV PYTHONPATH=/${LM_USER}:/usr/local/lib/python3.7/dist-packages:/usr/lib/python3/dist-packages:${PYTHONPATH} \
-    FLASK_DEBUG=1 \
     FLASK_RUN_HOST=0.0.0.0 \
     GUNICORN_WORKERS=1 \
     GUNICORN_THREADS=2 \
