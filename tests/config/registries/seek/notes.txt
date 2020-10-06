@@ -1,0 +1,31 @@
+TEST USERS
+
+
+admin
+---------------------
+username: admin
+password: workflowhub
+
+jenkins
+------------------------------------------------
+username: admin
+password: jenkins
+configureSecurity: Allow anonymous read access
+
+user1
+------------------------------------------------
+username: user1
+password: workflowhub
+project: Default, SharedProject, User1Project
+institutions: Default
+api-key: i6QV0pgTRtRjs1djN05gjxNjnreNhKTW7T_vxld6
+
+
+user2
+------------------------------------------------
+username: user2
+password: workflowhub
+projects: Default, SharedProject 
+institutions: Default
+api-token: b7cBBArF23QwoHdKmBk4C_Oh6Pmhb9cnSGxPJwKt
+
