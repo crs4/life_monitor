@@ -1,13 +1,14 @@
 import os
 import logging
 from typing import List, Type
-
 import dotenv
 
 from .db import db_uri
 from .utils import bool_from_string
 
 basedir = os.path.abspath(os.path.dirname(__file__))
+
+logger = logging.getLogger(__name__)
 
 
 def load_settings(config=None):
@@ -86,6 +87,7 @@ def get_config_by_name(name, settings=None):
                 setattr(config, k, v)
         return config
     except KeyError:
+        logger.warning(f"Unable to load the configuration {name}: using 'production'")
         return ProductionConfig
 
 
