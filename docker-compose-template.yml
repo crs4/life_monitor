@@ -97,6 +97,7 @@ services:
 
   #TEST seek:
   #TEST   image: crs4/lifemonitor-tests:seek
+  #TEST   #image: fairdom/seek:workflow
   #TEST   restart: "always"
   #TEST   ports:
   #TEST    - "3000:3000"
@@ -114,6 +115,8 @@ services:
   #TEST   ports:
   #TEST     - 8080:8080
   #TEST     - 50000:50000
+  #TEST   networks:
+  #TEST     - life_monitor
   
 
 volumes:
@@ -121,13 +124,13 @@ volumes:
 
 networks:
   life_monitor:
-  # You can easily connect this docker-compose with a
-  # local instance of the Seek/WorkflowHub docker-compose by putting them
-  # both on the same Docker network.  The configuration below will
-  # instantiate the life monitor services on a docker network called
-  # `seek_default` (the default name used by seek) which is managed externally
-  # (presumably by the docker-compose you used to start Seek).
-  # See the docker-compose network configuration reference for more details.
+    # You can easily connect this docker-compose with a
+    # local instance of the Seek/WorkflowHub docker-compose by putting them
+    # both on the same Docker network.  The configuration below will
+    # instantiate the life monitor services on a docker network called
+    # `seek_default` (the default name used by seek) which is managed externally
+    # (presumably by the docker-compose you used to start Seek).
+    # See the docker-compose network configuration reference for more details.
     # 
     # name: seek_default
     # external: true
