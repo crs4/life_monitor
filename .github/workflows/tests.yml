@@ -1,6 +1,6 @@
 # This is a basic workflow to help you get started with Actions
 
-name: LifeMonitorTests
+name: Run Tests
 
 # Controls when the action will run. Triggers the workflow on push or pull request
 # events but only for the master branch
@@ -19,7 +19,12 @@ jobs:
     steps:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
-
-    # Runs a single command using the runners shell
+    # Setup testing environment
+    - name: Set up testing environment
+      run: make start_test_env
+    # Run tests
     - name: Run tests
-      run: make tests
+      run: make runtests
+    # Teardown testing environment
+    - name: Teardown testing environment
+      run: make stop_test_env
