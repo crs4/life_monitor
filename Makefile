@@ -8,7 +8,7 @@ images: lifemonitor
 certs:
 	if [[ ! -d "certs" ]]; then \
 		mkdir certs && \
-		bash -x ./utils/certs/gencerts.sh && \
+		./utils/certs/gencerts.sh && \
 		cp utils/certs/data/ca.* certs/ && \
 		cp utils/certs/data/lm/*.pem certs/ && \
 		mv certs/ca.pem certs/lifemonitor.ca.crt && \
@@ -17,7 +17,7 @@ certs:
 		chmod 644 certs/*.{key,crt}; \
 	fi
 
-lifemonitor: docker/lifemonitor.Dockerfile
+lifemonitor: docker/lifemonitor.Dockerfile certs
 	docker build -f docker/lifemonitor.Dockerfile -t crs4/lifemonitor .
 
 docker-compose-dev.yml: docker-compose-template.yml
@@ -51,7 +51,7 @@ test_images:
 				 tests/config/registries/seek/
 	
 
-start_test_env: docker-compose-test.yml test_images images certs
+start_test_env: docker-compose-test.yml test_images images
 	docker-compose -f ./docker-compose-test.yml up -d ; 
 
 runtests: start_test_env
@@ -62,7 +62,7 @@ stop_test_env:
 		docker-compose -f ./docker-compose-test.yml down; \
 	fi
 
-startdev: docker-compose-dev.yml images certs
+startdev: docker-compose-dev.yml images
 	docker-compose -f ./docker-compose-dev.yml up -d
 
 stopdev:
@@ -70,7 +70,7 @@ stopdev:
 		docker-compose -f ./docker-compose-dev.yml down; \
 	fi
 
-start: images docker-compose.yml images certs
+start: images docker-compose.yml images
 	docker-compose -f ./docker-compose.yml up -d
 
 stop:
