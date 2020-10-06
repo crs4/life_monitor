@@ -23,45 +23,24 @@ Execute a CWL workflow from a crate and check results.
 """
 
 import argparse
-import json
 import os
 import shutil
 import subprocess
 import tempfile
 
 import yaml
+import lifemonitor.ro_crate as roc
 import lifemonitor.test_metadata as tm
 
 YamlDumper = getattr(yaml, "CDumper", getattr(yaml, "Dumper"))
-METADATA_BASENAME = "ro-crate-metadata.jsonld"
-
-
-# https://github.com/workflowhub-eu/about/wiki/Workflow-RO-Crate
-# https://researchobject.github.io/ro-crate/1.0/
-def parse_metadata(crate_dir):
-    fn = os.path.join(crate_dir, METADATA_BASENAME)
-    if not os.path.isfile(fn):
-        raise RuntimeError(f"{METADATA_BASENAME} not found in {crate_dir}")
-    with open(fn, "rt") as f:
-        json_data = json.load(f)
-    entities = {_["@id"]: _ for _ in json_data["@graph"]}
-    md_desc = entities[METADATA_BASENAME]
-    root = entities[md_desc["about"]["@id"]]
-    main = entities[root["mainEntity"]["@id"]]
-    assert main["@type"] == ["File", "SoftwareSourceCode", "Workflow"]
-    # Dataset @id SHOULD end with /
-    return {
-        "main": main["@id"],
-        "test": "test" in [_.rstrip("/") for _ in entities]
-    }
 
 
 # pip install planemo
-def check_workflow(crate_dir, metadata, tests):
+def check_workflow(crate_dir, wf_path, tests):
     wd = tempfile.mkdtemp(prefix="check_cwl_")
     crate_dir_bn = os.path.basename(crate_dir)
     tmp_crate_dir = os.path.join(wd, crate_dir_bn)
-    wf_fn = os.path.join(tmp_crate_dir, metadata["main"])
+    wf_fn = os.path.join(tmp_crate_dir, wf_path.relative_to(crate_dir))
     wf_bn = os.path.basename(wf_fn)
     shutil.copytree(crate_dir, tmp_crate_dir)
     head, tail = os.path.splitext(wf_bn)
@@ -82,17 +61,13 @@ def check_workflow(crate_dir, metadata, tests):
 
 
 def main(args):
-    metadata = parse_metadata(args.crate_dir)
-    test_dir = os.path.join(args.crate_dir, "test")
-    if not os.path.isdir(test_dir):
-        if metadata["test"]:
-            raise RuntimeError("test dir not found")
-        else:
-            print("crate has no tests, nothing to do")
-            return
+    wf_path, test_dir = roc.parse_metadata(args.crate_dir)
+    if not test_dir:
+        print("crate has no tests, nothing to do")
+        return
     cfg_fn = os.path.join(test_dir, "test-metadata.json")
     tests = tm.read_tests(cfg_fn, abs_paths=True)
-    check_workflow(args.crate_dir, metadata, tests)
+    check_workflow(args.crate_dir, wf_path, tests)
 
 
 if __name__ == "__main__":
