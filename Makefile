@@ -78,7 +78,11 @@ stop:
 	  docker-compose -f ./docker-compose.yml down; \
 	fi
 
-tests: start_test_env runtests stop_test_env	
+tests: start_test_env
+	docker-compose -f ./docker-compose-test.yml exec -T lm /bin/bash -c "tests/wait-for-it.sh seek:3000 -- pytest tests"; \
+	  result=$$?; \
+	  docker-compose -f ./docker-compose-test.yml down; \
+	  exit $$?
 
 clean: stop stopdev
 	rm -rf certs docker-compose.yml docker-compose-dev.yml
