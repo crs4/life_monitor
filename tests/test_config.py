@@ -10,9 +10,9 @@ logger = logging.getLogger()
 testing_settings = {"PROPERTY": "123456"}
 
 
-@pytest.mark.xfail(raises=KeyError)
 def test_not_valid_base_config():
-    lm_cfg.get_config_by_name("InvalidConfig")
+    assert lm_cfg.get_config_by_name("InvalidConfig") == lm_cfg.ProductionConfig, \
+        "A production config should be returned as a fallback"
 
 
 def check_config_properties(settings, flask_app=None):

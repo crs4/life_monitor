@@ -62,6 +62,7 @@ services:
     #DEV   - "LOCAL_PATH:/lm"
       - "./certs:/certs:ro"
       - "./instance:/lm/instance:ro"
+    #TEST   - "./tests/settings.conf:/lm/settings.conf:ro" # overwrite settings with test settings
     networks:
       - life_monitor
 
@@ -90,21 +91,53 @@ services:
     #DEV   - "LOCAL_PATH:/lm"
       - "./certs:/certs:ro"
       - "./instance:/lm/instance:ro"
+    #TEST   - "./tests/settings.conf:/lm/settings.conf:ro" # overwrite settings with test settings
     networks:
       - life_monitor
+
+  #TEST seek:
+  #TEST   image: crs4/lifemonitor-tests:seek
+  #TEST   #image: fairdom/seek:workflow
+  #TEST   restart: "always"
+  #TEST   ports:
+  #TEST    - "3000:3000"
+  #TEST   volumes:
+  #TEST     - ./certs/lm.crt:/certs/lm.crt:ro
+  #TEST     - ./certs/lm.key:/certs/lm.key:ro
+  #TEST     - ./tests/config/registries/seek/nginx.conf:/etc/nginx/nginx.conf:ro 
+  #TEST     #- ./tests/config/registries/seek/data/db.sqlite3:/seek/sqlite3-db/production.sqlite3:rw
+  #TEST     #- ./tests/config/registries/seek/data/filestore:/seek/filestore:rw
+  #TEST   networks:
+  #TEST     - life_monitor
+
+  #TEST jenkins:
+  #TEST   image: crs4/lifemonitor-tests:jenkins
+  #TEST   ports:
+  #TEST     - 8080:8080
+  #TEST     - 50000:50000
+  #TEST   networks:
+  #TEST     - life_monitor
+  
 
 volumes:
   lifemonitor_db:
 
 networks:
   life_monitor:
-  # You can easily connect this docker-compose with a
-  # local instance of the Seek/WorkflowHub docker-compose by putting them
-  # both on the same Docker network.  The configuration below will
-  # instantiate the life monitor services on a docker network called
-  # `seek_default` (the default name used by seek) which is managed externally
-  # (presumably by the docker-compose you used to start Seek).
-  # See the docker-compose network configuration reference for more details.
+    # You can easily connect this docker-compose with a
+    # local instance of the Seek/WorkflowHub docker-compose by putting them
+    # both on the same Docker network.  The configuration below will
+    # instantiate the life monitor services on a docker network called
+    # `seek_default` (the default name used by seek) which is managed externally
+    # (presumably by the docker-compose you used to start Seek).
+    # See the docker-compose network configuration reference for more details.
+    # 
+    # name: seek_default
+    # external: true
 
-  #   name: seek_default
-  #   external: true
+    # Uncomment the lines below to customize your network address
+    # driver: bridge
+    # ipam:
+    #   driver: default
+    #   config:
+    #     - subnet: 192.168.238.0/24
