@@ -7,14 +7,14 @@ images: lifemonitor
 
 certs:
 	if [[ ! -d "certs" ]]; then \
-		mkdir certs && \
-		./utils/certs/gencerts.sh && \
-		cp utils/certs/data/ca.* certs/ && \
-		cp utils/certs/data/lm/*.pem certs/ && \
-		mv certs/ca.pem certs/lifemonitor.ca.crt && \
-		mv certs/cert.pem certs/lm.crt && \
-		mv certs/key.pem certs/lm.key && \
-		chmod 644 certs/*.{key,crt}; \
+	  mkdir certs && \
+	  ./utils/certs/gencerts.sh && \
+	  cp utils/certs/data/ca.* certs/ && \
+	  cp utils/certs/data/lm/*.pem certs/ && \
+	  mv certs/ca.pem certs/lifemonitor.ca.crt && \
+	  mv certs/cert.pem certs/lm.crt && \
+	  mv certs/key.pem certs/lm.key && \
+	  chmod 644 certs/*.{key,crt}; \
 	fi
 
 lifemonitor: docker/lifemonitor.Dockerfile certs
@@ -36,7 +36,7 @@ docker-compose-test.yml: docker-compose-template.yml
 	    -e "s^FLASK_ENV=production^FLASK_ENV=development^" \
 	    -e "s^ALLOW_EMPTY_PASSWORD=no^ALLOW_EMPTY_PASSWORD=yes^" \
 	    -e "s^#DEV ^^" \
-		-e "s^#TEST ^^" \
+	    -e "s^#TEST ^^" \
 	    < docker-compose-template.yml > docker-compose-test.yml
 
 docker-compose.yml: docker-compose-template.yml
@@ -47,8 +47,8 @@ docker-compose.yml: docker-compose-template.yml
 
 test_images:
 	docker build -f tests/config/registries/seek/seek.Dockerfile \
-				 -t crs4/lifemonitor-tests:seek \
-				 tests/config/registries/seek/
+	       -t crs4/lifemonitor-tests:seek \
+	       tests/config/registries/seek/
 	
 
 start_test_env: docker-compose-test.yml test_images images
@@ -59,7 +59,7 @@ runtests: start_test_env
 
 stop_test_env:
 	if [[ -f "./docker-compose-test.yml" ]]; then \
-		docker-compose -f ./docker-compose-test.yml down; \
+	  docker-compose -f ./docker-compose-test.yml down; \
 	fi
 
 startdev: docker-compose-dev.yml images
@@ -67,7 +67,7 @@ startdev: docker-compose-dev.yml images
 
 stopdev:
 	if [[ -f "./docker-compose-dev.yml" ]]; then \
-		docker-compose -f ./docker-compose-dev.yml down; \
+	  docker-compose -f ./docker-compose-dev.yml down; \
 	fi
 
 start: images docker-compose.yml images
@@ -75,10 +75,14 @@ start: images docker-compose.yml images
 
 stop:
 	if [[ -f "./docker-compose.yml" ]]; then \
-		docker-compose -f ./docker-compose.yml down; \
+	  docker-compose -f ./docker-compose.yml down; \
 	fi
 
-tests: start_test_env runtests stop_test_env	
+tests: start_test_env
+	docker-compose -f ./docker-compose-test.yml exec -T lm /bin/bash -c "tests/wait-for-it.sh seek:3000 -- pytest tests"; \
+	  result=$$?; \
+	  docker-compose -f ./docker-compose-test.yml down; \
+	  exit $$?
 
 clean: stop stopdev
 	rm -rf certs docker-compose.yml docker-compose-dev.yml
