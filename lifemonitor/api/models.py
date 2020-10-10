@@ -15,6 +15,8 @@ from lifemonitor.db import db
 from lifemonitor.auth.models import User
 from sqlalchemy.ext.associationproxy import association_proxy
 from lifemonitor.auth.oauth2.client.services import oauth2_registry
+from lifemonitor.api import registries
+
 from lifemonitor.common import (SpecificationNotValidException, EntityNotFoundException,
                                 SpecificationNotDefinedException, TestingServiceNotSupportedException,
                                 NotImplementedException, TestingServiceException, LifeMonitorException)
@@ -74,35 +76,44 @@ class WorkflowRegistryClient(ABC):
 class WorkflowRegistry(db.Model):
 
     uuid = db.Column(UUID(as_uuid=True), primary_key=True, default=_uuid.uuid4)
-    name = db.Column(db.Text, unique=True)
     uri = db.Column(db.Text, unique=True)
-    _client_id = db.Column(
-        db.Integer, db.ForeignKey('client.id', ondelete='CASCADE')
-    )
+    type = db.Column(db.String, nullable=False)
+    _client_id = db.Column(db.Integer, db.ForeignKey('client.id', ondelete='CASCADE'))
+    _server_id = db.Column(db.Integer, db.ForeignKey('oauth2_identity_provider.id', ondelete='CASCADE'))
     client_credentials = db.relationship("Client", uselist=False, cascade="all, delete")
+    server_credentials = db.relationship("OAuth2IdentityProvider", uselist=False, cascade="all, delete")
     registered_workflows = db.relationship("Workflow",
                                            back_populates="workflow_registry", cascade="all, delete")
     client_id = association_proxy('client_credentials', 'client_id')
+    name = association_proxy('server_credentials', 'name')
+    #_uri = association_proxy('server_credentials', 'api_base_url')
+
     _client = None
 
-    def __init__(self, name, client_credentials):
+    __mapper_args__ = {
+        'polymorphic_identity': 'workflow_registry',
+        'polymorphic_on': type,
+    }
+
+    def __init__(self, client_credentials, server_credentials):
         self.__instance = self
-        self.name = name
-        self.uri = client_credentials.client_metadata['client_uri']
+        self.uri = server_credentials.api_base_url
         self.client_credentials = client_credentials
+        self.server_credentials = server_credentials
         self._client = None
+
+    @property
+    def name(self):
+        return self.server_credentials.name
+
+    @name.setter
+    def name(self, value):
+        self.server_credentials.name = value
 
     @property
     def client(self) -> WorkflowRegistryClient:
         if self._client is None:
-            m = f"lifemonitor.api.registry.{self.name}"
-            try:
-                mod = import_module(m)
-                self._client = getattr(mod, "WorkflowRegistryClient")(self)
-            except ModuleNotFoundError:
-                raise LifeMonitorException(f"ModuleNotFoundError: Unable to load module {m}")
-            except AttributeError:
-                raise LifeMonitorException(f"Unable to create an instance of WorkflowRegistryClient from module {m}")
+            return registries.get_registry_client_class(self.type)(self)
         return self._client
 
     def build_ro_link(self, w: Workflow) -> str:
@@ -170,6 +181,7 @@ class WorkflowRegistry(db.Model):
     @classmethod
     def find_by_name(cls, name):
         return cls.query.filter(WorkflowRegistry.name == name).first()
+        # return cls.query.filter_by(name=name).first()
 
     @classmethod
     def find_by_uri(cls, uri):
@@ -178,6 +190,11 @@ class WorkflowRegistry(db.Model):
     @classmethod
     def find_by_client_id(cls, client_id):
         return cls.query.filter_by(client_id=client_id).first()
+
+    @staticmethod
+    def new_instance(registry_type, client_credentials, server_credentials):
+        return registries.get_registry_class(registry_type)(client_credentials,
+                                                            server_credentials)
 
 
 class AggregateTestStatus:

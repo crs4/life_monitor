@@ -35,19 +35,19 @@ class Seek(OAuth2IdentityProvider):
                          **kwargs)
 
     @staticmethod
-def normalize_userinfo(client, data):
-    logger.debug("User data: %r", data)
-    data = data["data"]
-    params = {
-        'sub': str(data['id']),
-        'name': data['attributes']['title'],
-        'email': data['attributes']['mbox_sha1sum'],  # TODO: check if it is possible to decode the email
-        'preferred_username': data['id'],  # TODO: check if the username can be retrived from API
-        'profile': data['links']["self"],
-        'picture': data['attributes']['avatar'],
-        'website': '',
-    }
-    return params
+    def normalize_userinfo(client, data):
+        logger.debug("User data: %r", data)
+        data = data["data"]
+        params = {
+            'sub': str(data['id']),
+            'name': data['attributes']['title'],
+            'email': data['attributes']['mbox_sha1sum'],  # TODO: check if it is possible to decode the email
+            'preferred_username': data['id'],  # TODO: check if the username can be retrived from API
+            'profile': data['links']["self"],
+            'picture': data['attributes']['avatar'],
+            'website': '',
+        }
+        return params
 
 
 def refresh_oauth2_token(func):
