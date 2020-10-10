@@ -118,8 +118,8 @@ class AuthorizationServer(OAuth2AuthorizationServer):
             client.client_secret = gen_salt(48)
 
         if commit:
-        db.session.add(client)
-        db.session.commit()
+            db.session.add(client)
+            db.session.commit()
         return client
 
 
