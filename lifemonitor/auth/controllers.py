@@ -6,8 +6,9 @@ from flask_login import login_required, login_user, logout_user, current_user
 
 from .forms import RegisterForm, LoginForm, SetPasswordForm
 from .models import db
-from .oauth2.client.services import merge_users
-from .services import login_manager
+from .oauth2.client.services import merge_users, get_providers
+from .services import authorized, login_manager, current_registry, current_user
+
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
@@ -59,7 +60,7 @@ def login():
             login_user(user)
             flash("You have logged in")
             return redirect(url_for("auth.index"))
-    return render_template("auth/login.j2", form=form)
+    return render_template("auth/login.j2", form=form, providers=get_providers())
 
 
 @blueprint.route("/logout")

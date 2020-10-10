@@ -43,19 +43,36 @@ def update_token(name, token, refresh_token=None, access_token=None):
 # Create an instance of OAuth registry for oauth clients.
 oauth2_registry = OAuth(fetch_token=fetch_token, update_token=update_token)
 
+current_providers_list = []
 
-# Register backend services
-def config_oauth2_registry(app):
-    from .providers.github import GitHub
+
+def get_providers():
     from .providers.seek import Seek
+    from .providers.github import GitHub
+    global current_providers_list
+    providers = [GitHub] + Seek.all()
+    # The current implementation doesn't support dynamic registration of WorkflowRegistries
+    # The following a simple workaround to detect and reconfigure the oauth2registry
+    # when the number of workflow registries changes
+    if not current_providers_list or len(current_providers_list) != len(providers):
+        config_oauth2_registry(current_app, providers=providers)
+    current_providers_list = providers
+    return providers
 
-    oauth2_backends = [GitHub, Seek]
-    for backend in oauth2_backends:
-        class RemoteApp(backend, FlaskRemoteApp):
-            OAUTH_APP_CONFIG = backend.OAUTH_CONFIG
 
-        oauth2_registry.register(RemoteApp.NAME, overwrite=True, client_cls=RemoteApp)
-    oauth2_registry.init_app(app)
+def config_oauth2_registry(app, providers=None):
+    try:
+        logger.debug("Updating...")
+        oauth2_backends = providers or get_providers()
+        for backend in oauth2_backends:
+            class RemoteApp(FlaskRemoteApp):
+                NAME = backend.name
+                OAUTH_APP_CONFIG = backend.oauth_config
+
+            oauth2_registry.register(RemoteApp.NAME, overwrite=True, client_cls=RemoteApp)
+        oauth2_registry.init_app(app)
+    except Exception as e:
+        logger.debug(e)
 
 
 def merge_users(merge_from: User, merge_into: User, provider: str):

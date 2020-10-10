@@ -11,12 +11,11 @@
     </div>
   </form>
   <p>OR</p>
+  {% for p in providers %}
   <ul>
-    <li><a href="/oauth2/login/github">Login with GitHub</a></li>
+    <li><a href="/oauth2/login/{{p.name}}">Login with {{p.name.capitalize()}}</a></li>
   </ul>
-  <ul>
-    <li><a href="/oauth2/login/seek">Login with Seek</a></li>
-  </ul>
+  {% endfor %}
   <!--<p>If you want to create a new account, log in with a social provider or
     <a href="{{ url_for("auth.register") }}">go to the registration page</a>.
   </p>-->
