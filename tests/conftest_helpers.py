@@ -266,8 +266,8 @@ def create_authorization_code_access_token(_application,
         g.user = None  # store the user on g to allow the auto login; None to avoid the login
         client_id = client.client_id
         client_secret = client.client_info["client_secret"]
-        authorization_url = f"{application.config['BASE_URL']}/oauth/authorize"
-        token_url = f"{application.config['BASE_URL']}/oauth/token"
+        authorization_url = f"{application.config['BASE_URL']}/oauth2/authorize"
+        token_url = f"{application.config['BASE_URL']}/oauth2/token"
         # base_url = application.config[f"{registry_type}_API_BASE_URL".upper()]
 
         session.auth = None
@@ -309,7 +309,7 @@ def create_authorization_code_access_token(_application,
 
 
 def create_client_credentials_access_token(application, credentials):
-    token_url = f"{application.config.get('BASE_URL')}/oauth/token"
+    token_url = f"{application.config.get('BASE_URL')}/oauth2/token"
     response = requests.post(token_url, data={
         'grant_type': 'client_credentials',
         'client_id': credentials.client_id,
