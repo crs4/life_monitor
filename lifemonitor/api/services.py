@@ -3,7 +3,12 @@ import logging
 import tempfile
 from typing import Union
 from lifemonitor.auth.models import User
-from lifemonitor.common import EntityNotFoundException, NotAuthorizedException
+from lifemonitor.auth.oauth2.server import server
+from lifemonitor.auth.oauth2.client import providers
+from lifemonitor.common import (
+    EntityNotFoundException, NotAuthorizedException,
+    WorkflowRegistryNotSupportedException
+)
 from lifemonitor.api.models import (
     WorkflowRegistry, Workflow, TestSuite, TestInstance
 )
@@ -166,3 +171,61 @@ class LifeMonitor:
         if internal_id:
             return OAuthIdentity.find_by_user_id(internal_id, registry.name)
         return OAuthIdentity.find_by_provider_user_id(external_id, registry.name)
+
+    @staticmethod
+    def add_workflow_registry(type, name,
+                              client_id, client_secret,
+                              api_base_url=None, redirect_uris=None) -> WorkflowRegistry:
+        try:
+            # At the moment client_credentials of registries
+            # are associated with the admin account
+            user = User.find_by_username("admin")
+            if not user:
+                raise EntityNotFoundException(User, entity_id="admin")
+            server_credentials = providers.new_instance(provider_type=type,
+                                                        name=name,
+                                                        client_id=client_id,
+                                                        client_secret=client_secret,
+                                                        api_base_url=api_base_url)
+            client_credentials = server.create_client(user,
+                                                      name, server_credentials.api_base_url,
+                                                      ['client_credentials', 'authorization_code', 'token', 'id_token'],
+                                                      ["code", "token"],
+                                                      "read write",
+                                                      redirect_uris, "client_secret_post", commit=False)
+            registry = WorkflowRegistry.new_instance(type, client_credentials, server_credentials)
+            registry.save()
+            logger.debug(f"WorkflowRegistry '{name}' (type: {type})' created!")
+            return registry
+        except providers.OAuth2ProviderNotSupportedException as e:
+            raise WorkflowRegistryNotSupportedException(exception=e)
+
+    @staticmethod
+    def update_workflow_registry(uuid, name,
+                                 client_id, client_secret,
+                                 api_base_url=None, redirect_uris=None) -> WorkflowRegistry:
+        try:
+            registry = WorkflowRegistry.find_by_id(uuid)
+            if not registry:
+                raise EntityNotFoundException(WorkflowRegistry, entity_id=uuid)
+            registry.name = name
+            registry.uri = api_base_url
+            registry.server_credentials.client_id = client_id
+            registry.server_credentials.client_secret = client_secret
+            registry.server_credentials.api_base_url = api_base_url
+            registry.client_credentials.api_base_url = api_base_url
+            registry.client_credentials.redirect_uris = redirect_uris
+            registry.save()
+            logger.info(f"WorkflowRegistry '{name}' (type: {type})' updated!")
+            return registry
+        except providers.OAuth2ProviderNotSupportedException as e:
+            raise WorkflowRegistryNotSupportedException(exception=e)
+
+    @staticmethod
+    def get_workflow_registries() -> WorkflowRegistry:
+        return WorkflowRegistry.all()
+
+    @staticmethod
+    def get_workflow_registry(uuid) -> WorkflowRegistry:
+        return WorkflowRegistry.find_by_id(uuid)
+
