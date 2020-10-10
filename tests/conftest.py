@@ -4,6 +4,7 @@ import json
 import uuid
 import random
 import pytest
+import string
 import logging
 from lifemonitor import auth
 import lifemonitor.db as lm_db
@@ -41,9 +42,9 @@ def headers():
 
 
 @pytest.fixture(autouse=True)
-def initialize(request_context):
+def initialize(app_settings, request_context):
     helpers.clean_db()
-    helpers.init_db()
+    helpers.init_db(app_settings)
     auth.logout_user()
     auth.logout_registry()
 
@@ -57,7 +58,7 @@ def _get_app_settings(include_env=True):
     pattern = re.compile("((\\w+)_API_KEY(_\\w+)?)")
     for k, v in settings.copy().items():
         m = pattern.match(k)
-        logger.info(m)
+        logger.debug(m)
         if m:
             settings.pop(k)
             api_keys[k] = v
@@ -123,7 +124,7 @@ def app_context(app_settings):
 
 
 @pytest.fixture()
-def user1(app_context, provider_type, request):
+def user1(app_context, provider_type, client_credentials_registry, request):
     register_workflows = False
     if hasattr(request, 'param') and request.param is True:
         register_workflows = True
@@ -139,7 +140,7 @@ def user1_auth(app_context, user1, client_auth_method, client_credentials_regist
 
 
 @pytest.fixture()
-def user2(app_context, provider_type, request):
+def user2(app_context, provider_type, client_credentials_registry, request):
     register_workflows = False
     if hasattr(request, 'param') and request.param is True:
         register_workflows = True
@@ -183,6 +184,11 @@ def fake_app_context(request):
 
 
 @pytest.fixture
+def cli_runner(app_context):
+    return app_context.app.test_cli_runner()
+
+
+@pytest.fixture
 def random_workflow_id():
     return {
         'uuid': str(uuid.uuid4()),
@@ -212,8 +218,19 @@ def suite_uuid():
 
 
 @pytest.fixture
-def client_credentials_registry(app_context, admin_user):
-    return helpers.get_registry(admin_user)
+def client_credentials_registry(app_settings, app_context, admin_user):
+    return helpers.get_registry(app_settings, admin_user)
+
+
+@pytest.fixture
+def random_string(length=10):
+    letters = string.ascii_lowercase
+    return ''.join(random.choice(letters) for i in range(length))
+
+
+@pytest.fixture
+def fake_uri():
+    return "https://myservice.org"
 
 
 @pytest.fixture
