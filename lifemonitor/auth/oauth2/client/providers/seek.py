@@ -1,11 +1,40 @@
-import os
 import logging
-from flask import current_app
+from ..models import OAuth2IdentityProvider
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
 
 
+class Seek(OAuth2IdentityProvider):
+    # Default settings
+    defaults = {
+        "client_kwargs": {'scope': 'read'},
+        "api_base_url": 'https://workflowhub.eu',
+        "authorize_url": '/oauth/authorize',
+        "access_token_url": '/oauth/token',
+        "userinfo_endpoint": '/people/current?format=json'
+    }
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'seek'
+    }
+
+    def __init__(self, name, client_id, client_secret,
+                 api_base_url=defaults['api_base_url'],
+                 authorize_url=defaults['authorize_url'],
+                 access_token_url=defaults['access_token_url'],
+                 userinfo_endpoint=defaults['userinfo_endpoint'],
+                 client_kwargs=defaults['client_kwargs'],
+                 **kwargs):
+        logger.debug("Seek Provider Data: %r", kwargs)
+        super().__init__(name, client_id, client_secret,
+                         api_base_url, authorize_url,
+                         access_token_url,
+                         userinfo_endpoint,
+                         client_kwargs=client_kwargs,
+                         **kwargs)
+
+    @staticmethod
 def normalize_userinfo(client, data):
     logger.debug("User data: %r", data)
     data = data["data"]
@@ -19,28 +48,6 @@ def normalize_userinfo(client, data):
         'website': '',
     }
     return params
-
-
-class Seek(object):
-    NAME = 'seek'
-    # define API URLs
-    _api_base_url = current_app.config.get(
-        "{}_API_BASE_URL".format(NAME.upper()), 'https://workflowhub.eu')
-    _api_urls = (
-        ('API_BASE_URL', _api_base_url),
-        ('ACCESS_TOKEN_URL', os.path.join(_api_base_url, '/oauth/token')),
-        ('AUTHORIZE_URL', os.path.join(_api_base_url, '/oauth/authorize')),
-        ('USERINFO_ENDPOINT', os.path.join(_api_base_url, '/people/current?format=json'))
-    )
-    # init the OAuth configuration with static settings
-    OAUTH_CONFIG = {
-        'client_kwargs': {'scope': 'read'},
-        'userinfo_compliance_fix': normalize_userinfo,
-    }
-    # append the API urls to the configuration
-    for url in _api_urls:
-        OAUTH_CONFIG[url[0].lower()] = current_app.config.get(
-            "{}_{}".format(NAME.upper(), url[0]), url[1])
 
 
 def refresh_oauth2_token(func):
