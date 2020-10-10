@@ -1,6 +1,5 @@
 from __future__ import annotations
 import time
-
 from authlib.integrations.flask_oauth2 import AuthorizationServer as OAuth2AuthorizationServer
 from authlib.oauth2.rfc6749 import grants, InvalidRequestError
 from authlib.common.security import generate_token
@@ -93,7 +92,7 @@ class AuthorizationServer(OAuth2AuthorizationServer):
                       client_name, client_uri,
                       grant_type, response_type, scope,
                       redirect_uri,
-                      token_endpoint_auth_method=None):
+                      token_endpoint_auth_method=None, commit=True):
         client_id = gen_salt(24)
         client_id_issued_at = int(time.time())
         client = Client(
@@ -118,6 +117,7 @@ class AuthorizationServer(OAuth2AuthorizationServer):
         else:
             client.client_secret = gen_salt(48)
 
+        if commit:
         db.session.add(client)
         db.session.commit()
         return client
