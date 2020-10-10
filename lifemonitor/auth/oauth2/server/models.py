@@ -31,6 +31,18 @@ class Client(db.Model, OAuth2ClientMixin):
         ),
     )
 
+    @property
+    def redirect_uris(self):
+        return self.client_metadata.get('redirect_uris', [])
+
+    @redirect_uris.setter
+    def redirect_uris(self, value):
+        if isinstance(value, str):
+            value = value.split(',')
+        metadata = self.client_metadata
+        metadata['redirect_uris'] = value
+        self.set_client_metadata(metadata)
+
 
 class Token(db.Model, OAuth2TokenMixin):
     id = db.Column(db.Integer, primary_key=True)
