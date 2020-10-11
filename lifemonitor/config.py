@@ -34,6 +34,9 @@ class BaseConfig:
     # overhead and will be disabled by default in the future.  Set it to True
     # or False to suppress this warning.
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    # Enable refresh token generation.
+    # Refresh tokens will be issued as part of authorization code flow tokens
+    OAUTH2_REFRESH_TOKEN_GENERATOR = True
 
 
 class DevelopmentConfig(BaseConfig):
