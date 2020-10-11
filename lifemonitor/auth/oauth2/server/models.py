@@ -1,5 +1,6 @@
 from __future__ import annotations
 import time
+from typing import List
 from authlib.integrations.flask_oauth2 import AuthorizationServer as OAuth2AuthorizationServer
 from authlib.oauth2.rfc6749 import grants, InvalidRequestError
 from authlib.common.security import generate_token
@@ -10,10 +11,10 @@ from authlib.integrations.sqla_oauth2 import (
     create_query_client_func,
     create_save_token_func
 )
-from werkzeug.security import gen_salt
-
 from lifemonitor.db import db
+from werkzeug.security import gen_salt
 from lifemonitor.auth.models import User
+from datetime import datetime
 
 
 class Client(db.Model, OAuth2ClientMixin):
@@ -60,6 +61,12 @@ class Token(db.Model, OAuth2TokenMixin):
     client_id = db.Column(db.String,
                           db.ForeignKey('client.client_id', ondelete='CASCADE'))
     client = db.relationship('Client')
+
+    def is_expired(self) -> bool:
+        return datetime.utcnow().timestamp() - self.get_expires_at() > 0
+
+    def is_refresh_token_valid(self) -> bool:
+        return self if not self.revoked else None
 
     def save(self):
         db.session.add(self)
