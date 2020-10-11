@@ -191,15 +191,18 @@ class LifeMonitor:
                                                         client_id=client_id,
                                                         client_secret=client_secret,
                                                         api_base_url=api_base_url)
-            client_credentials = server.create_client(user,
-                                                      name, server_credentials.api_base_url,
-                                                      ['client_credentials', 'authorization_code', 'token', 'id_token'],
+            client_credentials = \
+                server.create_client(user, name, server_credentials.api_base_url,
+                                     ['client_credentials', 'authorization_code', 'refresh_token'],
                                                       ["code", "token"],
                                                       "read write",
-                                                      redirect_uris, "client_secret_post", commit=False)
+                                     redirect_uris.split(',')
+                                     if isinstance(redirect_uris, str)
+                                     else redirect_uris,
+                                     "client_secret_post", commit=False)
             registry = WorkflowRegistry.new_instance(type, client_credentials, server_credentials)
             registry.save()
-            logger.debug(f"WorkflowRegistry '{name}' (type: {type})' created!")
+            logger.debug(f"WorkflowRegistry '{name}' (type: {type})' created: {registry}")
             return registry
         except providers.OAuth2ProviderNotSupportedException as e:
             raise WorkflowRegistryNotSupportedException(exception=e)
