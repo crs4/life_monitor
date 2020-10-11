@@ -5,7 +5,6 @@ import logging
 import jenkins
 import uuid as _uuid
 from typing import Union
-from importlib import import_module
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Optional
@@ -19,7 +18,7 @@ from lifemonitor.api import registries
 
 from lifemonitor.common import (SpecificationNotValidException, EntityNotFoundException,
                                 SpecificationNotDefinedException, TestingServiceNotSupportedException,
-                                NotImplementedException, TestingServiceException, LifeMonitorException)
+                                NotImplementedException, TestingServiceException)
 from lifemonitor.utils import download_url, to_camel_case
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 
@@ -86,7 +85,7 @@ class WorkflowRegistry(db.Model):
                                            back_populates="workflow_registry", cascade="all, delete")
     client_id = association_proxy('client_credentials', 'client_id')
     name = association_proxy('server_credentials', 'name')
-    #_uri = association_proxy('server_credentials', 'api_base_url')
+    # _uri = association_proxy('server_credentials', 'api_base_url')
 
     _client = None
 

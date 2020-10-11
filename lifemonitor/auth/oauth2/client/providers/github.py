@@ -39,7 +39,6 @@ class GitHub:
         'userinfo_compliance_fix': normalize_userinfo,
     }
 
-
     @staticmethod
     def normalize_userinfo(client, data):
         return normalize_userinfo(client, data)

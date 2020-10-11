@@ -25,7 +25,7 @@ def test_workflow_registry_registration(app_client, provider_type,
     assert registry.uuid is not None, "Invalid registry identifier"
     assert registry.name == random_string, "Unexpected registry name"
     assert registry.uri == fake_uri, "Unexpected registry URI"
-    assert registry.client_credentials.redirect_uris == None, \
+    assert registry.client_credentials.redirect_uris is None, \
         "Unexpected redirect_uri URI"
 
 

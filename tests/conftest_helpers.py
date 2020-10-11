@@ -11,7 +11,6 @@ import lifemonitor.db as lm_db
 from lifemonitor.app import create_app, initialize_app
 from lifemonitor.auth.services import generate_new_api_key
 from lifemonitor.auth.models import User
-from lifemonitor.auth.oauth2.client.services import get_providers
 from lifemonitor.api.models import WorkflowRegistry
 from lifemonitor.api.services import LifeMonitor
 
@@ -368,7 +367,7 @@ def create_client_credentials_registry(_app_settings, _admin_user):
         return LifeMonitor.get_instance().add_workflow_registry(
             "seek", "seek",
             _app_settings.get('SEEK_CLIENT_ID'),
-            _app_settings.get('SEEK_CLIENT_SECRET'), 
+            _app_settings.get('SEEK_CLIENT_SECRET'),
             _app_settings.get('SEEK_API_BASE_URL'))
 
 

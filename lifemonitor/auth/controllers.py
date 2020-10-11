@@ -2,8 +2,8 @@ import logging
 
 import flask
 from flask import flash, url_for, request, render_template, redirect, jsonify
-from flask_login import login_required, login_user, logout_user, current_user
-
+from flask_login import login_required, login_user, logout_user
+from .. import common
 from .forms import RegisterForm, LoginForm, SetPasswordForm
 from .models import db
 from .oauth2.client.services import merge_users, get_providers
@@ -21,12 +21,17 @@ blueprint = flask.Blueprint("auth", __name__,
 login_manager.login_view = "auth.login"
 
 
-@login_required
+@authorized
 def show_current_user_profile():
-    try:
+    if current_user and not current_user.is_anonymous:
         return jsonify(current_user.to_dict())
-    except Exception as e:
-        logger.exception(e)
+    elif current_registry:
+        return jsonify({
+            'uuid': current_registry.uuid,
+            'name': current_registry.name,
+            'uri': current_registry.uri
+        })
+    raise common.Forbidden(detail="Client type unknown")
 
 
 @blueprint.route("/", methods=("GET",))

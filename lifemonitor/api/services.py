@@ -173,6 +173,10 @@ class LifeMonitor:
         return OAuthIdentity.find_by_provider_user_id(external_id, registry.name)
 
     @staticmethod
+    def get_workflow_registry_by_name(name):
+        pass
+
+    @staticmethod
     def add_workflow_registry(type, name,
                               client_id, client_secret,
                               api_base_url=None, redirect_uris=None) -> WorkflowRegistry:
@@ -229,3 +233,7 @@ class LifeMonitor:
     def get_workflow_registry(uuid) -> WorkflowRegistry:
         return WorkflowRegistry.find_by_id(uuid)
 
+    @staticmethod
+    def get_user_workflow_registries(user: User) -> WorkflowRegistry:
+        # FIXME
+        return WorkflowRegistry.all()

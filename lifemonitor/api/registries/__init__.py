@@ -36,7 +36,7 @@ def get_registry_class(registry_type):
         return __registry_types__[registry_type][0]
     except AttributeError as e:
         logger.exception(e)
-        raise common.WorkflowRegistryNotSupportedException(registry_type=m)
+        raise common.WorkflowRegistryNotSupportedException(registry_type=registry_type)
 
 
 def get_registry_client_class(registry_type):
@@ -44,4 +44,4 @@ def get_registry_client_class(registry_type):
         return __registry_types__[registry_type][1]
     except AttributeError as e:
         logger.exception(e)
-        raise common.WorkflowRegistryNotSupportedException(registry_type=m)
+        raise common.WorkflowRegistryNotSupportedException(registry_type=registry_type)
