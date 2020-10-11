@@ -15,6 +15,9 @@ def authorize():
     # Login is required since we need to know the current resource owner.
     # It can be done with a redirection to the login page, or a login
     # form on this authorization page.
+    if not server.request_authorization(current_user):
+        # granted by resource owner
+        return server.create_authorization_response(grant_user=current_user)
     if request.method == 'GET':
         grant = server.validate_consent_request(end_user=current_user)
         return render_template(

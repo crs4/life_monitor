@@ -81,6 +81,10 @@ class Token(db.Model, OAuth2TokenMixin):
         return cls.query.filter(Token.access_token == access_token).first()
 
     @classmethod
+    def find_by_user(cls, user: User) -> List[Token]:
+        return cls.query.filter(Token.user == user).all()
+
+    @classmethod
     def all(cls):
         return cls.query.all()
 
@@ -136,6 +140,13 @@ class AuthorizationServer(OAuth2AuthorizationServer):
             db.session.add(client)
             db.session.commit()
         return client
+
+    @staticmethod
+    def request_authorization(user: User) -> bool:
+        for t in Token.find_by_user(user):
+            if not t.revoked and not t.is_expired():
+                return False
+        return True
 
 
 class AuthorizationCode(db.Model, OAuth2AuthorizationCodeMixin):
