@@ -194,8 +194,8 @@ class LifeMonitor:
             client_credentials = \
                 server.create_client(user, name, server_credentials.api_base_url,
                                      ['client_credentials', 'authorization_code', 'refresh_token'],
-                                                      ["code", "token"],
-                                                      "read write",
+                                     ["code", "token"],
+                                     "read write",
                                      redirect_uris.split(',')
                                      if isinstance(redirect_uris, str)
                                      else redirect_uris,
@@ -208,22 +208,27 @@ class LifeMonitor:
             raise WorkflowRegistryNotSupportedException(exception=e)
 
     @staticmethod
-    def update_workflow_registry(uuid, name,
-                                 client_id, client_secret,
+    def update_workflow_registry(uuid, name=None,
+                                 client_id=None, client_secret=None,
                                  api_base_url=None, redirect_uris=None) -> WorkflowRegistry:
         try:
             registry = WorkflowRegistry.find_by_id(uuid)
             if not registry:
                 raise EntityNotFoundException(WorkflowRegistry, entity_id=uuid)
-            registry.name = name
-            registry.uri = api_base_url
-            registry.server_credentials.client_id = client_id
-            registry.server_credentials.client_secret = client_secret
-            registry.server_credentials.api_base_url = api_base_url
-            registry.client_credentials.api_base_url = api_base_url
-            registry.client_credentials.redirect_uris = redirect_uris
+            if name:
+                registry.server_credentials.name = name
+            if api_base_url:
+                registry.uri = api_base_url
+                registry.server_credentials.api_base_url = api_base_url
+                registry.client_credentials.api_base_url = api_base_url
+            if client_id:
+                registry.server_credentials.client_id = client_id
+            if client_secret:
+                registry.server_credentials.client_secret = client_secret
+            if redirect_uris:
+                registry.client_credentials.redirect_uris = redirect_uris
             registry.save()
-            logger.info(f"WorkflowRegistry '{name}' (type: {type})' updated!")
+            logger.info(f"WorkflowRegistry '{uuid}' (name: {name})' updated!")
             return registry
         except providers.OAuth2ProviderNotSupportedException as e:
             raise WorkflowRegistryNotSupportedException(exception=e)
