@@ -142,7 +142,13 @@ class AuthorizationServer(OAuth2AuthorizationServer):
         return client
 
     @staticmethod
-    def request_authorization(user: User) -> bool:
+    def request_authorization(client: Client, user: User) -> bool:
+        # We want to skip request for permssion when the client is a workflow registry.
+        # The current implementation supports only workflow registries as
+        # client_credentials clients. Thus, we can simple check if the grant 'client_credentials'
+        # has been assigned to the client
+        if client.check_grant_type("client_credentials"):
+            return False
         for t in Token.find_by_user(user):
             if not t.revoked and not t.is_expired():
                 return False
