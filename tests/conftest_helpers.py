@@ -241,15 +241,12 @@ def _fake_callback_uri():
 
 
 def create_authorization_code_flow_client(_admin_user):
-    # FIXME: replace with service; do not DB directly
     from lifemonitor.auth.oauth2.server import server
     client = server.create_client(_admin_user,
                                   "test_code_flow", _fake_callback_uri(),
                                   ['authorization_code', 'token', 'id_token'],
                                   ["code", "token"], "read write",
                                   _fake_callback_uri(), "client_secret_post")
-    print("CLIENT ID: %s" % client.client_id)
-    print("CLIENT SECRET: %s" % client.client_secret)
     logger.debug("Registered client: %r", client)
     return client
     # client.delete()
@@ -282,6 +279,7 @@ def create_authorization_code_access_token(_application,
             "redirect_uri": _fake_callback_uri(),
             "scope": "read write"
         }, data={"client_secret": client_secret}, allow_redirects=False)
+        logger.debug("The Response: %r", auth_response.content)
         assert auth_response.status_code == 302, "No redirection with auth code"
         # get the auth code from response header
         location = urlparse(auth_response.headers.get("Location"))
@@ -333,6 +331,11 @@ def create_app_client_headers(_client_auth_method, _application,
         access_token = create_authorization_code_access_token(
             _application, _client,
             _user=_app_user, _session=_app_user_session)["access_token"]
+    elif _client_auth_method == ClientAuthenticationMethod.REGISTRY_CODE_FLOW:
+        _client = _client_credentials_registry.client_credentials
+        access_token = create_authorization_code_access_token(
+            _application, _client,
+            _user=_app_user, _session=_app_user_session)["access_token"]
     elif _client_auth_method == ClientAuthenticationMethod.CLIENT_CREDENTIALS:
         _client = None
         access_token = create_client_credentials_access_token(
@@ -368,7 +371,8 @@ def create_client_credentials_registry(_app_settings, _admin_user):
             "seek", "seek",
             _app_settings.get('SEEK_CLIENT_ID'),
             _app_settings.get('SEEK_CLIENT_SECRET'),
-            _app_settings.get('SEEK_API_BASE_URL'))
+            _app_settings.get('SEEK_API_BASE_URL'),
+            redirect_uris=_fake_callback_uri())
 
 
 def get_registry(_app_settings, _admin_user):

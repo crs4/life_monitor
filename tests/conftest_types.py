@@ -21,6 +21,7 @@ class ClientAuthenticationMethod(TestParam):
     API_KEY = "ApiKey"
     CLIENT_CREDENTIALS = "ClientCredentials"
     AUTHORIZATION_CODE = "AuthorizationCode"
+    REGISTRY_CODE_FLOW = "RegistryCodeFlow"
 
 
 # class ClientSecurityType(TestParam):
