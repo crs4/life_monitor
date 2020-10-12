@@ -1,4 +1,5 @@
-from flask import request, render_template, redirect, Blueprint, jsonify
+import logging
+from flask import request, render_template, redirect, Blueprint, jsonify, url_for
 from flask_login import current_user, login_required
 
 from .services import server
@@ -8,18 +9,38 @@ blueprint = Blueprint("oauth2_server", __name__,
                       template_folder='templates',
                       static_folder="static", static_url_path='/static/auth2')
 
+logger = logging.getLogger(__name__)
+
 
 @blueprint.route('/authorize', methods=['GET', 'POST'])
 @login_required
 def authorize():
     # Login is required since we need to know the current resource owner.
-    # It can be done with a redirection to the login page, or a login
-    # form on this authorization page.
-    if not server.request_authorization(current_user):
-        # granted by resource owner
-        return server.create_authorization_response(grant_user=current_user)
+    # The decorator ensures the redirection to the login page when the current
+    # user is not authenticated.
+    return _process_authorization()
+
+
+@blueprint.route('/authorize/<name>', methods=['GET', 'POST'])
+def authorize_provider(name):
+    # Login is required since we need to know the current resource owner.
+    # This authorizataion request comes from a registry (identified by 'name')
+    # and registries act as identity providers. Thus, we handle the authentication
+    # by redirectin the user to the registry. This ensures the authorization
+    # will be granted by a user which has an identity on that registry.
+    if current_user.is_anonymous:
+        return redirect(url_for("oauth2provider.login", name=name,
+                                next=url_for(".authorize_provider",
+                                             name=name, **request.args.to_dict())))
+    return _process_authorization()
+
+
+def _process_authorization():
     if request.method == 'GET':
         grant = server.validate_consent_request(end_user=current_user)
+        if not server.request_authorization(grant.client, current_user):
+            # granted by resource owner
+            return server.create_authorization_response(grant_user=current_user)
         return render_template(
             'authorize.html',
             grant=grant,
