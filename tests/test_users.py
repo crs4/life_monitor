@@ -30,7 +30,8 @@ def test_user2(user2):
     ClientAuthenticationMethod.BASIC,
     ClientAuthenticationMethod.API_KEY,
     ClientAuthenticationMethod.AUTHORIZATION_CODE,
-    ClientAuthenticationMethod.CLIENT_CREDENTIALS
+    ClientAuthenticationMethod.CLIENT_CREDENTIALS,
+    ClientAuthenticationMethod.REGISTRY_CODE_FLOW
 ], indirect=True)
 def test_user1_auth(user1, client_auth_method, user1_auth):
     logger.debug("Auth: %r, %r, %r", user1_auth, client_auth_method, ClientAuthenticationMethod.BASIC.value)

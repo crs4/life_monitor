@@ -18,7 +18,8 @@ logger = logging.getLogger()
     #    ClientAuthenticationMethod.BASIC,
     ClientAuthenticationMethod.API_KEY,
     ClientAuthenticationMethod.AUTHORIZATION_CODE,
-    ClientAuthenticationMethod.CLIENT_CREDENTIALS
+    ClientAuthenticationMethod.CLIENT_CREDENTIALS,
+    ClientAuthenticationMethod.REGISTRY_CODE_FLOW
 ], indirect=True)
 def test_config_params(app_client, client_auth_method, user1, user1_auth):
     logger.info("Testing AuthMethod: %r", client_auth_method)
@@ -55,7 +56,8 @@ def test_config_params(app_client, client_auth_method, user1, user1_auth):
     #    ClientAuthenticationMethod.BASIC,
     ClientAuthenticationMethod.API_KEY,
     ClientAuthenticationMethod.AUTHORIZATION_CODE,
-    ClientAuthenticationMethod.CLIENT_CREDENTIALS
+    ClientAuthenticationMethod.CLIENT_CREDENTIALS,
+    ClientAuthenticationMethod.REGISTRY_CODE_FLOW
 ], indirect=True)
 def test_empty_workflows(app_client, client_auth_method, user1, user1_auth):
     response = app_client.get(utils.build_workflow_path(), headers=user1_auth)
@@ -70,7 +72,8 @@ def test_empty_workflows(app_client, client_auth_method, user1, user1_auth):
     #    ClientAuthenticationMethod.BASIC,
     ClientAuthenticationMethod.API_KEY,
     ClientAuthenticationMethod.AUTHORIZATION_CODE,
-    ClientAuthenticationMethod.CLIENT_CREDENTIALS
+    ClientAuthenticationMethod.CLIENT_CREDENTIALS,
+    ClientAuthenticationMethod.REGISTRY_CODE_FLOW
 ], indirect=True)
 def test_workflow_registration(app_client, client_auth_method,
                                user1, user1_auth, client_credentials_registry):
@@ -83,10 +86,13 @@ def test_workflow_registration(app_client, client_auth_method,
         del workflow['registry_uri']
         workflow['submitter_id'] = \
             list(user1["user"].oauth_identity.values())[0].provider_user_id
-    else:
+    elif client_auth_method == ClientAuthenticationMethod.AUTHORIZATION_CODE:
         workflow['registry_uri'] = client_credentials_registry.uri
-
+    elif client_auth_method == ClientAuthenticationMethod.REGISTRY_CODE_FLOW:
+        del workflow['registry_uri']
+        # del workflow['submitter_id'] # already deleted
     assert workflow['name'] is not None, "MMMMM"
+    logger.debug("The BODY: %r", workflow)
     response = app_client.post(utils.build_workflow_path(),
                                json=workflow, headers=user1_auth)
 
@@ -102,7 +108,8 @@ def test_workflow_registration(app_client, client_auth_method,
     #    ClientAuthenticationMethod.BASIC,
     ClientAuthenticationMethod.API_KEY,
     ClientAuthenticationMethod.AUTHORIZATION_CODE,
-    ClientAuthenticationMethod.CLIENT_CREDENTIALS
+    ClientAuthenticationMethod.CLIENT_CREDENTIALS,
+    ClientAuthenticationMethod.REGISTRY_CODE_FLOW
 ], indirect=True)
 @pytest.mark.parametrize("user1", [True], indirect=True)
 def test_get_workflows_scope(app_client, client_auth_method,
@@ -141,7 +148,8 @@ def test_get_workflows_scope(app_client, client_auth_method,
     #    ClientAuthenticationMethod.BASIC,
     ClientAuthenticationMethod.API_KEY,
     ClientAuthenticationMethod.AUTHORIZATION_CODE,
-    ClientAuthenticationMethod.CLIENT_CREDENTIALS
+    ClientAuthenticationMethod.CLIENT_CREDENTIALS,
+    ClientAuthenticationMethod.REGISTRY_CODE_FLOW
 ], indirect=True)
 @pytest.mark.parametrize("user1", [True], indirect=True)
 def test_delete_workflows(app_client, client_auth_method, user1, user1_auth):
@@ -159,7 +167,8 @@ def test_delete_workflows(app_client, client_auth_method, user1, user1_auth):
     #    ClientAuthenticationMethod.BASIC,
     ClientAuthenticationMethod.API_KEY,
     ClientAuthenticationMethod.AUTHORIZATION_CODE,
-    ClientAuthenticationMethod.CLIENT_CREDENTIALS
+    ClientAuthenticationMethod.CLIENT_CREDENTIALS,
+    ClientAuthenticationMethod.REGISTRY_CODE_FLOW
 ], indirect=True)
 # @pytest.mark.parametrize("user1", [True], indirect=True)
 def test_get_workflow_not_authorized(app_client, client_auth_method, user1, user1_auth):
@@ -173,7 +182,8 @@ def test_get_workflow_not_authorized(app_client, client_auth_method, user1, user
     #    ClientAuthenticationMethod.BASIC,
     ClientAuthenticationMethod.API_KEY,
     ClientAuthenticationMethod.AUTHORIZATION_CODE,
-    ClientAuthenticationMethod.CLIENT_CREDENTIALS
+    ClientAuthenticationMethod.CLIENT_CREDENTIALS,
+    ClientAuthenticationMethod.REGISTRY_CODE_FLOW
 ], indirect=True)
 def test_get_workflow_latest_version(app_client, client_auth_method, user1, user1_auth):
     workflow = utils.pick_workflow(user1, "sort-and-change-case")
@@ -206,7 +216,8 @@ def test_get_workflow_latest_version(app_client, client_auth_method, user1, user
     #    ClientAuthenticationMethod.BASIC,
     ClientAuthenticationMethod.API_KEY,
     ClientAuthenticationMethod.AUTHORIZATION_CODE,
-    ClientAuthenticationMethod.CLIENT_CREDENTIALS
+    ClientAuthenticationMethod.CLIENT_CREDENTIALS,
+    ClientAuthenticationMethod.REGISTRY_CODE_FLOW
 ], indirect=True)
 def test_get_workflow_status(app_client, client_auth_method, user1, user1_auth):
     w, workflow = utils.pick_and_register_workflow(user1, "sort-and-change-case")
@@ -225,7 +236,8 @@ def test_get_workflow_status(app_client, client_auth_method, user1, user1_auth):
     #    ClientAuthenticationMethod.BASIC,
     ClientAuthenticationMethod.API_KEY,
     ClientAuthenticationMethod.AUTHORIZATION_CODE,
-    ClientAuthenticationMethod.CLIENT_CREDENTIALS
+    ClientAuthenticationMethod.CLIENT_CREDENTIALS,
+    ClientAuthenticationMethod.REGISTRY_CODE_FLOW
 ], indirect=True)
 def test_get_workflow_suite(app_client, client_auth_method, user1, user1_auth):
     w, workflow = utils.pick_and_register_workflow(user1, "sort-and-change-case")

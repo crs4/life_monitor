@@ -13,7 +13,8 @@ logger = logging.getLogger()
     #    ClientAuthenticationMethod.BASIC,
     ClientAuthenticationMethod.API_KEY,
     ClientAuthenticationMethod.AUTHORIZATION_CODE,
-    ClientAuthenticationMethod.CLIENT_CREDENTIALS
+    ClientAuthenticationMethod.CLIENT_CREDENTIALS,
+    ClientAuthenticationMethod.REGISTRY_CODE_FLOW
 ], indirect=True)
 def test_get_instance(app_client, client_auth_method, user1, user1_auth):
     w, workflow = utils.pick_and_register_workflow(user1, "sort-and-change-case")
@@ -39,7 +40,8 @@ def test_get_instance(app_client, client_auth_method, user1, user1_auth):
     #    ClientAuthenticationMethod.BASIC,
     ClientAuthenticationMethod.API_KEY,
     ClientAuthenticationMethod.AUTHORIZATION_CODE,
-    ClientAuthenticationMethod.CLIENT_CREDENTIALS
+    ClientAuthenticationMethod.CLIENT_CREDENTIALS,
+    ClientAuthenticationMethod.REGISTRY_CODE_FLOW
 ], indirect=True)
 def test_get_instance_builds(app_client, client_auth_method, user1, user1_auth):
     w, workflow = utils.pick_and_register_workflow(user1, "sort-and-change-case")
@@ -67,7 +69,8 @@ def test_get_instance_builds(app_client, client_auth_method, user1, user1_auth):
     #    ClientAuthenticationMethod.BASIC,
     ClientAuthenticationMethod.API_KEY,
     ClientAuthenticationMethod.AUTHORIZATION_CODE,
-    ClientAuthenticationMethod.CLIENT_CREDENTIALS
+    ClientAuthenticationMethod.CLIENT_CREDENTIALS,
+    ClientAuthenticationMethod.REGISTRY_CODE_FLOW
 ], indirect=True)
 def test_get_instance_build(app_client, client_auth_method, user1, user1_auth):
     w, workflow = utils.pick_and_register_workflow(user1, "sort-and-change-case")
@@ -94,7 +97,8 @@ def test_get_instance_build(app_client, client_auth_method, user1, user1_auth):
     #    ClientAuthenticationMethod.BASIC,
     ClientAuthenticationMethod.API_KEY,
     ClientAuthenticationMethod.AUTHORIZATION_CODE,
-    ClientAuthenticationMethod.CLIENT_CREDENTIALS
+    ClientAuthenticationMethod.CLIENT_CREDENTIALS,
+    ClientAuthenticationMethod.REGISTRY_CODE_FLOW
 ], indirect=True)
 def test_get_instance_build_logs(app_client, client_auth_method, user1, user1_auth):
     w, workflow = utils.pick_and_register_workflow(user1, "sort-and-change-case")
