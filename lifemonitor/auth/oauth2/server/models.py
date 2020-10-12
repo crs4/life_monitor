@@ -1,5 +1,6 @@
 from __future__ import annotations
 import time
+from typing import List
 from authlib.integrations.flask_oauth2 import AuthorizationServer as OAuth2AuthorizationServer
 from authlib.oauth2.rfc6749 import grants, InvalidRequestError
 from authlib.common.security import generate_token
@@ -10,10 +11,10 @@ from authlib.integrations.sqla_oauth2 import (
     create_query_client_func,
     create_save_token_func
 )
-from werkzeug.security import gen_salt
-
 from lifemonitor.db import db
+from werkzeug.security import gen_salt
 from lifemonitor.auth.models import User
+from datetime import datetime
 
 
 class Client(db.Model, OAuth2ClientMixin):
@@ -42,6 +43,14 @@ class Client(db.Model, OAuth2ClientMixin):
         metadata['redirect_uris'] = value
         self.set_client_metadata(metadata)
 
+    @classmethod
+    def find_by_id(cls, client_id) -> Client:
+        return cls.query.get(client_id)
+
+    @classmethod
+    def all(cls) -> List[Client]:
+        return cls.query.all()
+
 
 class Token(db.Model, OAuth2TokenMixin):
     id = db.Column(db.Integer, primary_key=True)
@@ -52,6 +61,12 @@ class Token(db.Model, OAuth2TokenMixin):
     client_id = db.Column(db.String,
                           db.ForeignKey('client.client_id', ondelete='CASCADE'))
     client = db.relationship('Client')
+
+    def is_expired(self) -> bool:
+        return datetime.utcnow().timestamp() - self.get_expires_at() > 0
+
+    def is_refresh_token_valid(self) -> bool:
+        return self if not self.revoked else None
 
     def save(self):
         db.session.add(self)
@@ -64,6 +79,10 @@ class Token(db.Model, OAuth2TokenMixin):
     @classmethod
     def find(cls, access_token):
         return cls.query.filter(Token.access_token == access_token).first()
+
+    @classmethod
+    def find_by_user(cls, user: User) -> List[Token]:
+        return cls.query.filter(Token.user == user).all()
 
     @classmethod
     def all(cls):
@@ -121,6 +140,19 @@ class AuthorizationServer(OAuth2AuthorizationServer):
             db.session.add(client)
             db.session.commit()
         return client
+
+    @staticmethod
+    def request_authorization(client: Client, user: User) -> bool:
+        # We want to skip request for permssion when the client is a workflow registry.
+        # The current implementation supports only workflow registries as
+        # client_credentials clients. Thus, we can simple check if the grant 'client_credentials'
+        # has been assigned to the client
+        if client.check_grant_type("client_credentials"):
+            return False
+        for t in Token.find_by_user(user):
+            if not t.revoked and not t.is_expired():
+                return False
+        return True
 
 
 class AuthorizationCode(db.Model, OAuth2AuthorizationCodeMixin):

@@ -28,15 +28,15 @@ def create_blueprint(merge_identity_view):
 
     blueprint = Blueprint('oauth2provider', __name__)
 
-    @blueprint.route('/authorize/<name>', methods=('GET', 'POST'))
+    @blueprint.route('/authorized/<name>', methods=('GET', 'POST'))
     def authorize(name):
         remote = oauth2_registry.create_client(name)
         if remote is None:
             abort(404)
 
         next_url = flask.request.args.get('next')
-        if next_url:
-            return redirect(url_for(".login", name=name, next=next_url))
+        if next_url or not request.args.get("state", False):
+            return redirect(url_for(".login", name=name, next=next_url or remote.api_base_url))
 
         try:
             id_token = request.values.get('id_token')
@@ -60,8 +60,6 @@ def create_blueprint(merge_identity_view):
             return _handle_authorize(remote, token, user_info)
         except OAuthError as e:
             logger.debug(e)
-            if not request.args.get("state", False):
-                return redirect(url_for(".login", name=name, next=remote.api_base_url))
             return e.description, 401
 
     @blueprint.route('/login/<name>')

@@ -13,30 +13,32 @@ def test_registry_add(cli_runner, provider_type,
         provider_type.value,
         random_string,
         random_string,
-        fake_uri
+        fake_uri,
+        "--redirect-uris", fake_uri
     ])
     logger.info(result.output)
     assert 'Error' not in result.output, "Invalid CLI options"
-    for p in ['CLIENT ID', 'CLIENT SECRET', 'SCOPES']:
+    for p in ['CLIENT ID', 'CLIENT SECRET', 'SCOPES', 'REDIRECT URIs']:
         assert p in result.output, f"'{p}' not found as command output"
 
 
 def test_registry_update(cli_runner, provider_type,
                          random_string, fake_uri):
-
     reg = LifeMonitor.get_instance().add_workflow_registry(
-        provider_type.value, random_string, random_string, random_string, fake_uri)
+        provider_type.value, random_string, random_string, random_string,
+        api_base_url=fake_uri, redirect_uris=fake_uri)
     assert isinstance(reg, WorkflowRegistry), "Unexpected object instance"
     result = cli_runner.invoke(registry.update_registry, [
         reg.uuid,
-        f"{random_string}_",
-        provider_type.value,
-        f"{random_string}_x1",
-        f"{random_string}_x2",
-        fake_uri
+        "--name", f"{random_string}_",
+        "--client-id", f"{random_string}_x1",
+        "--client-secret", f"{random_string}_x2",
+        "--api-url", fake_uri,
+        "--redirect-uris", f"{fake_uri}"
     ])
-    logger.debug(result.output)
+    logger.info(result.output)
     assert 'Error' not in result.output, "Invalid CLI options"
+    assert 'ERROR' not in result.output, "Update error"
 
 
 def test_registry_list(cli_runner, provider_type,
