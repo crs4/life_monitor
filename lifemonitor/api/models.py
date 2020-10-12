@@ -175,20 +175,31 @@ class WorkflowRegistry(db.Model):
 
     @classmethod
     def find_by_id(cls, uuid) -> WorkflowRegistry:
-        return cls.query.get(uuid)
+        try:
+            return cls.query.get(uuid)
+        except Exception as e:
+            raise EntityNotFoundException(WorkflowRegistry, entity_id=uuid, exception=e)
 
     @classmethod
     def find_by_name(cls, name):
-        return cls.query.filter(WorkflowRegistry.name == name).first()
-        # return cls.query.filter_by(name=name).first()
+        try:
+            return cls.query.filter(WorkflowRegistry.server_credentials.has(name=name)).one()
+        except Exception as e:
+            raise EntityNotFoundException(WorkflowRegistry, entity_id=name, exception=e)
 
     @classmethod
     def find_by_uri(cls, uri):
-        return cls.query.filter(WorkflowRegistry.uri == uri).first()
+        try:
+            return cls.query.filter(WorkflowRegistry.uri == uri).one()
+        except Exception as e:
+            raise EntityNotFoundException(WorkflowRegistry, entity_id=uri, exception=e)
 
     @classmethod
     def find_by_client_id(cls, client_id):
-        return cls.query.filter_by(client_id=client_id).first()
+        try:
+            return cls.query.filter_by(client_id=client_id).first()
+        except Exception as e:
+            raise EntityNotFoundException(WorkflowRegistry, entity_id=client_id, exception=e)
 
     @staticmethod
     def new_instance(registry_type, client_credentials, server_credentials):

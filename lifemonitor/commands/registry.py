@@ -19,18 +19,22 @@ supported_registries = ["seek"]
 
 
 def print_registry_info(registry):
-    output = f"""
-    \nWorkflow Registry '{registry.name}' (uuid: {registry.uuid}, type: {registry.type}) registered!
-    \nOAuth2 Settings to connect to LifeMonitor:
-    - REGISTRY NAME: {registry.name}
-    - REGISTRY CLIENT ID: {registry.client_credentials.client_id}
-    - REGISTRY CLIENT SECRET: {registry.client_credentials.client_secret}
-    - REGISTRY CLIENT ALLOWED SCOPES: {registry.client_credentials.client_metadata['scope']}
-    - REGISTRY CLIENT ALLOWED FLOWS: {registry.client_credentials.client_metadata['grant_types']}
-    - REGISTRY CLIENT REDIRECT URIs: {registry.client_credentials.redirect_uris}
-    * AUTHORIZE URL: <LIFE_MONITOR_BASE_URL>/oauth2/authorize
-    * ACCESS TOKEN URL: <LIFE_MONITOR_BASE_URL>/oauth2/token
-    """
+    output = f"""\n
+{'*'*100}
+Workflow Registry '{registry.name}' (uuid: {registry.uuid}, type: {registry.type}) registered!
+{'*'*100}\n\n
+OAuth2 settings to connect to LifeMonitor:
+{'-'*100}
+REGISTRY NAME: {registry.name}
+REGISTRY CLIENT ID: {registry.client_credentials.client_id}
+REGISTRY CLIENT SECRET: {registry.client_credentials.client_secret}
+REGISTRY CLIENT ALLOWED SCOPES: {registry.client_credentials.client_metadata['scope']}
+REGISTRY CLIENT ALLOWED FLOWS: {registry.client_credentials.client_metadata['grant_types']}
+REGISTRY CLIENT REDIRECT URIs: {registry.client_credentials.redirect_uris}
+AUTHORIZE URL: <LIFE_MONITOR_BASE_URL>/oauth2/authorize/{registry.name}
+ACCESS TOKEN URL: <LIFE_MONITOR_BASE_URL>/oauth2/token
+CALLBACK URL: <LIFE_MONITOR_BASE_URL>/oauth2/authorized/{registry.name}[?next=<URL>]
+"""
     print(output)
 
 
@@ -45,7 +49,7 @@ def print_registry_info(registry):
 @with_appcontext
 def add_registry(name, type, client_id, client_secret, api_url, redirect_uris):
     """
-    Add a new Workflow Registry and generate its OAuth2 credentials
+    Add a new workflow registry and generate its OAuth2 credentials
     """
     try:
         # At the moment client_credentials of registries
@@ -76,7 +80,7 @@ def add_registry(name, type, client_id, client_secret, api_url, redirect_uris):
 @with_appcontext
 def update_registry(uuid, name, client_id, client_secret, api_url, redirect_uris):
     """
-    Update an existing Workflow Registry
+    Update a workflow registry
     """
     try:
         registry = lm.update_workflow_registry(uuid, name,
@@ -95,6 +99,7 @@ def update_registry(uuid, name, client_id, client_secret, api_url, redirect_uris
 @blueprint.cli.command('list')
 @with_appcontext
 def list_registries():
+    """ List all workflow registries """
     try:
         registries = lm.get_workflow_registries()
         if len(registries) == 0:
@@ -102,8 +107,28 @@ def list_registries():
         else:
             print(f"\n Workflow Registries:\n{'*'*80}")
             for r in registries:
-                print(f" - {r.uuid}: name='{r.name}', type={r.type}")
+                print(f"{r.uuid}, name='{r.name}', type={r.type}")
             print("\n")
+    except Exception as e:
+        try:
+            detail = re.search('DETAIL:\\s*(.+)', str(e)).group(1)
+        except AttributeError:
+            detail = str(e)
+        logger.exception(e)
+        print(f"ERROR: {detail}", file=sys.stderr)
+
+
+@blueprint.cli.command('show')
+@click.argument("name")
+@with_appcontext
+def show_registry(name):
+    """ Show info of a workflow registry """
+    try:
+        registry = lm.get_workflow_registry_by_name(name)
+        if not registry:
+            print(f"\n Workflow Registry '{name}' not found !!!\n")
+        else:
+            print_registry_info(registry)
     except Exception as e:
         try:
             detail = re.search('DETAIL:\\s*(.+)', str(e)).group(1)

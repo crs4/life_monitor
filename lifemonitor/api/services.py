@@ -174,7 +174,7 @@ class LifeMonitor:
 
     @staticmethod
     def get_workflow_registry_by_name(name):
-        pass
+        return WorkflowRegistry.find_by_name(name)
 
     @staticmethod
     def add_workflow_registry(type, name,
