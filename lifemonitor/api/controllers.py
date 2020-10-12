@@ -40,20 +40,24 @@ def workflows_post(body):
         except EntityNotFoundException:
             return report_problem(404, "Not Found",
                                   detail=messages.no_registry_found.format(registry_uri))
-    submitter = None
-    submitter_id = None
+    submitter = current_user
     if not current_user or current_user.is_anonymous:  # the client is a registry
         try:
             submitter_id = body['submitter_id']
+            # Try to find the identity of the submitter
+            identity = lm.find_registry_user_identity(registry,
+                                                      internal_id=current_user.id,
+                                                      external_id=submitter_id)
+            submitter = identity.user
         except KeyError:
             return report_problem(400, "Bad request",
                                   detail=messages.no_submitter_id_provided)
+        except OAuthIdentityNotFoundException:
+            return report_problem(401, "Unauthorized",
+                                  detail=messages.no_user_oauth_identity_on_registry
+                                  .format(submitter_id or current_user.id, registry.name))
     try:
-        # Try to find the identity of the submitter
-        identity = lm.find_registry_user_identity(registry,
-                                                  internal_id=current_user.id,
-                                                  external_id=submitter_id)
-        submitter = identity.user
+
         w = lm.register_workflow(
             workflow_registry=registry,
             workflow_submitter=submitter,
@@ -68,10 +72,6 @@ def workflows_post(body):
     except KeyError as e:
         return report_problem(400, "Bad Request", extra_info={"exception": str(e)},
                               detail=messages.input_data_missing)
-    except OAuthIdentityNotFoundException:
-        return report_problem(401, "Unauthorized",
-                              detail=messages.no_user_oauth_identity_on_registry
-                              .format(submitter_id or current_user.id, registry.name))
     except NotValidROCrateException as e:
         return report_problem(400, "Bad Request", extra_info={"exception": str(e)},
                               detail=messages.invalid_ro_crate)
@@ -123,10 +123,10 @@ def workflows_delete(wf_uuid, wf_version):
 @authorized
 def workflows_get():
     workflows = []
-    if current_registry:
-        workflows.extend(lm.get_registry_workflows(current_registry))
-    elif not current_user.is_anonymous:
+    if current_user and not current_user.is_anonymous:
         workflows.extend(lm.get_user_workflows(current_user))
+    elif current_registry:
+        workflows.extend(lm.get_registry_workflows(current_registry))
     else:
         return report_problem(401, "Unauthorized", detail=messages.no_user_in_session)
     logger.debug("workflows_get. Got %s workflows (user: %s)", len(workflows), current_user)

@@ -39,7 +39,7 @@ def get_token_scopes(access_token):
     registry = WorkflowRegistry.find_by_client_id(token.client.client_id)
     logger.debug("Token issued to a WorkflowRegistry: %r", registry is not None)
     if registry:
-        g.workflow_registry = registry
+        auth_services.login_registry(registry)
     return {
         "scope": token.scope
     }
