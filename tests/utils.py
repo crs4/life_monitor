@@ -30,7 +30,10 @@ def build_instances_path(instances_uuid=None):
 
 def assert_properties_exist(properties, object):
     for p in properties:
-        assert p in object, f"The property '{p}' is not set!"
+        try:
+            assert p in object, f"The property '{p}' is not set!"
+        except TypeError:
+            assert hasattr(object, p), f"The property '{p}' is not set!"
 
 
 def assert_status_code(expected, actual, message=None):

@@ -12,6 +12,7 @@ from lifemonitor.app import create_app, initialize_app
 from lifemonitor.auth.services import generate_new_api_key
 from lifemonitor.auth.models import User
 from lifemonitor.api.models import WorkflowRegistry
+from lifemonitor.api.services import LifeMonitor
 
 # set the module level logger
 logger = logging.getLogger(__name__)
@@ -44,9 +45,9 @@ def get_admin_user():
     return admin
 
 
-def init_db():
+def init_db(_app_settings):
     admin = get_admin_user()
-    create_client_credentials_registry(admin)
+    create_client_credentials_registry(_app_settings, admin)
 
 
 def clean_db():
@@ -181,6 +182,7 @@ def seek_user_session(application, index=None):
         logger.debug("WfHub user info: %r", wfhub_user_info)
         application.config.pop("SEEK_API_KEY", None)
         login_r = session.get(f"{application.config.get('BASE_URL')}/oauth2/login/seek")
+        logger.debug(login_r.content)
         assert login_r.status_code == 200, "Login Error: status code {} !!!".format(login_r.status_code)
         return User.find_by_username(wfhub_user_info['id']), session, wfhub_user_info
 
@@ -266,8 +268,8 @@ def create_authorization_code_access_token(_application,
         g.user = None  # store the user on g to allow the auto login; None to avoid the login
         client_id = client.client_id
         client_secret = client.client_info["client_secret"]
-        authorization_url = f"{application.config['BASE_URL']}/oauth/authorize"
-        token_url = f"{application.config['BASE_URL']}/oauth/token"
+        authorization_url = f"{application.config['BASE_URL']}/oauth2/authorize"
+        token_url = f"{application.config['BASE_URL']}/oauth2/token"
         # base_url = application.config[f"{registry_type}_API_BASE_URL".upper()]
 
         session.auth = None
@@ -309,7 +311,7 @@ def create_authorization_code_access_token(_application,
 
 
 def create_client_credentials_access_token(application, credentials):
-    token_url = f"{application.config.get('BASE_URL')}/oauth/token"
+    token_url = f"{application.config.get('BASE_URL')}/oauth2/token"
     response = requests.post(token_url, data={
         'grant_type': 'client_credentials',
         'client_id': credentials.client_id,
@@ -357,21 +359,20 @@ def get_user_auth_headers(_auth_method, _application, _registry, _user, _session
                                      _user, _session)
 
 
-def create_client_credentials_registry(_admin_user):
-    # FIXME: replace with service; do not DB directly
-    from lifemonitor.auth.oauth2.server import server
-    client = server.create_client(_admin_user,
-                                  "seek", "https://seek:3000",
-                                  'client_credentials', ["token"], "read write",
-                                  "", "client_secret_post")
-    logger.debug("Registered client: %r", client)
-    registry = WorkflowRegistry("seek", client)
-    registry.save()
-    return registry
+def create_client_credentials_registry(_app_settings, _admin_user):
+    lm = LifeMonitor.get_instance()
+    try:
+        return lm.get_workflow_registry_by_uri(_app_settings.get('SEEK_API_BASE_URL'))
+    except Exception:
+        return LifeMonitor.get_instance().add_workflow_registry(
+            "seek", "seek",
+            _app_settings.get('SEEK_CLIENT_ID'),
+            _app_settings.get('SEEK_CLIENT_SECRET'),
+            _app_settings.get('SEEK_API_BASE_URL'))
 
 
-def get_registry(_admin_user):
+def get_registry(_app_settings, _admin_user):
     registry = WorkflowRegistry.find_by_name("seek")
     if registry is None:
-        registry = create_client_credentials_registry(_admin_user)
+        registry = create_client_credentials_registry(_app_settings, _admin_user)
     return registry

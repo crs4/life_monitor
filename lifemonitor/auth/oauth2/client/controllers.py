@@ -10,7 +10,7 @@ from flask_login import current_user, login_user
 
 from lifemonitor.auth.models import User
 from .models import OAuthUserProfile, OAuthIdentity
-from .services import oauth2_registry
+from .services import oauth2_registry, config_oauth2_registry
 from authlib.integrations.base_client.errors import OAuthError
 from lifemonitor.auth.oauth2.client.models import OAuthIdentityNotFoundException
 
@@ -66,6 +66,10 @@ def create_blueprint(merge_identity_view):
 
     @blueprint.route('/login/<name>')
     def login(name):
+        # we allow dynamic reconfiguration of the oauth2registry
+        # when app is configured in dev or testing mode
+        if current_app.config['ENV'] in ("testing", "development"):
+            config_oauth2_registry(current_app)
         remote = oauth2_registry.create_client(name)
         if remote is None:
             abort(404)

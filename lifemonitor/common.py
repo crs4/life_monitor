@@ -99,6 +99,14 @@ class NotValidROCrateException(LifeMonitorException):
                          detail=detail, status=status, **kwargs)
 
 
+class WorkflowRegistryNotSupportedException(LifeMonitorException):
+
+    def __init__(self, detail="Workflow Registry not supported",
+                 type="about:blank", status=400, instance=None, **kwargs):
+        super().__init__(title="Bad request",
+                         detail=detail, status=status, **kwargs)
+
+
 class TestingServiceNotSupportedException(LifeMonitorException):
 
     def __init__(self, detail="Testing service not supported",
@@ -109,9 +117,9 @@ class TestingServiceNotSupportedException(LifeMonitorException):
 
 class TestingServiceException(LifeMonitorException):
 
-    def __init__(self, detail="Testing service not supported",
+    def __init__(self, detail="",
                  type="about:blank", status=500, instance=None, **kwargs):
-        super().__init__(title="Internal Server Error",
+        super().__init__(title="Testing service error",
                          detail=detail, status=status, **kwargs)
 
 

@@ -29,8 +29,8 @@ def normalize_userinfo(client, data):
 
 
 class GitHub:
-    NAME = 'github'
-    OAUTH_CONFIG = {
+    name = 'github'
+    oauth_config = {
         'api_base_url': 'https://api.github.com/',
         'access_token_url': 'https://github.com/login/oauth/access_token',
         'authorize_url': 'https://github.com/login/oauth/authorize',
@@ -38,3 +38,7 @@ class GitHub:
         'userinfo_endpoint': 'https://api.github.com/user',
         'userinfo_compliance_fix': normalize_userinfo,
     }
+
+    @staticmethod
+    def normalize_userinfo(client, data):
+        return normalize_userinfo(client, data)

@@ -9,7 +9,7 @@ blueprint = Blueprint("oauth2_server", __name__,
                       static_folder="static", static_url_path='/static/auth2')
 
 
-@blueprint.route('/oauth/authorize', methods=['GET', 'POST'])
+@blueprint.route('/authorize', methods=['GET', 'POST'])
 @login_required
 def authorize():
     # Login is required since we need to know the current resource owner.
@@ -30,12 +30,12 @@ def authorize():
     return server.create_authorization_response(grant_user=None)
 
 
-@blueprint.route('/oauth/token', methods=['POST'])
+@blueprint.route('/token', methods=['POST'])
 def issue_token():
     return server.create_token_response()
 
 
-@blueprint.route('/oauth/create_client', methods=('GET', 'POST'))
+@blueprint.route('/create_client', methods=('GET', 'POST'))
 @login_required
 def create_client():
     user = current_user

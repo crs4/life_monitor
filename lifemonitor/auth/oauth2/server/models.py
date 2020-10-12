@@ -1,6 +1,5 @@
 from __future__ import annotations
 import time
-
 from authlib.integrations.flask_oauth2 import AuthorizationServer as OAuth2AuthorizationServer
 from authlib.oauth2.rfc6749 import grants, InvalidRequestError
 from authlib.common.security import generate_token
@@ -30,6 +29,18 @@ class Client(db.Model, OAuth2ClientMixin):
             cascade="all, delete-orphan",
         ),
     )
+
+    @property
+    def redirect_uris(self):
+        return self.client_metadata.get('redirect_uris', [])
+
+    @redirect_uris.setter
+    def redirect_uris(self, value):
+        if isinstance(value, str):
+            value = value.split(',')
+        metadata = self.client_metadata
+        metadata['redirect_uris'] = value
+        self.set_client_metadata(metadata)
 
 
 class Token(db.Model, OAuth2TokenMixin):
@@ -81,7 +92,7 @@ class AuthorizationServer(OAuth2AuthorizationServer):
                       client_name, client_uri,
                       grant_type, response_type, scope,
                       redirect_uri,
-                      token_endpoint_auth_method=None):
+                      token_endpoint_auth_method=None, commit=True):
         client_id = gen_salt(24)
         client_id_issued_at = int(time.time())
         client = Client(
@@ -106,8 +117,9 @@ class AuthorizationServer(OAuth2AuthorizationServer):
         else:
             client.client_secret = gen_salt(48)
 
-        db.session.add(client)
-        db.session.commit()
+        if commit:
+            db.session.add(client)
+            db.session.commit()
         return client
 
 

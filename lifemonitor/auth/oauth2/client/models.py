@@ -1,14 +1,17 @@
 from __future__ import annotations
 
+from typing import List
 from datetime import datetime
-
 from sqlalchemy import DateTime
+from urllib.parse import urljoin
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy.orm.exc import NoResultFound
 from lifemonitor.db import db
+from importlib import import_module
 from lifemonitor.auth.models import User
-from lifemonitor.common import EntityNotFoundException
+from lifemonitor.common import EntityNotFoundException, LifeMonitorException
 
 
 class OAuthIdentityNotFoundException(EntityNotFoundException):
@@ -64,7 +67,7 @@ class OAuthIdentity(db.Model):
     )
 
     __table_args__ = (db.UniqueConstraint("provider", "provider_user_id"),)
-    __tablename__ = "oauth_identity"
+    __tablename__ = "oauth2_identity"
 
     def __repr__(self):
         parts = []
@@ -99,4 +102,110 @@ class OAuthIdentity(db.Model):
 
     @classmethod
     def all(cls):
+        return cls.query.all()
+
+
+class OAuth2IdentityProvider(db.Model):
+
+    id = db.Column(db.Integer, primary_key=True)
+    _type = db.Column("type", db.String, nullable=False)
+    name = db.Column(db.String, nullable=False, unique=True)
+    client_id = db.Column(db.String, nullable=False)
+    client_secret = db.Column(db.String, nullable=False)
+    client_kwargs = db.Column(JSONB, nullable=True)
+    _api_base_url = db.Column("api_base_url", db.String, nullable=False)
+    _authorize_url = db.Column("authorize_url", db.String, nullable=False)
+    authorize_params = db.Column(JSONB, nullable=True)
+    _access_token_url = db.Column("access_token_url", db.String, nullable=False)
+    access_token_params = db.Column(JSONB, nullable=True)
+    userinfo_endpoint = db.Column(db.String, nullable=False)
+
+    __tablename__ = "oauth2_identity_provider"
+    __mapper_args__ = {
+        'polymorphic_on': _type,
+        'polymorphic_identity': 'oauth2_identity_provider'
+    }
+
+    def __init__(self, name,
+                 client_id, client_secret,
+                 api_base_url, authorize_url, access_token_url, userinfo_endpoint,
+                 client_kwargs=None,
+                 authorize_params=None,
+                 access_token_params=None):
+        self.name = name
+        self.client_id = client_id
+        self.client_secret = client_secret
+        self.api_base_url = api_base_url
+        self.client_kwargs = client_kwargs
+        self.authorize_url = authorize_url
+        self.access_token_url = access_token_url
+        self.access_token_params = access_token_params
+        self.userinfo_endpoint = urljoin(api_base_url, userinfo_endpoint)
+
+    @hybrid_property
+    def api_base_url(self):
+        return self._api_base_url
+
+    @api_base_url.setter
+    def api_base_url(self, api_base_url):
+        assert api_base_url and len(api_base_url) > 0, "URL cannot be empty"
+        self._api_base_url = api_base_url
+
+    @hybrid_property
+    def authorize_url(self):
+        return self._authorize_url
+
+    @authorize_url.setter
+    def authorize_url(self, authorize_url):
+        assert authorize_url and len(authorize_url) > 0, "URL cannot be empty"
+        self._authorize_url = urljoin(self.api_base_url, authorize_url)
+
+    @hybrid_property
+    def access_token_url(self):
+        return self._access_token_url
+
+    @access_token_url.setter
+    def access_token_url(self, token_url):
+        assert token_url and len(token_url) > 0, "URL cannot be empty"
+        self._access_token_url = urljoin(self.api_base_url, token_url)
+
+    @property
+    def oauth_config(self):
+        return {
+            'client_id': self.client_id,
+            'client_secret': self.client_secret,
+            'client_kwargs': self.client_kwargs,
+            'api_base_url': self.api_base_url,
+            'authorize_url': self.authorize_url,
+            'authorize_params': self.authorize_params,
+            'access_token_url': self.access_token_url,
+            'access_token_params': self.access_token_params,
+            'userinfo_endpoint': self.userinfo_endpoint,
+            'userinfo_compliance_fix': self.normalize_userinfo,
+        }
+
+    def normalize_userinfo(self, client, data):
+        m = f"lifemonitor.auth.oauth2.client.providers.{self.type}"
+        try:
+            mod = import_module(m)
+            return getattr(mod, "normalize_userinfo")(client, data)
+        except ModuleNotFoundError:
+            raise LifeMonitorException(f"ModuleNotFoundError: Unable to load module {m}")
+        except AttributeError:
+            raise LifeMonitorException(f"Unable to create an instance of WorkflowRegistryClient from module {m}")
+
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
+
+    @classmethod
+    def find(cls, name) -> OAuth2IdentityProvider:
+        return cls.query.filter(cls.name == name).one()
+
+    @classmethod
+    def all(cls) -> List(OAuth2IdentityProvider):
         return cls.query.all()

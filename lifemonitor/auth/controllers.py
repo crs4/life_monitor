@@ -2,12 +2,13 @@ import logging
 
 import flask
 from flask import flash, url_for, request, render_template, redirect, jsonify
-from flask_login import login_required, login_user, logout_user, current_user
-
+from flask_login import login_required, login_user, logout_user
+from .. import common
 from .forms import RegisterForm, LoginForm, SetPasswordForm
 from .models import db
-from .oauth2.client.services import merge_users
-from .services import login_manager
+from .oauth2.client.services import merge_users, get_providers
+from .services import authorized, login_manager, current_registry, current_user
+
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
@@ -20,12 +21,17 @@ blueprint = flask.Blueprint("auth", __name__,
 login_manager.login_view = "auth.login"
 
 
-@login_required
+@authorized
 def show_current_user_profile():
-    try:
+    if current_user and not current_user.is_anonymous:
         return jsonify(current_user.to_dict())
-    except Exception as e:
-        logger.exception(e)
+    elif current_registry:
+        return jsonify({
+            'uuid': current_registry.uuid,
+            'name': current_registry.name,
+            'uri': current_registry.uri
+        })
+    raise common.Forbidden(detail="Client type unknown")
 
 
 @blueprint.route("/", methods=("GET",))
@@ -59,7 +65,7 @@ def login():
             login_user(user)
             flash("You have logged in")
             return redirect(url_for("auth.index"))
-    return render_template("auth/login.j2", form=form)
+    return render_template("auth/login.j2", form=form, providers=get_providers())
 
 
 @blueprint.route("/logout")
