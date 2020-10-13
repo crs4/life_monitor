@@ -55,10 +55,6 @@ class User(UserMixin, db.Model):
         db.session.add(self)
         db.session.commit()
 
-    @staticmethod
-    def find_by_username(username):
-        return User.query.filter(User.username == username).first()
-
     def to_dict(self):
         return {
             "id": self.id,
@@ -67,6 +63,14 @@ class User(UserMixin, db.Model):
                 n: i.user_info for n, i in self.oauth_identity.items()
             }
         }
+
+    @classmethod
+    def find_by_username(cls, username):
+        return cls.query.filter(cls.username == username).first()
+
+    @classmethod
+    def all(cls):
+        return cls.query.all()
 
 
 class ApiKey(db.Model):
@@ -118,3 +122,7 @@ class ApiKey(db.Model):
     @classmethod
     def find(cls, api_key) -> ApiKey:
         return cls.query.filter(ApiKey.key == api_key).first()
+
+    @classmethod
+    def all(cls):
+        return cls.query.all()
