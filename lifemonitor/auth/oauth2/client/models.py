@@ -50,10 +50,11 @@ class OAuthIdentity(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey(User.id), nullable=False)
     provider_user_id = db.Column(db.String(256), nullable=False)
-    provider = db.Column(db.String, nullable=False)
+    provider_id = db.Column(db.Integer, db.ForeignKey("oauth2_identity_provider.id"), nullable=False)
     created_at = db.Column(DateTime, default=datetime.utcnow, nullable=False)
     token = db.Column(JSONB, nullable=True)
     user_info = db.Column(JSONB, nullable=True)
+    provider = db.relationship("OAuth2IdentityProvider", uselist=False, back_populates="identities")
     user = db.relationship(
         User,
         # This `backref` thing sets up an `oauth` property on the User model,
@@ -61,12 +62,12 @@ class OAuthIdentity(db.Model):
         # where the dictionary key is the OAuth provider name.
         backref=db.backref(
             "oauth_identity",
-            collection_class=attribute_mapped_collection("provider"),
+            collection_class=attribute_mapped_collection("provider.name"),
             cascade="all, delete-orphan",
         ),
     )
 
-    __table_args__ = (db.UniqueConstraint("provider", "provider_user_id"),)
+    __table_args__ = (db.UniqueConstraint("provider_id", "provider_user_id"),)
     __tablename__ = "oauth2_identity"
 
     def __repr__(self):
@@ -83,22 +84,22 @@ class OAuthIdentity(db.Model):
         db.session.commit()
 
     @staticmethod
-    def find_by_user_id(user_id, provider) -> OAuthIdentity:
+    def find_by_user_id(user_id, provider_name) -> OAuthIdentity:
         try:
-            return OAuthIdentity.query.filter_by(
-                user_id=user_id, provider=provider
-            ).one()
+            return OAuthIdentity.query\
+                .filter(OAuthIdentity.provider.has(name=provider_name))\
+                .filter_by(user_id=user_id).one()
         except NoResultFound:
-            raise OAuthIdentityNotFoundException(f"{user_id}_{provider}")
+            raise OAuthIdentityNotFoundException(f"{user_id}_{provider_name}")
 
     @staticmethod
-    def find_by_provider_user_id(provider_user_id, provider) -> OAuthIdentity:
+    def find_by_provider_user_id(provider_user_id, provider_name) -> OAuthIdentity:
         try:
-            return OAuthIdentity.query.filter_by(
-                provider=provider, provider_user_id=provider_user_id
-            ).one()
+            return OAuthIdentity.query\
+                .filter(OAuthIdentity.provider.has(name=provider_name))\
+                .filter_by(provider_user_id=provider_user_id).one()
         except NoResultFound:
-            raise OAuthIdentityNotFoundException(f"{provider}_{provider_user_id}")
+            raise OAuthIdentityNotFoundException(f"{provider_name}_{provider_user_id}")
 
     @classmethod
     def all(cls):
@@ -119,6 +120,8 @@ class OAuth2IdentityProvider(db.Model):
     _access_token_url = db.Column("access_token_url", db.String, nullable=False)
     access_token_params = db.Column(JSONB, nullable=True)
     userinfo_endpoint = db.Column(db.String, nullable=False)
+    identities = db.relationship("OAuthIdentity",
+                                 back_populates="provider", cascade="all, delete")
 
     __tablename__ = "oauth2_identity_provider"
     __mapper_args__ = {
@@ -193,6 +196,13 @@ class OAuth2IdentityProvider(db.Model):
             raise LifeMonitorException(f"ModuleNotFoundError: Unable to load module {m}")
         except AttributeError:
             raise LifeMonitorException(f"Unable to create an instance of WorkflowRegistryClient from module {m}")
+
+    def find_identity_by_provider_user_id(self, provider_user_id):
+        try:
+            return OAuthIdentity.query.with_parent(self)\
+                .filter_by(provider_user_id=provider_user_id).one()
+        except NoResultFound:
+            raise OAuthIdentityNotFoundException(f"{provider_user_id}@{self}")
 
     def save(self):
         db.session.add(self)

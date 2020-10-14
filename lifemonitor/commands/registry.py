@@ -107,7 +107,7 @@ def list_registries():
         else:
             print(f"\n Workflow Registries:\n{'*'*80}")
             for r in registries:
-                print(f"{r.uuid}, name='{r.name}', type={r.type}")
+                print(f"{r.uuid} (name='{r.name}', type={r.type})")
             print("\n")
     except Exception as e:
         try:

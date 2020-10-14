@@ -7,12 +7,13 @@ from authlib.integrations.flask_client import FlaskRemoteApp
 
 from flask import flash, url_for, redirect, request, session, Blueprint, current_app, abort
 from flask_login import current_user, login_user
-
+from lifemonitor import common
+from lifemonitor.db import db
 from lifemonitor.auth.models import User
 from .models import OAuthUserProfile, OAuthIdentity
 from .services import oauth2_registry, config_oauth2_registry
 from authlib.integrations.base_client.errors import OAuthError
-from lifemonitor.auth.oauth2.client.models import OAuthIdentityNotFoundException
+from lifemonitor.auth.oauth2.client.models import OAuth2IdentityProvider, OAuthIdentityNotFoundException
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
@@ -92,61 +93,68 @@ class AuthorizatonHandler:
         logger.debug("Remote: %r", provider.name)
         logger.debug("Acquired token: %r", token)
         logger.debug("Acquired user_info: %r", user_info)
+        # avoid autoflush in this session
+        with db.session.no_autoflush:
+            try:
+                p = OAuth2IdentityProvider.find(provider.name)
+                logger.debug("THe found provider: %r", p)
+            except common.EntityNotFoundException as e:
+                return common.report_problem_from_exception(e)
 
-        try:
-            identity = OAuthIdentity.find_by_provider_user_id(user_info.sub, provider.name)
-            logger.debug("Found OAuth identity <%r,%r>: %r",
-                         provider.name, user_info.sub, identity)
-            # update identity with the last token and userinfo
-            identity.user_info = user_info.to_dict()
-            identity.token = token
-        except OAuthIdentityNotFoundException:
-            logger.debug("Not found OAuth identity <%r,%r>", provider.name, user_info.sub)
-            identity = OAuthIdentity(
-                provider_user_id=user_info.sub,
-                provider=provider.name,
-                user_info=user_info.to_dict(),
-                token=token,
-            )
-
-        # Now, figure out what to do with this token. There are 2x2 options:
-        # user login state and token link state.
-        if current_user.is_anonymous:
-            # If the user is not logged in and the token is linked,
-            # log the identity user
-            if identity.user:
-                login_user(identity.user)
+            try:
+                identity = p.find_identity_by_provider_user_id(user_info.sub)
+                logger.debug("Found OAuth identity <%r,%r>: %r",
+                             provider.name, user_info.sub, identity)
+                # update identity with the last token and userinfo
+                identity.user_info = user_info.to_dict()
+                identity.token = token
+            except OAuthIdentityNotFoundException:
+                logger.debug("Not found OAuth identity <%r,%r>", provider.name, user_info.sub)
+                with db.session.no_autoflush:
+                    identity = OAuthIdentity(
+                        provider=p,
+                        user_info=user_info.to_dict(),
+                        provider_user_id=user_info.sub,
+                        token=token,
+                    )
+            # Now, figure out what to do with this token. There are 2x2 options:
+            # user login state and token link state.
+            if current_user.is_anonymous:
+                # If the user is not logged in and the token is linked,
+                # log the identity user
+                if identity.user:
+                    login_user(identity.user)
+                else:
+                    # If the user is not logged in and the token is unlinked,
+                    # create a new local user account and log that account in.
+                    # This means that one person can make multiple accounts, but it's
+                    # OK because they can merge those accounts later.
+                    user = User.find_by_username(user_info.preferred_username)
+                    if not user:
+                        user = User(username=user_info.preferred_username)
+                    identity.user = user
+                    identity.save()
+                    login_user(user)
+                    flash("OAuth identity linked to the current user account.")
             else:
-                # If the user is not logged in and the token is unlinked,
-                # create a new local user account and log that account in.
-                # This means that one person can make multiple accounts, but it's
-                # OK because they can merge those accounts later.
-                user = User.find_by_username(user_info.preferred_username)
-                if not user:
-                    user = User(username=user_info.preferred_username)
-                identity.user = user
+                if identity.user:
+                    # If the user is logged in and the token is linked, check if these
+                    # accounts are the same!
+                    if current_user != identity.user:
+                        # Account collision! Ask user if they want to merge accounts.
+                        return redirect(url_for(self.merge_view,
+                                                provider=identity.provider,
+                                                username=identity.user.username))
+                # If the user is logged in and the token is unlinked or linked yet,
+                # link the token to the current user
+                identity.user = current_user
                 identity.save()
-                login_user(user)
-                flash("OAuth identity linked to the current user account.")
-        else:
-            if identity.user:
-                # If the user is logged in and the token is linked, check if these
-                # accounts are the same!
-                if current_user != identity.user:
-                    # Account collision! Ask user if they want to merge accounts.
-                    return redirect(url_for(self.merge_view,
-                                            provider=identity.provider,
-                                            username=identity.user.username))
-            # If the user is logged in and the token is unlinked or linked yet,
-            # link the token to the current user
-            identity.user = current_user
-            identity.save()
-            flash("Successfully linked GitHub account.")
+                flash("Successfully linked GitHub account.")
 
-        # Determine the right next hop
-        next_url = flask.request.args.get('next')
-        logger.debug("Request redirect (next URL stored on the 'next' request param: %r)", next_url)
-        if not next_url:
-            next_url = flask.session.pop(_OAUTH2_NEXT_URL, False)
-            logger.debug("Request redirect (next URL stored on session: %r)", next_url)
-        return redirect(next_url or '/')
+            # Determine the right next hop
+            next_url = flask.request.args.get('next')
+            logger.debug("Request redirect (next URL stored on the 'next' request param: %r)", next_url)
+            if not next_url:
+                next_url = flask.session.pop(_OAUTH2_NEXT_URL, False)
+                logger.debug("Request redirect (next URL stored on session: %r)", next_url)
+            return redirect(next_url or '/')
