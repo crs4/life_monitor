@@ -22,11 +22,12 @@ class OAuthIdentityNotFoundException(EntityNotFoundException):
 
 class OAuthUserProfile:
 
-    def __init__(self, sub=None, name=None, email=None, preferred_username=None,
-                 profile=None, picture=None, website=None) -> None:
+    def __init__(self, sub=None, name=None, email=None, mbox_sha1sum=None,
+                 preferred_username=None, profile=None, picture=None, website=None) -> None:
         self.sub = sub
         self.name = name
         self.email = email
+        self.mbox_sha1sum = mbox_sha1sum
         self.preferred_username = preferred_username
         self.profile = profile
         self.picture = picture
@@ -34,7 +35,7 @@ class OAuthUserProfile:
 
     def to_dict(self):
         res = {}
-        for k in ['sub', 'name', 'email', 'preferred_username', 'profile', 'picture', 'website']:
+        for k in ['sub', 'name', 'email', 'mbox_sha1sum', 'preferred_username', 'profile', 'picture', 'website']:
             res[k] = getattr(self, k)
         return res
 

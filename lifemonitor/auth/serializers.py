@@ -5,7 +5,7 @@ from lifemonitor.serializers import ma, BaseSchema
 
 
 class ProviderSchema(BaseSchema):
-
+    uuid = fields.String()
     name = fields.String()
     type = fields.String()
     uri = fields.String(attribute="api_base_url")
@@ -13,9 +13,13 @@ class ProviderSchema(BaseSchema):
 
 
 class IdentitySchema(BaseSchema):
-    id = fields.String(attribute="user_info.sub")
+    sub = fields.String(attribute="user_info.sub")
+    iss = fields.String(attribute="provider.api_base_url")
+    email = fields.String(attribute="user_info.email")
+    mbox_sha1sum = fields.String(attribute="user_info.mbox_sha1sum")
+    profile = fields.String(attribute="user_info.profile")
+    picture = fields.String(attribute="user_info.picture")
     provider = fields.Nested(ProviderSchema())
-    user_profile = fields.Dict(attribute="user_info")
 
 
 class UserSchema(BaseSchema):
