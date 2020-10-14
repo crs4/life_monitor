@@ -1,13 +1,21 @@
 from __future__ import annotations
 from . import models
-
 from marshmallow import fields
 from lifemonitor.serializers import ma, BaseSchema
 
 
-class IdentitySchema(BaseSchema):
+class ProviderSchema(BaseSchema):
 
-    user_info = fields.Dict()
+    name = fields.String()
+    type = fields.String()
+    uri = fields.String(attribute="api_base_url")
+    userinfo_endpoint = fields.String()
+
+
+class IdentitySchema(BaseSchema):
+    id = fields.String(attribute="user_info.sub")
+    provider = fields.Nested(ProviderSchema())
+    user_profile = fields.Dict(attribute="user_info")
 
 
 class UserSchema(BaseSchema):
@@ -19,4 +27,8 @@ class UserSchema(BaseSchema):
 
     id = ma.auto_field()
     username = ma.auto_field()
-    identities = fields.Nested(IdentitySchema(), attribute="oauth_identity.values()", many=True)
+    identity = fields.Nested(IdentitySchema(), attribute="current_identity")
+    # Uncomment to include all identities
+    # identities = fields.Dict(attribute="oauth_identity",
+    #                          keys=fields.String(),
+    #                          values=fields.Nested(IdentitySchema()))
