@@ -4,6 +4,7 @@ from flask_bcrypt import generate_password_hash, check_password_hash
 from flask_login import UserMixin, AnonymousUserMixin
 from lifemonitor.db import db
 
+
 # Set the module level logger
 logger = logging.getLogger(__name__)
 
@@ -31,6 +32,15 @@ class User(UserMixin, db.Model):
 
     def get_user_id(self):
         return self.id
+
+    @property
+    def current_identity(self):
+        from .services import current_registry
+        if current_registry:
+            for i in self.oauth_identity.values():
+                if i.provider == current_registry.server_credentials:
+                    return i
+        return None
 
     @property
     def password(self):
