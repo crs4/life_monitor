@@ -10,7 +10,7 @@ info:
 servers:
   - url: /
     description: >
-      Version 0.1.0 of API.  Add version prefix (e.g, /v1.0) once we have something useful
+      Version 0.1.0 of API. Add version prefix (e.g, /v1.0) once we have something useful
 
 paths:
   /users:
@@ -157,7 +157,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
-
+  
   /workflows:
     get:
       x-openapi-router-controller: lifemonitor.api.controllers
@@ -774,7 +774,7 @@ components:
         - uri
     
     ListOfRegistries:
-          type: object
+      type: object
       properties:
         items:
           type: array
@@ -1051,7 +1051,7 @@ components:
           scopes:
             read: Read data and metadata (including that of private resources)
             write: Write data and metadata of private resources
-
+    
 
   examples:
     test_metadata:
