@@ -5,7 +5,6 @@ from marshmallow import fields
 from lifemonitor.serializers import ma, BaseSchema
 
 
-
 class WorkflowRegistrySchema(BaseSchema):
     __envelope__ = {"single": None, "many": "items"}
     __model__ = models.WorkflowRegistry

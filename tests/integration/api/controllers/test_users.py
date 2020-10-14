@@ -58,7 +58,7 @@ def test_get_current_user_no_authorized(app_client, client_auth_method, user1, u
     ClientAuthenticationMethod.CLIENT_CREDENTIALS,
     ClientAuthenticationMethod.REGISTRY_CODE_FLOW
 ], indirect=True)
-def test_get_registry_user(app_client, admin_user, 
+def test_get_registry_user(app_client, admin_user,
                            user1, user1_auth):
     response = app_client.get(utils.build_users_path(user1['user'].id), headers=user1_auth)
     utils.assert_status_code(200, response.status_code)
