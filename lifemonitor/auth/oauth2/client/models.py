@@ -71,6 +71,16 @@ class OAuthIdentity(db.Model):
     __table_args__ = (db.UniqueConstraint("provider_id", "provider_user_id"),)
     __tablename__ = "oauth2_identity"
 
+    def __init__(self, provider, user_info, provider_user_id, token):
+        self.provider = provider
+        self.provider_user_id = provider_user_id
+        self.user_info = user_info
+        self.token = token
+
+    @property
+    def username(self):
+        return f"{self.provider.name}_{self.user_info['sub']}"
+
     def __repr__(self):
         parts = []
         parts.append(self.__class__.__name__)
@@ -145,6 +155,10 @@ class OAuth2IdentityProvider(db.Model):
         self.access_token_url = access_token_url
         self.access_token_params = access_token_params
         self.userinfo_endpoint = urljoin(api_base_url, userinfo_endpoint)
+
+    @property
+    def type(self):
+        return self._type
 
     @hybrid_property
     def api_base_url(self):

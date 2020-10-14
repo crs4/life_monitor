@@ -184,7 +184,7 @@ def seek_user_session(application, index=None):
         login_r = session.get(f"{application.config.get('BASE_URL')}/oauth2/login/seek")
         logger.debug(login_r.content)
         assert login_r.status_code == 200, "Login Error: status code {} !!!".format(login_r.status_code)
-        return User.find_by_username(wfhub_user_info['id']), session, wfhub_user_info
+        return User.find_by_username(f"seek_{wfhub_user_info['id']}"), session, wfhub_user_info
 
 
 def get_user_session(application, provider, index=None):
