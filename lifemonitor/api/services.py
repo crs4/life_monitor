@@ -1,7 +1,7 @@
 from __future__ import annotations
 import logging
 import tempfile
-from typing import Union
+from typing import Union, List
 from lifemonitor.auth.models import User
 from lifemonitor.auth.oauth2.server import server
 from lifemonitor.auth.oauth2.client import providers
@@ -118,6 +118,16 @@ class LifeMonitor:
         return suite.uuid
 
     @staticmethod
+    def get_workflow_registry_by_uuid(registry_uuid) -> WorkflowRegistry:
+        try:
+            r = WorkflowRegistry.find_by_id(registry_uuid)
+            if not r:
+                raise EntityNotFoundException(WorkflowRegistry, registry_uuid)
+            return r
+        except Exception:
+            raise EntityNotFoundException(WorkflowRegistry, registry_uuid)
+
+    @staticmethod
     def get_workflow_registry_by_uri(registry_uri) -> WorkflowRegistry:
         try:
             r = WorkflowRegistry.find_by_uri(registry_uri)
@@ -126,6 +136,16 @@ class LifeMonitor:
             return r
         except Exception:
             raise EntityNotFoundException(WorkflowRegistry, registry_uri)
+
+    @staticmethod
+    def get_workflow_registry_by_name(registry_name) -> WorkflowRegistry:
+        try:
+            r = WorkflowRegistry.find_by_name(registry_name)
+            if not r:
+                raise EntityNotFoundException(WorkflowRegistry, registry_name)
+            return r
+        except Exception:
+            raise EntityNotFoundException(WorkflowRegistry, registry_name)
 
     @staticmethod
     def get_workflow(uuid, version) -> Workflow:
@@ -171,10 +191,6 @@ class LifeMonitor:
         if internal_id:
             return OAuthIdentity.find_by_user_id(internal_id, registry.name)
         return OAuthIdentity.find_by_provider_user_id(external_id, registry.name)
-
-    @staticmethod
-    def get_workflow_registry_by_name(name):
-        return WorkflowRegistry.find_by_name(name)
 
     @staticmethod
     def add_workflow_registry(type, name,
@@ -242,6 +258,5 @@ class LifeMonitor:
         return WorkflowRegistry.find_by_id(uuid)
 
     @staticmethod
-    def get_user_workflow_registries(user: User) -> WorkflowRegistry:
-        # FIXME
-        return WorkflowRegistry.all()
+    def get_workflow_registry_users(registry: WorkflowRegistry) -> List[User]:
+        return registry.get_users()
