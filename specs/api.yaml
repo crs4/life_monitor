@@ -43,7 +43,7 @@ paths:
       operationId: "get_registry_user"
       summary: "Get a user of the current registry"
       parameters:
-        - $ref: "#/components/parameters/user_id"      
+        - $ref: "#/components/parameters/user_id"
       security:
         - api_key: ["read"]
         - oauth2: ["read"]
@@ -157,7 +157,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
-  
+
   /workflows:
     get:
       x-openapi-router-controller: lifemonitor.api.controllers
@@ -742,12 +742,64 @@ components:
       properties:
         id:
           type: integer
+          description: An identifier for the user, unique among all LifeMonitor accounts and never reused
         username:
           type: string
-        identities:
-          type: array
+          description: The user's username, unique among all LifeMonitor accounts
+        identity:
+          $ref: "#/components/schemas/UserIdentity"
+          nullable: true
       required:
         - id
+
+    UserIdentity:
+      type: object
+      description: A user identity issued by an identity provider.
+      properties:
+        sub:
+          type: string
+          description: An identifier for the user, unique among all provider accounts and never reused
+        iss:
+          type: string
+          description: An identifier of the provider issuer of the identity.
+        email:
+          type: string
+          description: The user's email address
+          nullable: true
+        mbox_sha1sum:
+          type: string
+          description: >
+            The textual representation of the result of applying the SHA1 mathematical functional 
+            to a 'mailto:' identifier (URI) for an Internet mailbox
+          nullable: true
+        profile:
+          type: string
+          description: The URL of the user's profile page
+        picture:
+          type: string
+          description: The URL of the user's profile picture.
+          nullable: true
+        provider:
+          $ref: "#/components/schemas/IdentityProvider"
+      required:
+        - sub
+        - iss
+        - profile
+        - provider
+
+    IdentityProvider:
+      type: object
+      properties:
+        type:
+          type: string
+        name:
+          type: string
+        uri:
+          type: string
+      required:
+        - name
+        - type
+        - uri
 
     ListOfUsers:
       type: object
@@ -772,7 +824,7 @@ components:
         - uuid
         - name
         - uri
-    
+
     ListOfRegistries:
       type: object
       properties:
@@ -782,7 +834,7 @@ components:
             $ref: "#/components/schemas/Registry"
       required:
         - items
-    
+
     Timestamp:
       type: string
 
@@ -1051,7 +1103,6 @@ components:
           scopes:
             read: Read data and metadata (including that of private resources)
             write: Write data and metadata of private resources
-    
 
   examples:
     test_metadata:
