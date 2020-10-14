@@ -184,7 +184,7 @@ def seek_user_session(application, index=None):
         login_r = session.get(f"{application.config.get('BASE_URL')}/oauth2/login/seek")
         logger.debug(login_r.content)
         assert login_r.status_code == 200, "Login Error: status code {} !!!".format(login_r.status_code)
-        return User.find_by_username(wfhub_user_info['id']), session, wfhub_user_info
+        return User.find_by_username(f"seek_{wfhub_user_info['id']}"), session, wfhub_user_info
 
 
 def get_user_session(application, provider, index=None):
@@ -362,13 +362,13 @@ def get_user_auth_headers(_auth_method, _application, _registry, _user, _session
                                      _user, _session)
 
 
-def create_client_credentials_registry(_app_settings, _admin_user):
+def create_client_credentials_registry(_app_settings, _admin_user, name='seek'):
     lm = LifeMonitor.get_instance()
     try:
-        return lm.get_workflow_registry_by_uri(_app_settings.get('SEEK_API_BASE_URL'))
+        return lm.get_workflow_registry_by_name(name)
     except Exception:
         return LifeMonitor.get_instance().add_workflow_registry(
-            "seek", "seek",
+            "seek", name,
             _app_settings.get('SEEK_CLIENT_ID'),
             _app_settings.get('SEEK_CLIENT_SECRET'),
             _app_settings.get('SEEK_API_BASE_URL'),

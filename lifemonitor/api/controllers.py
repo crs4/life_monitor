@@ -24,6 +24,29 @@ def _row_to_dict(row):
     return d
 
 
+# @authorized
+def workflow_registries_get():
+    registries = lm.get_workflow_registries()
+    logger.debug("registries_get. Got %s registries", len(registries))
+    return serializers.WorkflowRegistrySchema().dump(registries, many=True)
+
+
+# @authorized
+def workflow_registries_get_by_uuid(registry_uuid):
+    registry = lm.get_workflow_registry_by_uuid(registry_uuid)
+    logger.debug("registries_get. Got %s registry", registry)
+    return serializers.WorkflowRegistrySchema().dump(registry)
+
+
+@authorized
+def workflow_registries_get_current():
+    if current_registry:
+        registry = current_registry
+        logger.debug("registries_get. Got %s registry", registry)
+        return serializers.WorkflowRegistrySchema().dump(registry)
+    return report_problem(401, "Unauthorized")
+
+
 @authorized
 def workflows_post(body):
     registry = current_registry
@@ -57,7 +80,6 @@ def workflows_post(body):
                                   detail=messages.no_user_oauth_identity_on_registry
                                   .format(submitter_id or current_user.id, registry.name))
     try:
-
         w = lm.register_workflow(
             workflow_registry=registry,
             workflow_submitter=submitter,

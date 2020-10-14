@@ -22,11 +22,12 @@ class OAuthIdentityNotFoundException(EntityNotFoundException):
 
 class OAuthUserProfile:
 
-    def __init__(self, sub=None, name=None, email=None, preferred_username=None,
-                 profile=None, picture=None, website=None) -> None:
+    def __init__(self, sub=None, name=None, email=None, mbox_sha1sum=None,
+                 preferred_username=None, profile=None, picture=None, website=None) -> None:
         self.sub = sub
         self.name = name
         self.email = email
+        self.mbox_sha1sum = mbox_sha1sum
         self.preferred_username = preferred_username
         self.profile = profile
         self.picture = picture
@@ -34,7 +35,7 @@ class OAuthUserProfile:
 
     def to_dict(self):
         res = {}
-        for k in ['sub', 'name', 'email', 'preferred_username', 'profile', 'picture', 'website']:
+        for k in ['sub', 'name', 'email', 'mbox_sha1sum', 'preferred_username', 'profile', 'picture', 'website']:
             res[k] = getattr(self, k)
         return res
 
@@ -69,6 +70,16 @@ class OAuthIdentity(db.Model):
 
     __table_args__ = (db.UniqueConstraint("provider_id", "provider_user_id"),)
     __tablename__ = "oauth2_identity"
+
+    def __init__(self, provider, user_info, provider_user_id, token):
+        self.provider = provider
+        self.provider_user_id = provider_user_id
+        self.user_info = user_info
+        self.token = token
+
+    @property
+    def username(self):
+        return f"{self.provider.name}_{self.user_info['sub']}"
 
     def __repr__(self):
         parts = []
@@ -144,6 +155,10 @@ class OAuth2IdentityProvider(db.Model):
         self.access_token_url = access_token_url
         self.access_token_params = access_token_params
         self.userinfo_endpoint = urljoin(api_base_url, userinfo_endpoint)
+
+    @property
+    def type(self):
+        return self._type
 
     @hybrid_property
     def api_base_url(self):

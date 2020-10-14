@@ -5,6 +5,25 @@ from marshmallow import fields
 from lifemonitor.serializers import ma, BaseSchema
 
 
+class WorkflowRegistrySchema(BaseSchema):
+    __envelope__ = {"single": None, "many": "items"}
+    __model__ = models.WorkflowRegistry
+
+    class Meta:
+        model = models.WorkflowRegistry
+
+    uuid = ma.auto_field()
+    uri = ma.auto_field()
+    type = ma.auto_field()
+    name = fields.String(attributes="server_credentials.name")
+
+
+class ListOfWorkflowRegistriesSchema(BaseSchema):
+    __envelope__ = {"single": None, "many": "items"}
+
+    items = fields.Nested(WorkflowRegistrySchema(), many=True)
+
+
 class WorkflowSchema(BaseSchema):
     __envelope__ = {"single": None, "many": "items"}
     __model__ = models.Workflow

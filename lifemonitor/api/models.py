@@ -4,7 +4,7 @@ import re
 import logging
 import jenkins
 import uuid as _uuid
-from typing import Union
+from typing import Union, List
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Optional
@@ -121,8 +121,23 @@ class WorkflowRegistry(db.Model):
     def download_url(self, url, user, target_path=None):
         return self.client.download_url(url, user, target_path=target_path)
 
-    def get_users(self):
-        pass
+    @property
+    def users(self) -> List[User]:
+        return self.get_users()
+
+    def get_user(self, user_id) -> User:
+        for u in self.users:
+            logger.debug(f"Checking {u.id} {user_id}")
+            if u.id == user_id:
+                return u
+        raise EntityNotFoundException(User, entity_id=user_id)
+
+    def get_users(self) -> List[User]:
+        try:
+            return [i.user for i in OAuthIdentity.query
+                    .filter(OAuthIdentity.provider == self.server_credentials).all()]
+        except Exception as e:
+            raise EntityNotFoundException(e)
 
     def add_workflow(self, workflow_uuid, workflow_version,
                      workflow_submitter: User,

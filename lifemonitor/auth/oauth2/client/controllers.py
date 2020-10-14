@@ -25,7 +25,8 @@ def create_blueprint(merge_identity_view):
     authorization_handler = AuthorizatonHandler(merge_identity_view)
 
     def _handle_authorize(provider: FlaskRemoteApp, token, user_info):
-        return authorization_handler.handle_authorize(provider, token, OAuthUserProfile.from_dict(user_info))
+        return authorization_handler\
+            .handle_authorize(provider, token, OAuthUserProfile.from_dict(user_info))
 
     blueprint = Blueprint('oauth2provider', __name__)
 
@@ -129,9 +130,9 @@ class AuthorizatonHandler:
                     # create a new local user account and log that account in.
                     # This means that one person can make multiple accounts, but it's
                     # OK because they can merge those accounts later.
-                    user = User.find_by_username(user_info.preferred_username)
+                    user = User.find_by_username(identity.username)
                     if not user:
-                        user = User(username=user_info.preferred_username)
+                        user = User(username=identity.username)
                     identity.user = user
                     identity.save()
                     login_user(user)

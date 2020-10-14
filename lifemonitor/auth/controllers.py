@@ -1,11 +1,12 @@
 import logging
 
 import flask
-from flask import flash, url_for, request, render_template, redirect, jsonify
+from flask import flash, url_for, request, render_template, redirect
 from flask_login import login_required, login_user, logout_user
 from .. import common
 from .forms import RegisterForm, LoginForm, SetPasswordForm
 from .models import db
+from . import serializers
 from .oauth2.client.services import merge_users, get_providers
 from .services import authorized, login_manager, current_registry, current_user
 
@@ -24,13 +25,21 @@ login_manager.login_view = "auth.login"
 @authorized
 def show_current_user_profile():
     if current_user and not current_user.is_anonymous:
-        return jsonify(current_user.to_dict())
-    elif current_registry:
-        return jsonify({
-            'uuid': current_registry.uuid,
-            'name': current_registry.name,
-            'uri': current_registry.uri
-        })
+        return serializers.UserSchema().dump(current_user)
+    raise common.Forbidden(detail="Client type unknown")
+
+
+@authorized
+def get_registry_users():
+    if current_registry and current_user.is_anonymous:
+        return serializers.UserSchema().dump(current_registry.users, many=True)
+    raise common.Forbidden(detail="Client type unknown")
+
+
+@authorized
+def get_registry_user(user_id):
+    if current_registry:
+        return serializers.UserSchema().dump(current_registry.get_user(user_id))
     raise common.Forbidden(detail="Client type unknown")
 
 
