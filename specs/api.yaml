@@ -1,22 +1,76 @@
 # vim: set et sw=2
 
 openapi: "3.0.0"
+
 info:
-  version: "0.0.1"
+  version: "0.1.0"
   title: "Life Monitor API"
   description: "Workflow sustainability service"
 
 servers:
   - url: /
     description: >
-      Version 0.0 of API.  Add version prefix (e.g, /v1.0) once we have something useful
+      Version 0.1.0 of API.  Add version prefix (e.g, /v1.0) once we have something useful
 
 paths:
-  /me:
+  /users:
+    get:
+      x-openapi-router-controller: lifemonitor.auth.controllers
+      operationId: "get_registry_users"
+      summary: "Get users of the current registry"
+      security:
+        - api_key: ["read"]
+        - oauth2: ["read"]
+      responses:
+        "200":
+          description: List of registry users
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListOfUsers"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /users/{user_id}:
+    get:
+      x-openapi-router-controller: lifemonitor.auth.controllers
+      operationId: "get_registry_user"
+      summary: "Get a user of the current registry"
+      parameters:
+        - $ref: "#/components/parameters/user_id"      
+      security:
+        - api_key: ["read"]
+        - oauth2: ["read"]
+      responses:
+        "200":
+          description: Get a registry user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /users/current:
     get:
       x-openapi-router-controller: lifemonitor.auth.controllers
       operationId: "show_current_user_profile"
       summary: "Get the profile of the current logged user"
+      security:
+        - api_key: ["read"]
+        - oauth2: ["read"]
       responses:
         "200":
           description: User profile info
@@ -24,6 +78,85 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /registries:
+    get:
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "workflow_registries_get"
+      summary: "Get users of the current registry"
+      responses:
+        "200":
+          description: List of workflow registries
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListOfRegistries"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /registries/{registry_uuid}:
+    get:
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "workflow_registries_get_by_uuid"
+      summary: "Get users of the current registry"
+      parameters:
+        - $ref: "#/components/parameters/registry_uuid"
+      security:
+        - api_key: ["read"]
+        - oauth2: ["read"]
+      responses:
+        "200":
+          description: Get a workflow registry by uuid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Registry"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /registries/current:
+    get:
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "workflow_registries_get_current"
+      summary: "Get the current registry"
+      security:
+        - api_key: ["read"]
+        - oauth2: ["read"]
+      responses:
+        "200":
+          description: Current workflow registry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Registry"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /workflows:
     get:
@@ -500,6 +633,20 @@ paths:
 
 components:
   parameters:
+    registry_uuid:
+      name: "registry_uuid"
+      description: "Workflow Registry's Unique identifier"
+      in: path
+      schema:
+        type: string
+      required: true
+    user_id:
+      name: "user_id"
+      description: "User's Unique identifier"
+      in: path
+      schema:
+        type: integer
+      required: true
     wf_uuid:
       name: "wf_uuid"
       description: "Workflow's Unique identifier"
@@ -594,13 +741,48 @@ components:
       type: object
       properties:
         id:
-          type: string
+          type: integer
         username:
           type: string
         identities:
-          type: object
+          type: array
       required:
         - id
+
+    ListOfUsers:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
+      required:
+        - items
+
+    Registry:
+      type: object
+      properties:
+        uuid:
+          type: string
+        name:
+          type: string
+        uri:
+          type: string
+      required:
+        - uuid
+        - name
+        - uri
+    
+    ListOfRegistries:
+          type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Registry"
+      required:
+        - items
+    
     Timestamp:
       type: string
 
@@ -859,11 +1041,17 @@ components:
       x-tokenInfoFunc: lifemonitor.auth.oauth2.server.services.get_token_scopes
       flows:
         authorizationCode:
-          tokenUrl: "oauth/token"
-          authorizationUrl: "oauth/authorize"
+          tokenUrl: "/oauth2/token"
+          authorizationUrl: "/oauth2/authorize"
           scopes:
             read: Read data and metadata (including that of private resources)
             write: Write data and metadata of private resources
+        clientCredentials:
+          tokenUrl: "/oauth2/token"
+          scopes:
+            read: Read data and metadata (including that of private resources)
+            write: Write data and metadata of private resources
+
 
   examples:
     test_metadata:
