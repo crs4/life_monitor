@@ -5,9 +5,23 @@ from lifemonitor.api.services import LifeMonitor
 
 logger = logging.getLogger(__name__)
 
+_USERS_ENDPOINT = '/users'
+_REGISTRIES_ENDPOINT = '/registries'
 _WORKFLOWS_ENDPOINT = '/workflows'
 _SUITES_ENDPOINT = '/suites'
 _INSTANCES_ENDPOINT = '/instances'
+
+
+def build_users_path(user_id=None):
+    if user_id:
+        return f"{_USERS_ENDPOINT}/{user_id}"
+    return _USERS_ENDPOINT
+
+
+def build_registries_path(registry_uuid=None):
+    if registry_uuid:
+        return f"{_REGISTRIES_ENDPOINT}/{registry_uuid}"
+    return _REGISTRIES_ENDPOINT
 
 
 def build_workflow_path(workflow=None):

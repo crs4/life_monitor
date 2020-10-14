@@ -362,13 +362,13 @@ def get_user_auth_headers(_auth_method, _application, _registry, _user, _session
                                      _user, _session)
 
 
-def create_client_credentials_registry(_app_settings, _admin_user):
+def create_client_credentials_registry(_app_settings, _admin_user, name='seek'):
     lm = LifeMonitor.get_instance()
     try:
-        return lm.get_workflow_registry_by_uri(_app_settings.get('SEEK_API_BASE_URL'))
+        return lm.get_workflow_registry_by_name(name)
     except Exception:
         return LifeMonitor.get_instance().add_workflow_registry(
-            "seek", "seek",
+            "seek", name,
             _app_settings.get('SEEK_CLIENT_ID'),
             _app_settings.get('SEEK_CLIENT_SECRET'),
             _app_settings.get('SEEK_API_BASE_URL'),

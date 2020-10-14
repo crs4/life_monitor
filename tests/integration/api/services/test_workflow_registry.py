@@ -5,6 +5,7 @@ import pathlib
 from lifemonitor.api.services import LifeMonitor
 from lifemonitor.api.models import WorkflowRegistry
 from sqlalchemy import exc as sql_exceptions
+from tests.conftest_types import ClientAuthenticationMethod
 from lifemonitor.common import (
     WorkflowRegistryNotSupportedException
 )
@@ -74,3 +75,46 @@ def test_workflow_registry_update(app_client, provider_type, random_string, fake
             "Unexpected redirect_uri URI"
     except Exception as e:
         logger.exception(e)
+
+
+def test_workflow_registry_no_user(app_client, provider_type, random_string, fake_uri):
+    registry = LifeMonitor.get_instance().get_workflow_registry_by_name('seek')
+    assert isinstance(registry, WorkflowRegistry), "Unexpected object instance"
+    assert len(registry.get_users()) == 0, "Unexpected number of users"
+
+
+@pytest.mark.parametrize("client_auth_method", [
+    ClientAuthenticationMethod.REGISTRY_CODE_FLOW
+], indirect=True)
+def test_workflow_registry_one_user(app_client, user1, user1_auth,
+                                    provider_type, random_string, fake_uri):
+    registry = LifeMonitor.get_instance().get_workflow_registry_by_name('seek')
+    assert isinstance(registry, WorkflowRegistry), "Unexpected object instance"
+    assert isinstance(registry, WorkflowRegistry), "Unexpected object instance"
+    logger.debug("Create registry: %r", registry)
+    assert len(registry.get_users()) == 1, "Unexpected number of users"
+
+
+@pytest.mark.parametrize("client_auth_method", [
+    ClientAuthenticationMethod.REGISTRY_CODE_FLOW
+], indirect=True)
+def test_workflow_registry_two_users(app_client, user1_auth, user2_auth,
+                                     provider_type, random_string, fake_uri):
+    registry = LifeMonitor.get_instance().get_workflow_registry_by_name('seek')
+    assert isinstance(registry, WorkflowRegistry), "Unexpected object instance"
+    assert isinstance(registry, WorkflowRegistry), "Unexpected object instance"
+    logger.debug("Create registry: %r", registry)
+    assert len(registry.get_users()) == 2, "Unexpected number of users"
+
+
+@pytest.mark.parametrize("client_auth_method", [
+    ClientAuthenticationMethod.REGISTRY_CODE_FLOW
+], indirect=True)
+def test_workflow_registries_one_user(app_client, user1_auth, fake_registry,
+                                      provider_type, random_string, fake_uri):
+    registry = LifeMonitor.get_instance().get_workflow_registry_by_name('seek')
+    assert isinstance(registry, WorkflowRegistry), "Unexpected object instance"
+    assert isinstance(registry, WorkflowRegistry), "Unexpected object instance"
+    logger.debug("Create registry: %r", registry)
+    assert len(registry.get_users()) == 1, "Unexpected number of users"
+    assert len(fake_registry.get_users()) == 0, "Unexpected number of users"

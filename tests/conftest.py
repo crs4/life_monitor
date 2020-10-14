@@ -8,6 +8,7 @@ import string
 import logging
 from lifemonitor import auth
 import lifemonitor.db as lm_db
+from lifemonitor.api.services import LifeMonitor
 from lifemonitor.api.models import User, TestSuite
 from . import conftest_helpers as helpers
 from .conftest_types import ClientAuthenticationMethod, RegistryType
@@ -220,6 +221,12 @@ def suite_uuid():
 @pytest.fixture
 def client_credentials_registry(app_settings, app_context, admin_user):
     return helpers.get_registry(app_settings, admin_user)
+
+
+@pytest.fixture
+def fake_registry(app_settings, admin_user, random_string, fake_uri):
+    return LifeMonitor.get_instance().add_workflow_registry(
+        "seek", random_string, random_string, random_string, fake_uri)
 
 
 @pytest.fixture
