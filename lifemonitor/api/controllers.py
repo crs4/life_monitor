@@ -80,7 +80,6 @@ def workflows_post(body):
                                   detail=messages.no_user_oauth_identity_on_registry
                                   .format(submitter_id or current_user.id, registry.name))
     try:
-
         w = lm.register_workflow(
             workflow_registry=registry,
             workflow_submitter=submitter,
