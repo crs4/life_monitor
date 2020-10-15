@@ -150,7 +150,7 @@ class AuthorizatonHandler:
                 # link the token to the current user
                 identity.user = current_user
                 identity.save()
-                flash("Successfully linked GitHub account.")
+                flash(f"Your account has successfully been linked to the identity {identity}.")
 
             # Determine the right next hop
             next_url = flask.request.args.get('next')
