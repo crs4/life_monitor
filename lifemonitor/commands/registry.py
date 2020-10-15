@@ -46,8 +46,12 @@ CALLBACK URL: <LIFE_MONITOR_BASE_URL>/oauth2/authorized/{registry.name}[?next=<U
 @click.argument("api-url")
 @click.option("--redirect-uris", default=None,
               help="Redirect URIs (comma separated) to be used with authorization code flow")
+@click.option("--client-auth-method",
+              help="Specifies the method used for authenticating the registry with LifeMonitor",
+              type=click.Choice(['client_secret_basic', 'client_secret_post']),
+              default='client_secret_post')
 @with_appcontext
-def add_registry(name, type, client_id, client_secret, api_url, redirect_uris):
+def add_registry(name, type, client_id, client_secret, client_auth_method, api_url, redirect_uris):
     """
     Add a new workflow registry and generate its OAuth2 credentials
     """
@@ -55,7 +59,10 @@ def add_registry(name, type, client_id, client_secret, api_url, redirect_uris):
         # At the moment client_credentials of registries
         # are associated with the admin account
         registry = lm.add_workflow_registry(type, name,
-                                            client_id, client_secret, api_url, redirect_uris)
+                                            client_id, client_secret,
+                                            client_auth_method=client_auth_method,
+                                            api_base_url=api_url,
+                                            redirect_uris=redirect_uris)
         logger.info("Registry '%s' created!" % name)
         print_registry_info(registry)
     except Exception as e:
@@ -77,15 +84,25 @@ def add_registry(name, type, client_id, client_secret, api_url, redirect_uris):
 @click.option("--api-url", default=None, help="Base URL of the registry")
 @click.option("--redirect-uris", default=None,
               help="Redirect URIs (comma separated) to be used with authorization code flow")
+@click.option("--client-auth-method",
+              help="Specifies the method used for authenticating the registry with LifeMonitor",
+              type=click.Choice(['client_secret_basic', 'client_secret_post']),
+              default=None)
 @with_appcontext
-def update_registry(uuid, name, client_id, client_secret, api_url, redirect_uris):
+def update_registry(uuid, name,
+                    client_id, client_secret, client_auth_method,
+                    api_url, redirect_uris):
     """
     Update a workflow registry
     """
     try:
-        registry = lm.update_workflow_registry(uuid, name,
-                                               client_id, client_secret, api_url,
-                                               redirect_uris)
+        registry = lm.update_workflow_registry(uuid,
+                                               name=name,
+                                               client_id=client_id,
+                                               client_secret=client_secret,
+                                               client_auth_method=client_auth_method,
+                                               api_base_url=api_url,
+                                               redirect_uris=redirect_uris)
         logger.info("Registry '%s' updated!" % name)
         print_registry_info(registry)
     except Exception as e:

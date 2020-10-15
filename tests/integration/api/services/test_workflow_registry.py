@@ -20,7 +20,8 @@ def test_workflow_registry_registration(app_client, provider_type,
                                         random_string, fake_uri):
     redirect_uris = f"{fake_uri},{fake_uri}"
     registry = LifeMonitor.get_instance().add_workflow_registry(
-        provider_type.value, random_string, random_string, random_string, fake_uri, redirect_uris)
+        provider_type.value, random_string, random_string, random_string,
+        api_base_url=fake_uri, redirect_uris=redirect_uris)
 
     assert isinstance(registry, WorkflowRegistry), "Unexpected object instance"
     logger.debug("Create registry: %r", registry)
@@ -43,13 +44,13 @@ def test_workflow_registry_registration_error_exists(app_client, provider_type,
                                                      random_string, fake_uri):
     registry = LifeMonitor.get_instance().add_workflow_registry(
         provider_type.value, random_string,
-        random_string, random_string, fake_uri)
+        random_string, random_string, api_base_url=fake_uri)
 
     assert isinstance(registry, WorkflowRegistry), "Unexpected object instance"
     with pytest.raises(sql_exceptions.IntegrityError):
         LifeMonitor.get_instance().add_workflow_registry(
             provider_type.value,
-            random_string, random_string, random_string, fake_uri)
+            random_string, random_string, random_string, api_base_url=fake_uri)
 
 
 def test_workflow_registry_update(app_client, provider_type, random_string, fake_uri):

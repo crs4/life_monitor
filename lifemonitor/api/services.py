@@ -194,7 +194,7 @@ class LifeMonitor:
 
     @staticmethod
     def add_workflow_registry(type, name,
-                              client_id, client_secret,
+                              client_id, client_secret, client_auth_method="client_secret_post",
                               api_base_url=None, redirect_uris=None) -> WorkflowRegistry:
         try:
             # At the moment client_credentials of registries
@@ -215,7 +215,7 @@ class LifeMonitor:
                                      redirect_uris.split(',')
                                      if isinstance(redirect_uris, str)
                                      else redirect_uris,
-                                     "client_secret_post", commit=False)
+                                     client_auth_method, commit=False)
             registry = WorkflowRegistry.new_instance(type, client_credentials, server_credentials)
             registry.save()
             logger.debug(f"WorkflowRegistry '{name}' (type: {type})' created: {registry}")
@@ -225,7 +225,7 @@ class LifeMonitor:
 
     @staticmethod
     def update_workflow_registry(uuid, name=None,
-                                 client_id=None, client_secret=None,
+                                 client_id=None, client_secret=None, client_auth_method=None,
                                  api_base_url=None, redirect_uris=None) -> WorkflowRegistry:
         try:
             registry = WorkflowRegistry.find_by_id(uuid)
@@ -243,6 +243,8 @@ class LifeMonitor:
                 registry.server_credentials.client_secret = client_secret
             if redirect_uris:
                 registry.client_credentials.redirect_uris = redirect_uris
+            if client_auth_method:
+                registry.client_credentials.auth_method = client_auth_method
             registry.save()
             logger.info(f"WorkflowRegistry '{uuid}' (name: {name})' updated!")
             return registry

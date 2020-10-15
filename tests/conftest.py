@@ -226,7 +226,7 @@ def client_credentials_registry(app_settings, app_context, admin_user):
 @pytest.fixture
 def fake_registry(app_settings, admin_user, random_string, fake_uri):
     return LifeMonitor.get_instance().add_workflow_registry(
-        "seek", random_string, random_string, random_string, fake_uri)
+        "seek", random_string, random_string, random_string, api_base_url=fake_uri)
 
 
 @pytest.fixture

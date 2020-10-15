@@ -371,7 +371,7 @@ def create_client_credentials_registry(_app_settings, _admin_user, name='seek'):
             "seek", name,
             _app_settings.get('SEEK_CLIENT_ID'),
             _app_settings.get('SEEK_CLIENT_SECRET'),
-            _app_settings.get('SEEK_API_BASE_URL'),
+            api_base_url=_app_settings.get('SEEK_API_BASE_URL'),
             redirect_uris=_fake_callback_uri())
 
 

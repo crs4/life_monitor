@@ -43,6 +43,16 @@ class Client(db.Model, OAuth2ClientMixin):
         metadata['redirect_uris'] = value
         self.set_client_metadata(metadata)
 
+    @property
+    def auth_method(self):
+        return self.client_metadata.get('token_endpoint_auth_method')
+
+    @auth_method.setter
+    def auth_method(self, value):
+        metadata = self.client_metadata
+        metadata['token_endpoint_auth_method'] = value
+        self.set_client_metadata(metadata)
+
     @classmethod
     def find_by_id(cls, client_id) -> Client:
         return cls.query.get(client_id)
