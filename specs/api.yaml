@@ -759,32 +759,10 @@ components:
         sub:
           type: string
           description: An identifier for the user, unique among all provider accounts and never reused
-        iss:
-          type: string
-          description: An identifier of the provider issuer of the identity.
-        email:
-          type: string
-          description: The user's email address
-          nullable: true
-        mbox_sha1sum:
-          type: string
-          description: >
-            The textual representation of the result of applying the SHA1 mathematical functional 
-            to a 'mailto:' identifier (URI) for an Internet mailbox
-          nullable: true
-        profile:
-          type: string
-          description: The URL of the user's profile page
-        picture:
-          type: string
-          description: The URL of the user's profile picture.
-          nullable: true
         provider:
           $ref: "#/components/schemas/IdentityProvider"
       required:
         - sub
-        - iss
-        - profile
         - provider
 
     IdentityProvider:

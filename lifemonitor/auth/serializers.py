@@ -14,11 +14,11 @@ class ProviderSchema(BaseSchema):
 
 class IdentitySchema(BaseSchema):
     sub = fields.String(attribute="user_info.sub")
-    iss = fields.String(attribute="provider.api_base_url")
-    email = fields.String(attribute="user_info.email")
-    mbox_sha1sum = fields.String(attribute="user_info.mbox_sha1sum")
-    profile = fields.String(attribute="user_info.profile")
-    picture = fields.String(attribute="user_info.picture")
+    # iss = fields.String(attribute="provider.api_base_url")
+    # email = fields.String(attribute="user_info.email")
+    # mbox_sha1sum = fields.String(attribute="user_info.mbox_sha1sum")
+    # profile = fields.String(attribute="user_info.profile")
+    # picture = fields.String(attribute="user_info.picture")
     provider = fields.Nested(ProviderSchema())
 
 
