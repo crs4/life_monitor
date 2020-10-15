@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+import requests
 from typing import List
 from datetime import datetime
 from sqlalchemy import DateTime
@@ -12,6 +14,8 @@ from lifemonitor.db import db
 from importlib import import_module
 from lifemonitor.auth.models import User
 from lifemonitor.common import EntityNotFoundException, LifeMonitorException
+
+logger = logging.getLogger(__name__)
 
 
 class OAuthIdentityNotFoundException(EntityNotFoundException):
@@ -54,7 +58,7 @@ class OAuthIdentity(db.Model):
     provider_id = db.Column(db.Integer, db.ForeignKey("oauth2_identity_provider.id"), nullable=False)
     created_at = db.Column(DateTime, default=datetime.utcnow, nullable=False)
     token = db.Column(JSONB, nullable=True)
-    user_info = db.Column(JSONB, nullable=True)
+    _user_info = None
     provider = db.relationship("OAuth2IdentityProvider", uselist=False, back_populates="identities")
     user = db.relationship(
         User,
@@ -74,12 +78,22 @@ class OAuthIdentity(db.Model):
     def __init__(self, provider, user_info, provider_user_id, token):
         self.provider = provider
         self.provider_user_id = provider_user_id
-        self.user_info = user_info
+        self._user_info = user_info
         self.token = token
 
     @property
     def username(self):
-        return f"{self.provider.name}_{self.user_info['sub']}"
+        return f"{self.provider.name}_{self.provider_user_id}"
+
+    @property
+    def user_info(self):
+        if not self._user_info:
+            self._user_info = self.provider.get_user_info(self.provider_user_id, self.token)
+        return self._user_info
+
+    @user_info.setter
+    def user_info(self, value):
+        self._user_info = value
 
     def __repr__(self):
         parts = []
@@ -159,6 +173,11 @@ class OAuth2IdentityProvider(db.Model):
     @property
     def type(self):
         return self._type
+
+    def get_user_info(self, provider_user_id, token, normalized=True):
+        data = requests.get(urljoin(self.api_base_url, self.userinfo_endpoint),
+                            headers={'Authorization': f'Bearer {token}'})
+        return data if not normalized else self.normalize_userinfo(None, data)
 
     @hybrid_property
     def api_base_url(self):

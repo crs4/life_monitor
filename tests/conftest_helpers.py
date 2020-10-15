@@ -11,6 +11,7 @@ import lifemonitor.db as lm_db
 from lifemonitor.app import create_app, initialize_app
 from lifemonitor.auth.services import generate_new_api_key
 from lifemonitor.auth.models import User
+from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 from lifemonitor.api.models import WorkflowRegistry
 from lifemonitor.api.services import LifeMonitor
 
@@ -184,7 +185,7 @@ def seek_user_session(application, index=None):
         login_r = session.get(f"{application.config.get('BASE_URL')}/oauth2/login/seek")
         logger.debug(login_r.content)
         assert login_r.status_code == 200, "Login Error: status code {} !!!".format(login_r.status_code)
-        return User.find_by_username(f"seek_{wfhub_user_info['id']}"), session, wfhub_user_info
+        return OAuthIdentity.find_by_provider_user_id(wfhub_user_info['id'], 'seek').user, session, wfhub_user_info
 
 
 def get_user_session(application, provider, index=None):

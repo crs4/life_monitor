@@ -1,4 +1,7 @@
 import logging
+import requests
+from urllib.parse import urljoin
+from lifemonitor import common
 from ..models import OAuth2IdentityProvider
 
 # Config a module level logger
@@ -48,6 +51,18 @@ class Seek(OAuth2IdentityProvider):
             'website': '',
         }
         return params
+
+    def get_user_info(self, provider_user_id, token, normalized=True):
+        response = requests.get(urljoin(self.api_base_url,
+                                        f'/people/{provider_user_id}?format=json'),
+                                headers={'Authorization': f'Bearer {token["access_token"]}'})
+        user_info = response.json()
+        if response.status_code != 200:
+            raise common.LifeMonitorException(
+                title="Not found",
+                status=response.status_code, detail="Unable to get user data",
+                errors=user_info['errors'])
+        return user_info['data'] if not normalized else self.normalize_userinfo(None, user_info)
 
 
 def refresh_oauth2_token(func):
