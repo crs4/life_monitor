@@ -36,7 +36,7 @@ def update_token(name, token, refresh_token=None, access_token=None):
         return
 
     # update old token
-    identity.token = token
+    identity.set_token(token)
     identity.save()
 
 

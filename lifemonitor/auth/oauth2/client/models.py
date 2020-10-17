@@ -95,6 +95,9 @@ class OAuthIdentity(db.Model):
     def user_info(self, value):
         self._user_info = value
 
+    def set_token(self, token):
+        self.token = token
+
     def __repr__(self):
         parts = []
         parts.append(self.__class__.__name__)
