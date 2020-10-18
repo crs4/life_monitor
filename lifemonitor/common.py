@@ -23,6 +23,9 @@ class LifeMonitorException(Exception):
             except Exception:
                 pass
 
+    def __repr__(self):
+        return f"[{self.status}] {self.title}: {self.detail}"
+
     def to_json(self):
         return serializers.ProblemDetailsSchema().dumps(self)
 
