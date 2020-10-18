@@ -97,9 +97,15 @@ class AuthorizatonHandler:
         with db.session.no_autoflush:
             try:
                 p = OAuth2IdentityProvider.find(provider.name)
-                logger.debug("THe found provider: %r", p)
-            except common.EntityNotFoundException as e:
-                return common.report_problem_from_exception(e)
+                logger.debug("Provider found: %r", p)
+            except common.EntityNotFoundException:
+                try:
+                    logger.debug(f"Provider '{provider.name}' not found!")
+                    p = OAuth2IdentityProvider(provider.name, **provider.OAUTH_APP_CONFIG)
+                    p.save()
+                    logger.info(f"Provider '{provider.name}' registered")
+                except Exception as e:
+                    return common.report_problem_from_exception(e)
 
             try:
                 identity = p.find_identity_by_provider_user_id(user_info.sub)

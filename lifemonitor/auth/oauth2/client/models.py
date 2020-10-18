@@ -162,7 +162,8 @@ class OAuth2IdentityProvider(db.Model):
                  api_base_url, authorize_url, access_token_url, userinfo_endpoint,
                  client_kwargs=None,
                  authorize_params=None,
-                 access_token_params=None):
+                 access_token_params=None,
+                 **kwargs):
         self.name = name
         self.client_id = client_id
         self.client_secret = client_secret
@@ -251,7 +252,10 @@ class OAuth2IdentityProvider(db.Model):
 
     @classmethod
     def find(cls, name) -> OAuth2IdentityProvider:
-        return cls.query.filter(cls.name == name).one()
+        try:
+            return cls.query.filter(cls.name == name).one()
+        except NoResultFound:
+            raise EntityNotFoundException(cls, entity_id=name)
 
     @classmethod
     def all(cls) -> List(OAuth2IdentityProvider):
