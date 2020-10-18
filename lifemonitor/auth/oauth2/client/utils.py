@@ -9,7 +9,6 @@ class RequestHelper:
 
     _DEFAULT_KEY_ = "__lm.auth.request__"
 
-
     @classmethod
     def push_request(cls, key=None, url=None, params=None, headers=None):
         _params = request.args.to_dict()
