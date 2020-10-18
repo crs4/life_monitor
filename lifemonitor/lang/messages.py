@@ -17,3 +17,12 @@ unauthorized_user_instance_access = "The user '{}' cannot access test instance '
 unauthorized_registry_instance_access = "The registry '{}' cannot access test instance '{}'"
 unable_to_delete_workflow = "Unable to delete the workflow '{}'"
 unable_to_delete_suite = "Unable to delete the suite '{}'"
+unauthorized_no_user_nor_registry = "No user nor registry found in the current session"
+unauthorized_user_without_registry_identity = ("The current user has not authorized LifeMonitor "
+                                               "to use his account on the registry '{}'. "
+                                               "Please redirect the user to the 'authorization_url' "
+                                               "to start the authorization flow")
+unauthorized_user_with_expired_registry_token = ("The current token issued by the registry '{}' "
+                                                 "has expired. Please reauthorize the user '{}'"
+                                                 "Please redirect the user to the 'authorization_url' "
+                                                 "to start the authorization flow")
