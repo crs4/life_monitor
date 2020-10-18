@@ -54,12 +54,12 @@ def get_registry_user(user_id):
 
 @blueprint.route("/", methods=("GET",))
 def index():
-    return render_template("auth/profile.j2")
+    return render_template("auth/profile.j2", providers=get_providers())
 
 
 @blueprint.route("/profile", methods=("GET",))
 def profile():
-    return render_template("auth/profile.j2")
+    return render_template("auth/profile.j2", providers=get_providers())
 
 
 @blueprint.route("/register", methods=("GET", "POST"))
