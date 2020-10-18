@@ -1,19 +1,18 @@
 from __future__ import annotations
 
 import logging
-
-import flask
+from .utils import RequestHelper
+from .models import OAuthUserProfile, OAuthIdentity
+from .services import oauth2_registry, config_oauth2_registry
 from authlib.integrations.flask_client import FlaskRemoteApp
-
 from flask import flash, url_for, redirect, request, session, Blueprint, current_app, abort
 from flask_login import current_user, login_user
 from lifemonitor import common
 from lifemonitor.db import db
 from lifemonitor.auth.models import User
-from .models import OAuthUserProfile, OAuthIdentity
-from .services import oauth2_registry, config_oauth2_registry
 from authlib.integrations.base_client.errors import OAuthError
 from lifemonitor.auth.oauth2.client.models import OAuth2IdentityProvider, OAuthIdentityNotFoundException
+from authlib.oauth2.rfc6749 import OAuth2Token
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
@@ -36,7 +35,7 @@ def create_blueprint(merge_identity_view):
         if remote is None:
             abort(404)
 
-        next_url = flask.request.args.get('next')
+        next_url = request.args.get('next')
         if next_url or not request.args.get("state", False):
             return redirect(url_for(".login", name=name, next=next_url or remote.api_base_url))
 
@@ -74,7 +73,7 @@ def create_blueprint(merge_identity_view):
         if remote is None:
             abort(404)
         # save the 'next' parameter to allow automatic redirect after OAuth2 authorization
-        next_url = flask.request.args.get('next')
+        next_url = request.args.get('next', False)
         if next_url:
             session[_OAUTH2_NEXT_URL] = next_url
         redirect_uri = url_for('.authorize', name=name, _external=True)
@@ -154,9 +153,10 @@ class AuthorizatonHandler:
                 flash(f"Your account has successfully been linked to the identity {identity}.")
 
             # Determine the right next hop
-            next_url = flask.request.args.get('next')
+            next_url = request.args.get('next')
             logger.debug("Request redirect (next URL stored on the 'next' request param: %r)", next_url)
             if not next_url:
-                next_url = flask.session.pop(_OAUTH2_NEXT_URL, False)
+                next_url = session.pop(_OAUTH2_NEXT_URL, False)
                 logger.debug("Request redirect (next URL stored on session: %r)", next_url)
-            return redirect(next_url or '/')
+            return redirect(next_url, code=307) if next_url \
+                else RequestHelper.response() or redirect('/', code=302)
