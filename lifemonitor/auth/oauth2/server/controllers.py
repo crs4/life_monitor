@@ -2,6 +2,7 @@ import logging
 from flask import request, render_template, redirect, Blueprint, jsonify, url_for
 from flask_login import current_user, login_required
 
+from .models import Token
 from .services import server
 from .utils import split_by_crlf
 
@@ -26,9 +27,20 @@ def authorize_provider(name):
     # Login is required since we need to know the current resource owner.
     # This authorizataion request comes from a registry (identified by 'name')
     # and registries act as identity providers. Thus, we handle the authentication
-    # by redirectin the user to the registry. This ensures the authorization
+    # by redirecting the user to the registry. This ensures the authorization
     # will be granted by a user which has an identity on that registry.
+    authenticate_to_provider = False
     if current_user.is_anonymous:
+        logger.debug("Current user is anonymous")
+        authenticate_to_provider = True
+    elif name not in current_user.oauth_identity:
+        logger.debug(f"Current user doesn't have an identity issued by the provider '{name}'")
+        authenticate_to_provider = True
+    elif Token.check_token_expiration(current_user.oauth_identity[name].token['expires_at']):
+        logger.debug(f"The current user has expired token issued by the provider '{name}'")
+        authenticate_to_provider = True
+    logger.debug(f"Authenticate to provider '{name}': {authenticate_to_provider}")
+    if authenticate_to_provider:
         return redirect(url_for("oauth2provider.login", name=name,
                                 next=url_for(".authorize_provider",
                                              name=name, **request.args.to_dict())))
