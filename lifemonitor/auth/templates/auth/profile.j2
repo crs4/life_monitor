@@ -2,7 +2,7 @@
 {% block body %}
 <h1>Home</h1>
 {% if current_user.is_authenticated %}
-  <p>You are logged in as <strong>{{ current_user.username }}</strong>!</p>
+  <p>You are logged in as <strong>{{ current_user.username }}</strong></p>
   <ul>
     <li>
       You{% if not current_user.has_password %} do not{% endif %} have a password set for your account.

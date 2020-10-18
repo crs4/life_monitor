@@ -7,7 +7,7 @@ from .services import oauth2_registry, config_oauth2_registry
 from authlib.integrations.flask_client import FlaskRemoteApp
 from flask import flash, url_for, redirect, request, session, Blueprint, current_app, abort
 from flask_login import current_user, login_user
-from lifemonitor import common
+from lifemonitor import common, utils
 from lifemonitor.db import db
 from lifemonitor.auth.models import User
 from authlib.integrations.base_client.errors import OAuthError
@@ -130,11 +130,7 @@ class AuthorizatonHandler:
                     # create a new local user account and log that account in.
                     # This means that one person can make multiple accounts, but it's
                     # OK because they can merge those accounts later.
-                    # username = ''.join(random.string(string))
-                    user = User.find_by_username(identity.username)
-                    if not user:
-                        user = User(username=identity.username)
-                    # user = User(username=utils.generate_username(user_info))
+                    user = User(username=utils.generate_username(user_info))
                     identity.user = user
                     identity.save()
                     login_user(user)
