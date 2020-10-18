@@ -1,9 +1,11 @@
+import glob
 import logging
 from functools import wraps
 from importlib import import_module
 from flask import g, request, redirect, url_for
 from lifemonitor.common import LifeMonitorException
 from lifemonitor.utils import push_request_to_session
+from os.path import dirname, basename, isfile, join
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
@@ -39,3 +41,21 @@ def new_instance(provider_type, **kwargs):
     except (ModuleNotFoundError, AttributeError) as e:
         logger.exception(e)
         raise OAuth2ProviderNotSupportedException(provider_type=provider_type, orig=e)
+
+
+def register_providers():
+    modules_files = glob.glob(join(dirname(__file__), "*.py"))
+    modules = ['{}.{}'.format(__name__, basename(f)[:-3])
+               for f in modules_files if isfile(f) and not f.endswith('__init__.py')]
+    we_had_errors = False
+    for m in modules:
+        try:
+            # Try to load the command module 'm'
+            mod = import_module(m)
+            logger.debug(f"Loaded module {m}: {mod}")
+        except ModuleNotFoundError:
+            logger.error("ModuleNotFoundError: Unable to load module %s", m)
+            we_had_errors = True
+    if we_had_errors:
+        logger.error("** There were some errors loading application modules.**")
+        logger.error("Some commands may not be available.")
