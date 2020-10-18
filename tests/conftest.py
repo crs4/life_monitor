@@ -46,6 +46,7 @@ def headers():
 def initialize(app_settings, request_context):
     helpers.clean_db()
     helpers.init_db(app_settings)
+    helpers.disable_auto_login()
     auth.logout_user()
     auth.logout_registry()
 
