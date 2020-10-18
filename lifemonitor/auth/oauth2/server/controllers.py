@@ -71,7 +71,7 @@ def issue_token():
     return server.create_token_response()
 
 
-@blueprint.route('/create_client', methods=('GET', 'POST'))
+# @blueprint.route('/create_client', methods=('GET', 'POST'))
 @login_required
 def create_client():
     user = current_user
