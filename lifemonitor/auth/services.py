@@ -4,9 +4,11 @@ import logging
 # Config a module level logger
 import secrets
 import flask_login
-from flask import g
+from flask import g, request, url_for
 
 from werkzeug.local import LocalProxy
+from werkzeug.wrappers import Response
+from lifemonitor.lang import messages
 from lifemonitor.common import LifeMonitorException
 from lifemonitor.auth.models import ApiKey, User, Anonymous
 
@@ -57,8 +59,33 @@ current_user = flask_login.current_user
 def authorized(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
+        logger.debug(f"The current user: {current_user}")
+        logger.debug(f"The current registry: {current_registry}")
+        logger.debug(f"Request args: {request.args}")
+        validation = False
+        # raise unauthorized if no user nor registry in session
         if not current_registry and current_user.is_anonymous:
-            raise NotAuthorizedException(detail="No user nor registry found in the current session")
+            raise NotAuthorizedException(detail=messages.unauthorized_no_user_nor_registry)
+        # if there is a registry user in session
+        # check whether his token issued by the registry is valid
+        if current_registry and not current_user.is_anonymous:
+            if current_registry.name not in current_user.oauth_identity:
+                raise NotAuthorizedException(
+                    detail=messages.unauthorized_user_without_registry_identity.format(current_registry.name),
+                    authorization_url=url_for('oauth2provider.authorize',
+                                              name="seek", next=request.url))
+            # check if the token issued by the registry is valid
+            identity = current_user.oauth_identity[current_registry.name]
+            from .oauth2.client.controllers import AuthorizatonHandler
+            validation = AuthorizatonHandler.handle_validation(identity)
+            if isinstance(validation, Response):
+                return validation
+            elif validation is False:
+                raise NotAuthorizedException(
+                    detail=messages.unauthorized_user_with_expired_registry_token.format(
+                        current_registry.name, current_registry.name),
+                    authorization_url=url_for('oauth2provider.authorize',
+                                              name="seek", next=request.url))
         return func(*args, **kwargs)
     return wrapper
 

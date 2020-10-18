@@ -73,7 +73,7 @@ class Token(db.Model, OAuth2TokenMixin):
     client = db.relationship('Client')
 
     def is_expired(self) -> bool:
-        return datetime.utcnow().timestamp() - self.get_expires_at() > 0
+        return self.check_token_expiration(self.expires_at)
 
     def is_refresh_token_valid(self) -> bool:
         return self if not self.revoked else None
@@ -97,6 +97,10 @@ class Token(db.Model, OAuth2TokenMixin):
     @classmethod
     def all(cls):
         return cls.query.all()
+
+    @staticmethod
+    def check_token_expiration(expires_at) -> bool:
+        return datetime.utcnow().timestamp() - expires_at > 0
 
 
 class AuthorizationServer(OAuth2AuthorizationServer):

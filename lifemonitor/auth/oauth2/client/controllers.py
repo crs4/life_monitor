@@ -130,9 +130,11 @@ class AuthorizatonHandler:
                     # create a new local user account and log that account in.
                     # This means that one person can make multiple accounts, but it's
                     # OK because they can merge those accounts later.
+                    # username = ''.join(random.string(string))
                     user = User.find_by_username(identity.username)
                     if not user:
                         user = User(username=identity.username)
+                    # user = User(username=utils.generate_username(user_info))
                     identity.user = user
                     identity.save()
                     login_user(user)
@@ -160,3 +162,27 @@ class AuthorizatonHandler:
                 logger.debug("Request redirect (next URL stored on session: %r)", next_url)
             return redirect(next_url, code=307) if next_url \
                 else RequestHelper.response() or redirect('/', code=302)
+
+    @staticmethod
+    def handle_validation(identity: OAuthIdentity):
+        # If the token is expired it should be refreshed.
+        # The refresh should be handle by using the 'refresh_token' grant
+        # if supported by the OAuth2 server; otherwise a new authorization flow
+        # should be started.
+        token = OAuth2Token(identity.token)
+        if not token.is_expired():
+            logger.debug(f"The current token is not expired: {token}")
+            return True
+        # if the current token has a refresh token
+        # it will be automatically refreshed
+        if 'refresh_token' in token:
+            logger.debug("The current token has a refresh token")
+            return True
+        # if the current token doesn't have a refresh token
+        # automatically redirect the client to start a new authorization flow
+        if "redirection" not in request.args:
+            logger.debug("Trying to restart the authorization code flow")
+            RequestHelper.push_request(params={'redirection': 'true'})
+            return redirect(url_for('oauth2provider.login',
+                                    headers=request.headers, name="seek"), code=307)
+        return False
