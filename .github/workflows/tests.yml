@@ -21,10 +21,10 @@ jobs:
     - uses: actions/checkout@v2
     # Setup testing environment
     - name: Set up testing environment
-      run: make start_test_env
+      run: make start-testing
     # Run tests
     - name: Run tests
-      run: make runtests
+      run: make run-tests
     # Teardown testing environment
     - name: Teardown testing environment
-      run: make stop_test_env
+      run: make stop-all

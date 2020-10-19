@@ -1,0 +1,27 @@
+version: "3.5"
+
+services:
+  seek:
+    image: crs4/lifemonitor-tests:seek
+    #image: fairdom/seek:workflow
+    restart: "always"
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./certs/lm.crt:/certs/lm.crt:ro
+      - ./certs/lm.key:/certs/lm.key:ro
+      - ./tests/config/registries/seek/nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - life_monitor
+
+  jenkins:
+    image: crs4/lifemonitor-tests:jenkins
+    ports:
+      - 8080:8080
+      - 50000:50000
+    networks:
+      - life_monitor
+
+networks:
+  life_monitor:
+    name: life_monitor

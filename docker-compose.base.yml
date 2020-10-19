@@ -1,0 +1,91 @@
+version: "3.5"
+
+services:
+  db:
+    # Docker image docs: https://github.com/bitnami/bitnami-docker-postgresql
+    # We use PgSQL 11 instead of 12 since that's the newest version of the client
+    # available in the Python image we're using for the application
+    image: bitnami/postgresql:11
+    ports:
+      - "5432"
+    env_file: &env_file
+      - settings.conf
+    environment:
+      - "ALLOW_EMPTY_PASSWORD=no"
+    restart: "always"
+    healthcheck:
+      test: "pg_isready -U $${POSTGRESQL_USERNAME}"
+      interval: "10s"
+      retries: 6
+    networks:
+      - life_monitor
+    volumes:
+      - "lifemonitor_db:/bitnami/postgresql"
+
+  lm:
+    # Remember that this service is using its default configuration
+    # to access the database, so the settings must match the environment
+    # configuration set for db above.
+    image: crs4/lifemonitor
+    restart: "always"
+    depends_on:
+      - "db"
+      - "init"
+    env_file: *env_file
+    environment:
+      - "FLASK_ENV=production"
+      - "POSTGRESQL_HOST=db"
+      - "POSTGRESQL_PORT=5432"
+    volumes:
+      - "./certs:/certs:ro"
+      - "./instance:/lm/instance:ro"
+      - "./settings.conf:/lm/settings.conf:ro" # default settings
+    networks:
+      - life_monitor
+
+  init:
+    # Remember that this service is using its default configuration
+    # to access the database, so the settings must match the environment
+    # configuration set for db above.
+    image: crs4/lifemonitor
+    entrypoint: /bin/bash
+    restart: "no"
+    command: |
+      -c "wait-for-postgres.sh && flask db init"
+    depends_on:
+      - "db"
+    env_file: *env_file
+    environment:
+      - "FLASK_ENV=production"
+      - "POSTGRESQL_HOST=db"
+      - "POSTGRESQL_PORT=5432"
+    volumes:
+      - "./certs:/certs:ro"
+      - "./instance:/lm/instance:ro"
+      - "./settings.conf:/lm/settings.conf:ro" # default settings
+    networks:
+      - life_monitor
+
+volumes:
+  lifemonitor_db:
+
+networks:
+  life_monitor:
+    # You can easily connect this docker-compose with a
+    # local instance of the Seek/WorkflowHub docker-compose by putting them
+    # both on the same Docker network.  The configuration below will
+    # instantiate the life monitor services on a docker network called
+    # `life_monitor` which is owned and managed by the LifeMonitor docker-compose.
+    # To connect LifeMonitor to an existing network, set the property `name` below
+    # to the name of the network name you'd like to connect and set
+    # the property `external` to `true`, to declare the network as externally managed.
+    # See the docker-compose network configuration reference for more details.
+    name: life_monitor
+    external: false
+    # If are not using an external network, you can customize
+    # the network address by uncommenting the lines below
+    # driver: bridge
+    # ipam:
+    #   driver: default
+    #   config:
+    #     - subnet: 192.168.238.0/24
