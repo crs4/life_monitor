@@ -17,8 +17,11 @@ def load_settings(config=None):
         file_path = config.SETTINGS_FILE
     else:
         file_path = "settings.conf"
-    if os.path.exists(file_path):
-        result = dotenv.dotenv_values(dotenv_path=file_path)
+    result = {}
+    if config.CONFIG_NAME in ('development', 'testing'):
+        result.update(dotenv.dotenv_values(dotenv_path=TestingConfig.SETTINGS_FILE))
+    if not config.CONFIG_NAME == 'testing' and os.path.exists(file_path):
+        result.update(dotenv.dotenv_values(dotenv_path=file_path))
     return result
 
 
