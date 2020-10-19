@@ -27,3 +27,15 @@ def db_init():
         admin.password = "admin"
         db.session.add(admin)
         db.session.commit()
+
+
+@blueprint.cli.command('clean')
+@with_appcontext
+def db_clean():
+    """ Clean up DB """
+    from lifemonitor.db import db
+    db.session.rollback()
+    for table in reversed(db.metadata.sorted_tables):
+        db.session.execute(table.delete())
+    db.session.commit()
+    logger.info("DB deleted")
