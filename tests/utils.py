@@ -54,6 +54,10 @@ def assert_status_code(expected, actual, message=None):
     assert expected == actual, message or f"Expected status code {expected}, actual status code {actual}"
 
 
+def assert_error_message(message, error):
+    assert message in str(error), "Unexpected error message"
+
+
 def pick_workflow(app_user, name=None):
     assert len(app_user["workflows"]) > 0, "No workflow found to register"
     # pick one user workflow and register it

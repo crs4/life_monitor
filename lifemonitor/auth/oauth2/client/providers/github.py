@@ -1,4 +1,5 @@
 import logging
+from flask import current_app
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
@@ -31,6 +32,8 @@ def normalize_userinfo(client, data):
 class GitHub:
     name = 'github'
     oauth_config = {
+        'client_id': current_app.config.get('GITHUB_CLIENT_ID', None),
+        'client_secret': current_app.config.get('GITHUB_CLIENT_SECRET', None),
         'api_base_url': 'https://api.github.com/',
         'access_token_url': 'https://github.com/login/oauth/access_token',
         'authorize_url': 'https://github.com/login/oauth/authorize',

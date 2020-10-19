@@ -24,33 +24,42 @@ login_manager.login_view = "auth.login"
 
 @authorized
 def show_current_user_profile():
-    if current_user and not current_user.is_anonymous:
-        return serializers.UserSchema().dump(current_user)
-    raise common.Forbidden(detail="Client type unknown")
+    try:
+        if current_user and not current_user.is_anonymous:
+            return serializers.UserSchema().dump(current_user)
+        raise common.Forbidden(detail="Client type unknown")
+    except Exception as e:
+        return common.report_problem_from_exception(e)
 
 
 @authorized
 def get_registry_users():
-    if current_registry and current_user.is_anonymous:
-        return serializers.UserSchema().dump(current_registry.users, many=True)
-    raise common.Forbidden(detail="Client type unknown")
+    try:
+        if current_registry and current_user.is_anonymous:
+            return serializers.UserSchema().dump(current_registry.users, many=True)
+        raise common.Forbidden(detail="Client type unknown")
+    except Exception as e:
+        return common.report_problem_from_exception(e)
 
 
 @authorized
 def get_registry_user(user_id):
-    if current_registry:
-        return serializers.UserSchema().dump(current_registry.get_user(user_id))
-    raise common.Forbidden(detail="Client type unknown")
+    try:
+        if current_registry:
+            return serializers.UserSchema().dump(current_registry.get_user(user_id))
+        raise common.Forbidden(detail="Client type unknown")
+    except Exception as e:
+        return common.report_problem_from_exception(e)
 
 
 @blueprint.route("/", methods=("GET",))
 def index():
-    return render_template("auth/profile.j2")
+    return render_template("auth/profile.j2", providers=get_providers())
 
 
 @blueprint.route("/profile", methods=("GET",))
 def profile():
-    return render_template("auth/profile.j2")
+    return render_template("auth/profile.j2", providers=get_providers())
 
 
 @blueprint.route("/register", methods=("GET", "POST"))

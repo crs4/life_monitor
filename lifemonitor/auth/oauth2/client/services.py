@@ -36,7 +36,7 @@ def update_token(name, token, refresh_token=None, access_token=None):
         return
 
     # update old token
-    identity.token = token
+    identity.set_token(token)
     identity.save()
 
 
@@ -50,7 +50,10 @@ def get_providers():
     from .providers.seek import Seek
     from .providers.github import GitHub
     global current_providers_list
-    providers = [GitHub] + Seek.all()
+    providers = Seek.all()
+    if current_app.config.get('GITHUB_CLIENT_ID', None) \
+            and current_app.config.get('GITHUB_CLIENT_SECRET', None):
+        providers.append(GitHub)
     # The current implementation doesn't support dynamic registration of WorkflowRegistries
     # The following a simple workaround to detect and reconfigure the oauth2registry
     # when the number of workflow registries changes

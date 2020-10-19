@@ -4,7 +4,7 @@
     <title>{% block title %}LifeMonitor{% endblock %}</title>
     <link href="{{ url_for('auth.static', filename='auth/style.css') }}" rel="stylesheet">
 </head>
-<body>
-  {{ macros.messages() }}
+<body>  
   {% block body %}{% endblock %}
+  {{ macros.messages() }}
 </body>

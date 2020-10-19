@@ -59,7 +59,7 @@ def clean_db():
 
 
 def process_auto_login():
-    enabled = "auto_login" in g and g["auto_login"] is True
+    enabled = "auto_login" in g and g.auto_login is True
     logger.info("AutoLogin enabled: %r", enabled)
     if enabled:
         if "user" in g:
@@ -67,12 +67,14 @@ def process_auto_login():
             login_user(g.user)
 
 
-def enable_auto_login():
-    g["auto_login"] = True
+def enable_auto_login(user=None):
+    g.auto_login = True
+    g.user = user
 
 
 def disable_auto_login():
-    g["auto_login"] = False
+    g.pop("auto_login", False)
+    g.pop("user", False)
 
 
 def app_context(request_settings,
