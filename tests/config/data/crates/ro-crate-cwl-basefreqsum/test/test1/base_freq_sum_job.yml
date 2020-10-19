@@ -1,0 +1,5 @@
+fasta_in:
+  class: File
+  path: seqs.fa
+freqs_file_name: freqs.tsv
+freqs_sum_file_name: freqs_sum.tsv

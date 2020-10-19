@@ -15,6 +15,7 @@ if [[ "${FLASK_ENV}" == "development" ]]; then
 else
   gunicorn --workers "${GUNICORN_WORKERS}"  \
            --threads "${GUNICORN_THREADS}" \
+           --certfile=/certs/lm.crt --keyfile=/certs/lm.key \
            -b "0.0.0.0:8000" \
            "app"
 fi

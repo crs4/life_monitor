@@ -1,24 +1,21 @@
 {
-  "@context": "https://w3id.org/ro/crate/1.0/context",
+  "tmpformat": "ro/workflow/test-metadata/0.1",
   "@id": "test-project-metadata.jsonld",
-  "@type": "CreativeWork",
   "workflow": "a reference to the workflow",
   "test": [
     {
-      "name": "dtests",
+      "name": "test",
       "instance": [
         {
-          "name": "dtests",
-          "url": "http://172.30.10.90:8080/job/dtests/",
+          "name": "test",
           "service": {
             "type": "jenkins",
-            "url": "http://172.30.10.90:8080/"
+            "url": "http://jenkins:8080/",
+            "resource": "/job/test"
           }
         }
       ],
-      "specification": {
-
-      }
+      "specification": {}
     }
   ]
 }

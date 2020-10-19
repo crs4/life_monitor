@@ -11,4 +11,4 @@ def register_api(app, specs_dir):
     # see https://docs.authlib.org/en/stable/flask/2/authorization-server.html
     server.init_app(app)
     # register routes of the OAuth server
-    app.register_blueprint(blueprint)
+    app.register_blueprint(blueprint, url_prefix="/oauth2")

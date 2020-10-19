@@ -1,8 +1,8 @@
 {% extends 'auth/base.j2' %}
 {% block body %}
-<h1>Home</h1>
+<h1>LifeMonitor</h1>
 {% if current_user.is_authenticated %}
-  <p>You are logged in as <strong>{{ current_user.username }}</strong>!</p>
+  <p>You are logged in as <strong>{{ current_user.username }}</strong></p>
   <ul>
     <li>
       You{% if not current_user.has_password %} do not{% endif %} have a password set for your account.
@@ -10,22 +10,18 @@
         <a href="{{ url_for("auth.set_password") }}">Set a password</a>
       {% endif %}
     </li>
+    {% for p in providers %}
     <li>
-      {% if current_user.oauth_identity["github"] %}
-        You are <strong>{{ current_user.oauth_identity["github"].provider_user_id }}</strong> on GitHub.
+      {% if p.name in current_user.oauth_identity %}
+        Your user ID on <strong>{{p.name.capitalize()}}</strong> is: <strong>{{ current_user.oauth_identity[p.name].provider_user_id }}</strong>
       {% else %}
-        You have not linked a GitHub account.
-        <a href="/oauth2/login/github">Link GitHub account</a>
+        You have not linked a <strong>{{p.name.capitalize()}}</strong> account.
+        <a href="/oauth2/login/{{p.name}}">Link <strong>{{p.name.capitalize()}}</strong> account</a>
       {% endif %}
     </li>
-    <li>
-      {% if current_user.oauth_identity["seek"] %}
-        You are <strong>{{ current_user.oauth_identity["seek"].provider_user_id }}</strong> on Seek.
-      {% else %}
-        You have not linked a Seek account.
-        <a href="/oauth2/login/seek">Link Seek account</a>
-      {% endif %}
-    </li>
+    {% endfor %}
+
+    
   </ul>
   <a href="{{ url_for("auth.logout") }}">Log out</a>
 {% else %}

@@ -1,13 +1,15 @@
 import logging
 
 import flask
-from flask import flash, url_for, request, render_template, redirect, jsonify
-from flask_login import login_required, login_user, logout_user, current_user
-
+from flask import flash, url_for, request, render_template, redirect
+from flask_login import login_required, login_user, logout_user
+from .. import common
 from .forms import RegisterForm, LoginForm, SetPasswordForm
 from .models import db
-from .oauth2.client.services import merge_users
-from .services import login_manager
+from . import serializers
+from .oauth2.client.services import merge_users, get_providers
+from .services import authorized, login_manager, current_registry, current_user
+
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
@@ -20,22 +22,44 @@ blueprint = flask.Blueprint("auth", __name__,
 login_manager.login_view = "auth.login"
 
 
-@login_required
+@authorized
 def show_current_user_profile():
     try:
-        return jsonify(current_user.to_dict())
+        if current_user and not current_user.is_anonymous:
+            return serializers.UserSchema().dump(current_user)
+        raise common.Forbidden(detail="Client type unknown")
     except Exception as e:
-        logger.exception(e)
+        return common.report_problem_from_exception(e)
+
+
+@authorized
+def get_registry_users():
+    try:
+        if current_registry and current_user.is_anonymous:
+            return serializers.UserSchema().dump(current_registry.users, many=True)
+        raise common.Forbidden(detail="Client type unknown")
+    except Exception as e:
+        return common.report_problem_from_exception(e)
+
+
+@authorized
+def get_registry_user(user_id):
+    try:
+        if current_registry:
+            return serializers.UserSchema().dump(current_registry.get_user(user_id))
+        raise common.Forbidden(detail="Client type unknown")
+    except Exception as e:
+        return common.report_problem_from_exception(e)
 
 
 @blueprint.route("/", methods=("GET",))
 def index():
-    return render_template("auth/profile.j2")
+    return render_template("auth/profile.j2", providers=get_providers())
 
 
 @blueprint.route("/profile", methods=("GET",))
 def profile():
-    return render_template("auth/profile.j2")
+    return render_template("auth/profile.j2", providers=get_providers())
 
 
 @blueprint.route("/register", methods=("GET", "POST"))
@@ -59,7 +83,7 @@ def login():
             login_user(user)
             flash("You have logged in")
             return redirect(url_for("auth.index"))
-    return render_template("auth/login.j2", form=form)
+    return render_template("auth/login.j2", form=form, providers=get_providers())
 
 
 @blueprint.route("/logout")

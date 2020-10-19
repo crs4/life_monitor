@@ -23,7 +23,7 @@ def register_commands(app):
                 blueprint = getattr(mod, "blueprint")
                 # Register the blueprint object
                 app.register_blueprint(blueprint)
-                logger.info("Registered %s commands.", m)
+                logger.debug("Registered %s commands.", m)
             except AttributeError:
                 logger.error("Unable to find the 'blueprint' attribute in module %s", m)
                 we_had_errors = True

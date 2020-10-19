@@ -1,0 +1,32 @@
+version: "3.5"
+
+services:
+  db:
+    environment:
+      - "ALLOW_EMPTY_PASSWORD=yes"
+
+  lm:
+    user: "${USER_UID}:${USER_GID}"
+    environment:
+      - "FLASK_ENV=development"
+      - "HOME=/lm"
+      # Normally, OAuthLib will raise an InsecureTransportError if you attempt to use OAuth2 over HTTP,
+      # rather than HTTPS. Setting this environment variable will prevent this error from being raised.
+      # This is mostly useful for local testing, or automated tests. Never set this variable in production.
+      - "AUTHLIB_INSECURE_TRANSPORT=1"
+    volumes:
+      - "./:/lm"
+    ports:
+      - "8000:8000"
+
+  init:
+    user: "${USER_UID}:${USER_GID}"
+    environment:
+      - "FLASK_ENV=development"
+      # Normally, OAuthLib will raise an InsecureTransportError if you attempt to use OAuth2 over HTTP,
+      # rather than HTTPS. Setting this environment variable will prevent this error from being raised.
+      # This is mostly useful for local testing, or automated tests. Never set this variable in production.
+      - "AUTHLIB_INSECURE_TRANSPORT=1"
+      - "HOME=/lm"
+    volumes:
+      - "./:/lm"

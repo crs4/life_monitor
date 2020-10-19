@@ -1,6 +1,8 @@
 import json
 import logging
 import os
+import random
+import string
 import tempfile
 import zipfile
 
@@ -84,6 +86,10 @@ def search_for_test_definition(roc_path, ro_crate_metadata: dict):
     if os.path.exists(filename):
         return load_test_definition_filename(filename)
     return None
+
+
+def generate_username(user_info):
+    return ''.join(random.choice(string.ascii_letters + string.digits) for i in range(10))
 
 
 def push_request_to_session(name):

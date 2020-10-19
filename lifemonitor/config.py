@@ -1,7 +1,6 @@
 import os
 import logging
 from typing import List, Type
-
 import dotenv
 
 from .db import db_uri
@@ -9,16 +8,26 @@ from .utils import bool_from_string
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
+logger = logging.getLogger(__name__)
 
-def load_settings(file_path="settings.conf"):
+
+def load_settings(config=None):
     result = None
-    if os.path.exists(file_path):
-        result = dotenv.dotenv_values(dotenv_path=file_path)
+    if config:
+        file_path = config.SETTINGS_FILE
+    else:
+        file_path = "settings.conf"
+    result = {}
+    if config.CONFIG_NAME in ('development', 'testing'):
+        result.update(dotenv.dotenv_values(dotenv_path=TestingConfig.SETTINGS_FILE))
+    if not config.CONFIG_NAME == 'testing' and os.path.exists(file_path):
+        result.update(dotenv.dotenv_values(dotenv_path=file_path))
     return result
 
 
 class BaseConfig:
     CONFIG_NAME = "base"
+    SETTINGS_FILE = "settings.conf"
     USE_MOCK_EQUIVALENCY = False
     DEBUG = bool_from_string(os.getenv("DEBUG", "false"))
     LOG_LEVEL = os.environ.get('LOG_LEVEL', 'DEBUG' if DEBUG else 'INFO')
@@ -28,6 +37,9 @@ class BaseConfig:
     # overhead and will be disabled by default in the future.  Set it to True
     # or False to suppress this warning.
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    # Enable refresh token generation.
+    # Refresh tokens will be issued as part of authorization code flow tokens
+    OAUTH2_REFRESH_TOKEN_GENERATOR = True
 
 
 class DevelopmentConfig(BaseConfig):
@@ -47,6 +59,7 @@ class ProductionConfig(BaseConfig):
 
 class TestingConfig(BaseConfig):
     CONFIG_NAME = "testing"
+    SETTINGS_FILE = "tests/settings.conf"
     SECRET_KEY = os.getenv("TEST_SECRET_KEY", BaseConfig.SECRET_KEY)
     DEBUG = True
     TESTING = True
@@ -67,18 +80,20 @@ def get_config_by_name(name, settings=None):
         config = type(f"AppConfigInstance{name}".title(), (_config_by_name[name],), {})
         # load "settings.conf" to the environment
         if settings is None:
-            settings = load_settings()
+            settings = load_settings(config)
         if settings and "SQLALCHEMY_DATABASE_URI" not in settings:
             settings["SQLALCHEMY_DATABASE_URI"] = db_uri(settings)
         # always set the FLASK_APP_CONFIG_FILE variable to the environment
-        if "FLASK_APP_CONFIG_FILE" in settings:
+        if settings and "FLASK_APP_CONFIG_FILE" in settings:
             os.environ["FLASK_APP_CONFIG_FILE"] = settings["FLASK_APP_CONFIG_FILE"]
         # append properties from settings.conf
         # to the default configuration
-        for k, v in settings.items():
-            setattr(config, k, v)
+        if settings:
+            for k, v in settings.items():
+                setattr(config, k, v)
         return config
     except KeyError:
+        logger.warning(f"Unable to load the configuration {name}: using 'production'")
         return ProductionConfig
 
 

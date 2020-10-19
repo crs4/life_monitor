@@ -10,6 +10,8 @@ pyopenssl==19.1.0
 Flask~=1.1.2
 flask-restful==0.3.8
 Flask-SQLAlchemy==2.4.3
+flask-marshmallow==0.13.0
+marshmallow-sqlalchemy==0.23.1
 loginpass==0.5
 flask-bcrypt==0.7.1
 Flask-Security-Too==3.4.4
@@ -17,3 +19,5 @@ Authlib==0.14.3
 email-validator==1.1.1
 connexion[swagger-ui]==2.7.0
 python-jenkins==1.7.0
+pytest-mock==3.3.1
+flask-shell-ipython==0.4.1

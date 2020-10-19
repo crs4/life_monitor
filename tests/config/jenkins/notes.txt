@@ -1,0 +1,6 @@
+jenkins
+------------------------------------------------
+username: admin
+password: jenkins
+configureSecurity: Allow anonymous read access
+project: test

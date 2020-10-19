@@ -4,6 +4,7 @@ from flask_bcrypt import generate_password_hash, check_password_hash
 from flask_login import UserMixin, AnonymousUserMixin
 from lifemonitor.db import db
 
+
 # Set the module level logger
 logger = logging.getLogger(__name__)
 
@@ -11,6 +12,10 @@ logger = logging.getLogger(__name__)
 class Anonymous(AnonymousUserMixin):
     def __init__(self):
         self.username = 'Guest'
+
+    @property
+    def id(self):
+        return None
 
     def get_user_id(self):
         return None
@@ -27,6 +32,15 @@ class User(UserMixin, db.Model):
 
     def get_user_id(self):
         return self.id
+
+    @property
+    def current_identity(self):
+        from .services import current_registry
+        if current_registry:
+            for i in self.oauth_identity.values():
+                if i.provider == current_registry.server_credentials:
+                    return i
+        return None
 
     @property
     def password(self):
@@ -51,10 +65,6 @@ class User(UserMixin, db.Model):
         db.session.add(self)
         db.session.commit()
 
-    @staticmethod
-    def find_by_username(username):
-        return User.query.filter(User.username == username).first()
-
     def to_dict(self):
         return {
             "id": self.id,
@@ -63,6 +73,14 @@ class User(UserMixin, db.Model):
                 n: i.user_info for n, i in self.oauth_identity.items()
             }
         }
+
+    @classmethod
+    def find_by_username(cls, username):
+        return cls.query.filter(cls.username == username).first()
+
+    @classmethod
+    def all(cls):
+        return cls.query.all()
 
 
 class ApiKey(db.Model):
@@ -114,3 +132,7 @@ class ApiKey(db.Model):
     @classmethod
     def find(cls, api_key) -> ApiKey:
         return cls.query.filter(ApiKey.key == api_key).first()
+
+    @classmethod
+    def all(cls):
+        return cls.query.all()

@@ -1,29 +1,162 @@
 # vim: set et sw=2
 
 openapi: "3.0.0"
+
 info:
-  version: "0.0.1"
+  version: "0.1.0"
   title: "Life Monitor API"
   description: "Workflow sustainability service"
 
 servers:
   - url: /
-    description: Version 0.0 of API.  Add version prefix (e.g, /v1.0) once we have something useful
+    description: >
+      Version 0.1.0 of API. Add version prefix (e.g, /v1.0) once we have something useful
 
 paths:
-  /me:
+  /users:
+    get:
+      x-openapi-router-controller: lifemonitor.auth.controllers
+      operationId: "get_registry_users"
+      summary: "Get users of the current registry"
+      security:
+        - api_key: ["read"]
+        - oauth2: ["read"]
+      responses:
+        "200":
+          description: List of registry users
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListOfUsers"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /users/{user_id}:
+    get:
+      x-openapi-router-controller: lifemonitor.auth.controllers
+      operationId: "get_registry_user"
+      summary: "Get a user of the current registry"
+      parameters:
+        - $ref: "#/components/parameters/user_id"
+      security:
+        - api_key: ["read"]
+        - oauth2: ["read"]
+      responses:
+        "200":
+          description: Get a registry user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /users/current:
     get:
       x-openapi-router-controller: lifemonitor.auth.controllers
       operationId: "show_current_user_profile"
       summary: "Get the profile of the current logged user"
+      security:
+        - api_key: ["read"]
+        - oauth2: ["read"]
       responses:
-        '200':
+        "200":
           description: User profile info
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
+                $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
+  /registries:
+    get:
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "workflow_registries_get"
+      summary: "Get users of the current registry"
+      responses:
+        "200":
+          description: List of workflow registries
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListOfRegistries"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /registries/{registry_uuid}:
+    get:
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "workflow_registries_get_by_uuid"
+      summary: "Get users of the current registry"
+      parameters:
+        - $ref: "#/components/parameters/registry_uuid"
+      security:
+        - api_key: ["read"]
+        - oauth2: ["read"]
+      responses:
+        "200":
+          description: Get a workflow registry by uuid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Registry"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /registries/current:
+    get:
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "workflow_registries_get_current"
+      summary: "Get the current registry"
+      security:
+        - api_key: ["read"]
+        - oauth2: ["read"]
+      responses:
+        "200":
+          description: Current workflow registry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Registry"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /workflows:
     get:
@@ -31,34 +164,78 @@ paths:
       operationId: "workflows_get"
       summary: "Get all known workflows"
       security:
-        - api_key: ['read']
-        - oauth2: ['read']
+        - api_key: ["read"]
+        - oauth2: ["read"]
       responses:
-        '200':
+        "200":
           description: A JSON array of Workflow objects
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Workflow'
+                $ref: "#/components/schemas/ListOfWorkflow"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
 
     post:
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "workflows_post"
       summary: "Register a workflow"
       security:
-        - api_key: ['read', 'write']
-        - oauth2: ['read', 'write']
+        - api_key: ["read", "write"]
+        - oauth2: ["read", "write"]
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Workflow'
+              $ref: "#/components/schemas/Workflow"
       responses:
-        '201':
+        "201":
           description: Workflow created
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /workflows/{wf_uuid}:
+    get:
+      summary: "Get information about latest version of specified workflow"
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "workflows_get_latest_version_by_id"
+      parameters:
+        - $ref: "#/components/parameters/wf_uuid"
+      responses:
+        "200":
+          description: >
+            A Workflow object for the latest version of the specified workflow
+            and extended with the list of previous versions that are registered.
+            Information about the previous versions can be retrieved through the
+            `/workflows/{wf_uuid}/{wf_version}` resource.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Workflow"
+                  - type: object
+                    properties:
+                      previous_versions:
+                        type: array
+                        items:
+                          type: string
+                    required:
+                      - previous_versions
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /workflows/{wf_uuid}/{wf_version}:
     get:
@@ -66,105 +243,410 @@ paths:
       operationId: "workflows_get_by_id"
       summary: "Get information about a single workflow"
       security:
-        - api_key: ['read']
-        - oauth2: ['read']
+        - api_key: ["read"]
+        - oauth2: ["read"]
       parameters:
-        - $ref: '#/components/parameters/wf_uuid'
-        - $ref: '#/components/parameters/wf_version'
-        - $ref: '#/components/parameters/test_suite'
-        - $ref: '#/components/parameters/test_build'
-        - $ref: '#/components/parameters/test_output'
+        - $ref: "#/components/parameters/wf_uuid"
+        - $ref: "#/components/parameters/wf_version"
       responses:
-        '200':
+        "200":
           description: A Workflow object
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Workflow'
-        '400':
-          description: Invalid input
-        '404':
-          description: Not found
+                $ref: "#/components/schemas/Workflow"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
     put:
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "workflows_put"
       summary: "Modify an existing workflow"
       security:
-        - api_key: ['read', 'write']
-        - oauth2: ['read', 'write']
+        - api_key: ["read", "write"]
+        - oauth2: ["read", "write"]
       parameters:
-        - $ref: '#/components/parameters/wf_uuid'
-        - $ref: '#/components/parameters/wf_version'
+        - $ref: "#/components/parameters/wf_uuid"
+        - $ref: "#/components/parameters/wf_version"
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Workflow'
+              $ref: "#/components/schemas/Workflow"
       responses:
-        '200':
-          description: Workflow updated
+        "204":
+          description: "Workflow updated"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "501":
+          description: "Not implemented"
 
     delete:
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "workflows_delete"
       summary: "Delete a workflow"
       security:
-        - api_key: ['read', 'write']
-        - oauth2: ['read', 'write']
+        - api_key: ["read", "write"]
+        - oauth2: ["read", "write"]
       parameters:
-        - $ref: '#/components/parameters/wf_uuid'
-        - $ref: '#/components/parameters/wf_version'
+        - $ref: "#/components/parameters/wf_uuid"
+        - $ref: "#/components/parameters/wf_version"
       responses:
-        '200':
-          description: Does not exist
-        '204':
+        "204":
           description: Deleted
-        '400':
-          description: Invalid input
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /workflows/{wf_uuid}/{wf_version}/status:
+    get:
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "workflows_get_status"
+      summary: "Get test statuses of a single workflow"
+      security:
+        - api_key: ["read"]
+        - oauth2: ["read"]
+      parameters:
+        - $ref: "#/components/parameters/wf_uuid"
+        - $ref: "#/components/parameters/wf_version"
+      responses:
+        "200":
+          description: Summary of status of the specified workflow's tests
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowStatus"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /workflows/{wf_uuid}/{wf_version}/suites:
-    post:
+    get:
+      summary: "Get list of test suites associated with workflow"
       x-openapi-router-controller: lifemonitor.api.controllers
-      operationId: "suites_post"
-      summary: "Register a test suite"
+      operationId: "workflows_get_suites"
       security:
-        - api_key: ['read', 'write']
-        - oauth2: ['read', 'write']
+        - api_key: ["read"]
+        - oauth2: ["read"]
+      description: >
+        Get collection of test suites associated with workflow.  Test suites
+        are collected from the RO-crate received with the creation of a new
+        version of a workflow.
       parameters:
-        - $ref: '#/components/parameters/wf_uuid'
-        - $ref: '#/components/parameters/wf_version'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TestSuite'
+        - $ref: "#/components/parameters/wf_uuid"
+        - $ref: "#/components/parameters/wf_version"
       responses:
-        '201':
-          description: TestSuite created
+        "200":
+          description: List of TestSuites associated with the specified workflow version
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListOfTestSuite"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /suites/{suite_uuid}:
+    get:
+      summary: "Get info about a single test suite."
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "suites_get_by_uuid"
+      security:
+        - api_key: ["read"]
+        - oauth2: ["read"]
+      parameters:
+        - $ref: "#/components/parameters/suite_uuid"
+      responses:
+        "200":
+          description: TestSuite
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestSuite"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
     delete:
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "suites_delete"
       summary: "Delete a test suite"
       security:
-        - api_key: ['read', 'write']
-        - oauth2: ['read', 'write']
+        - api_key: ["read", "write"]
+        - oauth2: ["read", "write"]
       parameters:
-        - $ref: '#/components/parameters/suite_uuid'
+        - $ref: "#/components/parameters/suite_uuid"
       responses:
-        '200':
-          description: Does not exist
-        '204':
+        "204":
           description: Deleted
-        '400':
-          description: Invalid input
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "501":
+          description: "Not implemented"
+
+  /suites/{suite_uuid}/status:
+    get:
+      summary: >
+        Get status of latest build for this test suite for each known instance
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "suites_get_status"
+      security:
+        - api_key: ["read"]
+        - oauth2: ["read"]
+      parameters:
+        - $ref: "#/components/parameters/suite_uuid"
+      responses:
+        "200":
+          description: TestSuiteStatus
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestSuiteStatus"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /suites/{suite_uuid}/instances:
+    get:
+      summary: "Get list of instances of this suite present on testing services"
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "suites_get_instances"
+      security:
+        - api_key: ["read"]
+        - oauth2: ["read"]
+      parameters:
+        - $ref: "#/components/parameters/suite_uuid"
+      responses:
+        "200":
+          description: "List of test instances for this test suite"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListOfTestInstance"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    post:
+      summary: "Register or add an instance that executes this test suite"
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "suites_post_instance"
+      security:
+        - api_key: ["read", "write"]
+        - oauth2: ["read", "write"]
+      description: |
+        POSTing this resource results in the creation of a new test suite
+        instance.  That is, a specific test suite hosted and executed on a
+        specific testing service.
+
+        Two types of test instances can be created:  managed and unmanaged.
+        A *managed* test instance is managed by LifeMonitor on its
+        own testing infrastructure.
+        An *unmanaged" test instance is hosted on an external testing service
+        and LifeMonitor can only monitor it (query information about test
+        results through the service's API).
+      parameters:
+        - $ref: "#/components/parameters/suite_uuid"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - properties:
+                    managed:
+                      type: boolean
+                  required:
+                    - managed
+                - anyOf:
+                    - $ref: "#/components/schemas/TestInstance"
+                    - $ref: "#/components/schemas/ManagedTestInstanceCreationData"
+      responses:
+        "201":
+          description: Instance created
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "501":
+          description: "Not implemented"
+
+  /instances/{instance_uuid}:
+    get:
+      summary: >
+        Get summary of a test instance
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "instances_get_by_id"
+      security:
+        - api_key: ["read"]
+        - oauth2: ["read"]
+      parameters:
+        - $ref: "#/components/parameters/instance_uuid"
+      responses:
+        "200":
+          description: "Build summary list"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestInstance"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /instances/{instance_uuid}/latest-builds:
+    get:
+      summary: >
+        Get summaries of latest builds for this test suite, on this instance
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "instances_get_builds"
+      security:
+        - api_key: ["read"]
+        - oauth2: ["read"]
+      parameters:
+        - $ref: "#/components/parameters/instance_uuid"
+        - $ref: "#/components/parameters/limit"
+      responses:
+        "200":
+          description: "Build summary list"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListOfBuildSummary"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /instances/{instance_uuid}/builds/{build_id}:
+    get:
+      summary: "Get summary of a build for this test suite"
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "instances_builds_get_by_id"
+      security:
+        - api_key: ["read"]
+        - oauth2: ["read"]
+      parameters:
+        - $ref: "#/components/parameters/instance_uuid"
+        - $ref: "#/components/parameters/build_id"
+      responses:
+        "200":
+          description: "Log data"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BuildSummary"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /instances/{instance_uuid}/builds/{build_id}/logs:
+    get:
+      summary: "Get build logs"
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "instances_builds_get_logs"
+      security:
+        - api_key: ["read"]
+        - oauth2: ["read"]
+      parameters:
+        - $ref: "#/components/parameters/instance_uuid"
+        - $ref: "#/components/parameters/build_id"
+        - $ref: "#/components/parameters/offset_bytes"
+        - $ref: "#/components/parameters/limit_bytes"
+      responses:
+        "200":
+          description: "Log data"
+          content:
+            application/json:
+              schema:
+                type: string
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
 components:
   parameters:
+    registry_uuid:
+      name: "registry_uuid"
+      description: "Workflow Registry's Unique identifier"
+      in: path
+      schema:
+        type: string
+      required: true
+    user_id:
+      name: "user_id"
+      description: "User's Unique identifier"
+      in: path
+      schema:
+        type: integer
+      required: true
     wf_uuid:
       name: "wf_uuid"
       description: "Workflow's Unique identifier"
@@ -179,27 +661,6 @@ components:
       schema:
         type: string
       required: true
-    test_suite:
-      name: "test_suite"
-      description: "Flag to retrieve test suites info of the workflow"
-      in: query
-      schema:
-        type: boolean
-      required: false
-    test_build:
-      name: "test_build"
-      description: "Flag to retrieve test build info of test suites"
-      in: query
-      schema:
-        type: boolean
-      required: false
-    test_output:
-      name: "test_output"
-      description: "Flag to retrieve output of workflow tests"
-      in: query
-      schema:
-        type: boolean
-      required: false
     suite_uuid:
       name: "suite_uuid"
       description: "TestSuite's Unique identifier"
@@ -207,19 +668,153 @@ components:
       schema:
         type: string
       required: true
+    instance_uuid:
+      name: "instance_uuid"
+      description: "Test service Instance Unique identifier"
+      in: path
+      schema:
+        type: string
+      required: true
+    build_id:
+      name: "build_id"
+      description: "Build identifier"
+      in: path
+      schema:
+        type: string
+      required: true
+    limit:
+      name: "limit"
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 10
+      description: "Maximum number of items to retrieve"
+    limit_bytes:
+      name: "limit_bytes"
+      description: "Maximum number of log bytes to retrieve"
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 131072 # 128 kB
+    offset_bytes:
+      name: "offset_bytes"
+      description: "Number of bytes to skip while fetching the log"
+      in: query
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+
+  responses:
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+    BadRequest:
+      description: The request is malformed
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
 
   schemas:
     User:
       type: object
       properties:
         id:
-          type: string
+          type: integer
+          description: An identifier for the user, unique among all LifeMonitor accounts and never reused
         username:
           type: string
-        identities:
-          type: object
+          description: The user's username, unique among all LifeMonitor accounts
+        identity:
+          $ref: "#/components/schemas/UserIdentity"
+          nullable: true
       required:
         - id
+
+    UserIdentity:
+      type: object
+      description: A user identity issued by an identity provider.
+      properties:
+        sub:
+          type: string
+          description: An identifier for the user, unique among all provider accounts and never reused
+        provider:
+          $ref: "#/components/schemas/IdentityProvider"
+      required:
+        - sub
+        - provider
+
+    IdentityProvider:
+      type: object
+      properties:
+        type:
+          type: string
+        name:
+          type: string
+        uri:
+          type: string
+      required:
+        - name
+        - type
+        - uri
+
+    ListOfUsers:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
+      required:
+        - items
+
+    Registry:
+      type: object
+      properties:
+        uuid:
+          type: string
+        name:
+          type: string
+        uri:
+          type: string
+      required:
+        - uuid
+        - name
+        - uri
+
+    ListOfRegistries:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Registry"
+      required:
+        - items
+
+    Timestamp:
+      type: string
 
     Workflow:
       type: object
@@ -232,20 +827,238 @@ components:
           type: string
         name:
           type: string
+          nullable: true
         submitter_id:
           type: string
+          writeOnly: true
       required:
         - uuid
         - version
         - roc_link
 
+    ListOfWorkflow:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Workflow"
+      required:
+        - items
+
+    WorkflowStatus:
+      type: object
+      properties:
+        workflow:
+          type: object
+          properties:
+            uuid:
+              type: string
+            version:
+              type: string
+            name:
+              type: string
+          required:
+            - uuid
+            - version
+        aggregate_test_status:
+          $ref: "#/components/schemas/AggregateTestStatus"
+        latest_builds:
+          description: "Latest builds, one for each test instance"
+          type: array
+          items:
+            $ref: "#/components/schemas/BuildSummary"
+
+    AggregateTestStatus:
+      type: string
+      enum:
+        - "all_passing"
+        - "some_passing"
+        - "all_failing"
+        - "not_available"
+
     TestSuite:
       type: object
       properties:
+        uuid:
+          type: string
         test_suite_metadata:
           type: object
+          description: "To be determined."
+        instances:
+          type: array
+          items:
+            $ref: "#/components/schemas/TestInstance"
       required:
+        - uuid
         - test_suite_metadata
+        - instances
+
+    ListOfTestSuite:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/TestSuite"
+      required:
+        - items
+
+    TestSuiteStatus:
+      type: object
+      properties:
+        suite_uuid:
+          type: string
+        status:
+          $ref: "#/components/schemas/AggregateTestStatus"
+        latest_builds:
+          type: array
+          items:
+            $ref: "#/components/schemas/BuildSummary"
+      required:
+        - suite_uuid
+        - status
+
+    BuildStatus:
+      type: string
+      enum:
+        - passed
+        - failed
+        - error
+        - running
+        - waiting
+
+    BuildSummary:
+      type: object
+      properties:
+        build_id:
+          type: string
+        suite_uuid:
+          type: string
+        status:
+          $ref: "#/components/schemas/BuildStatus"
+        instance:
+          $ref: "#/components/schemas/TestInstance"
+        timestamp:
+          $ref: "#/components/schemas/Timestamp"
+        last_logs:
+          type: string
+          description: "Last few lines of build log, if available"
+      required:
+        - build_id
+        - suite_uuid
+        - instance
+        - timestamp
+
+    ListOfBuildSummary:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/BuildSummary"
+      required:
+        - items
+
+    Build:
+      type: object
+      properties:
+        build_id:
+          type: string
+        suite_uuid:
+          type: string
+        status:
+          $ref: "#/components/schemas/BuildStatus"
+        instance:
+          $ref: "#/components/schemas/TestInstance"
+        timestamp:
+          $ref: "#/components/schemas/Timestamp"
+          # other things to be added
+      required:
+        - build_id
+        - suite_uuid
+        - status
+        - instance
+        - timestamp
+
+    TestInstance:
+      type: object
+      properties:
+        name:
+          type: string
+        service:
+          type: object
+          properties:
+            type:
+              type: string
+            url:
+              type: string
+            resource:
+              type: string
+          required:
+            - type
+            - url
+      required:
+        - service
+
+    ListOfTestInstance:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/TestInstance"
+      required:
+        - items
+
+    ManagedTestInstanceCreationData:
+      type: object
+      description: |
+        This object collects the information to be provided for the creation of
+        a managed test instance.  At the moment it's empty.
+
+    Error:
+      type: object
+      description: |
+        The canonical model for problem details is a JSON [RFC7159] object.
+      properties:
+        type:
+          type: string
+          description: |
+            "type" (string) - An absolute URI [RFC3986] that identifies the
+            problem type.  When dereferenced, it SHOULD provide human-readable
+            documentation for the problem type (e.g., using HTML
+            [W3C.REC-html401-19991224]).  When this member is not present, its
+            value is assumed to be "about:blank".
+          default: "about:blank"
+        title:
+          type: string
+          description: |
+            "title" (string) - A short, human-readable summary of the problem
+            type.  It SHOULD NOT change from occurrence to occurrence of the 
+            problem, except for purposes of localisation.
+        status:
+          type: integer
+          description: |
+            "status" (number) - The HTTP status code ([RFC7231], Section 6)
+            generated by the origin server for this occurrence of the problem.
+        detail:
+          type: string
+          description: |
+            "detail" (string) - An human readable explanation specific to this
+            occurrence of the problem.
+        instance:
+          type: string
+          description: |
+            "instance" (string) - An absolute URI that identifies the specific
+            occurrence of the problem.  It may or may not yield further 
+            information if dereferenced.
+        extra_info:
+          type: object
+          description: Additional information
+      required:
+        - title
+        - status
 
   securitySchemes:
     api_key:
@@ -258,8 +1071,17 @@ components:
       x-tokenInfoFunc: lifemonitor.auth.oauth2.server.services.get_token_scopes
       flows:
         authorizationCode:
-          tokenUrl: "oauth/token"
-          authorizationUrl: "oauth/authorize"
+          tokenUrl: "/oauth2/token"
+          authorizationUrl: "/oauth2/authorize"
           scopes:
             read: Read data and metadata (including that of private resources)
             write: Write data and metadata of private resources
+        clientCredentials:
+          tokenUrl: "/oauth2/token"
+          scopes:
+            read: Read data and metadata (including that of private resources)
+            write: Write data and metadata of private resources
+
+  examples:
+    test_metadata:
+      externalValue: "examples/test-metadata.json"

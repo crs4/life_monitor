@@ -1,6 +1,6 @@
 from __future__ import annotations
 import time
-
+from typing import List
 from authlib.integrations.flask_oauth2 import AuthorizationServer as OAuth2AuthorizationServer
 from authlib.oauth2.rfc6749 import grants, InvalidRequestError
 from authlib.common.security import generate_token
@@ -11,10 +11,10 @@ from authlib.integrations.sqla_oauth2 import (
     create_query_client_func,
     create_save_token_func
 )
-from werkzeug.security import gen_salt
-
 from lifemonitor.db import db
+from werkzeug.security import gen_salt
 from lifemonitor.auth.models import User
+from datetime import datetime
 
 
 class Client(db.Model, OAuth2ClientMixin):
@@ -31,6 +31,36 @@ class Client(db.Model, OAuth2ClientMixin):
         ),
     )
 
+    @property
+    def redirect_uris(self):
+        return self.client_metadata.get('redirect_uris', [])
+
+    @redirect_uris.setter
+    def redirect_uris(self, value):
+        if isinstance(value, str):
+            value = value.split(',')
+        metadata = self.client_metadata
+        metadata['redirect_uris'] = value
+        self.set_client_metadata(metadata)
+
+    @property
+    def auth_method(self):
+        return self.client_metadata.get('token_endpoint_auth_method')
+
+    @auth_method.setter
+    def auth_method(self, value):
+        metadata = self.client_metadata
+        metadata['token_endpoint_auth_method'] = value
+        self.set_client_metadata(metadata)
+
+    @classmethod
+    def find_by_id(cls, client_id) -> Client:
+        return cls.query.get(client_id)
+
+    @classmethod
+    def all(cls) -> List[Client]:
+        return cls.query.all()
+
 
 class Token(db.Model, OAuth2TokenMixin):
     id = db.Column(db.Integer, primary_key=True)
@@ -41,6 +71,12 @@ class Token(db.Model, OAuth2TokenMixin):
     client_id = db.Column(db.String,
                           db.ForeignKey('client.client_id', ondelete='CASCADE'))
     client = db.relationship('Client')
+
+    def is_expired(self) -> bool:
+        return self.check_token_expiration(self.expires_at)
+
+    def is_refresh_token_valid(self) -> bool:
+        return self if not self.revoked else None
 
     def save(self):
         db.session.add(self)
@@ -55,8 +91,16 @@ class Token(db.Model, OAuth2TokenMixin):
         return cls.query.filter(Token.access_token == access_token).first()
 
     @classmethod
+    def find_by_user(cls, user: User) -> List[Token]:
+        return cls.query.filter(Token.user == user).all()
+
+    @classmethod
     def all(cls):
         return cls.query.all()
+
+    @staticmethod
+    def check_token_expiration(expires_at) -> bool:
+        return datetime.utcnow().timestamp() - expires_at > 0
 
 
 class AuthorizationServer(OAuth2AuthorizationServer):
@@ -81,7 +125,7 @@ class AuthorizationServer(OAuth2AuthorizationServer):
                       client_name, client_uri,
                       grant_type, response_type, scope,
                       redirect_uri,
-                      token_endpoint_auth_method=None):
+                      token_endpoint_auth_method=None, commit=True):
         client_id = gen_salt(24)
         client_id_issued_at = int(time.time())
         client = Client(
@@ -106,9 +150,23 @@ class AuthorizationServer(OAuth2AuthorizationServer):
         else:
             client.client_secret = gen_salt(48)
 
-        db.session.add(client)
-        db.session.commit()
+        if commit:
+            db.session.add(client)
+            db.session.commit()
         return client
+
+    @staticmethod
+    def request_authorization(client: Client, user: User) -> bool:
+        # We want to skip request for permssion when the client is a workflow registry.
+        # The current implementation supports only workflow registries as
+        # client_credentials clients. Thus, we can simple check if the grant 'client_credentials'
+        # has been assigned to the client
+        if client.check_grant_type("client_credentials"):
+            return False
+        for t in Token.find_by_user(user):
+            if not t.revoked and not t.is_expired():
+                return False
+        return True
 
 
 class AuthorizationCode(db.Model, OAuth2AuthorizationCodeMixin):

@@ -4,8 +4,7 @@ import re
 import logging
 import jenkins
 import uuid as _uuid
-from typing import Union
-from importlib import import_module
+from typing import Union, List
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Optional
@@ -15,9 +14,11 @@ from lifemonitor.db import db
 from lifemonitor.auth.models import User
 from sqlalchemy.ext.associationproxy import association_proxy
 from lifemonitor.auth.oauth2.client.services import oauth2_registry
+from lifemonitor.api import registries
+
 from lifemonitor.common import (SpecificationNotValidException, EntityNotFoundException,
                                 SpecificationNotDefinedException, TestingServiceNotSupportedException,
-                                NotImplementedException, TestingServiceException, LifeMonitorException)
+                                NotImplementedException, TestingServiceException)
 from lifemonitor.utils import download_url, to_camel_case
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 
@@ -40,8 +41,7 @@ class WorkflowRegistryClient(ABC):
 
     def _get_access_token(self, user_id):
         # get the access token related with the user of this client registry
-        return OAuthIdentity.find_by_user_provider(user_id,
-                                                   self.registry.name).token
+        return OAuthIdentity.find_by_user_id(user_id, self.registry.name).token
 
     def _get(self, user, *args, **kwargs):
         # update token
@@ -75,35 +75,44 @@ class WorkflowRegistryClient(ABC):
 class WorkflowRegistry(db.Model):
 
     uuid = db.Column(UUID(as_uuid=True), primary_key=True, default=_uuid.uuid4)
-    name = db.Column(db.Text, unique=True)
     uri = db.Column(db.Text, unique=True)
-    _client_id = db.Column(
-        db.Integer, db.ForeignKey('client.id', ondelete='CASCADE')
-    )
+    type = db.Column(db.String, nullable=False)
+    _client_id = db.Column(db.Integer, db.ForeignKey('client.id', ondelete='CASCADE'))
+    _server_id = db.Column(db.Integer, db.ForeignKey('oauth2_identity_provider.id', ondelete='CASCADE'))
     client_credentials = db.relationship("Client", uselist=False, cascade="all, delete")
+    server_credentials = db.relationship("OAuth2IdentityProvider", uselist=False, cascade="all, delete")
     registered_workflows = db.relationship("Workflow",
                                            back_populates="workflow_registry", cascade="all, delete")
     client_id = association_proxy('client_credentials', 'client_id')
+    name = association_proxy('server_credentials', 'name')
+    # _uri = association_proxy('server_credentials', 'api_base_url')
+
     _client = None
 
-    def __init__(self, name, client_credentials):
+    __mapper_args__ = {
+        'polymorphic_identity': 'workflow_registry',
+        'polymorphic_on': type,
+    }
+
+    def __init__(self, client_credentials, server_credentials):
         self.__instance = self
-        self.name = name
-        self.uri = client_credentials.client_metadata['client_uri']
+        self.uri = server_credentials.api_base_url
         self.client_credentials = client_credentials
+        self.server_credentials = server_credentials
         self._client = None
+
+    @property
+    def name(self):
+        return self.server_credentials.name
+
+    @name.setter
+    def name(self, value):
+        self.server_credentials.name = value
 
     @property
     def client(self) -> WorkflowRegistryClient:
         if self._client is None:
-            m = f"lifemonitor.api.registry.{self.name}"
-            try:
-                mod = import_module(m)
-                self._client = getattr(mod, "WorkflowRegistryClient")(self)
-            except ModuleNotFoundError:
-                raise LifeMonitorException(f"ModuleNotFoundError: Unable to load module {m}")
-            except AttributeError:
-                raise LifeMonitorException(f"Unable to create an instance of WorkflowRegistryClient from module {m}")
+            return registries.get_registry_client_class(self.type)(self)
         return self._client
 
     def build_ro_link(self, w: Workflow) -> str:
@@ -112,8 +121,23 @@ class WorkflowRegistry(db.Model):
     def download_url(self, url, user, target_path=None):
         return self.client.download_url(url, user, target_path=target_path)
 
-    def get_users(self):
-        pass
+    @property
+    def users(self) -> List[User]:
+        return self.get_users()
+
+    def get_user(self, user_id) -> User:
+        for u in self.users:
+            logger.debug(f"Checking {u.id} {user_id}")
+            if u.id == user_id:
+                return u
+        raise EntityNotFoundException(User, entity_id=user_id)
+
+    def get_users(self) -> List[User]:
+        try:
+            return [i.user for i in OAuthIdentity.query
+                    .filter(OAuthIdentity.provider == self.server_credentials).all()]
+        except Exception as e:
+            raise EntityNotFoundException(e)
 
     def add_workflow(self, workflow_uuid, workflow_version,
                      workflow_submitter: User,
@@ -139,10 +163,21 @@ class WorkflowRegistry(db.Model):
         db.session.delete(self)
         db.session.commit()
 
-    def get_workflow(self, uuid, version):
+    def get_workflow(self, uuid, version=None):
         try:
+            if not version:
+                return Workflow.query.with_parent(self)\
+                    .filter(Workflow.uuid == uuid).order_by(Workflow.version.desc()).first()
             return Workflow.query.with_parent(self)\
-                .filter(Workflow.uuid == uuid).filter(Workflow.version == version).one()
+                .filter(Workflow.uuid == uuid).filter(Workflow.version == version).first()
+        except Exception as e:
+            raise EntityNotFoundException(e)
+
+    def get_workflow_versions(self, uuid):
+        try:
+            workflows = Workflow.query.with_parent(self)\
+                .filter(Workflow.uuid == uuid).order_by(Workflow.version.desc())
+            return {w.version: w for w in workflows}
         except Exception as e:
             raise EntityNotFoundException(e)
 
@@ -155,19 +190,131 @@ class WorkflowRegistry(db.Model):
 
     @classmethod
     def find_by_id(cls, uuid) -> WorkflowRegistry:
-        return cls.query.get(uuid)
+        try:
+            return cls.query.get(uuid)
+        except Exception as e:
+            raise EntityNotFoundException(WorkflowRegistry, entity_id=uuid, exception=e)
 
     @classmethod
     def find_by_name(cls, name):
-        return cls.query.filter(WorkflowRegistry.name == name).first()
+        try:
+            return cls.query.filter(WorkflowRegistry.server_credentials.has(name=name)).one()
+        except Exception as e:
+            raise EntityNotFoundException(WorkflowRegistry, entity_id=name, exception=e)
 
     @classmethod
     def find_by_uri(cls, uri):
-        return cls.query.filter(WorkflowRegistry.uri == uri).first()
+        try:
+            return cls.query.filter(WorkflowRegistry.uri == uri).one()
+        except Exception as e:
+            raise EntityNotFoundException(WorkflowRegistry, entity_id=uri, exception=e)
 
     @classmethod
     def find_by_client_id(cls, client_id):
-        return cls.query.filter_by(client_id=client_id).first()
+        try:
+            return cls.query.filter_by(client_id=client_id).first()
+        except Exception as e:
+            raise EntityNotFoundException(WorkflowRegistry, entity_id=client_id, exception=e)
+
+    @staticmethod
+    def new_instance(registry_type, client_credentials, server_credentials):
+        return registries.get_registry_class(registry_type)(client_credentials,
+                                                            server_credentials)
+
+
+class AggregateTestStatus:
+    ALL_PASSING = "all_passing"
+    SOME_PASSING = "some_passing"
+    ALL_FAILING = "all_failing"
+    NOT_AVAILABLE = "not_available"
+
+
+class Status:
+
+    def __init__(self) -> None:
+        self._status = AggregateTestStatus.NOT_AVAILABLE
+        self._latest_builds = None
+        self._availability_issues = None
+
+    @property
+    def aggregated_status(self):
+        return self._status
+
+    @property
+    def latest_builds(self):
+        return self._latest_builds.copy()
+
+    @property
+    def availability_issues(self):
+        return self._availability_issues.copy()
+
+    @staticmethod
+    def _update_status(current_status, build_passing):
+        status = current_status
+        if status == AggregateTestStatus.NOT_AVAILABLE:
+            if build_passing:
+                status = AggregateTestStatus.ALL_PASSING
+            elif not build_passing:
+                status = AggregateTestStatus.ALL_FAILING
+        elif status == AggregateTestStatus.ALL_PASSING:
+            if not build_passing:
+                status = AggregateTestStatus.SOME_PASSING
+        elif status == AggregateTestStatus.ALL_FAILING:
+            if build_passing:
+                status = AggregateTestStatus.SOME_PASSING
+        return status
+
+    @staticmethod
+    def check_status(suites):
+        status = AggregateTestStatus.NOT_AVAILABLE
+        latest_builds = []
+        availability_issues = []
+
+        if len(suites) == 0:
+            availability_issues.append({
+                "issue": "No test suite configured for this workflow"
+            })
+
+        for suite in suites:
+            if len(suite.test_instances) == 0:
+                availability_issues.append({
+                    "issue": f"No test instances configured for suite {suite}"
+                })
+            for test_instance in suite.test_instances:
+                try:
+                    testing_service = test_instance.testing_service
+                    latest_build = testing_service.last_test_build
+                    if latest_build is None:
+                        availability_issues.append({
+                            "service": testing_service.uri,
+                            "instance": test_instance,  # WHAT?
+                            "issue": "No build found"
+                        })
+                    else:
+                        latest_builds.append(latest_build)
+                        status = WorkflowStatus._update_status(status, latest_build.is_successful())
+                except TestingServiceException as e:
+                    availability_issues.append({
+                        "service": testing_service.uri,
+                        "issue": str(e)
+                    })
+                    logger.exception(e)
+        # update the current status
+        return status, latest_builds, availability_issues
+
+
+class WorkflowStatus(Status):
+
+    def __init__(self, workflow: Workflow) -> None:
+        self.workflow = workflow
+        self._status, self._latest_builds, self._availability_issues = WorkflowStatus.check_status(self.workflow.test_suites)
+
+
+class SuiteStatus(Status):
+
+    def __init__(self, suite: TestSuite) -> None:
+        self.suite = suite
+        self._status, self._latest_builds, self._availability_issues = Status.check_status([suite])
 
 
 class Workflow(db.Model):
@@ -191,7 +338,7 @@ class Workflow(db.Model):
     __tablename__ = "workflow"
     __table_args__ = (
         db.UniqueConstraint(uuid, version),
-        db.UniqueConstraint(_registry_id, external_id),
+        db.UniqueConstraint(_registry_id, external_id, version),
     )
 
     def __init__(self, registry: WorkflowRegistry, submitter: User,
@@ -224,11 +371,31 @@ class Workflow(db.Model):
         return health
 
     @property
+    def previous_versions(self):
+        return list(self.previous_workflow_versions.keys())
+
+    @property
+    def previous_workflow_versions(self):
+        return {k: v
+                for k, v in self.workflow_registry.get_workflow_versions(self.uuid).items()
+                if k != self.version}
+
+    @property
+    def status(self) -> WorkflowStatus:
+        return WorkflowStatus(self)
+
+    @property
     def is_healthy(self) -> Union[bool, str]:
         return self.check_health()["healthy"]
 
     def add_test_suite(self, submitter: User, test_suite_metadata):
         return TestSuite(self, submitter, test_suite_metadata)
+
+    @property
+    def submitter_identity(self):
+        # Return the submitter identity wrt the registry
+        identity = OAuthIdentity.find_by_user_id(self.submitter.id, self.workflow_registry.name)
+        return identity.provider_user_id
 
     def to_dict(self, test_suite=False, test_build=False, test_output=False):
         health = self.check_health()
@@ -261,6 +428,11 @@ class Workflow(db.Model):
     def find_by_id(cls, uuid, version):
         return cls.query.filter(Workflow.uuid == uuid) \
             .filter(Workflow.version == version).first()
+
+    @classmethod
+    def find_latest_by_id(cls, uuid):
+        return cls.query.filter(Workflow.uuid == uuid) \
+            .order_by(Workflow.version.desc()).first()
 
     @classmethod
     def find_by_submitter(cls, submitter: User):
@@ -325,6 +497,10 @@ class TestSuite(db.Model):
                     logger.debug("Created TestInstance: %r", test_instance)
         except KeyError as e:
             raise SpecificationNotValidException(f"Missing property: {e}")
+
+    @property
+    def status(self) -> SuiteStatus:
+        return SuiteStatus(self)
 
     def get_test_instance_by_name(self, name) -> list:
         result = []
@@ -407,6 +583,10 @@ class TestInstance(db.Model):
         if not self.test_suite:
             raise EntityNotFoundException(Test)
         return self.test_suite.tests[self.name]
+
+    @property
+    def test_builds(self):
+        return self.testing_service.test_builds
 
     def to_dict(self, test_build=False, test_output=False):
         data = {
@@ -551,6 +731,15 @@ class TestingService(db.Model):
         return service_class(url, resource)
 
 
+class BuildStatus:
+    PASSED = "passed"
+    FAILED = "failed"
+    ERROR = "error"
+    RUNNING = "running"
+    WAITING = "waiting"
+    ABORTED = "aborted"
+
+
 class TestBuild(ABC):
     class Result(Enum):
         SUCCESS = 0
@@ -562,6 +751,15 @@ class TestBuild(ABC):
 
     def is_successful(self):
         return self.result == TestBuild.Result.SUCCESS
+
+    @property
+    @abstractmethod
+    def id(self) -> int:
+        pass
+
+    @property
+    def status(self):
+        pass
 
     @property
     def metadata(self):
@@ -579,6 +777,11 @@ class TestBuild(ABC):
 
     @property
     @abstractmethod
+    def timestamp(self) -> int:
+        pass
+
+    @property
+    @abstractmethod
     def duration(self) -> int:
         pass
 
@@ -586,6 +789,10 @@ class TestBuild(ABC):
     @abstractmethod
     def output(self) -> str:
         pass
+
+    @property
+    def last_logs(self) -> str:
+        return self.output
 
     @property
     @abstractmethod
@@ -612,14 +819,38 @@ class TestBuild(ABC):
 class JenkinsTestBuild(TestBuild):
 
     @property
+    def id(self) -> str:
+        return str(self.metadata['number'])
+
+    @property
     def build_number(self) -> int:
         return self.metadata['number']
+
+    def is_running(self) -> bool:
+        return self.metadata['building'] is True
+
+    @property
+    def status(self) -> str:
+        if self.is_running():
+            return BuildStatus.RUNNING
+        if self.metadata['result']:
+            if self.metadata['result'] == 'SUCCESS':
+                return BuildStatus.PASSED
+            elif self.metadata['result'] == 'ABORTED':
+                return BuildStatus.ABORTED
+            elif self.metadata['result'] == 'FAILURE':
+                return BuildStatus.FAILED
+        return BuildStatus.ERROR
 
     @property
     def last_built_revision(self):
         rev_info = list(map(lambda x: x["lastBuiltRevision"],
                             filter(lambda x: "lastBuiltRevision" in x, self.metadata["actions"])))
         return rev_info[0] if len(rev_info) == 1 else None
+
+    @property
+    def timestamp(self) -> int:
+        return self.metadata['timestamp']
 
     @property
     def duration(self) -> int:

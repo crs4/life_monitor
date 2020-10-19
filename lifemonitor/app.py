@@ -3,9 +3,12 @@ import logging
 from flask import Flask, jsonify
 
 from .db import db
+from . import commands
+from .serializers import ma
 import lifemonitor.config as config
 from lifemonitor.routes import register_routes
-from . import commands
+from .common import handle_exception
+
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -27,6 +30,8 @@ def create_app(env=None, settings=None, init_app=True, **kwargs):
     flask_app_instance_path = getattr(app_config, "FLASK_APP_INSTANCE_PATH", None)
     # create Flask app instance
     app = Flask(__name__, instance_relative_config=True, instance_path=flask_app_instance_path, **kwargs)
+    # register handler for app specific exception
+    app.register_error_handler(Exception, handle_exception)
     # set config object
     app.config.from_object(app_config)
     # load the file specified by the FLASK_APP_CONFIG_FILE environment variable
@@ -51,6 +56,8 @@ def initialize_app(app, app_context):
     config.configure_logging(app)
     # configure app DB
     db.init_app(app)
+    # configure serializer engine (Flask Marshmallow)
+    ma.init_app(app)
     # configure app routes
     register_routes(app)
     # register commands
