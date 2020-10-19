@@ -20,8 +20,10 @@ def db_init():
     logger.debug("Initializing DB...")
     db.create_all()
     logger.info("DB initialized")
-    # create a default admin user
-    admin = User("admin")
-    admin.password = "admin"
-    db.session.add(admin)
-    db.session.commit()
+    # create a default admin user if not exists
+    admin = User.find_by_username('admin')
+    if not admin:
+        admin = User("admin")
+        admin.password = "admin"
+        db.session.add(admin)
+        db.session.commit()
