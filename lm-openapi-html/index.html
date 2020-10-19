@@ -183,14 +183,15 @@ font-style: italic;
     <div class="app-desc">Workflow sustainability service</div>
     <div class="app-desc">More information: <a href="https://openapi-generator.tech">https://openapi-generator.tech</a></div>
     <div class="app-desc">Contact Info: <a href="team@openapitools.org">team@openapitools.org</a></div>
-    <div class="app-desc">Version: 0.0.1</div>
+    <div class="app-desc">Version: 0.1.0</div>
     <div class="app-desc">BasePath:</div>
     <div class="license-info">All rights reserved</div>
     <div class="license-url">http://apache.org/licenses/LICENSE-2.0.html</div>
   <h2>Access</h2>
     <ol>
       <li>APIKey KeyParamName:ApiKey KeyInQuery:false KeyInHeader:true</li>
-      <li>OAuth AuthorizationUrl:oauth/authorizeTokenUrl:oauth/token</li>
+      <li>OAuth AuthorizationUrl:TokenUrl:/oauth2/token</li>
+      <li>OAuth AuthorizationUrl:/oauth2/authorizeTokenUrl:/oauth2/token</li>
     </ol>
 
   <h2><a name="__Methods">Methods</a></h2>
@@ -200,21 +201,464 @@ font-style: italic;
   <div class="method-summary"></div>
   <h4><a href="#Default">Default</a></h4>
   <ul>
-  <li><a href="#showCurrentUserProfile"><code><span class="http-method">get</span> /me</code></a></li>
+  <li><a href="#getRegistryUser"><code><span class="http-method">get</span> /users/{user_id}</code></a></li>
+  <li><a href="#getRegistryUsers"><code><span class="http-method">get</span> /users</code></a></li>
+  <li><a href="#instancesBuildsGetById"><code><span class="http-method">get</span> /instances/{instance_uuid}/builds/{build_id}</code></a></li>
+  <li><a href="#instancesBuildsGetLogs"><code><span class="http-method">get</span> /instances/{instance_uuid}/builds/{build_id}/logs</code></a></li>
+  <li><a href="#instancesGetBuilds"><code><span class="http-method">get</span> /instances/{instance_uuid}/latest-builds</code></a></li>
+  <li><a href="#instancesGetById"><code><span class="http-method">get</span> /instances/{instance_uuid}</code></a></li>
+  <li><a href="#showCurrentUserProfile"><code><span class="http-method">get</span> /users/current</code></a></li>
   <li><a href="#suitesDelete"><code><span class="http-method">delete</span> /suites/{suite_uuid}</code></a></li>
-  <li><a href="#suitesPost"><code><span class="http-method">post</span> /workflows/{wf_uuid}/{wf_version}/suites</code></a></li>
+  <li><a href="#suitesGetByUuid"><code><span class="http-method">get</span> /suites/{suite_uuid}</code></a></li>
+  <li><a href="#suitesGetInstances"><code><span class="http-method">get</span> /suites/{suite_uuid}/instances</code></a></li>
+  <li><a href="#suitesGetStatus"><code><span class="http-method">get</span> /suites/{suite_uuid}/status</code></a></li>
+  <li><a href="#suitesPostInstance"><code><span class="http-method">post</span> /suites/{suite_uuid}/instances</code></a></li>
+  <li><a href="#workflowRegistriesGet"><code><span class="http-method">get</span> /registries</code></a></li>
+  <li><a href="#workflowRegistriesGetByUuid"><code><span class="http-method">get</span> /registries/{registry_uuid}</code></a></li>
+  <li><a href="#workflowRegistriesGetCurrent"><code><span class="http-method">get</span> /registries/current</code></a></li>
   <li><a href="#workflowsDelete"><code><span class="http-method">delete</span> /workflows/{wf_uuid}/{wf_version}</code></a></li>
   <li><a href="#workflowsGet"><code><span class="http-method">get</span> /workflows</code></a></li>
   <li><a href="#workflowsGetById"><code><span class="http-method">get</span> /workflows/{wf_uuid}/{wf_version}</code></a></li>
+  <li><a href="#workflowsGetLatestVersionById"><code><span class="http-method">get</span> /workflows/{wf_uuid}</code></a></li>
+  <li><a href="#workflowsGetStatus"><code><span class="http-method">get</span> /workflows/{wf_uuid}/{wf_version}/status</code></a></li>
+  <li><a href="#workflowsGetSuites"><code><span class="http-method">get</span> /workflows/{wf_uuid}/{wf_version}/suites</code></a></li>
   <li><a href="#workflowsPost"><code><span class="http-method">post</span> /workflows</code></a></li>
   <li><a href="#workflowsPut"><code><span class="http-method">put</span> /workflows/{wf_uuid}/{wf_version}</code></a></li>
   </ul>
 
   <h1><a name="Default">Default</a></h1>
+  <div class="method"><a name="getRegistryUser"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /users/{user_id}</code></pre></div>
+    <div class="method-summary">Get a user of the current registry (<span class="nickname">getRegistryUser</span>)</div>
+    <div class="method-notes"></div>
+
+    <h3 class="field-label">Path parameters</h3>
+    <div class="field-items">
+      <div class="param">user_id (required)</div>
+
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; User's Unique identifier default: null </div>
+    </div>  <!-- field-items -->
+
+
+
+
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#User">User</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "identity" : {
+    "sub" : "sub",
+    "provider" : {
+      "name" : "name",
+      "type" : "type",
+      "uri" : "uri"
+    }
+  },
+  "id" : 0,
+  "username" : "username"
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    Get a registry user
+        <a href="#User">User</a>
+    <h4 class="field-label">400</h4>
+    The request is malformed
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">403</h4>
+    Forbidden
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Resource not found
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="getRegistryUsers"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /users</code></pre></div>
+    <div class="method-summary">Get users of the current registry (<span class="nickname">getRegistryUsers</span>)</div>
+    <div class="method-notes"></div>
+
+
+
+
+
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#ListOfUsers">ListOfUsers</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "items" : [ {
+    "identity" : {
+      "sub" : "sub",
+      "provider" : {
+        "name" : "name",
+        "type" : "type",
+        "uri" : "uri"
+      }
+    },
+    "id" : 0,
+    "username" : "username"
+  }, {
+    "identity" : {
+      "sub" : "sub",
+      "provider" : {
+        "name" : "name",
+        "type" : "type",
+        "uri" : "uri"
+      }
+    },
+    "id" : 0,
+    "username" : "username"
+  } ]
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    List of registry users
+        <a href="#ListOfUsers">ListOfUsers</a>
+    <h4 class="field-label">400</h4>
+    The request is malformed
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">403</h4>
+    Forbidden
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Resource not found
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="instancesBuildsGetById"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /instances/{instance_uuid}/builds/{build_id}</code></pre></div>
+    <div class="method-summary">Get summary of a build for this test suite (<span class="nickname">instancesBuildsGetById</span>)</div>
+    <div class="method-notes"></div>
+
+    <h3 class="field-label">Path parameters</h3>
+    <div class="field-items">
+      <div class="param">instance_uuid (required)</div>
+
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Test service Instance Unique identifier default: null </div><div class="param">build_id (required)</div>
+
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Build identifier default: null </div>
+    </div>  <!-- field-items -->
+
+
+
+
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#BuildSummary">BuildSummary</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "instance" : {
+    "service" : {
+      "resource" : "resource",
+      "type" : "type",
+      "url" : "url"
+    },
+    "name" : "name"
+  },
+  "build_id" : "build_id",
+  "last_logs" : "last_logs",
+  "suite_uuid" : "suite_uuid",
+  "timestamp" : "timestamp"
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    Log data
+        <a href="#BuildSummary">BuildSummary</a>
+    <h4 class="field-label">400</h4>
+    The request is malformed
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">403</h4>
+    Forbidden
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Resource not found
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="instancesBuildsGetLogs"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /instances/{instance_uuid}/builds/{build_id}/logs</code></pre></div>
+    <div class="method-summary">Get build logs (<span class="nickname">instancesBuildsGetLogs</span>)</div>
+    <div class="method-notes"></div>
+
+    <h3 class="field-label">Path parameters</h3>
+    <div class="field-items">
+      <div class="param">instance_uuid (required)</div>
+
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Test service Instance Unique identifier default: null </div><div class="param">build_id (required)</div>
+
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Build identifier default: null </div>
+    </div>  <!-- field-items -->
+
+
+
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">offset_bytes (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Number of bytes to skip while fetching the log default: 0 </div><div class="param">limit_bytes (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Maximum number of log bytes to retrieve default: 131072 </div>
+    </div>  <!-- field-items -->
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      
+      String
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    Log data
+        <a href="#String">String</a>
+    <h4 class="field-label">400</h4>
+    The request is malformed
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">403</h4>
+    Forbidden
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Resource not found
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="instancesGetBuilds"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /instances/{instance_uuid}/latest-builds</code></pre></div>
+    <div class="method-summary">Get summaries of latest builds for this test suite, on this instance (<span class="nickname">instancesGetBuilds</span>)</div>
+    <div class="method-notes"></div>
+
+    <h3 class="field-label">Path parameters</h3>
+    <div class="field-items">
+      <div class="param">instance_uuid (required)</div>
+
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Test service Instance Unique identifier default: null </div>
+    </div>  <!-- field-items -->
+
+
+
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">limit (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Maximum number of items to retrieve default: 10 </div>
+    </div>  <!-- field-items -->
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#ListOfBuildSummary">ListOfBuildSummary</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "items" : [ {
+    "instance" : {
+      "service" : {
+        "resource" : "resource",
+        "type" : "type",
+        "url" : "url"
+      },
+      "name" : "name"
+    },
+    "build_id" : "build_id",
+    "last_logs" : "last_logs",
+    "suite_uuid" : "suite_uuid",
+    "timestamp" : "timestamp"
+  }, {
+    "instance" : {
+      "service" : {
+        "resource" : "resource",
+        "type" : "type",
+        "url" : "url"
+      },
+      "name" : "name"
+    },
+    "build_id" : "build_id",
+    "last_logs" : "last_logs",
+    "suite_uuid" : "suite_uuid",
+    "timestamp" : "timestamp"
+  } ]
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    Build summary list
+        <a href="#ListOfBuildSummary">ListOfBuildSummary</a>
+    <h4 class="field-label">400</h4>
+    The request is malformed
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">403</h4>
+    Forbidden
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Resource not found
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="instancesGetById"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /instances/{instance_uuid}</code></pre></div>
+    <div class="method-summary">Get summary of a test instance (<span class="nickname">instancesGetById</span>)</div>
+    <div class="method-notes"></div>
+
+    <h3 class="field-label">Path parameters</h3>
+    <div class="field-items">
+      <div class="param">instance_uuid (required)</div>
+
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Test service Instance Unique identifier default: null </div>
+    </div>  <!-- field-items -->
+
+
+
+
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#TestInstance">TestInstance</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "service" : {
+    "resource" : "resource",
+    "type" : "type",
+    "url" : "url"
+  },
+  "name" : "name"
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    Build summary list
+        <a href="#TestInstance">TestInstance</a>
+    <h4 class="field-label">400</h4>
+    The request is malformed
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">403</h4>
+    Forbidden
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Resource not found
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
   <div class="method"><a name="showCurrentUserProfile"/>
     <div class="method-path">
     <a class="up" href="#__Methods">Up</a>
-    <pre class="get"><code class="huge"><span class="http-method">get</span> /me</code></pre></div>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /users/current</code></pre></div>
     <div class="method-summary">Get the profile of the current logged user (<span class="nickname">showCurrentUserProfile</span>)</div>
     <div class="method-notes"></div>
 
@@ -235,8 +679,15 @@ font-style: italic;
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
     <pre class="example"><code>{
-  "identities" : "{}",
-  "id" : "id",
+  "identity" : {
+    "sub" : "sub",
+    "provider" : {
+      "name" : "name",
+      "type" : "type",
+      "uri" : "uri"
+    }
+  },
+  "id" : 0,
   "username" : "username"
 }</code></pre>
 
@@ -251,6 +702,18 @@ font-style: italic;
     <h4 class="field-label">200</h4>
     User profile info
         <a href="#User">User</a>
+    <h4 class="field-label">400</h4>
+    The request is malformed
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">403</h4>
+    Forbidden
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Resource not found
+        <a href="#Error">Error</a>
   </div> <!-- method -->
   <hr/>
   <div class="method"><a name="suitesDelete"/>
@@ -276,33 +739,280 @@ font-style: italic;
     <!--Todo: process Response Object and its headers, schema, examples -->
 
 
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
 
     <h3 class="field-label">Responses</h3>
-    <h4 class="field-label">200</h4>
-    Does not exist
-        <a href="#"></a>
     <h4 class="field-label">204</h4>
     Deleted
         <a href="#"></a>
     <h4 class="field-label">400</h4>
-    Invalid input
+    The request is malformed
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">403</h4>
+    Forbidden
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Resource not found
+        <a href="#Error">Error</a>
+    <h4 class="field-label">501</h4>
+    Not implemented
         <a href="#"></a>
   </div> <!-- method -->
   <hr/>
-  <div class="method"><a name="suitesPost"/>
+  <div class="method"><a name="suitesGetByUuid"/>
     <div class="method-path">
     <a class="up" href="#__Methods">Up</a>
-    <pre class="post"><code class="huge"><span class="http-method">post</span> /workflows/{wf_uuid}/{wf_version}/suites</code></pre></div>
-    <div class="method-summary">Register a test suite (<span class="nickname">suitesPost</span>)</div>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /suites/{suite_uuid}</code></pre></div>
+    <div class="method-summary">Get info about a single test suite. (<span class="nickname">suitesGetByUuid</span>)</div>
     <div class="method-notes"></div>
 
     <h3 class="field-label">Path parameters</h3>
     <div class="field-items">
-      <div class="param">wf_uuid (required)</div>
+      <div class="param">suite_uuid (required)</div>
 
-      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Workflow's Unique identifier default: null </div><div class="param">wf_version (required)</div>
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; TestSuite's Unique identifier default: null </div>
+    </div>  <!-- field-items -->
 
-      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Workflow's version default: null </div>
+
+
+
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#TestSuite">TestSuite</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "test_suite_metadata" : "{}",
+  "instances" : [ {
+    "service" : {
+      "resource" : "resource",
+      "type" : "type",
+      "url" : "url"
+    },
+    "name" : "name"
+  }, {
+    "service" : {
+      "resource" : "resource",
+      "type" : "type",
+      "url" : "url"
+    },
+    "name" : "name"
+  } ],
+  "uuid" : "uuid"
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    TestSuite
+        <a href="#TestSuite">TestSuite</a>
+    <h4 class="field-label">400</h4>
+    The request is malformed
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">403</h4>
+    Forbidden
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Resource not found
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="suitesGetInstances"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /suites/{suite_uuid}/instances</code></pre></div>
+    <div class="method-summary">Get list of instances of this suite present on testing services (<span class="nickname">suitesGetInstances</span>)</div>
+    <div class="method-notes"></div>
+
+    <h3 class="field-label">Path parameters</h3>
+    <div class="field-items">
+      <div class="param">suite_uuid (required)</div>
+
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; TestSuite's Unique identifier default: null </div>
+    </div>  <!-- field-items -->
+
+
+
+
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#ListOfTestInstance">ListOfTestInstance</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "items" : [ {
+    "service" : {
+      "resource" : "resource",
+      "type" : "type",
+      "url" : "url"
+    },
+    "name" : "name"
+  }, {
+    "service" : {
+      "resource" : "resource",
+      "type" : "type",
+      "url" : "url"
+    },
+    "name" : "name"
+  } ]
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    List of test instances for this test suite
+        <a href="#ListOfTestInstance">ListOfTestInstance</a>
+    <h4 class="field-label">400</h4>
+    The request is malformed
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">403</h4>
+    Forbidden
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Resource not found
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="suitesGetStatus"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /suites/{suite_uuid}/status</code></pre></div>
+    <div class="method-summary">Get status of latest build for this test suite for each known instance (<span class="nickname">suitesGetStatus</span>)</div>
+    <div class="method-notes"></div>
+
+    <h3 class="field-label">Path parameters</h3>
+    <div class="field-items">
+      <div class="param">suite_uuid (required)</div>
+
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; TestSuite's Unique identifier default: null </div>
+    </div>  <!-- field-items -->
+
+
+
+
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#TestSuiteStatus">TestSuiteStatus</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "latest_builds" : [ {
+    "instance" : {
+      "service" : {
+        "resource" : "resource",
+        "type" : "type",
+        "url" : "url"
+      },
+      "name" : "name"
+    },
+    "build_id" : "build_id",
+    "last_logs" : "last_logs",
+    "suite_uuid" : "suite_uuid",
+    "timestamp" : "timestamp"
+  }, {
+    "instance" : {
+      "service" : {
+        "resource" : "resource",
+        "type" : "type",
+        "url" : "url"
+      },
+      "name" : "name"
+    },
+    "build_id" : "build_id",
+    "last_logs" : "last_logs",
+    "suite_uuid" : "suite_uuid",
+    "timestamp" : "timestamp"
+  } ],
+  "suite_uuid" : "suite_uuid"
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    TestSuiteStatus
+        <a href="#TestSuiteStatus">TestSuiteStatus</a>
+    <h4 class="field-label">400</h4>
+    The request is malformed
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Resource not found
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="suitesPostInstance"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="post"><code class="huge"><span class="http-method">post</span> /suites/{suite_uuid}/instances</code></pre></div>
+    <div class="method-summary">Register or add an instance that executes this test suite (<span class="nickname">suitesPostInstance</span>)</div>
+    <div class="method-notes"><p>POSTing this resource results in the creation of a new test suite
+instance.  That is, a specific test suite hosted and executed on a
+specific testing service.</p>
+<p>Two types of test instances can be created:  managed and unmanaged.
+A <em>managed</em> test instance is managed by LifeMonitor on its
+own testing infrastructure.
+An *unmanaged&quot; test instance is hosted on an external testing service
+and LifeMonitor can only monitor it (query information about test
+results through the service's API).</p>
+</div>
+
+    <h3 class="field-label">Path parameters</h3>
+    <div class="field-items">
+      <div class="param">suite_uuid (required)</div>
+
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; TestSuite's Unique identifier default: null </div>
     </div>  <!-- field-items -->
 
     <h3 class="field-label">Consumes</h3>
@@ -313,7 +1023,7 @@ font-style: italic;
 
     <h3 class="field-label">Request body</h3>
     <div class="field-items">
-      <div class="param">TestSuite <a href="#TestSuite">TestSuite</a> (required)</div>
+      <div class="param">UNKNOWN_BASE_TYPE <a href="#UNKNOWN_BASE_TYPE">UNKNOWN_BASE_TYPE</a> (required)</div>
 
       <div class="param-desc"><span class="param-type">Body Parameter</span> &mdash;  </div>
 
@@ -326,11 +1036,206 @@ font-style: italic;
     <!--Todo: process Response Object and its headers, schema, examples -->
 
 
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
 
     <h3 class="field-label">Responses</h3>
     <h4 class="field-label">201</h4>
-    TestSuite created
+    Instance created
         <a href="#"></a>
+    <h4 class="field-label">400</h4>
+    The request is malformed
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">403</h4>
+    Forbidden
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Resource not found
+        <a href="#Error">Error</a>
+    <h4 class="field-label">501</h4>
+    Not implemented
+        <a href="#"></a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="workflowRegistriesGet"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /registries</code></pre></div>
+    <div class="method-summary">Get users of the current registry (<span class="nickname">workflowRegistriesGet</span>)</div>
+    <div class="method-notes"></div>
+
+
+
+
+
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#ListOfRegistries">ListOfRegistries</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "items" : [ {
+    "name" : "name",
+    "uuid" : "uuid",
+    "uri" : "uri"
+  }, {
+    "name" : "name",
+    "uuid" : "uuid",
+    "uri" : "uri"
+  } ]
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    List of workflow registries
+        <a href="#ListOfRegistries">ListOfRegistries</a>
+    <h4 class="field-label">400</h4>
+    The request is malformed
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">403</h4>
+    Forbidden
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Resource not found
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="workflowRegistriesGetByUuid"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /registries/{registry_uuid}</code></pre></div>
+    <div class="method-summary">Get users of the current registry (<span class="nickname">workflowRegistriesGetByUuid</span>)</div>
+    <div class="method-notes"></div>
+
+    <h3 class="field-label">Path parameters</h3>
+    <div class="field-items">
+      <div class="param">registry_uuid (required)</div>
+
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Workflow Registry's Unique identifier default: null </div>
+    </div>  <!-- field-items -->
+
+
+
+
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#Registry">Registry</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "name" : "name",
+  "uuid" : "uuid",
+  "uri" : "uri"
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    Get a workflow registry by uuid
+        <a href="#Registry">Registry</a>
+    <h4 class="field-label">400</h4>
+    The request is malformed
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">403</h4>
+    Forbidden
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Resource not found
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="workflowRegistriesGetCurrent"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /registries/current</code></pre></div>
+    <div class="method-summary">Get the current registry (<span class="nickname">workflowRegistriesGetCurrent</span>)</div>
+    <div class="method-notes"></div>
+
+
+
+
+
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#Registry">Registry</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "name" : "name",
+  "uuid" : "uuid",
+  "uri" : "uri"
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    Current workflow registry
+        <a href="#Registry">Registry</a>
+    <h4 class="field-label">400</h4>
+    The request is malformed
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">403</h4>
+    Forbidden
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Resource not found
+        <a href="#Error">Error</a>
   </div> <!-- method -->
   <hr/>
   <div class="method"><a name="workflowsDelete"/>
@@ -358,17 +1263,29 @@ font-style: italic;
     <!--Todo: process Response Object and its headers, schema, examples -->
 
 
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
 
     <h3 class="field-label">Responses</h3>
-    <h4 class="field-label">200</h4>
-    Does not exist
-        <a href="#"></a>
     <h4 class="field-label">204</h4>
     Deleted
         <a href="#"></a>
     <h4 class="field-label">400</h4>
-    Invalid input
-        <a href="#"></a>
+    The request is malformed
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">403</h4>
+    Forbidden
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Resource not found
+        <a href="#Error">Error</a>
   </div> <!-- method -->
   <hr/>
   <div class="method"><a name="workflowsGet"/>
@@ -386,7 +1303,7 @@ font-style: italic;
 
     <h3 class="field-label">Return type</h3>
     <div class="return-type">
-      array[<a href="#Workflow">Workflow</a>]
+      <a href="#ListOfWorkflow">ListOfWorkflow</a>
       
     </div>
 
@@ -395,11 +1312,19 @@ font-style: italic;
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
     <pre class="example"><code>{
-  "roc_link" : "roc_link",
-  "name" : "name",
-  "submitter_id" : "submitter_id",
-  "uuid" : "uuid",
-  "version" : "version"
+  "items" : [ {
+    "roc_link" : "roc_link",
+    "name" : "name",
+    "submitter_id" : "submitter_id",
+    "uuid" : "uuid",
+    "version" : "version"
+  }, {
+    "roc_link" : "roc_link",
+    "name" : "name",
+    "submitter_id" : "submitter_id",
+    "uuid" : "uuid",
+    "version" : "version"
+  } ]
 }</code></pre>
 
     <h3 class="field-label">Produces</h3>
@@ -412,7 +1337,10 @@ font-style: italic;
     <h3 class="field-label">Responses</h3>
     <h4 class="field-label">200</h4>
     A JSON array of Workflow objects
-        
+        <a href="#ListOfWorkflow">ListOfWorkflow</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
   </div> <!-- method -->
   <hr/>
   <div class="method"><a name="workflowsGetById"/>
@@ -434,16 +1362,6 @@ font-style: italic;
 
 
 
-    <h3 class="field-label">Query parameters</h3>
-    <div class="field-items">
-      <div class="param">test_suite (optional)</div>
-
-      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Flag to retrieve test suites info of the workflow default: null </div><div class="param">test_build (optional)</div>
-
-      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Flag to retrieve test build info of test suites default: null </div><div class="param">test_output (optional)</div>
-
-      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Flag to retrieve output of workflow tests default: null </div>
-    </div>  <!-- field-items -->
 
 
     <h3 class="field-label">Return type</h3>
@@ -476,11 +1394,257 @@ font-style: italic;
     A Workflow object
         <a href="#Workflow">Workflow</a>
     <h4 class="field-label">400</h4>
-    Invalid input
-        <a href="#"></a>
+    The request is malformed
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">403</h4>
+    Forbidden
+        <a href="#Error">Error</a>
     <h4 class="field-label">404</h4>
-    Not found
-        <a href="#"></a>
+    Resource not found
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="workflowsGetLatestVersionById"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /workflows/{wf_uuid}</code></pre></div>
+    <div class="method-summary">Get information about latest version of specified workflow (<span class="nickname">workflowsGetLatestVersionById</span>)</div>
+    <div class="method-notes"></div>
+
+    <h3 class="field-label">Path parameters</h3>
+    <div class="field-items">
+      <div class="param">wf_uuid (required)</div>
+
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Workflow's Unique identifier default: null </div>
+    </div>  <!-- field-items -->
+
+
+
+
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#Workflow">Workflow</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    A Workflow object for the latest version of the specified workflow and extended with the list of previous versions that are registered. Information about the previous versions can be retrieved through the <code>/workflows/{wf_uuid}/{wf_version}</code> resource.
+        <a href="#Workflow">Workflow</a>
+    <h4 class="field-label">400</h4>
+    The request is malformed
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">403</h4>
+    Forbidden
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Resource not found
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="workflowsGetStatus"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /workflows/{wf_uuid}/{wf_version}/status</code></pre></div>
+    <div class="method-summary">Get test statuses of a single workflow (<span class="nickname">workflowsGetStatus</span>)</div>
+    <div class="method-notes"></div>
+
+    <h3 class="field-label">Path parameters</h3>
+    <div class="field-items">
+      <div class="param">wf_uuid (required)</div>
+
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Workflow's Unique identifier default: null </div><div class="param">wf_version (required)</div>
+
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Workflow's version default: null </div>
+    </div>  <!-- field-items -->
+
+
+
+
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#WorkflowStatus">WorkflowStatus</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "workflow" : {
+    "name" : "name",
+    "uuid" : "uuid",
+    "version" : "version"
+  },
+  "latest_builds" : [ {
+    "instance" : {
+      "service" : {
+        "resource" : "resource",
+        "type" : "type",
+        "url" : "url"
+      },
+      "name" : "name"
+    },
+    "build_id" : "build_id",
+    "last_logs" : "last_logs",
+    "suite_uuid" : "suite_uuid",
+    "timestamp" : "timestamp"
+  }, {
+    "instance" : {
+      "service" : {
+        "resource" : "resource",
+        "type" : "type",
+        "url" : "url"
+      },
+      "name" : "name"
+    },
+    "build_id" : "build_id",
+    "last_logs" : "last_logs",
+    "suite_uuid" : "suite_uuid",
+    "timestamp" : "timestamp"
+  } ]
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    Summary of status of the specified workflow's tests
+        <a href="#WorkflowStatus">WorkflowStatus</a>
+    <h4 class="field-label">400</h4>
+    The request is malformed
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">403</h4>
+    Forbidden
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Resource not found
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="workflowsGetSuites"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /workflows/{wf_uuid}/{wf_version}/suites</code></pre></div>
+    <div class="method-summary">Get list of test suites associated with workflow (<span class="nickname">workflowsGetSuites</span>)</div>
+    <div class="method-notes">Get collection of test suites associated with workflow.  Test suites are collected from the RO-crate received with the creation of a new version of a workflow.</div>
+
+    <h3 class="field-label">Path parameters</h3>
+    <div class="field-items">
+      <div class="param">wf_uuid (required)</div>
+
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Workflow's Unique identifier default: null </div><div class="param">wf_version (required)</div>
+
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Workflow's version default: null </div>
+    </div>  <!-- field-items -->
+
+
+
+
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#ListOfTestSuite">ListOfTestSuite</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "items" : [ {
+    "test_suite_metadata" : "{}",
+    "instances" : [ {
+      "service" : {
+        "resource" : "resource",
+        "type" : "type",
+        "url" : "url"
+      },
+      "name" : "name"
+    }, {
+      "service" : {
+        "resource" : "resource",
+        "type" : "type",
+        "url" : "url"
+      },
+      "name" : "name"
+    } ],
+    "uuid" : "uuid"
+  }, {
+    "test_suite_metadata" : "{}",
+    "instances" : [ {
+      "service" : {
+        "resource" : "resource",
+        "type" : "type",
+        "url" : "url"
+      },
+      "name" : "name"
+    }, {
+      "service" : {
+        "resource" : "resource",
+        "type" : "type",
+        "url" : "url"
+      },
+      "name" : "name"
+    } ],
+    "uuid" : "uuid"
+  } ]
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    List of TestSuites associated with the specified workflow version
+        <a href="#ListOfTestSuite">ListOfTestSuite</a>
+    <h4 class="field-label">400</h4>
+    The request is malformed
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">403</h4>
+    Forbidden
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Resource not found
+        <a href="#Error">Error</a>
   </div> <!-- method -->
   <hr/>
   <div class="method"><a name="workflowsPost"/>
@@ -512,11 +1676,29 @@ font-style: italic;
     <!--Todo: process Response Object and its headers, schema, examples -->
 
 
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
 
     <h3 class="field-label">Responses</h3>
     <h4 class="field-label">201</h4>
     Workflow created
         <a href="#"></a>
+    <h4 class="field-label">400</h4>
+    The request is malformed
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">403</h4>
+    Forbidden
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Resource not found
+        <a href="#Error">Error</a>
   </div> <!-- method -->
   <hr/>
   <div class="method"><a name="workflowsPut"/>
@@ -556,10 +1738,31 @@ font-style: italic;
     <!--Todo: process Response Object and its headers, schema, examples -->
 
 
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
 
     <h3 class="field-label">Responses</h3>
-    <h4 class="field-label">200</h4>
+    <h4 class="field-label">204</h4>
     Workflow updated
+        <a href="#"></a>
+    <h4 class="field-label">400</h4>
+    The request is malformed
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">403</h4>
+    Forbidden
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Resource not found
+        <a href="#Error">Error</a>
+    <h4 class="field-label">501</h4>
+    Not implemented
         <a href="#"></a>
   </div> <!-- method -->
   <hr/>
@@ -569,25 +1772,197 @@ font-style: italic;
 
   <h3>Table of Contents</h3>
   <ol>
+    <li><a href="#AggregateTestStatus"><code>AggregateTestStatus</code> - </a></li>
+    <li><a href="#Build"><code>Build</code> - </a></li>
+    <li><a href="#BuildStatus"><code>BuildStatus</code> - </a></li>
+    <li><a href="#BuildSummary"><code>BuildSummary</code> - </a></li>
+    <li><a href="#Error"><code>Error</code> - </a></li>
+    <li><a href="#IdentityProvider"><code>IdentityProvider</code> - </a></li>
+    <li><a href="#ListOfBuildSummary"><code>ListOfBuildSummary</code> - </a></li>
+    <li><a href="#ListOfRegistries"><code>ListOfRegistries</code> - </a></li>
+    <li><a href="#ListOfTestInstance"><code>ListOfTestInstance</code> - </a></li>
+    <li><a href="#ListOfTestSuite"><code>ListOfTestSuite</code> - </a></li>
+    <li><a href="#ListOfUsers"><code>ListOfUsers</code> - </a></li>
+    <li><a href="#ListOfWorkflow"><code>ListOfWorkflow</code> - </a></li>
+    <li><a href="#Registry"><code>Registry</code> - </a></li>
+    <li><a href="#TestInstance"><code>TestInstance</code> - </a></li>
+    <li><a href="#TestInstance_service"><code>TestInstance_service</code> - </a></li>
     <li><a href="#TestSuite"><code>TestSuite</code> - </a></li>
+    <li><a href="#TestSuiteStatus"><code>TestSuiteStatus</code> - </a></li>
     <li><a href="#User"><code>User</code> - </a></li>
+    <li><a href="#UserIdentity"><code>UserIdentity</code> - </a></li>
     <li><a href="#Workflow"><code>Workflow</code> - </a></li>
+    <li><a href="#WorkflowStatus"><code>WorkflowStatus</code> - </a></li>
+    <li><a href="#WorkflowStatus_workflow"><code>WorkflowStatus_workflow</code> - </a></li>
   </ol>
 
+  <div class="model">
+    <h3><a name="AggregateTestStatus"><code>AggregateTestStatus</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+          </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="Build"><code>Build</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">build_id </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">suite_uuid </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">status </div><div class="param-desc"><span class="param-type"><a href="#BuildStatus">BuildStatus</a></span>  </div>
+<div class="param">instance </div><div class="param-desc"><span class="param-type"><a href="#TestInstance">TestInstance</a></span>  </div>
+<div class="param">timestamp </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="BuildStatus"><code>BuildStatus</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+          </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="BuildSummary"><code>BuildSummary</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">build_id </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">suite_uuid </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">status (optional)</div><div class="param-desc"><span class="param-type"><a href="#BuildStatus">BuildStatus</a></span>  </div>
+<div class="param">instance </div><div class="param-desc"><span class="param-type"><a href="#TestInstance">TestInstance</a></span>  </div>
+<div class="param">timestamp </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">last_logs (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Last few lines of build log, if available </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="Error"><code>Error</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'>The canonical model for problem details is a JSON [RFC7159] object.</div>
+    <div class="field-items">
+      <div class="param">type (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> &quot;type&quot; (string) - An absolute URI [RFC3986] that identifies the
+problem type.  When dereferenced, it SHOULD provide human-readable
+documentation for the problem type (e.g., using HTML
+[W3C.REC-html401-19991224]).  When this member is not present, its
+value is assumed to be &quot;about:blank&quot;. </div>
+<div class="param">title </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> &quot;title&quot; (string) - A short, human-readable summary of the problem
+type.  It SHOULD NOT change from occurrence to occurrence of the
+problem, except for purposes of localisation. </div>
+<div class="param">status </div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span> &quot;status&quot; (number) - The HTTP status code ([RFC7231], Section 6)
+generated by the origin server for this occurrence of the problem. </div>
+<div class="param">detail (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> &quot;detail&quot; (string) - An human readable explanation specific to this
+occurrence of the problem. </div>
+<div class="param">instance (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> &quot;instance&quot; (string) - An absolute URI that identifies the specific
+occurrence of the problem.  It may or may not yield further
+information if dereferenced. </div>
+<div class="param">extra_info (optional)</div><div class="param-desc"><span class="param-type"><a href="#">Object</a></span> Additional information </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="IdentityProvider"><code>IdentityProvider</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">type </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">name </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">uri </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="ListOfBuildSummary"><code>ListOfBuildSummary</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">items </div><div class="param-desc"><span class="param-type"><a href="#BuildSummary">array[BuildSummary]</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="ListOfRegistries"><code>ListOfRegistries</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">items </div><div class="param-desc"><span class="param-type"><a href="#Registry">array[Registry]</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="ListOfTestInstance"><code>ListOfTestInstance</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">items </div><div class="param-desc"><span class="param-type"><a href="#TestInstance">array[TestInstance]</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="ListOfTestSuite"><code>ListOfTestSuite</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">items </div><div class="param-desc"><span class="param-type"><a href="#TestSuite">array[TestSuite]</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="ListOfUsers"><code>ListOfUsers</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">items </div><div class="param-desc"><span class="param-type"><a href="#User">array[User]</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="ListOfWorkflow"><code>ListOfWorkflow</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">items </div><div class="param-desc"><span class="param-type"><a href="#Workflow">array[Workflow]</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="Registry"><code>Registry</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">uuid </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">name </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">uri </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="TestInstance"><code>TestInstance</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">service </div><div class="param-desc"><span class="param-type"><a href="#TestInstance_service">TestInstance_service</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="TestInstance_service"><code>TestInstance_service</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">type </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">url </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">resource (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
   <div class="model">
     <h3><a name="TestSuite"><code>TestSuite</code> - </a> <a class="up" href="#__Models">Up</a></h3>
     <div class='model-description'></div>
     <div class="field-items">
-      <div class="param">test_suite_metadata </div><div class="param-desc"><span class="param-type"><a href="#">Object</a></span>  </div>
+      <div class="param">uuid </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">test_suite_metadata </div><div class="param-desc"><span class="param-type"><a href="#">Object</a></span> To be determined. </div>
+<div class="param">instances </div><div class="param-desc"><span class="param-type"><a href="#TestInstance">array[TestInstance]</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="TestSuiteStatus"><code>TestSuiteStatus</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">suite_uuid </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">status </div><div class="param-desc"><span class="param-type"><a href="#AggregateTestStatus">AggregateTestStatus</a></span>  </div>
+<div class="param">latest_builds (optional)</div><div class="param-desc"><span class="param-type"><a href="#BuildSummary">array[BuildSummary]</a></span>  </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
     <h3><a name="User"><code>User</code> - </a> <a class="up" href="#__Models">Up</a></h3>
     <div class='model-description'></div>
     <div class="field-items">
-      <div class="param">id </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
-<div class="param">username (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
-<div class="param">identities (optional)</div><div class="param-desc"><span class="param-type"><a href="#">Object</a></span>  </div>
+      <div class="param">id </div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span> An identifier for the user, unique among all LifeMonitor accounts and never reused </div>
+<div class="param">username (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> The user's username, unique among all LifeMonitor accounts </div>
+<div class="param">identity (optional)</div><div class="param-desc"><span class="param-type"><a href="#UserIdentity">UserIdentity</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="UserIdentity"><code>UserIdentity</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'>A user identity issued by an identity provider.</div>
+    <div class="field-items">
+      <div class="param">sub </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> An identifier for the user, unique among all provider accounts and never reused </div>
+<div class="param">provider </div><div class="param-desc"><span class="param-type"><a href="#IdentityProvider">IdentityProvider</a></span>  </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
@@ -599,6 +1974,24 @@ font-style: italic;
 <div class="param">roc_link </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
 <div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
 <div class="param">submitter_id (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="WorkflowStatus"><code>WorkflowStatus</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">workflow (optional)</div><div class="param-desc"><span class="param-type"><a href="#WorkflowStatus_workflow">WorkflowStatus_workflow</a></span>  </div>
+<div class="param">aggregate_test_status (optional)</div><div class="param-desc"><span class="param-type"><a href="#AggregateTestStatus">AggregateTestStatus</a></span>  </div>
+<div class="param">latest_builds (optional)</div><div class="param-desc"><span class="param-type"><a href="#BuildSummary">array[BuildSummary]</a></span> Latest builds, one for each test instance </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="WorkflowStatus_workflow"><code>WorkflowStatus_workflow</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">uuid </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">version </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
     </div>  <!-- field-items -->
   </div>
   </body>
