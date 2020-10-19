@@ -36,7 +36,7 @@ def token_invalidate(username):
     logger.debug("User found: %r", user)
     count = 0
     for identity in user.oauth_identity.values():
-        identity.token = invalidate_token(identity.token)
+        identity.set_token(invalidate_token(identity.token))
         identity.save()
         print("Token invalidated: %r !" % identity.token)
         count += 1
