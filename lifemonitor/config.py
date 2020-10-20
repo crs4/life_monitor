@@ -18,10 +18,15 @@ def load_settings(config=None):
     else:
         file_path = "settings.conf"
     result = {}
-    if config.CONFIG_NAME in ('development', 'testing'):
-        result.update(dotenv.dotenv_values(dotenv_path=TestingConfig.SETTINGS_FILE))
-    if not config.CONFIG_NAME == 'testing' and os.path.exists(file_path):
+    test_settings = None
+    if config.CONFIG_NAME in ('development', 'testing', 'testingSupport'):
+        test_settings = dotenv.dotenv_values(dotenv_path=TestingConfig.SETTINGS_FILE)
+        if not config.TESTING:
+            result.update(test_settings)
+    if os.path.exists(file_path):
         result.update(dotenv.dotenv_values(dotenv_path=file_path))
+    if config.CONFIG_NAME in ('testingSupport', 'testing'):
+        result.update(test_settings)
     return result
 
 
@@ -67,10 +72,18 @@ class TestingConfig(BaseConfig):
     # SQLALCHEMY_DATABASE_URI = "sqlite:///{0}/app-test.db".format(basedir)
 
 
+class TestingSupportConfig(TestingConfig):
+    CONFIG_NAME = "testingSupport"
+    DEBUG = True
+    TESTING = False
+    LOG_LEVEL = "DEBUG"
+
+
 _EXPORT_CONFIGS: List[Type[BaseConfig]] = [
     DevelopmentConfig,
     TestingConfig,
     ProductionConfig,
+    TestingSupportConfig
 ]
 _config_by_name = {cfg.CONFIG_NAME: cfg for cfg in _EXPORT_CONFIGS}
 
