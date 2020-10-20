@@ -1,4 +1,5 @@
 from __future__ import annotations
+import json
 import logging
 import tempfile
 from typing import Union, List
@@ -12,7 +13,7 @@ from lifemonitor.common import (
 from lifemonitor.api.models import (
     WorkflowRegistry, Workflow, TestSuite, TestInstance
 )
-from lifemonitor.utils import extract_zip, search_for_test_definition
+from lifemonitor.utils import extract_zip
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 import lifemonitor.ro_crate as roc
 
@@ -63,12 +64,13 @@ class LifeMonitor:
                     roc_link=roc_link, roc_metadata=metadata,
                     external_id=external_id, name=name
                 )
-                # load test_definition_file and if it exists associate a test_suite the workflow
-                test_definition_file = search_for_test_definition(roc_path, metadata)
-                logger.debug("The test definition file: %r", test_definition_file)
-                if test_definition_file:
-                    logger.debug("Loaded test definition file: %r", test_definition_file)
-                    w.add_test_suite(workflow_submitter, test_definition_file)
+                # associate a test suite to the workflow if the crate contains test metadata
+                _, test_metadata_path = roc.parse_metadata(roc_path)
+                if test_metadata_path:
+                    logger.debug("Loading test metadata from %r", test_metadata_path)
+                    with open(test_metadata_path) as f:
+                        test_metadata = json.load(f)
+                    w.add_test_suite(workflow_submitter, test_metadata)
                 w.save()
                 return w
 

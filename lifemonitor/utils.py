@@ -1,6 +1,5 @@
 import json
 import logging
-import os
 import random
 import string
 import tempfile
@@ -9,8 +8,6 @@ import zipfile
 import flask
 import requests
 from .common import NotAuthorizedException, NotValidROCrateException
-
-RO_CRATE_TEST_DEFINITION_FILENAME = "test-metadata.json"
 
 logger = logging.getLogger()
 
@@ -64,18 +61,6 @@ def extract_zip(archive_path, target_path=None):
 def load_test_definition_filename(filename):
     with open(filename) as f:
         return json.load(f)
-
-
-def get_test_definition_path(roc_path):
-    return os.path.join(roc_path, "test", RO_CRATE_TEST_DEFINITION_FILENAME)
-
-
-def search_for_test_definition(roc_path, ro_crate_metadata: dict):
-    # first search on the root roc_path for a test_definition file
-    filename = get_test_definition_path(roc_path)
-    if os.path.exists(filename):
-        return load_test_definition_filename(filename)
-    return None
 
 
 def generate_username(user_info):

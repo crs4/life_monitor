@@ -73,12 +73,11 @@ def check_workflow(wf_fn, tests):
 
 
 def main(args):
-    wf_path, test_dir = roc.parse_metadata(args.crate_dir)
-    if not test_dir:
-        print("crate has no tests, nothing to do")
+    wf_path, test_metadata_path = roc.parse_metadata(args.crate_dir)
+    if not test_metadata_path:
+        print("crate has no Life Monitor tests, nothing to do")
         return
-    cfg_fn = roc.get_test_metadata_path(test_dir)
-    tests = tm.read_tests(cfg_fn, abs_paths=True)
+    tests = tm.read_tests(test_metadata_path, abs_paths=True)
     dump_instances(tests)
     check_workflow(wf_path, tests)
 
