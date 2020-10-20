@@ -10,7 +10,6 @@ import flask
 import requests
 from .common import NotAuthorizedException, NotValidROCrateException
 
-RO_CRATE_METADATA_FILENAME = "ro-crate-metadata.jsonld"
 RO_CRATE_TEST_DEFINITION_FILENAME = "test-metadata.json"
 
 logger = logging.getLogger()
@@ -60,15 +59,6 @@ def extract_zip(archive_path, target_path=None):
         return target_path
     except Exception as e:
         raise NotValidROCrateException(e)
-
-
-def load_ro_crate_metadata(roc_path):
-    file_path = os.path.join(roc_path, RO_CRATE_METADATA_FILENAME)
-    with open(file_path) as data_file:
-        logger.info("Loading RO Crate Metadata @ %s", file_path)
-        data = json.load(data_file)
-        logger.debug("RO Crate Metadata: %r", data)
-        return data
 
 
 def load_test_definition_filename(filename):

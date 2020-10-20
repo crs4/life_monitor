@@ -87,7 +87,7 @@ def find_test_dir(entity_map):
     return None
 
 
-def parse_metadata(crate_dir):
+def load_metadata(crate_dir):
     crate_dir = Path(crate_dir)
     metadata_path = crate_dir / METADATA_BASENAME
     if not metadata_path.is_file():
@@ -96,6 +96,12 @@ def parse_metadata(crate_dir):
             raise RuntimeError(f"{metadata_path} not found")
     with open(metadata_path, "rt") as f:
         json_data = json.load(f)
+    return json_data
+
+
+def parse_metadata(crate_dir):
+    crate_dir = Path(crate_dir)
+    json_data = load_metadata(crate_dir)
     entities = {_["@id"]: _ for _ in json_data["@graph"]}
     main_wf = find_main_workflow(entities)
     test_dir = find_test_dir(entities)

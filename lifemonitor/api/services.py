@@ -12,8 +12,9 @@ from lifemonitor.common import (
 from lifemonitor.api.models import (
     WorkflowRegistry, Workflow, TestSuite, TestInstance
 )
-from lifemonitor.utils import extract_zip, load_ro_crate_metadata, search_for_test_definition
+from lifemonitor.utils import extract_zip, search_for_test_definition
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
+import lifemonitor.ro_crate as roc
 
 logger = logging.getLogger()
 
@@ -55,7 +56,7 @@ class LifeMonitor:
             with tempfile.TemporaryDirectory() as roc_path:
                 logger.info("Extracting RO Crate @ %s", roc_path)
                 extract_zip(archive_path.name, target_path=roc_path)
-                metadata = load_ro_crate_metadata(roc_path)
+                metadata = roc.load_metadata(roc_path)
                 # create a new Workflow instance with the loaded metadata
                 w = workflow_registry.add_workflow(
                     workflow_uuid, workflow_version, workflow_submitter,
