@@ -77,7 +77,7 @@ def main(args):
     if not test_dir:
         print("crate has no tests, nothing to do")
         return
-    cfg_fn = os.path.join(test_dir, "test-metadata.json")
+    cfg_fn = roc.get_test_metadata_path(test_dir)
     tests = tm.read_tests(cfg_fn, abs_paths=True)
     dump_instances(tests)
     check_workflow(wf_path, tests)

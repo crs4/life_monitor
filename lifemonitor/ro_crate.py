@@ -33,6 +33,7 @@ from pathlib import Path
 
 METADATA_BASENAME = "ro-crate-metadata.json"  # since RO-Crate 1.1
 LEGACY_METADATA_BASENAME = "ro-crate-metadata.jsonld"
+TEST_METADATA_BASENAME = "test-metadata.json"
 WORKFLOW_TYPES = {"File", "SoftwareSourceCode", "ComputationalWorkflow"}
 LEGACY_WORKFLOW_TYPES = {"File", "SoftwareSourceCode", "Workflow"}
 
@@ -106,3 +107,8 @@ def parse_metadata(crate_dir):
         if not test_dir.is_dir():
             raise ValueError(f"test directory {test_dir} not found")
     return main_wf_path, test_dir
+
+
+def get_test_metadata_path(test_dir):
+    test_dir = Path(test_dir)
+    return test_dir / TEST_METADATA_BASENAME
