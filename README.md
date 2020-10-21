@@ -19,6 +19,10 @@ See the [wiki](https://github.com/crs4/life_monitor/wiki) for a more complete de
 https://github.com/crs4/life_monitor/wiki
 
 
+## NOTE: DOCS UNDER REVISION
+
+** NOTE THAT THIS DOCUMENT IS CURRENTLY UNDER REVISION AND WILL BE UPDATED SOON. INSTRUCTIONS BELOW ARE CURRENTLY NOT UP TO DATE WITH THE CURRENT REVISION IN THE MASTER BRANCH **
+
 
 ## Developing
 
