@@ -26,11 +26,13 @@ Workflow Registry '{registry.name}' (uuid: {registry.uuid}, type: {registry.type
 OAuth2 settings to connect to LifeMonitor:
 {'-'*100}
 REGISTRY NAME: {registry.name}
+REGISTRY API URL: {registry.uri}
 REGISTRY CLIENT ID: {registry.client_credentials.client_id}
 REGISTRY CLIENT SECRET: {registry.client_credentials.client_secret}
 REGISTRY CLIENT ALLOWED SCOPES: {registry.client_credentials.client_metadata['scope']}
 REGISTRY CLIENT ALLOWED FLOWS: {registry.client_credentials.client_metadata['grant_types']}
 REGISTRY CLIENT REDIRECT URIs: {registry.client_credentials.redirect_uris}
+REGISTRY CLIENT AUTH METHOD: {registry.client_credentials.auth_method}
 AUTHORIZE URL: <LIFE_MONITOR_BASE_URL>/oauth2/authorize/{registry.name}
 ACCESS TOKEN URL: <LIFE_MONITOR_BASE_URL>/oauth2/token
 CALLBACK URL: <LIFE_MONITOR_BASE_URL>/oauth2/authorized/{registry.name}[?next=<URL>]
