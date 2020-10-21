@@ -65,7 +65,6 @@ def get_providers():
 
 def config_oauth2_registry(app, providers=None):
     try:
-        logger.debug("Updating...")
         oauth2_backends = providers or get_providers()
         for backend in oauth2_backends:
             class RemoteApp(FlaskRemoteApp):

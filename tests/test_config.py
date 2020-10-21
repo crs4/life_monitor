@@ -10,6 +10,11 @@ logger = logging.getLogger()
 testing_settings = {"PROPERTY": "123456"}
 
 
+def test_db(app_context, app_settings):
+    logger.debug("App settings: %r", app_context.app.config)
+    assert app_context.app.config['POSTGRESQL_DATABASE'] == "lmtest", "Unexpected database in use"
+
+
 def test_not_valid_base_config():
     assert lm_cfg.get_config_by_name("InvalidConfig") == lm_cfg.ProductionConfig, \
         "A production config should be returned as a fallback"

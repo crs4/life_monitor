@@ -67,7 +67,7 @@ def create_blueprint(merge_identity_view):
     def login(name):
         # we allow dynamic reconfiguration of the oauth2registry
         # when app is configured in dev or testing mode
-        if current_app.config['ENV'] in ("testing", "development"):
+        if current_app.config['ENV'] in ("testing", "testingSupport", "development"):
             config_oauth2_registry(current_app)
         remote = oauth2_registry.create_client(name)
         if remote is None:

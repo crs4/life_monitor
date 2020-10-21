@@ -1,5 +1,5 @@
 import logging
-from flask import Blueprint
+from flask import Blueprint, current_app
 from flask.cli import with_appcontext
 from lifemonitor.auth.models import User
 
@@ -16,8 +16,9 @@ def db_init():
     """
     Initialize the DB
     """
-    from lifemonitor.db import db
+    from lifemonitor.db import db, create_db
     logger.debug("Initializing DB...")
+    create_db(settings=current_app.config)
     db.create_all()
     logger.info("DB initialized")
     # create a default admin user if not exists
