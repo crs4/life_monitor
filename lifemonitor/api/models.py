@@ -21,6 +21,7 @@ from lifemonitor.common import (SpecificationNotValidException, EntityNotFoundEx
                                 NotImplementedException, TestingServiceException)
 from lifemonitor.utils import download_url, to_camel_case
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
+import lifemonitor.test_metadata as tm
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -485,15 +486,17 @@ class TestSuite(db.Model):
     def _parse_test_definition(self):
         try:
             for test in self.test_definition["test"]:
-                for instance_data in test["instance"]:
-                    logger.debug("Instance_data: %r", instance_data)
-                    testing_service_data = instance_data["service"]
+                test = tm.Test.from_json(test)
+                for instance in test.instance:
+                    logger.debug("Instance: %r", instance)
                     testing_service = TestingService.new_instance(
-                        testing_service_data["type"],
-                        testing_service_data["url"], testing_service_data["resource"])
+                        instance.service.type,
+                        instance.service.url,
+                        instance.service.resource
+                    )
                     logger.debug("Created TestService: %r", testing_service)
                     test_instance = TestInstance(self, self.submitter,
-                                                 test["name"], testing_service)
+                                                 test.name, testing_service)
                     logger.debug("Created TestInstance: %r", test_instance)
         except KeyError as e:
             raise SpecificationNotValidException(f"Missing property: {e}")

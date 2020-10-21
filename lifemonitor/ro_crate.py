@@ -33,6 +33,7 @@ from pathlib import Path
 
 METADATA_BASENAME = "ro-crate-metadata.json"  # since RO-Crate 1.1
 LEGACY_METADATA_BASENAME = "ro-crate-metadata.jsonld"
+TEST_METADATA_BASENAME = "test-metadata.json"
 WORKFLOW_TYPES = {"File", "SoftwareSourceCode", "ComputationalWorkflow"}
 LEGACY_WORKFLOW_TYPES = {"File", "SoftwareSourceCode", "Workflow"}
 
@@ -86,7 +87,7 @@ def find_test_dir(entity_map):
     return None
 
 
-def parse_metadata(crate_dir):
+def load_metadata(crate_dir):
     crate_dir = Path(crate_dir)
     metadata_path = crate_dir / METADATA_BASENAME
     if not metadata_path.is_file():
@@ -95,14 +96,24 @@ def parse_metadata(crate_dir):
             raise RuntimeError(f"{metadata_path} not found")
     with open(metadata_path, "rt") as f:
         json_data = json.load(f)
+    return json_data
+
+
+def parse_metadata(crate_dir):
+    crate_dir = Path(crate_dir)
+    json_data = load_metadata(crate_dir)
     entities = {_["@id"]: _ for _ in json_data["@graph"]}
     main_wf = find_main_workflow(entities)
-    test_dir = find_test_dir(entities)
     main_wf_path = crate_dir / main_wf["@id"]
     if not main_wf_path.is_file():
         raise ValueError(f"main workflow {main_wf_path} not found")
+    test_metadata_path = None
+    test_dir = find_test_dir(entities)
     if test_dir is not None:
         test_dir = crate_dir / test_dir
         if not test_dir.is_dir():
             raise ValueError(f"test directory {test_dir} not found")
-    return main_wf_path, test_dir
+        p = test_dir / TEST_METADATA_BASENAME
+        if p.is_file():
+            test_metadata_path = p
+    return main_wf_path, test_metadata_path

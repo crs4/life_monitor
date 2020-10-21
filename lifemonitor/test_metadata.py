@@ -125,8 +125,8 @@ class Test:
     def from_json(cls, data):
         return cls(
             data["name"],
-            [Instance.from_json(_) for _ in data["instance"]],
-            TestDefinition.from_json(data["definition"])
+            [Instance.from_json(_) for _ in data.get("instance", [])],
+            TestDefinition.from_json(data.get("definition", {}))
         )
 
     def __init__(self, name, instance, definition):
