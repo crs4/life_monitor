@@ -2,7 +2,7 @@
 
 CA_NAME="ca"
 LOCALIP=$(ifconfig | sed -En 's/127.0.0.1//;s/.*inet (addr:)?(([0-9]*\.){3}[0-9]*).*/\2/p;' | sed -e ':a;N;$!ba;s/\n/,/g')
-DOMAINS="lm,lm.local,lifemonitor,lifemonitor.local,localhost,seek,nginx,wfhub"
+DOMAINS="lm,lm.local,lifemonitor,lifemonitor.local,lmtests,localhost,seek,nginx,wfhub"
 IPADDRESSES="${LOCALIP}"
 IMAGE_NAME="crs4/minica"
 

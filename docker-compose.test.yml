@@ -1,0 +1,36 @@
+version: "3.5"
+
+services:
+  
+  lmtests:
+    image: crs4/lifemonitor
+    user: "${USER_UID}:${USER_GID}"
+    depends_on:
+      - "db"
+    env_file: ./settings.conf
+    restart: "no"
+    entrypoint: /bin/bash
+    command: |
+      -c "wait-for-postgres.sh && flask db init && /usr/local/bin/lm_entrypoint.sh"
+    environment:
+      - "FLASK_ENV=testingSupport"
+      - "HOME=/lm"
+      # Normally, OAuthLib will raise an InsecureTransportError if you attempt to use OAuth2 over HTTP,
+      # rather than HTTPS. Setting this environment variable will prevent this error from being raised.
+      # This is mostly useful for local testing, or automated tests. Never set this variable in production.
+      - "AUTHLIB_INSECURE_TRANSPORT=1"
+      - "POSTGRESQL_HOST=db"
+      - "POSTGRESQL_PORT=5432"
+    volumes:
+      - "./:/lm"
+      - "./certs:/certs:ro"
+      - "./instance:/lm/instance:ro"
+      - "./settings.conf:/lm/settings.conf:ro" # default settings
+    ports:
+      - "8000"
+    networks:
+      - life_monitor
+
+networks:
+  life_monitor:
+    name: life_monitor
