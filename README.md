@@ -220,6 +220,6 @@ LifeMonitor needs to direct directly connect to the registry for different purpo
 
 ###### Additional notes on WorkflowHub configuration
 
-In order to get correct URLs from the WorkflowHub API, you need to set the base URL. Go to Server admin > Settings and set "Site base URL" to `https://<BASE_URL>:3000` (e.g., `https://seek:3000` is the configuration of this field on the [Seek](#aux-services) instance f the pre-configured LifeMonitor deployment ).
+* In order to get correct URLs from the WorkflowHub API, you need to set the base URL. Go to Server admin > Settings and set "Site base URL" to `https://<BASE_URL>:3000` (e.g., `https://seek:3000` is the configuration of this field on the [Seek](#aux-services) instance f the pre-configured LifeMonitor deployment ).
 
-To enable workflows, go to Server admin > Enable/disable features and click on "Workflows enabled". You can set "CWL Viewer URL" to `https://view.commonwl.org/`.
+* To enable workflows, go to Server admin > Enable/disable features and click on "Workflows enabled". You can set "CWL Viewer URL" to `https://view.commonwl.org/`.
