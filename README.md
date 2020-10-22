@@ -144,7 +144,8 @@ pip3 install -r requirements.txt
 
 The only external requirement is **PostgreSQL** (backend/client). You have to install it on your own to be able to successfully install the `psycopg2==2.8.5` Python requirement.
 
-<br>
+<br/>
+
 ## Authenticating <a name="authenticating"></a>
 
 LifeMonitor supports OAuth2 for authentication and authorization and currently
