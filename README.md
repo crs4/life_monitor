@@ -34,7 +34,7 @@ To start the deployment, go through the following steps:
 
 1. `make start`, to start the main LifeMonitor services;
 2. `make start-aux-services`, to start a preconfigured  set of auxiliary services  i.e., a **Seek/WorkflowHub** instance and a **Jenkins** instance) you need to test the current implementation of the system;
-3. register the Seek instance on LifeMonitor for more details) with the following command (see [WorkflowRegistrySetup](https://github.com/crs4/life_monitor/blob/first-release-docs/examples/1_WorkflowRegistrySetup.ipynb)):
+3. register the Seek instance on LifeMonitor with the following command (see [WorkflowRegistrySetup](https://github.com/crs4/life_monitor/blob/first-release-docs/examples/1_WorkflowRegistrySetup.ipynb) for more details):
 
 ```bash
 docker-compose exec lm /bin/bash -c "flask registry add seek seek ehukdECYQNmXxgJslBqNaJ2J4lPtoX_GADmLNztE8MI DuKar5qYdteOrB-eTN4F5qYSp-YrgvAJbz1yMyoVGrk https://seek:3000 --redirect-uris https://seek:3000"
@@ -191,15 +191,13 @@ most relevant ones for non-developers might be the following.
 
 
 
-## Connecting with WorkflowHub
+## Setup your own WorkflowHub instance
 
 You can run an instance of the WorkflowHub and LifeMonitor on the same host,
-each in their own docker-compose.  See the `docker-compose-template.yml` file to
+each in their own docker-compose.  See the `docker-compose.base.yml` file to
 set the name of the docker network the WHub docker-compose created, then the LM
 containers will be created attached to that same network and the services will
-see each other.  You will also neet to set `WORKFLOW_REGISTRY_URL` appropriately
-in `settings.conf`.
-
+see each other. 
 
 ## Setting up WorkflowHub and LifeMonitor with OAuth2 login
 
@@ -263,50 +261,6 @@ Also add a `192.168.1.167 lm.org` entry to the physical host's `/etc/hosts`.
 
 Since WorkflowHub is starting for the first time, we need to register a first
 admin user. Go to https://lm.org:3000 and fill out the forms.
-
-### Registering LifeMonitor as a client application on WorkflowHub
-
-On the WorkflowHub web interface, click on the user name on the top right,
-then go to "My Profile"; on the profile page, click "Actions" on the right,
-then choose "API Applications"; now click on "New Application" on the right
-and fill out the form. Choose a name, set Redirect URI to
-https://lm.org:8443/oauth2/auth/seek, activate Confidential and Scopes >
-Read, then submit the form.
-
-This can be done for any user (e.g., a service user could have been created on
-the WorkflowHub just for this), all that matters to LifeMonitor is the OAuth
-params provided after registration. Specifically, copy the following to
-`settings.conf` in the LifeMonitor repo: "Application UID" to `SEEK_CLIENT_ID`
-and "Secret" to `SEEK_CLIENT_SECRET`. Set the other WorkflowHub params to:
-
-```
-SEEK_API_BASE_URL="https://lm.org:3000"
-SEEK_AUTHORIZE_URL="https://lm.org:3000/oauth/authorize"
-SEEK_ACCESS_TOKEN_URL="https://lm.org:3000/oauth/token"
-```
-
-### Configure LifeMonitor's docker-compose file and start the service
-
-In the LifeMonitor `docker-compose-template.yml`, in the `lm` service section,
-map the lm.org host to the above IP:
-
-```yaml
-  lm:
-    [...]
-    extra_hosts:
-      - "lm.org:192.168.1.167"
-```
-
-Set the network name to `seek_default`:
-
-```yaml
-networks:
-  life_monitor:
-    name: seek_default
-    external: true
-```
-
-Start the service with `make startdev`.
 
 
 ### Authorizing LifeMonitor as a client application and logging in
