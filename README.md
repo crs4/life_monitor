@@ -38,6 +38,8 @@ To start the deployment, go through the following steps:
 ```bash
 docker-compose exec lm /bin/bash -c "flask registry add seek seek ehukdECYQNmXxgJslBqNaJ2J4lPtoX_GADmLNztE8MI DuKar5qYdteOrB-eTN4F5qYSp-YrgvAJbz1yMyoVGrk https://seek:3000 --redirect-uris https://seek:3000"
 ```
+Take note of the output of the command above which provide you the client credentials to setup your OAuth2 client to query the LifeMonitor API as workflow registry (see examples [LINK] ).
+
 
 > **NOTE.** The hostname of the workflow registry is `seek`. It is properly resolved by the other services of the deployment. But if your client connects to the LifeMonitor API from the outside of the Docker container network, you'll get a connection error. To solve this issue, set a proper entry on your local `/etc/hosts` (or local DNS server, like `bind`) in order to resolve the hostname `seek` to your local IP address. Alternatively, you can customise the docker-compose to directly use the *host* network and use `localhost` as hostname in registration command above.
 
@@ -48,6 +50,16 @@ You should now have a deployment with the following services up and running:
 * **Jenkins** @ [http://localhost:8080](https://localhost:3000)
 
 To check if the services are properly configured go to the LifeMonitor login page [https://localhost:8443/login/](https://localhost:8000/login/) and to log in by clicking "[Login with Seek](https://localhost:8000/oauth2/login/seek)" (you can use one of the preloaded users, e.g.: **user1**, *password*: **workflowhub** [see [notes](https://github.com/crs4/life_monitor/blob/master/tests/config/registries/seek/notes.txt)]). If all goes well, you should be logged in LifeMonitor and see a minimal user profile page.
+
+
+## Exploring API / User interface
+
+The web service has a built-in Swagger UI (thanks to
+[connexion](https://connexion.readthedocs.io/en/latest/)).  
+When the docker-compose is running, you can access the UI at `/ui` (e.g., [https://localhost:8443/ui](https://localhost:8443/ui) if you are using the *production* docker-compose deployment or [https://localhost:8000/ui](https://localhost:8000/ui) if your are using the *development* deployment).  
+The full OpenAPI specification is always in the source code repository under [specs/api.yaml](https://github.com/crs4/life_monitor/blob/master/specs/api.yaml) and a "beautified" html version is
+available [here](https://crs4.github.io/life_monitor/lm-openapi-rapidoc.html).
+
 
 ## Deploy **LifeMonitor** with `docker-compose`
 Basic management actions are implemented as `Makefile` *rules* and can be listed by `make help`:
@@ -129,23 +141,7 @@ pip3 install -r requirements.txt
 The only external requirement is **PostgreSQL** (backend/client). You have to install it on your own to be able to successfully install the `psycopg2==2.8.5` Python requirement.
 
 
-
-
 -----------------------------------------------
-TBD
-
-### Connecting to the docker-compose
-
-After starting the docker-compose, by default the https proxy for the `lm`
-service listens on port 8443:
-
-    $ curl --insecure https://localhost:8443/workflows
-    []
-
-
-The `--insecure` (also `-k`) option will be required unless you're using your own signed
-certificates.
-
 
 ## Authenticating
 
@@ -192,15 +188,6 @@ most relevant ones for non-developers might be the following.
 | flask api-key | api-key management |
 | flask db init | init the schema in a new database |
 
-
-## Exploring API / User interface
-
-The web service has a built-in Swagger UI (thanks to
-[connexion](https://connexion.readthedocs.io/en/latest/)).  When the
-docker-compose is running, you can access the UI at `/ui`.  The full OpenAPI
-specification is always in the source code repository under
-[lifemonitor/api.yaml](specs/api.yaml) and a "beautified" html version is
-available [here](https://crs4.github.io/life_monitor/).
 
 
 ## Connecting with WorkflowHub
