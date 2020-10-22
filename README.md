@@ -205,36 +205,25 @@ curl --insecure -X GET \
   -H 'Authorization: Bearer IT6g8H38GqIYcg7bnZuh8V0i1oGMGMjLIj9wMmQNOQ'
 ```
 
-
------------------------------------------------
-TBD
+<br>
 
 ## Command line interface <a name="cli"></a>
 
-To access the command line interface, you need to execute `flask ...` from the
-base LifeMonitor repository directory.  Rather than installing the dependencies
-on your system, you might prefer to use the pre-built docker images, either by:
+To access the command line interface, you need to pass the `CMD` to flask - i.e.,  `flask <CMD>` - from the base LifeMonitor repository directory.
 
-a. starting a new container:
-
-     docker run --rm -it crs4/lifemonitor flask --help
-
-b. if the docker compose is up, you can run commands inside that container:
+If you are using the `docker-compose` deployment, when it is up, you can run commands inside the LifeMonitor backend container (named `lm`):
 
     docker-compose exec lm flask --help
 
-As you can see from the help message, the CLI provides various commands.  The
-most relevant ones for non-developers might be the following.
+As you can see from the help message, the CLI provides various commands mainly intended for administrative tasks:
 
-| command       |               |
-|---------------|---------------|
-| flask api-key | api-key management |
-| flask db init | init the schema in a new database |
-
+| command        | purpose             |
+|----------------|---------------------|
+| flask api-key  | api-key management  |
+| flask db       | db management       |
+| flask registry | registry management |
 
 <br>
-
------
 
 ## Setup your own WorkflowHub instance <a name="setup-custom-seek-instance"></a>
 
