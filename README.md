@@ -160,6 +160,7 @@ authentication interface:
   * [https://localhost:8443/register]() --> register a new user on your instance
   * [https://localhost:8443/login]()
 
+
 ### Authenticating API <a name="authenticating-api"></a>
 
 LifeMonitor supports **API key** and **OAuth2** for authorizing API access.
