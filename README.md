@@ -127,7 +127,7 @@ Go through the `settings.conf` to customise the defaults of your LifeMonitor ins
 
 The main important settings are related with the database connection: you have to edit the `POSTGRESQL_*` properties accordingly to the configuration of your Postgres database.
 
-#### Github login (optional)
+#### Github login (optional) <a name="github"></a>
 The current implementation already support user login through **Github**, but it will be actively used in further versions of the system. Anyway, it can be configured by the editing the two properties `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` that you obtain as result of the registration of your LifeMonitor instance on Github. Go through *Settings/Developer settings/OAuth App* and click on *New OAuth App* to start the registration. The main relevant properties you need to provide are: 
 * **Homepage URL**: the `BASE_URL` of your LifeMonitor instance (e.g., `https://localhost:8443` or `https://localhost:8000`)
 * the **Authorization callback URL**: the URL of the LifeMonitor callback to handle the authorisation flow from Github. It must be set to `<BASE_URL>/oauth2/authorized/github`.
@@ -144,42 +144,72 @@ pip3 install -r requirements.txt
 
 The only external requirement is **PostgreSQL** (backend/client). You have to install it on your own to be able to successfully install the `psycopg2==2.8.5` Python requirement.
 
-
------------------------------------------------
-TBD
-## Authenticating
+<br>
+## Authenticating <a name="authenticating"></a>
 
 LifeMonitor supports OAuth2 for authentication and authorization and currently
-supports using identities from WorkflowHub and GitHub (for both of these to work
+supports using identities from WorkflowHub and GitHub. 
+
+>For both of these to work
 on a new deployment, the application must be appropriately configured and
-registered with the respective identity provider).
+registered with the respective identity provider (see [here](#github) for the Github configuration and [WorkflowRegistrySetup](https://github.com/crs4/life_monitor/blob/first-release-docs/examples/1_WorkflowRegistrySetup.ipynb) to configure your instance of WorkflowHub/Seek workflow registry).
 
 For testing and development, LifeMonitor provides a simple web-based
 authentication interface:
 
-  * https://localhost:8443/register --> register a new user on your instance
-  * https://localhost:8443/login
+  * [https://localhost:8443/register]() --> register a new user on your instance
+  * [https://localhost:8443/login]()
 
+### Authenticating API <a name="authenticating-api"></a>
 
-To authenticate API access, you're best off creating an API key using the
-provided CLI:
+LifeMonitor supports **API key** and **OAuth2** for authorizing API access.
+
+#### API key
+
+API keys allows to authenticate users when performing API calls and should be used only for development and testing. At the moment, API keys can be created only via CLI (see the
+[CLI](#cli) section for pointers on how to call it). 
+
+The API key will be printed on the console by typing:
 
     flask api-key create <username>
 
-The API key will be printed on the console.  See the
-[CLI](#Command-line-interface) section for pointers on how to call it.
+Or, if you are using the docker-compose deployment: 
+
+```
+docker-compose exec lm /bin/bash -c 'flask api-key create <username>'
+```    
+
+To query the LifeMonitor API with your API key, you have to pass it in the request header as follows:
+
+```
+curl --insecure -X GET \
+  'https://localhost:8443/users/current' \
+  -H 'ApiKey: KmIIggU9lTcI70fuzZEMHmAFyPHcg82r0qyCVvoKswr2K4XdN8FnVQ' 
+```
 
 
-#### API calls with requests when using self-signed certificates
-
-If you are using [requests](https://requests.readthedocs.io/en/master/), note
-that to interact with the WorkflowHub configured with a self-signed
-certificate you need to add `verify=False` to the calls. See
+>**NOTE: API calls when using self-signed certificates.** \
+> If are using `curl`, you need to add the `--insecure` flag to disable the certificate validation (see the above example). If you are using [requests](https://requests.readthedocs.io/en/master/), you need to add `verify=False` to the calls. See
 [this](https://stackoverflow.com/questions/30405867/how-to-get-python-requests-to-trust-a-self-signed-ssl-certificate)
 for instance.
 
 
-## Command line interface
+#### OAuth2
+The current implementation allows to use the OAuth2 protocol only with workflow registries. See [WorkflowRegistrySetup](https://github.com/crs4/life_monitor/blob/first-release-docs/examples/1_WorkflowRegistrySetup.ipynb) to set up your registry as OAuth2 LifeMonitor client.
+
+Workflow registries are allowed to use both the **Authorization Code** and **Client Credentials** grant type to exchange authorization tokens. Once you a valid OAuth2 token, put it into the `Authorization` header as follows:
+
+```
+curl --insecure -X GET \
+  'https://localhost:8443/registries/current' \
+  -H 'Authorization: Bearer IT6g8H38GqIYcg7bnZuh8V0i1oGMGMjLIj9wMmQNOQ'
+```
+
+
+-----------------------------------------------
+TBD
+
+## Command line interface <a name="cli"></a>
 
 To access the command line interface, you need to execute `flask ...` from the
 base LifeMonitor repository directory.  Rather than installing the dependencies
