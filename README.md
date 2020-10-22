@@ -4,7 +4,7 @@
 
 
 <div align="center" style="text-align: center; margin-top: 50px;">
-<img src="/docs/life_monitor_logo.png" alt="LM logo" width="200px" 
+<img src="/docs/life_monitor_logo.png" alt="LM logo" width="250px" 
      style="margin-top: 50px;" align="center" />
 </div>
 
