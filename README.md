@@ -53,13 +53,16 @@ You should now have a deployment with the following services up and running:
 To check if the services are properly configured go to the LifeMonitor login page [https://localhost:8443/login/](https://localhost:8000/login/) and to log in by clicking "[Login with Seek](https://localhost:8000/oauth2/login/seek)" (you can use one of the preloaded users, e.g.: **user1**, *password*: **workflowhub** [see [notes](https://github.com/crs4/life_monitor/blob/master/tests/config/registries/seek/notes.txt)]). If all goes well, you should be logged in LifeMonitor and see a minimal user profile page.
 
 
-## Exploring API / User interface
+## Exploring API
 
-The web service has a built-in Swagger UI (thanks to
-[connexion](https://connexion.readthedocs.io/en/latest/)).  
-When the docker-compose is running, you can access the UI at `/ui` (e.g., [https://localhost:8443/ui](https://localhost:8443/ui) if you are using the *production* docker-compose deployment or [https://localhost:8000/ui](https://localhost:8000/ui) if your are using the *development* deployment).  
 The full OpenAPI specification is always in the source code repository under [specs/api.yaml](https://github.com/crs4/life_monitor/blob/master/specs/api.yaml) and a "beautified" html version is
 available [here](https://crs4.github.io/life_monitor/lm-openapi-rapidoc.html).
+
+The LifeMonitor web service has a built-in Swagger UI (thanks to
+[connexion](https://connexion.readthedocs.io/en/latest/)). You can access the UI at `/ui` (e.g., [https://localhost:8443/ui](https://localhost:8443/ui) if you are using the *production* docker-compose deployment or [https://localhost:8000/ui](https://localhost:8000/ui) if your are using the *development* deployment).  
+
+
+The folder [`examples`](https://github.com/crs4/life_monitor/tree/master/examples) of this repository contains some relevant examples clients interacting with the LifeMonitor API. 
 
 
 ## Deploy **LifeMonitor** with `docker-compose`
