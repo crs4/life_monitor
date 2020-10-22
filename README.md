@@ -143,7 +143,7 @@ The only external requirement is **PostgreSQL** (backend/client). You have to in
 
 
 -----------------------------------------------
-
+TBD
 ## Authenticating
 
 LifeMonitor supports OAuth2 for authentication and authorization and currently
@@ -200,6 +200,8 @@ most relevant ones for non-developers might be the following.
 
 
 <br>
+
+-----
 
 ## Setup your own WorkflowHub instance <a name="setup-custom-seek-instance"></a>
 
