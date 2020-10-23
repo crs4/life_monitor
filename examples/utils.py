@@ -96,7 +96,7 @@ def fetch_registry_token(registry):
 
 def get_seek_user_info(username):
     assert username in seek_users.keys(), "Unknown user"
-    wfhub_username = username    
+    wfhub_username = username
     seek_session = requests.session()
     seek_session.verify = False
     seek_session.headers.update({
@@ -142,5 +142,5 @@ def get_seek_user_workflow(username, wf_id):
     # log the user on WfHub
     seek_session.auth = requests.auth.HTTPBasicAuth(wfhub_username, wfhub_password)
     response = seek_session.get(f"{wfhub_url}/workflows/{wf_id}")
-    assert response.status_code==200, f"Error: {response.content}"
+    assert response.status_code == 200, f"Error: {response.content}"
     return response.json()["data"]
