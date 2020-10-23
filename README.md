@@ -231,13 +231,13 @@ supports using identities from WorkflowHub and GitHub.
 
 >For both of these to work
 on a new deployment, the application must be appropriately configured and
-registered with the respective identity provider (see [here](#github) for the Github configuration and [WorkflowRegistrySetup](https://github.com/crs4/life_monitor/blob/first-release-docs/examples/1_WorkflowRegistrySetup.ipynb) to configure your instance of WorkflowHub/Seek workflow registry).
+registered with the respective identity provider (see [here](#github) for the Github configuration and [WorkflowRegistrySetup](examples/1_WorkflowRegistrySetup.ipynb) to configure your instance of the WorkflowHub/Seek workflow registry).
 
 For testing and development, LifeMonitor provides a simple web-based
 authentication interface:
 
-  * [https://localhost:8443/register]() --> register a new user on your instance
-  * [https://localhost:8443/login]()
+  * https://localhost:8443/register: register a new user
+  * https://localhost:8443/login: log in
 
 
 ### Authenticating API <a name="authenticating-api"></a>
