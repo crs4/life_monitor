@@ -242,35 +242,30 @@ authentication interface:
 
 ### Authenticating API <a name="authenticating-api"></a>
 
-LifeMonitor supports **API key** and **OAuth2** for authorizing API access.
+LifeMonitor supports **API keys** and **OAuth2** for authorizing API access.
 
-#### API key
+#### API keys
 
-API keys allows to authenticate users when performing API calls and should be
+API keys allow to authenticate users when performing API calls and should be
 used only for development and testing. At the moment, API keys can be created
-only via CLI (see the [CLI](#cli) section for pointers on how to call it). 
-
-The API key will be printed on the console by typing:
-
-    flask api-key create <username>
-
-Or, if you are using the docker-compose deployment: 
+only via CLI:
 
 ```
 docker-compose exec lm /bin/bash -c 'flask api-key create <username>'
 ```    
+
+The API key will be printed as part of the command's output.
 
 To query the LifeMonitor API with your API key, you have to pass it in the request header as follows:
 
 ```
 curl --insecure -X GET \
   'https://localhost:8443/users/current' \
-  -H 'ApiKey: KmIIggU9lTcI70fuzZEMHmAFyPHcg82r0qyCVvoKswr2K4XdN8FnVQ' 
+  -H 'ApiKey: <api key>'
 ```
 
-
 >**NOTE: API calls when using self-signed certificates.** \
-> If are using `curl`, you need to add the `--insecure` flag to disable the certificate validation (see the above example). If you are using [requests](https://requests.readthedocs.io/en/master/), you need to add `verify=False` to the calls. See
+> If you are using `curl`, you need to add the `--insecure` flag to disable certificate validation (see the above example). If you are using [requests](https://requests.readthedocs.io/en/master/), you need to add `verify=False` to the calls. See
 [this](https://stackoverflow.com/questions/30405867/how-to-get-python-requests-to-trust-a-self-signed-ssl-certificate)
 for instance.
 
@@ -278,64 +273,57 @@ for instance.
 #### OAuth2
 The current implementation allows to use the OAuth2 protocol only with workflow
 registries. See
-[WorkflowRegistrySetup](https://github.com/crs4/life_monitor/blob/first-release-docs/examples/1_WorkflowRegistrySetup.ipynb)
+[WorkflowRegistrySetup](examples/1_WorkflowRegistrySetup.ipynb)
 to set up your registry as OAuth2 LifeMonitor client.
 
 Workflow registries are allowed to use both the **Authorization Code** and
-**Client Credentials** grant type to exchange authorization tokens. Once you a
-valid OAuth2 token, put it into the `Authorization` header as follows:
+**Client Credentials** grant type to exchange authorization tokens. The OAuth2
+token needs to be included in the `Authorization` header as a Bearer
+Token. For instance, with curl:
 
 ```
 curl --insecure -X GET \
   'https://localhost:8443/registries/current' \
-  -H 'Authorization: Bearer IT6g8H38GqIYcg7bnZuh8V0i1oGMGMjLIj9wMmQNOQ'
+  -H 'Authorization: Bearer <token>'
 ```
 
-<br>
 
 ## Command line interface <a name="cli"></a>
 
-To access the command line interface, you need to pass the `CMD` to flask -
-i.e.,  `flask <CMD>` - from the base LifeMonitor repository directory.
-
-If you are using the `docker-compose` deployment, when it is up, you can run
-commands inside the LifeMonitor back-end container (named `lm`):
+LifeMonitor includes a command line interface (CLI), mainly intended for
+administrative tasks. To display a general help, run:
 
     docker-compose exec lm flask --help
 
-As you can see from the help message, the CLI provides various commands mainly
-intended for administrative tasks:
+The above will list all available commands. To get help for a specific
+command, run it with the `--help` flag. For instance:
 
-| command        | purpose             |
-|----------------|---------------------|
-| flask api-key  | api-key management  |
-| flask db       | db management       |
-| flask registry | registry management |
+    docker-compose exec lm flask registry --help
 
-<br>
 
 ## Setup your own WorkflowHub instance <a name="setup-custom-seek-instance"></a>
 
-If you already have a WorkflowHub (Seek) instance you can easily register it on
-LifeMonitor by following the procedure describe
-[here](https://github.com/crs4/life_monitor/blob/first-release-docs/examples/1_WorkflowRegistrySetup.ipynb).
+If you already have a WorkflowHub (Seek) instance you can easily register it
+on LifeMonitor by following the procedure described
+[here](examples/1_WorkflowRegistrySetup.ipynb). Make sure the following
+requirements are met.
 
-Notice that to successfully setup your own WorkflowHub instance to work with
-LifeMonitor you must make sure the following requirements are met.
 
 ###### HTTPs enabled
-HTTPS must be enabled on your WorkflowHub instance
-([here](https://github.com/crs4/life_monitor/blob/first-release-docs/docs/wfhub-setup-notes.md)
-some note on how to enable HTTPs) and its certificates should be valid by the
-LifeMonitor instance you have to connect. You could use certificates issued by a
-know certificate authority (e.g., Let's Encrypt) or use the autogenerated
-LifeMonitor certificate. It is automatically generated when you start a
-deployment, but can also be regenerated by deleting the existing `certs` folder
-and typing `make certs`. It is a multi-domain certificate and you can customise
-the list of certificate domain names by editing the `utils/gen-certs.sh` script.
+
+HTTPS must be enabled on your WorkflowHub instance (See [these
+notes](docs/wfhub-setup-notes.md)) and its certificates should be valid on the
+LifeMonitor instance you have to connect. You could use a certificate issued by
+a known certificate authority (e.g., Let's Encrypt) or use the autogenerated
+LifeMonitor certificate. The latter is automatically generated when you
+start a deployment, but can also be regenerated by deleting the existing
+`certs` folder and typing `make certs`. It is a multi-domain certificate and
+you can customise the list of certificate domain names by editing the
+`utils/gen-certs.sh` script.
 
 ###### Reachability
-LifeMonitor needs to direct directly connect to the registry for different
+
+LifeMonitor needs to directly connect to the registry for different
 purposes. Therefore, the registry should be bound to a hostname resolvable and
 reachable by LifeMonitor. For this reason, if you are using the docker-compose
 deployment you should avoid `localhost` as hostname for the registry, unless you
@@ -343,6 +331,6 @@ reconfigure the deployment to use the `host` Docker network mode.
 
 ###### Additional notes on WorkflowHub configuration
 
-* In order to get correct URLs from the WorkflowHub API, you need to set the base URL. Go to Server admin > Settings and set "Site base URL" to `https://<BASE_URL>:3000` (e.g., `https://seek:3000` is the configuration of this field on the [Seek](#aux-services) instance f the pre-configured LifeMonitor deployment ).
+* In order to get correct URLs from the WorkflowHub API, you need to set the base URL. Go to Server admin > Settings and set "Site base URL" to `https://<BASE_URL>:3000` (e.g., `https://seek:3000` is the configuration of this field on the [Seek](#aux-services) instance in the pre-configured LifeMonitor deployment).
 
 * To enable workflows, go to Server admin > Enable/disable features and click on "Workflows enabled". You can set "CWL Viewer URL" to `https://view.commonwl.org/`.
