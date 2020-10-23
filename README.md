@@ -60,13 +60,13 @@ the LifeMonitor API from the outside of the Docker container network**, set a
 proper entry on your local `/etc/hosts` (or local DNS server, like `bind`) in
 order to resolve the host name `seek` to your local IP address. Alternatively,
 you can customise the docker-compose to directly use the *host* network and use
-`localhost` as hostname in registration command above.
+`localhost` as hostname in the registration command above.
 
 You should now have a deployment with the following services up and running:
 
 * **LifeMonitor** @ [https://locahost:8443](https://localhost:8443)
 * **Seek** @ [https://seek:3000](https://seek:3000)
-* **Jenkins** @ [http://localhost:8080](https://localhost:3000)
+* **Jenkins** @ [http://localhost:8080](http://localhost:8080)
 
 To verify that the services are properly configured, go to the LifeMonitor login
 page [https://localhost:8443/login/](https://localhost:8000/login/) and log in
