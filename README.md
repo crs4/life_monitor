@@ -25,7 +25,6 @@ Life Monitor is being developed as part of the [EOSC-Life project](https://www.e
 
 See the [wiki](https://github.com/crs4/life_monitor/wiki) for a more complete description and additional information.
 
-[https://github.com/crs4/life_monitor/wiki]()
 
 ## Getting Started
 You can easily set up your own ready-to-use LifeMonitor instance using the
