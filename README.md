@@ -64,9 +64,9 @@ you can customise the docker-compose to directly use the *host* network and use
 
 You should now have a deployment with the following services up and running:
 
-* **LifeMonitor** @ [https://locahost:8443](https://localhost:8443)
-* **Seek** @ [https://seek:3000](https://seek:3000)
-* **Jenkins** @ [http://localhost:8080](http://localhost:8080)
+* **LifeMonitor** @ https://localhost:8443
+* **Seek** @ https://seek:3000
+* **Jenkins** @ http://localhost:8080
 
 To verify that the services are properly configured, go to the LifeMonitor login
 page at https://localhost:8443/login/ and log in
@@ -81,20 +81,19 @@ profile page.
 ## Exploring the API
 
 The full OpenAPI specification is always in the source code repository under
-[specs/api.yaml](https://github.com/crs4/life_monitor/blob/master/specs/api.yaml)
+[specs/api.yaml](specs/api.yaml)
 and a "beautified" html version is available
 [here](https://crs4.github.io/life_monitor/lm-openapi-rapidoc.html).
 
 The LifeMonitor web service has a built-in Swagger UI (thanks to
-[connexion](https://connexion.readthedocs.io/en/latest/)). You can access the UI
-at `/ui` (e.g., [https://localhost:8443/ui](https://localhost:8443/ui) if you
+[Connexion](https://connexion.readthedocs.io/en/latest/)). You can access the UI
+at `/ui` (e.g., https://localhost:8443/ui if you
 are using the *production* docker-compose deployment or
-[https://localhost:8000/ui](https://localhost:8000/ui) if your are using the
+https://localhost:8000/ui if your are using the
 *development* deployment).  
 
 
-Look in the folder [`examples`](https://github.com/crs4/life_monitor/tree/master/examples) of this
-repository for some examples of Python clients interacting with the
+Look in the [examples](examples) folder for some examples of Python clients interacting with the
 LifeMonitor API.
 
 
