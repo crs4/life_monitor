@@ -69,11 +69,11 @@ You should now have a deployment with the following services up and running:
 * **Jenkins** @ [http://localhost:8080](http://localhost:8080)
 
 To verify that the services are properly configured, go to the LifeMonitor login
-page [https://localhost:8443/login/](https://localhost:8000/login/) and log in
-by clicking "[Login with Seek](https://localhost:8000/oauth2/login/seek)" (you
+page at https://localhost:8443/login/ and log in
+by clicking "[Login with Seek](https://localhost:8443/oauth2/login/seek)" (you
 can use one of the preloaded users, e.g.: **user1**, *password*: **workflowhub**
- -- see
-[notes](https://github.com/crs4/life_monitor/blob/master/tests/config/registries/seek/notes.txt)).
+ -- see these
+[notes](tests/config/registries/seek/notes.txt)).
 If all goes well, you should be logged into LifeMonitor and see a minimal user
 profile page.
 
