@@ -33,6 +33,7 @@ provides you with the basic actions necessary to manage the deployment.
 
 To start the deployment, go through the following steps:
 
+0. `docker network create life_monitor` to create the Docker network;
 1. `make start`, to start the main LifeMonitor services;
 2. `make start-aux-services`, to start a preconfigured set of auxiliary services
    that are needed to test the LifeMonitor -- i.e., an instance of
