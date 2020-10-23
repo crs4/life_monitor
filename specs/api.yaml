@@ -15,14 +15,14 @@ servers:
     variables:
       server:
         enum:
-          - localhost
-          - lifemonitor
-          - lm
+          - "localhost"
+          - "lifemonitor"
+          - "lm"
       port:
-        default: 8443
+        default: "8443"
         enum:
-          - 8443
-          - 8000
+          - "8443"
+          - "8000"
 
 paths:
   /users:
