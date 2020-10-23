@@ -122,8 +122,12 @@ stop-all              Teardown all the services
 #### A note about volumes
 
 The docker-compose uses docker volumes for data storage.  These will persist
-between start and stop actions.  Use the regular Docker commands to get delete
-them.
+between start and stop actions.  Use the regular Docker commands to delete
+them. For instance:
+
+```bash
+docker volume rm life_monitor_lifemonitor_db
+```
 
 #### Environments
 
