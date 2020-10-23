@@ -120,7 +120,7 @@ stop-all              Teardown all the services
 
 #### A note about volumes
 
-The docker-compose uses docker volumes for data storage.  These will persist
+The docker-compose uses Docker volumes for data storage.  These will persist
 between start and stop actions.  Use the regular Docker commands to delete
 them. For instance:
 
@@ -132,13 +132,13 @@ docker volume rm life_monitor_lifemonitor_db
 
 | Environment | Services |
 |---------|---------|
-| **production** | LifeMonitor BackEnd, NGINX proxy, PostgreSQL DBMS |
-| **development** | LifeMonitor BackEnd in dev mode, PostgreSQL DBMS
-| **testing** | LifeMonitor Backend in testing mode, preconfigured auxiliary services (i.e., Seek, Jenkins) |
+| **production** | LifeMonitor back-end, NGINX proxy, PostgreSQL DBMS |
+| **development** | LifeMonitor back-end in dev mode, PostgreSQL DBMS
+| **testing** | LifeMonitor back-end in testing mode, preconfigured auxiliary services (i.e., Seek, Jenkins) |
 
 ##### Development environment
-The development mode mount the life monitor directory within the container and
-runs flask in development mode.  Thus, local changes to the code are immediately
+The development mode mounts the LifeMonitor directory within the container and
+runs Flask in development mode.  Thus, local changes to the code are immediately
 picked up.
 
 ##### Services
@@ -151,23 +151,25 @@ picked up.
 
 
 #### Docker build <a name="image-build"></a>
-As first setup of every environment initialisation, all the required Docker
-images will be build. The main image containing the LifeMonitor backend is built
-from `docker/lifemonitor.Dockerfile`. 
+
+The first step for setting up the environment is to build all required Docker
+images. The main image containing the LifeMonitor back-end is built
+from `docker/lifemonitor.Dockerfile`.
 
 Note that `docker/lifemonitor.Dockerfile` depends on the presence of a `certs`
 directory at the top level (i.e., the repository root) containing the SSL
 certificates. You can provide your own certificates by renaming them to `lm.key`
-and `lm.crt`. Any other (self signed) certificate you might want to install on
+and `lm.crt`. Any other (self-signed) certificate you might want to install on
 the LifeMonitor container should be placed inside the same `certs` directory. If
 this directory is not found, the Makefile will create it and populate it with
-self-signed certificates 
+self-signed certificates.
 > **WARNING**. If you have an empty `certs` directory the image will build but
 > it will be broken due to missing certificates. Thus, be sure to have a `certs`
 > folder populated with the `lm.key` and `lm.crt` files or use `make clean` to
 > clean up and remove the existing `certs` directory.
 
 #### Auxiliary Services <a name="aux-services"></a>
+
 LifeMonitor acts as a bridge between different systems. To simplify the setup of
 a complete environment, we provide preconfigured instances of the two systems
 which LifeMonitor is allowed to communicate with, i.e., the workflow registry
@@ -175,7 +177,7 @@ which LifeMonitor is allowed to communicate with, i.e., the workflow registry
 
 Their setup is mainly intended for testing but can be easily attached to the
 *production* and *development* environment mainly for local testing and
-development. The command `make start-aux-services` allows to start 
+development. You can use the `make start-aux-services` command to start them.
 
 To use them on your local environment without any further modification, you have
 to populate your `/etc/hosts` (or your local DNS server) in such a way that it
@@ -183,45 +185,44 @@ resolve the hostname `seek` to your local or loopback IP address.
 
 
 ### Settings <a name="settings"></a>
+
 Go through the `settings.conf` to customise the defaults of your LifeMonitor
 instance. As with any Flask application, you might want to enable/disable the
 `DEBUG` mode or enable the development Flask mode.
 
-The main important settings are related with the database connection: you have
-to edit the `POSTGRESQL_*` properties accordingly to the configuration of your
-Postgres database.
+The most important settings are those related to the database connection: edit
+the `POSTGRESQL_*` properties according to the configuration of your
+PostgreSQL database.
 
 #### Github login (optional) <a name="github"></a>
-The current implementation already support user login through **Github**, but it
-will be actively used in further versions of the system. Anyway, it can be
-configured by the editing the two properties `GITHUB_CLIENT_ID` and
-`GITHUB_CLIENT_SECRET` that you obtain as result of the registration of your
-LifeMonitor instance on Github. Go through *Settings/Developer settings/OAuth
-App* and click on *New OAuth App* to start the registration. The main relevant
-properties you need to provide are: 
+
+The current version supports user login via **Github**, but this will be
+actively used in future versions. It can be configured by editing the
+`GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` properties that you get as
+result of the registration of your LifeMonitor instance on Github. Go through
+*Settings/Developer settings/OAuth App* and click on *New OAuth App* to start
+the registration. The most relevant properties you need to provide are:
+
 * **Homepage URL**: the `BASE_URL` of your LifeMonitor instance (e.g.,
   `https://localhost:8443` or `https://localhost:8000`)
 * the **Authorization callback URL**: the URL of the LifeMonitor callback to
-  handle the authorisation flow from Github. It must be set to
+  handle the authorization flow from Github. It must be set to
 `<BASE_URL>/oauth2/authorized/github`.
 
 
-
-
 ## How to install on your local environment
+
 LifeMonitor is a plain Flask app and all its internal dependencies are frozen
 and collected on the `requirements.txt` file. Thus, you can easily install
 LifeMonitor by typing:
 
-```bash 
+```bash
 pip3 install -r requirements.txt
 ```
 
-The only external requirement is **PostgreSQL** (backend/client). You have to
-install it on your own to be able to successfully install the `psycopg2==2.8.5`
-Python requirement.
+The only non-Python dependency is **PostgreSQL** (back-end/client), which is
+required by the `psycopg2` Python package.
 
-<br/>
 
 ## Authenticating <a name="authenticating"></a>
 
@@ -298,7 +299,7 @@ To access the command line interface, you need to pass the `CMD` to flask -
 i.e.,  `flask <CMD>` - from the base LifeMonitor repository directory.
 
 If you are using the `docker-compose` deployment, when it is up, you can run
-commands inside the LifeMonitor backend container (named `lm`):
+commands inside the LifeMonitor back-end container (named `lm`):
 
     docker-compose exec lm flask --help
 
