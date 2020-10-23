@@ -18,11 +18,12 @@ servers:
           - "localhost"
           - "lifemonitor"
           - "lm"
+        default: "lifemonitor"
       port:
-        default: "8443"
         enum:
           - "8443"
           - "8000"
+        default: "8443"
 
 paths:
   /users:
