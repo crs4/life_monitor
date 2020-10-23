@@ -9,8 +9,20 @@ info:
 
 servers:
   - url: /
+  - url: 'https://{server}:{port}/'
     description: >
-      Version 0.1.0 of API. Add version prefix (e.g, /v1.0) once we have something useful
+      Variable server address.
+    variables:
+      server:
+        enum:
+          - localhost
+          - lifemonitor
+          - lm
+      port:
+        default: 8443
+        enum:
+          - 8443
+          - 8000
 
 paths:
   /users:
@@ -1035,7 +1047,7 @@ components:
           type: string
           description: |
             "title" (string) - A short, human-readable summary of the problem
-            type.  It SHOULD NOT change from occurrence to occurrence of the 
+            type.  It SHOULD NOT change from occurrence to occurrence of the
             problem, except for purposes of localisation.
         status:
           type: integer
@@ -1051,7 +1063,7 @@ components:
           type: string
           description: |
             "instance" (string) - An absolute URI that identifies the specific
-            occurrence of the problem.  It may or may not yield further 
+            occurrence of the problem.  It may or may not yield further
             information if dereferenced.
         extra_info:
           type: object
