@@ -48,7 +48,7 @@ docker-compose exec lm /bin/bash -c "flask registry add seek seek ehukdECYQNmXxg
 ```
 Take note of the output of the command above. It will provide you with the
 client credentials to setup your OAuth2 client to query the LifeMonitor API as a
-workflow registry (see examples [LINK] ).
+workflow registry (see the [examples](examples)).
 
 
 **NOTE.** If you're authenticating with the instance of Seek/WorkflowHub running
