@@ -40,7 +40,7 @@ To start the deployment, go through the following steps:
    [**Seek/WorkflowHub**](https://workflowhub.eu/) and an instance of
    [**Jenkins**](https://www.jenkins.io/);
 3. register the Seek instance on LifeMonitor with the following command (see
-   [WorkflowRegistrySetup](https://github.com/crs4/life_monitor/blob/first-release-docs/examples/1_WorkflowRegistrySetup.ipynb)
+   [WorkflowRegistrySetup](examples/1_WorkflowRegistrySetup.ipynb)
    for more details):
 
 ```bash
