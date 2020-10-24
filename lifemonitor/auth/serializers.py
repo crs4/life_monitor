@@ -13,7 +13,7 @@ class ProviderSchema(BaseSchema):
 
 
 class IdentitySchema(BaseSchema):
-    sub = fields.String(attribute="user_info.sub")
+    sub = fields.String(attribute="provider_user_id")
     # iss = fields.String(attribute="provider.api_base_url")
     # email = fields.String(attribute="user_info.email")
     # mbox_sha1sum = fields.String(attribute="user_info.mbox_sha1sum")
