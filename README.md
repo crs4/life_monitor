@@ -52,7 +52,7 @@ To start the deployment, go through the following steps:
 0. `docker network create life_monitor` to create the Docker network;
 1. `make start`, to start the main LifeMonitor services;
 2. `make start-aux-services`, to start the preconfigured instances of the WorkflowHub and Jenkins;
-    these auxiliary services are needed to run the LifeMonitor test;
+    these auxiliary services are needed to run the LifeMonitor tests;
 3. register the WorkflowHub instance with LifeMonitor with the following command (see
    [WorkflowRegistrySetup](examples/1_WorkflowRegistrySetup.ipynb)
    for more details):
@@ -87,8 +87,8 @@ use a server name other than `localhost` (or an IP address).  You **must edit
 the API applications authorized by WorkflowHub**.  Do the following:
 
 * Log into WorkflowHub as [`admin`](tests/config/registries/seek/notes.txt);
-* Click on the user menu on the top left;  select *My profile*;
-* Click on the *Actions* menu on the top left; select *API Applications*;
+* Click on the user menu on the top right; select *My profile*;
+* Click on the *Actions* menu on the top right; select *API Applications*;
 * Edit the `LifeMonitor` application by clicking on the *Edit* button on the
   left side of its row in the table;
 * Add the correct URI to the **Redirect URI** box.  E.g.,
