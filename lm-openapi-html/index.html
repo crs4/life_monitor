@@ -372,7 +372,7 @@ font-style: italic;
     <div class="method-path">
     <a class="up" href="#__Methods">Up</a>
     <pre class="get"><code class="huge"><span class="http-method">get</span> /instances/{instance_uuid}/builds/{build_id}</code></pre></div>
-    <div class="method-summary">Get summary of a build for this test suite (<span class="nickname">instancesBuildsGetById</span>)</div>
+    <div class="method-summary">Get summary of the specified build on the specified instance (<span class="nickname">instancesBuildsGetById</span>)</div>
     <div class="method-notes"></div>
 
     <h3 class="field-label">Path parameters</h3>
@@ -443,7 +443,7 @@ font-style: italic;
     <div class="method-path">
     <a class="up" href="#__Methods">Up</a>
     <pre class="get"><code class="huge"><span class="http-method">get</span> /instances/{instance_uuid}/builds/{build_id}/logs</code></pre></div>
-    <div class="method-summary">Get build logs (<span class="nickname">instancesBuildsGetLogs</span>)</div>
+    <div class="method-summary">Get the build logs for the specified build and instance (<span class="nickname">instancesBuildsGetLogs</span>)</div>
     <div class="method-notes"></div>
 
     <h3 class="field-label">Path parameters</h3>
@@ -506,7 +506,7 @@ font-style: italic;
     <div class="method-path">
     <a class="up" href="#__Methods">Up</a>
     <pre class="get"><code class="huge"><span class="http-method">get</span> /instances/{instance_uuid}/latest-builds</code></pre></div>
-    <div class="method-summary">Get summaries of latest builds for this test suite, on this instance (<span class="nickname">instancesGetBuilds</span>)</div>
+    <div class="method-summary">Get summaries of latest builds on the specified instance (<span class="nickname">instancesGetBuilds</span>)</div>
     <div class="method-notes"></div>
 
     <h3 class="field-label">Path parameters</h3>
@@ -771,7 +771,7 @@ font-style: italic;
     <div class="method-path">
     <a class="up" href="#__Methods">Up</a>
     <pre class="get"><code class="huge"><span class="http-method">get</span> /suites/{suite_uuid}</code></pre></div>
-    <div class="method-summary">Get info about a single test suite. (<span class="nickname">suitesGetByUuid</span>)</div>
+    <div class="method-summary">Get info about a single test suite (<span class="nickname">suitesGetByUuid</span>)</div>
     <div class="method-notes"></div>
 
     <h3 class="field-label">Path parameters</h3>
@@ -825,7 +825,7 @@ font-style: italic;
 
     <h3 class="field-label">Responses</h3>
     <h4 class="field-label">200</h4>
-    TestSuite
+    TestSuite object
         <a href="#TestSuite">TestSuite</a>
     <h4 class="field-label">400</h4>
     The request is malformed
@@ -845,7 +845,7 @@ font-style: italic;
     <div class="method-path">
     <a class="up" href="#__Methods">Up</a>
     <pre class="get"><code class="huge"><span class="http-method">get</span> /suites/{suite_uuid}/instances</code></pre></div>
-    <div class="method-summary">Get list of instances of this suite present on testing services (<span class="nickname">suitesGetInstances</span>)</div>
+    <div class="method-summary">Get all instances of this suite present on testing services (<span class="nickname">suitesGetInstances</span>)</div>
     <div class="method-notes"></div>
 
     <h3 class="field-label">Path parameters</h3>
@@ -982,7 +982,7 @@ font-style: italic;
 
     <h3 class="field-label">Responses</h3>
     <h4 class="field-label">200</h4>
-    TestSuiteStatus
+    TestSuiteStatus object
         <a href="#TestSuiteStatus">TestSuiteStatus</a>
     <h4 class="field-label">400</h4>
     The request is malformed
@@ -1002,8 +1002,8 @@ instance.  That is, a specific test suite hosted and executed on a
 specific testing service.</p>
 <p>Two types of test instances can be created:  managed and unmanaged.
 A <em>managed</em> test instance is managed by LifeMonitor on its
-own testing infrastructure.
-An *unmanaged&quot; test instance is hosted on an external testing service
+own testing infrastructure (not supported yet).
+An <em>unmanaged</em> test instance is hosted on an external testing service
 and LifeMonitor can only monitor it (query information about test
 results through the service's API).</p>
 </div>
@@ -1068,7 +1068,7 @@ results through the service's API).</p>
     <div class="method-path">
     <a class="up" href="#__Methods">Up</a>
     <pre class="get"><code class="huge"><span class="http-method">get</span> /registries</code></pre></div>
-    <div class="method-summary">Get users of the current registry (<span class="nickname">workflowRegistriesGet</span>)</div>
+    <div class="method-summary">Get all known workflow registries (<span class="nickname">workflowRegistriesGet</span>)</div>
     <div class="method-notes"></div>
 
 
@@ -1128,7 +1128,7 @@ results through the service's API).</p>
     <div class="method-path">
     <a class="up" href="#__Methods">Up</a>
     <pre class="get"><code class="huge"><span class="http-method">get</span> /registries/{registry_uuid}</code></pre></div>
-    <div class="method-summary">Get users of the current registry (<span class="nickname">workflowRegistriesGetByUuid</span>)</div>
+    <div class="method-summary">Get the workflow registry with the specified uuid (<span class="nickname">workflowRegistriesGetByUuid</span>)</div>
     <div class="method-notes"></div>
 
     <h3 class="field-label">Path parameters</h3>
@@ -1188,7 +1188,7 @@ results through the service's API).</p>
     <div class="method-path">
     <a class="up" href="#__Methods">Up</a>
     <pre class="get"><code class="huge"><span class="http-method">get</span> /registries/current</code></pre></div>
-    <div class="method-summary">Get the current registry (<span class="nickname">workflowRegistriesGetCurrent</span>)</div>
+    <div class="method-summary">Get the current workflow registry (<span class="nickname">workflowRegistriesGetCurrent</span>)</div>
     <div class="method-notes"></div>
 
 
@@ -1347,7 +1347,7 @@ results through the service's API).</p>
     <div class="method-path">
     <a class="up" href="#__Methods">Up</a>
     <pre class="get"><code class="huge"><span class="http-method">get</span> /workflows/{wf_uuid}/{wf_version}</code></pre></div>
-    <div class="method-summary">Get information about a single workflow (<span class="nickname">workflowsGetById</span>)</div>
+    <div class="method-summary">Get information about the specified version of the specified workflow (<span class="nickname">workflowsGetById</span>)</div>
     <div class="method-notes"></div>
 
     <h3 class="field-label">Path parameters</h3>
@@ -1464,7 +1464,7 @@ results through the service's API).</p>
     <div class="method-path">
     <a class="up" href="#__Methods">Up</a>
     <pre class="get"><code class="huge"><span class="http-method">get</span> /workflows/{wf_uuid}/{wf_version}/status</code></pre></div>
-    <div class="method-summary">Get test statuses of a single workflow (<span class="nickname">workflowsGetStatus</span>)</div>
+    <div class="method-summary">Get test statuses for a given workflow and workflow version (<span class="nickname">workflowsGetStatus</span>)</div>
     <div class="method-notes"></div>
 
     <h3 class="field-label">Path parameters</h3>
@@ -1535,7 +1535,7 @@ results through the service's API).</p>
 
     <h3 class="field-label">Responses</h3>
     <h4 class="field-label">200</h4>
-    Summary of status of the specified workflow's tests
+    Test status for the specified workflow and version
         <a href="#WorkflowStatus">WorkflowStatus</a>
     <h4 class="field-label">400</h4>
     The request is malformed
@@ -1555,7 +1555,7 @@ results through the service's API).</p>
     <div class="method-path">
     <a class="up" href="#__Methods">Up</a>
     <pre class="get"><code class="huge"><span class="http-method">get</span> /workflows/{wf_uuid}/{wf_version}/suites</code></pre></div>
-    <div class="method-summary">Get list of test suites associated with workflow (<span class="nickname">workflowsGetSuites</span>)</div>
+    <div class="method-summary">Get the test suites associated with the specified workflow and version (<span class="nickname">workflowsGetSuites</span>)</div>
     <div class="method-notes">Get collection of test suites associated with workflow.  Test suites are collected from the RO-crate received with the creation of a new version of a workflow.</div>
 
     <h3 class="field-label">Path parameters</h3>
