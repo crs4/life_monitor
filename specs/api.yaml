@@ -91,7 +91,7 @@ paths:
     get:
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "workflow_registries_get"
-      summary: "Get users of the current registry"
+      summary: "Get all known workflow registries"
       responses:
         "200":
           description: List of workflow registries
@@ -112,7 +112,7 @@ paths:
     get:
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "workflow_registries_get_by_uuid"
-      summary: "Get users of the current registry"
+      summary: "Get the workflow registry with the specified uuid"
       parameters:
         - $ref: "#/components/parameters/registry_uuid"
       security:
@@ -138,7 +138,7 @@ paths:
     get:
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "workflow_registries_get_current"
-      summary: "Get the current registry"
+      summary: "Get the current workflow registry"
       security:
         - api_key: ["read"]
         - oauth2: ["read"]
@@ -244,7 +244,7 @@ paths:
     get:
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "workflows_get_by_id"
-      summary: "Get information about a single workflow"
+      summary: "Get information about the specified version of the specified workflow"
       security:
         - api_key: ["read"]
         - oauth2: ["read"]
@@ -323,7 +323,7 @@ paths:
     get:
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "workflows_get_status"
-      summary: "Get test statuses of a single workflow"
+      summary: "Get test statuses for a given workflow and workflow version"
       security:
         - api_key: ["read"]
         - oauth2: ["read"]
@@ -332,7 +332,7 @@ paths:
         - $ref: "#/components/parameters/wf_version"
       responses:
         "200":
-          description: Summary of status of the specified workflow's tests
+          description: Test status for the specified workflow and version
           content:
             application/json:
               schema:
@@ -348,7 +348,7 @@ paths:
 
   /workflows/{wf_uuid}/{wf_version}/suites:
     get:
-      summary: "Get list of test suites associated with workflow"
+      summary: "Get the test suites associated with the specified workflow and version"
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "workflows_get_suites"
       security:
@@ -379,7 +379,7 @@ paths:
 
   /suites/{suite_uuid}:
     get:
-      summary: "Get info about a single test suite."
+      summary: "Get info about a single test suite"
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "suites_get_by_uuid"
       security:
@@ -389,7 +389,7 @@ paths:
         - $ref: "#/components/parameters/suite_uuid"
       responses:
         "200":
-          description: TestSuite
+          description: TestSuite object
           content:
             application/json:
               schema:
@@ -439,7 +439,7 @@ paths:
         - $ref: "#/components/parameters/suite_uuid"
       responses:
         "200":
-          description: TestSuiteStatus
+          description: TestSuiteStatus object
           content:
             application/json:
               schema:
@@ -451,7 +451,7 @@ paths:
 
   /suites/{suite_uuid}/instances:
     get:
-      summary: "Get list of instances of this suite present on testing services"
+      summary: "Get all instances of this suite present on testing services"
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "suites_get_instances"
       security:
@@ -489,8 +489,8 @@ paths:
 
         Two types of test instances can be created:  managed and unmanaged.
         A *managed* test instance is managed by LifeMonitor on its
-        own testing infrastructure.
-        An *unmanaged" test instance is hosted on an external testing service
+        own testing infrastructure (not supported yet).
+        An *unmanaged* test instance is hosted on an external testing service
         and LifeMonitor can only monitor it (query information about test
         results through the service's API).
       parameters:
@@ -553,7 +553,7 @@ paths:
   /instances/{instance_uuid}/latest-builds:
     get:
       summary: >
-        Get summaries of latest builds for this test suite, on this instance
+        Get summaries of latest builds on the specified instance
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "instances_get_builds"
       security:
@@ -580,7 +580,7 @@ paths:
 
   /instances/{instance_uuid}/builds/{build_id}:
     get:
-      summary: "Get summary of a build for this test suite"
+      summary: "Get summary of the specified build on the specified instance"
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "instances_builds_get_by_id"
       security:
@@ -607,7 +607,7 @@ paths:
 
   /instances/{instance_uuid}/builds/{build_id}/logs:
     get:
-      summary: "Get build logs"
+      summary: "Get the build logs for the specified build and instance"
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "instances_builds_get_logs"
       security:
