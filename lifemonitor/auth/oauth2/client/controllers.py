@@ -130,6 +130,7 @@ class AuthorizatonHandler:
                 # If the user is not logged in and the token is linked,
                 # log the identity user
                 if identity.user:
+                    identity.save()
                     login_user(identity.user)
                 else:
                     # If the user is not logged in and the token is unlinked,
