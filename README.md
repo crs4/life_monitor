@@ -31,15 +31,29 @@ You can easily set up your own ready-to-use LifeMonitor instance using the
 docker-compose deployment we distribute with this repository. A `Makefile`
 provides you with the basic actions necessary to manage the deployment. 
 
+### Full setup
+
+This default setup will instantiate:
+* the Life Monitor;
+* an instance of [**Seek/WorkflowHub**](https://workflowhub.eu/) which, among
+  other things, you will use as an **identity provider**;
+* an instance of [**Jenkins**](https://www.jenkins.io/).
+
+
+**Assumptions**:
+* you'll be running and accessing the setup on **localhost**;
+* you will use the integrated WorkflowHub instance as the identity provider.
+* **the WorkflowHub instance will be accessible with the host name `seek`**. You
+  can do this by creating an entry in `/etc/hosts` or using a local DNS server,
+  like `bind`. 
+
 To start the deployment, go through the following steps:
 
 0. `docker network create life_monitor` to create the Docker network;
 1. `make start`, to start the main LifeMonitor services;
-2. `make start-aux-services`, to start a preconfigured set of auxiliary services
-   that are needed to test the LifeMonitor -- i.e., an instance of
-   [**Seek/WorkflowHub**](https://workflowhub.eu/) and an instance of
-   [**Jenkins**](https://www.jenkins.io/);
-3. register the Seek instance on LifeMonitor with the following command (see
+2. `make start-aux-services`, to start the preconfigured instances of the WorkflowHub and Jenkins;
+    these auxiliary services are needed to run the LifeMonitor tests;
+3. register the WorkflowHub instance with LifeMonitor with the following command (see
    [WorkflowRegistrySetup](examples/1_WorkflowRegistrySetup.ipynb)
    for more details):
 
@@ -49,18 +63,6 @@ docker-compose exec lm /bin/bash -c "flask registry add seek seek ehukdECYQNmXxg
 Take note of the output of the command above. It will provide you with the
 client credentials to setup your OAuth2 client to query the LifeMonitor API as a
 workflow registry (see the [examples](examples)).
-
-
-**NOTE.** If you're authenticating with the instance of Seek/WorkflowHub running
-in the docker-compose (as we suggested in the instructions above), you need to
-make sure the client from which you're connecting can resolve its host name.
-The host name of the workflow registry is `seek` and it is properly resolved by
-the other services within the docker-compose. But **if your client connects to
-the LifeMonitor API from the outside of the Docker container network**, set a
-proper entry on your local `/etc/hosts` (or local DNS server, like `bind`) in
-order to resolve the host name `seek` to your local IP address. Alternatively,
-you can customise the docker-compose to directly use the *host* network and use
-`localhost` as hostname in the registration command above.
 
 You should now have a deployment with the following services up and running:
 
@@ -76,6 +78,22 @@ can use one of the preloaded users, e.g.: **user1**, *password*: **workflowhub**
 [notes](tests/config/registries/seek/notes.txt)).
 If all goes well, you should be logged into LifeMonitor and see a minimal user
 profile page.
+
+
+### Using a server name other than `localhost`
+
+To access the services in the docker-compose from another system, you'll have to
+use a server name other than `localhost` (or an IP address).  You **must edit
+the API applications authorized by WorkflowHub**.  Do the following:
+
+* Log into WorkflowHub as [`admin`](tests/config/registries/seek/notes.txt);
+* Click on the user menu on the top right; select *My profile*;
+* Click on the *Actions* menu on the top right; select *API Applications*;
+* Edit the `LifeMonitor` application by clicking on the *Edit* button on the
+  left side of its row in the table;
+* Add the correct URI to the **Redirect URI** box.  E.g.,
+
+    https://122.33.4.72:8443/oauth2/authorized/seek
 
 
 ## Exploring the API
