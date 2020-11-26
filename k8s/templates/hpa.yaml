@@ -1,0 +1,28 @@
+{{- if .Values.lifemonitor.autoscaling.enabled }}
+apiVersion: autoscaling/v2beta1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "chart.fullname" . }}
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "chart.fullname" . }}
+  minReplicas: {{ .Values.lifemonitor.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.lifemonitor.autoscaling.maxReplicas }}
+  metrics:
+    {{- if .Values.lifemonitor.autoscaling.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        targetAverageUtilization: {{ .Values.lifemonitor.autoscaling.targetCPUUtilizationPercentage }}
+    {{- end }}
+    {{- if .Values.lifemonitor.autoscaling.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        targetAverageUtilization: {{ .Values.lifemonitor.autoscaling.targetMemoryUtilizationPercentage }}
+    {{- end }}
+{{- end }}
