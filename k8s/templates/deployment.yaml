@@ -52,6 +52,13 @@ spec:
               value: "/lm/certs/tls.crt"
             - name: DEBUG
               value: "True"
+          volumeMounts:
+            - mountPath: "/lm/certs/"
+              name: lifemonitor-tls
+              readOnly: true
+            - name: lifemonitor-settings
+              mountPath: "/lm/settings.conf"
+              subPath: settings.conf
           ports:
             - name: http
               containerPort: 80
@@ -66,6 +73,13 @@ spec:
               port: http
           resources:
             {{- toYaml .Values.lifemonitor.resources | nindent 12 }}
+      volumes:
+        - name: lifemonitor-tls
+          secret:
+            secretName: lifemonitor-tls
+        - name: lifemonitor-settings
+          secret:
+            secretName: lifemonitor-settings
       {{- with .Values.lifemonitor.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
