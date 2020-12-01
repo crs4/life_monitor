@@ -1,14 +1,14 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "chart.fullname" . }}
+  name: {{ include "chart.fullname" . }}-backend
   labels:
     {{- include "chart.labels" . | nindent 4 }}
 spec:
   type: {{ .Values.lifemonitor.service.type }}
   ports:
     - port: {{ .Values.lifemonitor.service.port }}
-      targetPort: http
+      targetPort: 8000
       protocol: TCP
       name: http
   selector:
