@@ -1,0 +1,58 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "chart.fullname" . }}-init
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+spec:
+  template:
+    spec:
+      containers:
+      - name: lifemonitor-init
+        image: "{{ .Values.lifemonitor.image.repository }}:{{ .Values.lifemonitor.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.lifemonitor.image.pullPolicy }}
+        command: ["/bin/sh","-c"]
+        args: ["wait-for-postgres.sh && flask db init"]
+        env:
+            - name: POSTGRESQL_HOST
+              value: {{ include "chart.fullname" . }}-postgresql
+            - name: POSTGRESQL_PORT
+              value: "{{ .Values.postgresql.service.port }}"
+            - name: POSTGRESQL_USERNAME
+              value: "{{ .Values.postgresql.postgresqlUsername }}"
+            - name: POSTGRESQL_PASSWORD
+              value: "{{ .Values.postgresql.postgresqlPassword }}"
+            - name: POSTGRESQL_DATABASE
+              value: "{{ .Values.postgresql.postgresqlDatabase }}"
+            - name: TLS_KEY
+              value: "/lm/certs/tls.key"
+            - name: TLS_CERT
+              value: "/lm/certs/tls.crt"
+        volumeMounts:
+            - mountPath: "/lm/certs/"
+              name: lifemonitor-tls
+              readOnly: true
+            - name: lifemonitor-settings
+              mountPath: "/lm/settings.conf"
+              subPath: settings.conf
+      restartPolicy: Never
+      volumes:
+        - name: lifemonitor-tls
+          secret:
+            secretName: lifemonitor-tls
+        - name: lifemonitor-settings
+          secret:
+            secretName: lifemonitor-settings
+      {{- with .Values.lifemonitor.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.lifemonitor.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.lifemonitor.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+  backoffLimit: 4

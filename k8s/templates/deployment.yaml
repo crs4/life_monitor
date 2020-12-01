@@ -27,6 +27,11 @@ spec:
       serviceAccountName: {{ include "chart.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.lifemonitor.podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: init
+          image: "crs4/k8s-wait-for:latest"
+          imagePullPolicy: IfNotPresent
+          args: ["job", "{{ include "chart.fullname" . }}-init"]
       containers:
         - name: app
           securityContext:
