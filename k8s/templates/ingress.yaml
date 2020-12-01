@@ -1,8 +1,8 @@
 {{- if .Values.lifemonitor.ingress.enabled -}}
 {{- $fullName := include "chart.fullname" . -}}
 {{- $svcPort := .Values.lifemonitor.service.port -}}
-{{- if semverCompare ">=1.14-0" .Capabilities.KubeVersion.GitVersion -}}
-apiVersion: networking.k8s.io/v1beta1
+{{- if semverCompare ">=1.17-0" .Capabilities.KubeVersion.GitVersion -}}
+apiVersion: networking.k8s.io/v1
 {{- else -}}
 apiVersion: extensions/v1beta1
 {{- end }}
@@ -32,10 +32,13 @@ spec:
       http:
         paths:
           {{- range .paths }}
-          - path: {{ . }}
+          - path: {{ . | quote }}
+            pathType: Prefix
             backend:
-              serviceName: {{ $fullName }}
-              servicePort: {{ $svcPort }}
+              service:
+                name: {{ $fullName }}-nginx
+                port:
+                  number: 8080
           {{- end }}
     {{- end }}
   {{- end }}
