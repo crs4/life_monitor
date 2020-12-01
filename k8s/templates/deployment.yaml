@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "chart.fullname" . }}
+  name: {{ include "chart.fullname" . }}-backend
   labels:
     {{- include "chart.labels" . | nindent 4 }}
 spec:
@@ -28,7 +28,7 @@ spec:
       securityContext:
         {{- toYaml .Values.lifemonitor.podSecurityContext | nindent 8 }}
       containers:
-        - name: {{ .Chart.Name }}
+        - name: app
           securityContext:
             {{- toYaml .Values.lifemonitor.securityContext | nindent 12 }}
           image: "{{ .Values.lifemonitor.image.repository }}:{{ .Values.lifemonitor.image.tag | default .Chart.AppVersion }}"
