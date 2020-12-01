@@ -1,0 +1,26 @@
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ include "chart.fullname" . }}-role
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+rules:
+- apiGroups: ["", "extensions", "apps", "batch", "secrets"]
+  resources: ["*"]
+  verbs: ["*"]
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "chart.fullname" . }}-rbac
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "chart.serviceAccountName" . }}
+roleRef:
+  kind: Role
+  name: {{ include "chart.fullname" . }}-role
+  apiGroup: rbac.authorization.k8s.io
