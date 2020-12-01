@@ -33,6 +33,25 @@ spec:
             {{- toYaml .Values.lifemonitor.securityContext | nindent 12 }}
           image: "{{ .Values.lifemonitor.image.repository }}:{{ .Values.lifemonitor.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.lifemonitor.image.pullPolicy }}
+          env:
+            - name: FLASK_ENV
+              value: "production"
+            - name: POSTGRESQL_HOST
+              value: {{ include "chart.fullname" . }}-postgresql
+            - name: POSTGRESQL_PORT
+              value: "{{ .Values.postgresql.service.port }}"
+            - name: POSTGRESQL_USERNAME
+              value: "{{ .Values.postgresql.postgresqlUsername }}"
+            - name: POSTGRESQL_PASSWORD
+              value: "{{ .Values.postgresql.postgresqlPassword }}"
+            - name: POSTGRESQL_DATABASE
+              value: "{{ .Values.postgresql.postgresqlDatabase }}"
+            - name: TLS_KEY
+              value: "/lm/certs/tls.key"
+            - name: TLS_CERT
+              value: "/lm/certs/tls.crt"
+            - name: DEBUG
+              value: "True"
           ports:
             - name: http
               containerPort: 80
