@@ -1,4 +1,4 @@
-{{- if .Values.lifemonitor.ingress.enabled -}}
+{{- if .Values.ingress.enabled -}}
 {{- $fullName := include "chart.fullname" . -}}
 {{- $svcPort := .Values.lifemonitor.service.port -}}
 {{- if semverCompare ">=1.17-0" .Capabilities.KubeVersion.GitVersion -}}
@@ -11,14 +11,14 @@ metadata:
   name: {{ $fullName }}
   labels:
     {{- include "chart.labels" . | nindent 4 }}
-  {{- with .Values.lifemonitor.ingress.annotations }}
+  {{- with .Values.ingress.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  {{- if .Values.lifemonitor.ingress.tls }}
+  {{- if .Values.ingress.tls }}
   tls:
-    {{- range .Values.lifemonitor.ingress.tls }}
+    {{- range .Values.ingress.tls }}
     - hosts:
         {{- range .hosts }}
         - {{ . | quote }}
@@ -27,7 +27,7 @@ spec:
     {{- end }}
   {{- end }}
   rules:
-    {{- range .Values.lifemonitor.ingress.hosts }}
+    {{- range .Values.ingress.hosts }}
     - host: {{ .host | quote }}
       http:
         paths:
