@@ -15,6 +15,12 @@ serviceAccount:
   # If not set and create is true, a name is generated using the fullname template
   name: ""
 
+# OAuth2 settings to enable LifeMonitor to use 
+# external OAuth2 services as Identity Providers
+identity_providers:
+  github:
+    client_id: 
+    client_secret: 
 
 lifemonitor:
   replicaCount: 1
