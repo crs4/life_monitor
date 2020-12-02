@@ -2,8 +2,6 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-hostname: &hostname lm
-
 # name override
 nameOverride: ""
 fullnameOverride: ""
@@ -55,7 +53,7 @@ lifemonitor:
       #nginx.ingress.kubernetes.io/rewrite-target: /
       # kubernetes.io/tls-acme: "true"
     hosts:
-      - host: *hostname
+      - host: &hostname lm
         paths:
           - /
     tls:
