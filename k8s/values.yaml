@@ -42,6 +42,8 @@ lifemonitor:
     # runAsNonRoot: true
     # runAsUser: 1000
 
+  environment: production
+
   service:
     type: ClusterIP
     port: 8000
