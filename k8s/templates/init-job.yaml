@@ -14,35 +14,12 @@ spec:
         command: ["/bin/sh","-c"]
         args: ["wait-for-postgres.sh && flask db init"]
         env:
-            - name: POSTGRESQL_HOST
-              value: {{ include "chart.fullname" . }}-postgresql
-            - name: POSTGRESQL_PORT
-              value: "{{ .Values.postgresql.service.port }}"
-            - name: POSTGRESQL_USERNAME
-              value: "{{ .Values.postgresql.postgresqlUsername }}"
-            - name: POSTGRESQL_PASSWORD
-              value: "{{ .Values.postgresql.postgresqlPassword }}"
-            - name: POSTGRESQL_DATABASE
-              value: "{{ .Values.postgresql.postgresqlDatabase }}"
-            - name: TLS_KEY
-              value: "/lm/certs/tls.key"
-            - name: TLS_CERT
-              value: "/lm/certs/tls.crt"
+{{ include "lifemonitor.common-env" . | indent 12 }}
         volumeMounts:
-            - mountPath: "/lm/certs/"
-              name: lifemonitor-tls
-              readOnly: true
-            - name: lifemonitor-settings
-              mountPath: "/lm/settings.conf"
-              subPath: settings.conf
+{{ include "lifemonitor.common-volume-mounts" . | indent 12 }}
       restartPolicy: Never
       volumes:
-        - name: lifemonitor-tls
-          secret:
-            secretName: lifemonitor-tls
-        - name: lifemonitor-settings
-          secret:
-            secretName: lifemonitor-settings
+{{ include "lifemonitor.common-volume" . | indent 12 }}
       {{- with .Values.lifemonitor.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

@@ -60,3 +60,51 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+Define environment variables shared by some pods.
+*/}}
+{{- define "lifemonitor.common-env" -}}
+- name: FLASK_ENV
+  value: "{{ .Values.lifemonitor.environment }}"
+- name: POSTGRESQL_HOST
+  value: {{ include "chart.fullname" . }}-postgresql
+- name: POSTGRESQL_PORT
+  value: "{{ .Values.postgresql.service.port }}"
+- name: POSTGRESQL_USERNAME
+  value: "{{ .Values.postgresql.postgresqlUsername }}"
+- name: POSTGRESQL_PASSWORD
+  value: "{{ .Values.postgresql.postgresqlPassword }}"
+- name: POSTGRESQL_DATABASE
+  value: "{{ .Values.postgresql.postgresqlDatabase }}"
+- name: TLS_KEY
+  value: "/lm/certs/tls.key"
+- name: TLS_CERT
+  value: "/lm/certs/tls.crt"
+- name: DEBUG
+  value: "True"
+{{- end -}}
+
+{{/*
+Define volumes shared by some pods.
+*/}}
+{{- define "lifemonitor.common-volume" -}}
+- name: lifemonitor-tls
+  secret:
+    secretName: lifemonitor-tls
+- name: lifemonitor-settings
+  secret:
+    secretName: lifemonitor-settings
+{{- end -}}
+
+{{/*
+Define mount points shared by some pods.
+*/}}
+{{- define "lifemonitor.common-volume-mounts" -}}
+- mountPath: "/lm/certs/"
+  name: lifemonitor-tls
+  readOnly: true
+- name: lifemonitor-settings
+  mountPath: "/lm/settings.conf"
+  subPath: settings.conf
+{{- end -}}
