@@ -4,7 +4,11 @@ name: CI Pipeline
 # events but only for the master branch
 on:
   push:
-    #branches: [ master ]
+    branches:
+      - '**'
+    tags:
+      - 'v*.*.*'
+  pull_request:
 
 jobs:
     
@@ -47,14 +51,29 @@ jobs:
     steps:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
-    - name: Build the LifeMonitor Docker image
-      run: make lifemonitor
-    # Setup testing environment
-    - name: Set up testing environment
-      run: make start-testing
-    # Run tests
-    - name: Run tests
-      run: make run-tests
-    # Teardown testing environment
-    - name: Teardown testing environment
-      run: make stop-all
+    # - name: Build the LifeMonitor Docker image
+    #   run: make lifemonitor
+    # # Setup testing environment
+    # - name: Set up testing environment
+    #   run: make start-testing
+    # # Run tests
+    # - name: Run tests
+    #   run: make run-tests
+    # # Teardown testing environment
+    # - name: Teardown testing environment
+    #   run: make stop-all
+    - name: Login to DockerHub
+      uses: docker/login-action@v1 
+      with:
+        username: ${{ secrets.DOCKERHUB_USER }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+    - name: Build and push Docker image
+      id: docker_build
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        file: ./docker/lifemonitor.Dockerfile
+        platforms: linux/amd64
+        push: ${{ github.event_name != 'pull_request' }}
+        tags: ${{ steps.docker_build.outputs.tags }}
+        labels: ${{ steps.docker_build.outputs.labels }}
