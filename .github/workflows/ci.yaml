@@ -48,9 +48,26 @@ jobs:
     - name: run checks
       run: openapi-spec-validator specs/api.yaml
    
-  docker:
-    name: Build, Test and Push
+  tests:
+    name: Run tests
     runs-on: ubuntu-latest
+    steps:
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+    - uses: actions/checkout@v2
+    # Setup testing environment
+    - name: Set up testing environment
+      run: make start-testing
+    # Run tests
+    - name: Run tests
+      run: make run-tests
+    # Teardown testing environment
+    - name: Teardown testing environment
+      run: make stop-all
+    
+  docker:
+    name: Build and Push Docker image
+    runs-on: ubuntu-latest
+    needs: tests
     steps:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
@@ -61,15 +78,6 @@ jobs:
       uses: crazy-max/ghaction-docker-meta@v1
       with:
         images: crs4/lifemonitor      
-    # # Setup testing environment
-    # - name: Set up testing environment
-    #   run: make start-testing
-    # # Run tests
-    # - name: Run tests
-    #   run: make run-tests
-    # # Teardown testing environment
-    # - name: Teardown testing environment
-    #   run: make stop-all
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v1
       if: github.event_name != 'pull_request' && github.repository_owner == 'crs4'
