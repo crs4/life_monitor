@@ -1,0 +1,53 @@
+name: LifeMonitor CI Pipeline
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on:
+  push:
+    #branches: [ master ]
+
+jobs:
+  checkout:
+    runs-on: ubuntu-latest
+    steps:
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+    - uses: actions/checkout@v2
+
+  flake8_validation:
+    needs: checkout
+    runs-on: ubuntu-latest
+    steps:
+    - name: Install flake8
+      run: pip install flake8
+    - name: run checks
+      run: flake8 -v .
+
+  openapi_spec_validation:
+    needs: checkout
+    runs-on: ubuntu-latest
+    steps:
+    - name: Install OpenAPI Spec Validator
+      run: openapi-spec-validator
+    - name: run checks
+      run: openapi-spec-validator specs/api.yaml
+
+  docker_build:
+    needs: checkout
+    runs-on: ubuntu-latest
+    steps:
+    - name: Build the LifeMonitor Docker image
+      run: make lifemonitor
+    
+  run_tests:
+    needs: docker_build
+    runs-on: ubuntu-latest
+    steps:
+    # Setup testing environment
+    - name: Set up testing environment
+      run: make start-testing
+    # Run tests
+    - name: Run tests
+      run: make run-tests
+    # Teardown testing environment
+    - name: Teardown testing environment
+      run: make stop-all
