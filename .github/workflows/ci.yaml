@@ -11,7 +11,7 @@ on:
   pull_request:
 
 jobs:
-    
+  # Verifies pep8, pyflakes and circular complexity 
   flake8:
     name: Check flake8 (py v${{ matrix.python-version }})
     runs-on: ubuntu-latest
@@ -29,7 +29,7 @@ jobs:
       run: pip install flake8
     - name: run checks
       run: flake8 -v .
-
+  # Validate OpenAPI specs
   openapi_specs:
     name: Check OpenAPI Specs (py v${{ matrix.python-version }})
     runs-on: ubuntu-latest
@@ -47,7 +47,7 @@ jobs:
       run: pip install openapi-spec-validator
     - name: run checks
       run: openapi-spec-validator specs/api.yaml
-   
+  # Run LifeMonitor tests
   tests:
     name: Run tests
     runs-on: ubuntu-latest
@@ -64,7 +64,9 @@ jobs:
     # Teardown testing environment
     - name: Teardown testing environment
       run: make stop-all
-    
+  # Build and push the 'crs4/lifemonitor' image
+  # The image will be tagged and annotated accordingly to the OCI Image Format Specification 
+  # (https://github.com/opencontainers/image-spec/blob/master/annotations.md)
   docker:
     name: Build and Push Docker image
     runs-on: ubuntu-latest
