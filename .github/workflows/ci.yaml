@@ -41,7 +41,7 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install OpenAPI Spec Validator
-      run: openapi-spec-validator
+      run: pip install openapi-spec-validator
     - name: run checks
       run: openapi-spec-validator specs/api.yaml
 
