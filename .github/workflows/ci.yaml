@@ -7,19 +7,15 @@ on:
     #branches: [ master ]
 
 jobs:
-  checkout:
-    runs-on: ubuntu-latest
-    steps:
-    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-    - uses: actions/checkout@v2
-
+    
   flake8_validation:
-    needs: checkout
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: [3.7, 3.8, 3.9]
     steps:
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+    - uses: actions/checkout@v2
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
@@ -30,12 +26,13 @@ jobs:
       run: flake8 -v .
 
   openapi_spec_validation:
-    needs: checkout
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: [3.7, 3.8, 3.9]
     steps:
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+    - uses: actions/checkout@v2
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
@@ -46,9 +43,10 @@ jobs:
       run: openapi-spec-validator specs/api.yaml
 
   docker_build:
-    needs: checkout
     runs-on: ubuntu-latest
     steps:
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+    - uses: actions/checkout@v2
     - name: Build the LifeMonitor Docker image
       run: make lifemonitor
     
@@ -56,6 +54,8 @@ jobs:
     needs: docker_build
     runs-on: ubuntu-latest
     steps:
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+    - uses: actions/checkout@v2
     # Setup testing environment
     - name: Set up testing environment
       run: make start-testing
