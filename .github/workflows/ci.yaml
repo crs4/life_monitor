@@ -41,21 +41,14 @@ jobs:
       run: pip install openapi-spec-validator
     - name: run checks
       run: openapi-spec-validator specs/api.yaml
-
-  docker_build:
+   
+  run_tests:
     runs-on: ubuntu-latest
     steps:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
     - name: Build the LifeMonitor Docker image
       run: make lifemonitor
-    
-  run_tests:
-    needs: docker_build
-    runs-on: ubuntu-latest
-    steps:
-    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-    - uses: actions/checkout@v2
     # Setup testing environment
     - name: Set up testing environment
       run: make start-testing
