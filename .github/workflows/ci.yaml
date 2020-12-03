@@ -51,8 +51,8 @@ jobs:
     steps:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
-    # - name: Build the LifeMonitor Docker image
-    #   run: make lifemonitor
+    - name: Generate temporary certificates
+      run: make certs
     # # Setup testing environment
     # - name: Set up testing environment
     #   run: make start-testing
