@@ -13,15 +13,15 @@ on:
 jobs:
   # Verifies pep8, pyflakes and circular complexity 
   flake8:
-    name: Check flake8 (py v${{ matrix.python-version }})
+    name: Check flake8 (python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.7, 3.8, 3.9]
+        python-version: [3.7]
     steps:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Set up Python v${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
@@ -31,15 +31,15 @@ jobs:
       run: flake8 -v .
   # Validate OpenAPI specs
   openapi_specs:
-    name: Check OpenAPI Specs (py v${{ matrix.python-version }})
+    name: Check OpenAPI Specs (python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.7, 3.8, 3.9]
+        python-version: [3.7]
     steps:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Set up Python v${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
