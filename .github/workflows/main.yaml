@@ -104,27 +104,3 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.docker_meta.outputs.tags }}
           labels: ${{ steps.docker_meta.outputs.labels }}
-
-  # Generate OpenAPI docs
-  # (only if tests pass and the current branch is 'master')
-  generate_api_doc:
-    name: Generate OpenAPI docs
-    runs-on: ubuntu-latest
-    needs: tests
-    if: github.ref == 'refs/heads/master'
-    steps:
-      - uses: actions/checkout@v2
-      - name: Generate docs
-        run: docker run -u $(id -u):$(id -g)  --rm -v "${PWD}:/local" openapitools/openapi-generator-cli generate -g html -i /local/specs/api.yaml -o /local/html/
-      - name: Setup assets
-        run: |
-          mkdir --parents public/lm-openapi-html
-          mv html/* public/lm-openapi-html
-      - name: Publish docs
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          # https://github.com/marketplace/actions/github-pages-action
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./public
-          keep_files: true # keep existing files in gh-pages branch
-          enable_jekyll: true # Make sure this is enabled or the action will be default turn off Jekyll
