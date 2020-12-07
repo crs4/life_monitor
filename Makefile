@@ -80,7 +80,7 @@ certs:
 	fi
 
 lifemonitor: docker/lifemonitor.Dockerfile certs
-	printf "\n$(bold)Building LifeMonitor Docker image...$(reset)\n" ; \
+	@printf "\n$(bold)Building LifeMonitor Docker image...$(reset)\n" ; \
 	$(build_kit) docker $(build_cmd) $(cache_from_opt) $(cache_to_opt) \
 		  ${tags_opt} ${labels_opt} ${platforms_opt} \
 		  -f docker/lifemonitor.Dockerfile -t crs4/lifemonitor . ;\
