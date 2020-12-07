@@ -1,0 +1,98 @@
+name: CI Pipeline
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on:
+  push:
+    branches:
+      - "**"
+    tags:
+      - "v*.*.*"
+  pull_request:
+
+jobs:
+  # Verifies pep8, pyflakes and circular complexity
+  flake8:
+    name: Check Flake8 (python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.7]
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+      - name: Set up Python v${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install flake8
+        run: pip install flake8
+      - name: Run checks
+        run: flake8 -v .
+
+  # Validate OpenAPI specs
+  openapi_specs:
+    name: Check OpenAPI Specs (python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.7]
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+      - name: Set up Python v${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install OpenAPI Spec Validator
+        run: pip install openapi-spec-validator
+      - name: Run checks
+        run: openapi-spec-validator specs/api.yaml
+
+  # Build, Test and Push Docker image
+  tests:
+    name: Build, Test and Push Docker image
+    runs-on: ubuntu-latest
+    needs: [flake8, openapi_specs]
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+      # Extract Docker metadata
+      - name: Set up Docker metadata
+        id: docker_meta
+        uses: crazy-max/ghaction-docker-meta@v1
+        with:
+          images: crs4/lifemonitor
+      # Build Docker image
+      - name: Build Docker image
+        run: make lifemonitor
+        env:
+          TAGS: ${{ steps.docker_meta.outputs.tags }}
+          LABELS: ${{ steps.docker_meta.outputs.labels }}
+      # Setup testing environment
+      - name: Set up testing environment
+        run: make start-testing
+        env:
+          TAGS: ${{ steps.docker_meta.outputs.tags }}
+          LABELS: ${{ steps.docker_meta.outputs.labels }}
+      # Run tests
+      - name: Run tests
+        run: make run-tests
+        env:
+          TAGS: ${{ steps.docker_meta.outputs.tags }}
+          LABELS: ${{ steps.docker_meta.outputs.labels }}
+      # Teardown testing environment
+      - name: Teardown testing environment
+        run: make stop-all
+      # DockerHub Login
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USER }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      # Push Dokcer image
+      - name: Push Docker image
+        run: |
+          for t in ${{ steps.docker_meta.outputs.tags }}; do
+            docker push ${t}
+          done

@@ -9,6 +9,50 @@ green  := $(shell tput setaf 2)
 yellow := $(shell tput setaf 3)
 done   := $(shell echo "$(green)DONE$(reset)")
 
+
+# default Docker build options
+build_kit :=
+build_cmd := build
+cache_from_opt :=
+cache_to_opt :=
+builder := 
+ifeq ($(DOCKER_BUILDKIT),1)
+	build_kit = DOCKER_BUILDKIT=1
+	ifdef BUILDX_BUILDER
+		builder_opt = --builder ${BUILDX_BUILDER}
+	endif
+	build_cmd = buildx build --output=type=docker ${builder_opt}
+	ifdef CACHE_TO
+		cache_to_opt = --cache-to=$(CACHE_TO)
+	endif
+endif
+
+ifdef CACHE_FROM
+	cache_from_opt = --cache-from=$(CACHE_FROM)
+endif
+
+# handle extra labels
+labels_opt :=
+ifdef LABELS
+	lbs=$(shell echo ${LABELS} | tr ',' '\r')
+	labels_opt = $(foreach l,$(lbs),--label $(strip $(l)))	
+endif 
+
+# handle extra tags
+tags_opt :=
+ifdef TAGS
+	tags=$(shell echo ${TAGS} | tr ',' '\r')
+	tags_opt = $(foreach t,$(tags),--tag $(strip $(t)))	
+endif
+
+# handle platform option
+platforms_opt :=
+ifdef PLATFORMS
+	platforms=$(shell echo ${PLATFORMS} | tr ',' '\r')
+	platforms_opt = $(foreach p,$(platforms),--platform $(strip $(p)))	
+endif
+
+
 all: images
 
 images: lifemonitor
@@ -37,7 +81,9 @@ certs:
 
 lifemonitor: docker/lifemonitor.Dockerfile certs
 	@printf "\n$(bold)Building LifeMonitor Docker image...$(reset)\n" ; \
-	docker build -f docker/lifemonitor.Dockerfile -t crs4/lifemonitor . ;\
+	$(build_kit) docker $(build_cmd) $(cache_from_opt) $(cache_to_opt) \
+		  ${tags_opt} ${labels_opt} ${platforms_opt} \
+		  -f docker/lifemonitor.Dockerfile -t crs4/lifemonitor . ;\
 	printf "$(done)\n"
 
 aux_images: tests/config/registries/seek/seek.Dockerfile certs

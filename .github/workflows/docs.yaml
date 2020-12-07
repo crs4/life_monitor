@@ -1,0 +1,30 @@
+name: Docs Pipeline
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  # Generate OpenAPI docs
+  generate_api_doc:
+    name: Generate OpenAPI docs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Generate docs
+        run: docker run -u $(id -u):$(id -g)  --rm -v "${PWD}:/local" openapitools/openapi-generator-cli generate -g html -i /local/specs/api.yaml -o /local/html/
+      - name: Setup assets
+        run: |
+          mkdir --parents public/lm-openapi-html
+          mv html/* public/lm-openapi-html
+      - name: Publish docs
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          # https://github.com/marketplace/actions/github-pages-action
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./public
+          keep_files: true # keep existing files in gh-pages branch
+          enable_jekyll: true # Make sure this is enabled or the action will be default turn off Jekyll
