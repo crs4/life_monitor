@@ -216,6 +216,17 @@ postgresql:
     # loadBalancerSourceRanges:
     # - 10.10.10.0/24
 
+  # Enable container security context
+  # (see https://github.com/bitnami/charts/tree/master/bitnami/postgresql)
+  containerSecurityContext:
+    enabled: false
+    fsGroup: 1001
+
+  # Other pod security context to be included as-is in the pod spec
+  # (see https://github.com/bitnami/charts/tree/master/bitnami/postgresql)
+  securityContext:
+    enabled: false
+
   ## PostgreSQL data Persistent Volume Storage Class
   ## If defined, storageClassName: <storageClass>
   ## If set to "-", storageClassName: "", which disables dynamic provisioning
