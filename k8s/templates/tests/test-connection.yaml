@@ -1,3 +1,4 @@
+{{- if .Values.lifemonitor.enableTestConnection }}
 apiVersion: v1
 kind: Pod
 metadata:
@@ -11,5 +12,6 @@ spec:
     - name: wget
       image: busybox
       command: ['wget']
-      args: ['{{ include "chart.fullname" . }}:{{ .Values.lifemonitor.service.port }}']
+      args: ['{{ include "chart.fullname" . }}-backend:{{ .Values.lifemonitor.service.port }}']
   restartPolicy: Never
+{{- end }}
