@@ -94,7 +94,7 @@ Define volumes shared by some pods.
     secretName: lifemonitor-tls
 - name: lifemonitor-settings
   secret:
-    secretName: lifemonitor-settings
+    secretName: {{ include "chart.fullname" . }}-settings
 {{- end -}}
 
 {{/*
