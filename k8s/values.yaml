@@ -124,11 +124,11 @@ postgresql:
     debug: false
 
   ## String to partially override postgresql.fullname template (will maintain the release name)
-  nameOverride: "lifemonitor-postgresql"
+  nameOverride: "postgresql"
 
   ## String to fully override postgresql.fullname template
   ##
-  # fullnameOverride:
+  # fullnameOverride: ""
 
   ## PostgreSQL admin password (used when `postgresqlUsername` is not `postgres`)
   ## ref: https://github.com/bitnami/bitnami-docker-postgresql/blob/master/README.md#creating-a-database-user-on-first-run (see note!)
@@ -311,11 +311,11 @@ nginx:
 
   ## String to partially override nginx.fullname template (will maintain the release name)
   ##
-  nameOverride: "lifemonitor-nginx"
+  nameOverride: "nginx"
 
   ## String to fully override nginx.fullname template
   ##
-  # fullnameOverride:
+  # fullnameOverride: ""
 
   ## Kubernetes Cluster Domain
   ##
