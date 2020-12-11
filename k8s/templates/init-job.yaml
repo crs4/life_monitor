@@ -1,0 +1,35 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "chart.fullname" . }}-init
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+spec:
+  template:
+    spec:
+      containers:
+      - name: lifemonitor-init
+        image: "{{ .Values.lifemonitor.image.repository }}:{{ .Values.lifemonitor.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.lifemonitor.image.pullPolicy }}
+        command: ["/bin/sh","-c"]
+        args: ["wait-for-postgres.sh && flask db init"]
+        env:
+{{ include "lifemonitor.common-env" . | indent 12 }}
+        volumeMounts:
+{{ include "lifemonitor.common-volume-mounts" . | indent 12 }}
+      restartPolicy: Never
+      volumes:
+{{ include "lifemonitor.common-volume" . | indent 12 }}
+      {{- with .Values.lifemonitor.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.lifemonitor.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.lifemonitor.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+  backoffLimit: 4

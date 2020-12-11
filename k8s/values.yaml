@@ -1,0 +1,668 @@
+# Default values for chart.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# name override
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+# Ingress resource to expose the NGINX proxy routes
+# from outside the cluster
+ingress:
+    enabled: false
+    annotations:
+      kubernetes.io/ingress.class: nginx
+      #nginx.ingress.kubernetes.io/rewrite-target: /
+      # kubernetes.io/tls-acme: "true"
+    hosts:
+      - host: &hostname lm
+        paths:
+          - /
+    tls:
+      - secretName: lifemonitor-tls
+        hosts:
+          - *hostname
+
+# OAuth2 settings to enable LifeMonitor to use 
+# external OAuth2 services as Identity Providers
+identity_providers:
+  github:
+    client_id: 
+    client_secret: 
+
+lifemonitor:
+  replicaCount: 1
+
+  image:
+    repository: crs4/lifemonitor
+    pullPolicy: IfNotPresent
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: ""
+
+  imagePullSecrets: []
+  nameOverride: ""
+  fullnameOverride: ""
+
+  podAnnotations: {}
+
+  podSecurityContext: {}
+    # fsGroup: 2000
+
+  securityContext: {}
+    # capabilities:
+    #   drop:
+    #   - ALL
+    # readOnlyRootFilesystem: true
+    # runAsNonRoot: true
+    # runAsUser: 1000
+
+  environment: production
+
+  service:
+    type: ClusterIP
+    port: 8000
+
+  # Enable/Disable the pod to test connection to the LifeMonitor back-end
+  enableTestConnection: false
+
+  resources: {}
+    # We usually recommend not to specify default resources and to leave this as a conscious
+    # choice for the user. This also increases chances charts run on environments with little
+    # resources, such as Minikube. If you do want to specify resources, uncomment the following
+    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
+
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 100
+    targetCPUUtilizationPercentage: 80
+    # targetMemoryUtilizationPercentage: 80
+
+  nodeSelector: {}
+
+  tolerations: []
+
+  affinity: {}
+
+
+postgresql:
+  image:
+    registry: docker.io
+    repository: bitnami/postgresql
+    tag: 11.10.0-debian-10-r9
+    ## Specify a imagePullPolicy
+    ## Defaults to 'Always' if image tag is 'latest', else set to 'IfNotPresent'
+    ## ref: http://kubernetes.io/docs/user-guide/images/#pre-pulling-images
+    ##
+    pullPolicy: IfNotPresent
+    ## Optionally specify an array of imagePullSecrets.
+    ## Secrets must be manually created in the namespace.
+    ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+    ##
+    # pullSecrets:
+    #   - myRegistryKeySecretName
+
+    ## Set to true if you would like to see extra information on logs
+    ## It turns BASH and NAMI debugging in minideb
+    ## ref:  https://github.com/bitnami/minideb-extras/#turn-on-bash-debugging
+    ##
+    debug: false
+
+  ## String to partially override postgresql.fullname template (will maintain the release name)
+  nameOverride: "postgresql"
+
+  ## String to fully override postgresql.fullname template
+  ##
+  # fullnameOverride: ""
+
+  ## PostgreSQL admin password (used when `postgresqlUsername` is not `postgres`)
+  ## ref: https://github.com/bitnami/bitnami-docker-postgresql/blob/master/README.md#creating-a-database-user-on-first-run (see note!)
+  # postgresqlPostgresPassword:
+
+  ## PostgreSQL user (has superuser privileges if username is `postgres`)
+  ## ref: https://github.com/bitnami/bitnami-docker-postgresql/blob/master/README.md#setting-the-root-password-on-first-run
+  ##
+  postgresqlUsername: &dbuser lm
+
+  ## PostgreSQL password
+  ## ref: https://github.com/bitnami/bitnami-docker-postgresql/blob/master/README.md#setting-the-root-password-on-first-run
+  ##
+  postgresqlPassword: &dbpassword foobar
+
+  ## PostgreSQL password using existing secret
+  ## existingSecret: secret
+  ##
+
+  ## Mount PostgreSQL secret as a file instead of passing environment variable
+  # usePasswordFile: false
+
+  ## Create a database
+  ## ref: https://github.com/bitnami/bitnami-docker-postgresql/blob/master/README.md#creating-a-database-on-first-run
+  ##
+  postgresqlDatabase: &dbname lm
+
+  ## PostgreSQL data dir
+  ## ref: https://github.com/bitnami/bitnami-docker-postgresql/blob/master/README.md
+  ##
+  postgresqlDataDir: /bitnami/postgresql/data
+
+  ## An array to add extra environment variables
+  ## For example:
+  ## extraEnv:
+  ##   - name: FOO
+  ##     value: "bar"
+  ##
+  # extraEnv:
+  extraEnv: []
+
+  ## Name of a ConfigMap containing extra env vars
+  ##
+  # extraEnvVarsCM:
+
+  ## Specify extra initdb args
+  ## ref: https://github.com/bitnami/bitnami-docker-postgresql/blob/master/README.md
+  ##
+  # postgresqlInitdbArgs:
+
+  ## Specify a custom location for the PostgreSQL transaction log
+  ## ref: https://github.com/bitnami/bitnami-docker-postgresql/blob/master/README.md
+  ##
+  # postgresqlInitdbWalDir:
+
+  ## PostgreSQL configuration
+  ## Specify runtime configuration parameters as a dict, using camelCase, e.g.
+  ## {"sharedBuffers": "500MB"}
+  ## Alternatively, you can put your postgresql.conf under the files/ directory
+  ## ref: https://www.postgresql.org/docs/current/static/runtime-config.html
+  ##
+  # postgresqlConfiguration:
+
+  ## PostgreSQL extended configuration
+  ## As above, but _appended_ to the main configuration
+  ## Alternatively, you can put your *.conf under the files/conf.d/ directory
+  ## https://github.com/bitnami/bitnami-docker-postgresql#allow-settings-to-be-loaded-from-files-other-than-the-default-postgresqlconf
+  ##
+  # postgresqlExtendedConf:
+
+  ## PostgreSQL service configuration
+  ##
+  service:
+    ## PosgresSQL service type
+    ##
+    type: ClusterIP
+    # clusterIP: None
+    port: 5432
+
+    ## Specify the nodePort value for the LoadBalancer and NodePort service types.
+    ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport
+    ##
+    # nodePort:
+
+    ## Provide any additional annotations which may be required. Evaluated as a template.
+    ##
+    annotations: {}
+    ## Set the LoadBalancer service type to internal only.
+    ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#internal-load-balancer
+    ##
+    # loadBalancerIP:
+    ## Load Balancer sources. Evaluated as a template.
+    ## https://kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/#restrict-access-for-loadbalancer-service
+    ##
+    # loadBalancerSourceRanges:
+    # - 10.10.10.0/24
+
+  # Enable container security context
+  # (see https://github.com/bitnami/charts/tree/master/bitnami/postgresql)
+  containerSecurityContext:
+    enabled: false
+    fsGroup: 1001
+
+  # Other pod security context to be included as-is in the pod spec
+  # (see https://github.com/bitnami/charts/tree/master/bitnami/postgresql)
+  securityContext:
+    enabled: false
+
+  ## PostgreSQL data Persistent Volume Storage Class
+  ## If defined, storageClassName: <storageClass>
+  ## If set to "-", storageClassName: "", which disables dynamic provisioning
+  ## If undefined (the default) or set to null, no storageClassName spec is
+  ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
+  ##   GKE, AWS & OpenStack)
+  ##
+  persistence:
+    enabled: true
+    ## A manually managed Persistent Volume and Claim
+    ## If defined, PVC must be created manually before volume will be bound
+    ## The value is evaluated as a template, so, for example, the name can depend on .Release or .Chart
+    ##
+    # existingClaim:
+
+    ## The path the volume will be mounted at, useful when using different
+    ## PostgreSQL images.
+    ##
+    mountPath: /bitnami/postgresql
+
+    ## The subdirectory of the volume to mount to, useful in dev environments
+    ## and one PV for multiple services.
+    ##
+    subPath: ''
+
+    storageClass: "-"
+    accessModes:
+      - ReadWriteOnce
+    size: 8Gi
+    annotations: {}
+    ## selector can be used to match an existing PersistentVolume
+    ## selector:
+    ##   matchLabels:
+    ##     app: my-app
+    selector: {}
+
+
+nginx:
+
+  ## Global Docker image parameters
+  ## Please, note that this will override the image parameters, including dependencies, configured to use the global value
+  ## Current available global Docker image parameters: imageRegistry and imagePullSecrets
+  ##
+  # global:
+  #   imageRegistry: myRegistryName
+  #   imagePullSecrets:
+  #     - myRegistryKeySecretName
+
+  ## Bitnami NGINX image version
+  ## ref: https://hub.docker.com/r/bitnami/nginx/tags/
+  ##
+  image:
+    registry: docker.io
+    repository: bitnami/nginx
+    tag: 1.19.5-debian-10-r0
+    ## Specify a imagePullPolicy
+    ## Defaults to 'Always' if image tag is 'latest', else set to 'IfNotPresent'
+    ## ref: http://kubernetes.io/docs/user-guide/images/#pre-pulling-images
+    ##
+    pullPolicy: IfNotPresent
+    ## Optionally specify an array of imagePullSecrets.
+    ## Secrets must be manually created in the namespace.
+    ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+    ## E.g.:
+    ## pullSecrets:
+    ##   - myRegistryKeySecretName
+    ##
+    pullSecrets: []
+    ## Set to true if you would like to see extra information on logs
+    ##
+    debug: false
+
+  ## String to partially override nginx.fullname template (will maintain the release name)
+  ##
+  nameOverride: "nginx"
+
+  ## String to fully override nginx.fullname template
+  ##
+  # fullnameOverride: ""
+
+  ## Kubernetes Cluster Domain
+  ##
+  clusterDomain: cluster.local
+
+  ## Extra objects to deploy (value evaluated as a template)
+  ##
+  extraDeploy: []
+
+  ## Add labels to all the deployed resources
+  ##
+  commonLabels: {}
+
+  ## Add annotations to all the deployed resources
+  ##
+  commonAnnotations: {}
+
+  ## Command and args for running the container (set to default if not set). Use array form
+  ##
+  # command:
+  # args:
+
+  ## Additional environment variables to set
+  ## E.g:
+  ## extraEnvVars:
+  ##   - name: FOO
+  ##     value: BAR
+  ##
+  extraEnvVars: []
+
+  ## ConfigMap with extra environment variables
+  ##
+  # extraEnvVarsCM:
+
+  ## Secret with extra environment variables
+  ##
+  # extraEnvVarsSecret:
+
+  
+  ## Custom server block to be added to NGINX configuration
+  # serverBlock: |-
+  #   # set upstream server
+  #   upstream lm_app {
+  #     # fail_timeout=0 means we always retry an upstream even if it failed
+  #     # to return a good HTTP response
+  #     server lifemonitor-backend:8000 fail_timeout=0;
+  #   }
+
+  #   server {
+  #     listen 0.0.0.0:8080 default_server;
+  #     client_max_body_size 4G;
+  #     # set the correct host(s) for your site
+  #     server_name localhost;
+  #     keepalive_timeout 60;
+
+  #     #ssl_certificate /nginx/certs/lm.crt;
+  #     #ssl_certificate_key /nginx/certs/lm.key;
+
+  #     # force HTTP traffic to HTTPS
+  #     error_page  497 https://$host:8443$request_uri;
+
+  #     # set proxy location
+  #     location / {
+  #       #resolver 127.0.0.11 ipv6=off valid=30s;
+  #       proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+  #       proxy_set_header X-Forwarded-Proto $scheme;
+  #       proxy_set_header Host $http_host;
+  #       # we don't want nginx trying to do something clever with
+  #       # redirects, we set the Host: header above already.
+  #       proxy_redirect off;
+  #       proxy_pass https://lm_app;
+  #     }
+  #   }
+
+  ## ConfigMap with custom server block to be added to NGINX configuration
+  ## NOTE: This will override serverBlock
+  ##
+  existingServerBlockConfigmap: "lifemonitor-nginx-configmap"
+
+  ## Name of existing ConfigMap with the server static site content
+  ##
+  # staticSiteConfigmap
+
+  ## Name of existing PVC with the server static site content
+  ## NOTE: This will override staticSiteConfigmap
+  ##
+  # staticSitePVC
+
+  ## Number of replicas to deploy
+  ##
+  replicaCount: 1
+
+  ## Pod extra labels
+  ## ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+  ##
+  podLabels: {}
+
+  ## Pod annotations
+  ## ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+  ##
+  podAnnotations: {}
+
+  ## Pod affinity preset
+  ## ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#inter-pod-affinity-and-anti-affinity
+  ## Allowed values: soft, hard
+  ##
+  podAffinityPreset: ""
+
+  ## Pod anti-affinity preset
+  ## Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#inter-pod-affinity-and-anti-affinity
+  ## Allowed values: soft, hard
+  ##
+  podAntiAffinityPreset: soft
+
+  ## Node affinity preset
+  ## Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity
+  ## Allowed values: soft, hard
+  ##
+  nodeAffinityPreset:
+    ## Node affinity type
+    ## Allowed values: soft, hard
+    type: ""
+    ## Node label key to match
+    ## E.g.
+    ## key: "kubernetes.io/e2e-az-name"
+    ##
+    key: ""
+    ## Node label values to match
+    ## E.g.
+    ## values:
+    ##   - e2e-az1
+    ##   - e2e-az2
+    ##
+    values: []
+
+  ## Affinity for pod assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+  ## Note: podAffinityPreset, podAntiAffinityPreset, and  nodeAffinityPreset will be ignored when it's set
+  ##
+  affinity: {}
+
+  ## Node labels for pod assignment. Evaluated as a template.
+  ## Ref: https://kubernetes.io/docs/user-guide/node-selection/
+  ##
+  nodeSelector: {}
+
+  ## Tolerations for pod assignment. Evaluated as a template.
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations: {}
+
+  ## NGINX pods' Security Context.
+  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod
+  ##
+  podSecurityContext:
+    enabled: false
+    runAsUser: 1001
+    runAsNonRoot: true
+    ## sysctl settings
+    ## Example:
+    ## sysctls:
+    ## - name: net.core.somaxconn
+    ##   value: "10000"
+    ##
+    sysctls: {}
+
+  ## NGINX Core containers' Security Context (only main container).
+  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container
+  ##
+  containerSecurityContext:
+    enabled: false
+    fsGroup: 1001
+
+  ## Configures the ports NGINX listens on
+  ##
+  containerPorts:
+    http: 8080
+
+  ## NGINX containers' resource requests and limits
+  ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
+  ##
+  resources:
+    # We usually recommend not to specify default resources and to leave this as a conscious
+    # choice for the user. This also increases chances charts run on environments with little
+    # resources, such as Minikube. If you do want to specify resources, uncomment the following
+    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+    limits: {}
+    #   cpu: 100m
+    #   memory: 128Mi
+    requests: {}
+    #   cpu: 100m
+    #   memory: 128Mi
+
+  ## NGINX containers' liveness and readiness probes.
+  ## ref: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#container-probes
+  ##
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 30
+    timeoutSeconds: 5
+    periodSeconds: 10
+    failureThreshold: 6
+    successThreshold: 1
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 5
+    timeoutSeconds: 3
+    periodSeconds: 5
+    failureThreshold: 3
+    successThreshold: 1
+
+  ## Custom Liveness probe
+  ##
+  customLivenessProbe: {}
+
+  ## Custom Rediness probe
+  ##
+  customReadinessProbe: {}
+
+  ## Autoscaling parameters
+  ##
+  autoscaling:
+    enabled: false
+    # minReplicas: 1
+    # maxReplicas: 10
+    # targetCPU: 50
+    # targetMemory: 50
+
+  ## Array to add extra volumes (evaluated as a template)
+  ##
+  extraVolumes: []
+
+  ## Array to add extra mounts (normally used with extraVolumes, evaluated as a template)
+  ##
+  extraVolumeMounts: []
+
+  ## NGINX Service properties
+  ##
+  service:
+    ## Service type
+    ##
+    type: ClusterIP
+
+    ## HTTP Port
+    ##
+    port: 8080
+
+    ## Set the LoadBalancer service type to internal only.
+    ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#internal-load-balancer
+    ##
+    # loadBalancerIP:
+
+    ## Provide any additional annotations which may be required. This can be used to
+    ## set the LoadBalancer service type to internal only.
+    ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#internal-load-balancer
+    ##
+    annotations: {}
+
+    ## Enable client source IP preservation
+    ## ref http://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/#preserving-the-client-source-ip
+    ##
+    externalTrafficPolicy: Local
+
+  ## Prometheus Exporter / Metrics
+  ##
+  metrics:
+    enabled: false
+
+    ## Bitnami NGINX Prometheus Exporter image
+    ## ref: https://hub.docker.com/r/bitnami/nginx-exporter/tags/
+    ##
+    image:
+      registry: docker.io
+      repository: bitnami/nginx-exporter
+      tag: 0.8.0-debian-10-r147
+      pullPolicy: IfNotPresent
+      ## Optionally specify an array of imagePullSecrets.
+      ## Secrets must be manually created in the namespace.
+      ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+      ##
+      # pullSecrets:
+      #   - myRegistryKeySecretName
+
+    ## Prometheus exporter pods' annotation and labels
+    ## ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+    ##
+    podAnnotations: {}
+
+    ## Prometheus exporter service parameters
+    ##
+    service:
+      ## NGINX Prometheus exporter port
+      ##
+      port: 9113
+      ## Annotations for the Prometheus exporter service
+      ##
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ .Values.metrics.service.port }}"
+
+    ## NGINX Prometheus exporter resource requests and limits
+    ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
+    ##
+    resources:
+      # We usually recommend not to specify default resources and to leave this as a conscious
+      # choice for the user. This also increases chances charts run on environments with little
+      # resources, such as Minikube. If you do want to specify resources, uncomment the following
+      # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+      limits: {}
+      #   cpu: 100m
+      #   memory: 128Mi
+      requests: {}
+      #   cpu: 100m
+      #   memory: 128Mi
+
+    ## Prometheus Operator ServiceMonitor configuration
+    ##
+    serviceMonitor:
+      enabled: false
+      ## Namespace in which Prometheus is running
+      ##
+      # namespace: monitoring
+
+      ## Interval at which metrics should be scraped.
+      ## ref: https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#endpoint
+      ##
+      # interval: 10s
+
+      ## Timeout after which the scrape is ended
+      ## ref: https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#endpoint
+      ##
+      # scrapeTimeout: 10s
+
+      ## ServiceMonitor selector labels
+      ## ref: https://github.com/bitnami/charts/tree/master/bitnami/prometheus-operator#prometheus-configuration
+      ##
+      # selector:
+      #   prometheus: my-prometheus
+
+  ## Pod Disruption Budget configuration
+  ## ref: https://kubernetes.io/docs/tasks/run-application/configure-pdb/
+  ##
+  pdb:
+    create: false
+    ## Min number of pods that must still be available after the eviction
+    ##
+    minAvailable: 1
+    ## Max number of pods that can be unavailable after the eviction
+    ##
+    # maxUnavailable: 1

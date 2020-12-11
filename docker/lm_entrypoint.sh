@@ -5,6 +5,8 @@ set -o errexit
 
 export POSTGRESQL_USERNAME="${POSTGRESQL_USERNAME:-lm}"
 export POSTGRESQL_DATABASE="${POSTGRESQL_DATABASE:-lm}"
+export KEY=${TLS_KEY:-/certs/lm.key}
+export CERT=${TLS_CERT:-/certs/lm.crt}
 
 printf "Waiting for postgresql...\n" >&2
 wait-for-postgres.sh
@@ -15,7 +17,7 @@ if [[ "${FLASK_ENV}" == "development" || "${FLASK_ENV}" == "testingSupport" ]]; 
 else
   gunicorn --workers "${GUNICORN_WORKERS}"  \
            --threads "${GUNICORN_THREADS}" \
-           --certfile=/certs/lm.crt --keyfile=/certs/lm.key \
+           --certfile="${CERT}" --keyfile="${KEY}" \
            -b "0.0.0.0:8000" \
            "app"
 fi
