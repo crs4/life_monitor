@@ -54,8 +54,8 @@ class WorkflowRegistryClient(ABC):
         return self._oauth2client.get(*args, **kwargs)
 
     def download_url(self, url, user, target_path=None):
-        return download_url(url, target_path, 
-            authorization=f'Bearer {self._get_access_token(user.id)["access_token"]}')
+        return download_url(url, target_path,
+                            authorization=f'Bearer {self._get_access_token(user.id)["access_token"]}')
 
     def get_external_id(self, uuid, version, user: User) -> str:
         """ Return CSV of uuid and version"""
@@ -156,8 +156,8 @@ class WorkflowRegistry(db.Model):
             except Exception as e:
                 logger.exception(e)
 
-        return Workflow(self, workflow_submitter,
-                        workflow_uuid, workflow_version, roc_link,
+        return Workflow(workflow_uuid, workflow_version, workflow_submitter, roc_link,
+                        registry=self,
                         roc_metadata=roc_metadata,
                         external_id=external_id, name=name)
 
@@ -333,7 +333,7 @@ class Workflow(db.Model):
                              db.ForeignKey(User.id), nullable=False)
     _registry_id = \
         db.Column("registry_id", UUID(as_uuid=True),
-                  db.ForeignKey(WorkflowRegistry.uuid), nullable=False)
+                  db.ForeignKey(WorkflowRegistry.uuid), nullable=True)
     external_id = db.Column(db.String, nullable=True)
     workflow_registry = db.relationship("WorkflowRegistry", uselist=False, back_populates="registered_workflows")
     name = db.Column(db.Text, nullable=True)
@@ -347,8 +347,9 @@ class Workflow(db.Model):
         db.UniqueConstraint(_registry_id, external_id, version),
     )
 
-    def __init__(self, registry: WorkflowRegistry, submitter: User,
-                 uuid, version, rock_link,
+    def __init__(self,
+                 uuid, version, submitter: User, rock_link,
+                 registry: WorkflowRegistry = None,
                  roc_metadata=None, external_id=None, name=None) -> None:
         self.uuid = uuid
         self.version = version
