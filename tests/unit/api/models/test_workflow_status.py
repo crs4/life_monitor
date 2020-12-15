@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 @pytest.fixture
 def workflow():
-    return models.Workflow(MagicMock(), MagicMock(), uuid.uuid4(), "1", "https://link")
+    return models.Workflow(MagicMock(), uuid.uuid4(), "1", "https://link", MagicMock())
 
 
 @pytest.fixture
