@@ -47,8 +47,15 @@ class LifeMonitor:
             w = Workflow.find_by_id(uuid, version)
         if w is None:
             raise EntityNotFoundException(Workflow, f"{uuid}_{version}")
-        allowed = w.workflow_registry.get_user_workflows(user)
-        if w not in allowed:
+        # Check user access for a workflow
+        # As a general rule, we grant user access to the workflow
+        #   1. if the user if the workflow submitter
+        #   2. or the user has view access to the workflow on the registry
+        if w.submitter != user:
+            # if the user is not the submitter
+            # and the workflow is associated with a registry
+            # then we try to check whether the user is allowed to view the workflow
+            if w.workflow_registry is None or w not in w.workflow_registry.get_user_workflows(user):
                 raise NotAuthorizedException(f"User {user.username} is not allowed to access workflow")
         return w
 
