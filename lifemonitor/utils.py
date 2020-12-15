@@ -31,10 +31,10 @@ def to_camel_case(snake_str) -> str:
     return ''.join(x.title() for x in snake_str.split('_'))
 
 
-def download_url(url, target_path=None, token=None):
+def download_url(url, target_path=None, authorization=None):
     with requests.Session() as session:
-        if token:
-            session.headers['Authorization'] = f'Bearer {token}'
+        if authorization:
+            session.headers['Authorization'] = authorization
         with session.get(url, stream=True) as r:
             if r.status_code == 401 or r.status_code == 403:
                 raise NotAuthorizedException(r.content)

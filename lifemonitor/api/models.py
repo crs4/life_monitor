@@ -54,7 +54,8 @@ class WorkflowRegistryClient(ABC):
         return self._oauth2client.get(*args, **kwargs)
 
     def download_url(self, url, user, target_path=None):
-        return download_url(url, target_path, self._get_access_token(user.id)["access_token"])
+        return download_url(url, target_path, 
+            authorization=f'Bearer {self._get_access_token(user.id)["access_token"]}')
 
     def get_external_id(self, uuid, version, user: User) -> str:
         """ Return CSV of uuid and version"""
