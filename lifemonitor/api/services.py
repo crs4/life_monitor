@@ -7,6 +7,7 @@ from typing import Union, List
 
 from rocrate.rocrate import ROCrate
 from lifemonitor.auth.models import User
+from lifemonitor.utils import download_url
 from lifemonitor.auth.oauth2.server import server
 from lifemonitor.auth.oauth2.client import providers
 from lifemonitor.common import (
@@ -48,15 +49,21 @@ class LifeMonitor:
             raise EntityNotFoundException(Workflow, f"{uuid}_{version}")
         allowed = w.workflow_registry.get_user_workflows(user)
         if w not in allowed:
-            raise NotAuthorizedException(f"User {user.username} is not allowed to access workflow")
+                raise NotAuthorizedException(f"User {user.username} is not allowed to access workflow")
         return w
 
     @staticmethod
-    def register_workflow(workflow_registry: WorkflowRegistry, workflow_submitter: User,
-                          workflow_uuid, workflow_version, roc_link, external_id=None, name=None):
+    def register_workflow(workflow_submitter: User,
+                          workflow_uuid, workflow_version, roc_link,
+                          workflow_registry: WorkflowRegistry = None,
+                          authorization=None,
+                          external_id=None, name=None):
         with tempfile.NamedTemporaryFile(dir="/tmp") as archive_path:
             logger.info("Downloading RO Crate @ %s", archive_path.name)
-            zip_archive = workflow_registry.download_url(roc_link, workflow_submitter, target_path=archive_path.name)
+            if workflow_registry:
+                zip_archive = workflow_registry.download_url(roc_link, workflow_submitter, target_path=archive_path.name)
+            else:
+                zip_archive = download_url(roc_link, target_path=archive_path.name, authorization=authorization)
             logger.debug("ZIP Archive: %s", zip_archive)
             with tempfile.TemporaryDirectory() as roc_path:
                 logger.info("Extracting RO Crate @ %s", roc_path)
@@ -66,11 +73,18 @@ class LifeMonitor:
                 with open(metadata_path, "rt") as f:
                     metadata = json.load(f)
                 # create a new Workflow instance with the loaded metadata
-                w = workflow_registry.add_workflow(
-                    workflow_uuid, workflow_version, workflow_submitter,
-                    roc_link=roc_link, roc_metadata=metadata,
-                    external_id=external_id, name=name
-                )
+                if workflow_registry:
+                    w = workflow_registry.add_workflow(
+                        workflow_uuid, workflow_version, workflow_submitter,
+                        roc_link=roc_link, roc_metadata=metadata,
+                        external_id=external_id, name=name
+                    )
+                else:
+                    w = Workflow(
+                        workflow_uuid, workflow_version, workflow_submitter, roc_link,
+                        roc_metadata=metadata,
+                        external_id=external_id, name=name
+                    )
                 test_metadata = get_old_format_tests(crate)
                 if test_metadata:
                     logger.debug("Test metadata found in the crate")
