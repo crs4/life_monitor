@@ -1,0 +1,161 @@
+{
+    "@context": [
+        "https://w3id.org/ro/crate/1.1/context",
+        {
+            "TestSuite": "https://w3id.org/ro/terms/test#TestSuite",
+            "TestInstance": "https://w3id.org/ro/terms/test#TestInstance",
+            "TestService": "https://w3id.org/ro/terms/test#TestService",
+            "TestDefinition": "https://w3id.org/ro/terms/test#TestDefinition",
+            "PlanemoEngine": "https://w3id.org/ro/terms/test#PlanemoEngine",
+            "JenkinsService": "https://w3id.org/ro/terms/test#JenkinsService",
+            "TravisService": "https://w3id.org/ro/terms/test#TravisService",
+            "instance": "https://w3id.org/ro/terms/test#instance",
+            "runsOn": "https://w3id.org/ro/terms/test#runsOn",
+            "resource": "https://w3id.org/ro/terms/test#resource",
+            "definition": "https://w3id.org/ro/terms/test#definition",
+            "engineVersion": "https://w3id.org/ro/terms/test#engineVersion"
+        }
+    ],
+    "@graph": [
+        {
+            "@id": "ro-crate-metadata.json",
+            "@type": "CreativeWork",
+            "about": {
+                "@id": "./"
+            },
+            "conformsTo": {
+                "@id": "https://w3id.org/ro/crate/1.1"
+            }
+        },
+        {
+            "@id": "./",
+            "@type": "Dataset",
+            "name": "basefreqsum",
+            "description": "compute base frequencies in a FASTA file",
+            "license": "Apache-2.0",
+            "mainEntity": {
+                "@id": "workflows/base_freq_sum.cwl"
+            },
+            "hasPart": [
+                {
+                    "@id": "workflows/base_freq_sum.cwl"
+                },
+                {
+                    "@id": "tools/base_freqs.cwl"
+                },
+                {
+                    "@id": "tools/sum_freqs.cwl"
+                },
+                {
+                    "@id": "test/"
+                },
+                {
+                    "@id": "LICENSE"
+                },
+                {
+                    "@id": "README.md"
+                },
+                {
+                    "@id": "test/test1/base_freq_sum_tests.yml"
+                },
+                {
+                    "@id": "test/test2/base_freq_sum_tests.yml"
+                }
+            ]
+        },
+        {
+            "@id": "workflows/base_freq_sum.cwl",
+            "@type": [
+                "File",
+                "SoftwareSourceCode",
+                "ComputationalWorkflow"
+            ],
+            "programmingLanguage": {
+                "@id": "#cwl"
+            },
+            "name": "basefreqsum"
+        },
+        {
+            "@id": "tools/base_freqs.cwl",
+            "@type": "File"
+        },
+        {
+            "@id": "tools/sum_freqs.cwl",
+            "@type": "File"
+        },
+        {
+            "@id": "test/",
+            "@type": "Dataset",
+            "about": [
+                {
+                    "@id": "#test1"
+                },
+                {
+                    "@id": "#test2"
+                }
+            ]
+        },
+        {
+            "@id": "LICENSE",
+            "@type": "File"
+        },
+        {
+            "@id": "README.md",
+            "@type": "File"
+        },
+        {
+            "@id": "#cwl",
+            "@type": "ComputerLanguage",
+            "name": "Common Workflow Language",
+            "alternateName": "CWL",
+            "identifier": {
+                "@id": "https://w3id.org/cwl/v1.0/"
+            },
+            "url": {
+                "@id": "https://www.commonwl.org/"
+            }
+        },
+        {
+            "@id": "#test1",
+            "name": "test1",
+            "@type": "TestSuite",
+            "mainEntity": {
+                "@id": "workflows/base_freq_sum.cwl"
+            },
+            "definition": {"@id": "test/test1/base_freq_sum_tests.yml"}
+        },
+        {
+            "@id": "#test2",
+            "name": "test2",
+            "@type": "TestSuite",
+            "mainEntity": {
+                "@id": "workflows/base_freq_sum.cwl"
+            },
+            "definition": {"@id": "test/test2/base_freq_sum_tests.yml"}
+        },
+        {
+            "@id": "test/test1/base_freq_sum_tests.yml",
+            "@type": [
+                "File",
+                "TestDefinition"
+            ],
+            "conformsTo": {"@id": "https://w3id.org/ro/terms/test#PlanemoEngine"},
+            "engineVersion": ">=0.70"
+        },
+        {
+            "@id": "test/test2/base_freq_sum_tests.yml",
+            "@type": [
+                "File",
+                "TestDefinition"
+            ],
+            "conformsTo": {"@id": "https://w3id.org/ro/terms/test#PlanemoEngine"},
+            "engineVersion": ">=0.70"
+        },
+        {
+            "@id": "https://w3id.org/ro/terms/test#PlanemoEngine",
+            "@type": "SoftwareApplication",
+            "name": "Planemo",
+            "url": {"@id": "https://github.com/galaxyproject/planemo"}
+        }
+    ]
+}

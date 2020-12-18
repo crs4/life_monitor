@@ -23,50 +23,58 @@ Execute a CWL workflow from a crate and check results.
 """
 
 import argparse
-import os
+import pathlib
 import shutil
 import subprocess
 import tempfile
 
-import yaml
-import lifemonitor.ro_crate as roc
-import lifemonitor.test_metadata as tm
+from rocrate.rocrate import ROCrate
 
-YamlDumper = getattr(yaml, "CDumper", getattr(yaml, "Dumper"))
+
+PLANEMO_ENTITY = "https://w3id.org/ro/terms/test#PlanemoEngine"
+
+
+# In this crate, the workflow depends on tools which are expected to be in
+# ../tools. Currently there is no general way to express this relationship, so
+# we run this ad-hoc patch.
+def fix_tools_path(crate_dir, def_path):
+    tools_path = crate_dir / "tools"
+    new_tools_path = def_path.parent.parent / "tools"
+    if not new_tools_path.exists():
+        print(f"{tools_path} --> {new_tools_path}")
+        shutil.copytree(tools_path, new_tools_path)
 
 
 # pip install planemo
-def check_workflow(crate_dir, wf_path, tests):
-    wd = tempfile.mkdtemp(prefix="check_cwl_")
-    crate_dir_bn = os.path.basename(crate_dir)
-    tmp_crate_dir = os.path.join(wd, crate_dir_bn)
-    wf_fn = os.path.join(tmp_crate_dir, wf_path.relative_to(crate_dir))
-    wf_bn = os.path.basename(wf_fn)
-    shutil.copytree(crate_dir, tmp_crate_dir)
-    head, tail = os.path.splitext(wf_bn)
-    wf_dir = os.path.dirname(wf_fn)
-    test_fn = os.path.join(wf_dir, f"{head}_test.yml")
-    for t in tests:
-        print("RUNNING", t.name)
-        assert t.definition.engine.type == "planemo"
-        cases = tm.read_planemo(t.definition.path)
-        tm.paths_to_abs(cases, t.definition.path)
-        with open(test_fn, "wt") as f:
-            yaml.dump(cases, f, YamlDumper)
-        cmd = ["planemo", "test", "--engine", "cwltool", wf_fn]
+def check_workflow(crate, crate_dir):
+    main_workflow = crate.root_dataset["mainEntity"]
+    print("main workflow:", main_workflow.id)
+    for suite in crate.test_dir["about"]:
+        def_path = crate_dir / suite.definition.id
+        workflow = suite["mainEntity"]
+        workflow_path = crate_dir / workflow.id
+        print("running suite:", suite.id)
+        print("definition path:", def_path)
+        print("workflow:", workflow.id)
+        assert suite.definition.engine.id == PLANEMO_ENTITY
+        new_workflow_path = def_path.parent / workflow_path.name
+        # Planemo expects the test file in the same dir as the workflow
+        shutil.copy2(workflow_path, new_workflow_path)
+        fix_tools_path(crate_dir, def_path)
+        cmd = ["planemo", "test", "--engine", "cwltool", new_workflow_path]
+        print("Running Planemo")
         p = subprocess.run(cmd)
         p.check_returncode()
-        print(f"{t.name}: OK")
-    shutil.rmtree(wd)
+        print("OK")
 
 
 def main(args):
-    wf_path, test_metadata_path = roc.parse_metadata(args.crate_dir)
-    if not test_metadata_path:
-        print("crate has no Life Monitor tests, nothing to do")
-        return
-    tests = tm.read_tests(test_metadata_path, abs_paths=True)
-    check_workflow(args.crate_dir, wf_path, tests)
+    wd = pathlib.Path(tempfile.mkdtemp(prefix="life_monitor_"))
+    crate_dir = wd / pathlib.Path(args.crate_dir).name
+    shutil.copytree(args.crate_dir, crate_dir)
+    crate = ROCrate(crate_dir)
+    check_workflow(crate, crate_dir)
+    shutil.rmtree(wd)
 
 
 if __name__ == "__main__":
