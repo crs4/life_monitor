@@ -21,4 +21,4 @@ connexion[swagger-ui]==2.7.0
 python-jenkins==1.7.0
 pytest-mock==3.3.1
 flask-shell-ipython==0.4.1
-rocrate==0.3.0
+rocrate~=0.3.1
