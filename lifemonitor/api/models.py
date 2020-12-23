@@ -975,3 +975,32 @@ class JenkinsTestingService(TestingService):
             return self.server.get_build_console_output(self.job_name, build_number)
         except jenkins.JenkinsException as e:
             raise TestingServiceException(e)
+
+
+class TravisTestingService(TestingService):
+    _server = None
+    _job_name = None
+    __mapper_args__ = {
+        'polymorphic_identity': 'travis_testing_service'
+    }
+
+    def __init__(self, url: str, resource: str, token: TestingServiceToken) -> None:
+        super().__init__(url, resource)
+        self.token = token
+
+    def _build_headers(self, token: TestingServiceToken = None):
+        token = token or self.token
+        return {
+            'Travis-API-Version': '3',
+            'Authorization': 'token {}'.format(token.secret)
+        }
+
+    def _build_url(self, path):
+        return "{}{}".format(self.url, path)
+
+    def _get(self, path, token: TestingServiceToken = None) -> object:
+        response = requests.get(self._build_url(path), headers=self._build_headers(token))
+        if response.status_code != 200:
+            raise TestingServiceException(status=response.status_code,
+                                          detail=str(response.content))
+        return response.json()
