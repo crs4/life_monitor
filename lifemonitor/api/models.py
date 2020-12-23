@@ -1005,7 +1005,7 @@ class TravisTestingService(TestingService):
             raise TestingServiceException(status=response.status_code,
                                           detail=str(response.content))
         return response.json()
-    
+
     @property
     def is_workflow_healthy(self) -> bool:
         return self.last_test_build.is_successful()
