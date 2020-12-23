@@ -40,7 +40,7 @@ def _download_from_remote(url, output_stream, authorization=None):
             session.headers['Authorization'] = authorization
         with session.get(url, stream=True) as r:
             if r.status_code == 401 or r.status_code == 403:
-                raise Exception(r.content)
+                raise NotAuthorizedException(r.content)
             r.raise_for_status()
             for chunk in r.iter_content(chunk_size=8192):
                 output_stream.write(chunk)
@@ -48,7 +48,7 @@ def _download_from_remote(url, output_stream, authorization=None):
 
 def download_url(url, target_path=None, authorization=None):
     if not target_path:
-        target_path = tempfile.mktemp()    
+        target_path = tempfile.mktemp()
     parsed_url = urllib.parse.urlparse(url)
     if parsed_url.scheme == '' or parsed_url.scheme == 'file':
         shutil.copyfile(parsed_url.path, target_path)
