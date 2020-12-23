@@ -1005,7 +1005,35 @@ class TravisTestingService(TestingService):
             raise TestingServiceException(status=response.status_code,
                                           detail=str(response.content))
         return response.json()
+    
+    @property
+    def is_workflow_healthy(self) -> bool:
+        return self.last_test_build.is_successful()
 
+    @property
+    def last_test_build(self) -> Optional[JenkinsTestBuild]:
+        if self.project_metadata['lastBuild']:
+            return self.get_test_build(self.project_metadata['lastBuild']['number'])
+        return None
+
+    @property
+    def last_successful_test_build(self) -> Optional[JenkinsTestBuild]:
+        if self.project_metadata['lastSuccessfulBuild']:
+            return self.get_test_build(self.project_metadata['lastSuccessfulBuild']['number'])
+        return None
+
+    @property
+    def last_failed_test_build(self) -> Optional[JenkinsTestBuild]:
+        if self.project_metadata['lastFailedBuild']:
+            return self.get_test_build(self.project_metadata['lastFailedBuild']['number'])
+        return None
+
+    @property
+    def test_builds(self) -> list:
+        builds = []
+        for build_info in self.project_metadata['builds']:
+            builds.append(self.get_test_build(build_info['number']))
+        return builds
 
     @property
     def project_metadata(self):
@@ -1014,3 +1042,15 @@ class TravisTestingService(TestingService):
         except jenkins.JenkinsException as e:
             raise TestingServiceException(f"{self}: {e}")
 
+    def get_test_build(self, build_number) -> JenkinsTestBuild:
+        try:
+            build_metadata = self.server.get_build_info(self.job_name, build_number)
+            return JenkinsTestBuild(self, build_metadata)
+        except jenkins.JenkinsException as e:
+            raise TestingServiceException(e)
+
+    def get_test_build_output(self, build_number):
+        try:
+            return self.server.get_build_console_output(self.job_name, build_number)
+        except jenkins.JenkinsException as e:
+            raise TestingServiceException(e)
