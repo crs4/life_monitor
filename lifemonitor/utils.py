@@ -1,12 +1,15 @@
 import json
 import logging
 import random
+import shutil
 import string
 import tempfile
+import urllib
 import zipfile
 
 import flask
 import requests
+
 from .common import NotAuthorizedException, NotValidROCrateException
 
 logger = logging.getLogger()
@@ -31,19 +34,27 @@ def to_camel_case(snake_str) -> str:
     return ''.join(x.title() for x in snake_str.split('_'))
 
 
-def download_url(url, target_path=None, authorization=None):
+def _download_from_remote(url, output_stream, authorization=None):
     with requests.Session() as session:
         if authorization:
             session.headers['Authorization'] = authorization
         with session.get(url, stream=True) as r:
             if r.status_code == 401 or r.status_code == 403:
-                raise NotAuthorizedException(r.content)
+                raise Exception(r.content)
             r.raise_for_status()
-            if not target_path:
-                target_path = tempfile.mktemp()
-            with open(target_path, 'wb') as fd:
-                for chunk in r.iter_content(chunk_size=8192):
-                    fd.write(chunk)
+            for chunk in r.iter_content(chunk_size=8192):
+                output_stream.write(chunk)
+
+
+def download_url(url, target_path=None, authorization=None):
+    if not target_path:
+        target_path = tempfile.mktemp()    
+    parsed_url = urllib.parse.urlparse(url)
+    if parsed_url.scheme == '' or parsed_url.scheme == 'file':
+        shutil.copyfile(parsed_url.path, target_path)
+    else:
+        with open(target_path, 'wb') as fd:
+            _download_from_remote(url, fd, authorization)
     return target_path
 
 
