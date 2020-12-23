@@ -1004,3 +1004,12 @@ class TravisTestingService(TestingService):
             raise TestingServiceException(status=response.status_code,
                                           detail=str(response.content))
         return response.json()
+
+
+    @property
+    def project_metadata(self):
+        try:
+            return self._get("/repo/{}".format(self.resource))
+        except jenkins.JenkinsException as e:
+            raise TestingServiceException(f"{self}: {e}")
+
