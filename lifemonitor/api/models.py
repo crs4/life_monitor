@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 import logging
 import jenkins
+import requests
 import uuid as _uuid
 from typing import Union, List
 from abc import ABC, abstractmethod
