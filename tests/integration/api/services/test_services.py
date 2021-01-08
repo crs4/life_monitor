@@ -42,12 +42,12 @@ def test_workflow_registration(app_client, user1):
 
 def test_suite_invalid_service_type(app_client, user1):
     with pytest.raises(TestingServiceNotSupportedException):
-        utils.pick_and_register_workflow(user1, "basefreqsum-invalid")
+        utils.pick_and_register_workflow(user1, "sort-and-change-case-invalid-service-type")
 
 
 def test_suite_invalid_service_url(app_client, user1):
     with pytest.raises(TestingServiceException):
-        w, workflow = utils.pick_and_register_workflow(user1, "sort-and-change-case-invalid")
+        w, workflow = utils.pick_and_register_workflow(user1, "sort-and-change-case-invalid-service-url")
         assert len(workflow.test_suites) == 1, "Expected number of test suites 1"
         suite = workflow.test_suites[0]
         assert len(suite.test_instances) == 1, "Expected number of test instances 1"

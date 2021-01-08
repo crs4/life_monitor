@@ -154,7 +154,7 @@ def test_get_workflows_scope(app_client, client_auth_method,
 @pytest.mark.parametrize("user1", [True], indirect=True)
 def test_delete_workflows(app_client, client_auth_method, user1, user1_auth):
     workflows = Workflow.all()
-    assert len(workflows) == 3, "Unexpected number of workflow before delete"
+    assert len(workflows) > 0, "Unexpected number of workflows"
     for w in [x for x in user1['workflows'] if x['name'] in [_.name for _ in workflows]]:
         logger.debug("User1 Auth Headers: %r", user1_auth)
         r = app_client.delete(utils.build_workflow_path(w), headers=user1_auth)
