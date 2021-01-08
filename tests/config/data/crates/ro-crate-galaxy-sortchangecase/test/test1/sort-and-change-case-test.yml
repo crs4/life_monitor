@@ -1,8 +1,0 @@
-- doc: test with a small input
-  job:
-    bed_input:
-      class: File
-      path: input.bed
-  outputs:
-    uppercase_bed:
-      path: output_exp.bed
