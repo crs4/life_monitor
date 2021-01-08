@@ -25,7 +25,8 @@ test_crates.append(('ro-crate-galaxy-sortchangecase', 'ro-crate-galaxy-sortchang
 test_crates.append(('ro-crate-galaxy-sortchangecase', 'ro-crate-galaxy-sortchangecase-invalid-service-url'))
 
 # clean up RO-Crates folder
-shutil.rmtree(crates_target_path)
+if os.path.exists(crates_target_path):
+    shutil.rmtree(crates_target_path)
 os.makedirs(crates_target_path, exist_ok=True)
 # copy base RO-Crates
 for c in test_crates:
