@@ -4,7 +4,6 @@ import os
 import json
 import shutil
 import logging
-import pprint
 
 # configure logging
 logger = logging.getLogger()
