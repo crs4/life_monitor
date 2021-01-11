@@ -2,7 +2,10 @@ from __future__ import annotations
 import json
 import logging
 import tempfile
+from pathlib import Path
 from typing import Union, List
+
+from rocrate.rocrate import ROCrate
 from lifemonitor.auth.models import User
 from lifemonitor.auth.oauth2.server import server
 from lifemonitor.auth.oauth2.client import providers
@@ -15,7 +18,8 @@ from lifemonitor.api.models import (
 )
 from lifemonitor.utils import extract_zip
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
-import lifemonitor.ro_crate as roc
+from lifemonitor.test_metadata import get_old_format_tests
+
 
 logger = logging.getLogger()
 
@@ -57,19 +61,20 @@ class LifeMonitor:
             with tempfile.TemporaryDirectory() as roc_path:
                 logger.info("Extracting RO Crate @ %s", roc_path)
                 extract_zip(archive_path.name, target_path=roc_path)
-                metadata = roc.load_metadata(roc_path)
+                crate = ROCrate(roc_path)
+                metadata_path = Path(roc_path) / crate.metadata.id
+                with open(metadata_path, "rt") as f:
+                    metadata = json.load(f)
                 # create a new Workflow instance with the loaded metadata
                 w = workflow_registry.add_workflow(
                     workflow_uuid, workflow_version, workflow_submitter,
                     roc_link=roc_link, roc_metadata=metadata,
                     external_id=external_id, name=name
                 )
-                # associate a test suite to the workflow if the crate contains test metadata
-                _, test_metadata_path = roc.parse_metadata(roc_path)
-                if test_metadata_path:
-                    logger.debug("Loading test metadata from %r", test_metadata_path)
-                    with open(test_metadata_path) as f:
-                        test_metadata = json.load(f)
+                test_metadata = get_old_format_tests(crate)
+                if test_metadata:
+                    logger.debug("Test metadata found in the crate")
+                    # FIXME: the test metadata can describe more than one suite
                     w.add_test_suite(workflow_submitter, test_metadata)
                 w.save()
                 return w
