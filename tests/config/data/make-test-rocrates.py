@@ -64,7 +64,7 @@ patch_metadata_graph_node('crates/ro-crate-galaxy-sortchangecase-invalid-service
 patch_metadata_graph_node('crates/ro-crate-galaxy-sortchangecase-invalid-service-url/ro-crate-metadata.json',
                           node=("@type", "TestInstance"),
                           properties={
-                              'url': 'http://invalidurl:8080/'
+                              'url': 'http://127.0.0.1:67890'
                           })
 
 patch_metadata_graph_node('crates/ro-crate-galaxy-sortchangecase-invalid-service-type/ro-crate-metadata.json',
