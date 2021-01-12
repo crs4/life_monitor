@@ -70,7 +70,7 @@ def test_workflow_registration_not_allowed_user(app_client, user1, user2):
     logger.info("SET 1: %r", user1["workflows"])
     logger.info("SET 2: %r", user2["workflows"])
     # pick one workflow of user1 which is not visible to user2
-    workflow = utils.pick_workflow(user1, 'sort-and-change-case-invalid')
+    workflow = utils.pick_workflow(user1, 'sort-and-change-case-invalid-service-url')
     assert workflow, "Workflow not found"
     assert workflow['name'] not in [_['name'] for _ in user2['workflows']], \
         f"The workflow '{workflow['name']}' should not be visible to user2"
