@@ -23,63 +23,67 @@ Execute a Galaxy workflow from a crate and check results.
 """
 
 import argparse
-import os
+import pathlib
 import shutil
 import subprocess
 import tempfile
 
-import yaml
-import lifemonitor.ro_crate as roc
-import lifemonitor.test_metadata as tm
+from rocrate.rocrate import ROCrate
 
-YamlDumper = getattr(yaml, "CDumper", getattr(yaml, "Dumper"))
+
 GALAXY_IMG = "bgruening/galaxy-stable:20.05"
+PLANEMO_ENTITY = "https://w3id.org/ro/terms/test#PlanemoEngine"
 
 
-def dump_instances(tests):
-    print("references to test instances:")
-    for t in tests:
-        print(t.name)
-        if t.instance:
-            for i in t.instance:
-                print("    name:", i.name)
-                print("    service:")
-                print("        type:", i.service.type)
-                print("        url:", i.service.url)
-                print("        resource:", i.service.resource)
+def dump_test_suites(crate):
+    print("test suites:")
+    for suite in crate.test_dir["about"]:
+        print(" ", suite.id)
+        print("    workflow:", suite["mainEntity"].id)
+        print("    instances:")
+        for inst in suite.instance:
+            print("     ", inst.id)
+            print("       service:", inst.service.name)
+            print("       url:", inst.url)
+            print("       resource:", inst.resource)
+        print("   definition:")
+        print("     id:", suite.definition.id)
+        engine = suite.definition.engine
+        print("     engine:", engine.name)
+        print("     engine version:", suite.definition.engineVersion)
 
 
 # pip install planemo
-def check_workflow(wf_fn, tests):
-    wd = tempfile.mkdtemp(prefix="check_galaxy_")
-    wf_bn = os.path.basename(wf_fn)
-    wf_tmp_fn = os.path.join(wd, wf_bn)
-    shutil.copy2(wf_fn, wf_tmp_fn)
-    head, tail = os.path.splitext(wf_bn)
-    test_fn = os.path.join(wd, f"{head}-test.yml")
-    for t in tests:
-        print("RUNNING", t.name)
-        assert t.definition.engine.type == "planemo"
-        cases = tm.read_planemo(t.definition.path)
-        tm.paths_to_abs(cases, t.definition.path)
-        with open(test_fn, "wt") as f:
-            yaml.dump(cases, f, YamlDumper)
-        cmd = ["planemo", "test", "--engine", "docker_galaxy",
-               "--docker_galaxy_image", GALAXY_IMG, wf_tmp_fn]
-        p = subprocess.run(cmd)
-        p.check_returncode()
-        print(f"{t.name}: OK")
-    shutil.rmtree(wd)
+def check_workflow(crate, crate_dir):
+    main_workflow = crate.root_dataset["mainEntity"]
+    print("main workflow:", main_workflow.id)
+    suite = crate.test_dir["about"][0]
+    def_path = crate_dir / suite.definition.id
+    workflow = suite["mainEntity"]
+    workflow_path = crate_dir / workflow.id
+    print("running suite:", suite.id)
+    print("definition path:", def_path)
+    print("workflow:", workflow.id)
+    assert suite.definition.engine.id == PLANEMO_ENTITY
+    new_workflow_path = def_path.parent / workflow_path.name
+    # Planemo expects the test file in the same dir as the workflow
+    shutil.copy2(workflow_path, new_workflow_path)
+    cmd = ["planemo", "test", "--engine", "docker_galaxy",
+           "--docker_galaxy_image", GALAXY_IMG, new_workflow_path]
+    print("Running Planemo (this may take a while)")
+    p = subprocess.run(cmd)
+    p.check_returncode()
+    print("OK")
 
 
 def main(args):
-    wf_path, test_metadata_path = roc.parse_metadata(args.crate_dir)
-    if not test_metadata_path:
-        print("crate has no Life Monitor tests, nothing to do")
-        return
-    tests = tm.read_tests(test_metadata_path, abs_paths=True)
-    dump_instances(tests)
-    check_workflow(wf_path, tests)
+    wd = pathlib.Path(tempfile.mkdtemp(prefix="life_monitor_"))
+    crate_dir = wd / pathlib.Path(args.crate_dir).name
+    shutil.copytree(args.crate_dir, crate_dir)
+    crate = ROCrate(crate_dir)
+    dump_test_suites(crate)
+    check_workflow(crate, crate_dir)
+    shutil.rmtree(wd)
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-TEST USERS
+SEEK TEST USERS
 
 
 admin
@@ -15,7 +15,20 @@ password: workflowhub
 project: Default, SharedProject, User1Project
 institutions: Default
 api-key: S9_41Cb2Wm8Ho9qOd0FDjs4zhJNwhSESe-dfwqt-
-
+visible-workflows: 4
+workflows:
+    - name: sort-and-change-case
+      projects: User1Project
+      public: true
+    - name: basefreqsum
+      projects: Shared
+      public: false
+    - name: sort-and-change-case-invalid-service-url
+      projects: User1Project
+      public: false
+    - name: sort-and-change-case-invalid-service-type
+      projects: User1Project
+      public: false
 
 user2
 ------------------------------------------------
@@ -24,4 +37,5 @@ password: workflowhub
 projects: Default, SharedProject 
 institutions: Default
 api-token: 30GcRIdyV7uGvfXYa1squEW6IT3-n1zCjYxQY4Tt
+visible-workflows: 2
 

@@ -205,7 +205,7 @@ def random_valid_uuid():
 
 @pytest.fixture
 def test_suite_metadata():
-    with open(os.path.join(base_path, "data/test-metadata.json")) as df:
+    with open(os.path.join(base_path, "config/data/test-metadata/test-metadata.json")) as df:
         return json.load(df)
 
 

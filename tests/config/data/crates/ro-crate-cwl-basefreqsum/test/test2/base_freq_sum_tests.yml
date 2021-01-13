@@ -1,5 +1,0 @@
-- doc: test with a small input
-  job: base_freq_sum_job.yml
-  outputs:
-    freqs_sum:
-      path: freqs_sum_exp.tsv

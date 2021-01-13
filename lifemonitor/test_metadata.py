@@ -34,6 +34,16 @@ import yaml
 YamlLoader = getattr(yaml, "CLoader", getattr(yaml, "Loader"))
 
 
+JENKINS = "https://w3id.org/ro/terms/test#JenkinsService"
+TRAVIS = "https://w3id.org/ro/terms/test#TravisService"
+PLANEMO = "https://w3id.org/ro/terms/test#PlanemoEngine"
+_TO_OLD_TYPES = {
+    JENKINS: "jenkins",
+    TRAVIS: "travis",
+    PLANEMO: "planemo",
+}
+
+
 # TODO: check if this is a solved problem somewhere
 def norm_abs_path(path, ref_path):
     """\
@@ -167,4 +177,57 @@ def read_planemo(fname):
                 job = yaml.load(f, YamlLoader)
             c["job"] = job
         rval.append(c)
+    return rval
+
+
+def get_old_format_tests(crate):
+    """\
+    Convert tests in the crate (defined as specified in
+    https://github.com/crs4/life_monitor/wiki/Workflow-Testing-RO-Crate) to
+    the old JSON format
+    (https://github.com/crs4/life_monitor/wiki/Test-Metadata-Draft-Spec),
+    which is still used in some JSONB columns in the database.
+    """
+    if not crate.test_dir:
+        return None
+    about = crate.test_dir["about"]
+    if not about:
+        return None
+    rval = {
+        "tmpformat": "ro/workflow/test-metadata/0.1",
+        "@id": "test-metadata.json",
+        "test": [],
+    }
+    for suite in about:
+        old_suite_json = {
+            "name": suite.name,
+        }
+        rval["test"].append(old_suite_json)
+        instance = suite.instance
+        old_instance_json = []
+        old_suite_json["instance"] = old_instance_json
+        if instance:
+            for inst in suite.instance:
+                t = _TO_OLD_TYPES.get(inst.service.id, "unknown")
+                old_instance_json.append({
+                    "name": inst.name,
+                    "service": {
+                        "type": t,
+                        "url": inst.url,
+                        "resource": inst.resource,
+                    },
+                })
+        definition = suite.definition
+        if definition:
+            path = Path(definition.id).relative_to(crate.test_dir.id)
+            t = _TO_OLD_TYPES.get(definition.conformsTo.id, "unknown")
+            old_suite_json["definition"] = {
+                "test_engine": {
+                    "type": t,
+                    "version": definition.engineVersion,
+                },
+                "path": str(path),
+            }
+        else:
+            old_suite_json["definition"] = {}
     return rval
