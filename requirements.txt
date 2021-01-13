@@ -14,7 +14,7 @@ flask-marshmallow==0.13.0
 marshmallow-sqlalchemy==0.23.1
 loginpass==0.5
 flask-bcrypt==0.7.1
-Flask-Security-Too==3.4.4
+Flask-Security-Too==3.4.5
 Authlib==0.14.3
 email-validator==1.1.1
 connexion[swagger-ui]==2.7.0
