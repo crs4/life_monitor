@@ -2,8 +2,10 @@ import pytest
 import logging
 from flask import Response
 import lifemonitor.auth as auth
+import lifemonitor.api.models as models
 import lifemonitor.api.controllers as controllers
-from unittest.mock import MagicMock, patch
+from lifemonitor.common import EntityNotFoundException
+from unittest.mock import MagicMock, Mock, patch
 from tests.utils import assert_status_code
 
 
@@ -68,7 +70,7 @@ def test_get_instance_build_by_user_error_not_found(m, request_context, mock_use
     workflow = {"uuid": "1111-222"}
     instance = MagicMock()
     instance.uuid = '12345'
-    instance.test_builds = []
+    instance.get_test_build = Mock(side_effect=EntityNotFoundException(models.TestBuild))
     instance.test_suite.workflow = workflow
     m.get_test_instance.return_value = instance
     m.get_user_workflows.return_value = [workflow]
@@ -88,7 +90,7 @@ def test_get_instance_build_by_user(m, request_context, mock_user):
     build.id = "1"
     instance = MagicMock()
     instance.uuid = '12345'
-    instance.test_builds = [build]
+    instance.test_builds.return_value = [build]
     instance.test_suite.workflow = workflow
     m.get_test_instance.return_value = instance
     m.get_user_workflows.return_value = [workflow]
@@ -138,7 +140,7 @@ def test_get_instance_build_by_registry_error_not_found(m, request_context, mock
     workflow = {'uuid': '11111'}
     instance = MagicMock()
     instance.uuid = '12345'
-    instance.test_builds = [build]
+    instance.get_test_build = Mock(side_effect=EntityNotFoundException(models.TestBuild))
     instance.test_suite.workflow = workflow
     m.get_test_instance.return_value = instance
     mock_registry.registered_workflows = [workflow]
@@ -157,7 +159,7 @@ def test_get_instance_build_by_registry(m, request_context, mock_registry):
     workflow = {'uuid': '11111'}
     instance = MagicMock()
     instance.uuid = '12345'
-    instance.test_builds = [build]
+    instance.test_builds.return_value = [build]
     instance.test_suite.workflow = workflow
     m.get_test_instance.return_value = instance
     mock_registry.registered_workflows = [workflow]
