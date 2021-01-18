@@ -124,7 +124,5 @@ class ListOfTestInstancesSchema(BaseSchema):
     items = fields.Nested(TestInstanceSchema(), attribute="test_instances", many=True)
 
 
-class ListOfTestBuildsSchema(BaseSchema):
+class ListOfTestBuildsSchema(BuildSummarySchema):
     __envelope__ = {"single": None, "many": "items"}
-
-    items = fields.Nested(BuildSummarySchema(), attribute="test_builds", many=True)
