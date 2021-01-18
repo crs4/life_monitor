@@ -590,6 +590,9 @@ class TestInstance(db.Model):
     def get_test_builds(self, limit=100):
         return self.testing_service.get_test_builds(limit=limit)
 
+    def get_test_build(self, build_number):
+        return self.testing_service.get_test_build(build_number)
+
     def to_dict(self, test_build=False, test_output=False):
         data = {
             'uuid': str(self.uuid),
@@ -683,6 +686,9 @@ class TestingService(db.Model):
 
     @property
     def test_builds(self) -> list:
+        raise NotImplementedException()
+
+    def get_test_build(self, build_number) -> TestBuild:
         raise NotImplementedException()
 
     def get_test_builds(self, limit=100) -> list:
@@ -954,9 +960,13 @@ class JenkinsTestingService(TestingService):
                 break
             builds.append(self.get_test_build(build_info['number']))
         return builds
+
+    def get_test_build(self, build_number: int) -> JenkinsTestBuild:
         try:
-            build_metadata = self.server.get_build_info(self.job_name, build_number)
+            build_metadata = self.server.get_build_info(self.job_name, int(build_number))
             return JenkinsTestBuild(self, build_metadata)
+        except jenkins.NotFoundException as e:
+            raise EntityNotFoundException(TestBuild, entity_id=build_number, detail=str(e))
         except jenkins.JenkinsException as e:
             raise TestingServiceException(e)
 
