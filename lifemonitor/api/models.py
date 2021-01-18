@@ -587,9 +587,8 @@ class TestInstance(db.Model):
             raise EntityNotFoundException(Test)
         return self.test_suite.tests[self.name]
 
-    @property
-    def test_builds(self):
-        return self.testing_service.test_builds
+    def get_test_builds(self, limit=100):
+        return self.testing_service.get_test_builds(limit=limit)
 
     def to_dict(self, test_build=False, test_output=False):
         data = {
@@ -684,6 +683,9 @@ class TestingService(db.Model):
 
     @property
     def test_builds(self) -> list:
+        raise NotImplementedException()
+
+    def get_test_builds(self, limit=100) -> list:
         raise NotImplementedException()
 
     def get_test_builds_as_dict(self, test_output):
