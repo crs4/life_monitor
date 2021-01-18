@@ -765,7 +765,7 @@ class TestBuild(ABC):
 
     @property
     @abstractmethod
-    def id(self) -> int:
+    def id(self) -> str:
         pass
 
     @property
@@ -896,7 +896,7 @@ class JenkinsTestingService(TestingService):
             raise TestingServiceException(e)
 
     @property
-    def server(self):
+    def server(self) -> jenkins.Jenkins:
         if not self._server:
             self._server = jenkins.Jenkins(self.url)
         return self._server
