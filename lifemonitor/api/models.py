@@ -938,12 +938,22 @@ class JenkinsTestingService(TestingService):
 
     @property
     def project_metadata(self):
+        return self.get_project_metadata()
+
+    def get_project_metadata(self, fetch_all_builds=False):
         try:
-            return self.server.get_job_info(self.job_name)
+            return self.server.get_job_info(self.job_name, fetch_all_builds=fetch_all_builds)
         except jenkins.JenkinsException as e:
             raise TestingServiceException(f"{self}: {e}")
 
-    def get_test_build(self, build_number) -> JenkinsTestBuild:
+    def get_test_builds(self, limit=100):
+        builds = []
+        project_metadata = self.get_project_metadata(fetch_all_builds=True if limit > 100 else False)
+        for build_info in project_metadata['builds']:
+            if len(builds) == limit:
+                break
+            builds.append(self.get_test_build(build_info['number']))
+        return builds
         try:
             build_metadata = self.server.get_build_info(self.job_name, build_number)
             return JenkinsTestBuild(self, build_metadata)
