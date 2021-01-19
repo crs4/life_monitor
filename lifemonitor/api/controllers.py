@@ -337,7 +337,6 @@ def instances_builds_get_by_id(instance_uuid, build_id):
         build = response.get_test_build(build_id)
         logger.debug("The test build: %r", build)
         if build:
-            # TODO: limit logs to few lines
             return serializers.BuildSummarySchema().dump(build)
     except EntityNotFoundException:
         return report_problem(404, "Not Found", detail=messages.instance_build_not_found.format(build_id, instance_uuid))
@@ -346,17 +345,24 @@ def instances_builds_get_by_id(instance_uuid, build_id):
 
 
 @authorized
-def instances_builds_get_logs(instance_uuid, build_id, offset_bytes, limit_bytes):
+def instances_builds_get_logs(instance_uuid, build_id, offset_bytes=0, limit_bytes=131072):
+    if not isinstance(offset_bytes, int) or offset_bytes < 0:
+        return report_problem(400, "Bad Request", detail=messages.invalid_log_offset)
+    if not isinstance(limit_bytes, int) or limit_bytes <= 0:
+        return report_problem(400, "Bad Request", detail=messages.invalid_log_limit)
     response = _get_instances_or_problem(instance_uuid)
     if isinstance(response, Response):
         return response
     try:
         build = response.get_test_build(build_id)
-        logger.debug("The test build: %r", build)
+        logger.debug("offset = %r, limit = %r", offset_bytes, limit_bytes)
         if build:
-            # TODO: limit logs to few lines
-            return build.output
+            log = build.output
+            if len(log) > offset_bytes:
+                return log[offset_bytes:(offset_bytes + limit_bytes)]
+            return report_problem(400, "Bad Request", detail="Invalid offset")
     except EntityNotFoundException:
         return report_problem(404, "Not Found", detail=messages.instance_build_not_found.format(build_id, instance_uuid))
     except Exception as e:
+        logger.exception(e)
         return report_problem(500, "Internal Error", extra_info={"exception": str(e)})
