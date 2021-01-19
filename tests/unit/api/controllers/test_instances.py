@@ -175,7 +175,6 @@ def test_get_instance_build_logs_by_user_invlid_limit(m, request_context, mock_u
     assert messages.invalid_log_limit in error["detail"], "Unexpected error message"
 
 
-
 @patch("lifemonitor.api.controllers.lm")
 def test_get_instance_build_logs_by_user(m, request_context, mock_user):
     assert not auth.current_user.is_anonymous, "Unexpected user in session"
