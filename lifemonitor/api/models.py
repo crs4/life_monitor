@@ -1005,6 +1005,17 @@ class TravisTestingService(TestingService):
         response = requests.get(self._build_url(path, params), headers=self._build_headers(token))
         return response.json() if response.status_code == 200 else response
 
+    @property
+    def repo_id(self):
+        # extract the job name from the resource path
+        if self._job_name is None:
+            logger.debug(f"Getting project metadata - resource: {self.resource}")
+            self._job_name = re.sub("(?s:.*)/", "", self.resource.strip('/'))
+            logger.debug(f"The job name: {self._job_name}")
+            if not self._job_name or len(self._job_name) == 0:
+                raise TestingServiceException(
+                    f"Unable to get the Jenkins job from the resource {self._job_name}")
+        return self._job_name
 
     @property
     def is_workflow_healthy(self) -> bool:
