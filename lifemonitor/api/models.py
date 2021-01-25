@@ -1040,17 +1040,10 @@ class TravisTestingService(TestingService):
         return None
 
     @property
-    def test_builds(self) -> list:
-        builds = []
-        for build_info in self.project_metadata['builds']:
-            builds.append(self.get_test_build(build_info['number']))
-        return builds
-
-    @property
     def project_metadata(self):
         try:
-            return self._get("/repo/{}".format(self.resource))
-        except jenkins.JenkinsException as e:
+            return self._get("/repo/{}".format(self.repo_id))
+        except Exception as e:
             raise TestingServiceException(f"{self}: {e}")
 
     def get_test_build(self, build_number) -> JenkinsTestBuild:
