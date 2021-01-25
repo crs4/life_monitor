@@ -784,7 +784,7 @@ class TestBuild(ABC):
 
     @property
     @abstractmethod
-    def last_built_revision(self):
+    def revision(self):
         pass
 
     @property
@@ -820,7 +820,7 @@ class TestBuild(ABC):
         data = {
             'success': self.is_successful(),
             'build_number': self.build_number,
-            'last_build_revision': self.last_built_revision,
+            'last_build_revision': self.revision,
             'duration': self.duration
         }
         if test_output:
@@ -855,7 +855,7 @@ class JenkinsTestBuild(TestBuild):
         return BuildStatus.ERROR
 
     @property
-    def last_built_revision(self):
+    def revision(self):
         rev_info = list(map(lambda x: x["lastBuiltRevision"],
                             filter(lambda x: "lastBuiltRevision" in x, self.metadata["actions"])))
         return rev_info[0] if len(rev_info) == 1 else None
