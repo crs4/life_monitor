@@ -691,7 +691,7 @@ class TestingService(db.Model):
     def get_test_build(self, build_number) -> TestBuild:
         raise NotImplementedException()
 
-    def get_test_builds(self, limit=100) -> list:
+    def get_test_builds(self, limit=10) -> list:
         raise NotImplementedException()
 
     def get_test_builds_as_dict(self, test_output):
@@ -952,7 +952,7 @@ class JenkinsTestingService(TestingService):
         except jenkins.JenkinsException as e:
             raise TestingServiceException(f"{self}: {e}")
 
-    def get_test_builds(self, limit=100):
+    def get_test_builds(self, limit=10):
         builds = []
         project_metadata = self.get_project_metadata(fetch_all_builds=True if limit > 100 else False)
         for build_info in project_metadata['builds']:
