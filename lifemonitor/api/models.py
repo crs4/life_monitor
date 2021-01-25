@@ -996,15 +996,15 @@ class TravisTestingService(TestingService):
             'Authorization': 'token {}'.format(token.secret)
         }
 
-    def _build_url(self, path):
-        return "{}{}".format(self.url, path)
+    def _build_url(self, path, params=None):
+        query = "?" + urlencode(params) if params else ""
+        return urljoin(self.url, path + query)
 
-    def _get(self, path, token: TestingServiceToken = None) -> object:
-        response = requests.get(self._build_url(path), headers=self._build_headers(token))
-        if response.status_code != 200:
-            raise TestingServiceException(status=response.status_code,
-                                          detail=str(response.content))
-        return response.json()
+    def _get(self, path, token: TestingServiceToken = None, params=None) -> object:
+        logger.debug("Getting resource: %r", self._build_url(path, params))
+        response = requests.get(self._build_url(path, params), headers=self._build_headers(token))
+        return response.json() if response.status_code == 200 else response
+
 
     @property
     def is_workflow_healthy(self) -> bool:
