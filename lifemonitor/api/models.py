@@ -978,6 +978,58 @@ class JenkinsTestingService(TestingService):
             raise TestingServiceException(e)
 
 
+class TravisTestBuild(TestBuild):
+
+    @property
+    def id(self) -> str:
+        return str(self.metadata['id'])
+
+    @property
+    def build_number(self) -> int:
+        return self.metadata['number']
+
+    def is_running(self) -> bool:
+        return len(self.metadata['finished_at']) > 0
+
+    @property
+    def status(self) -> str:
+        if self.is_running():
+            return BuildStatus.RUNNING
+        if self.metadata['state']:
+            if self.metadata['result'] == 'passed':
+                return BuildStatus.PASSED
+            elif self.metadata['result'] == 'canceled':
+                return BuildStatus.ABORTED
+            elif self.metadata['result'] == 'failed':
+                return BuildStatus.FAILED
+        return BuildStatus.ERROR
+
+    @property
+    def revision(self):
+        return self.metadata['commit']
+
+    @property
+    def timestamp(self) -> int:
+        return datetime.datetime.strptime(
+            self.metadata["started_at"], "%Y-%m-%dT%H:%M:%SZ").timestamp()
+
+    @property
+    def duration(self) -> int:
+        return self.metadata['duration']
+
+    @property
+    def output(self) -> str:
+        return self.testing_service.get_test_build_output(self.build_number)
+
+    @property
+    def result(self) -> TestBuild.Result:
+        return TestBuild.Result.SUCCESS \
+            if self.metadata["result"] == "passed" else TestBuild.Result.FAILED
+
+    @property
+    def url(self) -> str:
+        return "{}{}".format(self.testing_service.url, self.metadata['@href'])
+
 class TravisTestingService(TestingService):
     _server = None
     _job_name = None
