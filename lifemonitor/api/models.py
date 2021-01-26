@@ -991,18 +991,17 @@ class TravisTestBuild(TestBuild):
         return self.metadata['number']
 
     def is_running(self) -> bool:
-        return len(self.metadata['finished_at']) > 0
+        return len(self.metadata['finished_at']) == 0
 
     @property
     def status(self) -> str:
         if self.is_running():
             return BuildStatus.RUNNING
-        if self.metadata['state']:
-            if self.metadata['result'] == 'passed':
+        if self.metadata['state'] == 'passed':
                 return BuildStatus.PASSED
-            elif self.metadata['result'] == 'canceled':
+        elif self.metadata['state'] == 'canceled':
                 return BuildStatus.ABORTED
-            elif self.metadata['result'] == 'failed':
+        elif self.metadata['state'] == 'failed':
                 return BuildStatus.FAILED
         return BuildStatus.ERROR
 
