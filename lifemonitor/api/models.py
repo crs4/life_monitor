@@ -680,7 +680,7 @@ class TestingService(db.Model):
         raise NotImplementedException()
 
     @property
-    def last_successful_test_build(self) -> TestBuild:
+    def last_passed_test_build(self) -> TestBuild:
         raise NotImplementedException()
 
     @property
@@ -699,12 +699,12 @@ class TestingService(db.Model):
 
     def get_test_builds_as_dict(self, test_output):
         last_test_build = self.last_test_build
-        last_successful_test_build = self.last_successful_test_build
+        last_passed_test_build = self.last_passed_test_build
         last_failed_test_build = self.last_failed_test_build
         return {
             'last_test_build': last_test_build.to_dict(test_output) if last_test_build else None,
-            'last_successful_test_build':
-                last_successful_test_build.to_dict(test_output) if last_successful_test_build else None,
+            'last_passed_test_build':
+                last_passed_test_build.to_dict(test_output) if last_passed_test_build else None,
             'last_failed_test_build':
                 last_failed_test_build.to_dict(test_output) if last_failed_test_build else None,
             "test_builds": [t.to_dict(test_output) for t in self.test_builds]
@@ -927,7 +927,7 @@ class JenkinsTestingService(TestingService):
         return None
 
     @property
-    def last_successful_test_build(self) -> Optional[JenkinsTestBuild]:
+    def last_passed_test_build(self) -> Optional[JenkinsTestBuild]:
         if self.project_metadata['lastSuccessfulBuild']:
             return self.get_test_build(self.project_metadata['lastSuccessfulBuild']['number'])
         return None
@@ -1098,7 +1098,7 @@ class TravisTestingService(TestingService):
         return self._get_last_test_build()
 
     @property
-    def last_successful_test_build(self) -> Optional[TravisTestBuild]:
+    def last_passed_test_build(self) -> Optional[TravisTestBuild]:
         return self._get_last_test_build(state='passed')
 
     @property
