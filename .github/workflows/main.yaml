@@ -95,9 +95,13 @@ jobs:
       # Setup testing environment
       - name: Set up testing environment
         run: TAGS=${DOCKER_TAGS} LABELS=${DOCKER_LABELS} make start-testing
+        env:
+          TRAVIS_TOKEN: ${{ secrets.TRAVIS_TOKEN }}
       # Run tests
       - name: Run tests
         run: TAGS=${DOCKER_TAGS} LABELS=${DOCKER_LABELS} make run-tests
+        env:
+          TRAVIS_TOKEN: ${{ secrets.TRAVIS_TOKEN }}
       # Teardown testing environment
       - name: Teardown testing environment
         run: make stop-all
