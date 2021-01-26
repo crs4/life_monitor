@@ -1087,7 +1087,7 @@ class TravisTestingService(TestingService):
                 else:
                     raise TestingServiceException(status=response.status_code,
                                                   detail=str(response.content))
-            if not 'builds' in response or len(response['builds']) == 0:
+            if 'builds' not in response or len(response['builds']) == 0:
                 raise EntityNotFoundException(TestBuild)
             return TravisTestBuild(self, response['builds'][0])
         except Exception as e:
