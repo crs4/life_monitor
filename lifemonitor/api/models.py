@@ -590,7 +590,7 @@ class TestInstance(db.Model):
             raise EntityNotFoundException(Test)
         return self.test_suite.tests[self.name]
 
-    def get_test_builds(self, limit=100):
+    def get_test_builds(self, limit=10):
         return self.testing_service.get_test_builds(limit=limit)
 
     def get_test_build(self, build_number):
@@ -996,13 +996,13 @@ class TravisTestBuild(TestBuild):
     @property
     def status(self) -> str:
         if self.is_running():
-            return BuildStatus.RUNNING
+            return BuildStatus.RUNNING        
         if self.metadata['state'] == 'passed':
-                return BuildStatus.PASSED
+            return BuildStatus.PASSED
         elif self.metadata['state'] == 'canceled':
-                return BuildStatus.ABORTED
+            return BuildStatus.ABORTED
         elif self.metadata['state'] == 'failed':
-                return BuildStatus.FAILED
+            return BuildStatus.FAILED
         return BuildStatus.ERROR
 
     @property
@@ -1030,6 +1030,7 @@ class TravisTestBuild(TestBuild):
     @property
     def url(self) -> str:
         return "{}{}".format(self.testing_service.url, self.metadata['@href'])
+
 
 class TravisTestingService(TestingService):
     _server = None
@@ -1074,23 +1075,35 @@ class TravisTestingService(TestingService):
     def is_workflow_healthy(self) -> bool:
         return self.last_test_build.is_successful()
 
-    @property
-    def last_test_build(self) -> Optional[JenkinsTestBuild]:
-        if self.project_metadata['lastBuild']:
-            return self.get_test_build(self.project_metadata['lastBuild']['number'])
-        return None
+    def _get_last_test_build(self, state=None) -> Optional[TravisTestBuild]:
+        try:
+            params = {'limit': 1, 'sort_by': 'number:desc'}
+            if state:
+                params['state'] = state
+            response = self._get("/repo/{}/builds".format(self.repo_id), params=params)
+            if isinstance(response, requests.Response):
+                if response.status_code == 404:
+                    raise EntityNotFoundException(TestBuild)
+                else:
+                    raise TestingServiceException(status=response.status_code,
+                                                  detail=str(response.content))
+            if not 'builds' in response or len(response['builds']) == 0:
+                raise EntityNotFoundException(TestBuild)
+            return TravisTestBuild(self, response['builds'][0])
+        except Exception as e:
+            raise TestingServiceException(e)
 
     @property
-    def last_successful_test_build(self) -> Optional[JenkinsTestBuild]:
-        if self.project_metadata['lastSuccessfulBuild']:
-            return self.get_test_build(self.project_metadata['lastSuccessfulBuild']['number'])
-        return None
+    def last_test_build(self) -> Optional[TravisTestBuild]:
+        return self._get_last_test_build()
 
     @property
-    def last_failed_test_build(self) -> Optional[JenkinsTestBuild]:
-        if self.project_metadata['lastFailedBuild']:
-            return self.get_test_build(self.project_metadata['lastFailedBuild']['number'])
-        return None
+    def last_successful_test_build(self) -> Optional[TravisTestBuild]:
+        return self._get_last_test_build(state='passed')
+
+    @property
+    def last_failed_test_build(self) -> Optional[TravisTestBuild]:
+        return self._get_last_test_build(state='failed')
 
     @property
     def project_metadata(self):
@@ -1099,15 +1112,29 @@ class TravisTestingService(TestingService):
         except Exception as e:
             raise TestingServiceException(f"{self}: {e}")
 
-    def get_test_build(self, build_number) -> JenkinsTestBuild:
+    def get_test_builds(self, limit=10):
         try:
-            build_metadata = self.server.get_build_info(self.job_name, build_number)
-            return JenkinsTestBuild(self, build_metadata)
-        except jenkins.JenkinsException as e:
-            raise TestingServiceException(e)
+            builds = []
+            response = self._get("/repo/{}/builds".format(self.repo_id), params={'limit': limit})
+            if isinstance(response, requests.Response):
+                logger.debug(response)
+                raise TestingServiceException(status=response.status_code,
+                                              detail=str(response.content))
+            for build_info in response['builds']:
+                builds.append(TravisTestBuild(self, build_info))
+            return builds
+        except Exception as e:
+            raise TestingServiceException(details=f"{e}")
 
-    def get_test_build_output(self, build_number):
+    def get_test_build(self, build_number: int) -> JenkinsTestBuild:
         try:
-            return self.server.get_build_console_output(self.job_name, build_number)
-        except jenkins.JenkinsException as e:
-            raise TestingServiceException(e)
+            response = self._get("/build/{}".format(build_number))
+            if isinstance(response, requests.Response):
+                if response.status_code == 404:
+                    raise EntityNotFoundException(TestBuild, entity_id=build_number)
+                else:
+                    raise TestingServiceException(status=response.status_code,
+                                                  detail=str(response.content))
+            return TravisTestBuild(self, response)
+        except Exception as e:
+            raise TestingServiceException(details=f"{e}")
