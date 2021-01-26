@@ -996,7 +996,7 @@ class TravisTestBuild(TestBuild):
     @property
     def status(self) -> str:
         if self.is_running():
-            return BuildStatus.RUNNING        
+            return BuildStatus.RUNNING
         if self.metadata['state'] == 'passed':
             return BuildStatus.PASSED
         elif self.metadata['state'] == 'canceled':
