@@ -4,6 +4,7 @@ import re
 import logging
 import jenkins
 import requests
+import datetime
 import uuid as _uuid
 from typing import Union, List
 from abc import ABC, abstractmethod
@@ -23,6 +24,7 @@ from lifemonitor.common import (SpecificationNotValidException, EntityNotFoundEx
 from lifemonitor.utils import download_url, to_camel_case
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 import lifemonitor.test_metadata as tm
+from urllib.parse import urljoin, urlencode
 
 # set module level logger
 logger = logging.getLogger(__name__)
