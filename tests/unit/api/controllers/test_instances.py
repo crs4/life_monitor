@@ -126,7 +126,7 @@ def test_get_instance_build_last_logs_by_user(m, request_context, mock_user):
 
 
 @patch("lifemonitor.api.controllers.lm")
-def test_get_instance_build_logs_by_user_invlid_offset(m, request_context, mock_user):
+def test_get_instance_build_logs_by_user_invalid_offset(m, request_context, mock_user):
     assert not auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry is not None, "Unexpected registry in session"
     workflow = {"uuid": "1111-222"}
@@ -151,7 +151,7 @@ def test_get_instance_build_logs_by_user_invlid_offset(m, request_context, mock_
 
 
 @patch("lifemonitor.api.controllers.lm")
-def test_get_instance_build_logs_by_user_invlid_limit(m, request_context, mock_user):
+def test_get_instance_build_logs_by_user_invalid_limit(m, request_context, mock_user):
     assert not auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry is not None, "Unexpected registry in session"
     workflow = {"uuid": "1111-222"}
