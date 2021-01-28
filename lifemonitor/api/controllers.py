@@ -322,10 +322,10 @@ def instances_get_by_id(instance_uuid):
 
 @authorized
 def instances_get_builds(instance_uuid, limit):
-    # TODO: implement pagination using 'limit' param
     response = _get_instances_or_problem(instance_uuid)
+    logger.info("Number of builds to load: %r", limit)
     return response if isinstance(response, Response) \
-        else serializers.ListOfTestBuildsSchema().dump(response)
+        else serializers.ListOfTestBuildsSchema().dump(response.get_test_builds(limit=limit), many=True)
 
 
 @authorized
@@ -333,22 +333,36 @@ def instances_builds_get_by_id(instance_uuid, build_id):
     response = _get_instances_or_problem(instance_uuid)
     if isinstance(response, Response):
         return response
-    for build in response.test_builds:
-        if build.id == build_id:
-            # TODO: limit logs to few lines
+    try:
+        build = response.get_test_build(build_id)
+        logger.debug("The test build: %r", build)
+        if build:
             return serializers.BuildSummarySchema().dump(build)
-    return report_problem(404, "Not Found",
-                          detail=messages.instance_build_not_found.format(build_id, instance_uuid))
+    except EntityNotFoundException:
+        return report_problem(404, "Not Found", detail=messages.instance_build_not_found.format(build_id, instance_uuid))
+    except Exception as e:
+        return report_problem(500, "Internal Error", extra_info={"exception": str(e)})
 
 
 @authorized
-def instances_builds_get_logs(instance_uuid, build_id, offset_bytes, limit_bytes):
+def instances_builds_get_logs(instance_uuid, build_id, offset_bytes=0, limit_bytes=131072):
+    if not isinstance(offset_bytes, int) or offset_bytes < 0:
+        return report_problem(400, "Bad Request", detail=messages.invalid_log_offset)
+    if not isinstance(limit_bytes, int) or limit_bytes <= 0:
+        return report_problem(400, "Bad Request", detail=messages.invalid_log_limit)
     response = _get_instances_or_problem(instance_uuid)
     if isinstance(response, Response):
         return response
-    for build in response.test_builds:
-        if build.id == build_id:
-            # TODO: implement pagination using 'limit_bytes' param
-            return build.output
-    return report_problem(404, "Not Found",
-                          detail=messages.instance_build_not_found.format(build_id, instance_uuid))
+    try:
+        build = response.get_test_build(build_id)
+        logger.debug("offset = %r, limit = %r", offset_bytes, limit_bytes)
+        if build:
+            log = build.output
+            if len(log) > offset_bytes:
+                return log[offset_bytes:(offset_bytes + limit_bytes)]
+            return report_problem(400, "Bad Request", detail="Invalid offset")
+    except EntityNotFoundException:
+        return report_problem(404, "Not Found", detail=messages.instance_build_not_found.format(build_id, instance_uuid))
+    except Exception as e:
+        logger.exception(e)
+        return report_problem(500, "Internal Error", extra_info={"exception": str(e)})

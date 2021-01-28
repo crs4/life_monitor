@@ -78,7 +78,10 @@ class BuildSummarySchema(BaseSchema):
     status = fields.String()
     instance = ma.Nested(TestInstanceSchema(), attribute="testing_service.test_instance")
     timestamp = fields.String()
-    last_logs = fields.String()
+    last_logs = fields.Method("get_last_logs")
+
+    def get_last_logs(self, obj):
+        return "" if not obj.output else obj.output[-400:]
 
 
 class WorkflowStatusSchema(BaseSchema):
@@ -124,7 +127,5 @@ class ListOfTestInstancesSchema(BaseSchema):
     items = fields.Nested(TestInstanceSchema(), attribute="test_instances", many=True)
 
 
-class ListOfTestBuildsSchema(BaseSchema):
+class ListOfTestBuildsSchema(BuildSummarySchema):
     __envelope__ = {"single": None, "many": "items"}
-
-    items = fields.Nested(BuildSummarySchema(), attribute="test_builds", many=True)

@@ -26,3 +26,5 @@ unauthorized_user_with_expired_registry_token = ("The current token issued by th
                                                  "has expired. Please reauthorize the user '{}'"
                                                  "Please redirect the user to the 'authorization_url' "
                                                  "to start the authorization flow")
+invalid_log_offset = "Invalid offset: it should be a positive integer"
+invalid_log_limit = "Invalid limit: it should be a positive integer"

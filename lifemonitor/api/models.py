@@ -587,9 +587,11 @@ class TestInstance(db.Model):
             raise EntityNotFoundException(Test)
         return self.test_suite.tests[self.name]
 
-    @property
-    def test_builds(self):
-        return self.testing_service.test_builds
+    def get_test_builds(self, limit=100):
+        return self.testing_service.get_test_builds(limit=limit)
+
+    def get_test_build(self, build_number):
+        return self.testing_service.get_test_build(build_number)
 
     def to_dict(self, test_build=False, test_output=False):
         data = {
@@ -686,6 +688,12 @@ class TestingService(db.Model):
     def test_builds(self) -> list:
         raise NotImplementedException()
 
+    def get_test_build(self, build_number) -> TestBuild:
+        raise NotImplementedException()
+
+    def get_test_builds(self, limit=10) -> list:
+        raise NotImplementedException()
+
     def get_test_builds_as_dict(self, test_output):
         last_test_build = self.last_test_build
         last_successful_test_build = self.last_successful_test_build
@@ -757,7 +765,7 @@ class TestBuild(ABC):
 
     @property
     @abstractmethod
-    def id(self) -> int:
+    def id(self) -> str:
         pass
 
     @property
@@ -888,7 +896,7 @@ class JenkinsTestingService(TestingService):
             raise TestingServiceException(e)
 
     @property
-    def server(self):
+    def server(self) -> jenkins.Jenkins:
         if not self._server:
             self._server = jenkins.Jenkins(self.url)
         return self._server
@@ -936,15 +944,29 @@ class JenkinsTestingService(TestingService):
 
     @property
     def project_metadata(self):
+        return self.get_project_metadata()
+
+    def get_project_metadata(self, fetch_all_builds=False):
         try:
-            return self.server.get_job_info(self.job_name)
+            return self.server.get_job_info(self.job_name, fetch_all_builds=fetch_all_builds)
         except jenkins.JenkinsException as e:
             raise TestingServiceException(f"{self}: {e}")
 
-    def get_test_build(self, build_number) -> JenkinsTestBuild:
+    def get_test_builds(self, limit=10):
+        builds = []
+        project_metadata = self.get_project_metadata(fetch_all_builds=True if limit > 100 else False)
+        for build_info in project_metadata['builds']:
+            if len(builds) == limit:
+                break
+            builds.append(self.get_test_build(build_info['number']))
+        return builds
+
+    def get_test_build(self, build_number: int) -> JenkinsTestBuild:
         try:
-            build_metadata = self.server.get_build_info(self.job_name, build_number)
+            build_metadata = self.server.get_build_info(self.job_name, int(build_number))
             return JenkinsTestBuild(self, build_metadata)
+        except jenkins.NotFoundException as e:
+            raise EntityNotFoundException(TestBuild, entity_id=build_number, detail=str(e))
         except jenkins.JenkinsException as e:
             raise TestingServiceException(e)
 
