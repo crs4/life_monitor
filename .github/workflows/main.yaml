@@ -57,12 +57,17 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
+      # Set Docker image
+      - name: Set env
+        run: echo "DOCKERHUB_REPO=$( if [[ -n $USER_REPO ]]; then echo $USER_REPO; else echo $GITHUB_REPOSITORY; fi )" >> $GITHUB_ENV
+        env:
+          USER_REPO: ${{ secrets.DOCKERHUB_REPO }}
       # Extract Docker metadata
       - name: Set up Docker metadata
         id: docker_meta
         uses: crazy-max/ghaction-docker-meta@v1
         with:
-          images: crs4/lifemonitor
+          images: ${{ env.DOCKERHUB_REPO }}
       # Build Docker image
       - name: Build Docker image
         run: make lifemonitor
