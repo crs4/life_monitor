@@ -11,6 +11,7 @@ on:
   pull_request:
 
 env:
+  TERM: xterm
   # enable Docker push only if the required secrets are defined
   ENABLE_DOCKER_PUSH: ${{ secrets.DOCKERHUB_USER != null && secrets.DOCKERHUB_TOKEN != null }}
 
