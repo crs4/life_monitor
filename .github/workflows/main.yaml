@@ -67,7 +67,7 @@ jobs:
         env:
           USER_REPO: ${{ secrets.DOCKERHUB_REPO }}
       # Extract Docker metadata
-      - name: Set up Docker metadata
+      - name: Extract Docker metadata
         id: docker_meta
         uses: crazy-max/ghaction-docker-meta@v1
         with:
