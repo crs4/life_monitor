@@ -72,11 +72,21 @@ jobs:
         uses: crazy-max/ghaction-docker-meta@v1
         with:
           images: ${{ env.DOCKERHUB_REPO }}
-      # Build Docker image
-      - name: Build Docker image
-        run: make lifemonitor
+      # Set up Docker tags
+      - name: Set up Docker tags
+        run: |
+          IFS=$'\n'      # Change IFS to new line
+          tags=($TAGS)   # split to array
+          echo "DOCKER_TAGS=$(printf "'%s' " "${tags[@]}")" >> $GITHUB_ENV
         env:
           TAGS: ${{ steps.docker_meta.outputs.tags }}
+      # Set up Docker labels
+      - name: Set up Docker labels
+        run: |
+          IFS=$'\n'      # Change IFS to new line
+          labels=($LABELS) # split to array $names
+          echo "DOCKER_LABELS=$(printf "'%s' " "${labels[@]}")" >> $GITHUB_ENV
+        env:
           LABELS: ${{ steps.docker_meta.outputs.labels }}
       # Setup testing environment
       - name: Set up testing environment
