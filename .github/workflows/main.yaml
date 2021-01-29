@@ -88,18 +88,15 @@ jobs:
           echo "DOCKER_LABELS=$(printf "'%s' " "${labels[@]}")" >> $GITHUB_ENV
         env:
           LABELS: ${{ steps.docker_meta.outputs.labels }}
+      # Build Docker image
+      - name: Build Docker image
+        run: TAGS=${DOCKER_TAGS} LABELS=${DOCKER_LABELS} make lifemonitor
       # Setup testing environment
       - name: Set up testing environment
-        run: make start-testing
-        env:
-          TAGS: ${{ steps.docker_meta.outputs.tags }}
-          LABELS: ${{ steps.docker_meta.outputs.labels }}
+        run: TAGS=${DOCKER_TAGS} LABELS=${DOCKER_LABELS} make start-testing
       # Run tests
       - name: Run tests
-        run: make run-tests
-        env:
-          TAGS: ${{ steps.docker_meta.outputs.tags }}
-          LABELS: ${{ steps.docker_meta.outputs.labels }}
+        run: TAGS=${DOCKER_TAGS} LABELS=${DOCKER_LABELS} make run-tests
       # Teardown testing environment
       - name: Teardown testing environment
         run: make stop-all
