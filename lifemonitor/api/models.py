@@ -668,10 +668,6 @@ class TestingService(db.Model):
         return f'<TestingService {self.url}, resource {self.resource} ({self.uuid})>'
 
     @property
-    def test_instance_name(self):
-        return self.test_instance.name
-
-    @property
     def is_workflow_healthy(self) -> bool:
         raise NotImplementedException()
 
