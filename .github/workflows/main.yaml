@@ -7,10 +7,11 @@ on:
     branches:
       - "**"
     tags:
-      - "v*.*.*"
+      - "*.*.*"
   pull_request:
 
 env:
+  TERM: xterm
   # enable Docker push only if the required secrets are defined
   ENABLE_DOCKER_PUSH: ${{ secrets.DOCKERHUB_USER != null && secrets.DOCKERHUB_TOKEN != null }}
 
@@ -67,29 +68,36 @@ jobs:
         env:
           USER_REPO: ${{ secrets.DOCKERHUB_REPO }}
       # Extract Docker metadata
-      - name: Set up Docker metadata
+      - name: Extract Docker metadata
         id: docker_meta
         uses: crazy-max/ghaction-docker-meta@v1
         with:
           images: ${{ env.DOCKERHUB_REPO }}
+      # Set up Docker tags
+      - name: Set up Docker tags
+        run: |
+          IFS=$'\n'      # Change IFS to new line
+          tags=($TAGS)   # split to array
+          echo "DOCKER_TAGS=$(printf "'%s' " "${tags[@]}")" >> $GITHUB_ENV
+        env:
+          TAGS: ${{ steps.docker_meta.outputs.tags }}
+      # Set up Docker labels
+      - name: Set up Docker labels
+        run: |
+          IFS=$'\n'      # Change IFS to new line
+          labels=($LABELS) # split to array $names
+          echo "DOCKER_LABELS=$(printf "'%s' " "${labels[@]}")" >> $GITHUB_ENV
+        env:
+          LABELS: ${{ steps.docker_meta.outputs.labels }}
       # Build Docker image
       - name: Build Docker image
-        run: make lifemonitor
-        env:
-          TAGS: ${{ steps.docker_meta.outputs.tags }}
-          LABELS: ${{ steps.docker_meta.outputs.labels }}
+        run: TAGS=${DOCKER_TAGS} LABELS=${DOCKER_LABELS} make lifemonitor
       # Setup testing environment
       - name: Set up testing environment
-        run: make start-testing
-        env:
-          TAGS: ${{ steps.docker_meta.outputs.tags }}
-          LABELS: ${{ steps.docker_meta.outputs.labels }}
+        run: TAGS=${DOCKER_TAGS} LABELS=${DOCKER_LABELS} make start-testing
       # Run tests
       - name: Run tests
-        run: make run-tests
-        env:
-          TAGS: ${{ steps.docker_meta.outputs.tags }}
-          LABELS: ${{ steps.docker_meta.outputs.labels }}
+        run: TAGS=${DOCKER_TAGS} LABELS=${DOCKER_LABELS} make run-tests
       # Teardown testing environment
       - name: Teardown testing environment
         run: make stop-all
@@ -104,6 +112,8 @@ jobs:
       - name: Push Docker image
         if: ${{ env.ENABLE_DOCKER_PUSH == 'true' }}
         run: |
-          for t in ${{ steps.docker_meta.outputs.tags }}; do
-            docker push ${t}
+          for ((i = 0; i < ${#TAGS[@]}; i++)); do
+              docker push "${TAGS[$i]}"
           done
+        env:
+          TAGS: ${{ steps.docker_meta.outputs.tags }}

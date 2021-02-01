@@ -9,6 +9,13 @@ green  := $(shell tput setaf 2)
 yellow := $(shell tput setaf 3)
 done   := $(shell echo "$(green)DONE$(reset)")
 
+# utility function to prepare multi-valued CLI parameters
+# Usage: get_opts <PARAM_NAME> <PARAM_VALUE>
+#   - PARAM_NAME:  e.g., label, tag
+#   - PARAM_VALUE: bash array of values, e.g., (v1 v2 v3)
+define get_opts
+	$(shell opts=""; values=($(2)); for (( i=0; i<$${#values[@]}; i++)); do opts="$$opts --$(1) '$${values[$$i]}'"; done; echo "$$opts")
+endef
 
 # default Docker build options
 build_kit :=
@@ -27,6 +34,7 @@ ifeq ($(DOCKER_BUILDKIT),1)
 	endif
 endif
 
+# set cache param
 ifdef CACHE_FROM
 	cache_from_opt = --cache-from=$(CACHE_FROM)
 endif
@@ -34,23 +42,21 @@ endif
 # handle extra labels
 labels_opt :=
 ifdef LABELS
-	lbs=$(shell echo ${LABELS} | tr ',' '\r')
-	labels_opt = $(foreach l,$(lbs),--label $(strip $(l)))	
+	labels_opt := $(call get_opts,label,$(LABELS))
 endif 
 
 # handle extra tags
 tags_opt :=
 ifdef TAGS
-	tags=$(shell echo ${TAGS} | tr ',' '\r')
-	tags_opt = $(foreach t,$(tags),--tag $(strip $(t)))	
+	tags_opt := $(call get_opts,tag,$(TAGS))
 endif
 
 # handle platform option
 platforms_opt :=
 ifdef PLATFORMS
-	platforms=$(shell echo ${PLATFORMS} | tr ',' '\r')
-	platforms_opt = $(foreach p,$(platforms),--platform $(strip $(p)))	
+	platforms_opt := $(call get_opts,platforms,$(PLATFORMS))
 endif
+
 
 
 all: images
