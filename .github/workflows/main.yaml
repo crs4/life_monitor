@@ -112,8 +112,8 @@ jobs:
       - name: Push Docker image
         if: ${{ env.ENABLE_DOCKER_PUSH == 'true' }}
         run: |
-          for ((i = 0; i < ${#TAGS[@]}; i++)); do
-              docker push "${TAGS[$i]}"
+          for t in ${TAGS}; do
+              docker push ${t}
           done
         env:
           TAGS: ${{ steps.docker_meta.outputs.tags }}
