@@ -928,6 +928,7 @@ components:
         - passed
         - failed
         - error
+        - aborted
         - running
         - waiting
 
