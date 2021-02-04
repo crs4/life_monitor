@@ -286,12 +286,11 @@ class Status:
                 })
             for test_instance in suite.test_instances:
                 try:
-                    testing_service = test_instance.testing_service
-                    latest_build = testing_service.last_test_build
+                    latest_build = test_instance.last_test_build
                     if latest_build is None:
                         availability_issues.append({
-                            "service": testing_service.uri,
-                            "instance": test_instance,  # WHAT?
+                            "service": test_instance.testing_service.url,
+                            "test_instance": test_instance,
                             "issue": "No build found"
                         })
                     else:
@@ -299,7 +298,8 @@ class Status:
                         status = WorkflowStatus._update_status(status, latest_build.is_successful())
                 except TestingServiceException as e:
                     availability_issues.append({
-                        "service": testing_service.uri,
+                        "service": test_instance.testing_service.url,
+                        "resource": test_instance.resource,
                         "issue": str(e)
                     })
                     logger.exception(e)
