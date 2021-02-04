@@ -565,20 +565,24 @@ class TestInstance(db.Model):
     _test_suite_uuid = \
         db.Column("test_suite_uuid", UUID(as_uuid=True), db.ForeignKey(TestSuite.uuid), nullable=False)
     name = db.Column(db.Text, nullable=False)
+    resource = db.Column(db.Text, nullable=False)
     parameters = db.Column(JSONB, nullable=True)
     submitter_id = db.Column(db.Integer,
                              db.ForeignKey(User.id), nullable=False)
     # configure relationships
     submitter = db.relationship("User", uselist=False)
     test_suite = db.relationship("TestSuite", back_populates="test_instances")
-    testing_service = db.relationship("TestingService", uselist=False, back_populates="test_instance",
-                                      cascade="all, delete", lazy='joined')
+    testing_service = db.relationship("TestingService",
+                                      back_populates="test_instances",
+                                      uselist=False,
+                                      cascade="save-update, merge, delete, delete-orphan")
 
     def __init__(self, testing_suite: TestSuite, submitter: User,
-                 test_name, testing_service: TestingService) -> None:
+                 test_name, test_resource, testing_service: TestingService) -> None:
         self.test_suite = testing_suite
         self.submitter = submitter
         self.name = test_name
+        self.resource = test_resource
         self.testing_service = testing_service
 
     def __repr__(self):
