@@ -931,7 +931,7 @@ class JenkinsTestingService(TestingService):
         job_name = re.sub("(?s:.*)/", "", resource.strip('/'))
         logger.debug(f"The job name: {job_name}")
         if not job_name or len(job_name) == 0:
-                raise TestingServiceException(
+            raise TestingServiceException(
                 f"Unable to get the Jenkins job from the resource {job_name}")
         return job_name
 
@@ -939,7 +939,7 @@ class JenkinsTestingService(TestingService):
         return self.get_last_test_build(test_instance).is_successful()
 
     def get_last_test_build(self, test_instance: TestInstance) -> Optional[JenkinsTestBuild]:
-        metadata = self.get_project_metadata(test_instance)        
+        metadata = self.get_project_metadata(test_instance)
         if 'lastBuild' in metadata and metadata['lastBuild']:
             return self.get_test_build(test_instance, metadata['lastBuild']['number'])
         return None
@@ -952,7 +952,7 @@ class JenkinsTestingService(TestingService):
 
     def get_last_failed_test_build(self, test_instance: TestInstance) -> Optional[JenkinsTestBuild]:
         metadata = self.get_project_metadata(test_instance)
-        if 'lastFailedBuild'  in metadata and metadata['lastFailedBuild']:
+        if 'lastFailedBuild' in metadata and metadata['lastFailedBuild']:
             return self.get_test_build(metadata['lastFailedBuild']['number'])
         return None
 
@@ -965,11 +965,11 @@ class JenkinsTestingService(TestingService):
 
     def get_project_metadata(self, test_instance: TestInstance, fetch_all_builds=False):
         if not hasattr(test_instance, "_raw_metadata") or test_instance._raw_metadata is None:
-        try:
+            try:
                 test_instance._raw_metadata = self.server.get_job_info(
                     self.get_job_name(test_instance.resource), fetch_all_builds=fetch_all_builds)
-        except jenkins.JenkinsException as e:
-            raise TestingServiceException(f"{self}: {e}")
+            except jenkins.JenkinsException as e:
+                raise TestingServiceException(f"{self}: {e}")
         return test_instance._raw_metadata
 
     def get_test_builds(self, test_instance: TestInstance, limit=10):
@@ -1084,7 +1084,7 @@ class TravisTestingService(TestingService):
         job_name = re.sub("(?s:.*)/", "", test_instance.resource.strip('/'))
         logger.debug(f"The job name: {job_name}")
         if not job_name or len(job_name) == 0:
-                raise TestingServiceException(
+            raise TestingServiceException(
                 f"Unable to get the Jenkins job from the resource {test_instance.resource}")
         return job_name
 
