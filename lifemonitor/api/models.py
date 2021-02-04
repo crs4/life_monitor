@@ -524,10 +524,10 @@ class TestSuite(db.Model):
         }
 
     def add_test_instance(self, submitter: User,
-                          test_name, testing_service_type, testing_service_url):
+                          test_name, testing_service_type, testing_service_url, testing_service_resource):
         testing_service = \
-            TestingService.new_instance(testing_service_type, testing_service_url)
-        test_instance = TestInstance(self, submitter, test_name, testing_service)
+            TestingService.get_instance(testing_service_type, testing_service_url)
+        test_instance = TestInstance(self, submitter, test_name, testing_service_resource, testing_service)
         logger.debug("Created TestInstance: %r", test_instance)
         return test_instance
 
