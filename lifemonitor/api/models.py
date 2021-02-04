@@ -906,12 +906,18 @@ class JenkinsTestingService(TestingService):
         'polymorphic_identity': 'jenkins_testing_service'
     }
 
-    def __init__(self, url: str, resource: str) -> None:
-        super().__init__(url, resource)
+    def __init__(self, url: str) -> None:
+        super().__init__(url)
         try:
             self._server = jenkins.Jenkins(self.url)
         except Exception as e:
             raise TestingServiceException(e)
+
+    def check_connection(self) -> bool:
+        try:
+            assert '_class' in self.server.get_info()
+        except Exception as e:
+            raise TestingServiceException(detail=str(e))
 
     @property
     def server(self) -> jenkins.Jenkins:
@@ -919,78 +925,75 @@ class JenkinsTestingService(TestingService):
             self._server = jenkins.Jenkins(self.url)
         return self._server
 
-    @property
-    def job_name(self):
+    @staticmethod
+    def get_job_name(resource):
         # extract the job name from the resource path
-        if self._job_name is None:
-            logger.debug(f"Getting project metadata - resource: {self.resource}")
-            self._job_name = re.sub("(?s:.*)/", "", self.resource.strip('/'))
-            logger.debug(f"The job name: {self._job_name}")
-            if not self._job_name or len(self._job_name) == 0:
+        logger.debug(f"Getting project metadata - resource: {resource}")
+        job_name = re.sub("(?s:.*)/", "", resource.strip('/'))
+        logger.debug(f"The job name: {job_name}")
+        if not job_name or len(job_name) == 0:
                 raise TestingServiceException(
-                    f"Unable to get the Jenkins job from the resource {self._job_name}")
-        return self._job_name
+                f"Unable to get the Jenkins job from the resource {job_name}")
+        return job_name
 
-    @property
-    def is_workflow_healthy(self) -> bool:
-        return self.last_test_build.is_successful()
+    def is_workflow_healthy(self, test_instance: TestInstance) -> bool:
+        return self.get_last_test_build(test_instance).is_successful()
 
-    @property
-    def last_test_build(self) -> Optional[JenkinsTestBuild]:
-        if self.project_metadata['lastBuild']:
-            return self.get_test_build(self.project_metadata['lastBuild']['number'])
+    def get_last_test_build(self, test_instance: TestInstance) -> Optional[JenkinsTestBuild]:
+        metadata = self.get_project_metadata(test_instance)        
+        if 'lastBuild' in metadata and metadata['lastBuild']:
+            return self.get_test_build(test_instance, metadata['lastBuild']['number'])
         return None
 
-    @property
-    def last_passed_test_build(self) -> Optional[JenkinsTestBuild]:
-        if self.project_metadata['lastSuccessfulBuild']:
-            return self.get_test_build(self.project_metadata['lastSuccessfulBuild']['number'])
+    def get_last_passed_test_build(self, test_instance: TestInstance) -> Optional[JenkinsTestBuild]:
+        metadata = self.get_project_metadata(test_instance)
+        if 'lastSuccessfulBuild' in metadata and metadata['lastSuccessfulBuild']:
+            return self.get_test_build(test_instance, metadata['lastSuccessfulBuild']['number'])
         return None
 
-    @property
-    def last_failed_test_build(self) -> Optional[JenkinsTestBuild]:
-        if self.project_metadata['lastFailedBuild']:
-            return self.get_test_build(self.project_metadata['lastFailedBuild']['number'])
+    def get_last_failed_test_build(self, test_instance: TestInstance) -> Optional[JenkinsTestBuild]:
+        metadata = self.get_project_metadata(test_instance)
+        if 'lastFailedBuild'  in metadata and metadata['lastFailedBuild']:
+            return self.get_test_build(metadata['lastFailedBuild']['number'])
         return None
 
-    @property
-    def test_builds(self) -> list:
+    def test_builds(self, test_instance: TestInstance) -> list:
         builds = []
-        for build_info in self.project_metadata['builds']:
-            builds.append(self.get_test_build(build_info['number']))
+        metadata = self.get_project_metadata(test_instance)
+        for build_info in metadata['builds']:
+            builds.append(self.get_test_build(test_instance, build_info['number']))
         return builds
 
-    @property
-    def project_metadata(self):
-        return self.get_project_metadata()
-
-    def get_project_metadata(self, fetch_all_builds=False):
+    def get_project_metadata(self, test_instance: TestInstance, fetch_all_builds=False):
+        if not hasattr(test_instance, "_raw_metadata") or test_instance._raw_metadata is None:
         try:
-            return self.server.get_job_info(self.job_name, fetch_all_builds=fetch_all_builds)
+                test_instance._raw_metadata = self.server.get_job_info(
+                    self.get_job_name(test_instance.resource), fetch_all_builds=fetch_all_builds)
         except jenkins.JenkinsException as e:
             raise TestingServiceException(f"{self}: {e}")
+        return test_instance._raw_metadata
 
-    def get_test_builds(self, limit=10):
+    def get_test_builds(self, test_instance: TestInstance, limit=10):
         builds = []
-        project_metadata = self.get_project_metadata(fetch_all_builds=True if limit > 100 else False)
+        project_metadata = self.get_project_metadata(test_instance, fetch_all_builds=True if limit > 100 else False)
         for build_info in project_metadata['builds']:
             if len(builds) == limit:
                 break
-            builds.append(self.get_test_build(build_info['number']))
+            builds.append(self.get_test_build(test_instance, build_info['number']))
         return builds
 
-    def get_test_build(self, build_number: int) -> JenkinsTestBuild:
+    def get_test_build(self, test_instance: TestInstance, build_number: int) -> JenkinsTestBuild:
         try:
-            build_metadata = self.server.get_build_info(self.job_name, int(build_number))
-            return JenkinsTestBuild(self, build_metadata)
+            build_metadata = self.server.get_build_info(self.get_job_name(test_instance.resource), int(build_number))
+            return JenkinsTestBuild(self, test_instance, build_metadata)
         except jenkins.NotFoundException as e:
             raise EntityNotFoundException(TestBuild, entity_id=build_number, detail=str(e))
         except jenkins.JenkinsException as e:
             raise TestingServiceException(e)
 
-    def get_test_build_output(self, build_number):
+    def get_test_build_output(self, test_instance: TestInstance, build_number):
         try:
-            return self.server.get_build_console_output(self.job_name, build_number)
+            return self.server.get_build_console_output(self.get_job_name(test_instance.resource), build_number)
         except jenkins.JenkinsException as e:
             raise TestingServiceException(e)
 
