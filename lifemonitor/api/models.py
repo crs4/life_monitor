@@ -773,8 +773,9 @@ class TestBuild(ABC):
         SUCCESS = 0
         FAILED = 1
 
-    def __init__(self, testing_service: TestingService, metadata) -> None:
+    def __init__(self, testing_service: TestingService, test_instance: TestInstance, metadata) -> None:
         self.testing_service = testing_service
+        self.test_instance = test_instance
         self._metadata = metadata
 
     def is_successful(self):
@@ -886,7 +887,7 @@ class JenkinsTestBuild(TestBuild):
 
     @property
     def output(self) -> str:
-        return self.testing_service.get_test_build_output(self.build_number)
+        return self.testing_service.get_test_build_output(self.test_instance, self.build_number)
 
     @property
     def result(self) -> TestBuild.Result:
