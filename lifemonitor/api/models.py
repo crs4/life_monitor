@@ -1037,7 +1037,7 @@ class TravisTestBuild(TestBuild):
 
     @property
     def output(self) -> str:
-        return self.testing_service.get_test_build_output(self.build_number)
+        return self.testing_service.get_test_build_output(self.test_instance, self.build_number)
 
     @property
     def result(self) -> TestBuild.Result:
@@ -1056,8 +1056,8 @@ class TravisTestingService(TestingService):
         'polymorphic_identity': 'travis_testing_service'
     }
 
-    def __init__(self, url: str, resource: str, token: TestingServiceToken) -> None:
-        super().__init__(url, resource)
+    def __init__(self, url: str, token: TestingServiceToken = None) -> None:
+        super().__init__(url)
         self.token = token
 
     def _build_headers(self, token: TestingServiceToken = None):
@@ -1076,28 +1076,28 @@ class TravisTestingService(TestingService):
         response = requests.get(self._build_url(path, params), headers=self._build_headers(token))
         return response.json() if response.status_code == 200 else response
 
-    @property
-    def repo_id(self):
+    @staticmethod
+    def get_repo_id(test_instance: TestInstance):
         # extract the job name from the resource path
-        if self._job_name is None:
-            logger.debug(f"Getting project metadata - resource: {self.resource}")
-            self._job_name = re.sub("(?s:.*)/", "", self.resource.strip('/'))
-            logger.debug(f"The job name: {self._job_name}")
-            if not self._job_name or len(self._job_name) == 0:
+        resource = test_instance.resource
+        logger.debug(f"Getting project metadata - resource: {test_instance.resource}")
+        job_name = re.sub("(?s:.*)/", "", test_instance.resource.strip('/'))
+        logger.debug(f"The job name: {job_name}")
+        if not job_name or len(job_name) == 0:
                 raise TestingServiceException(
-                    f"Unable to get the Jenkins job from the resource {self._job_name}")
-        return self._job_name
+                f"Unable to get the Jenkins job from the resource {test_instance.resource}")
+        return job_name
 
-    @property
-    def is_workflow_healthy(self) -> bool:
-        return self.last_test_build.is_successful()
+    def is_workflow_healthy(self, test_instance: TestInstance) -> bool:
+        return self.get_last_test_build(test_instance).is_successful()
 
-    def _get_last_test_build(self, state=None) -> Optional[TravisTestBuild]:
+    def _get_last_test_build(self, test_instance: TestInstance, state=None) -> Optional[TravisTestBuild]:
         try:
+            repo_id = self.get_repo_id(test_instance)
             params = {'limit': 1, 'sort_by': 'number:desc'}
             if state:
                 params['state'] = state
-            response = self._get("/repo/{}/builds".format(self.repo_id), params=params)
+            response = self._get("/repo/{}/builds".format(repo_id), params=params)
             if isinstance(response, requests.Response):
                 if response.status_code == 404:
                     raise EntityNotFoundException(TestBuild)
@@ -1106,44 +1106,41 @@ class TravisTestingService(TestingService):
                                                   detail=str(response.content))
             if 'builds' not in response or len(response['builds']) == 0:
                 raise EntityNotFoundException(TestBuild)
-            return TravisTestBuild(self, response['builds'][0])
+            return TravisTestBuild(self, test_instance, response['builds'][0])
         except Exception as e:
             raise TestingServiceException(e)
 
-    @property
-    def last_test_build(self) -> Optional[TravisTestBuild]:
-        return self._get_last_test_build()
+    def get_last_test_build(self, test_instance: TestInstance) -> Optional[TravisTestBuild]:
+        return self._get_last_test_build(test_instance)
 
-    @property
-    def last_passed_test_build(self) -> Optional[TravisTestBuild]:
-        return self._get_last_test_build(state='passed')
+    def get_last_passed_test_build(self, test_instance: TestInstance) -> Optional[TravisTestBuild]:
+        return self._get_last_test_build(test_instance, state='passed')
 
-    @property
-    def last_failed_test_build(self) -> Optional[TravisTestBuild]:
-        return self._get_last_test_build(state='failed')
+    def get_last_failed_test_build(self, test_instance: TestInstance) -> Optional[TravisTestBuild]:
+        return self._get_last_test_build(test_instance, state='failed')
 
-    @property
-    def project_metadata(self):
+    def get_project_metadata(self, test_instance: TestInstance):
         try:
-            return self._get("/repo/{}".format(self.repo_id))
+            return self._get("/repo/{}".format(self.get_repo_id(test_instance)))
         except Exception as e:
             raise TestingServiceException(f"{self}: {e}")
 
-    def get_test_builds(self, limit=10):
+    def get_test_builds(self, test_instance: TestInstance, limit=10):
         try:
             builds = []
-            response = self._get("/repo/{}/builds".format(self.repo_id), params={'limit': limit})
+            repo_id = self.get_repo_id(test_instance)
+            response = self._get("/repo/{}/builds".format(repo_id), params={'limit': limit})
             if isinstance(response, requests.Response):
                 logger.debug(response)
                 raise TestingServiceException(status=response.status_code,
                                               detail=str(response.content))
             for build_info in response['builds']:
-                builds.append(TravisTestBuild(self, build_info))
+                builds.append(TravisTestBuild(self, test_instance, build_info))
             return builds
         except Exception as e:
             raise TestingServiceException(details=f"{e}")
 
-    def get_test_build(self, build_number: int) -> JenkinsTestBuild:
+    def get_test_build(self, test_instance: TestInstance, build_number: int) -> JenkinsTestBuild:
         try:
             response = self._get("/build/{}".format(build_number))
             if isinstance(response, requests.Response):
@@ -1152,6 +1149,6 @@ class TravisTestingService(TestingService):
                 else:
                     raise TestingServiceException(status=response.status_code,
                                                   detail=str(response.content))
-            return TravisTestBuild(self, response)
+            return TravisTestBuild(self, test_instance, response)
         except Exception as e:
             raise TestingServiceException(details=f"{e}")
