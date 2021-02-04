@@ -651,14 +651,40 @@ class TestingServiceToken:
         return not self.__eq__(other)
 
 
+class TestingServiceTokenManager:
+    __instance = None
+
+    @classmethod
+    def get_instance(cls) -> TestingServiceTokenManager:
+        if not cls.__instance:
+            cls.__instance = cls()
+        return cls.__instance
+
+    def __init__(self):
+        if self.__instance:
+            raise RuntimeError("TestingServiceTokenManager instance already exists!")
+        self.__instance = self
+        self.__token_registry = {}
+
+    def add_token(self, service_url, token: TestingServiceToken):
+        self.__token_registry[service_url] = token
+
+    def remove_token(self, service_url):
+        try:
+            del self.__token_registry[service_url]
+        except KeyError:
+            logger.info("No token for the service '{}'", service_url)
+
+    def get_token(self, service_url) -> TestingServiceToken:
+        return self.__token_registry[service_url] if service_url in self.__token_registry else None
+
+
 class TestingService(db.Model):
     uuid = db.Column("uuid", UUID(as_uuid=True), db.ForeignKey(TestInstance.uuid), primary_key=True)
     _type = db.Column("type", db.String, nullable=False)
-    _key = db.Column("key", db.Text, nullable=True)
-    _secret = db.Column("secret", db.Text, nullable=True)
     url = db.Column(db.Text, nullable=False, unique=True)
-    # configure nested object
-    token = db.composite(TestingServiceToken, _key, _secret)
+    _token = None
+
     # configure relationships
     test_instances = db.relationship("TestInstance", back_populates="testing_service")
 
@@ -669,10 +695,18 @@ class TestingService(db.Model):
 
     def __init__(self, url: str, token: TestingServiceToken = None) -> None:
         self.url = url
-        self.token = token
+        self._token = token
 
     def __repr__(self):
         return f'<TestingService {self.url}, ({self.uuid})>'
+
+    @property
+    def token(self):
+        if not self._token:
+            logger.debug("Querying the token registry for the service %r...", self.url)
+            self._token = TestingServiceTokenManager.get_instance().get_token(self.url)
+        logger.debug("Set token for the testing service %r (type: %r): %r", self.url, self._type, self._token is not None)
+        return self._token
 
     def check_connection(self) -> bool:
         raise NotImplementedException()
