@@ -492,14 +492,15 @@ class TestSuite(db.Model):
                 test = tm.Test.from_json(test)
                 for instance in test.instance:
                     logger.debug("Instance: %r", instance)
-                    testing_service = TestingService.new_instance(
+                    testing_service = TestingService.get_instance(
                         instance.service.type,
-                        instance.service.url,
-                        instance.service.resource
+                        instance.service.url
                     )
+                    assert testing_service, "Testing service not initialized"
                     logger.debug("Created TestService: %r", testing_service)
                     test_instance = TestInstance(self, self.submitter,
-                                                 test.name, testing_service)
+                                                 test.name, instance.service.resource,
+                                                 testing_service)
                     logger.debug("Created TestInstance: %r", test_instance)
         except KeyError as e:
             raise SpecificationNotValidException(f"Missing property: {e}")
