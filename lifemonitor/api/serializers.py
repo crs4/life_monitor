@@ -1,8 +1,13 @@
 from __future__ import annotations
-from . import models
 
+import logging
+from . import models
 from marshmallow import fields
 from lifemonitor.serializers import ma, BaseSchema
+
+
+# set module level logger
+logger = logging.getLogger(__name__)
 
 
 class WorkflowRegistrySchema(BaseSchema):
@@ -41,19 +46,6 @@ class LatestWorkflowSchema(WorkflowSchema):
     previous_versions = fields.List(fields.String, attribute="previous_versions")
 
 
-class TestServiceSchema(BaseSchema):
-    __envelope__ = {"single": None, "many": "items"}
-    __model__ = models.TestingService
-
-    class Meta:
-        model = models.TestingService
-
-    uuid = ma.auto_field()
-    type = fields.String(attribute="_type")
-    url = ma.auto_field()
-    resource = ma.auto_field()
-
-
 class TestInstanceSchema(BaseSchema):
     __envelope__ = {"single": None, "many": None}
     __model__ = models.TestInstance
@@ -63,7 +55,16 @@ class TestInstanceSchema(BaseSchema):
 
     uuid = ma.auto_field()
     name = ma.auto_field()
-    service = ma.Nested(TestServiceSchema(), attribute="testing_service")
+    service = fields.Method("get_testing_service")
+
+    def get_testing_service(self, obj):
+        logger.debug("Test current obj: %r", obj)
+        return {
+            'uuid': obj.testing_service.uuid,
+            'url': obj.testing_service.url,
+            'type': obj.testing_service._type,
+            'resource': obj.resource
+        }
 
 
 class BuildSummarySchema(BaseSchema):
@@ -74,9 +75,9 @@ class BuildSummarySchema(BaseSchema):
         model = models.TestBuild
 
     build_id = fields.String(attribute="build_number")
-    suite_uuid = fields.String(attribute="testing_service.test_instance.test_suite.uuid")
+    suite_uuid = fields.String(attribute="test_instance.test_suite.uuid")
     status = fields.String()
-    instance = ma.Nested(TestInstanceSchema(), attribute="testing_service.test_instance")
+    instance = ma.Nested(TestInstanceSchema(), attribute="test_instance")
     timestamp = fields.String()
     last_logs = fields.Method("get_last_logs")
 
