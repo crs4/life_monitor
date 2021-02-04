@@ -21,6 +21,7 @@ logger.debug("RO-CRATES SOURCE PATH: %s", crates_target_path)
 
 # list of RO-Crates
 test_crates = ['ro-crate-cwl-basefreqsum', 'ro-crate-galaxy-sortchangecase']
+test_crates.append(('ro-crate-galaxy-sortchangecase', 'ro-crate-galaxy-sortchangecase-travis'))
 test_crates.append(('ro-crate-galaxy-sortchangecase', 'ro-crate-galaxy-sortchangecase-invalid-service-type'))
 test_crates.append(('ro-crate-galaxy-sortchangecase', 'ro-crate-galaxy-sortchangecase-invalid-service-url'))
 
@@ -28,15 +29,15 @@ test_crates.append(('ro-crate-galaxy-sortchangecase', 'ro-crate-galaxy-sortchang
 if os.path.exists(crates_target_path):
     shutil.rmtree(crates_target_path)
 os.makedirs(crates_target_path, exist_ok=True)
+
 # copy base RO-Crates
 for c in test_crates:
     source_dir, target_dir = c if type(c) is tuple else (c, c)
     shutil.copytree(os.path.join(crates_source_path, source_dir), os.path.join(crates_target_path, target_dir))
 
-# generate an invalid testing service type
-
 
 def patch_metadata_graph_node(metadata_file, node, properties):
+    # path RO-crate metadata node
     with open(metadata_file) as f:
         data = json.load(f)
     for n in data['@graph']:
@@ -54,6 +55,33 @@ patch_metadata_graph_node('crates/ro-crate-galaxy-sortchangecase/ro-crate-metada
                               'url': 'http://jenkins:8080/',
                               'resource': 'job/test/'
                           })
+
+patch_metadata_graph_node('crates/ro-crate-galaxy-sortchangecase-travis/ro-crate-metadata.json',
+                          node=("name", "sort-and-change-case"),
+                          properties={
+                              'name': 'sort-and-change-case-travis'
+                          })
+
+patch_metadata_graph_node('crates/ro-crate-galaxy-sortchangecase-travis/ro-crate-metadata.json',
+                          node=("@type", "TestInstance"),
+                          properties={
+                              "runsOn": {
+                                  "@id": "https://w3id.org/ro/terms/test#TravisService"
+                              },
+                              "url": "https://api.travis-ci.org",
+                              "resource": "repo/1002447"
+                          })
+
+patch_metadata_graph_node('crates/ro-crate-galaxy-sortchangecase-travis/ro-crate-metadata.json',
+                          node=("@type", "TestService"),
+                          properties={
+                              "@id": "https://w3id.org/ro/terms/test#TravisService",
+                              "name": "Travis",
+                              "url": {
+                                  "@id": "https://travis-ci.org"
+                              }
+                          })
+
 
 patch_metadata_graph_node('crates/ro-crate-galaxy-sortchangecase-invalid-service-url/ro-crate-metadata.json',
                           node=("name", "sort-and-change-case"),
