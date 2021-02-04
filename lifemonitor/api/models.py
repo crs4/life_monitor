@@ -1089,17 +1089,16 @@ class TravisTestingService(TestingService):
     __mapper_args__ = {
         'polymorphic_identity': 'travis_testing_service'
     }
-
-    def __init__(self, url: str, token: TestingServiceToken = None) -> None:
-        super().__init__(url)
-        self.token = token
+    __headers__ = {
+        'Travis-API-Version': '3'
+    }
 
     def _build_headers(self, token: TestingServiceToken = None):
-        token = token or self.token
-        return {
-            'Travis-API-Version': '3',
-            'Authorization': 'token {}'.format(token.secret)
-        }
+        headers = self.__headers__.copy()
+        token = token if not token is None else self.token
+        if token:
+            headers['Authorization'] = 'token {}'.format(token.secret)
+        return headers
 
     def _build_url(self, path, params=None):
         query = "?" + urlencode(params) if params else ""
