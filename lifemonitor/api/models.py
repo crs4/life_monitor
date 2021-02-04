@@ -647,53 +647,49 @@ class TestingService(db.Model):
     _type = db.Column("type", db.String, nullable=False)
     _key = db.Column("key", db.Text, nullable=True)
     _secret = db.Column("secret", db.Text, nullable=True)
-    url = db.Column(db.Text, nullable=False)
-    resource = db.Column(db.Text, nullable=False)
+    url = db.Column(db.Text, nullable=False, unique=True)
     # configure nested object
     token = db.composite(TestingServiceToken, _key, _secret)
     # configure relationships
-    test_instance = db.relationship("TestInstance", back_populates="testing_service",
-                                    cascade="all, delete", lazy='joined')
+    test_instances = db.relationship("TestInstance", back_populates="testing_service")
 
     __mapper_args__ = {
         'polymorphic_on': _type,
         'polymorphic_identity': 'testing_service'
     }
 
-    def __init__(self, url: str, resource: str) -> None:
+    def __init__(self, url: str, token: TestingServiceToken = None) -> None:
         self.url = url
-        self.resource = resource
+        self.token = token
 
     def __repr__(self):
-        return f'<TestingService {self.url}, resource {self.resource} ({self.uuid})>'
+        return f'<TestingService {self.url}, ({self.uuid})>'
 
-    @property
-    def is_workflow_healthy(self) -> bool:
+    def check_connection(self) -> bool:
         raise NotImplementedException()
 
-    @property
-    def last_test_build(self) -> TestBuild:
+    def is_workflow_healthy(self, test_instance: TestInstance) -> bool:
         raise NotImplementedException()
 
-    @property
-    def last_passed_test_build(self) -> TestBuild:
+    def get_last_test_build(self, test_instance: TestInstance) -> TestBuild:
         raise NotImplementedException()
 
-    @property
-    def last_failed_test_build(self) -> TestBuild:
+    def get_last_passed_test_build(self, test_instance: TestInstance) -> TestBuild:
         raise NotImplementedException()
 
-    @property
-    def test_builds(self) -> list:
+    def get_last_failed_test_build(self, test_instance: TestInstance) -> TestBuild:
         raise NotImplementedException()
 
-    def get_test_build(self, build_number) -> TestBuild:
+    def get_test_builds(self, test_instance: TestInstance) -> list:
         raise NotImplementedException()
 
-    def get_test_builds(self, limit=10) -> list:
+    def get_test_build(self, test_instance: TestInstance, build_number) -> TestBuild:
         raise NotImplementedException()
 
-    def get_test_builds_as_dict(self, test_output):
+    def get_test_builds(self, test_instance: TestInstance, limit=10) -> list:
+        raise NotImplementedException()
+
+    def get_test_builds_as_dict(self, test_instance: TestInstance, test_output):
         last_test_build = self.last_test_build
         last_passed_test_build = self.last_passed_test_build
         last_failed_test_build = self.last_failed_test_build
@@ -733,7 +729,9 @@ class TestingService(db.Model):
         return cls.query.get(uuid)
 
     @classmethod
-    def new_instance(cls, service_type, url: str, resource: str):
+    def find_by_url(cls, url) -> TestingService:
+        return cls.query.filter(TestingService.url == url).first()
+
         try:
             service_class = globals()["{}TestingService".format(to_camel_case(service_type))]
         except KeyError:
