@@ -594,11 +594,15 @@ class TestInstance(db.Model):
             raise EntityNotFoundException(Test)
         return self.test_suite.tests[self.name]
 
+    @property
+    def last_test_build(self):
+        return self.testing_service.get_last_test_build(self)
+
     def get_test_builds(self, limit=10):
-        return self.testing_service.get_test_builds(limit=limit)
+        return self.testing_service.get_test_builds(self, limit=limit)
 
     def get_test_build(self, build_number):
-        return self.testing_service.get_test_build(build_number)
+        return self.testing_service.get_test_build(self, build_number)
 
     def to_dict(self, test_build=False, test_output=False):
         data = {
