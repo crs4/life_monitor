@@ -732,11 +732,22 @@ class TestingService(db.Model):
     def find_by_url(cls, url) -> TestingService:
         return cls.query.filter(TestingService.url == url).first()
 
+    @classmethod
+    def get_instance(cls, service_type, url: str):
+        try:
+            # return the service obj if the service has already been registered
+            instance = cls.find_by_url(url)
+            logger.debug("Found service instance: %r", instance)
+            if instance:
+                return instance
+            # try to instanciate the service if the it has not been registered yet
         try:
             service_class = globals()["{}TestingService".format(to_camel_case(service_type))]
         except KeyError:
             raise TestingServiceNotSupportedException(f"Not supported testing service type '{service_type}'")
-        return service_class(url, resource)
+            return service_class(url)
+        except Exception as e:
+            raise TestingServiceException(detail=str(e))
 
 
 class BuildStatus:
