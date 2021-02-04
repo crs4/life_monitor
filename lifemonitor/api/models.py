@@ -939,8 +939,8 @@ class JenkinsTestingService(TestingService):
         'polymorphic_identity': 'jenkins_testing_service'
     }
 
-    def __init__(self, url: str) -> None:
-        super().__init__(url)
+    def __init__(self, url: str, token: TestingServiceToken = None) -> None:
+        super().__init__(url, token)
         try:
             self._server = jenkins.Jenkins(self.url)
         except Exception as e:
