@@ -750,11 +750,10 @@ class TestingService(db.Model):
             if instance:
                 return instance
             # try to instanciate the service if the it has not been registered yet
-        try:
             service_class = globals()["{}TestingService".format(to_camel_case(service_type))]
+            return service_class(url)
         except KeyError:
             raise TestingServiceNotSupportedException(f"Not supported testing service type '{service_type}'")
-            return service_class(url)
         except Exception as e:
             raise TestingServiceException(detail=str(e))
 
