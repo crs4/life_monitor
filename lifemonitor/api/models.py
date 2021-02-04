@@ -1076,7 +1076,7 @@ class TravisTestBuild(TestBuild):
     @property
     def result(self) -> TestBuild.Result:
         return TestBuild.Result.SUCCESS \
-            if self.metadata["result"] == "passed" else TestBuild.Result.FAILED
+            if self.metadata["state"] == "passed" else TestBuild.Result.FAILED
 
     @property
     def url(self) -> str:
