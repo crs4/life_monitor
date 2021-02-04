@@ -32,12 +32,12 @@ def suite(error_description, request):
         test_instance = MagicMock()
         suite.test_instances.append(test_instance)
         test_instance.testing_service = MagicMock()
-        test_instance.testing_service.last_test_build = MagicMock()
+        test_instance.last_test_build = MagicMock()
         if i is None:
-            test_instance.testing_service.last_test_build.is_successful.side_effect = \
+            test_instance.last_test_build.is_successful.side_effect = \
                 models.TestingServiceException(error_description)
         else:
-            test_instance.testing_service.last_test_build.is_successful.return_value = i
+            test_instance.last_test_build.is_successful.return_value = i
     return suite
 
 
@@ -138,6 +138,7 @@ def test_status_only_one_build_failing(workflow, suite):
     assert status.aggregated_status == models.AggregateTestStatus.NOT_AVAILABLE, \
         f"The actual workflow status should be {models.AggregateTestStatus.NOT_AVAILABLE}"
     workflow.test_suites.append(suite)
+    logger.debug("Adding suite: %r", suite)
     status = workflow.status
     assert status.aggregated_status == models.AggregateTestStatus.ALL_FAILING, \
         f"The actual workflow status should be {models.AggregateTestStatus.ALL_FAILING}"

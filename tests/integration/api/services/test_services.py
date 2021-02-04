@@ -17,10 +17,13 @@ tests_root_dir = pathlib.Path(this_dir).parent
 logger = logging.getLogger()
 
 
-def test_workflow_registration(app_client, user1):
+def test_valid_workflows(valid_workflow):
+    logger.debug(valid_workflow)
+
+def test_workflow_registration(app_client, user1, valid_workflow):
 
     # pick the test with a valid specification and one test instance
-    w, workflow = utils.pick_and_register_workflow(user1, "sort-and-change-case")
+    w, workflow = utils.pick_and_register_workflow(user1, valid_workflow)
 
     assert workflow is not None, "workflow must be not None"
     assert isinstance(workflow, Workflow), "Object is not an instance of Workflow"
@@ -36,8 +39,8 @@ def test_workflow_registration(app_client, user1):
     assert len(suite.test_instances) == 1, "Expected number of test instances 1"
     conf = suite.test_instances[0]
     service = conf.testing_service
-    assert isinstance(service, JenkinsTestingService), "Unexpected type for service"
-    assert service.server is not None, "Not found _server property"
+    #assert isinstance(service, JenkinsTestingService), "Unexpected type for service"
+    #assert service.server is not None, "Not found _server property"
 
 
 def test_suite_invalid_service_type(app_client, user1):
@@ -52,7 +55,7 @@ def test_suite_invalid_service_url(app_client, user1):
         suite = workflow.test_suites[0]
         assert len(suite.test_instances) == 1, "Expected number of test instances 1"
         conf = suite.test_instances[0]
-        conf.testing_service.project_metadata()  # this should raise the exception
+        conf.testing_service.check_connection()  # this should raise the exception
 
 
 def test_suite_without_instances(app_client, user1):
@@ -95,10 +98,10 @@ def test_workflow_serialization_no_instances(app_client, user1):
     logger.debug(data)
 
 
-def test_workflow_deregistration(app_client, user1):
+def test_workflow_deregistration(app_client, user1, valid_workflow):
     lm = LifeMonitor.get_instance()
     # pick and register one workflow
-    wf_data, workflow = utils.pick_and_register_workflow(user1)
+    wf_data, workflow = utils.pick_and_register_workflow(user1, valid_workflow)
     # current number of workflows
     number_of_workflows = len(Workflow.all())
     lm.deregister_user_workflow(wf_data['uuid'], wf_data['version'], user1["user"])
@@ -115,10 +118,10 @@ def test_workflow_deregistration_exception(app_client, user1, random_workflow_id
                                                             user1['user'])
 
 
-def test_suite_registration(app_client, user1, test_suite_metadata):
+def test_suite_registration(app_client, user1, test_suite_metadata, valid_workflow):
     # register a new workflow
     lm = LifeMonitor.get_instance()
-    wf_data, workflow = utils.pick_and_register_workflow(user1)
+    wf_data, workflow = utils.pick_and_register_workflow(user1, valid_workflow)
     # try to add a new test suite instance
     logger.debug("TestDefinition: %r", test_suite_metadata)
     current_number_of_suites = len(workflow.test_suites)
@@ -165,10 +168,10 @@ def test_suite_registration_invalid_specification_exception(
                                                        invalid_test_suite_metadata)
 
 
-def test_suite_deregistration(app_client, user1):
+def test_suite_deregistration(app_client, user1, valid_workflow):
     # register a new workflow
     lm = LifeMonitor.get_instance()
-    wf_data, workflow = utils.pick_and_register_workflow(user1)
+    wf_data, workflow = utils.pick_and_register_workflow(user1, valid_workflow)
 
     # pick the first suite
     current_number_of_suites = len(workflow.test_suites)

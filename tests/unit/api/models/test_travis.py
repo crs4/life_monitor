@@ -25,7 +25,7 @@ def travis_token():
 
 @pytest.fixture
 def travis_job():
-    return '3417615'
+    return '1002447'
 
 
 @pytest.fixture
@@ -40,7 +40,6 @@ def test_instance(travis_resource):
     return instance
 
 
-
 @pytest.fixture
 def travis_service(travis_url, travis_token) -> models.TravisTestingService:
     return models.TravisTestingService(travis_url, travis_token)
@@ -49,6 +48,14 @@ def travis_service(travis_url, travis_token) -> models.TravisTestingService:
 @pytest.fixture
 def travis_job_info(travis_service, test_instance):
     return travis_service.get_project_metadata(test_instance)
+
+
+@pytest.mark.skipif(not token, reason="Travis token not set")
+def test_service_token(travis_url):
+    service = models.TravisTestingService(travis_url)
+    logger.debug(service)
+    tk = models.TestingServiceTokenManager.get_instance().get_token(travis_url)
+    assert token == tk.secret, "Unexpected Travis token"
 
 
 @pytest.mark.skipif(not token, reason="Travis token not set")

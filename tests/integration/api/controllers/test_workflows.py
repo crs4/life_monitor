@@ -76,10 +76,11 @@ def test_empty_workflows(app_client, client_auth_method, user1, user1_auth):
     ClientAuthenticationMethod.REGISTRY_CODE_FLOW
 ], indirect=True)
 def test_workflow_registration(app_client, client_auth_method,
-                               user1, user1_auth, client_credentials_registry):
+                               user1, user1_auth, client_credentials_registry, valid_workflow):
     logger.debug("User: %r", user1)
     logger.debug("headers: %r", user1_auth)
-    workflow = utils.pick_workflow(user1, "sort-and-change-case")
+    #workflow = utils.pick_workflow(user1, "sort-and-change-case")
+    workflow = utils.pick_workflow(user1, valid_workflow)
     logger.debug("Selected workflow: %r", workflow)
     logger.debug("Using oauth2 user: %r", user1)
     if client_auth_method == ClientAuthenticationMethod.CLIENT_CREDENTIALS:  # ClientCredentials case
@@ -185,8 +186,8 @@ def test_get_workflow_not_authorized(app_client, client_auth_method, user1, user
     ClientAuthenticationMethod.CLIENT_CREDENTIALS,
     ClientAuthenticationMethod.REGISTRY_CODE_FLOW
 ], indirect=True)
-def test_get_workflow_latest_version(app_client, client_auth_method, user1, user1_auth):
-    workflow = utils.pick_workflow(user1, "sort-and-change-case")
+def test_get_workflow_latest_version(app_client, client_auth_method, user1, user1_auth, valid_workflow):
+    workflow = utils.pick_workflow(user1, valid_workflow)
     wv1 = workflow.copy()
     wv2 = workflow.copy()
 
@@ -219,8 +220,8 @@ def test_get_workflow_latest_version(app_client, client_auth_method, user1, user
     ClientAuthenticationMethod.CLIENT_CREDENTIALS,
     ClientAuthenticationMethod.REGISTRY_CODE_FLOW
 ], indirect=True)
-def test_get_workflow_status(app_client, client_auth_method, user1, user1_auth):
-    w, workflow = utils.pick_and_register_workflow(user1, "sort-and-change-case")
+def test_get_workflow_status(app_client, client_auth_method, user1, user1_auth, valid_workflow):
+    w, workflow = utils.pick_and_register_workflow(user1, valid_workflow)
     response = app_client.get(f"{utils.build_workflow_path(w)}/status", headers=user1_auth)
     logger.debug(response)
     utils.assert_status_code(response.status_code, 200)
@@ -239,8 +240,8 @@ def test_get_workflow_status(app_client, client_auth_method, user1, user1_auth):
     ClientAuthenticationMethod.CLIENT_CREDENTIALS,
     ClientAuthenticationMethod.REGISTRY_CODE_FLOW
 ], indirect=True)
-def test_get_workflow_suite(app_client, client_auth_method, user1, user1_auth):
-    w, workflow = utils.pick_and_register_workflow(user1, "sort-and-change-case")
+def test_get_workflow_suite(app_client, client_auth_method, user1, user1_auth, valid_workflow):
+    w, workflow = utils.pick_and_register_workflow(user1, valid_workflow)
     response = app_client.get(f"{utils.build_workflow_path(w)}/suites", headers=user1_auth)
     logger.debug(response)
     utils.assert_status_code(response.status_code, 200)
