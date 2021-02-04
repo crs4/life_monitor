@@ -10,7 +10,7 @@ import lifemonitor.api.models as models
 logger = logging.getLogger(__name__)
 
 # global token to test Travis API
-token = os.environ.get('TRAVIS_TOKEN', False)
+token = os.environ.get('TRAVIS_TESTING_SERVICE_TOKEN', False)
 
 
 @pytest.fixture
