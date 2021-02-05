@@ -1068,7 +1068,7 @@ class TravisTestBuild(TestBuild):
 
     @property
     def output(self) -> str:
-        return self.testing_service.get_test_build_output(self.test_instance, self.build_number)
+        return self.testing_service.get_test_build_output(self.test_instance, self.id)
 
     @property
     def result(self) -> TestBuild.Result:
@@ -1156,13 +1156,16 @@ class TravisTestingService(TestingService):
 
     def get_test_builds(self, test_instance: TestInstance, limit=10):
         try:
-            builds = []
             repo_id = self.get_repo_id(test_instance)
             response = self._get("/repo/{}/builds".format(repo_id), params={'limit': limit})
-            if isinstance(response, requests.Response):
-                logger.debug(response)
-                raise TestingServiceException(status=response.status_code,
-                                              detail=str(response.content))
+        except Exception as e:
+            raise TestingServiceException(details=f"{e}")
+        if isinstance(response, requests.Response):
+            logger.debug(response)
+            raise TestingServiceException(status=response.status_code,
+                                          detail=str(response.content))
+        try:
+            builds = []
             for build_info in response['builds']:
                 builds.append(TravisTestBuild(self, test_instance, build_info))
             return builds
@@ -1172,27 +1175,39 @@ class TravisTestingService(TestingService):
     def get_test_build(self, test_instance: TestInstance, build_number: int) -> JenkinsTestBuild:
         try:
             response = self._get("/build/{}".format(build_number))
-            if isinstance(response, requests.Response):
-                if response.status_code == 404:
-                    raise EntityNotFoundException(TestBuild, entity_id=build_number)
-                else:
-                    raise TestingServiceException(status=response.status_code,
-                                                  detail=str(response.content))
-            return TravisTestBuild(self, test_instance, response)
         except Exception as e:
             raise TestingServiceException(details=f"{e}")
+        if isinstance(response, requests.Response):
+            if response.status_code == 404:
+                raise EntityNotFoundException(TestBuild, entity_id=build_number)
+            else:
+                raise TestingServiceException(status=response.status_code,
+                                              detail=str(response.content))
+        return TravisTestBuild(self, test_instance, response)
 
     def get_test_build_output(self, test_instance: TestInstance, build_number):
         # FIXME: The current implementation returns the logs of the last job.
         # It would be appropriate to introduce an intermediate pagination schema
         # to efficiently wrap the pagination of the underlying testing service back-end.
         try:
-            _metadata = self.get_project_metadata(test_instance)
-            if 'builds' not in _metadata or \
-                    len(_metadata['builds']) == 0 or \
-                    len(_metadata['builds'][0]['jobs']) == 0:
+            _metadata = self._get(f"/build/{build_number}/jobs")
+        except Exception as e:
+            raise TestingServiceException(details=f"{e}")
+
+        if isinstance(_metadata, requests.Response):
+            if _metadata.status_code == 404:
+                raise EntityNotFoundException(TestBuild, entity_id=build_number)
+            else:
+                raise TestingServiceException(status=_metadata.status_code,
+                                              detail=str(_metadata.content))
+        try:
+            logger.debug("Number of jobs: %r", len(_metadata['jobs']))
+            if 'jobs' not in _metadata or len(_metadata['jobs']) == 0:
+                logger.debug("Ops... no job found")
                 return ""
-            response = self._get("/job/{}/logs".format(_metadata['builds'][0]['jobs'][len(_metadata['builds'][0]['jobs']) - 1]))
+            url = "/job/{}/log".format(_metadata['jobs'][len(_metadata['jobs']) - 1]['id'])
+            logger.debug("URL: %r", url)
+            response = self._get(url)
             if isinstance(response, requests.Response):
                 if response.status_code == 404:
                     raise EntityNotFoundException(TestBuild, entity_id=build_number)
@@ -1201,4 +1216,5 @@ class TravisTestingService(TestingService):
                                                   detail=str(response.content))
             return response['content']
         except Exception as e:
+            logger.exception(e)
             raise TestingServiceException(details=f"{e}")

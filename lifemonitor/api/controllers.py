@@ -358,7 +358,7 @@ def instances_builds_get_logs(instance_uuid, build_id, offset_bytes=0, limit_byt
         logger.debug("offset = %r, limit = %r", offset_bytes, limit_bytes)
         if build:
             log = build.output
-            if len(log) > offset_bytes:
+            if len(log) >= offset_bytes:
                 return log[offset_bytes:(offset_bytes + limit_bytes)]
             return report_problem(400, "Bad Request", detail="Invalid offset")
     except EntityNotFoundException:
