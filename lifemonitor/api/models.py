@@ -1181,3 +1181,24 @@ class TravisTestingService(TestingService):
             return TravisTestBuild(self, test_instance, response)
         except Exception as e:
             raise TestingServiceException(details=f"{e}")
+
+    def get_test_build_output(self, test_instance: TestInstance, build_number):
+        # FIXME: The current implementation returns the logs of the last job.
+        # It would be appropriate to introduce an intermediate pagination schema
+        # to efficiently wrap the pagination of the underlying testing service back-end.
+        try:
+            _metadata = self.get_project_metadata(test_instance)
+            if 'builds' not in _metadata or \
+                    len(_metadata['builds']) == 0 or \
+                    len(_metadata['builds'][0]['jobs']) == 0:
+                return ""
+            response = self._get("/job/{}/logs".format(_metadata['builds'][0]['jobs'][len(_metadata['builds'][0]['jobs']) - 1]))
+            if isinstance(response, requests.Response):
+                if response.status_code == 404:
+                    raise EntityNotFoundException(TestBuild, entity_id=build_number)
+                else:
+                    raise TestingServiceException(status=response.status_code,
+                                                  detail=str(response.content))
+            return response['content']
+        except Exception as e:
+            raise TestingServiceException(details=f"{e}")
