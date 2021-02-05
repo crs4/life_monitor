@@ -1,5 +1,4 @@
 import json
-from tests.conftest import valid_workflow
 import pytest
 import logging
 

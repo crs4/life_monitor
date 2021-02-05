@@ -4,7 +4,7 @@ import logging
 import pathlib
 from tests import utils
 from lifemonitor.api.services import LifeMonitor
-from lifemonitor.api.models import Workflow, JenkinsTestingService
+from lifemonitor.api.models import Workflow
 from lifemonitor.common import (
     EntityNotFoundException, NotAuthorizedException,
     SpecificationNotValidException,
