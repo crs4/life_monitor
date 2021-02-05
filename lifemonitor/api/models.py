@@ -1092,7 +1092,7 @@ class TravisTestingService(TestingService):
 
     def _build_headers(self, token: TestingServiceToken = None):
         headers = self.__headers__.copy()
-        token = token if not token is None else self.token
+        token = token if token else self.token
         if token:
             headers['Authorization'] = 'token {}'.format(token.secret)
         return headers
@@ -1109,7 +1109,6 @@ class TravisTestingService(TestingService):
     @staticmethod
     def get_repo_id(test_instance: TestInstance):
         # extract the job name from the resource path
-        resource = test_instance.resource
         logger.debug(f"Getting project metadata - resource: {test_instance.resource}")
         job_name = re.sub("(?s:.*)/", "", test_instance.resource.strip('/'))
         logger.debug(f"The job name: {job_name}")
