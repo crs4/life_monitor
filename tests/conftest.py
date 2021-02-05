@@ -203,7 +203,7 @@ def random_valid_uuid():
     return str(uuid.uuid4())
 
 
-@pytest.fixture(params=['sort-and-change-case', 'sort-and-change-case-travis'])
+@pytest.fixture(params=helpers.get_valid_workflows())
 def valid_workflow(request):
     return request.param
 

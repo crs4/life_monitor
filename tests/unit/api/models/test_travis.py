@@ -1,16 +1,16 @@
 
-import os
 import pytest
 import logging
 import requests
-from unittest.mock import MagicMock
 import lifemonitor.api.models as models
+from unittest.mock import MagicMock
+from tests.conftest_helpers import get_travis_token
 
 
 logger = logging.getLogger(__name__)
 
 # global token to test Travis API
-token = os.environ.get('TRAVIS_TESTING_SERVICE_TOKEN', False)
+token = get_travis_token()
 
 
 @pytest.fixture

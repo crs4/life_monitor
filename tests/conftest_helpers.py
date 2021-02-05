@@ -112,6 +112,17 @@ def app_context(request_settings,
         raise RuntimeError(e)
 
 
+def get_travis_token():
+    return os.environ.get('TRAVIS_TESTING_SERVICE_TOKEN', False)
+
+
+def get_valid_workflows():
+    wfs = ['sort-and-change-case']
+    if get_travis_token():
+        wfs.append('sort-and-change-case-travis')
+    return wfs
+
+
 def get_user_workflows(_application, _registry_type, _public=True, _to_skip=None, index_user=0):
     """ Parametric fixture: available params are {wfhub}"""
     try:
