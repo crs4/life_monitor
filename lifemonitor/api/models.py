@@ -723,9 +723,6 @@ class TestingService(db.Model):
     def get_last_failed_test_build(self, test_instance: TestInstance) -> TestBuild:
         raise NotImplementedException()
 
-    def get_test_builds(self, test_instance: TestInstance) -> list:
-        raise NotImplementedException()
-
     def get_test_build(self, test_instance: TestInstance, build_number) -> TestBuild:
         raise NotImplementedException()
 
