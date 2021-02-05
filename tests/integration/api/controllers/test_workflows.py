@@ -79,7 +79,6 @@ def test_workflow_registration(app_client, client_auth_method,
                                user1, user1_auth, client_credentials_registry, valid_workflow):
     logger.debug("User: %r", user1)
     logger.debug("headers: %r", user1_auth)
-    #workflow = utils.pick_workflow(user1, "sort-and-change-case")
     workflow = utils.pick_workflow(user1, valid_workflow)
     logger.debug("Selected workflow: %r", workflow)
     logger.debug("Using oauth2 user: %r", user1)

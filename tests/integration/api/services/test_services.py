@@ -39,8 +39,6 @@ def test_workflow_registration(app_client, user1, valid_workflow):
     assert len(suite.test_instances) == 1, "Expected number of test instances 1"
     conf = suite.test_instances[0]
     service = conf.testing_service
-    #assert isinstance(service, JenkinsTestingService), "Unexpected type for service"
-    #assert service.server is not None, "Not found _server property"
 
 
 def test_suite_invalid_service_type(app_client, user1):

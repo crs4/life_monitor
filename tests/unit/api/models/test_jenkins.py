@@ -59,7 +59,6 @@ def test_project_metadata_cache(jenkins_url, test_instance):
         server.get_job_info.assert_called_once()
         assert metadata == raw_data, "Unexpected retrieved metadata"
         metadata = jenkins_service.get_project_metadata(test_instance)
-        #server.get_job_info.assert_called_once(), "The cache should be used"
         assert server.get_job_info.call_count == 1, "The cache should be used"
         assert metadata == raw_data, "Unexpected retrieved metadata"
 
