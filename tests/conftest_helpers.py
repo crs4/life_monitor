@@ -164,7 +164,10 @@ def seek_workflow(application, provider, public, to_skip=None, index_user=0):
                         'name': workflow["attributes"]["title"],
                         'roc_link': f'{workflow["attributes"]["content_blobs"][0]["link"]}/download',
                         'registry_uri': application.config["SEEK_API_BASE_URL"],
-                        'valid': re.search("invalid", workflow["attributes"]["title"])
+                        'valid': re.search("invalid", workflow["attributes"]["title"]),
+                        # TODO: replace the naive identification of service type
+                        # (anyway it is compatible with the current test data)
+                        'testing_service_type': 'travis' if re.search('travis', workflow["attributes"]["title"], re.IGNORECASE) else 'jenkins'
                     })
             except Exception as e:
                 logger.exception(e)
