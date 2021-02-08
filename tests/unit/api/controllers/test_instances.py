@@ -189,7 +189,6 @@ def test_get_instance_build_logs_by_user(m, request_context, mock_user):
     workflow = {"uuid": "1111-222"}
     build = MagicMock()
     build.id = "1"
-    #build.output = str(os.urandom(default_limit))
     output_part = str("n" * part_size)
     build.get_output.return_value = output_part
     logger.debug("Part length: %r", len(output_part))
