@@ -74,7 +74,7 @@ class BuildSummarySchema(BaseSchema):
     class Meta:
         model = models.TestBuild
 
-    build_id = fields.String(attribute="build_number")
+    build_id = fields.String(attribute="id")
     suite_uuid = fields.String(attribute="test_instance.test_suite.uuid")
     status = fields.String()
     instance = ma.Nested(TestInstanceSchema(), attribute="test_instance")
