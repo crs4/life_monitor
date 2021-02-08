@@ -17,8 +17,6 @@ instance
 *.pyc
 ./certs
 docker-compose.yml
-docker-compose-dev.yml
-docker-compose-test.yml
 utils/certs/data
 tests/config/data/crates/*.zip
 tests/config/registries/seek/data
