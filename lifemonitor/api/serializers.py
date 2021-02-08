@@ -82,7 +82,7 @@ class BuildSummarySchema(BaseSchema):
     last_logs = fields.Method("get_last_logs")
 
     def get_last_logs(self, obj):
-        return "" if not obj.output else obj.output[-400:]
+        return obj.get_output(0, 131072)
 
 
 class WorkflowStatusSchema(BaseSchema):

@@ -881,7 +881,7 @@ class JenkinsTestBuild(TestBuild):
 
     @property
     def id(self) -> str:
-        return str(self.metadata['number'])
+        return self.metadata['number']
 
     @property
     def build_number(self) -> int:
@@ -1118,7 +1118,7 @@ class TravisTestingService(TestingService):
         # extract the job name from the resource path
         logger.debug(f"Getting project metadata - resource: {test_instance.resource}")
         job_name = re.sub("(?s:.*)/", "", test_instance.resource.strip('/'))
-        logger.debug(f"The job name: {job_name}")
+        logger.debug(f"The repo ID: {job_name}")
         if not job_name or len(job_name) == 0:
             raise TestingServiceException(
                 f"Unable to get the Jenkins job from the resource {test_instance.resource}")
@@ -1219,14 +1219,14 @@ class TravisTestingService(TestingService):
             while current_job_index < len(_metadata['jobs']) and \
                     (offset <= offset_bytes or limit_bytes == 0 or len(output) < limit_bytes):
                 url = "/job/{}/log".format(_metadata['jobs'][current_job_index]['id'])
-            logger.debug("URL: %r", url)
-            response = self._get(url)
-            if isinstance(response, requests.Response):
-                if response.status_code == 404:
-                    raise EntityNotFoundException(TestBuild, entity_id=build_number)
-                else:
-                    raise TestingServiceException(status=response.status_code,
-                                                  detail=str(response.content))
+                logger.debug("URL: %r", url)
+                response = self._get(url)
+                if isinstance(response, requests.Response):
+                    if response.status_code == 404:
+                        raise EntityNotFoundException(TestBuild, entity_id=build_number)
+                    else:
+                        raise TestingServiceException(status=response.status_code,
+                                                      detail=str(response.content))
                 job_output = response['content']
                 logger.debug("Job output length: %r", len(job_output))
                 output += job_output
