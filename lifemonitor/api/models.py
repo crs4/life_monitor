@@ -16,6 +16,7 @@ from lifemonitor.db import db
 from lifemonitor.auth.models import User
 from sqlalchemy.ext.associationproxy import association_proxy
 from lifemonitor.auth.oauth2.client.services import oauth2_registry
+from lifemonitor.lang import messages
 from lifemonitor.api import registries
 
 from lifemonitor.common import (SpecificationNotValidException, EntityNotFoundException,
@@ -807,6 +808,7 @@ class TestBuild(ABC):
         self.testing_service = testing_service
         self.test_instance = test_instance
         self._metadata = metadata
+        self._output = None
 
     def is_successful(self):
         return self.result == TestBuild.Result.SUCCESS
@@ -845,13 +847,10 @@ class TestBuild(ABC):
         pass
 
     @property
-    @abstractmethod
     def output(self) -> str:
-        pass
-
-    @property
-    def last_logs(self) -> str:
-        return self.output
+        if not self._output:
+            self._output = self.testing_service.get_test_build_output(self.test_instance, self.id, offset_bytes=0, limit_bytes=0)
+        return self._output
 
     @property
     @abstractmethod
@@ -862,6 +861,9 @@ class TestBuild(ABC):
     @abstractmethod
     def url(self) -> str:
         pass
+
+    def get_output(self, offset_bytes=0, limit_bytes=131072):
+        return self.testing_service.get_test_build_output(self.test_instance, self.id, offset_bytes, limit_bytes)
 
     def to_dict(self, test_output=False) -> dict:
         data = {
@@ -914,10 +916,6 @@ class JenkinsTestBuild(TestBuild):
     @property
     def duration(self) -> int:
         return self.metadata['duration']
-
-    @property
-    def output(self) -> str:
-        return self.testing_service.get_test_build_output(self.test_instance, self.build_number)
 
     @property
     def result(self) -> TestBuild.Result:
@@ -1021,9 +1019,22 @@ class JenkinsTestingService(TestingService):
         except jenkins.JenkinsException as e:
             raise TestingServiceException(e)
 
-    def get_test_build_output(self, test_instance: TestInstance, build_number):
+    def get_test_build_output(self, test_instance: TestInstance, build_number, offset_bytes=0, limit_bytes=131072):
         try:
-            return self.server.get_build_console_output(self.get_job_name(test_instance.resource), build_number)
+            logger.debug("test_instance '%r', build_number '%r'", test_instance.name, build_number)
+            logger.debug("query param: offset=%r, limit=%r", offset_bytes, limit_bytes)
+
+            if not isinstance(offset_bytes, int) or offset_bytes < 0:
+                raise ValueError(messages.invalid_log_offset)
+            if not isinstance(limit_bytes, int) or limit_bytes < 0:
+                raise ValueError(messages.invalid_log_limit)
+
+            output = self.server.get_build_console_output(self.get_job_name(test_instance.resource), build_number)
+            if len(output) < offset_bytes:
+                raise ValueError(messages.invalid_log_offset)
+
+            return output[offset_bytes:(offset_bytes + len(output) if limit_bytes == 0 else limit_bytes)]
+
         except jenkins.JenkinsException as e:
             raise TestingServiceException(e)
 
@@ -1065,10 +1076,6 @@ class TravisTestBuild(TestBuild):
     @property
     def duration(self) -> int:
         return self.metadata['duration']
-
-    @property
-    def output(self) -> str:
-        return self.testing_service.get_test_build_output(self.test_instance, self.id)
 
     @property
     def result(self) -> TestBuild.Result:
@@ -1185,14 +1192,14 @@ class TravisTestingService(TestingService):
                                               detail=str(response.content))
         return TravisTestBuild(self, test_instance, response)
 
-    def get_test_build_output(self, test_instance: TestInstance, build_number):
-        # FIXME: The current implementation returns the logs of the last job.
-        # It would be appropriate to introduce an intermediate pagination schema
-        # to efficiently wrap the pagination of the underlying testing service back-end.
+    def get_test_build_output(self, test_instance: TestInstance, build_number, offset_bytes=0, limit_bytes=131072):
         try:
             _metadata = self._get(f"/build/{build_number}/jobs")
         except Exception as e:
             raise TestingServiceException(details=f"{e}")
+
+        logger.debug("test_instance '%r', build_number '%r'", test_instance.name, build_number)
+        logger.debug("query param: offset=%r, limit=%r", offset_bytes, limit_bytes)
 
         if isinstance(_metadata, requests.Response):
             if _metadata.status_code == 404:
@@ -1201,11 +1208,17 @@ class TravisTestingService(TestingService):
                 raise TestingServiceException(status=_metadata.status_code,
                                               detail=str(_metadata.content))
         try:
-            logger.debug("Number of jobs: %r", len(_metadata['jobs']))
+            logger.debug("Number of jobs (test_instance '%r', build_number '%r'): %r", test_instance.name, build_number, len(_metadata['jobs']))
             if 'jobs' not in _metadata or len(_metadata['jobs']) == 0:
                 logger.debug("Ops... no job found")
                 return ""
-            url = "/job/{}/log".format(_metadata['jobs'][len(_metadata['jobs']) - 1]['id'])
+
+            offset = 0
+            output = ""
+            current_job_index = 0
+            while current_job_index < len(_metadata['jobs']) and \
+                    (offset <= offset_bytes or limit_bytes == 0 or len(output) < limit_bytes):
+                url = "/job/{}/log".format(_metadata['jobs'][current_job_index]['id'])
             logger.debug("URL: %r", url)
             response = self._get(url)
             if isinstance(response, requests.Response):
@@ -1214,7 +1227,13 @@ class TravisTestingService(TestingService):
                 else:
                     raise TestingServiceException(status=response.status_code,
                                                   detail=str(response.content))
-            return response['content']
+                job_output = response['content']
+                logger.debug("Job output length: %r", len(job_output))
+                output += job_output
+                offset += len(job_output)
+                current_job_index += 1
+            # filter output
+            return output[offset_bytes:(offset_bytes + len(output) if limit_bytes == 0 else limit_bytes)]
         except Exception as e:
             logger.exception(e)
             raise TestingServiceException(details=f"{e}")
