@@ -1,10 +1,9 @@
-
 import pytest
 import logging
 import requests
 import lifemonitor.api.models as models
 from unittest.mock import MagicMock
-from tests.conftest_helpers import get_travis_token
+from tests.conftest_helpers import get_travis_token, get_random_slice_indexes
 
 
 logger = logging.getLogger(__name__)
@@ -158,3 +157,27 @@ def test_get_last_passed_test_build(travis_service: models.TravisTestingService,
     assert build, "Unable to get the latest failed build"
     # check if the two builds are equal or not
     assert found_failed_build.id == build.id, "Invalid build ID"
+
+
+@pytest.mark.skipif(not token, reason="Travis token not set")
+def test_get_last_logs(travis_service: models.TravisTestingService, test_instance):
+    # search the last failed build
+    builds = travis_service.get_test_builds(test_instance, limit=1000)
+    assert len(builds) > 0, "Unexpected number of builds"
+    build = builds[-1]
+    logger.debug("The last build: %r", build)
+
+    # get all the output
+    output = build.output
+    logger.debug("output length: %r", len(output))
+    assert build.get_output(offset_bytes=0, limit_bytes=0) == output, "Unexpected output"
+
+    # test pagination
+    slices = get_random_slice_indexes(3, len(output))
+    logger.debug("Slice indexes: %r", slices)
+    for s in slices:
+        logger.debug("Checking slice: %r", s)
+        sout = build.get_output(offset_bytes=s[0], limit_bytes=s[1])
+        limit_bytes = s[1] if s[1] else (len(output))
+        assert len(sout) == limit_bytes - s[0], "Unexpected output length"
+        assert output[s[0]:limit_bytes] == sout, "The actual output slice if different from the expected"

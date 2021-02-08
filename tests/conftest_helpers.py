@@ -1,5 +1,6 @@
 import os
 import re
+import random
 import dotenv
 import logging
 import requests
@@ -399,3 +400,15 @@ def get_registry(_app_settings, _admin_user):
     if registry is None:
         registry = create_client_credentials_registry(_app_settings, _admin_user)
     return registry
+
+
+def get_random_slice_indexes(num_of_slices, max_value):
+    slices = []
+    if max_value <= 0:
+        logger.warning("The max value should be greater than 0")
+    else:
+        while len(slices) < num_of_slices:
+            limit = random.randint(0, max_value)
+            offset = random.randint(0, limit - 1)
+            slices.append((offset, limit))
+    return slices
