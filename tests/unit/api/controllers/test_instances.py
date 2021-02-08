@@ -178,7 +178,7 @@ def test_get_instance_build_logs_by_user_invalid_limit(m, request_context, mock_
 @patch("lifemonitor.api.controllers.lm")
 def test_get_instance_build_logs_by_user(m, request_context, mock_user):
     assert not auth.current_user.is_anonymous, "Unexpected user in session"
-    assert auth.current_registry is not None, "Unexpected registry in session"    
+    assert auth.current_registry is not None, "Unexpected registry in session"
     # pagination settings
     default_limit = 131072
     parts = 4
@@ -205,7 +205,7 @@ def test_get_instance_build_logs_by_user(m, request_context, mock_user):
     m.get_user_workflows.assert_called_once()
     assert isinstance(response, str), "Unexpected response type"
     assert len(response) == part_size, f"Unexpected log length: it should be limited to {part_size} bytes"
-    # test pagination    
+    # test pagination
     for n in range(0, parts):
         # test get logs defaults offset and limit
         response = controllers.instances_builds_get_logs(

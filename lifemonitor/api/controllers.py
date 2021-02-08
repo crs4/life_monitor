@@ -357,7 +357,7 @@ def instances_builds_get_logs(instance_uuid, build_id, offset_bytes=0, limit_byt
         build = response.get_test_build(build_id)
         logger.debug("offset = %r, limit = %r", offset_bytes, limit_bytes)
         if build:
-            return build.get_output(offset_bytes=offset_bytes, limit_bytes=limit_bytes)            
+            return build.get_output(offset_bytes=offset_bytes, limit_bytes=limit_bytes)
     except EntityNotFoundException:
         return report_problem(404, "Not Found", detail=messages.instance_build_not_found.format(build_id, instance_uuid))
     except ValueError as e:
