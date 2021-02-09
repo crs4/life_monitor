@@ -1,4 +1,6 @@
 import os
+import re
+import random
 import dotenv
 import logging
 import requests
@@ -111,6 +113,17 @@ def app_context(request_settings,
         raise RuntimeError(e)
 
 
+def get_travis_token():
+    return os.environ.get('TRAVIS_TESTING_SERVICE_TOKEN', False)
+
+
+def get_valid_workflows():
+    wfs = ['sort-and-change-case']
+    if get_travis_token():
+        wfs.append('sort-and-change-case-travis')
+    return wfs
+
+
 def get_user_workflows(_application, _registry_type, _public=True, _to_skip=None, index_user=0):
     """ Parametric fixture: available params are {wfhub}"""
     try:
@@ -162,7 +175,11 @@ def seek_workflow(application, provider, public, to_skip=None, index_user=0):
                         'version': str(workflow["attributes"]["versions"][0]['version']),  # pick the first version
                         'name': workflow["attributes"]["title"],
                         'roc_link': f'{workflow["attributes"]["content_blobs"][0]["link"]}/download',
-                        'registry_uri': application.config["SEEK_API_BASE_URL"]
+                        'registry_uri': application.config["SEEK_API_BASE_URL"],
+                        'valid': re.search("invalid", workflow["attributes"]["title"]),
+                        # TODO: replace the naive identification of service type
+                        # (anyway it is compatible with the current test data)
+                        'testing_service_type': 'travis' if re.search('travis', workflow["attributes"]["title"], re.IGNORECASE) else 'jenkins'
                     })
             except Exception as e:
                 logger.exception(e)
@@ -383,3 +400,15 @@ def get_registry(_app_settings, _admin_user):
     if registry is None:
         registry = create_client_credentials_registry(_app_settings, _admin_user)
     return registry
+
+
+def get_random_slice_indexes(num_of_slices, max_value):
+    slices = []
+    if max_value <= 0:
+        logger.warning("The max value should be greater than 0")
+    else:
+        while len(slices) < num_of_slices:
+            limit = random.randint(0, max_value)
+            offset = random.randint(0, limit - 1)
+            slices.append((offset, limit))
+    return slices

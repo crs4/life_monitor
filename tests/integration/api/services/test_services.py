@@ -4,7 +4,7 @@ import logging
 import pathlib
 from tests import utils
 from lifemonitor.api.services import LifeMonitor
-from lifemonitor.api.models import Workflow, JenkinsTestingService
+import lifemonitor.api.models as models
 from lifemonitor.common import (
     EntityNotFoundException, NotAuthorizedException,
     SpecificationNotValidException,
@@ -17,27 +17,28 @@ tests_root_dir = pathlib.Path(this_dir).parent
 logger = logging.getLogger()
 
 
-def test_workflow_registration(app_client, user1):
+def test_valid_workflows(valid_workflow):
+    logger.debug(valid_workflow)
 
+
+def test_workflow_registration(app_client, user1, valid_workflow):
     # pick the test with a valid specification and one test instance
-    w, workflow = utils.pick_and_register_workflow(user1, "sort-and-change-case")
-
+    w, workflow = utils.pick_and_register_workflow(user1, valid_workflow)
     assert workflow is not None, "workflow must be not None"
-    assert isinstance(workflow, Workflow), "Object is not an instance of Workflow"
+    assert isinstance(workflow, models.Workflow), "Object is not an instance of Workflow"
     assert (workflow.uuid, workflow.version) == (w['uuid'], w['version']),\
         "Unexpected workflow ID"
     assert workflow.external_id is not None, "External ID must be computed if not provided"
     assert workflow.external_id == w["external_id"], "Invalid external ID"
     assert workflow.submitter == user1["user"], "Inavalid submitter user"
-
     # inspect the suite/test type
     assert len(workflow.test_suites) == 1, "Expected number of test suites 1"
     suite = workflow.test_suites[0]
     assert len(suite.test_instances) == 1, "Expected number of test instances 1"
     conf = suite.test_instances[0]
     service = conf.testing_service
-    assert isinstance(service, JenkinsTestingService), "Unexpected type for service"
-    assert service.server is not None, "Not found _server property"
+    testing_service_type = getattr(models, "{}TestingService".format(w['testing_service_type'].capitalize()))
+    assert isinstance(service, testing_service_type), "Unexpected type for service"
 
 
 def test_suite_invalid_service_type(app_client, user1):
@@ -52,7 +53,7 @@ def test_suite_invalid_service_url(app_client, user1):
         suite = workflow.test_suites[0]
         assert len(suite.test_instances) == 1, "Expected number of test instances 1"
         conf = suite.test_instances[0]
-        conf.testing_service.project_metadata()  # this should raise the exception
+        conf.testing_service.check_connection()  # this should raise the exception
 
 
 def test_suite_without_instances(app_client, user1):
@@ -81,7 +82,7 @@ def test_workflow_registration_not_allowed_user(app_client, user1, user2):
 
 def test_workflow_serialization(app_client, user1):
     _, workflow = utils.pick_and_register_workflow(user1)
-    assert isinstance(workflow, Workflow), "Workflow not properly initialized"
+    assert isinstance(workflow, models.Workflow), "Workflow not properly initialized"
     data = workflow.to_dict(test_suite=True, test_build=True, test_output=True)
     assert isinstance(data, dict), "Invalid serialization output type"
     logger.debug(data)
@@ -89,22 +90,22 @@ def test_workflow_serialization(app_client, user1):
 
 def test_workflow_serialization_no_instances(app_client, user1):
     _, workflow = utils.pick_and_register_workflow(user1, "basefreqsum")
-    assert isinstance(workflow, Workflow), "Workflow not properly initialized"
+    assert isinstance(workflow, models.Workflow), "Workflow not properly initialized"
     data = workflow.to_dict(test_suite=True, test_build=True, test_output=True)
     assert isinstance(data, dict), "Invalid serialization output type"
     logger.debug(data)
 
 
-def test_workflow_deregistration(app_client, user1):
+def test_workflow_deregistration(app_client, user1, valid_workflow):
     lm = LifeMonitor.get_instance()
     # pick and register one workflow
-    wf_data, workflow = utils.pick_and_register_workflow(user1)
+    wf_data, workflow = utils.pick_and_register_workflow(user1, valid_workflow)
     # current number of workflows
-    number_of_workflows = len(Workflow.all())
+    number_of_workflows = len(models.Workflow.all())
     lm.deregister_user_workflow(wf_data['uuid'], wf_data['version'], user1["user"])
-    assert len(Workflow.all()) == number_of_workflows - 1, "Unexpected number of workflows"
+    assert len(models.Workflow.all()) == number_of_workflows - 1, "Unexpected number of workflows"
     # try to find
-    w = Workflow.find_by_id(wf_data['uuid'], wf_data['version'])
+    w = models.Workflow.find_by_id(wf_data['uuid'], wf_data['version'])
     assert w is None, "Workflow must not be in the DB"
 
 
@@ -115,10 +116,10 @@ def test_workflow_deregistration_exception(app_client, user1, random_workflow_id
                                                             user1['user'])
 
 
-def test_suite_registration(app_client, user1, test_suite_metadata):
+def test_suite_registration(app_client, user1, test_suite_metadata, valid_workflow):
     # register a new workflow
     lm = LifeMonitor.get_instance()
-    wf_data, workflow = utils.pick_and_register_workflow(user1)
+    wf_data, workflow = utils.pick_and_register_workflow(user1, valid_workflow)
     # try to add a new test suite instance
     logger.debug("TestDefinition: %r", test_suite_metadata)
     current_number_of_suites = len(workflow.test_suites)
@@ -158,17 +159,17 @@ def test_suite_registration_unauthorized_user_exception(
 def test_suite_registration_invalid_specification_exception(
         app_client, user1, invalid_test_suite_metadata):
     w, workflow = utils.pick_and_register_workflow(user1)
-    assert isinstance(workflow, Workflow), "Workflow not properly initialized"
+    assert isinstance(workflow, models.Workflow), "Workflow not properly initialized"
     with pytest.raises(SpecificationNotValidException):
         LifeMonitor.get_instance().register_test_suite(w['uuid'], w['version'],
                                                        user1["user"],
                                                        invalid_test_suite_metadata)
 
 
-def test_suite_deregistration(app_client, user1):
+def test_suite_deregistration(app_client, user1, valid_workflow):
     # register a new workflow
     lm = LifeMonitor.get_instance()
-    wf_data, workflow = utils.pick_and_register_workflow(user1)
+    wf_data, workflow = utils.pick_and_register_workflow(user1, valid_workflow)
 
     # pick the first suite
     current_number_of_suites = len(workflow.test_suites)

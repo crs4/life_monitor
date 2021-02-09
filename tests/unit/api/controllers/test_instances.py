@@ -122,7 +122,7 @@ def test_get_instance_build_last_logs_by_user(m, request_context, mock_user):
     m.get_user_workflows.assert_called_once()
     assert isinstance(response, dict), "Unexpected response type"
     logger.debug("The loaded instance: %r", response)
-    assert len(response["last_logs"]) == 400, "Unexpected log length: it should be limited to the last 400 chars"
+    assert len(response["last_logs"]) <= 131072, "Unexpected log length: it should be limited to the last 131072 bytes"
 
 
 @patch("lifemonitor.api.controllers.lm")
@@ -179,11 +179,19 @@ def test_get_instance_build_logs_by_user_invalid_limit(m, request_context, mock_
 def test_get_instance_build_logs_by_user(m, request_context, mock_user):
     assert not auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry is not None, "Unexpected registry in session"
+    # pagination settings
+    default_limit = 131072
+    parts = 4
+    part_size = round(default_limit / parts)
+    logger.debug("Number of parts: %d", parts)
+    logger.debug("Part size: %d", part_size)
+    # set workflow/test_instance/test_build
     workflow = {"uuid": "1111-222"}
     build = MagicMock()
     build.id = "1"
-    default_limit = 131072
-    build.output = str(os.urandom(default_limit))
+    output_part = str("n" * part_size)
+    build.get_output.return_value = output_part
+    logger.debug("Part length: %r", len(output_part))
     instance = MagicMock()
     instance.uuid = '12345'
     instance.get_test_build.return_value = build
@@ -194,24 +202,16 @@ def test_get_instance_build_logs_by_user(m, request_context, mock_user):
     response = controllers.instances_builds_get_logs(instance['uuid'], build.id)
     m.get_test_instance.assert_called_once()
     m.get_user_workflows.assert_called_once()
-    logger.debug("Response: %r", response)
     assert isinstance(response, str), "Unexpected response type"
-    logger.debug("The loaded logs: %r", response)
-    assert len(response) == default_limit, "Unexpected log length: it should be limited to the last 400 chars"
+    assert len(response) == part_size, f"Unexpected log length: it should be limited to {part_size} bytes"
     # test pagination
-    parts = 4
-    part_size = round(default_limit / parts)
-    logger.debug("Number of parts: %d", parts)
-    logger.debug("Part size: %d", part_size)
     for n in range(0, parts):
         # test get logs defaults offset and limit
         response = controllers.instances_builds_get_logs(
             instance['uuid'], build.id,
             limit_bytes=part_size, offset_bytes=part_size * n)
-        logger.debug("Response: %r", response)
         assert isinstance(response, str), "Unexpected response type"
-        logger.debug("The loaded logs: %r", response)
-        assert len(response) == part_size, "Unexpected log length: it should be limited to the last 400 chars"
+        assert len(response) == part_size, f"Unexpected log length: it should be limited to {part_size} bytes"
 
 
 @patch("lifemonitor.api.controllers.lm")

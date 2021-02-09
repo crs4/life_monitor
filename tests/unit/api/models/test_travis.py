@@ -1,15 +1,15 @@
-
-import os
 import pytest
 import logging
 import requests
 import lifemonitor.api.models as models
+from unittest.mock import MagicMock
+from tests.conftest_helpers import get_travis_token, get_random_slice_indexes
 
 
 logger = logging.getLogger(__name__)
 
 # global token to test Travis API
-token = os.environ.get('TRAVIS_TOKEN', False)
+token = get_travis_token()
 
 
 @pytest.fixture
@@ -24,7 +24,7 @@ def travis_token():
 
 @pytest.fixture
 def travis_job():
-    return '3417615'
+    return '1002447'
 
 
 @pytest.fixture
@@ -33,13 +33,28 @@ def travis_resource(travis_job):
 
 
 @pytest.fixture
-def travis_service(travis_url, travis_resource, travis_token) -> models.TravisTestingService:
-    return models.TravisTestingService(travis_url, travis_resource, travis_token)
+def test_instance(travis_resource):
+    instance = MagicMock()
+    instance.resource = travis_resource
+    return instance
 
 
 @pytest.fixture
-def travis_job_info(travis_service):
-    return travis_service.project_metadata
+def travis_service(travis_url, travis_token) -> models.TravisTestingService:
+    return models.TravisTestingService(travis_url, travis_token)
+
+
+@pytest.fixture
+def travis_job_info(travis_service, test_instance):
+    return travis_service.get_project_metadata(test_instance)
+
+
+@pytest.mark.skipif(not token, reason="Travis token not set")
+def test_service_token(travis_url):
+    service = models.TravisTestingService(travis_url)
+    logger.debug(service)
+    tk = models.TestingServiceTokenManager.get_instance().get_token(travis_url)
+    assert token == tk.secret, "Unexpected Travis token"
 
 
 @pytest.mark.skipif(not token, reason="Travis token not set")
@@ -53,8 +68,8 @@ def test_connection(travis_service):
 
 
 @pytest.mark.skipif(not token, reason="Travis token not set")
-def test_repo_id(travis_service, travis_job):
-    assert travis_service.repo_id == travis_job, "Unexpected repo ID"
+def test_repo_id(travis_service, test_instance, travis_job):
+    assert travis_service.get_repo_id(test_instance) == travis_job, "Unexpected repo ID"
 
 
 @pytest.mark.skipif(not token, reason="Travis token not set")
@@ -74,9 +89,9 @@ def test_project_metadata(travis_service, travis_job, travis_job_info):
 
 
 @pytest.mark.skipif(not token, reason="Travis token not set")
-def test_get_builds(travis_service, travis_job):
+def test_get_builds(travis_service, travis_job, test_instance):
     number_of_builds = 5
-    builds = travis_service.get_test_builds(limit=number_of_builds)
+    builds = travis_service.get_test_builds(test_instance, limit=number_of_builds)
     logger.debug(len(builds))
     assert len(builds) == number_of_builds, "Unexpected number of limits"
     for b in builds:
@@ -85,31 +100,31 @@ def test_get_builds(travis_service, travis_job):
 
 
 @pytest.mark.skipif(not token, reason="Travis token not set")
-def test_get_build(travis_service):
-    builds = travis_service.get_test_builds()
+def test_get_build(travis_service, test_instance):
+    builds = travis_service.get_test_builds(test_instance)
     logger.info(builds)
     test_build = builds[0]
     logger.debug("Testing build: %r", test_build.id)
-    build = travis_service.get_test_build(test_build.id)
+    build = travis_service.get_test_build(test_instance, test_build.id)
     logger.info(build)
     for p in ['id', 'build_number', 'duration', 'timestamp', 'status', 'duration', 'url']:
         assert getattr(build, p), "Unable to find the property {}".format(p)
 
 
 @pytest.mark.skipif(not token, reason="Travis token not set")
-def test_get_last_test_build(travis_service: models.TravisTestingService):
-    builds = travis_service.get_test_builds()
+def test_get_last_test_build(travis_service: models.TravisTestingService, test_instance):
+    builds = travis_service.get_test_builds(test_instance)
     last_build = builds[0]  # builds are always ordered from the latest executed
-    build = travis_service.last_test_build
+    build = travis_service.get_last_test_build(test_instance)
     logger.debug("First build from the build list: %r", last_build.id)
     logger.debug("ID of the lastest build: %r", build.id)
     assert last_build.id == build.id, "Invalid build ID"
 
 
 @pytest.mark.skipif(not token, reason="Travis token not set")
-def test_get_last_failed_test_build(travis_service: models.TravisTestingService):
+def test_get_last_failed_test_build(travis_service: models.TravisTestingService, test_instance):
     # search the last failed build
-    builds = travis_service.get_test_builds(limit=1000)
+    builds = travis_service.get_test_builds(test_instance, limit=1000)
     found_failed_build = None
     for b in builds:
         logger.debug("Checking %r: status -> %r", b.id, b.status)
@@ -118,7 +133,7 @@ def test_get_last_failed_test_build(travis_service: models.TravisTestingService)
             break
     logger.debug("Found build: %r", found_failed_build)
     assert found_failed_build, "Unable to find the latest failed build"
-    build = travis_service.last_failed_test_build
+    build = travis_service.get_last_failed_test_build(test_instance)
     logger.debug("Latest failed build: %r", build)
     assert build, "Unable to get the latest failed build"
     # check if the two builds are equal or not
@@ -126,9 +141,9 @@ def test_get_last_failed_test_build(travis_service: models.TravisTestingService)
 
 
 @pytest.mark.skipif(not token, reason="Travis token not set")
-def test_get_last_passed_test_build(travis_service: models.TravisTestingService):
+def test_get_last_passed_test_build(travis_service: models.TravisTestingService, test_instance):
     # search the last failed build
-    builds = travis_service.get_test_builds(limit=1000)
+    builds = travis_service.get_test_builds(test_instance, limit=1000)
     found_failed_build = None
     for b in builds:
         logger.debug("Checking %r: status -> %r", b.id, b.status)
@@ -137,8 +152,32 @@ def test_get_last_passed_test_build(travis_service: models.TravisTestingService)
             break
     logger.debug("Found build: %r", found_failed_build)
     assert found_failed_build, "Unable to find the latest failed build"
-    build = travis_service.last_passed_test_build
+    build = travis_service.get_last_passed_test_build(test_instance)
     logger.debug("Latest passed build: %r", build)
     assert build, "Unable to get the latest failed build"
     # check if the two builds are equal or not
     assert found_failed_build.id == build.id, "Invalid build ID"
+
+
+@pytest.mark.skipif(not token, reason="Travis token not set")
+def test_get_last_logs(travis_service: models.TravisTestingService, test_instance):
+    # search the last failed build
+    builds = travis_service.get_test_builds(test_instance, limit=1000)
+    assert len(builds) > 0, "Unexpected number of builds"
+    build = builds[-1]
+    logger.debug("The last build: %r", build)
+
+    # get all the output
+    output = build.output
+    logger.debug("output length: %r", len(output))
+    assert build.get_output(offset_bytes=0, limit_bytes=0) == output, "Unexpected output"
+
+    # test pagination
+    slices = get_random_slice_indexes(3, len(output))
+    logger.debug("Slice indexes: %r", slices)
+    for s in slices:
+        logger.debug("Checking slice: %r", s)
+        sout = build.get_output(offset_bytes=s[0], limit_bytes=s[1])
+        limit_bytes = s[1] if s[1] else (len(output))
+        assert len(sout) == limit_bytes - s[0], "Unexpected output length"
+        assert output[s[0]:limit_bytes] == sout, "The actual output slice if different from the expected"

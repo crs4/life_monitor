@@ -203,6 +203,11 @@ def random_valid_uuid():
     return str(uuid.uuid4())
 
 
+@pytest.fixture(params=helpers.get_valid_workflows())
+def valid_workflow(request):
+    return request.param
+
+
 @pytest.fixture
 def test_suite_metadata():
     with open(os.path.join(base_path, "config/data/test-metadata/test-metadata.json")) as df:

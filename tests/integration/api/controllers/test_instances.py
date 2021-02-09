@@ -16,8 +16,8 @@ logger = logging.getLogger()
     ClientAuthenticationMethod.CLIENT_CREDENTIALS,
     ClientAuthenticationMethod.REGISTRY_CODE_FLOW
 ], indirect=True)
-def test_get_instance(app_client, client_auth_method, user1, user1_auth):
-    w, workflow = utils.pick_and_register_workflow(user1, "sort-and-change-case")
+def test_get_instance(app_client, client_auth_method, user1, user1_auth, valid_workflow):
+    w, workflow = utils.pick_and_register_workflow(user1, valid_workflow)
     assert len(workflow.test_suites) > 0, "Unexpected number of test suites"
     suite = workflow.test_suites[0]
     logger.debug("The test suite: %r", suite)
@@ -43,8 +43,8 @@ def test_get_instance(app_client, client_auth_method, user1, user1_auth):
     ClientAuthenticationMethod.CLIENT_CREDENTIALS,
     ClientAuthenticationMethod.REGISTRY_CODE_FLOW
 ], indirect=True)
-def test_get_instance_builds(app_client, client_auth_method, user1, user1_auth):
-    w, workflow = utils.pick_and_register_workflow(user1, "sort-and-change-case")
+def test_get_instance_builds(app_client, client_auth_method, user1, user1_auth, valid_workflow):
+    w, workflow = utils.pick_and_register_workflow(user1, valid_workflow)
     assert len(workflow.test_suites) > 0, "Unexpected number of test suites"
     suite = workflow.test_suites[0]
     logger.debug("The test suite: %r", suite)
@@ -52,7 +52,7 @@ def test_get_instance_builds(app_client, client_auth_method, user1, user1_auth):
     instance = suite.test_instances[0]
     logger.debug("The test instance: %r", instance)
 
-    response = app_client.get(f"{utils.build_instances_path(instance.uuid)}/latest-builds",
+    response = app_client.get(f"{utils.build_instances_path(instance.uuid)}/latest-builds?limit=2",
                               headers=user1_auth)
     logger.debug(response)
     utils.assert_status_code(200, response.status_code)
@@ -75,8 +75,8 @@ def test_get_instance_builds(app_client, client_auth_method, user1, user1_auth):
     ClientAuthenticationMethod.CLIENT_CREDENTIALS,
     ClientAuthenticationMethod.REGISTRY_CODE_FLOW
 ], indirect=True)
-def test_get_instance_builds_limit_parameter(app_client, client_auth_method, user1, user1_auth):
-    w, workflow = utils.pick_and_register_workflow(user1, "sort-and-change-case")
+def test_get_instance_builds_limit_parameter(app_client, client_auth_method, user1, user1_auth, valid_workflow):
+    w, workflow = utils.pick_and_register_workflow(user1, valid_workflow)
     assert len(workflow.test_suites) > 0, "Unexpected number of test suites"
     suite = workflow.test_suites[0]
     logger.debug("The test suite: %r", suite)
@@ -107,8 +107,8 @@ def test_get_instance_builds_limit_parameter(app_client, client_auth_method, use
     ClientAuthenticationMethod.CLIENT_CREDENTIALS,
     ClientAuthenticationMethod.REGISTRY_CODE_FLOW
 ], indirect=True)
-def test_get_instance_build(app_client, client_auth_method, user1, user1_auth):
-    w, workflow = utils.pick_and_register_workflow(user1, "sort-and-change-case")
+def test_get_instance_build(app_client, client_auth_method, user1, user1_auth, valid_workflow):
+    w, workflow = utils.pick_and_register_workflow(user1, valid_workflow)
     assert len(workflow.test_suites) > 0, "Unexpected number of test suites"
     suite = workflow.test_suites[0]
     logger.debug("The test suite: %r", suite)
@@ -135,8 +135,8 @@ def test_get_instance_build(app_client, client_auth_method, user1, user1_auth):
     ClientAuthenticationMethod.CLIENT_CREDENTIALS,
     ClientAuthenticationMethod.REGISTRY_CODE_FLOW
 ], indirect=True)
-def test_get_instance_build_logs(app_client, client_auth_method, user1, user1_auth):
-    w, workflow = utils.pick_and_register_workflow(user1, "sort-and-change-case")
+def test_get_instance_build_logs(app_client, client_auth_method, user1, user1_auth, valid_workflow):
+    w, workflow = utils.pick_and_register_workflow(user1, valid_workflow)
     assert len(workflow.test_suites) > 0, "Unexpected number of test suites"
     suite = workflow.test_suites[0]
     logger.debug("The test suite: %r", suite)
@@ -148,7 +148,7 @@ def test_get_instance_build_logs(app_client, client_auth_method, user1, user1_au
 
     response = app_client.get(f"{utils.build_instances_path(instance.uuid)}/builds/{build.id}/logs",
                               headers=user1_auth)
-    logger.debug(response)
+    logger.debug(response.data)
     utils.assert_status_code(response.status_code, 200)
     data = json.loads(response.data)
     logger.debug("Response data: %r", data)

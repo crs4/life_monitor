@@ -16,6 +16,7 @@ from lifemonitor.db import db
 from lifemonitor.auth.models import User
 from sqlalchemy.ext.associationproxy import association_proxy
 from lifemonitor.auth.oauth2.client.services import oauth2_registry
+from lifemonitor.lang import messages
 from lifemonitor.api import registries
 
 from lifemonitor.common import (SpecificationNotValidException, EntityNotFoundException,
@@ -37,7 +38,7 @@ class WorkflowRegistryClient(ABC):
         try:
             self._oauth2client: RemoteApp = getattr(oauth2_registry, self.registry.name)
         except AttributeError:
-            raise RuntimeError(f"Unable to find a OAuth2 client for the {self.name} service")
+            raise RuntimeError(f"Unable to find a OAuth2 client for the {self.registry.name} service")
 
     @property
     def registry(self):
@@ -286,12 +287,11 @@ class Status:
                 })
             for test_instance in suite.test_instances:
                 try:
-                    testing_service = test_instance.testing_service
-                    latest_build = testing_service.last_test_build
+                    latest_build = test_instance.last_test_build
                     if latest_build is None:
                         availability_issues.append({
-                            "service": testing_service.uri,
-                            "instance": test_instance,  # WHAT?
+                            "service": test_instance.testing_service.url,
+                            "test_instance": test_instance,
                             "issue": "No build found"
                         })
                     else:
@@ -299,7 +299,8 @@ class Status:
                         status = WorkflowStatus._update_status(status, latest_build.is_successful())
                 except TestingServiceException as e:
                     availability_issues.append({
-                        "service": testing_service.uri,
+                        "service": test_instance.testing_service.url,
+                        "resource": test_instance.resource,
                         "issue": str(e)
                     })
                     logger.exception(e)
@@ -492,14 +493,15 @@ class TestSuite(db.Model):
                 test = tm.Test.from_json(test)
                 for instance in test.instance:
                     logger.debug("Instance: %r", instance)
-                    testing_service = TestingService.new_instance(
+                    testing_service = TestingService.get_instance(
                         instance.service.type,
-                        instance.service.url,
-                        instance.service.resource
+                        instance.service.url
                     )
+                    assert testing_service, "Testing service not initialized"
                     logger.debug("Created TestService: %r", testing_service)
                     test_instance = TestInstance(self, self.submitter,
-                                                 test.name, testing_service)
+                                                 test.name, instance.service.resource,
+                                                 testing_service)
                     logger.debug("Created TestInstance: %r", test_instance)
         except KeyError as e:
             raise SpecificationNotValidException(f"Missing property: {e}")
@@ -523,10 +525,10 @@ class TestSuite(db.Model):
         }
 
     def add_test_instance(self, submitter: User,
-                          test_name, testing_service_type, testing_service_url):
+                          test_name, testing_service_type, testing_service_url, testing_service_resource):
         testing_service = \
-            TestingService.new_instance(testing_service_type, testing_service_url)
-        test_instance = TestInstance(self, submitter, test_name, testing_service)
+            TestingService.get_instance(testing_service_type, testing_service_url)
+        test_instance = TestInstance(self, submitter, test_name, testing_service_resource, testing_service)
         logger.debug("Created TestInstance: %r", test_instance)
         return test_instance
 
@@ -565,20 +567,24 @@ class TestInstance(db.Model):
     _test_suite_uuid = \
         db.Column("test_suite_uuid", UUID(as_uuid=True), db.ForeignKey(TestSuite.uuid), nullable=False)
     name = db.Column(db.Text, nullable=False)
+    resource = db.Column(db.Text, nullable=False)
     parameters = db.Column(JSONB, nullable=True)
     submitter_id = db.Column(db.Integer,
                              db.ForeignKey(User.id), nullable=False)
     # configure relationships
     submitter = db.relationship("User", uselist=False)
     test_suite = db.relationship("TestSuite", back_populates="test_instances")
-    testing_service = db.relationship("TestingService", uselist=False, back_populates="test_instance",
-                                      cascade="all, delete", lazy='joined')
+    testing_service = db.relationship("TestingService",
+                                      back_populates="test_instances",
+                                      uselist=False,
+                                      cascade="save-update, merge, delete, delete-orphan")
 
     def __init__(self, testing_suite: TestSuite, submitter: User,
-                 test_name, testing_service: TestingService) -> None:
+                 test_name, test_resource, testing_service: TestingService) -> None:
         self.test_suite = testing_suite
         self.submitter = submitter
         self.name = test_name
+        self.resource = test_resource
         self.testing_service = testing_service
 
     def __repr__(self):
@@ -590,11 +596,15 @@ class TestInstance(db.Model):
             raise EntityNotFoundException(Test)
         return self.test_suite.tests[self.name]
 
+    @property
+    def last_test_build(self):
+        return self.testing_service.get_last_test_build(self)
+
     def get_test_builds(self, limit=10):
-        return self.testing_service.get_test_builds(limit=limit)
+        return self.testing_service.get_test_builds(self, limit=limit)
 
     def get_test_build(self, build_number):
-        return self.testing_service.get_test_build(build_number)
+        return self.testing_service.get_test_build(self, build_number)
 
     def to_dict(self, test_build=False, test_output=False):
         data = {
@@ -642,62 +652,85 @@ class TestingServiceToken:
         return not self.__eq__(other)
 
 
+class TestingServiceTokenManager:
+    __instance = None
+
+    @classmethod
+    def get_instance(cls) -> TestingServiceTokenManager:
+        if not cls.__instance:
+            cls.__instance = cls()
+        return cls.__instance
+
+    def __init__(self):
+        if self.__instance:
+            raise RuntimeError("TestingServiceTokenManager instance already exists!")
+        self.__instance = self
+        self.__token_registry = {}
+
+    def add_token(self, service_url, token: TestingServiceToken):
+        self.__token_registry[service_url] = token
+
+    def remove_token(self, service_url):
+        try:
+            del self.__token_registry[service_url]
+        except KeyError:
+            logger.info("No token for the service '{}'", service_url)
+
+    def get_token(self, service_url) -> TestingServiceToken:
+        return self.__token_registry[service_url] if service_url in self.__token_registry else None
+
+
 class TestingService(db.Model):
     uuid = db.Column("uuid", UUID(as_uuid=True), db.ForeignKey(TestInstance.uuid), primary_key=True)
     _type = db.Column("type", db.String, nullable=False)
-    _key = db.Column("key", db.Text, nullable=True)
-    _secret = db.Column("secret", db.Text, nullable=True)
-    url = db.Column(db.Text, nullable=False)
-    resource = db.Column(db.Text, nullable=False)
-    # configure nested object
-    token = db.composite(TestingServiceToken, _key, _secret)
+    url = db.Column(db.Text, nullable=False, unique=True)
+    _token = None
+
     # configure relationships
-    test_instance = db.relationship("TestInstance", back_populates="testing_service",
-                                    cascade="all, delete", lazy='joined')
+    test_instances = db.relationship("TestInstance", back_populates="testing_service")
 
     __mapper_args__ = {
         'polymorphic_on': _type,
         'polymorphic_identity': 'testing_service'
     }
 
-    def __init__(self, url: str, resource: str) -> None:
+    def __init__(self, url: str, token: TestingServiceToken = None) -> None:
         self.url = url
-        self.resource = resource
+        self._token = token
 
     def __repr__(self):
-        return f'<TestingService {self.url}, resource {self.resource} ({self.uuid})>'
+        return f'<TestingService {self.url}, ({self.uuid})>'
 
     @property
-    def test_instance_name(self):
-        return self.test_instance.name
+    def token(self):
+        if not self._token:
+            logger.debug("Querying the token registry for the service %r...", self.url)
+            self._token = TestingServiceTokenManager.get_instance().get_token(self.url)
+        logger.debug("Set token for the testing service %r (type: %r): %r", self.url, self._type, self._token is not None)
+        return self._token
 
-    @property
-    def is_workflow_healthy(self) -> bool:
+    def check_connection(self) -> bool:
         raise NotImplementedException()
 
-    @property
-    def last_test_build(self) -> TestBuild:
+    def is_workflow_healthy(self, test_instance: TestInstance) -> bool:
         raise NotImplementedException()
 
-    @property
-    def last_passed_test_build(self) -> TestBuild:
+    def get_last_test_build(self, test_instance: TestInstance) -> TestBuild:
         raise NotImplementedException()
 
-    @property
-    def last_failed_test_build(self) -> TestBuild:
+    def get_last_passed_test_build(self, test_instance: TestInstance) -> TestBuild:
         raise NotImplementedException()
 
-    @property
-    def test_builds(self) -> list:
+    def get_last_failed_test_build(self, test_instance: TestInstance) -> TestBuild:
         raise NotImplementedException()
 
-    def get_test_build(self, build_number) -> TestBuild:
+    def get_test_build(self, test_instance: TestInstance, build_number) -> TestBuild:
         raise NotImplementedException()
 
-    def get_test_builds(self, limit=10) -> list:
+    def get_test_builds(self, test_instance: TestInstance, limit=10) -> list:
         raise NotImplementedException()
 
-    def get_test_builds_as_dict(self, test_output):
+    def get_test_builds_as_dict(self, test_instance: TestInstance, test_output):
         last_test_build = self.last_test_build
         last_passed_test_build = self.last_passed_test_build
         last_failed_test_build = self.last_failed_test_build
@@ -737,12 +770,24 @@ class TestingService(db.Model):
         return cls.query.get(uuid)
 
     @classmethod
-    def new_instance(cls, service_type, url: str, resource: str):
+    def find_by_url(cls, url) -> TestingService:
+        return cls.query.filter(TestingService.url == url).first()
+
+    @classmethod
+    def get_instance(cls, service_type, url: str):
         try:
+            # return the service obj if the service has already been registered
+            instance = cls.find_by_url(url)
+            logger.debug("Found service instance: %r", instance)
+            if instance:
+                return instance
+            # try to instanciate the service if the it has not been registered yet
             service_class = globals()["{}TestingService".format(to_camel_case(service_type))]
+            return service_class(url)
         except KeyError:
             raise TestingServiceNotSupportedException(f"Not supported testing service type '{service_type}'")
-        return service_class(url, resource)
+        except Exception as e:
+            raise TestingServiceException(detail=str(e))
 
 
 class BuildStatus:
@@ -759,9 +804,11 @@ class TestBuild(ABC):
         SUCCESS = 0
         FAILED = 1
 
-    def __init__(self, testing_service: TestingService, metadata) -> None:
+    def __init__(self, testing_service: TestingService, test_instance: TestInstance, metadata) -> None:
         self.testing_service = testing_service
+        self.test_instance = test_instance
         self._metadata = metadata
+        self._output = None
 
     def is_successful(self):
         return self.result == TestBuild.Result.SUCCESS
@@ -800,13 +847,10 @@ class TestBuild(ABC):
         pass
 
     @property
-    @abstractmethod
     def output(self) -> str:
-        pass
-
-    @property
-    def last_logs(self) -> str:
-        return self.output
+        if not self._output:
+            self._output = self.testing_service.get_test_build_output(self.test_instance, self.id, offset_bytes=0, limit_bytes=0)
+        return self._output
 
     @property
     @abstractmethod
@@ -817,6 +861,9 @@ class TestBuild(ABC):
     @abstractmethod
     def url(self) -> str:
         pass
+
+    def get_output(self, offset_bytes=0, limit_bytes=131072):
+        return self.testing_service.get_test_build_output(self.test_instance, self.id, offset_bytes, limit_bytes)
 
     def to_dict(self, test_output=False) -> dict:
         data = {
@@ -834,7 +881,7 @@ class JenkinsTestBuild(TestBuild):
 
     @property
     def id(self) -> str:
-        return str(self.metadata['number'])
+        return self.metadata['number']
 
     @property
     def build_number(self) -> int:
@@ -871,10 +918,6 @@ class JenkinsTestBuild(TestBuild):
         return self.metadata['duration']
 
     @property
-    def output(self) -> str:
-        return self.testing_service.get_test_build_output(self.build_number)
-
-    @property
     def result(self) -> TestBuild.Result:
         return TestBuild.Result.SUCCESS \
             if self.metadata["result"] == "SUCCESS" else TestBuild.Result.FAILED
@@ -891,12 +934,18 @@ class JenkinsTestingService(TestingService):
         'polymorphic_identity': 'jenkins_testing_service'
     }
 
-    def __init__(self, url: str, resource: str) -> None:
-        super().__init__(url, resource)
+    def __init__(self, url: str, token: TestingServiceToken = None) -> None:
+        super().__init__(url, token)
         try:
             self._server = jenkins.Jenkins(self.url)
         except Exception as e:
             raise TestingServiceException(e)
+
+    def check_connection(self) -> bool:
+        try:
+            assert '_class' in self.server.get_info()
+        except Exception as e:
+            raise TestingServiceException(detail=str(e))
 
     @property
     def server(self) -> jenkins.Jenkins:
@@ -904,78 +953,88 @@ class JenkinsTestingService(TestingService):
             self._server = jenkins.Jenkins(self.url)
         return self._server
 
-    @property
-    def job_name(self):
+    @staticmethod
+    def get_job_name(resource):
         # extract the job name from the resource path
-        if self._job_name is None:
-            logger.debug(f"Getting project metadata - resource: {self.resource}")
-            self._job_name = re.sub("(?s:.*)/", "", self.resource.strip('/'))
-            logger.debug(f"The job name: {self._job_name}")
-            if not self._job_name or len(self._job_name) == 0:
-                raise TestingServiceException(
-                    f"Unable to get the Jenkins job from the resource {self._job_name}")
-        return self._job_name
+        logger.debug(f"Getting project metadata - resource: {resource}")
+        job_name = re.sub("(?s:.*)/", "", resource.strip('/'))
+        logger.debug(f"The job name: {job_name}")
+        if not job_name or len(job_name) == 0:
+            raise TestingServiceException(
+                f"Unable to get the Jenkins job from the resource {job_name}")
+        return job_name
 
-    @property
-    def is_workflow_healthy(self) -> bool:
-        return self.last_test_build.is_successful()
+    def is_workflow_healthy(self, test_instance: TestInstance) -> bool:
+        return self.get_last_test_build(test_instance).is_successful()
 
-    @property
-    def last_test_build(self) -> Optional[JenkinsTestBuild]:
-        if self.project_metadata['lastBuild']:
-            return self.get_test_build(self.project_metadata['lastBuild']['number'])
+    def get_last_test_build(self, test_instance: TestInstance) -> Optional[JenkinsTestBuild]:
+        metadata = self.get_project_metadata(test_instance)
+        if 'lastBuild' in metadata and metadata['lastBuild']:
+            return self.get_test_build(test_instance, metadata['lastBuild']['number'])
         return None
 
-    @property
-    def last_passed_test_build(self) -> Optional[JenkinsTestBuild]:
-        if self.project_metadata['lastSuccessfulBuild']:
-            return self.get_test_build(self.project_metadata['lastSuccessfulBuild']['number'])
+    def get_last_passed_test_build(self, test_instance: TestInstance) -> Optional[JenkinsTestBuild]:
+        metadata = self.get_project_metadata(test_instance)
+        if 'lastSuccessfulBuild' in metadata and metadata['lastSuccessfulBuild']:
+            return self.get_test_build(test_instance, metadata['lastSuccessfulBuild']['number'])
         return None
 
-    @property
-    def last_failed_test_build(self) -> Optional[JenkinsTestBuild]:
-        if self.project_metadata['lastFailedBuild']:
-            return self.get_test_build(self.project_metadata['lastFailedBuild']['number'])
+    def get_last_failed_test_build(self, test_instance: TestInstance) -> Optional[JenkinsTestBuild]:
+        metadata = self.get_project_metadata(test_instance)
+        if 'lastFailedBuild' in metadata and metadata['lastFailedBuild']:
+            return self.get_test_build(metadata['lastFailedBuild']['number'])
         return None
 
-    @property
-    def test_builds(self) -> list:
+    def test_builds(self, test_instance: TestInstance) -> list:
         builds = []
-        for build_info in self.project_metadata['builds']:
-            builds.append(self.get_test_build(build_info['number']))
+        metadata = self.get_project_metadata(test_instance)
+        for build_info in metadata['builds']:
+            builds.append(self.get_test_build(test_instance, build_info['number']))
         return builds
 
-    @property
-    def project_metadata(self):
-        return self.get_project_metadata()
+    def get_project_metadata(self, test_instance: TestInstance, fetch_all_builds=False):
+        if not hasattr(test_instance, "_raw_metadata") or test_instance._raw_metadata is None:
+            try:
+                test_instance._raw_metadata = self.server.get_job_info(
+                    self.get_job_name(test_instance.resource), fetch_all_builds=fetch_all_builds)
+            except jenkins.JenkinsException as e:
+                raise TestingServiceException(f"{self}: {e}")
+        return test_instance._raw_metadata
 
-    def get_project_metadata(self, fetch_all_builds=False):
-        try:
-            return self.server.get_job_info(self.job_name, fetch_all_builds=fetch_all_builds)
-        except jenkins.JenkinsException as e:
-            raise TestingServiceException(f"{self}: {e}")
-
-    def get_test_builds(self, limit=10):
+    def get_test_builds(self, test_instance: TestInstance, limit=10):
         builds = []
-        project_metadata = self.get_project_metadata(fetch_all_builds=True if limit > 100 else False)
+        project_metadata = self.get_project_metadata(test_instance, fetch_all_builds=True if limit > 100 else False)
         for build_info in project_metadata['builds']:
             if len(builds) == limit:
                 break
-            builds.append(self.get_test_build(build_info['number']))
+            builds.append(self.get_test_build(test_instance, build_info['number']))
         return builds
 
-    def get_test_build(self, build_number: int) -> JenkinsTestBuild:
+    def get_test_build(self, test_instance: TestInstance, build_number: int) -> JenkinsTestBuild:
         try:
-            build_metadata = self.server.get_build_info(self.job_name, int(build_number))
-            return JenkinsTestBuild(self, build_metadata)
+            build_metadata = self.server.get_build_info(self.get_job_name(test_instance.resource), int(build_number))
+            return JenkinsTestBuild(self, test_instance, build_metadata)
         except jenkins.NotFoundException as e:
             raise EntityNotFoundException(TestBuild, entity_id=build_number, detail=str(e))
         except jenkins.JenkinsException as e:
             raise TestingServiceException(e)
 
-    def get_test_build_output(self, build_number):
+    def get_test_build_output(self, test_instance: TestInstance, build_number, offset_bytes=0, limit_bytes=131072):
         try:
-            return self.server.get_build_console_output(self.job_name, build_number)
+            logger.debug("test_instance '%r', build_number '%r'", test_instance.name, build_number)
+            logger.debug("query param: offset=%r, limit=%r", offset_bytes, limit_bytes)
+
+            if not isinstance(offset_bytes, int) or offset_bytes < 0:
+                raise ValueError(messages.invalid_log_offset)
+            if not isinstance(limit_bytes, int) or limit_bytes < 0:
+                raise ValueError(messages.invalid_log_limit)
+
+            output = self.server.get_build_console_output(self.get_job_name(test_instance.resource), build_number)
+            if len(output) < offset_bytes:
+                raise ValueError(messages.invalid_log_offset)
+
+            return output[offset_bytes:(offset_bytes + len(output) if limit_bytes == 0 else limit_bytes)]
+
         except jenkins.JenkinsException as e:
             raise TestingServiceException(e)
 
@@ -1019,13 +1078,9 @@ class TravisTestBuild(TestBuild):
         return self.metadata['duration']
 
     @property
-    def output(self) -> str:
-        return self.testing_service.get_test_build_output(self.build_number)
-
-    @property
     def result(self) -> TestBuild.Result:
         return TestBuild.Result.SUCCESS \
-            if self.metadata["result"] == "passed" else TestBuild.Result.FAILED
+            if self.metadata["state"] == "passed" else TestBuild.Result.FAILED
 
     @property
     def url(self) -> str:
@@ -1038,17 +1093,16 @@ class TravisTestingService(TestingService):
     __mapper_args__ = {
         'polymorphic_identity': 'travis_testing_service'
     }
-
-    def __init__(self, url: str, resource: str, token: TestingServiceToken) -> None:
-        super().__init__(url, resource)
-        self.token = token
+    __headers__ = {
+        'Travis-API-Version': '3'
+    }
 
     def _build_headers(self, token: TestingServiceToken = None):
-        token = token or self.token
-        return {
-            'Travis-API-Version': '3',
-            'Authorization': 'token {}'.format(token.secret)
-        }
+        headers = self.__headers__.copy()
+        token = token if token else self.token
+        if token:
+            headers['Authorization'] = 'token {}'.format(token.secret)
+        return headers
 
     def _build_url(self, path, params=None):
         query = "?" + urlencode(params) if params else ""
@@ -1059,28 +1113,27 @@ class TravisTestingService(TestingService):
         response = requests.get(self._build_url(path, params), headers=self._build_headers(token))
         return response.json() if response.status_code == 200 else response
 
-    @property
-    def repo_id(self):
+    @staticmethod
+    def get_repo_id(test_instance: TestInstance):
         # extract the job name from the resource path
-        if self._job_name is None:
-            logger.debug(f"Getting project metadata - resource: {self.resource}")
-            self._job_name = re.sub("(?s:.*)/", "", self.resource.strip('/'))
-            logger.debug(f"The job name: {self._job_name}")
-            if not self._job_name or len(self._job_name) == 0:
-                raise TestingServiceException(
-                    f"Unable to get the Jenkins job from the resource {self._job_name}")
-        return self._job_name
+        logger.debug(f"Getting project metadata - resource: {test_instance.resource}")
+        job_name = re.sub("(?s:.*)/", "", test_instance.resource.strip('/'))
+        logger.debug(f"The repo ID: {job_name}")
+        if not job_name or len(job_name) == 0:
+            raise TestingServiceException(
+                f"Unable to get the Jenkins job from the resource {test_instance.resource}")
+        return job_name
 
-    @property
-    def is_workflow_healthy(self) -> bool:
-        return self.last_test_build.is_successful()
+    def is_workflow_healthy(self, test_instance: TestInstance) -> bool:
+        return self.get_last_test_build(test_instance).is_successful()
 
-    def _get_last_test_build(self, state=None) -> Optional[TravisTestBuild]:
+    def _get_last_test_build(self, test_instance: TestInstance, state=None) -> Optional[TravisTestBuild]:
         try:
+            repo_id = self.get_repo_id(test_instance)
             params = {'limit': 1, 'sort_by': 'number:desc'}
             if state:
                 params['state'] = state
-            response = self._get("/repo/{}/builds".format(self.repo_id), params=params)
+            response = self._get("/repo/{}/builds".format(repo_id), params=params)
             if isinstance(response, requests.Response):
                 if response.status_code == 404:
                     raise EntityNotFoundException(TestBuild)
@@ -1089,52 +1142,98 @@ class TravisTestingService(TestingService):
                                                   detail=str(response.content))
             if 'builds' not in response or len(response['builds']) == 0:
                 raise EntityNotFoundException(TestBuild)
-            return TravisTestBuild(self, response['builds'][0])
+            return TravisTestBuild(self, test_instance, response['builds'][0])
         except Exception as e:
             raise TestingServiceException(e)
 
-    @property
-    def last_test_build(self) -> Optional[TravisTestBuild]:
-        return self._get_last_test_build()
+    def get_last_test_build(self, test_instance: TestInstance) -> Optional[TravisTestBuild]:
+        return self._get_last_test_build(test_instance)
 
-    @property
-    def last_passed_test_build(self) -> Optional[TravisTestBuild]:
-        return self._get_last_test_build(state='passed')
+    def get_last_passed_test_build(self, test_instance: TestInstance) -> Optional[TravisTestBuild]:
+        return self._get_last_test_build(test_instance, state='passed')
 
-    @property
-    def last_failed_test_build(self) -> Optional[TravisTestBuild]:
-        return self._get_last_test_build(state='failed')
+    def get_last_failed_test_build(self, test_instance: TestInstance) -> Optional[TravisTestBuild]:
+        return self._get_last_test_build(test_instance, state='failed')
 
-    @property
-    def project_metadata(self):
+    def get_project_metadata(self, test_instance: TestInstance):
         try:
-            return self._get("/repo/{}".format(self.repo_id))
+            return self._get("/repo/{}".format(self.get_repo_id(test_instance)))
         except Exception as e:
             raise TestingServiceException(f"{self}: {e}")
 
-    def get_test_builds(self, limit=10):
+    def get_test_builds(self, test_instance: TestInstance, limit=10):
+        try:
+            repo_id = self.get_repo_id(test_instance)
+            response = self._get("/repo/{}/builds".format(repo_id), params={'limit': limit})
+        except Exception as e:
+            raise TestingServiceException(details=f"{e}")
+        if isinstance(response, requests.Response):
+            logger.debug(response)
+            raise TestingServiceException(status=response.status_code,
+                                          detail=str(response.content))
         try:
             builds = []
-            response = self._get("/repo/{}/builds".format(self.repo_id), params={'limit': limit})
-            if isinstance(response, requests.Response):
-                logger.debug(response)
-                raise TestingServiceException(status=response.status_code,
-                                              detail=str(response.content))
             for build_info in response['builds']:
-                builds.append(TravisTestBuild(self, build_info))
+                builds.append(TravisTestBuild(self, test_instance, build_info))
             return builds
         except Exception as e:
             raise TestingServiceException(details=f"{e}")
 
-    def get_test_build(self, build_number: int) -> JenkinsTestBuild:
+    def get_test_build(self, test_instance: TestInstance, build_number: int) -> JenkinsTestBuild:
         try:
             response = self._get("/build/{}".format(build_number))
-            if isinstance(response, requests.Response):
-                if response.status_code == 404:
-                    raise EntityNotFoundException(TestBuild, entity_id=build_number)
-                else:
-                    raise TestingServiceException(status=response.status_code,
-                                                  detail=str(response.content))
-            return TravisTestBuild(self, response)
         except Exception as e:
+            raise TestingServiceException(details=f"{e}")
+        if isinstance(response, requests.Response):
+            if response.status_code == 404:
+                raise EntityNotFoundException(TestBuild, entity_id=build_number)
+            else:
+                raise TestingServiceException(status=response.status_code,
+                                              detail=str(response.content))
+        return TravisTestBuild(self, test_instance, response)
+
+    def get_test_build_output(self, test_instance: TestInstance, build_number, offset_bytes=0, limit_bytes=131072):
+        try:
+            _metadata = self._get(f"/build/{build_number}/jobs")
+        except Exception as e:
+            raise TestingServiceException(details=f"{e}")
+
+        logger.debug("test_instance '%r', build_number '%r'", test_instance.name, build_number)
+        logger.debug("query param: offset=%r, limit=%r", offset_bytes, limit_bytes)
+
+        if isinstance(_metadata, requests.Response):
+            if _metadata.status_code == 404:
+                raise EntityNotFoundException(TestBuild, entity_id=build_number)
+            else:
+                raise TestingServiceException(status=_metadata.status_code,
+                                              detail=str(_metadata.content))
+        try:
+            logger.debug("Number of jobs (test_instance '%r', build_number '%r'): %r", test_instance.name, build_number, len(_metadata['jobs']))
+            if 'jobs' not in _metadata or len(_metadata['jobs']) == 0:
+                logger.debug("Ops... no job found")
+                return ""
+
+            offset = 0
+            output = ""
+            current_job_index = 0
+            while current_job_index < len(_metadata['jobs']) and \
+                    (offset <= offset_bytes or limit_bytes == 0 or len(output) < limit_bytes):
+                url = "/job/{}/log".format(_metadata['jobs'][current_job_index]['id'])
+                logger.debug("URL: %r", url)
+                response = self._get(url)
+                if isinstance(response, requests.Response):
+                    if response.status_code == 404:
+                        raise EntityNotFoundException(TestBuild, entity_id=build_number)
+                    else:
+                        raise TestingServiceException(status=response.status_code,
+                                                      detail=str(response.content))
+                job_output = response['content']
+                logger.debug("Job output length: %r", len(job_output))
+                output += job_output
+                offset += len(job_output)
+                current_job_index += 1
+            # filter output
+            return output[offset_bytes:(offset_bytes + len(output) if limit_bytes == 0 else limit_bytes)]
+        except Exception as e:
+            logger.exception(e)
             raise TestingServiceException(details=f"{e}")

@@ -12,7 +12,7 @@ def test_user1(user1):
     assert "user" not in g, "Ops"
     logger.debug("USER 1: %r", user1)
     assert_properties_exist(['user', 'user_info', 'workflows'], user1)
-    assert len(user1['workflows']) == 4, "Unexpected number of workflows for user1"
+    assert len(user1['workflows']) == 5, "Unexpected number of workflows for user1"
     wfs = [w['name'] for w in user1['workflows']]
     for p in ['basefreqsum', 'sort-and-change-case',
               'sort-and-change-case-invalid-service-url',
