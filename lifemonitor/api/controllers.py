@@ -81,11 +81,11 @@ def workflows_post(body):
                                   .format(submitter_id or current_user.id, registry.name))
     try:
         w = lm.register_workflow(
-            workflow_registry=registry,
             workflow_submitter=submitter,
             workflow_uuid=body['uuid'],
             workflow_version=body['version'],
             roc_link=body['roc_link'],
+            workflow_registry=registry,
             external_id=body.get("external_id", None),
             name=body.get('name', None)
         )
