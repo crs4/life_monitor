@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-import lifemonitor.api.models as models
 import lifemonitor.common as common
 
 
@@ -92,13 +91,13 @@ class Status:
 
 class WorkflowStatus(Status):
 
-    def __init__(self, workflow: models.Workflow) -> None:
+    def __init__(self, workflow) -> None:
         self.workflow = workflow
         self._status, self._latest_builds, self._availability_issues = WorkflowStatus.check_status(self.workflow.test_suites)
 
 
 class SuiteStatus(Status):
 
-    def __init__(self, suite: models.TestSuite) -> None:
+    def __init__(self, suite) -> None:
         self.suite = suite
         self._status, self._latest_builds, self._availability_issues = Status.check_status([suite])
