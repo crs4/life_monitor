@@ -90,7 +90,7 @@ class WorkflowRegistry(db.Model):
     _server_id = db.Column(db.Integer, db.ForeignKey('oauth2_identity_provider.id', ondelete='CASCADE'))
     client_credentials = db.relationship("Client", uselist=False, cascade="all, delete")
     server_credentials = db.relationship("OAuth2IdentityProvider", uselist=False, cascade="all, delete")
-    registered_workflows = db.relationship("models.Workflow",
+    registered_workflows = db.relationship("Workflow",
                                            back_populates="workflow_registry", cascade="all, delete")
     client_id = association_proxy('client_credentials', 'client_id')
     name = association_proxy('server_credentials', 'name')
