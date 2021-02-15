@@ -28,10 +28,10 @@ import lifemonitor.test_metadata as tm
 from urllib.parse import urljoin, urlencode
 
 # Status
-from lifemonitor.api.models.status import Suite, WorkflowStatus, SuiteStatus
+from lifemonitor.api.models.status import Suite, AggregateTestStatus, WorkflowStatus, SuiteStatus
 
 __all__ = [
-    "Suite", "WorkflowStatus", "SuiteStatus"
+    "Suite", "AggregateTestStatus", "WorkflowStatus", "SuiteStatus"
 ]
 
 # set module level logger
