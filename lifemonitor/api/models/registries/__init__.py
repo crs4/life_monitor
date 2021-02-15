@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from .registry import WorkflowRegistry, WorkflowRegistryClient
 
 import glob
 import logging
 import lifemonitor.common as common
 from importlib import import_module
 from os.path import dirname, basename, isfile, join
+
+from .registry import WorkflowRegistry, WorkflowRegistryClient
 
 # set module level logger
 logger = logging.getLogger(__name__)

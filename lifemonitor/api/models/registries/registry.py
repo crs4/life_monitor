@@ -11,8 +11,6 @@ from lifemonitor.auth.models import User
 from sqlalchemy.ext.associationproxy import association_proxy
 from lifemonitor.auth.oauth2.client.services import oauth2_registry
 
-from lifemonitor.api import registries
-
 from lifemonitor.common import (EntityNotFoundException)
 from lifemonitor.utils import download_url, to_camel_case
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
@@ -22,6 +20,8 @@ import lifemonitor.api.models as models
 
 # set module level logger
 logger = logging.getLogger(__name__)
+
+
 
 
 class WorkflowRegistryClient(ABC):
@@ -111,7 +111,7 @@ class WorkflowRegistry(db.Model):
     @property
     def client(self) -> WorkflowRegistryClient:
         if self._client is None:
-            return registries.get_registry_client_class(self.type)(self)
+            return models.registries.get_registry_client_class(self.type)(self)
         return self._client
 
     def build_ro_link(self, w: models.Workflow) -> str:
@@ -217,5 +217,5 @@ class WorkflowRegistry(db.Model):
 
     @staticmethod
     def new_instance(registry_type, client_credentials, server_credentials):
-        return registries.get_registry_class(registry_type)(client_credentials,
+        return models.registries.get_registry_class(registry_type)(client_credentials,
                                                             server_credentials)

@@ -6,24 +6,19 @@ import jenkins
 import requests
 import datetime
 import uuid as _uuid
-from typing import Union, List
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Optional
-from authlib.integrations.base_client import RemoteApp
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from lifemonitor.db import db
 from lifemonitor.auth.models import User
-from sqlalchemy.ext.associationproxy import association_proxy
-from lifemonitor.auth.oauth2.client.services import oauth2_registry
 from lifemonitor.lang import messages
-from lifemonitor.api import registries
 
 from lifemonitor.common import (SpecificationNotValidException, EntityNotFoundException,
                                 SpecificationNotDefinedException, TestingServiceNotSupportedException,
                                 NotImplementedException, TestingServiceException)
-from lifemonitor.utils import download_url, to_camel_case
-from lifemonitor.auth.oauth2.client.models import OAuthIdentity
+from lifemonitor.utils import to_camel_case
+
 import lifemonitor.test_metadata as tm
 from urllib.parse import urljoin, urlencode
 
