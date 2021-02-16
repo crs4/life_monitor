@@ -56,19 +56,19 @@ class JenkinsTestingService(TestingService):
     def is_workflow_healthy(self, test_instance: models.TestInstance) -> bool:
         return self.get_last_test_build(test_instance).is_successful()
 
-    def get_last_test_build(self, test_instance: models.TestInstance) -> Optional[models.JenkinsTestBuild]:
+    def get_last_test_build(self, test_instance: models.TestInstance) -> Optional[JenkinsTestBuild]:
         metadata = self.get_project_metadata(test_instance)
         if 'lastBuild' in metadata and metadata['lastBuild']:
             return self.get_test_build(test_instance, metadata['lastBuild']['number'])
         return None
 
-    def get_last_passed_test_build(self, test_instance: models.TestInstance) -> Optional[models.JenkinsTestBuild]:
+    def get_last_passed_test_build(self, test_instance: models.TestInstance) -> Optional[JenkinsTestBuild]:
         metadata = self.get_project_metadata(test_instance)
         if 'lastSuccessfulBuild' in metadata and metadata['lastSuccessfulBuild']:
             return self.get_test_build(test_instance, metadata['lastSuccessfulBuild']['number'])
         return None
 
-    def get_last_failed_test_build(self, test_instance: models.TestInstance) -> Optional[models.JenkinsTestBuild]:
+    def get_last_failed_test_build(self, test_instance: models.TestInstance) -> Optional[JenkinsTestBuild]:
         metadata = self.get_project_metadata(test_instance)
         if 'lastFailedBuild' in metadata and metadata['lastFailedBuild']:
             return self.get_test_build(metadata['lastFailedBuild']['number'])
@@ -99,10 +99,10 @@ class JenkinsTestingService(TestingService):
             builds.append(self.get_test_build(test_instance, build_info['number']))
         return builds
 
-    def get_test_build(self, test_instance: models.TestInstance, build_number: int) -> models.JenkinsTestBuild:
+    def get_test_build(self, test_instance: models.TestInstance, build_number: int) -> JenkinsTestBuild:
         try:
             build_metadata = self.server.get_build_info(self.get_job_name(test_instance.resource), int(build_number))
-            return models.JenkinsTestBuild(self, test_instance, build_metadata)
+            return JenkinsTestBuild(self, test_instance, build_metadata)
         except jenkins.NotFoundException as e:
             raise EntityNotFoundException(models.TestBuild, entity_id=build_number, detail=str(e))
         except jenkins.JenkinsException as e:
@@ -126,3 +126,53 @@ class JenkinsTestingService(TestingService):
 
         except jenkins.JenkinsException as e:
             raise TestingServiceException(e)
+
+
+class JenkinsTestBuild(models.TestBuild):
+
+    @property
+    def id(self) -> str:
+        return self.metadata['number']
+
+    @property
+    def build_number(self) -> int:
+        return self.metadata['number']
+
+    def is_running(self) -> bool:
+        return self.metadata['building'] is True
+
+    @property
+    def status(self) -> str:
+        if self.is_running():
+            return models.BuildStatus.RUNNING
+        if self.metadata['result']:
+            if self.metadata['result'] == 'SUCCESS':
+                return models.BuildStatus.PASSED
+            elif self.metadata['result'] == 'ABORTED':
+                return models.BuildStatus.ABORTED
+            elif self.metadata['result'] == 'FAILURE':
+                return models.BuildStatus.FAILED
+        return models.BuildStatus.ERROR
+
+    @property
+    def revision(self):
+        rev_info = list(map(lambda x: x["lastBuiltRevision"],
+                            filter(lambda x: "lastBuiltRevision" in x, self.metadata["actions"])))
+        return rev_info[0] if len(rev_info) == 1 else None
+
+    @property
+    def timestamp(self) -> int:
+        return self.metadata['timestamp']
+
+    @property
+    def duration(self) -> int:
+        return self.metadata['duration']
+
+    @property
+    def result(self) -> models.TestBuild.Result:
+        return models.TestBuild.Result.SUCCESS \
+            if self.metadata["result"] == "SUCCESS" else models.TestBuild.Result.FAILED
+
+    @property
+    def url(self) -> str:
+        return self.metadata['url']

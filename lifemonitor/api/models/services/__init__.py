@@ -2,12 +2,15 @@ from __future__ import annotations
 
 import logging
 
-from .jenkins import JenkinsTestingService
 from .service import TestingService, TestingServiceToken, TestingServiceTokenManager
-from .travis import TravisTestingService
+from .jenkins import JenkinsTestingService, JenkinsTestBuild
+from .travis import TravisTestingService, TravisTestBuild
 
 # set module level logger
 logger = logging.getLogger(__name__)
 
 
-__all__ = ["TestingService", "JenkinsTestingService", "TravisTestingService", "TestingServiceToken", "TestingServiceTokenManager"]
+__all__ = ["TestingService",
+           "JenkinsTestingService", "JenkinsTestBuild",
+           "TravisTestingService", "TravisTestBuild",
+           "TestingServiceToken", "TestingServiceTokenManager"]

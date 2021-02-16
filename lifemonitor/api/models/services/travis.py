@@ -1,6 +1,7 @@
 
 from __future__ import annotations
 
+import datetime
 import logging
 import re
 import urllib
@@ -108,7 +109,7 @@ class TravisTestingService(TestingService):
         except Exception as e:
             raise TestingServiceException(details=f"{e}")
 
-    def get_test_build(self, test_instance: models.TestInstance, build_number: int) -> models.JenkinsTestBuild:
+    def get_test_build(self, test_instance: models.TestInstance, build_number: int) -> models.TravisTestBuild:
         try:
             response = self._get("/build/{}".format(build_number))
         except Exception as e:
@@ -166,3 +167,51 @@ class TravisTestingService(TestingService):
         except Exception as e:
             logger.exception(e)
             raise TestingServiceException(details=f"{e}")
+
+
+class TravisTestBuild(models.TestBuild):
+
+    @property
+    def id(self) -> str:
+        return str(self.metadata['id'])
+
+    @property
+    def build_number(self) -> int:
+        return self.metadata['number']
+
+    def is_running(self) -> bool:
+        return len(self.metadata['finished_at']) == 0
+
+    @property
+    def status(self) -> str:
+        if self.is_running():
+            return models.BuildStatus.RUNNING
+        if self.metadata['state'] == 'passed':
+            return models.BuildStatus.PASSED
+        elif self.metadata['state'] == 'canceled':
+            return models.BuildStatus.ABORTED
+        elif self.metadata['state'] == 'failed':
+            return models.BuildStatus.FAILED
+        return models.BuildStatus.ERROR
+
+    @property
+    def revision(self):
+        return self.metadata['commit']
+
+    @property
+    def timestamp(self) -> int:
+        return datetime.datetime.strptime(
+            self.metadata["started_at"], "%Y-%m-%dT%H:%M:%SZ").timestamp()
+
+    @property
+    def duration(self) -> int:
+        return self.metadata['duration']
+
+    @property
+    def result(self) -> models.TestBuild.Result:
+        return models.TestBuild.Result.SUCCESS \
+            if self.metadata["state"] == "passed" else models.TestBuild.Result.FAILED
+
+    @property
+    def url(self) -> str:
+        return "{}{}".format(self.testing_service.url, self.metadata['@href'])

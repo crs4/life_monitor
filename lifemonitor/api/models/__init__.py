@@ -15,12 +15,13 @@ from .registries import WorkflowRegistry, WorkflowRegistryClient
 from .workflows import Workflow
 
 # 'testsuites' package
-from .testsuites import Test, TestSuite, TestInstance, \
-    BuildStatus, TestBuild, JenkinsTestBuild, TravisTestBuild
+from .testsuites import Test, TestSuite, TestInstance, BuildStatus, TestBuild
 
 # 'testing_services'
-from .services import TestingService, JenkinsTestingService, \
-    TravisTestingService, TestingServiceToken, TestingServiceTokenManager
+from .services import TestingService, \
+    JenkinsTestingService, JenkinsTestBuild, \
+    TravisTestingService, TravisTestBuild, \
+    TestingServiceToken, TestingServiceTokenManager
 
 
 __all__ = [

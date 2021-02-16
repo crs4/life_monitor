@@ -2,7 +2,6 @@ from __future__ import annotations
 
 
 import logging
-import datetime
 import uuid as _uuid
 from abc import ABC, abstractmethod
 from enum import Enum
@@ -297,101 +296,3 @@ class TestBuild(ABC):
         if test_output:
             data['output'] = self.output
         return data
-
-
-class JenkinsTestBuild(TestBuild):
-
-    @property
-    def id(self) -> str:
-        return self.metadata['number']
-
-    @property
-    def build_number(self) -> int:
-        return self.metadata['number']
-
-    def is_running(self) -> bool:
-        return self.metadata['building'] is True
-
-    @property
-    def status(self) -> str:
-        if self.is_running():
-            return BuildStatus.RUNNING
-        if self.metadata['result']:
-            if self.metadata['result'] == 'SUCCESS':
-                return BuildStatus.PASSED
-            elif self.metadata['result'] == 'ABORTED':
-                return BuildStatus.ABORTED
-            elif self.metadata['result'] == 'FAILURE':
-                return BuildStatus.FAILED
-        return BuildStatus.ERROR
-
-    @property
-    def revision(self):
-        rev_info = list(map(lambda x: x["lastBuiltRevision"],
-                            filter(lambda x: "lastBuiltRevision" in x, self.metadata["actions"])))
-        return rev_info[0] if len(rev_info) == 1 else None
-
-    @property
-    def timestamp(self) -> int:
-        return self.metadata['timestamp']
-
-    @property
-    def duration(self) -> int:
-        return self.metadata['duration']
-
-    @property
-    def result(self) -> TestBuild.Result:
-        return TestBuild.Result.SUCCESS \
-            if self.metadata["result"] == "SUCCESS" else TestBuild.Result.FAILED
-
-    @property
-    def url(self) -> str:
-        return self.metadata['url']
-
-
-class TravisTestBuild(TestBuild):
-
-    @property
-    def id(self) -> str:
-        return str(self.metadata['id'])
-
-    @property
-    def build_number(self) -> int:
-        return self.metadata['number']
-
-    def is_running(self) -> bool:
-        return len(self.metadata['finished_at']) == 0
-
-    @property
-    def status(self) -> str:
-        if self.is_running():
-            return BuildStatus.RUNNING
-        if self.metadata['state'] == 'passed':
-            return BuildStatus.PASSED
-        elif self.metadata['state'] == 'canceled':
-            return BuildStatus.ABORTED
-        elif self.metadata['state'] == 'failed':
-            return BuildStatus.FAILED
-        return BuildStatus.ERROR
-
-    @property
-    def revision(self):
-        return self.metadata['commit']
-
-    @property
-    def timestamp(self) -> int:
-        return datetime.datetime.strptime(
-            self.metadata["started_at"], "%Y-%m-%dT%H:%M:%SZ").timestamp()
-
-    @property
-    def duration(self) -> int:
-        return self.metadata['duration']
-
-    @property
-    def result(self) -> TestBuild.Result:
-        return TestBuild.Result.SUCCESS \
-            if self.metadata["state"] == "passed" else TestBuild.Result.FAILED
-
-    @property
-    def url(self) -> str:
-        return "{}{}".format(self.testing_service.url, self.metadata['@href'])
