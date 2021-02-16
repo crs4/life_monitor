@@ -217,5 +217,5 @@ class WorkflowRegistry(db.Model):
 
     @staticmethod
     def new_instance(registry_type, client_credentials, server_credentials):
-        return models.registries.get_registry_class(registry_type)(client_credentials,
+        return models.get_registry_class(registry_type)(client_credentials,
                                                             server_credentials)

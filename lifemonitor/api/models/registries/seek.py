@@ -1,11 +1,12 @@
 from __future__ import annotations
-import os
+
 import logging
+import os
 from typing import Union
+
+from lifemonitor.api import models
 from lifemonitor.auth.models import User
 from lifemonitor.common import EntityNotFoundException
-from lifemonitor.api import models
-
 
 # set module level logger
 logger = logging.getLogger(__name__)

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import logging
-import lifemonitor.common as common
 
+import lifemonitor.common as common
 
 # set module level logger
 logger = logging.getLogger(__name__)

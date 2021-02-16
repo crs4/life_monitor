@@ -5,7 +5,6 @@ import logging
 from lifemonitor.db import db
 from lifemonitor.auth.models import User
 
-
 # 'status' module
 from .status import Status, AggregateTestStatus, WorkflowStatus, SuiteStatus
 
@@ -16,14 +15,15 @@ from .registries import WorkflowRegistry, WorkflowRegistryClient
 from .workflows import Workflow
 
 # 'testsuites' package
-from .testsuites import Test, TestSuite, TestInstance, TestingServiceToken, TestingServiceTokenManager, TestingService, \
-    BuildStatus, TestBuild, JenkinsTestBuild, JenkinsTestingService, TravisTestBuild, TravisTestingService
+from .testsuites import Test, TestSuite, TestInstance, \
+    BuildStatus, TestBuild, JenkinsTestBuild, TravisTestBuild
 
-__all__ = [
-    "Status", "AggregateTestStatus", "WorkflowStatus", "SuiteStatus"
-]
+from .services import TestingService, JenkinsTestingService, TravisTestingService, TestingServiceToken, TestingServiceTokenManager
+
+
+# __all__ = [
+#     "Status", "AggregateTestStatus", "WorkflowStatus", "SuiteStatus"
+# ]
 
 # set module level logger
 logger = logging.getLogger(__name__)
-
-

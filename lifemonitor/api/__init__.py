@@ -1,8 +1,10 @@
-import re
-import pathlib
 import logging
+import pathlib
+import re
+
 import connexion
 from lifemonitor.api import models
+
 from .serializers import ma
 
 logger = logging.getLogger(__name__)

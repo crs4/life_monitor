@@ -2,14 +2,13 @@ from __future__ import annotations
 
 import logging
 from typing import Union
-from sqlalchemy.dialects.postgresql import UUID, JSONB
-from lifemonitor.db import db
-from lifemonitor.auth.models import User
-
-from lifemonitor.common import (TestingServiceException)
-from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 
 import lifemonitor.api.models as models
+from lifemonitor.auth.models import User
+from lifemonitor.auth.oauth2.client.models import OAuthIdentity
+from lifemonitor.common import TestingServiceException
+from lifemonitor.db import db
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 # set module level logger
 logger = logging.getLogger(__name__)
