@@ -1,20 +1,21 @@
 from __future__ import annotations
+
 import time
+from datetime import datetime
 from typing import List
-from authlib.integrations.flask_oauth2 import AuthorizationServer as OAuth2AuthorizationServer
-from authlib.oauth2.rfc6749 import grants, InvalidRequestError
+
 from authlib.common.security import generate_token
-from authlib.integrations.sqla_oauth2 import (
-    OAuth2AuthorizationCodeMixin,
-    OAuth2ClientMixin,
-    OAuth2TokenMixin,
-    create_query_client_func,
-    create_save_token_func
-)
+from authlib.integrations.flask_oauth2 import \
+    AuthorizationServer as OAuth2AuthorizationServer
+from authlib.integrations.sqla_oauth2 import (OAuth2AuthorizationCodeMixin,
+                                              OAuth2ClientMixin,
+                                              OAuth2TokenMixin,
+                                              create_query_client_func,
+                                              create_save_token_func)
+from authlib.oauth2.rfc6749 import InvalidRequestError, grants
+from lifemonitor.auth.models import User
 from lifemonitor.db import db
 from werkzeug.security import gen_salt
-from lifemonitor.auth.models import User
-from datetime import datetime
 
 
 class Client(db.Model, OAuth2ClientMixin):

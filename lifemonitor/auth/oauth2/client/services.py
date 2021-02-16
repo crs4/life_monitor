@@ -2,16 +2,15 @@ from __future__ import annotations
 
 import logging
 
-from authlib.integrations.flask_client import FlaskRemoteApp
-from authlib.integrations.flask_client import OAuth
+from authlib.integrations.flask_client import FlaskRemoteApp, OAuth
 from authlib.oauth2.rfc6749 import OAuth2Token
 from flask import current_app
 from flask_login import current_user
+from lifemonitor.db import db
 
+from ...models import User
 # Config a module level logger
 from .models import OAuthIdentity
-from ...models import User
-from lifemonitor.db import db
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
@@ -47,8 +46,8 @@ current_providers_list = []
 
 
 def get_providers():
-    from .providers.seek import Seek
     from .providers.github import GitHub
+    from .providers.seek import Seek
     global current_providers_list
     providers = Seek.all()
     if current_app.config.get('GITHUB_CLIENT_ID', None) \

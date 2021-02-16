@@ -1,5 +1,7 @@
 import logging
-from flask import request, render_template, redirect, Blueprint, jsonify, url_for
+
+from flask import (Blueprint, jsonify, redirect, render_template, request,
+                   url_for)
 from flask_login import current_user, login_required
 
 from .models import Token

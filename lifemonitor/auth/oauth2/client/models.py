@@ -1,19 +1,21 @@
 from __future__ import annotations
 
 import logging
-import requests
-from typing import List
 from datetime import datetime
-from sqlalchemy import DateTime
+from importlib import import_module
+from typing import List
 from urllib.parse import urljoin
-from sqlalchemy.ext.hybrid import hybrid_property
+
+import requests
+from lifemonitor.auth.models import User
+from lifemonitor.db import db
+from lifemonitor.exceptions import (EntityNotFoundException,
+                                    LifeMonitorException)
+from sqlalchemy import DateTime
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy.orm.exc import NoResultFound
-from lifemonitor.db import db
-from importlib import import_module
-from lifemonitor.auth.models import User
-from lifemonitor.exceptions import EntityNotFoundException, LifeMonitorException
 
 logger = logging.getLogger(__name__)
 
