@@ -2,6 +2,7 @@ import uuid
 import logging
 import pytest
 from unittest.mock import MagicMock
+import lifemonitor.common as common
 import lifemonitor.api.models as models
 
 
@@ -35,7 +36,7 @@ def suite(error_description, request):
         test_instance.last_test_build = MagicMock()
         if i is None:
             test_instance.last_test_build.is_successful.side_effect = \
-                models.TestingServiceException(error_description)
+                common.TestingServiceException(error_description)
         else:
             test_instance.last_test_build.is_successful.return_value = i
     return suite
