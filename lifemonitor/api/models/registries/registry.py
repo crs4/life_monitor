@@ -12,7 +12,7 @@ from sqlalchemy.ext.associationproxy import association_proxy
 from lifemonitor.auth.oauth2.client.services import oauth2_registry
 
 from lifemonitor.common import (EntityNotFoundException)
-from lifemonitor.utils import download_url, to_camel_case
+from lifemonitor.utils import download_url, ClassManager
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 
 
@@ -22,9 +22,9 @@ import lifemonitor.api.models as models
 logger = logging.getLogger(__name__)
 
 
-
-
 class WorkflowRegistryClient(ABC):
+
+    client_types = ClassManager('lifemonitor.api.models.registries', class_suffix="WorkflowRegistryClient", skip=["registry"])
 
     def __init__(self, registry: WorkflowRegistry):
         self._registry = registry
@@ -70,6 +70,10 @@ class WorkflowRegistryClient(ABC):
     def filter_by_user(workflows: list, user: User):
         pass
 
+    @classmethod
+    def get_client_class(cls, client_type):
+        return cls.client_types.get_class(client_type)
+
 
 class WorkflowRegistry(db.Model):
 
@@ -87,6 +91,8 @@ class WorkflowRegistry(db.Model):
     # _uri = association_proxy('server_credentials', 'api_base_url')
 
     _client = None
+
+    registry_types = ClassManager('lifemonitor.api.models.registries', class_suffix="WorkflowRegistry", skip=["registry"])
 
     __mapper_args__ = {
         'polymorphic_identity': 'workflow_registry',
@@ -111,7 +117,7 @@ class WorkflowRegistry(db.Model):
     @property
     def client(self) -> WorkflowRegistryClient:
         if self._client is None:
-            return models.registries.get_registry_client_class(self.type)(self)
+            return WorkflowRegistryClient.get_client_class(self.type)(self)
         return self._client
 
     def build_ro_link(self, w: models.Workflow) -> str:
@@ -215,7 +221,11 @@ class WorkflowRegistry(db.Model):
         except Exception as e:
             raise EntityNotFoundException(WorkflowRegistry, entity_id=client_id, exception=e)
 
-    @staticmethod
-    def new_instance(registry_type, client_credentials, server_credentials):
-        return models.get_registry_class(registry_type)(client_credentials,
-                                                            server_credentials)
+    @classmethod
+    def get_registry_class(cls, registry_type):
+        return cls.registry_types.get_class(registry_type)
+
+    @classmethod
+    def new_instance(cls, registry_type, client_credentials, server_credentials):
+        return cls.get_registry_class(registry_type)(client_credentials,
+                                                     server_credentials)

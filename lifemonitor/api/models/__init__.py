@@ -18,12 +18,20 @@ from .workflows import Workflow
 from .testsuites import Test, TestSuite, TestInstance, \
     BuildStatus, TestBuild, JenkinsTestBuild, TravisTestBuild
 
-from .services import TestingService, JenkinsTestingService, TravisTestingService, TestingServiceToken, TestingServiceTokenManager
+# 'testing_services'
+from .services import TestingService, JenkinsTestingService, \
+    TravisTestingService, TestingServiceToken, TestingServiceTokenManager
 
 
-# __all__ = [
-#     "Status", "AggregateTestStatus", "WorkflowStatus", "SuiteStatus"
-# ]
+__all__ = [
+    "db", "User",
+    "Status", "AggregateTestStatus", "WorkflowStatus", "SuiteStatus",
+    "WorkflowRegistry", "WorkflowRegistryClient", "Workflow",
+    "Test", "TestSuite", "TestInstance",
+    "BuildStatus", "TestBuild", "JenkinsTestBuild", "TravisTestBuild",
+    "TestingService", "JenkinsTestingService", "TravisTestingService",
+    "TestingServiceToken", "TestingServiceTokenManager"
+]
 
 # set module level logger
 logger = logging.getLogger(__name__)

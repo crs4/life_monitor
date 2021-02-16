@@ -1,3 +1,4 @@
+import glob
 import json
 import logging
 import random
@@ -6,6 +7,8 @@ import string
 import tempfile
 import urllib
 import zipfile
+from importlib import import_module
+from os.path import basename, dirname, isfile, join
 
 import flask
 import requests
@@ -93,3 +96,42 @@ def pop_request_from_session(name):
             "form": flask.session.pop(f'{name}_next_forms')
         }
     return None
+
+
+class ClassManager:
+
+    def __init__(self, package, class_prefix="", class_suffix="", skip=None):
+        self._package = package
+        self._prefix = class_prefix
+        self._suffix = class_suffix
+        self._skip = ['__init__']
+        if skip:
+            if isinstance(skip, list):
+                self._skip.extend(skip)
+            else:
+                self._skip.append(skip)
+        self.__concrete_types__ = None
+
+    def _load_concrete_types(self):
+        if not self.__concrete_types__:
+            self.__concrete_types__ = {}
+            module_obj = import_module(self._package)
+            print(module_obj)
+            modules_files = glob.glob(join(dirname(module_obj.__file__), "*.py"))
+            print(modules_files)
+            modules = ['{}'.format(basename(f)[:-3]) for f in modules_files if isfile(f)]
+            for m in modules:
+                if m not in self._skip:
+                    object_class = f"{self._prefix}{m.capitalize()}{self._suffix}"
+                    try:
+                        mod = import_module(f"{self._package}.{m}")
+                        self.__concrete_types__[m] = (
+                            getattr(mod, object_class),
+                        )
+                    except (ModuleNotFoundError, AttributeError) as e:
+                        logger.warning(f"Unable to load object module {m}")
+                        logger.exception(e)
+        return self.__concrete_types__
+
+    def get_class(self, concrete_type):
+        return self._load_concrete_types()[concrete_type][0]

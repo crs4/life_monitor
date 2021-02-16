@@ -8,7 +8,7 @@ from lifemonitor.common import (NotImplementedException,
                                 TestingServiceException,
                                 TestingServiceNotSupportedException)
 from lifemonitor.db import db
-from lifemonitor.utils import to_camel_case
+from lifemonitor.utils import ClassManager
 from sqlalchemy.dialects.postgresql import UUID
 
 # set module level logger
@@ -69,6 +69,9 @@ class TestingService(db.Model):
 
     # configure relationships
     test_instances = db.relationship("TestInstance", back_populates="testing_service")
+
+    # configure the class manager
+    service_type_registry = ClassManager('lifemonitor.api.models.services', class_suffix='TestingService', skip=['__init__', 'service'])
 
     __mapper_args__ = {
         'polymorphic_on': _type,
@@ -163,8 +166,7 @@ class TestingService(db.Model):
             if instance:
                 return instance
             # try to instanciate the service if the it has not been registered yet
-            service_class = globals()["{}TestingService".format(to_camel_case(service_type))]
-            return service_class(url)
+            return cls.service_type_registry.get_class(service_type)(url)
         except KeyError:
             raise TestingServiceNotSupportedException(f"Not supported testing service type '{service_type}'")
         except Exception as e:

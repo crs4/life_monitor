@@ -29,6 +29,5 @@ def register_api(app, specs_dir):
                         validate_responses=True,
                         arguments={'global': 'global_value'})
     app.register_blueprint(api.blueprint)
-    models.registries.load_registry_types()
     ma.init_app(app)
     register_testing_services_credentials(app.config)
