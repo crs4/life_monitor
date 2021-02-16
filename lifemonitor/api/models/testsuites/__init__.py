@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-import re
+
 import logging
-import jenkins
-import requests
 import datetime
 import uuid as _uuid
 from abc import ABC, abstractmethod
@@ -12,23 +10,16 @@ from typing import Optional
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from lifemonitor.db import db
 from lifemonitor.auth.models import User
-from lifemonitor.lang import messages
+from lifemonitor.common import (SpecificationNotDefinedException, SpecificationNotValidException, EntityNotFoundException)
 
-from lifemonitor.common import (SpecificationNotValidException, EntityNotFoundException,
-                                SpecificationNotDefinedException, TestingServiceNotSupportedException,
-                                NotImplementedException, TestingServiceException)
-from lifemonitor.utils import to_camel_case
 
 import lifemonitor.test_metadata as tm
-from urllib.parse import urljoin, urlencode
 
 
 import lifemonitor.api.models as models
 
 # set module level logger
 logger = logging.getLogger(__name__)
-
-
 
 
 class Test:
@@ -114,7 +105,7 @@ class TestSuite(db.Model):
     def add_test_instance(self, submitter: User,
                           test_name, testing_service_type, testing_service_url, testing_service_resource):
         testing_service = \
-            TestingService.get_instance(testing_service_type, testing_service_url)
+            models.TestingService.get_instance(testing_service_type, testing_service_url)
         test_instance = TestInstance(self, submitter, test_name, testing_service_resource, testing_service)
         logger.debug("Created TestInstance: %r", test_instance)
         return test_instance
@@ -167,7 +158,7 @@ class TestInstance(db.Model):
                                       cascade="save-update, merge, delete, delete-orphan")
 
     def __init__(self, testing_suite: TestSuite, submitter: User,
-                 test_name, test_resource, testing_service: TestingService) -> None:
+                 test_name, test_resource, testing_service: models.TestingService) -> None:
         self.test_suite = testing_suite
         self.submitter = submitter
         self.name = test_name
@@ -221,10 +212,6 @@ class TestInstance(db.Model):
         return cls.query.get(uuid)
 
 
-
-
-
-
 class BuildStatus:
     PASSED = "passed"
     FAILED = "failed"
@@ -239,7 +226,7 @@ class TestBuild(ABC):
         SUCCESS = 0
         FAILED = 1
 
-    def __init__(self, testing_service: TestingService, test_instance: TestInstance, metadata) -> None:
+    def __init__(self, testing_service: models.TestingService, test_instance: TestInstance, metadata) -> None:
         self.testing_service = testing_service
         self.test_instance = test_instance
         self._metadata = metadata
@@ -362,8 +349,6 @@ class JenkinsTestBuild(TestBuild):
         return self.metadata['url']
 
 
-
-
 class TravisTestBuild(TestBuild):
 
     @property
@@ -410,5 +395,3 @@ class TravisTestBuild(TestBuild):
     @property
     def url(self) -> str:
         return "{}{}".format(self.testing_service.url, self.metadata['@href'])
-
-
