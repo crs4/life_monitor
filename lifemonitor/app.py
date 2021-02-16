@@ -7,7 +7,7 @@ from . import commands
 from .serializers import ma
 import lifemonitor.config as config
 from lifemonitor.routes import register_routes
-from .common import handle_exception
+from .exceptions import handle_exception
 
 
 # set module level logger

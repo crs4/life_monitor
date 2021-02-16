@@ -13,7 +13,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from lifemonitor.db import db
 from importlib import import_module
 from lifemonitor.auth.models import User
-from lifemonitor.common import EntityNotFoundException, LifeMonitorException
+from lifemonitor.exceptions import EntityNotFoundException, LifeMonitorException
 
 logger = logging.getLogger(__name__)
 

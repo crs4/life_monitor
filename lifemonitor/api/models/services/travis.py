@@ -9,7 +9,7 @@ from typing import Optional
 
 import lifemonitor.api.models as models
 import requests
-from lifemonitor.common import EntityNotFoundException, TestingServiceException
+from lifemonitor.exceptions import EntityNotFoundException, TestingServiceException
 
 from .service import TestingService
 

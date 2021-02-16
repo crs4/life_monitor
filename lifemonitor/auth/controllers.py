@@ -3,7 +3,7 @@ import logging
 import flask
 from flask import flash, url_for, request, render_template, redirect
 from flask_login import login_required, login_user, logout_user
-from .. import common
+from .. import exceptions
 from .forms import RegisterForm, LoginForm, SetPasswordForm
 from .models import db
 from . import serializers
@@ -27,9 +27,9 @@ def show_current_user_profile():
     try:
         if current_user and not current_user.is_anonymous:
             return serializers.UserSchema().dump(current_user)
-        raise common.Forbidden(detail="Client type unknown")
+        raise exceptions.Forbidden(detail="Client type unknown")
     except Exception as e:
-        return common.report_problem_from_exception(e)
+        return exceptions.report_problem_from_exception(e)
 
 
 @authorized
@@ -37,9 +37,9 @@ def get_registry_users():
     try:
         if current_registry and current_user.is_anonymous:
             return serializers.UserSchema().dump(current_registry.users, many=True)
-        raise common.Forbidden(detail="Client type unknown")
+        raise exceptions.Forbidden(detail="Client type unknown")
     except Exception as e:
-        return common.report_problem_from_exception(e)
+        return exceptions.report_problem_from_exception(e)
 
 
 @authorized
@@ -47,9 +47,9 @@ def get_registry_user(user_id):
     try:
         if current_registry:
             return serializers.UserSchema().dump(current_registry.get_user(user_id))
-        raise common.Forbidden(detail="Client type unknown")
+        raise exceptions.Forbidden(detail="Client type unknown")
     except Exception as e:
-        return common.report_problem_from_exception(e)
+        return exceptions.report_problem_from_exception(e)
 
 
 @blueprint.route("/", methods=("GET",))

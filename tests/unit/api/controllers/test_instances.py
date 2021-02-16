@@ -7,7 +7,7 @@ import lifemonitor.auth as auth
 import lifemonitor.api.models as models
 import lifemonitor.api.controllers as controllers
 import lifemonitor.lang.messages as messages
-from lifemonitor.common import EntityNotFoundException
+from lifemonitor.exceptions import EntityNotFoundException
 from unittest.mock import MagicMock, Mock, patch
 from tests.utils import assert_status_code
 

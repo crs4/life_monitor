@@ -10,10 +10,8 @@ from lifemonitor.auth.models import User
 from lifemonitor.utils import download_url
 from lifemonitor.auth.oauth2.server import server
 from lifemonitor.auth.oauth2.client import providers
-from lifemonitor.common import (
-    EntityNotFoundException, NotAuthorizedException,
-    WorkflowRegistryNotSupportedException
-)
+import lifemonitor.exceptions as lm_exceptions
+
 from lifemonitor.api.models import (
     WorkflowRegistry, Workflow, TestSuite, TestInstance
 )
@@ -46,7 +44,7 @@ class LifeMonitor:
         else:
             w = Workflow.find_by_id(uuid, version)
         if w is None:
-            raise EntityNotFoundException(Workflow, f"{uuid}_{version}")
+            raise lm_exceptions.EntityNotFoundException(Workflow, f"{uuid}_{version}")
         # Check user access for a workflow
         # As a general rule, we grant user access to the workflow
         #   1. if the user if the workflow submitter
@@ -56,7 +54,7 @@ class LifeMonitor:
             # and the workflow is associated with a registry
             # then we try to check whether the user is allowed to view the workflow
             if w.workflow_registry is None or w not in w.workflow_registry.get_user_workflows(user):
-                raise NotAuthorizedException(f"User {user.username} is not allowed to access workflow")
+                raise lm_exceptions.NotAuthorizedException(f"User {user.username} is not allowed to access workflow")
         return w
 
     @staticmethod
@@ -105,9 +103,9 @@ class LifeMonitor:
         workflow = cls._find_and_check_workflow(workflow_uuid, workflow_version, user)
         logger.debug("Workflow to delete: %r", workflow)
         if not workflow:
-            raise EntityNotFoundException(Workflow, (workflow_uuid, workflow_version))
+            raise lm_exceptions.EntityNotFoundException(Workflow, (workflow_uuid, workflow_version))
         if workflow.submitter != user:
-            raise NotAuthorizedException("Only the workflow submitter can add test suites")
+            raise lm_exceptions.NotAuthorizedException("Only the workflow submitter can add test suites")
         workflow.delete()
         logger.debug("Deleted workflow wf_uuid: %r - version: %r", workflow_uuid, workflow_version)
         return workflow_uuid, workflow_version
@@ -117,7 +115,7 @@ class LifeMonitor:
         workflow = registry.get_workflow(workflow_uuid, workflow_version)
         logger.debug("Workflow to delete: %r", workflow)
         if not workflow:
-            raise EntityNotFoundException(Workflow, (workflow_uuid, workflow_version))
+            raise lm_exceptions.EntityNotFoundException(Workflow, (workflow_uuid, workflow_version))
         workflow.delete()
         logger.debug("Deleted workflow wf_uuid: %r - version: %r", workflow_uuid, workflow_version)
         return workflow_uuid, workflow_version
@@ -127,10 +125,10 @@ class LifeMonitor:
                             submitter: User, test_suite_metadata) -> TestSuite:
         workflow = Workflow.find_by_id(workflow_uuid, workflow_version)
         if not workflow:
-            raise EntityNotFoundException(Workflow, (workflow_uuid, workflow_version))
+            raise lm_exceptions.EntityNotFoundException(Workflow, (workflow_uuid, workflow_version))
         # For now only the workflow submitter can add test suites
         if workflow.submitter != submitter:
-            raise NotAuthorizedException("Only the workflow submitter can add test suites")
+            raise lm_exceptions.NotAuthorizedException("Only the workflow submitter can add test suites")
         suite = workflow.add_test_suite(submitter, test_suite_metadata)
         suite.save()
         return suite
@@ -141,7 +139,7 @@ class LifeMonitor:
         if not isinstance(test_suite, TestSuite):
             suite = TestSuite.find_by_id(test_suite)
             if not suite:
-                raise EntityNotFoundException(TestSuite, test_suite)
+                raise lm_exceptions.EntityNotFoundException(TestSuite, test_suite)
         suite.delete()
         logger.debug("Deleted TestSuite: %r", suite.uuid)
         return suite.uuid
@@ -151,30 +149,30 @@ class LifeMonitor:
         try:
             r = WorkflowRegistry.find_by_id(registry_uuid)
             if not r:
-                raise EntityNotFoundException(WorkflowRegistry, registry_uuid)
+                raise lm_exceptions.EntityNotFoundException(WorkflowRegistry, registry_uuid)
             return r
         except Exception:
-            raise EntityNotFoundException(WorkflowRegistry, registry_uuid)
+            raise lm_exceptions.EntityNotFoundException(WorkflowRegistry, registry_uuid)
 
     @staticmethod
     def get_workflow_registry_by_uri(registry_uri) -> WorkflowRegistry:
         try:
             r = WorkflowRegistry.find_by_uri(registry_uri)
             if not r:
-                raise EntityNotFoundException(WorkflowRegistry, registry_uri)
+                raise lm_exceptions.EntityNotFoundException(WorkflowRegistry, registry_uri)
             return r
         except Exception:
-            raise EntityNotFoundException(WorkflowRegistry, registry_uri)
+            raise lm_exceptions.EntityNotFoundException(WorkflowRegistry, registry_uri)
 
     @staticmethod
     def get_workflow_registry_by_name(registry_name) -> WorkflowRegistry:
         try:
             r = WorkflowRegistry.find_by_name(registry_name)
             if not r:
-                raise EntityNotFoundException(WorkflowRegistry, registry_name)
+                raise lm_exceptions.EntityNotFoundException(WorkflowRegistry, registry_name)
             return r
         except Exception:
-            raise EntityNotFoundException(WorkflowRegistry, registry_name)
+            raise lm_exceptions.EntityNotFoundException(WorkflowRegistry, registry_name)
 
     @staticmethod
     def get_workflow(uuid, version) -> Workflow:
@@ -230,7 +228,7 @@ class LifeMonitor:
             # are associated with the admin account
             user = User.find_by_username("admin")
             if not user:
-                raise EntityNotFoundException(User, entity_id="admin")
+                raise lm_exceptions.EntityNotFoundException(User, entity_id="admin")
             server_credentials = providers.new_instance(provider_type=type,
                                                         name=name,
                                                         client_id=client_id,
@@ -250,7 +248,7 @@ class LifeMonitor:
             logger.debug(f"WorkflowRegistry '{name}' (type: {type})' created: {registry}")
             return registry
         except providers.OAuth2ProviderNotSupportedException as e:
-            raise WorkflowRegistryNotSupportedException(exception=e)
+            raise lm_exceptions.WorkflowRegistryNotSupportedException(exception=e)
 
     @staticmethod
     def update_workflow_registry(uuid, name=None,
@@ -259,7 +257,7 @@ class LifeMonitor:
         try:
             registry = WorkflowRegistry.find_by_id(uuid)
             if not registry:
-                raise EntityNotFoundException(WorkflowRegistry, entity_id=uuid)
+                raise lm_exceptions.EntityNotFoundException(WorkflowRegistry, entity_id=uuid)
             if name:
                 registry.server_credentials.name = name
             if api_base_url:
@@ -278,7 +276,7 @@ class LifeMonitor:
             logger.info(f"WorkflowRegistry '{uuid}' (name: {name})' updated!")
             return registry
         except providers.OAuth2ProviderNotSupportedException as e:
-            raise WorkflowRegistryNotSupportedException(exception=e)
+            raise lm_exceptions.WorkflowRegistryNotSupportedException(exception=e)
 
     @staticmethod
     def get_workflow_registries() -> WorkflowRegistry:

@@ -11,7 +11,7 @@ from lifemonitor.auth.models import User
 from sqlalchemy.ext.associationproxy import association_proxy
 from lifemonitor.auth.oauth2.client.services import oauth2_registry
 
-from lifemonitor.common import (EntityNotFoundException)
+from lifemonitor.exceptions import EntityNotFoundException
 from lifemonitor.utils import download_url, ClassManager
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 

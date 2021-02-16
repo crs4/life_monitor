@@ -6,10 +6,11 @@ from lifemonitor.lang import messages
 from lifemonitor.auth import current_user, current_registry, authorized
 from lifemonitor.api.services import LifeMonitor
 from lifemonitor.api import serializers
+import lifemonitor.exceptions as lm_exceptions
 import werkzeug.exceptions as http_exceptions
-from lifemonitor.common import EntityNotFoundException, NotAuthorizedException, NotValidROCrateException, LifeMonitorException
+
 from lifemonitor.auth.oauth2.client.models import OAuthIdentityNotFoundException
-from lifemonitor.common import report_problem
+
 # Initialize a reference to the LifeMonitor instance
 lm = LifeMonitor.get_instance()
 
@@ -44,25 +45,25 @@ def workflow_registries_get_current():
         registry = current_registry
         logger.debug("registries_get. Got %s registry", registry)
         return serializers.WorkflowRegistrySchema().dump(registry)
-    return report_problem(401, "Unauthorized")
+    return lm_exceptions.report_problem(401, "Unauthorized")
 
 
 @authorized
 def workflows_post(body):
     registry = current_registry
     if registry and 'registry_uri' in body:
-        return report_problem(400, "Bad request",
-                              detail=messages.unexpected_registry_uri)
+        return lm_exceptions.report_problem(400, "Bad request",
+                                            detail=messages.unexpected_registry_uri)
     if not registry:
         if 'registry_uri' not in body:
-            return report_problem(400, "Bad request",
-                                  detail=messages.no_registry_uri_provided)
+            return lm_exceptions.report_problem(400, "Bad request",
+                                                detail=messages.no_registry_uri_provided)
         registry_uri = body.get('registry_uri', None)
         try:
             registry = lm.get_workflow_registry_by_uri(registry_uri)
-        except EntityNotFoundException:
-            return report_problem(404, "Not Found",
-                                  detail=messages.no_registry_found.format(registry_uri))
+        except lm_exceptions.EntityNotFoundException:
+            return lm_exceptions.report_problem(404, "Not Found",
+                                                detail=messages.no_registry_found.format(registry_uri))
     submitter = current_user
     if not current_user or current_user.is_anonymous:  # the client is a registry
         try:
@@ -73,12 +74,12 @@ def workflows_post(body):
                                                       external_id=submitter_id)
             submitter = identity.user
         except KeyError:
-            return report_problem(400, "Bad request",
-                                  detail=messages.no_submitter_id_provided)
+            return lm_exceptions.report_problem(400, "Bad request",
+                                                detail=messages.no_submitter_id_provided)
         except OAuthIdentityNotFoundException:
-            return report_problem(401, "Unauthorized",
-                                  detail=messages.no_user_oauth_identity_on_registry
-                                  .format(submitter_id or current_user.id, registry.name))
+            return lm_exceptions.report_problem(401, "Unauthorized",
+                                                detail=messages.no_user_oauth_identity_on_registry
+                                                .format(submitter_id or current_user.id, registry.name))
     try:
         w = lm.register_workflow(
             workflow_submitter=submitter,
@@ -92,18 +93,18 @@ def workflows_post(body):
         logger.debug("workflows_post. Created workflow '%s' (ver.%s)", w.uuid, w.version)
         return {'wf_uuid': str(w.uuid), 'wf_version': w.version}, 201
     except KeyError as e:
-        return report_problem(400, "Bad Request", extra_info={"exception": str(e)},
-                              detail=messages.input_data_missing)
-    except NotValidROCrateException as e:
-        return report_problem(400, "Bad Request", extra_info={"exception": str(e)},
-                              detail=messages.invalid_ro_crate)
-    except NotAuthorizedException as e:
-        return report_problem(403, "Forbidden", extra_info={"exception": str(e)},
-                              detail=messages.not_authorized_registry_access
-                              .format(registry.name))
+        return lm_exceptions.report_problem(400, "Bad Request", extra_info={"exception": str(e)},
+                                            detail=messages.input_data_missing)
+    except lm_exceptions.NotValidROCrateException as e:
+        return lm_exceptions.report_problem(400, "Bad Request", extra_info={"exception": str(e)},
+                                            detail=messages.invalid_ro_crate)
+    except lm_exceptions.NotAuthorizedException as e:
+        return lm_exceptions.report_problem(403, "Forbidden", extra_info={"exception": str(e)},
+                                            detail=messages.not_authorized_registry_access
+                                            .format(registry.name))
     except Exception as e:
         logger.exception(e)
-        raise LifeMonitorException(title="Internal Error", detail=str(e))
+        raise lm_exceptions.LifeMonitorException(title="Internal Error", detail=str(e))
 
 
 @authorized
@@ -128,18 +129,18 @@ def workflows_delete(wf_uuid, wf_version):
         elif current_registry:
             lm.deregister_registry_workflow(wf_uuid, wf_version, current_registry)
         else:
-            return report_problem(403, "Forbidden",
-                                  detail=messages.no_user_in_session)
+            return lm_exceptions.report_problem(403, "Forbidden",
+                                                detail=messages.no_user_in_session)
         return connexion.NoContent, 204
-    except EntityNotFoundException as e:
-        return report_problem(404, "Not Found", extra_info={"exception": str(e.detail)},
-                              detail=messages.workflow_not_found.format(wf_uuid, wf_version))
-    except OAuthIdentityNotFoundException as e:
-        return report_problem(401, "Unauthorized", extra_info={"exception": str(e)})
-    except NotAuthorizedException as e:
-        return report_problem(403, "Forbidden", extra_info={"exception": str(e)})
+    except lm_exceptions.EntityNotFoundException as e:
+        return lm_exceptions.report_problem(404, "Not Found", extra_info={"exception": str(e.detail)},
+                                            detail=messages.workflow_not_found.format(wf_uuid, wf_version))
+    except lm_exceptions.OAuthIdentityNotFoundException as e:
+        return lm_exceptions.report_problem(401, "Unauthorized", extra_info={"exception": str(e)})
+    except lm_exceptions.NotAuthorizedException as e:
+        return lm_exceptions.report_problem(403, "Forbidden", extra_info={"exception": str(e)})
     except Exception as e:
-        raise LifeMonitorException(title="Internal Error", detail=str(e))
+        raise lm_exceptions.LifeMonitorException(title="Internal Error", detail=str(e))
 
 
 @authorized
@@ -150,7 +151,7 @@ def workflows_get():
     elif current_registry:
         workflows.extend(lm.get_registry_workflows(current_registry))
     else:
-        return report_problem(401, "Unauthorized", detail=messages.no_user_in_session)
+        return lm_exceptions.report_problem(401, "Unauthorized", detail=messages.no_user_in_session)
     logger.debug("workflows_get. Got %s workflows (user: %s)", len(workflows), current_user)
     return serializers.WorkflowSchema().dump(workflows, many=True)
 
@@ -163,15 +164,15 @@ def _get_workflow_or_problem(wf_uuid, wf_version):
         elif current_registry:
             wf = lm.get_registry_workflow(current_registry, wf_uuid, wf_version)
         else:
-            return report_problem(403, "Forbidden",
-                                  detail=messages.no_user_in_session)
+            return lm_exceptions.report_problem(403, "Forbidden",
+                                                detail=messages.no_user_in_session)
         if wf is None:
-            return report_problem(404, "Not Found",
-                                  detail=messages.workflow_not_found.format(wf_uuid, wf_version))
+            return lm_exceptions.report_problem(404, "Not Found",
+                                                detail=messages.workflow_not_found.format(wf_uuid, wf_version))
         return wf
-    except EntityNotFoundException as e:
-        return report_problem(404, "Not Found", extra_info={"exception": str(e)},
-                              detail=messages.workflow_not_found.format(wf_uuid, wf_version))
+    except lm_exceptions.EntityNotFoundException as e:
+        return lm_exceptions.report_problem(404, "Not Found", extra_info={"exception": str(e)},
+                                            detail=messages.workflow_not_found.format(wf_uuid, wf_version))
 
 
 @authorized
@@ -206,19 +207,19 @@ def _get_suite_or_problem(suite_uuid):
     try:
         suite = lm.get_suite(suite_uuid)
         if not suite:
-            return report_problem(404, "Not Found", detail=messages.suite_not_found.format(suite_uuid))
+            return lm_exceptions.report_problem(404, "Not Found", detail=messages.suite_not_found.format(suite_uuid))
         if current_user and not current_user.is_anonymous:
             user_workflows = lm.get_user_workflows(current_user)
             if suite.workflow not in user_workflows:
-                return report_problem(403, "Forbidden", detail=messages.unauthorized_user_suite_access
-                                      .format(current_user.username, suite_uuid))
+                return lm_exceptions.report_problem(403, "Forbidden", detail=messages.unauthorized_user_suite_access
+                                                    .format(current_user.username, suite_uuid))
         elif current_registry:
             if suite.workflow not in current_registry.registered_workflows:
-                return report_problem(403, "Forbidden", detail=messages.unauthorized_registry_suite_access
-                                      .format(current_registry.name, suite_uuid))
+                return lm_exceptions.report_problem(403, "Forbidden", detail=messages.unauthorized_registry_suite_access
+                                                    .format(current_registry.name, suite_uuid))
         return suite
-    except EntityNotFoundException:
-        return report_problem(404, "Not Found", detail=messages.suite_not_found.format(suite_uuid))
+    except lm_exceptions.EntityNotFoundException:
+        return lm_exceptions.report_problem(404, "Not Found", detail=messages.suite_not_found.format(suite_uuid))
 
 
 @authorized
@@ -265,11 +266,11 @@ def suites_delete(suite_uuid):
             return response
         if lm.deregister_test_suite(response) == suite_uuid:
             return connexion.NoContent, 204
-        return report_problem(500, "Internal Error",
-                              detail=messages.unable_to_delete_suite.format(suite_uuid))
+        return lm_exceptions.report_problem(500, "Internal Error",
+                                            detail=messages.unable_to_delete_suite.format(suite_uuid))
     except Exception as e:
-        return report_problem(500, "Internal Error", extra_info={"exception": str(e)},
-                              detail=messages.unable_to_delete_suite.format(suite_uuid))
+        return lm_exceptions.report_problem(500, "Internal Error", extra_info={"exception": str(e)},
+                                            detail=messages.unable_to_delete_suite.format(suite_uuid))
 
 
 def suites_post_instance(suite_uuid):
@@ -287,7 +288,7 @@ def suites_post_instance(suite_uuid):
                 return "Unable to find a valid WorkflowRegistry", 404
             if suite.workflow not in registry.registered_workflows:
                 return f"The registry cannot access suite {suite}", 401
-    except EntityNotFoundException:
+    except lm_exceptions.EntityNotFoundException:
         return "Invalid ID", 400
 
     return "Not implemented", 501
@@ -297,20 +298,20 @@ def _get_instances_or_problem(instance_uuid):
     try:
         instance = lm.get_test_instance(instance_uuid)
         if not instance:
-            return report_problem(404, "Not Found",
-                                  detail=messages.suite_not_found.format(instance_uuid))
+            return lm_exceptions.report_problem(404, "Not Found",
+                                                detail=messages.suite_not_found.format(instance_uuid))
         if current_user and not current_user.is_anonymous:
             user_workflows = lm.get_user_workflows(current_user)
             if instance.test_suite.workflow not in user_workflows:
-                return report_problem(403, "Forbidden", detail=messages.unauthorized_user_instance_access
-                                      .format(current_user.username, instance_uuid))
+                return lm_exceptions.report_problem(403, "Forbidden", detail=messages.unauthorized_user_instance_access
+                                                    .format(current_user.username, instance_uuid))
         elif current_registry:
             if instance.test_suite.workflow not in current_registry.registered_workflows:
-                return report_problem(403, "Forbidden", detail=messages.unauthorized_registry_instance_access
-                                      .format(current_registry.name, instance_uuid))
+                return lm_exceptions.report_problem(403, "Forbidden", detail=messages.unauthorized_registry_instance_access
+                                                    .format(current_registry.name, instance_uuid))
         return instance
-    except EntityNotFoundException:
-        return report_problem(404, "Not Found", detail=messages.instance_not_found.format(instance_uuid))
+    except lm_exceptions.EntityNotFoundException:
+        return lm_exceptions.report_problem(404, "Not Found", detail=messages.instance_not_found.format(instance_uuid))
 
 
 @authorized
@@ -338,18 +339,18 @@ def instances_builds_get_by_id(instance_uuid, build_id):
         logger.debug("The test build: %r", build)
         if build:
             return serializers.BuildSummarySchema().dump(build)
-    except EntityNotFoundException:
-        return report_problem(404, "Not Found", detail=messages.instance_build_not_found.format(build_id, instance_uuid))
+    except lm_exceptions.EntityNotFoundException:
+        return lm_exceptions.report_problem(404, "Not Found", detail=messages.instance_build_not_found.format(build_id, instance_uuid))
     except Exception as e:
-        return report_problem(500, "Internal Error", extra_info={"exception": str(e)})
+        return lm_exceptions.report_problem(500, "Internal Error", extra_info={"exception": str(e)})
 
 
 @authorized
 def instances_builds_get_logs(instance_uuid, build_id, offset_bytes=0, limit_bytes=131072):
     if not isinstance(offset_bytes, int) or offset_bytes < 0:
-        return report_problem(400, "Bad Request", detail=messages.invalid_log_offset)
+        return lm_exceptions.report_problem(400, "Bad Request", detail=messages.invalid_log_offset)
     if not isinstance(limit_bytes, int) or limit_bytes < 0:
-        return report_problem(400, "Bad Request", detail=messages.invalid_log_limit)
+        return lm_exceptions.report_problem(400, "Bad Request", detail=messages.invalid_log_limit)
     response = _get_instances_or_problem(instance_uuid)
     if isinstance(response, Response):
         return response
@@ -358,10 +359,10 @@ def instances_builds_get_logs(instance_uuid, build_id, offset_bytes=0, limit_byt
         logger.debug("offset = %r, limit = %r", offset_bytes, limit_bytes)
         if build:
             return build.get_output(offset_bytes=offset_bytes, limit_bytes=limit_bytes)
-    except EntityNotFoundException:
-        return report_problem(404, "Not Found", detail=messages.instance_build_not_found.format(build_id, instance_uuid))
+    except lm_exceptions.EntityNotFoundException:
+        return lm_exceptions.report_problem(404, "Not Found", detail=messages.instance_build_not_found.format(build_id, instance_uuid))
     except ValueError as e:
-        return report_problem(400, "Bad Request", detail=str(e))
+        return lm_exceptions.report_problem(400, "Bad Request", detail=str(e))
     except Exception as e:
         logger.exception(e)
-        return report_problem(500, "Internal Error", extra_info={"exception": str(e)})
+        return lm_exceptions.report_problem(500, "Internal Error", extra_info={"exception": str(e)})

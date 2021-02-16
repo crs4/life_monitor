@@ -4,10 +4,10 @@ import logging
 from typing import Union
 
 import lifemonitor.api.models as models
+import lifemonitor.exceptions as lm_exceptions
+from lifemonitor.api.models import db
 from lifemonitor.auth.models import User
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
-from lifemonitor.common import TestingServiceException
-from lifemonitor.db import db
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 # set module level logger
@@ -63,7 +63,7 @@ class Workflow(db.Model):
                     testing_service = test_instance.testing_service
                     if not testing_service.last_test_build.is_successful():
                         health["healthy"] = False
-                except TestingServiceException as e:
+                except lm_exceptions.TestingServiceException as e:
                     health["issues"].append(str(e))
                     health["healthy"] = "Unknown"
         return health

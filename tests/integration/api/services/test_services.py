@@ -5,11 +5,7 @@ import pathlib
 from tests import utils
 from lifemonitor.api.services import LifeMonitor
 import lifemonitor.api.models as models
-from lifemonitor.common import (
-    EntityNotFoundException, NotAuthorizedException,
-    SpecificationNotValidException,
-    TestingServiceNotSupportedException, TestingServiceException
-)
+import lifemonitor.exceptions as lm_exceptions
 
 this_dir = os.path.dirname(os.path.abspath(__file__))
 tests_root_dir = pathlib.Path(this_dir).parent
@@ -42,12 +38,12 @@ def test_workflow_registration(app_client, user1, valid_workflow):
 
 
 def test_suite_invalid_service_type(app_client, user1):
-    with pytest.raises(TestingServiceNotSupportedException):
+    with pytest.raises(lm_exceptions.TestingServiceNotSupportedException):
         utils.pick_and_register_workflow(user1, "sort-and-change-case-invalid-service-type")
 
 
 def test_suite_invalid_service_url(app_client, user1):
-    with pytest.raises(TestingServiceException):
+    with pytest.raises(lm_exceptions.TestingServiceException):
         w, workflow = utils.pick_and_register_workflow(user1, "sort-and-change-case-invalid-service-url")
         assert len(workflow.test_suites) == 1, "Expected number of test suites 1"
         suite = workflow.test_suites[0]
@@ -76,7 +72,7 @@ def test_workflow_registration_not_allowed_user(app_client, user1, user2):
     assert workflow['name'] not in [_['name'] for _ in user2['workflows']], \
         f"The workflow '{workflow['name']}' should not be visible to user2"
     # user2 should not be allowed to register the workflow
-    with pytest.raises(NotAuthorizedException):
+    with pytest.raises(lm_exceptions.NotAuthorizedException):
         w, workflow = utils.register_workflow(user2, workflow)
 
 
@@ -110,7 +106,7 @@ def test_workflow_deregistration(app_client, user1, valid_workflow):
 
 
 def test_workflow_deregistration_exception(app_client, user1, random_workflow_id):
-    with pytest.raises(EntityNotFoundException):
+    with pytest.raises(lm_exceptions.EntityNotFoundException):
         LifeMonitor.get_instance().deregister_user_workflow(random_workflow_id['uuid'],
                                                             random_workflow_id['version'],
                                                             user1['user'])
@@ -140,7 +136,7 @@ def test_suite_registration(app_client, user1, test_suite_metadata, valid_workfl
 
 def test_suite_registration_workflow_not_found_exception(
         app_client, user1, random_workflow_id, test_suite_metadata):
-    with pytest.raises(EntityNotFoundException):
+    with pytest.raises(lm_exceptions.EntityNotFoundException):
         LifeMonitor.get_instance().register_test_suite(random_workflow_id['uuid'],
                                                        random_workflow_id['version'],
                                                        user1['user'],
@@ -149,7 +145,7 @@ def test_suite_registration_workflow_not_found_exception(
 
 def test_suite_registration_unauthorized_user_exception(
         app_client, user1, random_workflow_id, test_suite_metadata):
-    with pytest.raises(EntityNotFoundException):
+    with pytest.raises(lm_exceptions.EntityNotFoundException):
         LifeMonitor.get_instance().register_test_suite(random_workflow_id['uuid'],
                                                        random_workflow_id['version'],
                                                        user1['user'],
@@ -160,7 +156,7 @@ def test_suite_registration_invalid_specification_exception(
         app_client, user1, invalid_test_suite_metadata):
     w, workflow = utils.pick_and_register_workflow(user1)
     assert isinstance(workflow, models.Workflow), "Workflow not properly initialized"
-    with pytest.raises(SpecificationNotValidException):
+    with pytest.raises(lm_exceptions.SpecificationNotValidException):
         LifeMonitor.get_instance().register_test_suite(w['uuid'], w['version'],
                                                        user1["user"],
                                                        invalid_test_suite_metadata)
@@ -183,7 +179,7 @@ def test_suite_deregistration(app_client, user1, valid_workflow):
 
 
 def test_suite_deregistration_exception(app_client, user1, random_valid_uuid):
-    with pytest.raises(EntityNotFoundException):
+    with pytest.raises(lm_exceptions.EntityNotFoundException):
         LifeMonitor.get_instance().deregister_test_suite(random_valid_uuid)
 
 

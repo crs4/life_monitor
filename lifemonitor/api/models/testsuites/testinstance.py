@@ -5,7 +5,7 @@ import uuid as _uuid
 
 import lifemonitor.api.models as models
 from lifemonitor.api.models import db
-from lifemonitor.common import EntityNotFoundException
+from lifemonitor.exceptions import EntityNotFoundException
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 from .testsuite import TestSuite

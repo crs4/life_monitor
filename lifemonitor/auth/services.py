@@ -9,7 +9,7 @@ from flask import g, request, url_for
 from werkzeug.local import LocalProxy
 from werkzeug.wrappers import Response
 from lifemonitor.lang import messages
-from lifemonitor.common import LifeMonitorException
+from lifemonitor.exceptions import LifeMonitorException
 from lifemonitor.auth.models import ApiKey, User, Anonymous
 
 logger = logging.getLogger(__name__)

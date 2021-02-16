@@ -3,7 +3,7 @@ import logging
 from functools import wraps
 from importlib import import_module
 from flask import g, request, redirect, url_for
-from lifemonitor.common import LifeMonitorException
+from lifemonitor.exceptions import LifeMonitorException
 from lifemonitor.utils import push_request_to_session
 from os.path import dirname, basename, isfile, join
 

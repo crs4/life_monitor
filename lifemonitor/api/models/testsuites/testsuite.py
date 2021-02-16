@@ -6,9 +6,9 @@ from typing import Optional
 
 import lifemonitor.api.models as models
 import lifemonitor.test_metadata as tm
+import lifemonitor.exceptions as lm_exceptions
 from lifemonitor.auth.models import User
-from lifemonitor.common import (SpecificationNotDefinedException,
-                                SpecificationNotValidException)
+
 from lifemonitor.db import db
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 
@@ -76,7 +76,7 @@ class TestSuite(db.Model):
                                                         testing_service)
                     logger.debug("Created TestInstance: %r", test_instance)
         except KeyError as e:
-            raise SpecificationNotValidException(f"Missing property: {e}")
+            raise lm_exceptions.SpecificationNotValidException(f"Missing property: {e}")
 
     @property
     def status(self) -> models.SuiteStatus:
@@ -107,9 +107,9 @@ class TestSuite(db.Model):
     @property
     def tests(self) -> Optional[dict]:
         if not self.test_definition:
-            raise SpecificationNotDefinedException('Not test definition for the test suite {}'.format(self.uuid))
+            raise lm_exceptions.SpecificationNotDefinedException('Not test definition for the test suite {}'.format(self.uuid))
         if "test" not in self.test_definition:
-            raise SpecificationNotValidException("'test' property not found")
+            raise lm_exceptions.SpecificationNotValidException("'test' property not found")
         # TODO: implement a caching mechanism: with a custom setter for the test_definition collection
         result = {}
         for test in self.test_definition["test"]:

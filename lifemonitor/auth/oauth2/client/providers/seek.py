@@ -1,7 +1,7 @@
 import logging
 import requests
 from urllib.parse import urljoin
-from lifemonitor import common
+from lifemonitor import exceptions
 from ..models import OAuth2IdentityProvider
 
 # Config a module level logger
@@ -60,11 +60,11 @@ class Seek(OAuth2IdentityProvider):
                                 headers={'Authorization': f'Bearer {token["access_token"]}'})
         if response.status_code != 200:
             try:
-                raise common.LifeMonitorException(
+                raise exceptions.LifeMonitorException(
                     status=response.status_code, detail="Unable to get user data",
                     errors=response.json()['errors'])
             except Exception:
-                raise common.LifeMonitorException(
+                raise exceptions.LifeMonitorException(
                     status=response.status_code, detail="Unable to get user data")
 
         user_info = response.json()

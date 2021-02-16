@@ -3,11 +3,9 @@ from __future__ import annotations
 
 import logging
 
-import lifemonitor.api.models as models
-from lifemonitor.common import (NotImplementedException,
-                                TestingServiceException,
-                                TestingServiceNotSupportedException)
-from lifemonitor.db import db
+import lifemonitor.exceptions as lm_exceptions
+from lifemonitor.api import models
+from lifemonitor.api.models import db
 from lifemonitor.utils import ClassManager
 from sqlalchemy.dialects.postgresql import UUID
 
@@ -94,25 +92,25 @@ class TestingService(db.Model):
         return self._token
 
     def check_connection(self) -> bool:
-        raise NotImplementedException()
+        raise lm_exceptions.NotImplementedException()
 
     def is_workflow_healthy(self, test_instance: models.TestInstance) -> bool:
-        raise NotImplementedException()
+        raise lm_exceptions.NotImplementedException()
 
     def get_last_test_build(self, test_instance: models.TestInstance) -> models.TestBuild:
-        raise NotImplementedException()
+        raise lm_exceptions.NotImplementedException()
 
     def get_last_passed_test_build(self, test_instance: models.TestInstance) -> models.TestBuild:
-        raise NotImplementedException()
+        raise lm_exceptions.NotImplementedException()
 
     def get_last_failed_test_build(self, test_instance: models.TestInstance) -> models.TestBuild:
-        raise NotImplementedException()
+        raise lm_exceptions.NotImplementedException()
 
     def get_test_build(self, test_instance: models.TestInstance, build_number) -> models.TestBuild:
-        raise NotImplementedException()
+        raise lm_exceptions.NotImplementedException()
 
     def get_test_builds(self, test_instance: models.TestInstance, limit=10) -> list:
-        raise NotImplementedException()
+        raise lm_exceptions.ßNotImplementedException()
 
     def get_test_builds_as_dict(self, test_instance: models.TestInstance, test_output):
         last_test_build = self.last_test_build
@@ -168,6 +166,6 @@ class TestingService(db.Model):
             # try to instanciate the service if the it has not been registered yet
             return cls.service_type_registry.get_class(service_type)(url)
         except KeyError:
-            raise TestingServiceNotSupportedException(f"Not supported testing service type '{service_type}'")
+            raise lm_exceptions.TestingServiceNotSupportedException(f"Not supported testing service type '{service_type}'")
         except Exception as e:
-            raise TestingServiceException(detail=str(e))
+            raise lm_exceptions.TestingServiceException(detail=str(e))

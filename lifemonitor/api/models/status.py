@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 
-import lifemonitor.common as common
+import lifemonitor.exceptions as lm_exceptions
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -78,7 +78,7 @@ class Status:
                     else:
                         latest_builds.append(latest_build)
                         status = WorkflowStatus._update_status(status, latest_build.is_successful())
-                except common.TestingServiceException as e:
+                except lm_exceptions.TestingServiceException as e:
                     availability_issues.append({
                         "service": test_instance.testing_service.url,
                         "resource": test_instance.resource,

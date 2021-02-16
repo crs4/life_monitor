@@ -1,5 +1,6 @@
 import logging
-from flask import Response, request, current_app
+
+from flask import Response, current_app, request
 from lifemonitor import serializers
 from werkzeug.exceptions import HTTPException
 

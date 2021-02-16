@@ -6,9 +6,8 @@ from lifemonitor.api.services import LifeMonitor
 from lifemonitor.api.models import WorkflowRegistry
 from sqlalchemy import exc as sql_exceptions
 from tests.conftest_types import ClientAuthenticationMethod
-from lifemonitor.common import (
-    WorkflowRegistryNotSupportedException
-)
+from lifemonitor.exceptions import WorkflowRegistryNotSupportedException
+
 
 this_dir = os.path.dirname(os.path.abspath(__file__))
 tests_root_dir = pathlib.Path(this_dir).parent

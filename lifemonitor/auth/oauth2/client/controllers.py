@@ -7,7 +7,7 @@ from .services import oauth2_registry, config_oauth2_registry
 from authlib.integrations.flask_client import FlaskRemoteApp
 from flask import flash, url_for, redirect, request, session, Blueprint, current_app, abort
 from flask_login import current_user, login_user
-from lifemonitor import common, utils
+from lifemonitor import exceptions, utils
 from lifemonitor.db import db
 from lifemonitor.auth.models import User
 from authlib.integrations.base_client.errors import OAuthError
@@ -98,14 +98,14 @@ class AuthorizatonHandler:
             try:
                 p = OAuth2IdentityProvider.find(provider.name)
                 logger.debug("Provider found: %r", p)
-            except common.EntityNotFoundException:
+            except exceptions.EntityNotFoundException:
                 try:
                     logger.debug(f"Provider '{provider.name}' not found!")
                     p = OAuth2IdentityProvider(provider.name, **provider.OAUTH_APP_CONFIG)
                     p.save()
                     logger.info(f"Provider '{provider.name}' registered")
                 except Exception as e:
-                    return common.report_problem_from_exception(e)
+                    return exceptions.report_problem_from_exception(e)
 
             try:
                 identity = p.find_identity_by_provider_user_id(user_info.sub)

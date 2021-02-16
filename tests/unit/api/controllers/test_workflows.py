@@ -2,7 +2,7 @@ import pytest
 import logging
 
 import lifemonitor.auth as auth
-import lifemonitor.common as common
+import lifemonitor.exceptions as lm_exceptions
 import lifemonitor.api.models as models
 import lifemonitor.api.controllers as controllers
 import lifemonitor.api.serializers as serializers
@@ -78,7 +78,7 @@ def test_post_workflow_by_user_error_invalid_registry_uri(m, request_context, mo
     assert not auth.current_registry, "Unexpected registry in session"
     # add one fake workflow
     data = {"registry_uri": "123456"}
-    m.get_workflow_registry_by_uri.side_effect = common.EntityNotFoundException(models.WorkflowRegistry)
+    m.get_workflow_registry_by_uri.side_effect = lm_exceptions.EntityNotFoundException(models.WorkflowRegistry)
     response = controllers.workflows_post(body=data)
     m.get_workflow_registry_by_uri.assert_called_once_with(data["registry_uri"]), \
         "get_workflow_registry_by_uri should be used"
@@ -203,7 +203,7 @@ def test_post_workflow_by_registry_invalid_rocrate(m, request_context, mock_regi
     w = MagicMock()
     w.uuid = data['uuid']
     w.version = data['version']
-    m.register_workflow.side_effect = common.NotValidROCrateException()
+    m.register_workflow.side_effect = lm_exceptions.NotValidROCrateException()
     response = controllers.workflows_post(body=data)
     logger.debug("Response: %r", response)
     assert_status_code(response.status_code, 400)
@@ -224,7 +224,7 @@ def test_post_workflow_by_registry_not_authorized(m, request_context, mock_regis
     w = MagicMock()
     w.uuid = data['uuid']
     w.version = data['version']
-    m.register_workflow.side_effect = common.NotAuthorizedException()
+    m.register_workflow.side_effect = lm_exceptions.NotAuthorizedException()
     response = controllers.workflows_post(body=data)
     logger.debug("Response: %r", response)
     assert_status_code(response.status_code, 403)
@@ -236,7 +236,7 @@ def test_post_workflow_by_registry_not_authorized(m, request_context, mock_regis
 def test_get_workflow_by_id_error_not_found(m, request_context, mock_registry):
     assert auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry, "Unexpected registry in session"
-    m.get_registry_workflow.side_effect = common.EntityNotFoundException(models.Workflow)
+    m.get_registry_workflow.side_effect = lm_exceptions.EntityNotFoundException(models.Workflow)
     response = controllers.workflows_get_by_id(wf_uuid="12345", wf_version="1")
     logger.debug("Response: %r", response)
     assert_status_code(response.status_code, 404)

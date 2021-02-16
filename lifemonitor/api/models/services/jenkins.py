@@ -7,7 +7,7 @@ from typing import Optional
 
 import jenkins
 import lifemonitor.api.models as models
-from lifemonitor.common import EntityNotFoundException, TestingServiceException
+import lifemonitor.exceptions as lm_exceptions
 from lifemonitor.lang import messages
 
 from .service import TestingService
@@ -28,13 +28,13 @@ class JenkinsTestingService(TestingService):
         try:
             self._server = jenkins.Jenkins(self.url)
         except Exception as e:
-            raise TestingServiceException(e)
+            raise lm_exceptions.TestingServiceException(e)
 
     def check_connection(self) -> bool:
         try:
             assert '_class' in self.server.get_info()
         except Exception as e:
-            raise TestingServiceException(detail=str(e))
+            raise lm_exceptions.TestingServiceException(detail=str(e))
 
     @property
     def server(self) -> jenkins.Jenkins:
@@ -49,7 +49,7 @@ class JenkinsTestingService(TestingService):
         job_name = re.sub("(?s:.*)/", "", resource.strip('/'))
         logger.debug(f"The job name: {job_name}")
         if not job_name or len(job_name) == 0:
-            raise TestingServiceException(
+            raise lm_exceptions.TestingServiceException(
                 f"Unable to get the Jenkins job from the resource {job_name}")
         return job_name
 
@@ -87,7 +87,7 @@ class JenkinsTestingService(TestingService):
                 test_instance._raw_metadata = self.server.get_job_info(
                     self.get_job_name(test_instance.resource), fetch_all_builds=fetch_all_builds)
             except jenkins.JenkinsException as e:
-                raise TestingServiceException(f"{self}: {e}")
+                raise lm_exceptions.TestingServiceException(f"{self}: {e}")
         return test_instance._raw_metadata
 
     def get_test_builds(self, test_instance: models.TestInstance, limit=10):
@@ -104,9 +104,9 @@ class JenkinsTestingService(TestingService):
             build_metadata = self.server.get_build_info(self.get_job_name(test_instance.resource), int(build_number))
             return JenkinsTestBuild(self, test_instance, build_metadata)
         except jenkins.NotFoundException as e:
-            raise EntityNotFoundException(models.TestBuild, entity_id=build_number, detail=str(e))
+            raise lm_exceptions.EntityNotFoundException(models.TestBuild, entity_id=build_number, detail=str(e))
         except jenkins.JenkinsException as e:
-            raise TestingServiceException(e)
+            raise lm_exceptions.TestingServiceException(e)
 
     def get_test_build_output(self, test_instance: models.TestInstance, build_number, offset_bytes=0, limit_bytes=131072):
         try:
@@ -125,7 +125,7 @@ class JenkinsTestingService(TestingService):
             return output[offset_bytes:(offset_bytes + len(output) if limit_bytes == 0 else limit_bytes)]
 
         except jenkins.JenkinsException as e:
-            raise TestingServiceException(e)
+            raise lm_exceptions.TestingServiceException(e)
 
 
 class JenkinsTestBuild(models.TestBuild):

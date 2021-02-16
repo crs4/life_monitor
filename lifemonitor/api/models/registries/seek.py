@@ -6,7 +6,7 @@ from typing import Union
 
 from lifemonitor.api import models
 from lifemonitor.auth.models import User
-from lifemonitor.common import EntityNotFoundException
+from lifemonitor.exceptions import EntityNotFoundException
 
 # set module level logger
 logger = logging.getLogger(__name__)
