@@ -1,7 +1,7 @@
 import glob
 import logging
 from importlib import import_module
-from os.path import dirname, basename, isfile, join
+from os.path import basename, dirname, isfile, join
 
 # set module level logger
 logger = logging.getLogger(__name__)

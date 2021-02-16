@@ -1,7 +1,8 @@
+import logging
 import re
 import sys
+
 import click
-import logging
 from flask import Blueprint
 from flask.cli import with_appcontext
 from lifemonitor.api.services import LifeMonitor

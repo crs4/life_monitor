@@ -5,11 +5,10 @@ import uuid as _uuid
 from typing import Optional
 
 import lifemonitor.api.models as models
-import lifemonitor.test_metadata as tm
 import lifemonitor.exceptions as lm_exceptions
+import lifemonitor.test_metadata as tm
+from lifemonitor.api.models import db
 from lifemonitor.auth.models import User
-
-from lifemonitor.db import db
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 # set module level logger

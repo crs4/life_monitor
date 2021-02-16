@@ -1,12 +1,11 @@
-import pytest
 import logging
-
-import lifemonitor.auth as auth
-from lifemonitor.lang import messages
-import lifemonitor.api.controllers as controllers
 from unittest.mock import MagicMock, patch
-from tests.utils import assert_status_code
 
+import lifemonitor.api.controllers as controllers
+import lifemonitor.auth as auth
+import pytest
+from lifemonitor.lang import messages
+from tests.utils import assert_status_code
 
 logger = logging.getLogger(__name__)
 

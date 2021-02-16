@@ -1,7 +1,8 @@
+import logging
 
 import pytest
-import logging
 from flask import g
+
 from .conftest import ClientAuthenticationMethod
 from .utils import assert_properties_exist
 

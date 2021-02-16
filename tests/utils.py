@@ -1,4 +1,5 @@
 import logging
+
 import lifemonitor.db as lm_db
 from lifemonitor.api import models
 from lifemonitor.api.services import LifeMonitor

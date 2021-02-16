@@ -1,15 +1,15 @@
 import logging
 
 import flask
-from flask import flash, url_for, request, render_template, redirect
+from flask import flash, redirect, render_template, request, url_for
 from flask_login import login_required, login_user, logout_user
-from .. import exceptions
-from .forms import RegisterForm, LoginForm, SetPasswordForm
-from .models import db
-from . import serializers
-from .oauth2.client.services import merge_users, get_providers
-from .services import authorized, login_manager, current_registry, current_user
 
+from .. import exceptions
+from . import serializers
+from .forms import LoginForm, RegisterForm, SetPasswordForm
+from .models import db
+from .oauth2.client.services import get_providers, merge_users
+from .services import authorized, current_registry, current_user, login_manager
 
 # Config a module level logger
 logger = logging.getLogger(__name__)

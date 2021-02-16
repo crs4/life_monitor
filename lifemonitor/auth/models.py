@@ -1,9 +1,10 @@
 from __future__ import annotations
-import logging
-from flask_bcrypt import generate_password_hash, check_password_hash
-from flask_login import UserMixin, AnonymousUserMixin
-from lifemonitor.db import db
 
+import logging
+
+from flask_bcrypt import check_password_hash, generate_password_hash
+from flask_login import AnonymousUserMixin, UserMixin
+from lifemonitor.db import db
 
 # Set the module level logger
 logger = logging.getLogger(__name__)

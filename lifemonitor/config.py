@@ -1,6 +1,7 @@
-import os
 import logging
+import os
 from typing import List, Type
+
 import dotenv
 
 from .db import db_uri

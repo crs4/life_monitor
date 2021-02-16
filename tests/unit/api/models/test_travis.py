@@ -1,10 +1,10 @@
-import pytest
 import logging
-import requests
-import lifemonitor.api.models as models
 from unittest.mock import MagicMock
-from tests.conftest_helpers import get_travis_token, get_random_slice_indexes
 
+import lifemonitor.api.models as models
+import pytest
+import requests
+from tests.conftest_helpers import get_random_slice_indexes, get_travis_token
 
 logger = logging.getLogger(__name__)
 

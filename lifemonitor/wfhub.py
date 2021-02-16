@@ -3,7 +3,6 @@ from urllib.parse import urlsplit
 
 import requests
 
-
 HEADERS = {
     "Content-type": "application/vnd.api+json",
     "Accept": "application/vnd.api+json",

@@ -1,24 +1,20 @@
 from __future__ import annotations
+
 import json
 import logging
 import tempfile
 from pathlib import Path
-from typing import Union, List
+from typing import List, Union
 
-from rocrate.rocrate import ROCrate
-from lifemonitor.auth.models import User
-from lifemonitor.utils import download_url
-from lifemonitor.auth.oauth2.server import server
-from lifemonitor.auth.oauth2.client import providers
 import lifemonitor.exceptions as lm_exceptions
-
-from lifemonitor.api.models import (
-    WorkflowRegistry, Workflow, TestSuite, TestInstance
-)
-from lifemonitor.utils import extract_zip
+from lifemonitor.api import models
+from lifemonitor.auth.models import User
+from lifemonitor.auth.oauth2.client import providers
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
+from lifemonitor.auth.oauth2.server import server
 from lifemonitor.test_metadata import get_old_format_tests
-
+from lifemonitor.utils import download_url, extract_zip
+from rocrate.rocrate import ROCrate
 
 logger = logging.getLogger()
 
@@ -40,11 +36,11 @@ class LifeMonitor:
     @staticmethod
     def _find_and_check_workflow(uuid, version, user: User):
         if not version:
-            w = Workflow.find_latest_by_id(uuid)
+            w = models.Workflow.find_latest_by_id(uuid)
         else:
-            w = Workflow.find_by_id(uuid, version)
+            w = models.Workflow.find_by_id(uuid, version)
         if w is None:
-            raise lm_exceptions.EntityNotFoundException(Workflow, f"{uuid}_{version}")
+            raise lm_exceptions.EntityNotFoundException(models.Workflow, f"{uuid}_{version}")
         # Check user access for a workflow
         # As a general rule, we grant user access to the workflow
         #   1. if the user if the workflow submitter
@@ -60,7 +56,7 @@ class LifeMonitor:
     @staticmethod
     def register_workflow(workflow_submitter: User,
                           workflow_uuid, workflow_version, roc_link,
-                          workflow_registry: WorkflowRegistry = None,
+                          workflow_registry: models.WorkflowRegistry = None,
                           authorization=None,
                           external_id=None, name=None):
         with tempfile.NamedTemporaryFile(dir="/tmp") as archive_path:
@@ -85,7 +81,7 @@ class LifeMonitor:
                         external_id=external_id, name=name
                     )
                 else:
-                    w = Workflow(
+                    w = models.Workflow(
                         workflow_uuid, workflow_version, workflow_submitter, roc_link,
                         roc_metadata=metadata,
                         external_id=external_id, name=name
@@ -103,7 +99,7 @@ class LifeMonitor:
         workflow = cls._find_and_check_workflow(workflow_uuid, workflow_version, user)
         logger.debug("Workflow to delete: %r", workflow)
         if not workflow:
-            raise lm_exceptions.EntityNotFoundException(Workflow, (workflow_uuid, workflow_version))
+            raise lm_exceptions.EntityNotFoundException(models.Workflow, (workflow_uuid, workflow_version))
         if workflow.submitter != user:
             raise lm_exceptions.NotAuthorizedException("Only the workflow submitter can add test suites")
         workflow.delete()
@@ -111,21 +107,21 @@ class LifeMonitor:
         return workflow_uuid, workflow_version
 
     @staticmethod
-    def deregister_registry_workflow(workflow_uuid, workflow_version, registry: WorkflowRegistry):
+    def deregister_registry_workflow(workflow_uuid, workflow_version, registry: models.WorkflowRegistry):
         workflow = registry.get_workflow(workflow_uuid, workflow_version)
         logger.debug("Workflow to delete: %r", workflow)
         if not workflow:
-            raise lm_exceptions.EntityNotFoundException(Workflow, (workflow_uuid, workflow_version))
+            raise lm_exceptions.EntityNotFoundException(models.Workflow, (workflow_uuid, workflow_version))
         workflow.delete()
         logger.debug("Deleted workflow wf_uuid: %r - version: %r", workflow_uuid, workflow_version)
         return workflow_uuid, workflow_version
 
     @staticmethod
     def register_test_suite(workflow_uuid, workflow_version,
-                            submitter: User, test_suite_metadata) -> TestSuite:
-        workflow = Workflow.find_by_id(workflow_uuid, workflow_version)
+                            submitter: models.User, test_suite_metadata) -> models.TestSuite:
+        workflow = models.Workflow.find_by_id(workflow_uuid, workflow_version)
         if not workflow:
-            raise lm_exceptions.EntityNotFoundException(Workflow, (workflow_uuid, workflow_version))
+            raise lm_exceptions.EntityNotFoundException(models.Workflow, (workflow_uuid, workflow_version))
         # For now only the workflow submitter can add test suites
         if workflow.submitter != submitter:
             raise lm_exceptions.NotAuthorizedException("Only the workflow submitter can add test suites")
@@ -134,84 +130,84 @@ class LifeMonitor:
         return suite
 
     @staticmethod
-    def deregister_test_suite(test_suite: Union[TestSuite, str]) -> str:
+    def deregister_test_suite(test_suite: Union[models.TestSuite, str]) -> str:
         suite = test_suite
-        if not isinstance(test_suite, TestSuite):
-            suite = TestSuite.find_by_id(test_suite)
+        if not isinstance(test_suite, models.TestSuite):
+            suite = models.TestSuite.find_by_id(test_suite)
             if not suite:
-                raise lm_exceptions.EntityNotFoundException(TestSuite, test_suite)
+                raise lm_exceptions.EntityNotFoundException(models.TestSuite, test_suite)
         suite.delete()
         logger.debug("Deleted TestSuite: %r", suite.uuid)
         return suite.uuid
 
     @staticmethod
-    def get_workflow_registry_by_uuid(registry_uuid) -> WorkflowRegistry:
+    def get_workflow_registry_by_uuid(registry_uuid) -> models.WorkflowRegistry:
         try:
-            r = WorkflowRegistry.find_by_id(registry_uuid)
+            r = models.WorkflowRegistry.find_by_id(registry_uuid)
             if not r:
-                raise lm_exceptions.EntityNotFoundException(WorkflowRegistry, registry_uuid)
+                raise lm_exceptions.EntityNotFoundException(models.WorkflowRegistry, registry_uuid)
             return r
         except Exception:
-            raise lm_exceptions.EntityNotFoundException(WorkflowRegistry, registry_uuid)
+            raise lm_exceptions.EntityNotFoundException(models.WorkflowRegistry, registry_uuid)
 
     @staticmethod
-    def get_workflow_registry_by_uri(registry_uri) -> WorkflowRegistry:
+    def get_workflow_registry_by_uri(registry_uri) -> models.WorkflowRegistry:
         try:
-            r = WorkflowRegistry.find_by_uri(registry_uri)
+            r = models.WorkflowRegistry.find_by_uri(registry_uri)
             if not r:
-                raise lm_exceptions.EntityNotFoundException(WorkflowRegistry, registry_uri)
+                raise lm_exceptions.EntityNotFoundException(models.WorkflowRegistry, registry_uri)
             return r
         except Exception:
-            raise lm_exceptions.EntityNotFoundException(WorkflowRegistry, registry_uri)
+            raise lm_exceptions.EntityNotFoundException(models.WorkflowRegistry, registry_uri)
 
     @staticmethod
-    def get_workflow_registry_by_name(registry_name) -> WorkflowRegistry:
+    def get_workflow_registry_by_name(registry_name) -> models.WorkflowRegistry:
         try:
-            r = WorkflowRegistry.find_by_name(registry_name)
+            r = models.WorkflowRegistry.find_by_name(registry_name)
             if not r:
-                raise lm_exceptions.EntityNotFoundException(WorkflowRegistry, registry_name)
+                raise lm_exceptions.EntityNotFoundException(models.WorkflowRegistry, registry_name)
             return r
         except Exception:
-            raise lm_exceptions.EntityNotFoundException(WorkflowRegistry, registry_name)
+            raise lm_exceptions.EntityNotFoundException(models.WorkflowRegistry, registry_name)
 
     @staticmethod
-    def get_workflow(uuid, version) -> Workflow:
-        return Workflow.find_by_id(uuid, version)
+    def get_workflow(uuid, version) -> models.Workflow:
+        return models.Workflow.find_by_id(uuid, version)
 
     @staticmethod
     def get_workflows() -> list:
-        return Workflow.all()
+        return models.Workflow.all()
 
     @staticmethod
-    def get_registry_workflow(registry: WorkflowRegistry, uuid, version=None) -> Workflow:
+    def get_registry_workflow(registry: models.WorkflowRegistry, uuid, version=None) -> models.Workflow:
         return registry.get_workflow(uuid, version)
 
     @staticmethod
-    def get_registry_workflows(registry: WorkflowRegistry) -> list:
+    def get_registry_workflows(registry: models.WorkflowRegistry) -> list:
         return registry.registered_workflows
 
     @classmethod
-    def get_user_workflow(cls, user: User, uuid, version=None) -> Workflow:
+    def get_user_workflow(cls, user: models.User, uuid, version=None) -> models.Workflow:
         return cls._find_and_check_workflow(uuid, version, user)
 
     @staticmethod
     def get_user_workflows(user: User) -> list:
         workflows = []
-        registries = WorkflowRegistry.all()
+        registries = models.WorkflowRegistry.all()
         for registry in registries:
             workflows.extend(registry.get_user_workflows(user))
         return workflows
 
     @staticmethod
-    def get_suite(suite_uuid) -> TestSuite:
-        return TestSuite.find_by_id(suite_uuid)
+    def get_suite(suite_uuid) -> models.TestSuite:
+        return models.TestSuite.find_by_id(suite_uuid)
 
     @staticmethod
-    def get_test_instance(instance_uuid) -> TestInstance:
-        return TestInstance.find_by_id(instance_uuid)
+    def get_test_instance(instance_uuid) -> models.TestInstance:
+        return models.TestInstance.find_by_id(instance_uuid)
 
     @staticmethod
-    def find_registry_user_identity(registry: WorkflowRegistry,
+    def find_registry_user_identity(registry: models.WorkflowRegistry,
                                     internal_id=None, external_id=None) -> OAuthIdentity:
         if not internal_id and not external_id:
             raise ValueError("external_id and internal_id cannot be both None")
@@ -222,7 +218,7 @@ class LifeMonitor:
     @staticmethod
     def add_workflow_registry(type, name,
                               client_id, client_secret, client_auth_method="client_secret_post",
-                              api_base_url=None, redirect_uris=None) -> WorkflowRegistry:
+                              api_base_url=None, redirect_uris=None) -> models.WorkflowRegistry:
         try:
             # At the moment client_credentials of registries
             # are associated with the admin account
@@ -243,7 +239,7 @@ class LifeMonitor:
                                      if isinstance(redirect_uris, str)
                                      else redirect_uris,
                                      client_auth_method, commit=False)
-            registry = WorkflowRegistry.new_instance(type, client_credentials, server_credentials)
+            registry = models.WorkflowRegistry.new_instance(type, client_credentials, server_credentials)
             registry.save()
             logger.debug(f"WorkflowRegistry '{name}' (type: {type})' created: {registry}")
             return registry
@@ -253,11 +249,11 @@ class LifeMonitor:
     @staticmethod
     def update_workflow_registry(uuid, name=None,
                                  client_id=None, client_secret=None, client_auth_method=None,
-                                 api_base_url=None, redirect_uris=None) -> WorkflowRegistry:
+                                 api_base_url=None, redirect_uris=None) -> models.WorkflowRegistry:
         try:
-            registry = WorkflowRegistry.find_by_id(uuid)
+            registry = models.WorkflowRegistry.find_by_id(uuid)
             if not registry:
-                raise lm_exceptions.EntityNotFoundException(WorkflowRegistry, entity_id=uuid)
+                raise lm_exceptions.EntityNotFoundException(models.WorkflowRegistry, entity_id=uuid)
             if name:
                 registry.server_credentials.name = name
             if api_base_url:
@@ -279,13 +275,13 @@ class LifeMonitor:
             raise lm_exceptions.WorkflowRegistryNotSupportedException(exception=e)
 
     @staticmethod
-    def get_workflow_registries() -> WorkflowRegistry:
-        return WorkflowRegistry.all()
+    def get_workflow_registries() -> models.WorkflowRegistry:
+        return models.WorkflowRegistry.all()
 
     @staticmethod
-    def get_workflow_registry(uuid) -> WorkflowRegistry:
-        return WorkflowRegistry.find_by_id(uuid)
+    def get_workflow_registry(uuid) -> models.WorkflowRegistry:
+        return models.WorkflowRegistry.find_by_id(uuid)
 
     @staticmethod
-    def get_workflow_registry_users(registry: WorkflowRegistry) -> List[User]:
+    def get_workflow_registry_users(registry: models.WorkflowRegistry) -> List[User]:
         return registry.get_users()

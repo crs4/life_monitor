@@ -2,21 +2,19 @@ from __future__ import annotations
 
 import logging
 import uuid as _uuid
-from typing import Union, List
 from abc import ABC, abstractmethod
-from authlib.integrations.base_client import RemoteApp
-from sqlalchemy.dialects.postgresql import UUID
-from lifemonitor.db import db
-from lifemonitor.auth.models import User
-from sqlalchemy.ext.associationproxy import association_proxy
-from lifemonitor.auth.oauth2.client.services import oauth2_registry
-
-from lifemonitor.exceptions import EntityNotFoundException
-from lifemonitor.utils import download_url, ClassManager
-from lifemonitor.auth.oauth2.client.models import OAuthIdentity
-
+from typing import List, Union
 
 import lifemonitor.api.models as models
+from authlib.integrations.base_client import RemoteApp
+from lifemonitor.api.models import db
+from lifemonitor.auth.models import User
+from lifemonitor.auth.oauth2.client.models import OAuthIdentity
+from lifemonitor.auth.oauth2.client.services import oauth2_registry
+from lifemonitor.exceptions import EntityNotFoundException
+from lifemonitor.utils import ClassManager, download_url
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.ext.associationproxy import association_proxy
 
 # set module level logger
 logger = logging.getLogger(__name__)

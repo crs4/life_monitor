@@ -1,16 +1,16 @@
-import os
 import json
-import pytest
 import logging
-from flask import Response
-import lifemonitor.auth as auth
-import lifemonitor.api.models as models
-import lifemonitor.api.controllers as controllers
-import lifemonitor.lang.messages as messages
-from lifemonitor.exceptions import EntityNotFoundException
+import os
 from unittest.mock import MagicMock, Mock, patch
-from tests.utils import assert_status_code
 
+import lifemonitor.api.controllers as controllers
+import lifemonitor.api.models as models
+import lifemonitor.auth as auth
+import lifemonitor.lang.messages as messages
+import pytest
+from flask import Response
+from lifemonitor.exceptions import EntityNotFoundException
+from tests.utils import assert_status_code
 
 logger = logging.getLogger(__name__)
 

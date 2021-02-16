@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import logging
-from . import models
-from marshmallow import fields
-from lifemonitor.serializers import ma, BaseSchema
 
+from lifemonitor.serializers import BaseSchema, ma
+from marshmallow import fields
+
+from . import models
 
 # set module level logger
 logger = logging.getLogger(__name__)

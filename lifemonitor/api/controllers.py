@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 import logging
+
 import connexion
-from flask import g, Response
-from lifemonitor.lang import messages
-from lifemonitor.auth import current_user, current_registry, authorized
-from lifemonitor.api.services import LifeMonitor
-from lifemonitor.api import serializers
 import lifemonitor.exceptions as lm_exceptions
 import werkzeug.exceptions as http_exceptions
-
+from flask import Response, g
+from lifemonitor.api import serializers
+from lifemonitor.api.services import LifeMonitor
+from lifemonitor.auth import authorized, current_registry, current_user
 from lifemonitor.auth.oauth2.client.models import OAuthIdentityNotFoundException
+from lifemonitor.lang import messages
 
 # Initialize a reference to the LifeMonitor instance
 lm = LifeMonitor.get_instance()

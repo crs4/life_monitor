@@ -1,10 +1,10 @@
-import uuid
 import logging
-import pytest
+import uuid
 from unittest.mock import MagicMock
-import lifemonitor.exceptions as lm_exceptions
-import lifemonitor.api.models as models
 
+import lifemonitor.api.models as models
+import lifemonitor.exceptions as lm_exceptions
+import pytest
 
 logger = logging.getLogger(__name__)
 

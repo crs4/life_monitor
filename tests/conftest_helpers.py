@@ -1,21 +1,23 @@
-import os
-import re
-import random
-import dotenv
 import logging
+import os
+import random
+import re
+from urllib.parse import urlparse
+
+import dotenv
+import lifemonitor.db as lm_db
 import requests
 from flask import g
-from tests import utils
-from .conftest_types import ClientAuthenticationMethod
-from urllib.parse import urlparse
 from flask_login import login_user, logout_user
-import lifemonitor.db as lm_db
-from lifemonitor.app import create_app, initialize_app
-from lifemonitor.auth.services import generate_new_api_key
-from lifemonitor.auth.models import User
-from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 from lifemonitor.api.models import WorkflowRegistry
 from lifemonitor.api.services import LifeMonitor
+from lifemonitor.app import create_app, initialize_app
+from lifemonitor.auth.models import User
+from lifemonitor.auth.oauth2.client.models import OAuthIdentity
+from lifemonitor.auth.services import generate_new_api_key
+from tests import utils
+
+from .conftest_types import ClientAuthenticationMethod
 
 # set the module level logger
 logger = logging.getLogger(__name__)
