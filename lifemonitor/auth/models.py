@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import datetime
 import logging
+from typing import List
 
+from authlib.integrations.sqla_oauth2 import OAuth2TokenMixin
 from flask_bcrypt import check_password_hash, generate_password_hash
 from flask_login import AnonymousUserMixin, UserMixin
 from lifemonitor.db import db
@@ -137,3 +140,57 @@ class ApiKey(db.Model):
     @classmethod
     def all(cls):
         return cls.query.all()
+
+
+class Credentials(db.Model):
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(
+        db.Integer, db.ForeignKey('user.id', ondelete='CASCADE')
+    )
+    type = db.Column(db.String, nullable=False)
+    user = db.relationship('User')
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'credentials',
+        'polymorphic_on': type,
+    }
+
+
+class Token(Credentials, OAuth2TokenMixin):
+
+    id = db.Column(db.Integer, db.ForeignKey('credentials.id'), primary_key=True)
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'token'
+    }
+
+    def is_expired(self) -> bool:
+        return self.check_token_expiration(self.expires_at)
+
+    def is_refresh_token_valid(self) -> bool:
+        return self if not self.revoked else None
+
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
+
+    @classmethod
+    def find(cls, access_token):
+        return cls.query.filter(Token.access_token == access_token).first()
+
+    @classmethod
+    def find_by_user(cls, user: User) -> List[Token]:
+        return cls.query.filter(Token.user == user).all()
+
+    @classmethod
+    def all(cls):
+        return cls.query.all()
+
+    @staticmethod
+    def check_token_expiration(expires_at) -> bool:
+        return datetime.utcnow().timestamp() - expires_at > 0

@@ -7,7 +7,7 @@ from typing import List
 from urllib.parse import urljoin
 
 import requests
-from lifemonitor.auth.models import User
+from lifemonitor.auth import models
 from lifemonitor.db import db
 from lifemonitor.exceptions import (EntityNotFoundException,
                                     LifeMonitorException)
@@ -53,9 +53,8 @@ class OAuthUserProfile:
         return profile
 
 
-class OAuthIdentity(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey(User.id), nullable=False)
+class OAuthIdentity(models.Credentials):
+    id = db.Column(db.Integer, db.ForeignKey('credentials.id'), primary_key=True)
     provider_user_id = db.Column(db.String(256), nullable=False)
     provider_id = db.Column(db.Integer, db.ForeignKey("oauth2_identity_provider.id"), nullable=False)
     created_at = db.Column(DateTime, default=datetime.utcnow, nullable=False)
@@ -63,7 +62,7 @@ class OAuthIdentity(db.Model):
     _user_info = None
     provider = db.relationship("OAuth2IdentityProvider", uselist=False, back_populates="identities")
     user = db.relationship(
-        User,
+        models.User,
         # This `backref` thing sets up an `oauth` property on the User model,
         # which is a dictionary of OAuth models associated with that user,
         # where the dictionary key is the OAuth provider name.
@@ -76,6 +75,9 @@ class OAuthIdentity(db.Model):
 
     __table_args__ = (db.UniqueConstraint("provider_id", "provider_user_id"),)
     __tablename__ = "oauth2_identity"
+    __mapper_args__ = {
+        'polymorphic_identity': 'oauth2_identity'
+    }
 
     def __init__(self, provider, user_info, provider_user_id, token):
         self.provider = provider
