@@ -32,6 +32,8 @@ class Client(db.Model, OAuth2ClientMixin):
         ),
     )
 
+    __tablename__ = "oauth2_client"
+
     @property
     def redirect_uris(self):
         return self.client_metadata.get('redirect_uris', [])
@@ -70,8 +72,10 @@ class Token(db.Model, OAuth2TokenMixin):
     )
     user = db.relationship('User')
     client_id = db.Column(db.String,
-                          db.ForeignKey('client.client_id', ondelete='CASCADE'))
+                          db.ForeignKey('oauth2_client.client_id', ondelete='CASCADE'))
     client = db.relationship('Client')
+
+    __tablename__ = "oauth2_client_token"
 
     def is_expired(self) -> bool:
         return self.check_token_expiration(self.expires_at)

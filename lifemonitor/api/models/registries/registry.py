@@ -78,7 +78,7 @@ class WorkflowRegistry(db.Model):
     uuid = db.Column(UUID(as_uuid=True), primary_key=True, default=_uuid.uuid4)
     uri = db.Column(db.Text, unique=True)
     type = db.Column(db.String, nullable=False)
-    _client_id = db.Column(db.Integer, db.ForeignKey('client.id', ondelete='CASCADE'))
+    _client_id = db.Column(db.Integer, db.ForeignKey('oauth2_client.id', ondelete='CASCADE'))
     _server_id = db.Column(db.Integer, db.ForeignKey('oauth2_identity_provider.id', ondelete='CASCADE'))
     client_credentials = db.relationship("Client", uselist=False, cascade="all, delete")
     server_credentials = db.relationship("OAuth2IdentityProvider", uselist=False, cascade="all, delete")
