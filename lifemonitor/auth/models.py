@@ -142,7 +142,7 @@ class ApiKey(db.Model):
         return cls.query.all()
 
 
-class Credentials(db.Model):
+class ExternalServiceAccessAuthorization(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(
@@ -157,12 +157,23 @@ class Credentials(db.Model):
     }
 
 
-class Token(Credentials, OAuth2TokenMixin):
+class ExternalServiceAuthorizationHeader(ExternalServiceAccessAuthorization):
 
-    id = db.Column(db.Integer, db.ForeignKey('credentials.id'), primary_key=True)
+    id = db.Column(db.Integer, db.ForeignKey('external_service_access_authorization.id'), primary_key=True)
 
     __mapper_args__ = {
-        'polymorphic_identity': 'token'
+        'polymorphic_identity': 'authorization_header'
+    }
+
+    header = db.Column(db.String, nullable=False)
+
+
+class ExternalServiceAccessToken(ExternalServiceAccessAuthorization, OAuth2TokenMixin):
+
+    id = db.Column(db.Integer, db.ForeignKey('external_service_access_authorization.id'), primary_key=True)
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'access_token'
     }
 
     def is_expired(self) -> bool:
@@ -181,11 +192,11 @@ class Token(Credentials, OAuth2TokenMixin):
 
     @classmethod
     def find(cls, access_token):
-        return cls.query.filter(Token.access_token == access_token).first()
+        return cls.query.filter(cls.access_token == access_token).first()
 
     @classmethod
-    def find_by_user(cls, user: User) -> List[Token]:
-        return cls.query.filter(Token.user == user).all()
+    def find_by_user(cls, user: User) -> List[ExternalServiceAccessToken]:
+        return cls.query.filter(cls.user == user).all()
 
     @classmethod
     def all(cls):

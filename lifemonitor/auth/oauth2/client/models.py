@@ -53,8 +53,8 @@ class OAuthUserProfile:
         return profile
 
 
-class OAuthIdentity(models.Credentials):
-    id = db.Column(db.Integer, db.ForeignKey('credentials.id'), primary_key=True)
+class OAuthIdentity(models.ExternalServiceAccessAuthorization):
+    id = db.Column(db.Integer, db.ForeignKey('external_service_access_authorization.id'), primary_key=True)
     provider_user_id = db.Column(db.String(256), nullable=False)
     provider_id = db.Column(db.Integer, db.ForeignKey("oauth2_identity_provider.id"), nullable=False)
     created_at = db.Column(DateTime, default=datetime.utcnow, nullable=False)
