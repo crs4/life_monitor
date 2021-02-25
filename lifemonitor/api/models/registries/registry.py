@@ -1,20 +1,19 @@
 from __future__ import annotations
 
 import logging
-import uuid as _uuid
 from abc import ABC, abstractmethod
 from typing import List, Union
 
 import lifemonitor.api.models as models
 from authlib.integrations.base_client import RemoteApp
 from lifemonitor.api.models import db
-from lifemonitor.auth.models import User
+from lifemonitor.auth.models import ExternalResource, User
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 from lifemonitor.auth.oauth2.client.services import oauth2_registry
 from lifemonitor.exceptions import EntityNotFoundException
 from lifemonitor.utils import ClassManager, download_url
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.associationproxy import association_proxy
+
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -73,49 +72,39 @@ class WorkflowRegistryClient(ABC):
         return cls.client_types.get_class(client_type)
 
 
-class WorkflowRegistry(db.Model):
+class WorkflowRegistry(ExternalResource):
 
-    uuid = db.Column(UUID(as_uuid=True), primary_key=True, default=_uuid.uuid4)
-    uri = db.Column(db.Text, unique=True)
-    type = db.Column(db.String, nullable=False)
+    id = db.Column(db.Integer, db.ForeignKey(ExternalResource.id), primary_key=True)
+    registry_type = db.Column(db.String, nullable=False)
     _client_id = db.Column(db.Integer, db.ForeignKey('oauth2_client.id', ondelete='CASCADE'))
     _server_id = db.Column(db.Integer, db.ForeignKey('oauth2_identity_provider.id', ondelete='CASCADE'))
     client_credentials = db.relationship("Client", uselist=False, cascade="all, delete")
-    server_credentials = db.relationship("OAuth2IdentityProvider", uselist=False, cascade="all, delete")
+    server_credentials = db.relationship("OAuth2IdentityProvider", uselist=False, cascade="all, delete", foreign_keys=[_server_id])
     registered_workflows = db.relationship("Workflow",
                                            back_populates="workflow_registry", cascade="all, delete")
     client_id = association_proxy('client_credentials', 'client_id')
-    name = association_proxy('server_credentials', 'name')
-    # _uri = association_proxy('server_credentials', 'api_base_url')
 
     _client = None
 
     registry_types = ClassManager('lifemonitor.api.models.registries', class_suffix="WorkflowRegistry", skip=["registry"])
 
     __mapper_args__ = {
-        'polymorphic_identity': 'workflow_registry',
-        'polymorphic_on': type,
+        'polymorphic_identity': 'workflow_registry'
     }
 
-    def __init__(self, client_credentials, server_credentials):
-        self.__instance = self
-        self.uri = server_credentials.api_base_url
+    def __init__(self, registry_type, client_credentials, server_credentials):
+        super().__init__(self.__class__.__name__,
+                         server_credentials.api_base_url, name=server_credentials.name)
+        self.registry_type = registry_type
         self.client_credentials = client_credentials
         self.server_credentials = server_credentials
         self._client = None
 
     @property
-    def name(self):
-        return self.server_credentials.name
-
-    @name.setter
-    def name(self, value):
-        self.server_credentials.name = value
-
-    @property
     def client(self) -> WorkflowRegistryClient:
         if self._client is None:
-            return WorkflowRegistryClient.get_client_class(self.type)(self)
+            rtype = self.__class__.__name__.replace("WorkflowRegistry", "").lower()
+            return WorkflowRegistryClient.get_client_class(rtype)(self)
         return self._client
 
     def build_ro_link(self, w: models.Workflow) -> str:

@@ -15,9 +15,15 @@ logger = logging.getLogger(__name__)
 
 class SeekWorkflowRegistry(WorkflowRegistry):
 
+    id = models.db.Column(models.db.Integer,
+                          models.db.ForeignKey(WorkflowRegistry.id), primary_key=True)
+
     __mapper_args__ = {
-        'polymorphic_identity': 'seek'
+        'polymorphic_identity': 'seek_registry'
     }
+
+    def __init__(self, client_credentials, server_credentials):
+        super().__init__('seek_registry', client_credentials, server_credentials)
 
 
 class SeekWorkflowRegistryClient(WorkflowRegistryClient):
