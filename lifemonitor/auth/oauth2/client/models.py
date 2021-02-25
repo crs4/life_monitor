@@ -147,12 +147,13 @@ class OAuth2IdentityProvider(db.Model):
     client_id = db.Column(db.String, nullable=False)
     client_secret = db.Column(db.String, nullable=False)
     client_kwargs = db.Column(JSONB, nullable=True)
-    _api_base_url = db.Column("api_base_url", db.String, nullable=False)
     _authorize_url = db.Column("authorize_url", db.String, nullable=False)
     authorize_params = db.Column(JSONB, nullable=True)
     _access_token_url = db.Column("access_token_url", db.String, nullable=False)
     access_token_params = db.Column(JSONB, nullable=True)
     userinfo_endpoint = db.Column(db.String, nullable=False)
+    api_resource_id = db.Column(db.Integer, db.ForeignKey("external_resource.id"), nullable=False)
+    api_resource = db.relationship("ExternalResource", cascade="all, delete")
     identities = db.relationship("OAuthIdentity",
                                  back_populates="provider", cascade="all, delete")
 
@@ -172,7 +173,7 @@ class OAuth2IdentityProvider(db.Model):
         self.name = name
         self.client_id = client_id
         self.client_secret = client_secret
-        self.api_base_url = api_base_url
+        self.api_resource = models.ExternalResource("OAuth2IdentityProvider", api_base_url, name=self.name)
         self.client_kwargs = client_kwargs
         self.authorize_url = authorize_url
         self.access_token_url = access_token_url
@@ -188,14 +189,14 @@ class OAuth2IdentityProvider(db.Model):
                             headers={'Authorization': f'Bearer {token}'})
         return data if not normalized else self.normalize_userinfo(None, data)
 
-    @hybrid_property
+    @property
     def api_base_url(self):
-        return self._api_base_url
+        return self.api_resource.uri
 
     @api_base_url.setter
     def api_base_url(self, api_base_url):
         assert api_base_url and len(api_base_url) > 0, "URL cannot be empty"
-        self._api_base_url = api_base_url
+        self.api_resource.uri = api_base_url
 
     @hybrid_property
     def authorize_url(self):
