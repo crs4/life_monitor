@@ -2,12 +2,15 @@ from __future__ import annotations
 
 import datetime
 import logging
+import uuid as _uuid
 from typing import List
 
 from authlib.integrations.sqla_oauth2 import OAuth2TokenMixin
 from flask_bcrypt import check_password_hash, generate_password_hash
 from flask_login import AnonymousUserMixin, UserMixin
 from lifemonitor.db import db
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm.collections import attribute_mapped_collection
 
 # Set the module level logger
 logger = logging.getLogger(__name__)
@@ -29,6 +32,10 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(256), unique=True, nullable=False)
     password_hash = db.Column(db.LargeBinary, nullable=True)
+
+    authorization = db.relationship("ExternalServiceAccessAuthorization",
+                                    collection_class=attribute_mapped_collection('resource.uuid'),
+                                    cascade="all, delete-orphan")
 
     def __init__(self, username=None) -> None:
         super().__init__()
@@ -142,19 +149,61 @@ class ApiKey(db.Model):
         return cls.query.all()
 
 
+class ExternalResource(db.Model):
+
+    id = db.Column('id', db.Integer, primary_key=True)
+    uuid = db.Column(UUID(as_uuid=True), default=_uuid.uuid4, unique=True)
+    type = db.Column(db.String, nullable=False)
+    name = db.Column(db.String, nullable=True)
+    uri = db.Column(db.String, nullable=False)
+
+    authorization = db.relationship('ExternalServiceAccessAuthorization',
+                                    uselist=False, back_populates="resource", cascade="all, delete-orphan")
+
+    def __init__(self, rtype, uri, uuid=None, name=None) -> None:
+        super().__init__()
+        self.type = rtype
+        self.uri = uri
+        self.name = name
+        if uuid:
+            self.uuid = uuid
+
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
+
+    @classmethod
+    def all(cls):
+        return cls.query.all()
+
+    @classmethod
+    def find_by_uuid(cls, uuid):
+        return cls.query.filter(cls.uuid == uuid).first()
+
+
 class ExternalServiceAccessAuthorization(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(
-        db.Integer, db.ForeignKey('user.id', ondelete='CASCADE')
-    )
     type = db.Column(db.String, nullable=False)
-    user = db.relationship('User')
+    user_id = db.Column('user_id', db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
+    resource_id = db.Column(db.Integer, db.ForeignKey('external_resource.id'), nullable=False)
+    resource = db.relationship('ExternalResource', back_populates="authorization", cascade="all, delete")
+
+    user = db.relationship("User", back_populates="authorization")
 
     __mapper_args__ = {
-        'polymorphic_identity': 'credentials',
+        'polymorphic_identity': 'authorization',
         'polymorphic_on': type,
     }
+
+    def __init__(self, resource, user) -> None:
+        super().__init__()
+        self.resource = resource
+        self.user = user
 
 
 class ExternalServiceAuthorizationHeader(ExternalServiceAccessAuthorization):
