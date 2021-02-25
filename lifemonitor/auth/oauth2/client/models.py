@@ -80,6 +80,7 @@ class OAuthIdentity(models.ExternalServiceAccessAuthorization):
     }
 
     def __init__(self, provider, user_info, provider_user_id, token):
+        super().__init__(provider.api_resource, self.user)
         self.provider = provider
         self.provider_user_id = provider_user_id
         self._user_info = user_info
