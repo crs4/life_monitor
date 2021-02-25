@@ -7,19 +7,20 @@ from typing import Union
 from lifemonitor.api import models
 from lifemonitor.auth.models import User
 from lifemonitor.exceptions import EntityNotFoundException
+from .registry import WorkflowRegistry, WorkflowRegistryClient
 
 # set module level logger
 logger = logging.getLogger(__name__)
 
 
-class SeekWorkflowRegistry(models.WorkflowRegistry):
+class SeekWorkflowRegistry(WorkflowRegistry):
 
     __mapper_args__ = {
         'polymorphic_identity': 'seek'
     }
 
 
-class SeekWorkflowRegistryClient(models.WorkflowRegistryClient):
+class SeekWorkflowRegistryClient(WorkflowRegistryClient):
 
     def get_workflows_metadata(self, user, details=False):
         r = self._get(user, "/workflows?format=json")

@@ -100,7 +100,7 @@ def pop_request_from_session(name):
 
 class ClassManager:
 
-    def __init__(self, package, class_prefix="", class_suffix="", skip=None):
+    def __init__(self, package, class_prefix="", class_suffix="", skip=None, lazy=True):
         self._package = package
         self._prefix = class_prefix
         self._suffix = class_suffix
@@ -111,6 +111,8 @@ class ClassManager:
             else:
                 self._skip.append(skip)
         self.__concrete_types__ = None
+        if not lazy:
+            self._load_concrete_types()
 
     def _load_concrete_types(self):
         if not self.__concrete_types__:
@@ -135,3 +137,6 @@ class ClassManager:
 
     def get_class(self, concrete_type):
         return self._load_concrete_types()[concrete_type][0]
+
+    def get_classes(self):
+        return [_[0] for _ in self._load_concrete_types().values()]
