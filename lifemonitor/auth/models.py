@@ -32,9 +32,8 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(256), unique=True, nullable=False)
     password_hash = db.Column(db.LargeBinary, nullable=True)
 
-    authorization = db.relationship("ExternalServiceAccessAuthorization",
-                                    collection_class=attribute_mapped_collection('resource.uuid'),
-                                    cascade="all, delete-orphan")
+    authorizations = db.relationship("ExternalServiceAccessAuthorization",
+                                     cascade="all, delete-orphan")
 
     def __init__(self, username=None) -> None:
         super().__init__()
@@ -42,6 +41,9 @@ class User(UserMixin, db.Model):
 
     def get_user_id(self):
         return self.id
+
+    def get_authorization(self, resource: ExternalResource):
+        return ExternalServiceAccessAuthorization.find_by_user_and_resource(self, resource)
 
     @property
     def current_identity(self):
@@ -208,7 +210,7 @@ class ExternalServiceAccessAuthorization(db.Model):
     resource_id = db.Column(db.Integer, db.ForeignKey('external_resource.id'), nullable=False)
     resource = db.relationship('ExternalResource', back_populates="authorization", cascade="all, delete")
 
-    user = db.relationship("User", back_populates="authorization")
+    user = db.relationship("User", back_populates="authorizations", cascade="all, delete")
 
     __mapper_args__ = {
         'polymorphic_identity': 'authorization',
@@ -219,6 +221,11 @@ class ExternalServiceAccessAuthorization(db.Model):
         super().__init__()
         self.resource = resource
         self.user = user
+
+    @classmethod
+    def find_by_user_and_resource(cls, user: User, resource: ExternalResource):
+        return cls.query.filter(ExternalResource.id == cls.resource_id)\
+            .filter(ExternalResource.uuid == resource.uuid).filter(cls.user_id == user.id).all()
 
 
 class ExternalServiceAuthorizationHeader(ExternalServiceAccessAuthorization):
