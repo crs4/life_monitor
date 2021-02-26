@@ -79,9 +79,10 @@ class WorkflowRegistry(ExternalResource):
     _client_id = db.Column(db.Integer, db.ForeignKey('oauth2_client.id', ondelete='CASCADE'))
     _server_id = db.Column(db.Integer, db.ForeignKey('oauth2_identity_provider.id', ondelete='CASCADE'))
     client_credentials = db.relationship("Client", uselist=False, cascade="all, delete")
-    server_credentials = db.relationship("OAuth2IdentityProvider", uselist=False, cascade="all, delete", foreign_keys=[_server_id])
-    registered_workflows = db.relationship("Workflow",
-                                           back_populates="workflow_registry", cascade="all, delete")
+    server_credentials = db.relationship("OAuth2IdentityProvider",
+                                         uselist=False, cascade="all, delete",
+                                         foreign_keys=[_server_id],
+                                         backref="workflow_registry")
     client_id = association_proxy('client_credentials', 'client_id')
 
     _client = None
@@ -99,6 +100,14 @@ class WorkflowRegistry(ExternalResource):
         self.client_credentials = client_credentials
         self.server_credentials = server_credentials
         self._client = None
+
+    def __repr__(self):
+        return '<WorkflowRegistry ({}) -- name {}, url {}>'.format(
+            self.uuid, self.name, self.uri)
+
+    @property
+    def api(self) -> ExternalResource:
+        return self.server_credentials.api_resource
 
     @property
     def client(self) -> WorkflowRegistryClient:
@@ -190,7 +199,7 @@ class WorkflowRegistry(ExternalResource):
     @classmethod
     def find_by_name(cls, name):
         try:
-            return cls.query.filter(WorkflowRegistry.server_credentials.has(name=name)).one()
+            return cls.query.filter(WorkflowRegistry.name == name).one()
         except Exception as e:
             raise EntityNotFoundException(WorkflowRegistry, entity_id=name, exception=e)
 
