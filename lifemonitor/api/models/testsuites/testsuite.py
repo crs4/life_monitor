@@ -36,7 +36,7 @@ class Test:
 class TestSuite(db.Model):
     uuid = db.Column(UUID(as_uuid=True), primary_key=True, default=_uuid.uuid4)
     _workflow_id = db.Column("workflow_id", db.Integer,
-                             db.ForeignKey(models.workflows.Workflow._id), nullable=False)
+                             db.ForeignKey(models.workflows.Workflow.id), nullable=False)
     workflow = db.relationship("Workflow", back_populates="test_suites")
     test_definition = db.Column(JSONB, nullable=False)
     submitter_id = db.Column(db.Integer,

@@ -6,53 +6,56 @@ from typing import Union
 import lifemonitor.api.models as models
 import lifemonitor.exceptions as lm_exceptions
 from lifemonitor.api.models import db
-from lifemonitor.auth.models import User
+from lifemonitor.auth.models import ExternalResource, User
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.ext.associationproxy import association_proxy
+from sqlalchemy.ext.hybrid import hybrid_property
 
 # set module level logger
 logger = logging.getLogger(__name__)
 
 
-class Workflow(db.Model):
-    _id = db.Column('id', db.Integer, primary_key=True)
-    uuid = db.Column(UUID)
-    version = db.Column(db.Text, nullable=False)
-    roc_link = db.Column(db.Text, nullable=False)
+class Workflow(ExternalResource):
+    id = db.Column(db.Integer, db.ForeignKey(ExternalResource.id), primary_key=True)
     roc_metadata = db.Column(JSONB, nullable=True)
     submitter_id = db.Column(db.Integer,
                              db.ForeignKey(User.id), nullable=False)
-    _registry_id = \
-        db.Column("registry_id", UUID(as_uuid=True),
-                  db.ForeignKey(models.WorkflowRegistry.uuid), nullable=True)
     external_id = db.Column(db.String, nullable=True)
-    workflow_registry = db.relationship("WorkflowRegistry", uselist=False, back_populates="registered_workflows")
+    workflow_registry_id = \
+        db.Column(db.Integer, db.ForeignKey("workflow_registry.id"), nullable=True)
+
+    workflow_registry = db.relationship("WorkflowRegistry",
+                                        foreign_keys=[workflow_registry_id],
+                                        backref="registered_workflows")
     name = db.Column(db.Text, nullable=True)
     test_suites = db.relationship("TestSuite", back_populates="workflow", cascade="all, delete")
     submitter = db.relationship("User", uselist=False)
+    ro_crate = db.relationship("ExternalResource", uselist=False)
+    roc_link = association_proxy('ro_crate', 'uri')
 
-    # additional relational specs
-    __tablename__ = "workflow"
-    __table_args__ = (
-        db.UniqueConstraint(uuid, version),
-        db.UniqueConstraint(_registry_id, external_id, version),
-    )
+    __mapper_args__ = {
+        'polymorphic_identity': 'workflow'
+    }
+
+    # TODO: Set additional constraint which cannot be expressed
+    # with __table_args__ due to the usage of inheritance
+    # db.UniqueConstraint("workflow.id", "workflow.version")
+    # db.UniqueConstraint("workflow._registry_id", "workflow.external_id", "workflow.version")
 
     def __init__(self,
-                 uuid, version, submitter: User, rock_link,
+                 uuid, version, submitter: User, roc_link,
                  registry: models.WorkflowRegistry = None,
                  roc_metadata=None, external_id=None, name=None) -> None:
-        self.uuid = uuid
-        self.version = version
-        self.roc_link = rock_link
+        super().__init__(self.__class__.__name__,
+                         roc_link, uuid=uuid, name=name, version=version)
         self.roc_metadata = roc_metadata
-        self.name = name
         self.external_id = external_id
         self.workflow_registry = registry
         self.submitter = submitter
 
     def __repr__(self):
-        return '<Workflow ({}, {}); name: {}; link: {}>'.format(
+        return '<Workflow ({}, {}), name: {}, ro_crate link {}>'.format(
             self.uuid, self.version, self.name, self.roc_link)
 
     def check_health(self) -> dict:
@@ -67,6 +70,10 @@ class Workflow(db.Model):
                     health["issues"].append(str(e))
                     health["healthy"] = "Unknown"
         return health
+
+    @hybrid_property
+    def roc_link(self):
+        return self.uri
 
     @property
     def previous_versions(self):
