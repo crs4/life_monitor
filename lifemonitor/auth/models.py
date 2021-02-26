@@ -166,9 +166,6 @@ class ExternalResource(db.Model):
     uri = db.Column(db.String, nullable=False)
     version = db.Column(db.String, nullable=True)
 
-    authorization = db.relationship('ExternalServiceAccessAuthorization',
-                                    back_populates="resource", cascade="all, delete-orphan")
-
     __mapper_args__ = {
         'polymorphic_identity': 'resource',
         'polymorphic_on': rtype,
@@ -208,13 +205,25 @@ class ExternalResource(db.Model):
         return cls.query.filter(cls.uuid == uuid).first()
 
 
+association_table = db.Table(
+    'external_resource_authorization', db.Model.metadata,
+    db.Column('resource_id', db.Integer,
+              db.ForeignKey("external_resource.id")),
+    db.Column('authorization_id', db.Integer,
+              db.ForeignKey("external_service_access_authorization.id"))
+)
+
+
 class ExternalServiceAccessAuthorization(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     type = db.Column(db.String, nullable=False)
-    user_id = db.Column('user_id', db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
-    resource_id = db.Column(db.Integer, db.ForeignKey('external_resource.id'), nullable=False)
-    resource = db.relationship('ExternalResource', back_populates="authorization", cascade="all, delete")
+    user_id = db.Column('user_id', db.Integer,
+                        db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
+
+    resources = db.relationship("ExternalResource",
+                                secondary=association_table,
+                                backref="authorizations")
 
     user = db.relationship("User", back_populates="authorizations", cascade="all, delete")
 
@@ -223,15 +232,13 @@ class ExternalServiceAccessAuthorization(db.Model):
         'polymorphic_on': type,
     }
 
-    def __init__(self, resource, user) -> None:
+    def __init__(self, user) -> None:
         super().__init__()
-        self.resource = resource
         self.user = user
 
-    @classmethod
-    def find_by_user_and_resource(cls, user: User, resource: ExternalResource):
-        return cls.query.filter(ExternalResource.id == cls.resource_id)\
-            .filter(ExternalResource.uuid == resource.uuid).filter(cls.user_id == user.id).all()
+    @staticmethod
+    def find_by_user_and_resource(user: User, resource: ExternalResource):
+        return [a for a in user.authorizations if resource in a.resources]
 
 
 class ExternalServiceAuthorizationHeader(ExternalServiceAccessAuthorization):
@@ -244,6 +251,9 @@ class ExternalServiceAuthorizationHeader(ExternalServiceAccessAuthorization):
 
     header = db.Column(db.String, nullable=False)
 
+    def __init__(self, user, header=None) -> None:
+        super().__init__(user)
+        self.header = header
 
 class ExternalServiceAccessToken(ExternalServiceAccessAuthorization, OAuth2TokenMixin):
 
