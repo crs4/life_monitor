@@ -9,8 +9,7 @@ from authlib.integrations.sqla_oauth2 import OAuth2TokenMixin
 from flask_bcrypt import check_password_hash, generate_password_hash
 from flask_login import AnonymousUserMixin, UserMixin
 from lifemonitor.db import db
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm.collections import attribute_mapped_collection
+
 
 # Set the module level logger
 logger = logging.getLogger(__name__)
@@ -152,21 +151,37 @@ class ApiKey(db.Model):
 class ExternalResource(db.Model):
 
     id = db.Column('id', db.Integer, primary_key=True)
-    uuid = db.Column(UUID(as_uuid=True), default=_uuid.uuid4, unique=True)
+    uuid = db.Column(db.String, default=_uuid.uuid4, unique=True)
+    rtype = db.Column(db.String, nullable=False)
     type = db.Column(db.String, nullable=False)
     name = db.Column(db.String, nullable=True)
     uri = db.Column(db.String, nullable=False)
+    version = db.Column(db.String, nullable=True)
 
     authorization = db.relationship('ExternalServiceAccessAuthorization',
-                                    uselist=False, back_populates="resource", cascade="all, delete-orphan")
+                                    back_populates="resource", cascade="all, delete-orphan")
 
-    def __init__(self, rtype, uri, uuid=None, name=None) -> None:
+    __mapper_args__ = {
+        'polymorphic_identity': 'resource',
+        'polymorphic_on': rtype,
+    }
+
+    __table_args__ = (
+        db.UniqueConstraint(uuid, version),
+    )
+
+    def __init__(self, type, uri, uuid=None, name=None, version=None) -> None:
         super().__init__()
-        self.type = rtype
+        self.type = type
         self.uri = uri
         self.name = name
+        self.version = version
         if uuid:
             self.uuid = uuid
+
+    def __repr__(self):
+        return '<ExternalResource {}: {} -> {} (type={}))>'.format(
+            self.id, self.uuid, self.uri, self.type)
 
     def save(self):
         db.session.add(self)
