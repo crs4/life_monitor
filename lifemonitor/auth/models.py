@@ -43,7 +43,13 @@ class User(UserMixin, db.Model):
         return self.id
 
     def get_authorization(self, resource: ExternalResource):
-        return ExternalServiceAccessAuthorization.find_by_user_and_resource(self, resource)
+        auths = ExternalServiceAccessAuthorization.find_by_user_and_resource(self, resource)
+        # check for sub-resource authorizations
+        for subresource in ["api"]:
+            if hasattr(resource, subresource):
+                auths.extend(ExternalServiceAccessAuthorization
+                             .find_by_user_and_resource(self, getattr(resource, subresource)))
+        return auths
 
     @property
     def current_identity(self):
