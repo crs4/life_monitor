@@ -80,11 +80,12 @@ class OAuthIdentity(models.ExternalServiceAccessAuthorization):
     }
 
     def __init__(self, provider, user_info, provider_user_id, token):
-        super().__init__(provider.api_resource, self.user)
+        super().__init__(self.user)
         self.provider = provider
         self.provider_user_id = provider_user_id
         self._user_info = user_info
         self.token = token
+        self.resources.append(provider.api_resource)
 
     def as_http_header(self):
         return f"{self.provider.token_type} {self.token['access_token']}"
@@ -186,6 +187,10 @@ class OAuth2IdentityProvider(db.Model):
     @property
     def type(self):
         return self._type
+
+    @property
+    def token_type(self):
+        return "Bearer"
 
     def get_user_info(self, provider_user_id, token, normalized=True):
         data = requests.get(urljoin(self.api_base_url, self.userinfo_endpoint),
