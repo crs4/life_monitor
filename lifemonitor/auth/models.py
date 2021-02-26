@@ -236,6 +236,9 @@ class ExternalServiceAccessAuthorization(db.Model):
         super().__init__()
         self.user = user
 
+    def as_http_header(self):
+        return ""
+
     @staticmethod
     def find_by_user_and_resource(user: User, resource: ExternalResource):
         return [a for a in user.authorizations if resource in a.resources]
@@ -254,6 +257,10 @@ class ExternalServiceAuthorizationHeader(ExternalServiceAccessAuthorization):
     def __init__(self, user, header=None) -> None:
         super().__init__(user)
         self.header = header
+
+    def as_http_header(self):
+        return self.header
+
 
 class ExternalServiceAccessToken(ExternalServiceAccessAuthorization, OAuth2TokenMixin):
 
@@ -276,6 +283,9 @@ class ExternalServiceAccessToken(ExternalServiceAccessAuthorization, OAuth2Token
     def delete(self):
         db.session.delete(self)
         db.session.commit()
+
+    def as_http_header(self):
+        return f"{self.token_type} {self.access_token}"
 
     @classmethod
     def find(cls, access_token):

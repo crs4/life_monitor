@@ -86,6 +86,9 @@ class OAuthIdentity(models.ExternalServiceAccessAuthorization):
         self._user_info = user_info
         self.token = token
 
+    def as_http_header(self):
+        return f"{self.provider.token_type} {self.token['access_token']}"
+
     @property
     def username(self):
         return f"{self.provider.name}_{self.provider_user_id}"
