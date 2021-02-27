@@ -42,7 +42,7 @@ class User(UserMixin, db.Model):
     def get_user_id(self):
         return self.id
 
-    def get_authorization(self, resource: ExternalResource):
+    def get_authorization(self, resource: Resource):
         auths = ExternalServiceAccessAuthorization.find_by_user_and_resource(self, resource)
         # check for sub-resource authorizations
         for subresource in ["api"]:
@@ -156,7 +156,7 @@ class ApiKey(db.Model):
         return cls.query.all()
 
 
-class ExternalResource(db.Model):
+class Resource(db.Model):
 
     id = db.Column('id', db.Integer, primary_key=True)
     uuid = db.Column(db.String, default=_uuid.uuid4, unique=True)
@@ -185,7 +185,7 @@ class ExternalResource(db.Model):
             self.uuid = uuid
 
     def __repr__(self):
-        return '<ExternalResource {}: {} -> {} (type={}))>'.format(
+        return '<Resource {}: {} -> {} (type={}))>'.format(
             self.id, self.uuid, self.uri, self.type)
 
     def save(self):
@@ -208,7 +208,7 @@ class ExternalResource(db.Model):
 association_table = db.Table(
     'external_resource_authorization', db.Model.metadata,
     db.Column('resource_id', db.Integer,
-              db.ForeignKey("external_resource.id")),
+              db.ForeignKey("resource.id")),
     db.Column('authorization_id', db.Integer,
               db.ForeignKey("external_service_access_authorization.id"))
 )
@@ -221,7 +221,7 @@ class ExternalServiceAccessAuthorization(db.Model):
     user_id = db.Column('user_id', db.Integer,
                         db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
 
-    resources = db.relationship("ExternalResource",
+    resources = db.relationship("Resource",
                                 secondary=association_table,
                                 backref="authorizations")
 
@@ -240,7 +240,7 @@ class ExternalServiceAccessAuthorization(db.Model):
         return ""
 
     @staticmethod
-    def find_by_user_and_resource(user: User, resource: ExternalResource):
+    def find_by_user_and_resource(user: User, resource: Resource):
         return [a for a in user.authorizations if resource in a.resources]
 
 

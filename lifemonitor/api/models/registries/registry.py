@@ -7,7 +7,7 @@ from typing import List, Union
 import lifemonitor.api.models as models
 from authlib.integrations.base_client import RemoteApp
 from lifemonitor.api.models import db
-from lifemonitor.auth.models import ExternalResource, User
+from lifemonitor.auth.models import Resource, User
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 from lifemonitor.auth.oauth2.client.services import oauth2_registry
 from lifemonitor.exceptions import EntityNotFoundException
@@ -72,9 +72,9 @@ class WorkflowRegistryClient(ABC):
         return cls.client_types.get_class(client_type)
 
 
-class WorkflowRegistry(ExternalResource):
+class WorkflowRegistry(Resource):
 
-    id = db.Column(db.Integer, db.ForeignKey(ExternalResource.id), primary_key=True)
+    id = db.Column(db.Integer, db.ForeignKey(Resource.id), primary_key=True)
     registry_type = db.Column(db.String, nullable=False)
     _client_id = db.Column(db.Integer, db.ForeignKey('oauth2_client.id', ondelete='CASCADE'))
     _server_id = db.Column(db.Integer, db.ForeignKey('oauth2_identity_provider.id', ondelete='CASCADE'))
@@ -106,7 +106,7 @@ class WorkflowRegistry(ExternalResource):
             self.uuid, self.name, self.uri)
 
     @property
-    def api(self) -> ExternalResource:
+    def api(self) -> Resource:
         return self.server_credentials.api_resource
 
     @property

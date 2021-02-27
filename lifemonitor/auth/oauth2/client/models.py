@@ -156,8 +156,8 @@ class OAuth2IdentityProvider(db.Model):
     _access_token_url = db.Column("access_token_url", db.String, nullable=False)
     access_token_params = db.Column(JSONB, nullable=True)
     userinfo_endpoint = db.Column(db.String, nullable=False)
-    api_resource_id = db.Column(db.Integer, db.ForeignKey("external_resource.id"), nullable=False)
-    api_resource = db.relationship("ExternalResource", cascade="all, delete")
+    api_resource_id = db.Column(db.Integer, db.ForeignKey("resource.id"), nullable=False)
+    api_resource = db.relationship("Resource", cascade="all, delete")
     identities = db.relationship("OAuthIdentity",
                                  back_populates="provider", cascade="all, delete")
 
@@ -177,7 +177,7 @@ class OAuth2IdentityProvider(db.Model):
         self.name = name
         self.client_id = client_id
         self.client_secret = client_secret
-        self.api_resource = models.ExternalResource("OAuth2IdentityProvider", api_base_url, name=self.name)
+        self.api_resource = models.Resource("OAuth2IdentityProvider", api_base_url, name=self.name)
         self.client_kwargs = client_kwargs
         self.authorize_url = authorize_url
         self.access_token_url = access_token_url
