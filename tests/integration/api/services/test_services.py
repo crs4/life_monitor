@@ -21,7 +21,7 @@ def test_workflow_registration(app_client, user1, valid_workflow):
     # pick the test with a valid specification and one test instance
     w, workflow = utils.pick_and_register_workflow(user1, valid_workflow)
     assert workflow is not None, "workflow must be not None"
-    assert isinstance(workflow, models.Workflow), "Object is not an instance of Workflow"
+    assert isinstance(workflow, models.WorkflowVersion), "Object is not an instance of WorkflowVersion"
     assert (workflow.uuid, workflow.version) == (w['uuid'], w['version']),\
         "Unexpected workflow ID"
     assert workflow.external_id is not None, "External ID must be computed if not provided"
@@ -78,7 +78,7 @@ def test_workflow_registration_not_allowed_user(app_client, user1, user2):
 
 def test_workflow_serialization(app_client, user1):
     _, workflow = utils.pick_and_register_workflow(user1)
-    assert isinstance(workflow, models.Workflow), "Workflow not properly initialized"
+    assert isinstance(workflow, models.WorkflowVersion), "Workflow not properly initialized"
     data = workflow.to_dict(test_suite=True, test_build=True, test_output=True)
     assert isinstance(data, dict), "Invalid serialization output type"
     logger.debug(data)
@@ -86,7 +86,7 @@ def test_workflow_serialization(app_client, user1):
 
 def test_workflow_serialization_no_instances(app_client, user1):
     _, workflow = utils.pick_and_register_workflow(user1, "basefreqsum")
-    assert isinstance(workflow, models.Workflow), "Workflow not properly initialized"
+    assert isinstance(workflow, models.WorkflowVersion), "Workflow not properly initialized"
     data = workflow.to_dict(test_suite=True, test_build=True, test_output=True)
     assert isinstance(data, dict), "Invalid serialization output type"
     logger.debug(data)
@@ -97,11 +97,11 @@ def test_workflow_deregistration(app_client, user1, valid_workflow):
     # pick and register one workflow
     wf_data, workflow = utils.pick_and_register_workflow(user1, valid_workflow)
     # current number of workflows
-    number_of_workflows = len(models.Workflow.all())
+    number_of_workflows = len(models.WorkflowVersion.all())
     lm.deregister_user_workflow(wf_data['uuid'], wf_data['version'], user1["user"])
-    assert len(models.Workflow.all()) == number_of_workflows - 1, "Unexpected number of workflows"
+    assert len(models.WorkflowVersion.all()) == number_of_workflows - 1, "Unexpected number of workflows"
     # try to find
-    w = models.Workflow.find_by_id(wf_data['uuid'], wf_data['version'])
+    w = models.WorkflowVersion.find_by_id(wf_data['uuid'], wf_data['version'])
     assert w is None, "Workflow must not be in the DB"
 
 
@@ -155,7 +155,7 @@ def test_suite_registration_unauthorized_user_exception(
 def test_suite_registration_invalid_specification_exception(
         app_client, user1, invalid_test_suite_metadata):
     w, workflow = utils.pick_and_register_workflow(user1)
-    assert isinstance(workflow, models.Workflow), "Workflow not properly initialized"
+    assert isinstance(workflow, models.WorkflowVersion), "Workflow not properly initialized"
     with pytest.raises(lm_exceptions.SpecificationNotValidException):
         LifeMonitor.get_instance().register_test_suite(w['uuid'], w['version'],
                                                        user1["user"],

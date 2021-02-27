@@ -236,7 +236,7 @@ def test_post_workflow_by_registry_not_authorized(m, request_context, mock_regis
 def test_get_workflow_by_id_error_not_found(m, request_context, mock_registry):
     assert auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry, "Unexpected registry in session"
-    m.get_registry_workflow.side_effect = lm_exceptions.EntityNotFoundException(models.Workflow)
+    m.get_registry_workflow.side_effect = lm_exceptions.EntityNotFoundException(models.WorkflowVersion)
     response = controllers.workflows_get_by_id(wf_uuid="12345", wf_version="1")
     logger.debug("Response: %r", response)
     assert_status_code(response.status_code, 404)

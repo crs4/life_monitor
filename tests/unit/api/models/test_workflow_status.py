@@ -11,7 +11,11 @@ logger = logging.getLogger(__name__)
 
 @pytest.fixture
 def workflow():
-    return models.Workflow(MagicMock(), uuid.uuid4(), "1", "https://link", MagicMock())
+    # uuid, version, submitter: User, roc_link,
+    #  registry: models.WorkflowRegistry = None,
+    #  roc_metadata = None, external_id = None, name = None
+    return models.WorkflowVersion(uuid.uuid4(), "1", MagicMock(),
+                                  "https://link", MagicMock())
 
 
 @pytest.fixture
