@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 from lifemonitor.db import db
 from lifemonitor.auth.models import User
+from .rocrate import ROCrate
 
 # 'status' module
 from .status import Status, AggregateTestStatus, WorkflowStatus, SuiteStatus
@@ -25,7 +26,7 @@ from .services import TestingService, \
 
 
 __all__ = [
-    "db", "User",
+    "db", "User", "ROCrate",
     "Status", "AggregateTestStatus", "WorkflowStatus", "SuiteStatus",
     "WorkflowRegistry", "WorkflowRegistryClient", "Workflow",
     "Test", "TestSuite", "TestInstance",
