@@ -36,11 +36,11 @@ class LifeMonitor:
     @staticmethod
     def _find_and_check_workflow(uuid, version, user: User):
         if not version:
-            w = models.Workflow.find_latest_by_id(uuid)
+            w = models.WorkflowVersion.find_latest_by_id(uuid)
         else:
-            w = models.Workflow.find_by_id(uuid, version)
+            w = models.WorkflowVersion.find_by_id(uuid, version)
         if w is None:
-            raise lm_exceptions.EntityNotFoundException(models.Workflow, f"{uuid}_{version}")
+            raise lm_exceptions.EntityNotFoundException(models.WorkflowVersion, f"{uuid}_{version}")
         # Check user access for a workflow
         # As a general rule, we grant user access to the workflow
         #   1. if the user if the workflow submitter
@@ -59,6 +59,9 @@ class LifeMonitor:
                           workflow_registry: models.WorkflowRegistry = None,
                           authorization=None,
                           external_id=None, name=None):
+
+        # TODO: replace workflow_registry with 
+        # workflow_hosting_service                          
         with tempfile.NamedTemporaryFile(dir="/tmp") as archive_path:
             logger.info("Downloading RO Crate @ %s", archive_path.name)
             if workflow_registry:
@@ -73,7 +76,7 @@ class LifeMonitor:
                 metadata_path = Path(roc_path) / crate.metadata.id
                 with open(metadata_path, "rt") as f:
                     metadata = json.load(f)
-                # create a new Workflow instance with the loaded metadata
+                # create a new WorkflowVersion instance with the loaded metadata
                 if workflow_registry:
                     w = workflow_registry.add_workflow(
                         workflow_uuid, workflow_version, workflow_submitter,
@@ -81,7 +84,7 @@ class LifeMonitor:
                         external_id=external_id, name=name
                     )
                 else:
-                    w = models.Workflow(
+                    w = models.WorkflowVersion(
                         workflow_uuid, workflow_version, workflow_submitter, roc_link,
                         roc_metadata=metadata,
                         external_id=external_id, name=name
@@ -97,9 +100,9 @@ class LifeMonitor:
     @classmethod
     def deregister_user_workflow(cls, workflow_uuid, workflow_version, user: User):
         workflow = cls._find_and_check_workflow(workflow_uuid, workflow_version, user)
-        logger.debug("Workflow to delete: %r", workflow)
+        logger.debug("WorkflowVersion to delete: %r", workflow)
         if not workflow:
-            raise lm_exceptions.EntityNotFoundException(models.Workflow, (workflow_uuid, workflow_version))
+            raise lm_exceptions.EntityNotFoundException(models.WorkflowVersion, (workflow_uuid, workflow_version))
         if workflow.submitter != user:
             raise lm_exceptions.NotAuthorizedException("Only the workflow submitter can add test suites")
         workflow.delete()
@@ -109,9 +112,9 @@ class LifeMonitor:
     @staticmethod
     def deregister_registry_workflow(workflow_uuid, workflow_version, registry: models.WorkflowRegistry):
         workflow = registry.get_workflow(workflow_uuid, workflow_version)
-        logger.debug("Workflow to delete: %r", workflow)
+        logger.debug("WorkflowVersion to delete: %r", workflow)
         if not workflow:
-            raise lm_exceptions.EntityNotFoundException(models.Workflow, (workflow_uuid, workflow_version))
+            raise lm_exceptions.EntityNotFoundException(models.WorkflowVersion, (workflow_uuid, workflow_version))
         workflow.delete()
         logger.debug("Deleted workflow wf_uuid: %r - version: %r", workflow_uuid, workflow_version)
         return workflow_uuid, workflow_version
@@ -119,9 +122,9 @@ class LifeMonitor:
     @staticmethod
     def register_test_suite(workflow_uuid, workflow_version,
                             submitter: models.User, test_suite_metadata) -> models.TestSuite:
-        workflow = models.Workflow.find_by_id(workflow_uuid, workflow_version)
+        workflow = models.WorkflowVersion.find_by_id(workflow_uuid, workflow_version)
         if not workflow:
-            raise lm_exceptions.EntityNotFoundException(models.Workflow, (workflow_uuid, workflow_version))
+            raise lm_exceptions.EntityNotFoundException(models.WorkflowVersion, (workflow_uuid, workflow_version))
         # For now only the workflow submitter can add test suites
         if workflow.submitter != submitter:
             raise lm_exceptions.NotAuthorizedException("Only the workflow submitter can add test suites")
@@ -171,15 +174,15 @@ class LifeMonitor:
             raise lm_exceptions.EntityNotFoundException(models.WorkflowRegistry, registry_name)
 
     @staticmethod
-    def get_workflow(uuid, version) -> models.Workflow:
-        return models.Workflow.find_by_id(uuid, version)
+    def get_workflow(uuid, version) -> models.WorkflowVersion:
+        return models.WorkflowVersion.find_by_id(uuid, version)
 
     @staticmethod
     def get_workflows() -> list:
-        return models.Workflow.all()
+        return models.WorkflowVersion.all()
 
     @staticmethod
-    def get_registry_workflow(registry: models.WorkflowRegistry, uuid, version=None) -> models.Workflow:
+    def get_registry_workflow(registry: models.WorkflowRegistry, uuid, version=None) -> models.WorkflowVersion:
         return registry.get_workflow(uuid, version)
 
     @staticmethod
@@ -187,7 +190,7 @@ class LifeMonitor:
         return registry.registered_workflows
 
     @classmethod
-    def get_user_workflow(cls, user: models.User, uuid, version=None) -> models.Workflow:
+    def get_user_workflow(cls, user: models.User, uuid, version=None) -> models.WorkflowVersion:
         return cls._find_and_check_workflow(uuid, version, user)
 
     @staticmethod

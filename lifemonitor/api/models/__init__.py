@@ -13,7 +13,7 @@ from .status import Status, AggregateTestStatus, WorkflowStatus, SuiteStatus
 from .registries import WorkflowRegistry, WorkflowRegistryClient
 
 # 'workflows' package
-from .workflows import Workflow
+from .workflows import WorkflowVersion
 
 # 'testsuites' package
 from .testsuites import Test, TestSuite, TestInstance, BuildStatus, TestBuild
@@ -28,7 +28,7 @@ from .services import TestingService, \
 __all__ = [
     "db", "User", "ROCrate",
     "Status", "AggregateTestStatus", "WorkflowStatus", "SuiteStatus",
-    "WorkflowRegistry", "WorkflowRegistryClient", "Workflow",
+    "WorkflowRegistry", "WorkflowRegistryClient", "WorkflowVersion",
     "Test", "TestSuite", "TestInstance",
     "BuildStatus", "TestBuild", "JenkinsTestBuild", "TravisTestBuild",
     "TestingService", "JenkinsTestingService", "TravisTestingService",

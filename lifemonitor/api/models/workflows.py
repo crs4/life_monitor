@@ -1,4 +1,5 @@
 from __future__ import annotations
+from lifemonitor.api.models.rocrate import ROCrate
 
 import logging
 from typing import Union
@@ -16,11 +17,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 logger = logging.getLogger(__name__)
 
 
-class Workflow(ExternalResource):
-    id = db.Column(db.Integer, db.ForeignKey(ExternalResource.id), primary_key=True)
-    roc_metadata = db.Column(JSONB, nullable=True)
-    submitter_id = db.Column(db.Integer,
-                             db.ForeignKey(User.id), nullable=False)
+class WorkflowVersion(ROCrate):
     external_id = db.Column(db.String, nullable=True)
     workflow_registry_id = \
         db.Column(db.Integer, db.ForeignKey("workflow_registry.id"), nullable=True)

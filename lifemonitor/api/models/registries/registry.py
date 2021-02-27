@@ -52,7 +52,7 @@ class WorkflowRegistryClient(ABC):
         return ",".join([str(uuid), str(version)])
 
     @abstractmethod
-    def build_ro_link(self, w: models.Workflow) -> str:
+    def build_ro_link(self, w: models.WorkflowVersion) -> str:
         pass
 
     @abstractmethod
@@ -60,7 +60,7 @@ class WorkflowRegistryClient(ABC):
         pass
 
     @abstractmethod
-    def get_workflow_metadata(self, user, w: Union[models.Workflow, str]):
+    def get_workflow_metadata(self, user, w: Union[models.WorkflowVersion, str]):
         pass
 
     @abstractmethod
@@ -116,7 +116,7 @@ class WorkflowRegistry(Resource):
             return WorkflowRegistryClient.get_client_class(rtype)(self)
         return self._client
 
-    def build_ro_link(self, w: models.Workflow) -> str:
+    def build_ro_link(self, w: models.WorkflowVersion) -> str:
         return self.client.build_ro_link(w)
 
     def download_url(self, url, user, target_path=None):
@@ -151,10 +151,10 @@ class WorkflowRegistry(Resource):
             except Exception as e:
                 logger.exception(e)
 
-        return models.Workflow(workflow_uuid, workflow_version, workflow_submitter, roc_link,
-                               registry=self,
-                               roc_metadata=roc_metadata,
-                               external_id=external_id, name=name)
+        return models.WorkflowVersion(workflow_uuid, workflow_version, workflow_submitter, roc_link,
+                                      registry=self,
+                                      roc_metadata=roc_metadata,
+                                      external_id=external_id, name=name)
 
     def save(self):
         db.session.add(self)
@@ -167,17 +167,17 @@ class WorkflowRegistry(Resource):
     def get_workflow(self, uuid, version=None):
         try:
             if not version:
-                return models.Workflow.query.with_parent(self)\
-                    .filter(models.Workflow.uuid == uuid).order_by(models.Workflow.version.desc()).first()
-            return models.Workflow.query.with_parent(self)\
-                .filter(models.Workflow.uuid == uuid).filter(models.Workflow.version == version).first()
+                return models.WorkflowVersion.query.with_parent(self)\
+                    .filter(models.WorkflowVersion.uuid == uuid).order_by(models.WorkflowVersion.version.desc()).first()
+            return models.WorkflowVersion.query.with_parent(self)\
+                .filter(models.WorkflowVersion.uuid == uuid).filter(models.WorkflowVersion.version == version).first()
         except Exception as e:
             raise EntityNotFoundException(e)
 
     def get_workflow_versions(self, uuid):
         try:
-            workflows = models.Workflow.query.with_parent(self)\
-                .filter(models.Workflow.uuid == uuid).order_by(models.Workflow.version.desc())
+            workflows = models.WorkflowVersion.query.with_parent(self)\
+                .filter(models.WorkflowVersion.uuid == uuid).order_by(models.WorkflowVersion.version.desc())
             return {w.version: w for w in workflows}
         except Exception as e:
             raise EntityNotFoundException(e)
@@ -192,7 +192,7 @@ class WorkflowRegistry(Resource):
     @classmethod
     def find_by_id(cls, uuid) -> WorkflowRegistry:
         try:
-            return cls.query.get(uuid)
+            return cls.query.filter(cls.uuid == uuid).one()
         except Exception as e:
             raise EntityNotFoundException(WorkflowRegistry, entity_id=uuid, exception=e)
 

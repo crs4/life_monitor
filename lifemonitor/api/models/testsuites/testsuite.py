@@ -36,8 +36,8 @@ class Test:
 class TestSuite(db.Model):
     uuid = db.Column(UUID(as_uuid=True), primary_key=True, default=_uuid.uuid4)
     _workflow_id = db.Column("workflow_id", db.Integer,
-                             db.ForeignKey(models.workflows.Workflow.id), nullable=False)
-    workflow = db.relationship("Workflow", back_populates="test_suites")
+                             db.ForeignKey(models.workflows.WorkflowVersion.id), nullable=False)
+    workflow = db.relationship("WorkflowVersion", back_populates="test_suites")
     test_definition = db.Column(JSONB, nullable=False)
     submitter_id = db.Column(db.Integer,
                              db.ForeignKey(User.id), nullable=False)
@@ -47,7 +47,7 @@ class TestSuite(db.Model):
                                      cascade="all, delete")
 
     def __init__(self,
-                 w: models.workflows.Workflow, submitter: User,
+                 w: models.workflows.WorkflowVersion, submitter: User,
                  test_definition: object) -> None:
         self.workflow = w
         self.submitter = submitter

@@ -112,7 +112,7 @@ def workflows_put(wf_uuid, wf_version, body):
     # TODO: to be implemented
     logger.debug("PUT called for workflow (%s,%s)", wf_uuid, wf_version)
     # try:
-    #     wf = model.Workflow.query.get(wf_id)
+    #     wf = model.WorkflowVersion.query.get(wf_id)
     # except sqlalchemy.exc.DataError:
     #     return "Invalid ID", 400
     # wf.name = body['name']
@@ -135,7 +135,7 @@ def workflows_delete(wf_uuid, wf_version):
     except lm_exceptions.EntityNotFoundException as e:
         return lm_exceptions.report_problem(404, "Not Found", extra_info={"exception": str(e.detail)},
                                             detail=messages.workflow_not_found.format(wf_uuid, wf_version))
-    except lm_exceptions.OAuthIdentityNotFoundException as e:
+    except OAuthIdentityNotFoundException as e:
         return lm_exceptions.report_problem(401, "Unauthorized", extra_info={"exception": str(e)})
     except lm_exceptions.NotAuthorizedException as e:
         return lm_exceptions.report_problem(403, "Forbidden", extra_info={"exception": str(e)})
