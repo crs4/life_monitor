@@ -156,6 +156,22 @@ class ApiKey(db.Model):
         return cls.query.all()
 
 
+resource_owners_table = db.Table(
+    'resource_owner', db.Model.metadata,
+    db.Column('resource_id', db.Integer,
+              db.ForeignKey("resource.id")),
+    db.Column('user_id', db.Integer,
+              db.ForeignKey("user.id"))
+)
+
+resource_viewers_table = db.Table(
+    'resource_viewer', db.Model.metadata,
+    db.Column('resource_id', db.Integer,
+              db.ForeignKey("resource.id")),
+    db.Column('user_id', db.Integer,
+              db.ForeignKey("user.id"))
+)
+
 class Resource(db.Model):
 
     id = db.Column('id', db.Integer, primary_key=True)
@@ -165,6 +181,14 @@ class Resource(db.Model):
     name = db.Column(db.String, nullable=True)
     uri = db.Column(db.String, nullable=False)
     version = db.Column(db.String, nullable=True)
+
+    owners = db.relationship("User",
+                             secondary=resource_owners_table,
+                             backref="own_resources")
+
+    viewers = db.relationship("User",
+                              secondary=resource_owners_table,
+                              backref="shared_resources")
 
     __mapper_args__ = {
         'polymorphic_identity': 'resource',
