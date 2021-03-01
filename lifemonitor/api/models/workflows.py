@@ -1,15 +1,15 @@
 from __future__ import annotations
-from lifemonitor.api.models.rocrate import ROCrate
 
 import logging
-from typing import Union
+from typing import List, Union
 
 import lifemonitor.api.models as models
 import lifemonitor.exceptions as lm_exceptions
 from lifemonitor.api.models import db
-from lifemonitor.auth.models import ExternalResource, User
+from lifemonitor.api.models.registries.registry import WorkflowRegistry
+from lifemonitor.api.models.rocrate import ROCrate
+from lifemonitor.auth.models import Resource, User
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
-from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.hybrid import hybrid_property
 
@@ -17,18 +17,82 @@ from sqlalchemy.ext.hybrid import hybrid_property
 logger = logging.getLogger(__name__)
 
 
-class WorkflowVersion(ROCrate):
-    external_id = db.Column(db.String, nullable=True)
-    workflow_registry_id = \
-        db.Column(db.Integer, db.ForeignKey("workflow_registry.id"), nullable=True)
+class Workflow(Resource):
+    id = db.Column(db.Integer, db.ForeignKey(Resource.id), primary_key=True)
 
-    workflow_registry = db.relationship("WorkflowRegistry",
-                                        foreign_keys=[workflow_registry_id],
-                                        backref="registered_workflows")
-    name = db.Column(db.Text, nullable=True)
-    test_suites = db.relationship("TestSuite", back_populates="workflow", cascade="all, delete")
+    external_ns = "external-id:"
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'workflow_archive'
+    }
+
+    def __init__(self, uri=None, uuid=None, version=None, name=None) -> None:
+        super().__init__(self.__class__.__name__,
+                         uri=uri or f"{self.external_ns}:undefined",
+                         uuid=uuid, version=version, name=name)
+
+    def __repr__(self):
+        return '<Workflow ({}, {}), name: {}>'.format(
+            self.uuid, self.version, self.name)
+
+    @hybrid_property
+    def external_id(self):
+        return self.uuid.replace(self.external_ns, "")
+
+    @property
+    def latest_version(self):
+        return WorkflowVersion.find_latest_by_id(self.uuid)
+
+    def add_version(self, version, uri, submitter: User, uuid=None, name=None,
+                    hosting_service: models.WorkflowRegistry = None):
+        try:
+            if hosting_service and hasattr(hosting_service, 'get_external_id'):
+                self.uri = f"{self.external_ns}{hosting_service.get_external_id(self.uuid, version, submitter)}"
+        except lm_exceptions.EntityNotFoundException as e:
+            raise lm_exceptions.NotAuthorizedException(details=str(e))
+        return WorkflowVersion(self, uri, version, submitter, uuid=uuid, name=name,
+                               hosting_service=hosting_service)
+
+    def remove_version(self, version: WorkflowVersion):
+        self.versions.remove(version)
+
+    def check_health(self) -> dict:
+        health = {'healthy': True, 'issues': []}
+        for suite in self.test_suites:
+            for test_instance in suite.test_instances:
+                try:
+                    testing_service = test_instance.testing_service
+                    if not testing_service.last_test_build.is_successful():
+                        health["healthy"] = False
+                except lm_exceptions.TestingServiceException as e:
+                    health["issues"].append(str(e))
+                    health["healthy"] = "Unknown"
+        return health
+
+    @classmethod
+    def get_user_workflow(cls, owner: User, uuid) -> Workflow:
+        return cls.query\
+            .join(User, Workflow.owners)\
+            .filter(User.id == owner.id)\
+            .filter(cls.uuid == uuid).first()
+
+    @classmethod
+    def get_user_workflows(cls, owner: User) -> List[Workflow]:
+        return cls.query\
+            .join(User, Workflow.owners)\
+            .filter(User.id == owner.id).all()
+
+
+class WorkflowVersion(ROCrate):
+    id = db.Column(db.Integer, db.ForeignKey(ROCrate.id), primary_key=True)
+    submitter_id = db.Column(db.Integer, db.ForeignKey(User.id), nullable=False)
+    workflow_id = \
+        db.Column(db.Integer, db.ForeignKey("workflow.id"), nullable=True)
+    workflow = db.relationship("Workflow", foreign_keys=[workflow_id], cascade="all",
+                               backref=db.backref("versions", cascade="all, delete-orphan"))
+    test_suites = db.relationship("TestSuite", back_populates="workflow",
+                                  cascade="all, delete")
     submitter = db.relationship("User", uselist=False)
-    ro_crate = db.relationship("ExternalResource", uselist=False)
     roc_link = association_proxy('ro_crate', 'uri')
 
     __mapper_args__ = {
@@ -39,20 +103,21 @@ class WorkflowVersion(ROCrate):
     # with __table_args__ due to the usage of inheritance
     # db.UniqueConstraint("workflow.id", "workflow.version")
     # db.UniqueConstraint("workflow._registry_id", "workflow.external_id", "workflow.version")
+    # __table_args__ = (
+    #     db.UniqueConstraint(workflow_id, ROCrate.version, submitter_id),
+    # )
 
-    def __init__(self,
-                 uuid, version, submitter: User, roc_link,
-                 registry: models.WorkflowRegistry = None,
-                 roc_metadata=None, external_id=None, name=None) -> None:
-        super().__init__(self.__class__.__name__,
-                         roc_link, uuid=uuid, name=name, version=version)
-        self.roc_metadata = roc_metadata
-        self.external_id = external_id
-        self.workflow_registry = registry
+    def __init__(self, workflow: Workflow,
+                 uri, version, submitter: User, uuid=None, name=None,
+                 hosting_service: models.WorkflowRegistry = None) -> None:
+        super().__init__(uri, uuid=uuid, name=name,
+                         version=version, hosting_service=hosting_service)
         self.submitter = submitter
+        self.owners.append(submitter)
+        self.workflow = workflow
 
     def __repr__(self):
-        return '<Workflow ({}, {}), name: {}, ro_crate link {}>'.format(
+        return '<WorkflowVersion ({}, {}), name: {}, ro_crate link {}>'.format(
             self.uuid, self.version, self.name, self.roc_link)
 
     def check_health(self) -> dict:
@@ -69,18 +134,28 @@ class WorkflowVersion(ROCrate):
         return health
 
     @hybrid_property
+    def authorizations(self):
+        auths = [a for a in self._authorizations]
+        if self.hosting_service:
+            for auth in self.submitter.get_authorization(self.hosting_service):
+                auths.append(auth)
+        return auths
+
+    @hybrid_property
+    def workflow_registry(self):
+        return self.hosting_service
+
+    @hybrid_property
     def roc_link(self):
         return self.uri
 
     @property
     def previous_versions(self):
-        return list(self.previous_workflow_versions.keys())
+        return [w.version for w in self.workflow.versions if w != self and w.version < self.version]
 
     @property
     def previous_workflow_versions(self):
-        return {k: v
-                for k, v in self.workflow_registry.get_workflow_versions(self.uuid).items()
-                if k != self.version}
+        return [w for w in self.workflow.versions if w != self and w.version < self.version]
 
     @property
     def status(self) -> models.WorkflowStatus:
@@ -128,14 +203,57 @@ class WorkflowVersion(ROCrate):
 
     @classmethod
     def find_by_id(cls, uuid, version):
-        return cls.query.filter(Workflow.uuid == uuid) \
-            .filter(Workflow.version == version).first()
+        return cls.query.filter(WorkflowVersion.uuid == uuid) \
+            .filter(WorkflowVersion.version == version).first()
 
     @classmethod
     def find_latest_by_id(cls, uuid):
-        return cls.query.filter(Workflow.uuid == uuid) \
-            .order_by(Workflow.version.desc()).first()
+        return cls.query.filter(WorkflowVersion.uuid == uuid) \
+            .order_by(WorkflowVersion.version.desc()).first()
 
     @classmethod
     def find_by_submitter(cls, submitter: User):
-        return cls.query.filter(Workflow.submitter_id == submitter.id).first()
+        return cls.query.filter(WorkflowVersion.submitter_id == submitter.id).first()
+
+    @classmethod
+    def find_by_owner(cls, owner: User, uuid, version):
+        return cls.query\
+            .join(User, WorkflowVersion.owners)\
+            .filter(User.id == owner.id)\
+            .filter(WorkflowVersion.uuid == uuid)\
+            .filter(WorkflowVersion.version == version).first()
+
+    @classmethod
+    def get_user_workflow(cls, owner: User, uuid, version=None):
+        if version:
+            return cls.query\
+                .join(User, WorkflowVersion.owners)\
+                .filter(User.id == owner.id)\
+                .filter(cls.uuid == uuid)\
+                .filter(cls.version == version).first()
+        return cls.query\
+            .join(User, WorkflowVersion.owners)\
+            .filter(User.id == owner.id)\
+            .filter(cls.uuid == uuid)\
+            .order_by(WorkflowVersion.version.desc()).first()
+
+    @classmethod
+    def get_user_workflows(cls, owner: User):
+        return cls.query\
+            .join(User, WorkflowVersion.owners)\
+            .filter(User.id == owner.id).all()
+
+    @classmethod
+    def get_registry_workflow(cls, registry_uuid, uuid, version=None):
+        if version:
+            return cls.query\
+                .join(WorkflowRegistry, cls.hosting_service)\
+                .filter(WorkflowRegistry.uuid == registry_uuid)\
+                .filter(cls.uuid == uuid)\
+                .filter(cls.version == version)\
+                .order_by(cls.version.desc()).first()
+        return cls.query\
+            .join(WorkflowRegistry, cls.hosting_service)\
+            .filter(WorkflowRegistry.uuid == registry_uuid)\
+            .filter(cls.uuid == uuid)\
+            .order_by(WorkflowVersion.version.desc()).first()

@@ -123,6 +123,9 @@ class WorkflowRegistry(Resource):
             return WorkflowRegistryClient.get_client_class(rtype)(self)
         return self._client
 
+    def get_external_id(self, uuid, version, user: User):
+        return self.client.get_external_id(uuid, version, user)
+
     def build_ro_link(self, w: models.WorkflowVersion) -> str:
         return self.client.build_ro_link(w)
 
@@ -132,6 +135,10 @@ class WorkflowRegistry(Resource):
     @property
     def users(self) -> List[User]:
         return self.get_users()
+
+    @property
+    def registered_workflows(self):
+        return self.ro_crates
 
     def get_user(self, user_id) -> User:
         for u in self.users:
@@ -147,21 +154,11 @@ class WorkflowRegistry(Resource):
         except Exception as e:
             raise EntityNotFoundException(e)
 
-    def add_workflow(self, workflow_uuid, workflow_version,
-                     workflow_submitter: User,
-                     roc_link, roc_metadata=None,
-                     external_id=None, name=None):
-        if external_id is None:
-            try:
-                external_id = self.client.get_external_id(
-                    workflow_uuid, workflow_version, workflow_submitter)
-            except Exception as e:
-                logger.exception(e)
+    def get_authorization(self, user: User):
+        auths = ExternalServiceAccessAuthorization.find_by_user_and_resource(user, self)
+        # check for sub-resource authorizations
 
-        return models.WorkflowVersion(workflow_uuid, workflow_version, workflow_submitter, roc_link,
-                                      registry=self,
-                                      roc_metadata=roc_metadata,
-                                      external_id=external_id, name=name)
+        return auths
 
     def save(self):
         db.session.add(self)
@@ -173,13 +170,9 @@ class WorkflowRegistry(Resource):
 
     def get_workflow(self, uuid, version=None):
         try:
-            if not version:
-                return models.WorkflowVersion.query.with_parent(self)\
-                    .filter(models.WorkflowVersion.uuid == uuid).order_by(models.WorkflowVersion.version.desc()).first()
-            return models.WorkflowVersion.query.with_parent(self)\
-                .filter(models.WorkflowVersion.uuid == uuid).filter(models.WorkflowVersion.version == version).first()
+            return models.WorkflowVersion.get_registry_workflow(self.uuid, uuid, version=version)
         except Exception as e:
-            raise EntityNotFoundException(e)
+            raise EntityNotFoundException(models.Workflow, details=str(e), entity_id=uuid)
 
     def get_workflow_versions(self, uuid):
         try:
