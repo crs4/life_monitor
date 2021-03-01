@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import json
 import logging
 import shutil
@@ -84,19 +85,19 @@ class ROCrate(Resource):
             # with tempfile.NamedTemporaryFile(dir="/tmp") as archive_path:
             zip_archive = download_url(roc_link, target_path=archive_path.name, authorization=authorization_header)
             logger.debug("ZIP Archive: %s", zip_archive)
-            roc_path = target_path or Path(tempfile.mkdtemp())
+            roc_path = target_path or Path(tempfile.mkdtemp(dir="/tmp"))
             logger.info("Extracting RO Crate @ %s", roc_path)
-            extract_zip(archive_path, target_path=roc_path.name)
+            extract_zip(archive_path, target_path=roc_path.as_posix())
             return roc_path
 
     @classmethod
     def load_metadata_files(cls, roc_link, authorization_header=None):
         roc_path = cls.extract_rocrate(roc_link, authorization_header=authorization_header)
         try:
-            from os import listdir
-            logger.debug(listdir(roc_path.name))
-            crate = ROCrateHelper(roc_path.name)
-            metadata_path = Path(roc_path.name) / crate.metadata.id
+            roc_posix_path = roc_path.as_posix()
+            logger.debug(os.listdir(roc_posix_path))
+            crate = ROCrateHelper(roc_posix_path)
+            metadata_path = Path(roc_posix_path) / crate.metadata.id
             with open(metadata_path, "rt") as f:
                 metadata = json.load(f)
             # create a new Workflow instance with the loaded metadata
