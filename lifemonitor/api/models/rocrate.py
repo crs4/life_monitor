@@ -73,16 +73,18 @@ class ROCrate(Resource):
                 self._metadata_loaded = True
                 return self._metadata, self._test_metadata
             except Exception as e:
-                logger.exception(e)
                 errors.append(e)
 
-        # FIXME: replace with a proper exception
+        # for e in errors:
+        #     logger.debug("Error: %r", e)
+        # logger.debug("Errors: %r", [e for e in errors if isinstance(e, lm_exceptions.NotAuthorizedException)])
+        if len([e for e in errors if isinstance(e, lm_exceptions.NotAuthorizedException)]) == len(errors):
+            raise lm_exceptions.NotAuthorizedException()
         raise lm_exceptions.LifeMonitorException("ROCrate download error", errors=errors)
 
     @staticmethod
     def extract_rocrate(roc_link, target_path=None, authorization_header=None):
         with tempfile.NamedTemporaryFile(dir="/tmp") as archive_path:
-            # with tempfile.NamedTemporaryFile(dir="/tmp") as archive_path:
             zip_archive = download_url(roc_link, target_path=archive_path.name, authorization=authorization_header)
             logger.debug("ZIP Archive: %s", zip_archive)
             roc_path = target_path or Path(tempfile.mkdtemp(dir="/tmp"))

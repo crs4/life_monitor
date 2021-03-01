@@ -43,7 +43,7 @@ def _download_from_remote(url, output_stream, authorization=None):
             session.headers['Authorization'] = authorization
         with session.get(url, stream=True) as r:
             if r.status_code == 401 or r.status_code == 403:
-                raise NotAuthorizedException(r.content)
+                raise NotAuthorizedException(details=r.content)
             r.raise_for_status()
             for chunk in r.iter_content(chunk_size=8192):
                 output_stream.write(chunk)
@@ -62,6 +62,8 @@ def download_url(url, target_path=None, authorization=None):
 
 
 def extract_zip(archive_path, target_path=None):
+    logger.debug("Archive path: %r", archive_path)
+    logger.debug("Target path: %r", target_path)
     try:
         if not target_path:
             target_path = tempfile.mkdtemp()
