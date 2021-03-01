@@ -1,20 +1,14 @@
 from __future__ import annotations
 
-import json
 import logging
-import tempfile
-from pathlib import Path
-from typing import List, Union
+from typing import Union
 
 import lifemonitor.exceptions as lm_exceptions
 from lifemonitor.api import models
-from lifemonitor.auth.models import User
+from lifemonitor.auth.models import ExternalServiceAuthorizationHeader, User
 from lifemonitor.auth.oauth2.client import providers
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 from lifemonitor.auth.oauth2.server import server
-from lifemonitor.test_metadata import get_old_format_tests
-from lifemonitor.utils import download_url, extract_zip
-from rocrate.rocrate import ROCrate
 
 logger = logging.getLogger()
 
@@ -36,16 +30,16 @@ class LifeMonitor:
     @staticmethod
     def _find_and_check_workflow(uuid, version, user: User):
         if not version:
-            w = models.WorkflowVersion.find_latest_by_id(uuid)
+            w = models.Workflow.get_user_workflow(user, uuid).latest_version
         else:
-            w = models.WorkflowVersion.find_by_id(uuid, version)
+            w = models.WorkflowVersion.get_user_workflow(user, uuid, version)
         if w is None:
             raise lm_exceptions.EntityNotFoundException(models.WorkflowVersion, f"{uuid}_{version}")
-        # Check user access for a workflow
+        # Check whether the user can access the workflow.
         # As a general rule, we grant user access to the workflow
-        #   1. if the user if the workflow submitter
-        #   2. or the user has view access to the workflow on the registry
-        if w.submitter != user:
+        #   1. if the user belongs to the owners group
+        #   2. or the user belongs to the viewers group
+        if user not in w.owners and user not in w.viewers:
             # if the user is not the submitter
             # and the workflow is associated with a registry
             # then we try to check whether the user is allowed to view the workflow
@@ -57,45 +51,30 @@ class LifeMonitor:
     def register_workflow(workflow_submitter: User,
                           workflow_uuid, workflow_version, roc_link,
                           workflow_registry: models.WorkflowRegistry = None,
-                          authorization=None,
-                          external_id=None, name=None):
+                          authorization=None, name=None):
 
-        # TODO: replace workflow_registry with 
-        # workflow_hosting_service                          
-        with tempfile.NamedTemporaryFile(dir="/tmp") as archive_path:
-            logger.info("Downloading RO Crate @ %s", archive_path.name)
+        # find or create a user workflow
+        w = models.Workflow.get_user_workflow(workflow_submitter, workflow_uuid)
+        if not w:
+            w = models.Workflow(uuid=workflow_uuid, name=name)
+            w.owners.append(workflow_submitter)
             if workflow_registry:
-                zip_archive = workflow_registry.download_url(roc_link, workflow_submitter, target_path=archive_path.name)
+                for auth in workflow_submitter.get_authorization(workflow_registry):
+                    auth.resources.append(w)
             else:
-                zip_archive = download_url(roc_link, target_path=archive_path.name, authorization=authorization)
-            logger.debug("ZIP Archive: %s", zip_archive)
-            with tempfile.TemporaryDirectory() as roc_path:
-                logger.info("Extracting RO Crate @ %s", roc_path)
-                extract_zip(archive_path.name, target_path=roc_path)
-                crate = ROCrate(roc_path)
-                metadata_path = Path(roc_path) / crate.metadata.id
-                with open(metadata_path, "rt") as f:
-                    metadata = json.load(f)
-                # create a new WorkflowVersion instance with the loaded metadata
-                if workflow_registry:
-                    w = workflow_registry.add_workflow(
-                        workflow_uuid, workflow_version, workflow_submitter,
-                        roc_link=roc_link, roc_metadata=metadata,
-                        external_id=external_id, name=name
-                    )
-                else:
-                    w = models.WorkflowVersion(
-                        workflow_uuid, workflow_version, workflow_submitter, roc_link,
-                        roc_metadata=metadata,
-                        external_id=external_id, name=name
-                    )
-                test_metadata = get_old_format_tests(crate)
-                if test_metadata:
-                    logger.debug("Test metadata found in the crate")
-                    # FIXME: the test metadata can describe more than one suite
-                    w.add_test_suite(workflow_submitter, test_metadata)
-                w.save()
-                return w
+                raise("Unsupported yet")
+
+        wv = w.add_version(workflow_version, roc_link, workflow_submitter,
+                           uuid=workflow_uuid, name=name,
+                           hosting_service=workflow_registry)
+        if authorization:
+            wv.authorizations.append(ExternalServiceAuthorizationHeader(workflow_submitter, header=authorization))
+        if wv.test_metadata:
+            logger.debug("Test metadata found in the crate")
+            # FIXME: the test metadata can describe more than one suite
+            wv.add_test_suite(workflow_submitter, wv.test_metadata)
+        w.save()
+        return wv
 
     @classmethod
     def deregister_user_workflow(cls, workflow_uuid, workflow_version, user: User):
@@ -122,7 +101,7 @@ class LifeMonitor:
     @staticmethod
     def register_test_suite(workflow_uuid, workflow_version,
                             submitter: models.User, test_suite_metadata) -> models.TestSuite:
-        workflow = models.WorkflowVersion.find_by_id(workflow_uuid, workflow_version)
+        workflow = models.WorkflowVersion.get_user_workflow(submitter, workflow_uuid, workflow_version)
         if not workflow:
             raise lm_exceptions.EntityNotFoundException(models.WorkflowVersion, (workflow_uuid, workflow_version))
         # For now only the workflow submitter can add test suites
@@ -194,12 +173,12 @@ class LifeMonitor:
         return cls._find_and_check_workflow(uuid, version, user)
 
     @staticmethod
+    def get_workflow_registry_users(registry: models.WorkflowRegistry) -> List[User]:
+        return registry.get_users()
+
+    @staticmethod
     def get_user_workflows(user: User) -> list:
-        workflows = []
-        registries = models.WorkflowRegistry.all()
-        for registry in registries:
-            workflows.extend(registry.get_user_workflows(user))
-        return workflows
+        return models.WorkflowVersion.get_user_workflows(user)
 
     @staticmethod
     def get_suite(suite_uuid) -> models.TestSuite:
@@ -284,7 +263,3 @@ class LifeMonitor:
     @staticmethod
     def get_workflow_registry(uuid) -> models.WorkflowRegistry:
         return models.WorkflowRegistry.find_by_id(uuid)
-
-    @staticmethod
-    def get_workflow_registry_users(registry: models.WorkflowRegistry) -> List[User]:
-        return registry.get_users()
