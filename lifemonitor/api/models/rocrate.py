@@ -23,7 +23,9 @@ class ROCrate(Resource):
 
     id = db.Column(db.Integer, db.ForeignKey(Resource.id), primary_key=True)
     hosting_service_id = db.Column(db.Integer, db.ForeignKey("resource.id"), nullable=True)
-    hosting_service = db.relationship("Resource", uselist=False, foreign_keys=[hosting_service_id])
+    hosting_service = db.relationship("Resource", uselist=False,
+                                      backref=db.backref("ro_crates", cascade="all, delete-orphan"),
+                                      foreign_keys=[hosting_service_id])
     _metadata = db.Column("metadata", JSONB, nullable=True)
     _test_metadata = None
     _local_path = None
