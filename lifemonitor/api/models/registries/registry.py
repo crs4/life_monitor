@@ -5,15 +5,17 @@ from abc import ABC, abstractmethod
 from typing import List, Union
 
 import lifemonitor.api.models as models
+import requests
 from authlib.integrations.base_client import RemoteApp
 from lifemonitor.api.models import db
-from lifemonitor.auth.models import Resource, User
+from lifemonitor.auth.models import (ExternalServiceAccessAuthorization,
+                                     Resource, User)
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 from lifemonitor.auth.oauth2.client.services import oauth2_registry
-from lifemonitor.exceptions import EntityNotFoundException
+from lifemonitor.exceptions import (EntityNotFoundException,
+                                    NotAuthorizedException)
 from lifemonitor.utils import ClassManager, download_url
 from sqlalchemy.ext.associationproxy import association_proxy
-
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -39,9 +41,14 @@ class WorkflowRegistryClient(ABC):
         return OAuthIdentity.find_by_user_id(user_id, self.registry.name).token
 
     def _get(self, user, *args, **kwargs):
-        # update token
-        self._oauth2client.token = self._get_access_token(user.id)
-        return self._oauth2client.get(*args, **kwargs)
+        with requests.Session() as session:
+            for auth in user.get_authorization(self.registry):
+                session.headers['Authorization'] = auth.as_http_header()
+                r = session.get(*args, **kwargs)
+                if r.status_code == 401 or r.status_code == 403:
+                    raise NotAuthorizedException(details=r.content)
+                r.raise_for_status()
+                return r
 
     def download_url(self, url, user, target_path=None):
         return download_url(url, target_path,
