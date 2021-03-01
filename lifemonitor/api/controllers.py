@@ -8,7 +8,8 @@ from flask import Response, g
 from lifemonitor.api import serializers
 from lifemonitor.api.services import LifeMonitor
 from lifemonitor.auth import authorized, current_registry, current_user
-from lifemonitor.auth.oauth2.client.models import OAuthIdentityNotFoundException
+from lifemonitor.auth.oauth2.client.models import \
+    OAuthIdentityNotFoundException
 from lifemonitor.lang import messages
 
 # Initialize a reference to the LifeMonitor instance
@@ -87,7 +88,6 @@ def workflows_post(body):
             workflow_version=body['version'],
             roc_link=body['roc_link'],
             workflow_registry=registry,
-            external_id=body.get("external_id", None),
             name=body.get('name', None)
         )
         logger.debug("workflows_post. Created workflow '%s' (ver.%s)", w.uuid, w.version)
