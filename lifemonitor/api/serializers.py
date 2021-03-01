@@ -32,14 +32,14 @@ class ListOfWorkflowRegistriesSchema(BaseSchema):
 
 class WorkflowSchema(BaseSchema):
     __envelope__ = {"single": None, "many": "items"}
-    __model__ = models.Workflow
+    __model__ = models.WorkflowVersion
 
     class Meta:
-        model = models.Workflow
+        model = models.WorkflowVersion
 
     uuid = ma.auto_field()
     version = ma.auto_field()
-    roc_link = ma.auto_field()
+    roc_link = fields.String(attributes="ro_crate.uri")
     name = ma.auto_field()
 
 
