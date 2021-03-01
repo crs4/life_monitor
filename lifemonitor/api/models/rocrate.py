@@ -63,7 +63,7 @@ class ROCrate(Resource):
                 auth_header = authorization.as_http_header() if authorization else None
                 logger.debug(auth_header)
                 self._metadata, self._test_metadata = \
-                    self.load_metadata_files(self.uri, authorization_header=auth_header, cleanup=False)
+                    self.load_metadata_files(self.uri, authorization_header=auth_header)
                 return self._metadata, self._test_metadata
             except Exception as e:
                 logger.exception(e)
@@ -74,18 +74,18 @@ class ROCrate(Resource):
 
     @staticmethod
     def extract_rocrate(roc_link, target_path=None, authorization_header=None):
-        archive_path = tempfile.NamedTemporaryFile(dir="/tmp")
-        # with tempfile.NamedTemporaryFile(dir="/tmp") as archive_path:
-        zip_archive = download_url(roc_link, target_path=archive_path.name, authorization=authorization_header)
-        logger.debug("ZIP Archive: %s", zip_archive)
-        roc_path = target_path or tempfile.TemporaryDirectory()
-        logger.info("Extracting RO Crate @ %s", roc_path)
-        extract_zip(archive_path, target_path=roc_path.name)
-        return roc_path
+        with tempfile.NamedTemporaryFile(dir="/tmp") as archive_path:
+            # with tempfile.NamedTemporaryFile(dir="/tmp") as archive_path:
+            zip_archive = download_url(roc_link, target_path=archive_path.name, authorization=authorization_header)
+            logger.debug("ZIP Archive: %s", zip_archive)
+            roc_path = target_path or Path(tempfile.mkdtemp())
+            logger.info("Extracting RO Crate @ %s", roc_path)
+            extract_zip(archive_path, target_path=roc_path.name)
+            return roc_path
 
     @classmethod
-    def load_metadata_files(cls, roc_link, target_path=None, authorization_header=None, cleanup=True):
-        roc_path = cls.extract_rocrate(roc_link, target_path=target_path, authorization_header=authorization_header)
+    def load_metadata_files(cls, roc_link, authorization_header=None):
+        roc_path = cls.extract_rocrate(roc_link, authorization_header=authorization_header)
         try:
             from os import listdir
             logger.debug(listdir(roc_path.name))
@@ -97,8 +97,7 @@ class ROCrate(Resource):
             test_metadata = get_old_format_tests(crate)
             return metadata, test_metadata
         finally:
-            if cleanup:
-                shutil.rmtree(roc_path, ignore_errors=True)
+            shutil.rmtree(roc_path, ignore_errors=True)
 
     def save(self):
         db.session.add(self)
