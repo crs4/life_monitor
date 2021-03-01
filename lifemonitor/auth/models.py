@@ -9,6 +9,7 @@ from authlib.integrations.sqla_oauth2 import OAuth2TokenMixin
 from flask_bcrypt import check_password_hash, generate_password_hash
 from flask_login import AnonymousUserMixin, UserMixin
 from lifemonitor.db import db
+from sqlalchemy.ext.hybrid import hybrid_property
 
 
 # Set the module level logger
@@ -159,23 +160,24 @@ class ApiKey(db.Model):
 resource_owners_table = db.Table(
     'resource_owner', db.Model.metadata,
     db.Column('resource_id', db.Integer,
-              db.ForeignKey("resource.id")),
+              db.ForeignKey("resource.id", ondelete="CASCADE")),
     db.Column('user_id', db.Integer,
-              db.ForeignKey("user.id"))
+              db.ForeignKey("user.id", ondelete="CASCADE"))
 )
 
 resource_viewers_table = db.Table(
     'resource_viewer', db.Model.metadata,
     db.Column('resource_id', db.Integer,
-              db.ForeignKey("resource.id")),
+              db.ForeignKey("resource.id", ondelete="CASCADE")),
     db.Column('user_id', db.Integer,
-              db.ForeignKey("user.id"))
+              db.ForeignKey("user.id", ondelete="CASCADE"))
 )
+
 
 class Resource(db.Model):
 
     id = db.Column('id', db.Integer, primary_key=True)
-    uuid = db.Column(db.String, default=_uuid.uuid4, unique=True)
+    uuid = db.Column(db.String, default=_uuid.uuid4)
     rtype = db.Column(db.String, nullable=False)
     type = db.Column(db.String, nullable=False)
     name = db.Column(db.String, nullable=True)
@@ -184,33 +186,45 @@ class Resource(db.Model):
 
     owners = db.relationship("User",
                              secondary=resource_owners_table,
-                             backref="own_resources")
+                             backref="own_resources", passive_deletes=True)
 
     viewers = db.relationship("User",
                               secondary=resource_owners_table,
-                              backref="shared_resources")
+                              backref="shared_resources", passive_deletes=True)
 
     __mapper_args__ = {
         'polymorphic_identity': 'resource',
         'polymorphic_on': rtype,
     }
 
-    __table_args__ = (
-        db.UniqueConstraint(uuid, version),
-    )
+    # __table_args__ = (
+    #     db.UniqueConstraint(uuid, version),
+    # )
 
-    def __init__(self, type, uri, uuid=None, name=None, version=None) -> None:
-        super().__init__()
+    def __init__(self, type, uri, uuid=None,
+                 name=None, version=None) -> None:
         self.type = type
         self.uri = uri
         self.name = name
         self.version = version
-        if uuid:
-            self.uuid = uuid
+        self.uuid = uuid
 
     def __repr__(self):
         return '<Resource {}: {} -> {} (type={}))>'.format(
             self.id, self.uuid, self.uri, self.type)
+
+    @hybrid_property
+    def authorizations(self):
+        return self._authorizations
+
+    def get_authorization(self, user: User):
+        auths = ExternalServiceAccessAuthorization.find_by_user_and_resource(user, self)
+        # check for sub-resource authorizations
+        for subresource in ["api"]:
+            if hasattr(self, subresource):
+                auths.extend(ExternalServiceAccessAuthorization
+                             .find_by_user_and_resource(self, getattr(self, subresource)))
+        return auths
 
     def save(self):
         db.session.add(self)
@@ -229,12 +243,12 @@ class Resource(db.Model):
         return cls.query.filter(cls.uuid == uuid).first()
 
 
-association_table = db.Table(
-    'external_resource_authorization', db.Model.metadata,
+resource_authorization_table = db.Table(
+    'resource_authorization', db.Model.metadata,
     db.Column('resource_id', db.Integer,
-              db.ForeignKey("resource.id")),
+              db.ForeignKey("resource.id", ondelete="CASCADE")),
     db.Column('authorization_id', db.Integer,
-              db.ForeignKey("external_service_access_authorization.id"))
+              db.ForeignKey("external_service_access_authorization.id", ondelete="CASCADE"))
 )
 
 
@@ -246,8 +260,9 @@ class ExternalServiceAccessAuthorization(db.Model):
                         db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
 
     resources = db.relationship("Resource",
-                                secondary=association_table,
-                                backref="authorizations")
+                                secondary=resource_authorization_table,
+                                backref="_authorizations",
+                                passive_deletes=True)
 
     user = db.relationship("User", back_populates="authorizations", cascade="all, delete")
 
@@ -278,7 +293,7 @@ class ExternalServiceAuthorizationHeader(ExternalServiceAccessAuthorization):
 
     header = db.Column(db.String, nullable=False)
 
-    def __init__(self, user, header=None) -> None:
+    def __init__(self, user, header) -> None:
         super().__init__(user)
         self.header = header
 
