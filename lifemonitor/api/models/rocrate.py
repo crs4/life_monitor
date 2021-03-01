@@ -29,6 +29,7 @@ class ROCrate(Resource):
     _metadata = db.Column("metadata", JSONB, nullable=True)
     _test_metadata = None
     _local_path = None
+    _metadata_loaded = False
 
     __mapper_args__ = {
         'polymorphic_identity': 'ro_crate',
@@ -44,10 +45,14 @@ class ROCrate(Resource):
 
     @hybrid_property
     def crate_metadata(self):
+        if not self._metadata_loaded:
+            self.load_metadata()
         return self._metadata
 
     @property
     def test_metadata(self):
+        if not self._metadata_loaded:
+            self.load_metadata()
         return self._test_metadata
 
     def _get_authorizations(self):
@@ -64,6 +69,7 @@ class ROCrate(Resource):
                 logger.debug(auth_header)
                 self._metadata, self._test_metadata = \
                     self.load_metadata_files(self.uri, authorization_header=auth_header)
+                self._metadata_loaded = True
                 return self._metadata, self._test_metadata
             except Exception as e:
                 logger.exception(e)
