@@ -180,7 +180,15 @@ class LifeMonitor:
 
     @staticmethod
     def get_user_workflows(user: User) -> list:
-        return models.WorkflowVersion.get_user_workflows(user)
+        workflows = [w for w in models.WorkflowVersion.get_user_workflows(user)]
+        # TODO: replace WorkflowRegistry with a more general Entity
+        for svc in models.WorkflowRegistry.all():
+            try:
+                if svc.get_user(user.id):
+                    workflows.extend(svc.get_user_workflows(user))
+            except lm_exceptions.lm_exceptions.EntityNotFoundException:
+                pass
+        return workflows
 
     @staticmethod
     def get_suite(suite_uuid) -> models.TestSuite:
