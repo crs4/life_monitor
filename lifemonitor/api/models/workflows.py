@@ -202,33 +202,15 @@ class WorkflowVersion(ROCrate):
         return cls.query.all()
 
     @classmethod
-    def find_by_id(cls, uuid, version):
-        return cls.query.filter(WorkflowVersion.uuid == uuid) \
-            .filter(WorkflowVersion.version == version).first()
-
-    @classmethod
-    def find_latest_by_id(cls, uuid):
-        return cls.query.filter(WorkflowVersion.uuid == uuid) \
-            .order_by(WorkflowVersion.version.desc()).first()
-
-    @classmethod
-    def find_by_submitter(cls, submitter: User):
-        return cls.query.filter(WorkflowVersion.submitter_id == submitter.id).first()
-
-    @classmethod
-    def find_by_owner(cls, owner: User, uuid, version):
-        return cls.query\
-            .join(User, WorkflowVersion.owners)\
-            .filter(User.id == owner.id)\
-            .filter(WorkflowVersion.uuid == uuid)\
-            .filter(WorkflowVersion.version == version).first()
+    def get_submitter_versions(cls, submitter: User) -> List[WorkflowVersion]:
+        return cls.query.filter(WorkflowVersion.submitter_id == submitter.id).all()
 
     @classmethod
     def get_user_workflow(cls, owner: User, uuid, version):
-            return cls.query\
+        return cls.query\
             .join(Permission)\
             .filter(Permission.resource_id == cls.id, Permission.user_id == owner.id)\
-            .filter(cls.uuid == uuid, cls.version == version).first()
+            .filter(cls.uuid == uuid, cls.version == version).one()
 
     @classmethod
     def get_user_workflows(cls, owner: User):
@@ -237,16 +219,19 @@ class WorkflowVersion(ROCrate):
             .filter(Permission.resource_id == cls.id, Permission.user_id == owner.id).all()
 
     @classmethod
-    def get_registry_workflow(cls, registry_uuid, uuid, version=None):
-        if version:
-            return cls.query\
-                .join(WorkflowRegistry, cls.hosting_service)\
-                .filter(WorkflowRegistry.uuid == registry_uuid)\
-                .filter(cls.uuid == uuid)\
-                .filter(cls.version == version)\
-                .order_by(cls.version.desc()).first()
+    def get_hosted_workflow_version(cls, hosting_service: Resource, uuid, version) -> List[WorkflowVersion]:
+        # TODO: replace WorkflowRegistry with a more general Entity
         return cls.query\
             .join(WorkflowRegistry, cls.hosting_service)\
-            .filter(WorkflowRegistry.uuid == registry_uuid)\
+            .filter(WorkflowRegistry.uuid == hosting_service.uuid)\
             .filter(cls.uuid == uuid)\
-            .order_by(WorkflowVersion.version.desc()).first()
+            .filter(cls.version == version)\
+            .order_by(WorkflowVersion.version.desc()).one()
+
+    @classmethod
+    def get_hosted_workflow_versions(cls, hosting_service: Resource) -> List[WorkflowVersion]:
+        # TODO: replace WorkflowRegistry with a more general Entity
+        return cls.query\
+            .join(WorkflowRegistry, cls.hosting_service)\
+            .filter(WorkflowRegistry.uuid == hosting_service.uuid)\
+            .order_by(WorkflowVersion.version.desc()).all()
