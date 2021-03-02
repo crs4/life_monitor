@@ -25,8 +25,8 @@ def test_workflow_registration(app_client, user1, valid_workflow):
     assert isinstance(workflow, models.WorkflowVersion), "Object is not an instance of WorkflowVersion"
     assert (workflow.uuid, workflow.version) == (w['uuid'], w['version']),\
         "Unexpected workflow ID"
-    #assert workflow.external_id is not None, "External ID must be computed if not provided"
-    #assert workflow.external_id == w["external_id"], "Invalid external ID"
+    # assert workflow.external_id is not None, "External ID must be computed if not provided"
+    # assert workflow.external_id == w["external_id"], "Invalid external ID"
     assert workflow.submitter == user1["user"], "Inavalid submitter user"
     # inspect the suite/test type
     assert len(workflow.test_suites) == 1, "Expected number of test suites 1"
