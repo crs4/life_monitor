@@ -38,7 +38,7 @@ class Workflow(Resource):
 
     @hybrid_property
     def external_id(self):
-        return self.uuid.replace(self.external_ns, "")
+        return self.uri.replace(self.external_ns, "")
 
     @property
     def latest_version(self):
