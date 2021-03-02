@@ -12,6 +12,7 @@ from lifemonitor.auth.models import Resource, User, Permission
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm.collections import attribute_mapped_collection
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -41,7 +42,7 @@ class Workflow(Resource):
 
     @property
     def latest_version(self):
-        return WorkflowVersion.find_latest_by_id(self.uuid)
+        return max(self.versions.values(), key=lambda v: v.version)
 
     def add_version(self, version, uri, submitter: User, uuid=None, name=None,
                     hosting_service: models.WorkflowRegistry = None):
@@ -88,7 +89,8 @@ class WorkflowVersion(ROCrate):
     workflow_id = \
         db.Column(db.Integer, db.ForeignKey("workflow.id"), nullable=True)
     workflow = db.relationship("Workflow", foreign_keys=[workflow_id], cascade="all",
-                               backref=db.backref("versions", cascade="all, delete-orphan"))
+                               backref=db.backref("versions", cascade="all, delete-orphan",
+                                                  collection_class=attribute_mapped_collection('version')))
     test_suites = db.relationship("TestSuite", back_populates="workflow",
                                   cascade="all, delete")
     submitter = db.relationship("User", uselist=False)
@@ -149,11 +151,11 @@ class WorkflowVersion(ROCrate):
 
     @property
     def previous_versions(self):
-        return [w.version for w in self.workflow.versions if w != self and w.version < self.version]
+        return [w.version for w in self.workflow.versions.values() if w != self and w.version < self.version]
 
     @property
     def previous_workflow_versions(self):
-        return [w for w in self.workflow.versions if w != self and w.version < self.version]
+        return [w for w in self.workflow.versions.values() if w != self and w.version < self.version]
 
     @property
     def status(self) -> models.WorkflowStatus:
