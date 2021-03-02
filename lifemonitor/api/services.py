@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Union
+from typing import Union, List
 
 import lifemonitor.exceptions as lm_exceptions
 from lifemonitor.api import models
