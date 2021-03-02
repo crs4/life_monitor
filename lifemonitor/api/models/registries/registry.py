@@ -123,7 +123,7 @@ class WorkflowRegistry(Resource):
             return WorkflowRegistryClient.get_client_class(rtype)(self)
         return self._client
 
-    def get_external_id(self, uuid, version, user: User):
+    def get_external_id(self, uuid, version, user: User) -> str:
         return self.client.get_external_id(uuid, version, user)
 
     def build_ro_link(self, w: models.WorkflowVersion) -> str:
@@ -137,8 +137,13 @@ class WorkflowRegistry(Resource):
         return self.get_users()
 
     @property
-    def registered_workflows(self):
+    def registered_workflows(self) -> List[models.WorkflowVersion]:
         return self.ro_crates
+
+    def get_authorization(self, user: User):
+        auths = ExternalServiceAccessAuthorization.find_by_user_and_resource(user, self)
+        # check for sub-resource authorizations
+        return auths
 
     def get_user(self, user_id) -> User:
         for u in self.users:
@@ -177,7 +182,7 @@ class WorkflowRegistry(Resource):
         return w.workflow if w else None
 
     @classmethod
-    def all(cls):
+    def all(cls) -> List[WorkflowRegistry]:
         return cls.query.all()
 
     @classmethod
