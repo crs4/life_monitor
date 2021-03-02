@@ -37,7 +37,7 @@ class SeekWorkflowRegistryClient(WorkflowRegistryClient):
             else [self.get_workflow_metadata(user, w['id']) for w in workflows]
 
     def get_workflow_metadata(self, user, w: Union[models.WorkflowVersion, str]):
-        _id = w.external_id if isinstance(w, models.WorkflowVersion) else w
+        _id = w.workflow.external_id if isinstance(w, models.WorkflowVersion) else w
         r = self._get(user, f"{self.registry.uri}/workflows/{_id}?format=json")
         if r.status_code != 200:
             raise RuntimeError(f"ERROR: unable to get workflow (status code: {r.status_code})")
@@ -50,7 +50,7 @@ class SeekWorkflowRegistryClient(WorkflowRegistryClient):
         result = []
         allowed = [w["id"] for w in self.get_workflows_metadata(user)]
         for w in workflows:
-            if str(w.external_id) in allowed:
+            if str(w.workflow.external_id) in allowed:
                 result.append(w)
         return result
 
