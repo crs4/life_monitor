@@ -159,11 +159,8 @@ class WorkflowRegistry(Resource):
         except Exception as e:
             raise EntityNotFoundException(e)
 
-    def get_authorization(self, user: User):
-        auths = ExternalServiceAccessAuthorization.find_by_user_and_resource(user, self)
-        # check for sub-resource authorizations
-
-        return auths
+    def get_user_workflows(self, user: User) -> List[models.WorkflowVersion]:
+        return self.client.filter_by_user(self.registered_workflows, user)
 
     def save(self):
         db.session.add(self)
