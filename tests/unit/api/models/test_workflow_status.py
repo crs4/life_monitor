@@ -14,7 +14,7 @@ def workflow():
     # uuid, version, submitter: User, roc_link,
     #  registry: models.WorkflowRegistry = None,
     #  roc_metadata = None, external_id = None, name = None
-    return models.WorkflowVersion(uuid.uuid4(), "1", MagicMock(),
+    return models.WorkflowVersion(MagicMock(), uuid.uuid4(), "1", MagicMock(),
                                   "https://link", MagicMock())
 
 
