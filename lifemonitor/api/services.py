@@ -5,7 +5,7 @@ from typing import Union
 
 import lifemonitor.exceptions as lm_exceptions
 from lifemonitor.api import models
-from lifemonitor.auth.models import ExternalServiceAuthorizationHeader, User
+from lifemonitor.auth.models import ExternalServiceAuthorizationHeader, User, Permission, RoleType
 from lifemonitor.auth.oauth2.client import providers
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 from lifemonitor.auth.oauth2.server import server
@@ -39,7 +39,8 @@ class LifeMonitor:
         # As a general rule, we grant user access to the workflow
         #   1. if the user belongs to the owners group
         #   2. or the user belongs to the viewers group
-        if user not in w.owners and user not in w.viewers:
+        # if user not in w.owners and user not in w.viewers:
+        if not user.has_permission(w):
             # if the user is not the submitter
             # and the workflow is associated with a registry
             # then we try to check whether the user is allowed to view the workflow
@@ -57,7 +58,7 @@ class LifeMonitor:
         w = models.Workflow.get_user_workflow(workflow_submitter, workflow_uuid)
         if not w:
             w = models.Workflow(uuid=workflow_uuid, name=name)
-            w.owners.append(workflow_submitter)
+            w.permissions.append(Permission(user=workflow_submitter, roles=[RoleType.owner]))
             if workflow_registry:
                 for auth in workflow_submitter.get_authorization(workflow_registry):
                     auth.resources.append(w)
@@ -67,6 +68,7 @@ class LifeMonitor:
         wv = w.add_version(workflow_version, roc_link, workflow_submitter,
                            uuid=workflow_uuid, name=name,
                            hosting_service=workflow_registry)
+        wv.permissions.append(Permission(user=workflow_submitter, roles=[RoleType.owner]))
         if authorization:
             wv.authorizations.append(ExternalServiceAuthorizationHeader(workflow_submitter, header=authorization))
         if wv.test_metadata:

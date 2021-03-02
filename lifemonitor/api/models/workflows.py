@@ -72,15 +72,14 @@ class Workflow(Resource):
     @classmethod
     def get_user_workflow(cls, owner: User, uuid) -> Workflow:
         return cls.query\
-            .join(User, Workflow.owners)\
-            .filter(User.id == owner.id)\
+            .join(Permission)\
+            .filter(Permission.resource_id == cls.id, Permission.user_id == owner.id)\
             .filter(cls.uuid == uuid).first()
 
     @classmethod
     def get_user_workflows(cls, owner: User) -> List[Workflow]:
-        return cls.query\
-            .join(User, Workflow.owners)\
-            .filter(User.id == owner.id).all()
+        return cls.query.join(Permission)\
+            .filter(Permission.user_id == owner.id).all()
 
 
 class WorkflowVersion(ROCrate):
@@ -113,7 +112,6 @@ class WorkflowVersion(ROCrate):
         super().__init__(uri, uuid=uuid, name=name,
                          version=version, hosting_service=hosting_service)
         self.submitter = submitter
-        self.owners.append(submitter)
         self.workflow = workflow
 
     def __repr__(self):
@@ -224,24 +222,17 @@ class WorkflowVersion(ROCrate):
             .filter(WorkflowVersion.version == version).first()
 
     @classmethod
-    def get_user_workflow(cls, owner: User, uuid, version=None):
-        if version:
+    def get_user_workflow(cls, owner: User, uuid, version):
             return cls.query\
-                .join(User, WorkflowVersion.owners)\
-                .filter(User.id == owner.id)\
-                .filter(cls.uuid == uuid)\
-                .filter(cls.version == version).first()
-        return cls.query\
-            .join(User, WorkflowVersion.owners)\
-            .filter(User.id == owner.id)\
-            .filter(cls.uuid == uuid)\
-            .order_by(WorkflowVersion.version.desc()).first()
+            .join(Permission)\
+            .filter(Permission.resource_id == cls.id, Permission.user_id == owner.id)\
+            .filter(cls.uuid == uuid, cls.version == version).first()
 
     @classmethod
     def get_user_workflows(cls, owner: User):
         return cls.query\
-            .join(User, WorkflowVersion.owners)\
-            .filter(User.id == owner.id).all()
+            .join(Permission)\
+            .filter(Permission.resource_id == cls.id, Permission.user_id == owner.id).all()
 
     @classmethod
     def get_registry_workflow(cls, registry_uuid, uuid, version=None):

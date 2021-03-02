@@ -33,6 +33,8 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(256), unique=True, nullable=False)
     password_hash = db.Column(db.LargeBinary, nullable=True)
 
+    permissions = db.relationship("Permission", back_populates="user",
+                                  cascade="all, delete-orphan")
     authorizations = db.relationship("ExternalServiceAccessAuthorization",
                                      cascade="all, delete-orphan")
 
@@ -76,6 +78,12 @@ class User(UserMixin, db.Model):
     @property
     def has_password(self):
         return bool(self.password_hash)
+
+    def has_permission(self, resource: Resource) -> bool:
+        return self.get_permission(resource) is not None
+
+    def get_permission(self, resource: Resource) -> Permission:
+        return next((p for p in self.permissions if p.resource == resource), None)
 
     def verify_password(self, password):
         return check_password_hash(self.password_hash, password)
@@ -157,23 +165,6 @@ class ApiKey(db.Model):
         return cls.query.all()
 
 
-resource_owners_table = db.Table(
-    'resource_owner', db.Model.metadata,
-    db.Column('resource_id', db.Integer,
-              db.ForeignKey("resource.id", ondelete="CASCADE")),
-    db.Column('user_id', db.Integer,
-              db.ForeignKey("user.id", ondelete="CASCADE"))
-)
-
-resource_viewers_table = db.Table(
-    'resource_viewer', db.Model.metadata,
-    db.Column('resource_id', db.Integer,
-              db.ForeignKey("resource.id", ondelete="CASCADE")),
-    db.Column('user_id', db.Integer,
-              db.ForeignKey("user.id", ondelete="CASCADE"))
-)
-
-
 class Resource(db.Model):
 
     id = db.Column('id', db.Integer, primary_key=True)
@@ -184,13 +175,8 @@ class Resource(db.Model):
     uri = db.Column(db.String, nullable=False)
     version = db.Column(db.String, nullable=True)
 
-    owners = db.relationship("User",
-                             secondary=resource_owners_table,
-                             backref="own_resources", passive_deletes=True)
-
-    viewers = db.relationship("User",
-                              secondary=resource_owners_table,
-                              backref="shared_resources", passive_deletes=True)
+    permissions = db.relationship("Permission", back_populates="resource",
+                                  cascade="all, delete-orphan")
 
     __mapper_args__ = {
         'polymorphic_identity': 'resource',
@@ -250,6 +236,31 @@ resource_authorization_table = db.Table(
     db.Column('authorization_id', db.Integer,
               db.ForeignKey("external_service_access_authorization.id", ondelete="CASCADE"))
 )
+
+
+class RoleType:
+    owner = "owner"
+    viewer = "viewer"
+
+
+class Permission(db.Model):
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), primary_key=True)
+    resource_id = db.Column(db.Integer, db.ForeignKey('resource.id', ondelete='CASCADE'), primary_key=True)
+    roles = db.Column(db.ARRAY(db.String), nullable=True)
+    user = db.relationship("User", back_populates="permissions")
+    resource = db.relationship("Resource", back_populates="permissions")
+
+    def __repr__(self):
+        return '<Permission of user {} for resource {}: {}>'.format(
+            self.user, self.resource, self.roles)
+
+    def __init__(self, user: User = None, resource: Resource = None, roles=None) -> None:
+        self.user = user
+        self.resource = resource
+        self.roles = []
+        if roles:
+            for r in roles:
+                self.roles.append(r)
 
 
 class ExternalServiceAccessAuthorization(db.Model):
