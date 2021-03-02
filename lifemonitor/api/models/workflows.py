@@ -8,7 +8,7 @@ import lifemonitor.exceptions as lm_exceptions
 from lifemonitor.api.models import db
 from lifemonitor.api.models.registries.registry import WorkflowRegistry
 from lifemonitor.api.models.rocrate import ROCrate
-from lifemonitor.auth.models import Resource, User
+from lifemonitor.auth.models import Resource, User, Permission
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.hybrid import hybrid_property
