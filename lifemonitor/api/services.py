@@ -171,7 +171,7 @@ class LifeMonitor:
         return w.latest_version if version is None else w.versions[version]
 
     @staticmethod
-    def get_registry_workflows(registry: models.WorkflowRegistry) -> list:
+    def get_registry_workflows(registry: models.WorkflowRegistry) -> List[models.WorkflowVersion]:
         return registry.registered_workflows
 
     @classmethod
