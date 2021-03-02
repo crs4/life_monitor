@@ -58,7 +58,7 @@ class LifeMonitor:
         if workflow_registry:
             w = workflow_registry.get_workflow(workflow_uuid)
         else:
-        w = models.Workflow.get_user_workflow(workflow_submitter, workflow_uuid)
+            w = models.Workflow.get_user_workflow(workflow_submitter, workflow_uuid)
         if not w:
             w = models.Workflow(uuid=workflow_uuid, name=name)
             w.permissions.append(Permission(user=workflow_submitter, roles=[RoleType.owner]))
@@ -156,10 +156,6 @@ class LifeMonitor:
             return r
         except Exception:
             raise lm_exceptions.EntityNotFoundException(models.WorkflowRegistry, registry_name)
-
-    @staticmethod
-    def get_workflow(uuid, version) -> models.WorkflowVersion:
-        return models.WorkflowVersion.find_by_id(uuid, version)
 
     @staticmethod
     def get_workflows() -> list:
