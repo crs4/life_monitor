@@ -32,8 +32,8 @@ class Workflow(Resource):
                          uuid=uuid, version=version, name=name)
 
     def __repr__(self):
-        return '<Workflow ({}, {}), name: {}>'.format(
-            self.uuid, self.version, self.name)
+        return '<Workflow ({}), name: {}>'.format(
+            self.uuid, self.name)
 
     @hybrid_property
     def external_id(self):
