@@ -247,19 +247,11 @@ class LifeMonitor:
             if not registry:
                 raise lm_exceptions.EntityNotFoundException(models.WorkflowRegistry, entity_id=uuid)
             if name:
-                registry.server_credentials.name = name
-            if api_base_url:
-                registry.uri = api_base_url
-                registry.server_credentials.api_base_url = api_base_url
-                registry.client_credentials.api_base_url = api_base_url
-            if client_id:
-                registry.server_credentials.client_id = client_id
-            if client_secret:
-                registry.server_credentials.client_secret = client_secret
-            if redirect_uris:
-                registry.client_credentials.redirect_uris = redirect_uris
-            if client_auth_method:
-                registry.client_credentials.auth_method = client_auth_method
+                registry.set_name(name)
+            if api_base_url is not None:
+                registry.set_uri(api_base_url)
+            registry.update_client(client_id=client_id, client_secret=client_secret,
+                                   redirect_uris=redirect_uris, client_auth_method=client_auth_method)
             registry.save()
             logger.info(f"WorkflowRegistry '{uuid}' (name: {name})' updated!")
             return registry

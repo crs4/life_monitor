@@ -116,6 +116,26 @@ class WorkflowRegistry(Resource):
     def api(self) -> Resource:
         return self.server_credentials.api_resource
 
+    def set_name(self, name):
+        self.name = name
+        self.server_credentials.name = name
+
+    def set_uri(self, uri):
+        self.uri = uri
+        self.server_credentials.api_resource.uri = uri
+        self.client_credentials.api_base_url = uri
+
+    def update_client(self, client_id=None, client_secret=None,
+                      redirect_uris=None, client_auth_method=None):
+        if client_id:
+            self.server_credentials.client_id = client_id
+        if client_secret:
+            self.server_credentials.client_secret = client_secret
+        if redirect_uris:
+            self.client_credentials.redirect_uris = redirect_uris
+        if client_auth_method:
+            self.client_credentials.auth_method = client_auth_method
+
     @property
     def client(self) -> WorkflowRegistryClient:
         if self._client is None:
