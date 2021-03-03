@@ -204,6 +204,7 @@ class OAuth2IdentityProvider(db.Model):
     @api_base_url.setter
     def api_base_url(self, api_base_url):
         assert api_base_url and len(api_base_url) > 0, "URL cannot be empty"
+        self.uri = api_base_url
         self.api_resource.uri = api_base_url
 
     @hybrid_property
