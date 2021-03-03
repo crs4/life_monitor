@@ -40,13 +40,14 @@ class Workflow(Resource):
     def external_id(self):
         return self.uri.replace(self.external_ns, "")
 
-    @property
-    def latest_version(self):
+    @hybrid_property
+    def latest_version(self) -> WorkflowVersion:
         return max(self.versions.values(), key=lambda v: v.version)
 
     def add_version(self, version, uri, submitter: User, uuid=None, name=None,
                     hosting_service: models.WorkflowRegistry = None):
         try:
+            uuid = self.uuid if uuid is None else uuid
             if hosting_service and hasattr(hosting_service, 'get_external_id'):
                 self.uri = f"{self.external_ns}{hosting_service.get_external_id(self.uuid, version, submitter)}"
         except lm_exceptions.EntityNotFoundException as e:
@@ -72,10 +73,15 @@ class Workflow(Resource):
 
     @classmethod
     def get_user_workflow(cls, owner: User, uuid) -> Workflow:
-        return cls.query\
-            .join(Permission)\
-            .filter(Permission.resource_id == cls.id, Permission.user_id == owner.id)\
-            .filter(cls.uuid == uuid).first()
+        try:
+            return cls.query\
+                .join(Permission)\
+                .filter(Permission.resource_id == cls.id, Permission.user_id == owner.id)\
+                .filter(cls.uuid == uuid).first()
+        except Exception as e:
+            raise lm_exceptions.EntityNotFoundException(WorkflowRegistry,
+                                                        entity_id=f"{uuid}",
+                                                        exception=str(e))
 
     @classmethod
     def get_user_workflows(cls, owner: User) -> List[Workflow]:
@@ -142,19 +148,23 @@ class WorkflowVersion(ROCrate):
         return auths
 
     @hybrid_property
-    def workflow_registry(self):
+    def workflow_registry(self) -> models.WorkflowRegistry:
         return self.hosting_service
 
     @hybrid_property
-    def roc_link(self):
+    def roc_link(self) -> str:
         return self.uri
 
     @property
-    def previous_versions(self):
+    def latest_version(self) -> bool:
+        return self.workflow.latest_version.version == self.version
+
+    @property
+    def previous_versions(self) -> List[str]:
         return [w.version for w in self.workflow.versions.values() if w != self and w.version < self.version]
 
     @property
-    def previous_workflow_versions(self):
+    def previous_workflow_versions(self) -> List[models.WorkflowVersion]:
         return [w for w in self.workflow.versions.values() if w != self and w.version < self.version]
 
     @property
@@ -206,7 +216,7 @@ class WorkflowVersion(ROCrate):
         return cls.query.filter(WorkflowVersion.submitter_id == submitter.id).all()
 
     @classmethod
-    def get_user_workflow(cls, owner: User, uuid, version):
+    def get_user_workflow(cls, owner: User, uuid, version) -> WorkflowVersion:
         try:
             return cls.query\
                 .join(Permission)\
@@ -218,7 +228,7 @@ class WorkflowVersion(ROCrate):
                                                         exception=str(e))
 
     @classmethod
-    def get_user_workflows(cls, owner: User):
+    def get_user_workflows(cls, owner: User) -> List[WorkflowVersion]:
         return cls.query\
             .join(Permission)\
             .filter(Permission.resource_id == cls.id, Permission.user_id == owner.id).all()

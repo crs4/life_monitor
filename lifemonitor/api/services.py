@@ -28,7 +28,7 @@ class LifeMonitor:
         self.__instance = self
 
     @staticmethod
-    def _find_and_check_workflow(uuid, version, user: User):
+    def _find_and_check_workflow_version(user: User, uuid, version=None):
         if not version:
             w = models.Workflow.get_user_workflow(user, uuid).latest_version
         else:
@@ -83,7 +83,7 @@ class LifeMonitor:
 
     @classmethod
     def deregister_user_workflow(cls, workflow_uuid, workflow_version, user: User):
-        workflow = cls._find_and_check_workflow(workflow_uuid, workflow_version, user)
+        workflow = cls._find_and_check_workflow_version(user, workflow_uuid, workflow_version)
         logger.debug("WorkflowVersion to delete: %r", workflow)
         if not workflow:
             raise lm_exceptions.EntityNotFoundException(models.WorkflowVersion, (workflow_uuid, workflow_version))
@@ -158,37 +158,50 @@ class LifeMonitor:
             raise lm_exceptions.EntityNotFoundException(models.WorkflowRegistry, registry_name)
 
     @staticmethod
-    def get_workflows() -> list:
-        return models.WorkflowVersion.all()
+    def get_workflows() -> List[models.Workflow]:
+        return models.Workflow.all()
 
     @staticmethod
-    def get_registry_workflow(registry: models.WorkflowRegistry, uuid, version=None) -> models.WorkflowVersion:
+    def get_registry_workflows(registry: models.WorkflowRegistry) -> List[models.Workflow]:
+        return registry.get_workflows()
+
+    @staticmethod
+    def get_registry_workflow(registry: models.WorkflowRegistry) -> models.Workflow:
+        return registry.registered_workflows
+
+    @staticmethod
+    def get_registry_workflow_versions(registry: models.WorkflowRegistry, uuid) -> List[models.WorkflowVersion]:
+        return registry.get_workflow(uuid)
+
+    @staticmethod
+    def get_registry_workflow_version(registry: models.WorkflowRegistry, uuid, version=None) -> models.WorkflowVersion:
         w = registry.get_workflow(uuid)
         return w.latest_version if version is None else w.versions[version]
 
     @staticmethod
-    def get_registry_workflows(registry: models.WorkflowRegistry) -> List[models.WorkflowVersion]:
-        return registry.registered_workflows
-
-    @classmethod
-    def get_user_workflow(cls, user: models.User, uuid, version=None) -> models.WorkflowVersion:
-        return cls._find_and_check_workflow(uuid, version, user)
-
-    @staticmethod
-    def get_workflow_registry_users(registry: models.WorkflowRegistry) -> List[User]:
-        return registry.get_users()
-
-    @staticmethod
-    def get_user_workflows(user: User) -> list:
-        workflows = [w for w in models.WorkflowVersion.get_user_workflows(user)]
+    def get_user_workflows(user: User) -> List[models.Workflow]:
+        workflows = [w for w in models.Workflow.get_user_workflows(user)]
         # TODO: replace WorkflowRegistry with a more general Entity
         for svc in models.WorkflowRegistry.all():
             try:
                 if svc.get_user(user.id):
-                    workflows.extend(svc.get_user_workflows(user))
+                    workflows.extend([w for w in svc.get_user_workflows(user)
+                                      if w not in workflows])
             except lm_exceptions.lm_exceptions.EntityNotFoundException:
                 pass
         return workflows
+
+    @classmethod
+    def get_user_workflow(cls, user: models.User, uuid, version=None) -> models.Workflow:
+        return cls._find_and_check_workflow_version(user, uuid, version).workflow
+
+    @classmethod
+    def get_user_workflow_version(cls, user: models.User, uuid, version=None) -> models.WorkflowVersion:
+        return cls._find_and_check_workflow_version(user, uuid, version)
+
+    @staticmethod
+    def get_workflow_registry_users(registry: models.WorkflowRegistry) -> List[User]:
+        return registry.get_users()
 
     @staticmethod
     def get_suite(suite_uuid) -> models.TestSuite:

@@ -179,7 +179,21 @@ class WorkflowRegistry(Resource):
         except Exception as e:
             raise EntityNotFoundException(e)
 
-    def get_user_workflows(self, user: User) -> List[models.WorkflowVersion]:
+    def get_workflows(self) -> List[models.Workflow]:
+        return list({w.workflow for w in self.registered_workflows})
+
+    def get_workflow(self, uuid) -> models.Workflow:
+        w = next((w for w in self.registered_workflows if w.uuid == uuid), None)
+        # w = models.WorkflowVersion.query\
+        #     .join(WorkflowRegistry, models.WorkflowVersion.hosting_service)\
+        #     .filter(WorkflowRegistry.uuid == self.uuid)\
+        #     .filter(models.WorkflowVersion.uuid == uuid).first()
+        return w.workflow if w else None
+
+    def get_user_workflows(self, user: User) -> List[models.Workflow]:
+        return self.client.filter_by_user(self.get_workflows(), user)
+
+    def get_user_workflow_versions(self, user: User) -> List[models.WorkflowVersion]:
         return self.client.filter_by_user(self.registered_workflows, user)
 
     def save(self):
@@ -189,14 +203,6 @@ class WorkflowRegistry(Resource):
     def delete(self):
         db.session.delete(self)
         db.session.commit()
-
-    def get_workflow(self, uuid) -> models.Workflow:
-        w = next((w for w in self.registered_workflows if w.uuid == uuid), None)
-        # w = models.WorkflowVersion.query\
-        #     .join(WorkflowRegistry, models.WorkflowVersion.hosting_service)\
-        #     .filter(WorkflowRegistry.uuid == self.uuid)\
-        #     .filter(models.WorkflowVersion.uuid == uuid).first()
-        return w.workflow if w else None
 
     @classmethod
     def all(cls) -> List[WorkflowRegistry]:
