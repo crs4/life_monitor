@@ -188,7 +188,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Workflow"
+              $ref: "#/components/schemas/WorkflowVersion"
       responses:
         "201":
           description: Workflow created
@@ -222,7 +222,7 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/Workflow"
+                  - $ref: "#/components/schemas/WorkflowVersion"
                   - type: object
                     properties:
                       previous_versions:
@@ -257,7 +257,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Workflow"
+                $ref: "#/components/schemas/WorkflowVersion"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -282,7 +282,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Workflow"
+              $ref: "#/components/schemas/WorkflowVersion"
       responses:
         "204":
           description: "Workflow updated"
@@ -824,6 +824,17 @@ components:
       properties:
         uuid:
           type: string
+        name:
+          type: string
+          nullable: true
+      required:
+        - uuid
+
+    WorkflowVersion:
+      type: object
+      properties:
+        uuid:
+          type: string
         version:
           type: string
         roc_link:
@@ -831,6 +842,14 @@ components:
         name:
           type: string
           nullable: true
+        latest_version:
+          type: boolean
+          readOnly: true
+        versions:
+          readOnly: true
+          type: array
+          items:
+            type: string
         submitter_id:
           type: string
           writeOnly: true

@@ -38,12 +38,31 @@ class WorkflowSchema(BaseSchema):
         model = models.WorkflowVersion
 
     uuid = ma.auto_field()
-    version = ma.auto_field()
-    roc_link = fields.String(attributes="ro_crate.uri")
     name = ma.auto_field()
 
 
-class LatestWorkflowSchema(WorkflowSchema):
+class WorkflowVersionSchema(BaseSchema):
+    __envelope__ = {"single": None, "many": "items"}
+    __model__ = models.WorkflowVersion
+
+    class Meta:
+        model = models.WorkflowVersion
+
+    uuid = ma.auto_field()
+    version = ma.auto_field()
+    roc_link = fields.String(attributes="ro_crate.uri")
+    name = ma.auto_field()
+    latest_version = fields.Boolean(attributes="latest_version")
+
+
+class WorkflowVersionDetailsSchema(WorkflowVersionSchema):
+    versions = fields.Method("get_versions")
+
+    def get_versions(self, obj: models.WorkflowVersion):
+        return [v.version for v in obj.workflow.versions.values()]
+
+
+class LatestWorkflowSchema(WorkflowVersionSchema):
     previous_versions = fields.List(fields.String, attribute="previous_versions")
 
 
@@ -93,7 +112,7 @@ class WorkflowStatusSchema(BaseSchema):
     class Meta:
         model = models.WorkflowStatus
 
-    workflow = ma.Nested(WorkflowSchema(only=("uuid", "version", "name")))
+    workflow = ma.Nested(WorkflowVersionSchema(only=("uuid", "version", "name")))
     aggregate_test_status = fields.String(attribute="aggregated_status")
     latest_builds = ma.Nested(BuildSummarySchema(), many=True)
 
