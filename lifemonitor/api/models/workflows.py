@@ -207,10 +207,15 @@ class WorkflowVersion(ROCrate):
 
     @classmethod
     def get_user_workflow(cls, owner: User, uuid, version):
-        return cls.query\
-            .join(Permission)\
-            .filter(Permission.resource_id == cls.id, Permission.user_id == owner.id)\
-            .filter(cls.uuid == uuid, cls.version == version).one()
+        try:
+            return cls.query\
+                .join(Permission)\
+                .filter(Permission.resource_id == cls.id, Permission.user_id == owner.id)\
+                .filter(cls.uuid == uuid, cls.version == version).first()
+        except Exception as e:
+            raise lm_exceptions.EntityNotFoundException(WorkflowRegistry,
+                                                        entity_id=f"{uuid}_{version}",
+                                                        exception=str(e))
 
     @classmethod
     def get_user_workflows(cls, owner: User):
@@ -221,12 +226,17 @@ class WorkflowVersion(ROCrate):
     @classmethod
     def get_hosted_workflow_version(cls, hosting_service: Resource, uuid, version) -> List[WorkflowVersion]:
         # TODO: replace WorkflowRegistry with a more general Entity
-        return cls.query\
-            .join(WorkflowRegistry, cls.hosting_service)\
-            .filter(WorkflowRegistry.uuid == hosting_service.uuid)\
-            .filter(cls.uuid == uuid)\
-            .filter(cls.version == version)\
-            .order_by(WorkflowVersion.version.desc()).one()
+        try:
+            return cls.query\
+                .join(WorkflowRegistry, cls.hosting_service)\
+                .filter(WorkflowRegistry.uuid == hosting_service.uuid)\
+                .filter(cls.uuid == uuid)\
+                .filter(cls.version == version)\
+                .order_by(WorkflowVersion.version.desc()).one()
+        except Exception as e:
+            raise lm_exceptions.EntityNotFoundException(WorkflowRegistry,
+                                                        entity_id=f"{uuid}_{version}",
+                                                        exception=str(e))
 
     @classmethod
     def get_hosted_workflow_versions(cls, hosting_service: Resource) -> List[WorkflowVersion]:
