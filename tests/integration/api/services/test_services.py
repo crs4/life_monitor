@@ -6,7 +6,6 @@ from tests import utils
 from lifemonitor.api.services import LifeMonitor
 import lifemonitor.api.models as models
 import lifemonitor.exceptions as lm_exceptions
-from tests.conftest_types import ClientAuthenticationMethod
 
 this_dir = os.path.dirname(os.path.abspath(__file__))
 tests_root_dir = pathlib.Path(this_dir).parent
@@ -54,16 +53,8 @@ def test_preserve_registry_workflow_identity(app_client, user1, user2, valid_wor
     assert len(w.versions) == 2, "Invalid number of workflow versions"
 
 
-@pytest.mark.parametrize("client_auth_method", [
-    #    ClientAuthenticationMethod.BASIC,
-    ClientAuthenticationMethod.API_KEY,
-    ClientAuthenticationMethod.AUTHORIZATION_CODE,
-    ClientAuthenticationMethod.CLIENT_CREDENTIALS,
-    ClientAuthenticationMethod.REGISTRY_CODE_FLOW
-], indirect=True)
 @pytest.mark.parametrize("user1", [True], indirect=True)
-def test_get_workflows_scope(app_client, client_auth_method,
-                             user1, user1_auth, user2, user2_auth):
+def test_get_workflows_scope(user1, user2):
 
     logger.debug("The first user: %r", user1['user'])
     logger.debug("Number of workflows user1: %r", len(user1['workflows']))
@@ -71,7 +62,6 @@ def test_get_workflows_scope(app_client, client_auth_method,
     logger.debug("The second user: %r", user2['user'])
     logger.debug("Number of workflows user1: %r", len(user2['workflows']))
 
-    assert user1_auth != user2_auth, "Invalid credentials"
     assert len(user1['workflows']) > len(user2['workflows'])
 
     registry = models.WorkflowRegistry.all()[0]
@@ -81,12 +71,8 @@ def test_get_workflows_scope(app_client, client_auth_method,
     user1_workflows = lm.get_user_workflows(user1["user"])
     user2_workflows = lm.get_user_workflows(user2["user"])
 
-    # when the query is performed by the registry, we get all workflows in the registry
-    if client_auth_method == ClientAuthenticationMethod.CLIENT_CREDENTIALS:
-        assert len(user2_workflows) == len(user1_workflows), "Unexpected number of workflows"
-    else:
-        assert len(user2_workflows) == 2, "Unexpected number of workflows"
-        assert len(user2_workflows) < len(user1_workflows), "Unexpected number of workflows"
+    assert len(user2_workflows) == 2, "Unexpected number of workflows"
+    assert len(user2_workflows) < len(user1_workflows), "Unexpected number of workflows"
 
 
 def test_suite_invalid_service_type(app_client, user1):
