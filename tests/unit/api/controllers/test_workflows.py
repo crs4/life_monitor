@@ -236,14 +236,14 @@ def test_post_workflow_by_registry_not_authorized(m, request_context, mock_regis
 def test_get_workflow_by_id_error_not_found(m, request_context, mock_registry):
     assert auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry, "Unexpected registry in session"
-    m.get_registry_workflow.side_effect = lm_exceptions.EntityNotFoundException(models.WorkflowVersion)
+    m.get_registry_workflow_version.side_effect = lm_exceptions.EntityNotFoundException(models.WorkflowVersion)
     response = controllers.workflows_get_by_id(wf_uuid="12345", wf_version="1")
     logger.debug("Response: %r", response)
     assert_status_code(response.status_code, 404)
     assert messages.workflow_not_found\
         .format("12345", "1") in response.data.decode()
     # test when the service return None
-    m.get_registry_workflow.return_value = None
+    m.get_registry_workflow_version.return_value = None
     response = controllers.workflows_get_by_id(wf_uuid="12345", wf_version="1")
     logger.debug("Response: %r", response)
     assert_status_code(response.status_code, 404)
@@ -255,10 +255,12 @@ def test_get_workflow_by_id_error_not_found(m, request_context, mock_registry):
 def test_get_workflow_by_id(m, request_context, mock_registry):
     assert auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry, "Unexpected registry in session"
-    data = {"uuid": "12345", "version": "2", "roc_link": "https://somelink", "previous_versions": ["1"]}
-    m.get_registry_workflow.return_value = data
+    data = {"uuid": "12345", "version": "2", "roc_link": "https://somelink"}
+    w = models.Workflow(uuid=data["uuid"])
+    wv = w.add_version(data["version"], data["roc_link"], {})
+    m.get_registry_workflow_version.return_value = wv
     response = controllers.workflows_get_by_id(data['uuid'], data['version'])
-    m.get_registry_workflow.assert_called_once_with(mock_registry, data['uuid'], data['version'])
+    m.get_registry_workflow_version.assert_called_once_with(mock_registry, data['uuid'], data['version'])
     logger.debug("Response: %r", response)
     assert isinstance(response, dict), "Unexpected response"
     assert response['uuid'] == data['uuid'], "Unexpected workflow UUID"
@@ -271,9 +273,9 @@ def test_get_latest_workflow_version_by_id(m, request_context, mock_registry):
     assert auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry, "Unexpected registry in session"
     data = {"uuid": "12345", "version": "2", "roc_link": "https://somelink", "previous_versions": ["1"]}
-    m.get_registry_workflow.return_value = data
+    m.get_registry_workflow_version.return_value = data
     response = controllers.workflows_get_latest_version_by_id(data['uuid'])
-    m.get_registry_workflow.assert_called_once_with(mock_registry, data['uuid'], None)
+    m.get_registry_workflow_version.assert_called_once_with(mock_registry, data['uuid'], None)
     logger.debug("Response: %r", response)
     assert isinstance(response, dict), "Unexpected response"
     assert response['uuid'] == data['uuid'], "Unexpected workflow UUID"

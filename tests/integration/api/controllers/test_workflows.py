@@ -252,6 +252,43 @@ def test_get_workflow_latest_version(app_client, client_auth_method, user1, user
     ClientAuthenticationMethod.CLIENT_CREDENTIALS,
     ClientAuthenticationMethod.REGISTRY_CODE_FLOW
 ], indirect=True)
+def test_get_workflow_version(app_client, client_auth_method, user1, user1_auth, valid_workflow):
+    workflow = utils.pick_workflow(user1, valid_workflow)
+    wv1 = workflow.copy()
+    wv2 = workflow.copy()
+
+    wv1['version'] = "1"
+    wv2['version'] = "2"
+    utils.register_workflow(user1, wv1)
+    utils.register_workflow(user1, wv2)
+
+    response = app_client.get(utils.build_workflow_path(), headers=user1_auth)
+    utils.assert_status_code(response.status_code, 200)
+    workflows = json.loads(response.data)
+    logger.debug("Workflows: %r", workflows)
+
+    url = f"{utils.build_workflow_path()}/{workflow['uuid']}/1"
+    logger.debug("URL: %r", url)
+    response = app_client.get(url, headers=user1_auth)
+    logger.debug(response)
+    utils.assert_status_code(response.status_code, 200)
+    data = json.loads(response.data)
+    logger.debug("Response data: %r", data)
+    assert data['uuid'] == workflow['uuid'], "Unexpected workflow ID"
+    assert data['version'] == "1", "Unexpected workflow version number: it should the latest (=2)"
+    assert data['latest_version'] is False, "It shouldn't be the latest version"
+    assert "versions" in data, "Unable to find the versions field"
+    assert "1" in data['versions'], "Version 1 not listed"
+    assert "2" in data['versions'], "Version 2 not listed"
+
+
+@pytest.mark.parametrize("client_auth_method", [
+    #    ClientAuthenticationMethod.BASIC,
+    ClientAuthenticationMethod.API_KEY,
+    ClientAuthenticationMethod.AUTHORIZATION_CODE,
+    ClientAuthenticationMethod.CLIENT_CREDENTIALS,
+    ClientAuthenticationMethod.REGISTRY_CODE_FLOW
+], indirect=True)
 def test_get_workflow_status(app_client, client_auth_method, user1, user1_auth, valid_workflow):
     w, workflow = utils.pick_and_register_workflow(user1, valid_workflow)
     response = app_client.get(f"{utils.build_workflow_path(w)}/status", headers=user1_auth)

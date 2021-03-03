@@ -234,7 +234,7 @@ def test_workflow_latest_version(app_client, user1, random_valid_uuid):
     u = user1['user']
     logger.debug("The User: %r", u)
     workflows = LifeMonitor.get_instance().get_user_workflows(u)
-    w = LifeMonitor.get_instance().get_user_workflow(u, workflow['uuid'])
+    w = LifeMonitor.get_instance().get_user_workflow_version(u, workflow['uuid'])
     logger.debug(w)
     logger.debug(workflows)
     logger.debug("Previous versions: %r", w.previous_versions)
