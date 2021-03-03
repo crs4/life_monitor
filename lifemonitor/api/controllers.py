@@ -160,9 +160,9 @@ def _get_workflow_or_problem(wf_uuid, wf_version):
     try:
         wf = None
         if current_user and not current_user.is_anonymous:
-            wf = lm.get_user_workflow(current_user, wf_uuid, wf_version)
+            wf = lm.get_user_workflow_version(current_user, wf_uuid, wf_version)
         elif current_registry:
-            wf = lm.get_registry_workflow(current_registry, wf_uuid, wf_version)
+            wf = lm.get_registry_workflow_version(current_registry, wf_uuid, wf_version)
         else:
             return lm_exceptions.report_problem(403, "Forbidden",
                                                 detail=messages.no_user_in_session)
@@ -179,7 +179,7 @@ def _get_workflow_or_problem(wf_uuid, wf_version):
 def workflows_get_by_id(wf_uuid, wf_version):
     response = _get_workflow_or_problem(wf_uuid, wf_version)
     return response if isinstance(response, Response) \
-        else serializers.WorkflowSchema().dump(response)
+        else serializers.WorkflowVersionDetailsSchema().dump(response)
 
 
 @authorized
@@ -208,15 +208,11 @@ def _get_suite_or_problem(suite_uuid):
         suite = lm.get_suite(suite_uuid)
         if not suite:
             return lm_exceptions.report_problem(404, "Not Found", detail=messages.suite_not_found.format(suite_uuid))
-        if current_user and not current_user.is_anonymous:
-            user_workflows = lm.get_user_workflows(current_user)
-            if suite.workflow not in user_workflows:
-                return lm_exceptions.report_problem(403, "Forbidden", detail=messages.unauthorized_user_suite_access
-                                                    .format(current_user.username, suite_uuid))
-        elif current_registry:
-            if suite.workflow not in current_registry.registered_workflows:
-                return lm_exceptions.report_problem(403, "Forbidden", detail=messages.unauthorized_registry_suite_access
-                                                    .format(current_registry.name, suite_uuid))
+
+        response = _get_workflow_or_problem(suite.workflow.uuid, suite.workflow.version)
+        if isinstance(response, Response):
+            return lm_exceptions.report_problem(403, "Forbidden", detail=messages.unauthorized_user_suite_access
+                                                .format(current_user.username, suite_uuid), trace=response)
         return suite
     except lm_exceptions.EntityNotFoundException:
         return lm_exceptions.report_problem(404, "Not Found", detail=messages.suite_not_found.format(suite_uuid))
@@ -300,15 +296,10 @@ def _get_instances_or_problem(instance_uuid):
         if not instance:
             return lm_exceptions.report_problem(404, "Not Found",
                                                 detail=messages.suite_not_found.format(instance_uuid))
-        if current_user and not current_user.is_anonymous:
-            user_workflows = lm.get_user_workflows(current_user)
-            if instance.test_suite.workflow not in user_workflows:
-                return lm_exceptions.report_problem(403, "Forbidden", detail=messages.unauthorized_user_instance_access
-                                                    .format(current_user.username, instance_uuid))
-        elif current_registry:
-            if instance.test_suite.workflow not in current_registry.registered_workflows:
-                return lm_exceptions.report_problem(403, "Forbidden", detail=messages.unauthorized_registry_instance_access
-                                                    .format(current_registry.name, instance_uuid))
+        response = _get_suite_or_problem(instance.test_suite.uuid)
+        if isinstance(response, Response):
+            return lm_exceptions.report_problem(403, "Forbidden", detail=messages.unauthorized_user_instance_access
+                                                .format(current_user.username, instance_uuid), trace=response)
         return instance
     except lm_exceptions.EntityNotFoundException:
         return lm_exceptions.report_problem(404, "Not Found", detail=messages.instance_not_found.format(instance_uuid))
