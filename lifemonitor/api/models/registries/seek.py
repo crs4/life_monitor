@@ -50,7 +50,8 @@ class SeekWorkflowRegistryClient(WorkflowRegistryClient):
         result = []
         allowed = [w["id"] for w in self.get_workflows_metadata(user)]
         for w in workflows:
-            if str(w.workflow.external_id) in allowed:
+            if str(w.workflow.external_id
+                   if isinstance(w, models.WorkflowVersion) else w.external_id) in allowed:
                 result.append(w)
         return result
 
