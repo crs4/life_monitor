@@ -6,10 +6,10 @@ from unittest.mock import MagicMock, Mock, patch
 import lifemonitor.api.controllers as controllers
 import lifemonitor.api.models as models
 import lifemonitor.auth as auth
+import lifemonitor.exceptions as lm_exceptions
 import lifemonitor.lang.messages as messages
 import pytest
 from flask import Response
-from lifemonitor.exceptions import EntityNotFoundException
 from tests.utils import assert_status_code
 
 logger = logging.getLogger(__name__)
@@ -37,15 +37,24 @@ def test_get_instance_error_not_found(m, request_context, mock_user):
 def test_get_instance_by_user_error_forbidden(m, request_context, mock_user):
     assert not auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry is not None, "Unexpected registry in session"
-    workflow = {"uuid": "1111-222"}
+    # Mock instance
+    workflow = MagicMock()
+    workflow.uuid = "1111-222"
     instance = MagicMock()
     instance.uuid = '12345'
+    instance.suite = MagicMock()
+    instance.suite.uuid = '1111'
     instance.test_suite.workflow = workflow
     m.get_test_instance.return_value = instance
     m.get_user_workflows.return_value = []
+    m.get_suite.return_value = instance.suite
+    m.get_user_workflow_version = Mock(side_effect=lm_exceptions.NotAuthorizedException)
+    # m.get_registry_workflow_version = workflow
     response = controllers.instances_get_by_id(instance['uuid'])
+    logger.debug("Response: %r", response.data)
     m.get_test_instance.assert_called_once()
-    m.get_user_workflows.assert_called_once()
+    m.get_suite.assert_called_once()
+    m.get_user_workflow_version.assert_called_once()
     assert_status_code(403, response.status_code)
 
 
@@ -53,15 +62,21 @@ def test_get_instance_by_user_error_forbidden(m, request_context, mock_user):
 def test_get_instance_by_user(m, request_context, mock_user):
     assert not auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry is not None, "Unexpected registry in session"
-    workflow = {"uuid": "1111-222"}
+    workflow = MagicMock()
+    workflow.uuid = "1111-222"
     instance = MagicMock()
     instance.uuid = '12345'
+    instance.suite = MagicMock()
+    instance.suite.uuid = '1111'
     instance.test_suite.workflow = workflow
     m.get_test_instance.return_value = instance
-    m.get_user_workflows.return_value = [workflow]
+    m.get_user_workflows.return_value = []
+    m.get_suite.return_value = instance.suite
+    m.get_user_workflow_version = workflow
     response = controllers.instances_get_by_id(instance['uuid'])
     m.get_test_instance.assert_called_once()
-    m.get_user_workflows.assert_called_once()
+    m.get_suite.assert_called_once()
+    m.get_user_workflow_version.assert_called_once()
     assert not isinstance(response, Response), "Unexpected response type"
     assert isinstance(response, dict), "Unexpected response type"
 
@@ -70,16 +85,13 @@ def test_get_instance_by_user(m, request_context, mock_user):
 def test_get_instance_build_by_user_error_not_found(m, request_context, mock_user):
     assert not auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry is not None, "Unexpected registry in session"
-    workflow = {"uuid": "1111-222"}
     instance = MagicMock()
-    instance.uuid = '12345'
-    instance.get_test_build = Mock(side_effect=EntityNotFoundException(models.TestBuild))
-    instance.test_suite.workflow = workflow
+    instance.get_test_build.side_effect = \
+        lm_exceptions.EntityNotFoundException(models.TestBuild)
     m.get_test_instance.return_value = instance
-    m.get_user_workflows.return_value = [workflow]
-    response = controllers.instances_builds_get_by_id(instance['uuid'], '12345')
+    response = controllers.instances_builds_get_by_id('111', '12345')
+    logger.debug("Response: %r", response)
     m.get_test_instance.assert_called_once()
-    m.get_user_workflows.assert_called_once()
     assert isinstance(response, Response), "Unexpected response type"
     assert_status_code(404, response.status_code)
 
@@ -88,18 +100,24 @@ def test_get_instance_build_by_user_error_not_found(m, request_context, mock_use
 def test_get_instance_build_by_user(m, request_context, mock_user):
     assert not auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry is not None, "Unexpected registry in session"
-    workflow = {"uuid": "1111-222"}
     build = MagicMock()
     build.id = "1"
+    workflow = MagicMock()
+    workflow.uuid = "1111-222"
     instance = MagicMock()
     instance.uuid = '12345'
-    instance.test_builds.return_value = [build]
+    instance.suite = MagicMock()
+    instance.suite.uuid = '1111'
+    instance.get_test_build.return_value = build
     instance.test_suite.workflow = workflow
     m.get_test_instance.return_value = instance
-    m.get_user_workflows.return_value = [workflow]
+    m.get_user_workflows.return_value = []
+    m.get_suite.return_value = instance.suite
+    m.get_user_workflow_version = workflow
     response = controllers.instances_builds_get_by_id(instance['uuid'], build.id)
     m.get_test_instance.assert_called_once()
-    m.get_user_workflows.assert_called_once()
+    m.get_suite.assert_called_once()
+    m.get_user_workflow_version.assert_called_once()
     assert isinstance(response, dict), "Unexpected response type"
 
 
@@ -111,15 +129,18 @@ def test_get_instance_build_last_logs_by_user(m, request_context, mock_user):
     build = MagicMock()
     build.id = "1"
     build.output = os.urandom(2048)
+    workflow = MagicMock()
+    workflow.uuid = "1111-222"
     instance = MagicMock()
     instance.uuid = '12345'
+    instance.suite = MagicMock()
+    instance.suite.uuid = '1111'
     instance.get_test_build.return_value = build
     instance.test_suite.workflow = workflow
-    m.get_test_instance.return_value = instance
-    m.get_user_workflows.return_value = [workflow]
     response = controllers.instances_builds_get_by_id(instance['uuid'], build.id)
     m.get_test_instance.assert_called_once()
-    m.get_user_workflows.assert_called_once()
+    m.get_suite.assert_called_once()
+    m.get_user_workflow_version.assert_called_once()
     assert isinstance(response, dict), "Unexpected response type"
     logger.debug("The loaded instance: %r", response)
     assert len(response["last_logs"]) <= 131072, "Unexpected log length: it should be limited to the last 131072 bytes"
@@ -134,12 +155,14 @@ def test_get_instance_build_logs_by_user_invalid_offset(m, request_context, mock
     build.id = "1"
     default_limit = 131072
     build.output = str(os.urandom(default_limit))
+    workflow = MagicMock()
+    workflow.uuid = "1111-222"
     instance = MagicMock()
     instance.uuid = '12345'
+    instance.suite = MagicMock()
+    instance.suite.uuid = '1111'
     instance.get_test_build.return_value = build
     instance.test_suite.workflow = workflow
-    m.get_test_instance.return_value = instance
-    m.get_user_workflows.return_value = [workflow]
     # test get logs defaults offset and limit
     response = controllers.instances_builds_get_logs(instance['uuid'], build.id, offset_bytes=-1000)
     logger.debug("Response: %r", response)
@@ -192,16 +215,23 @@ def test_get_instance_build_logs_by_user(m, request_context, mock_user):
     output_part = str("n" * part_size)
     build.get_output.return_value = output_part
     logger.debug("Part length: %r", len(output_part))
+    workflow = MagicMock()
+    workflow.uuid = "1111-222"
     instance = MagicMock()
     instance.uuid = '12345'
+    instance.suite = MagicMock()
+    instance.suite.uuid = '1111'
     instance.get_test_build.return_value = build
     instance.test_suite.workflow = workflow
     m.get_test_instance.return_value = instance
-    m.get_user_workflows.return_value = [workflow]
+    m.get_user_workflows.return_value = []
+    m.get_suite.return_value = instance.suite
+    m.get_user_workflow_version = workflow
     # test get logs defaults offset and limit
     response = controllers.instances_builds_get_logs(instance['uuid'], build.id)
     m.get_test_instance.assert_called_once()
-    m.get_user_workflows.assert_called_once()
+    m.get_suite.assert_called_once()
+    m.get_user_workflow_version.assert_called_once()
     assert isinstance(response, str), "Unexpected response type"
     assert len(response) == part_size, f"Unexpected log length: it should be limited to {part_size} bytes"
     # test pagination
@@ -218,12 +248,17 @@ def test_get_instance_build_logs_by_user(m, request_context, mock_user):
 def test_get_instance_by_registry_error_forbidden(m, request_context, mock_registry):
     assert auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry, "Unexpected registry in session"
-    workflow = {"uuid": "1111-222"}
+    workflow = MagicMock()
+    workflow.uuid = "1111-222"
     instance = MagicMock()
     instance.uuid = '12345'
+    instance.suite = MagicMock()
+    instance.suite.uuid = '1111'
     instance.test_suite.workflow = workflow
     m.get_test_instance.return_value = instance
-    mock_registry.registered_workflows = []
+    m.get_user_workflows.return_value = []
+    m.get_suite.return_value = instance.suite
+    m.get_registry_workflow_version = Mock(side_effect=lm_exceptions.NotAuthorizedException)
     response = controllers.instances_get_by_id(instance['uuid'])
     m.get_test_instance.assert_called_once()
     assert isinstance(response, Response), "Unexpected response type"
@@ -254,7 +289,7 @@ def test_get_instance_build_by_registry_error_not_found(m, request_context, mock
     workflow = {'uuid': '11111'}
     instance = MagicMock()
     instance.uuid = '12345'
-    instance.get_test_build = Mock(side_effect=EntityNotFoundException(models.TestBuild))
+    instance.get_test_build = Mock(side_effect=lm_exceptions.EntityNotFoundException(models.TestBuild))
     instance.test_suite.workflow = workflow
     m.get_test_instance.return_value = instance
     mock_registry.registered_workflows = [workflow]
