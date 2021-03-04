@@ -173,6 +173,9 @@ def _get_workflow_or_problem(wf_uuid, wf_version):
     except lm_exceptions.EntityNotFoundException as e:
         return lm_exceptions.report_problem(404, "Not Found", extra_info={"exception": str(e)},
                                             detail=messages.workflow_not_found.format(wf_uuid, wf_version))
+    except lm_exceptions.NotAuthorizedException as e:
+        return lm_exceptions.report_problem(403, "Forbidden", extra_info={"exception": str(e)},
+                                            detail=messages.unauthorized_workflow_access.format(wf_uuid))
 
 
 @authorized
@@ -211,8 +214,13 @@ def _get_suite_or_problem(suite_uuid):
 
         response = _get_workflow_or_problem(suite.workflow.uuid, suite.workflow.version)
         if isinstance(response, Response):
-            return lm_exceptions.report_problem(403, "Forbidden", detail=messages.unauthorized_user_suite_access
-                                                .format(current_user.username, suite_uuid), trace=response)
+            if response.status_code == 404:
+                return lm_exceptions.report_problem(500, "Internal Error",
+                                                    extra_info={"reason": response.get_json()['detail']})
+            return lm_exceptions.report_problem(403, "Forbidden",
+                                                detail=messages.unauthorized_user_suite_access
+                                                .format(current_user.username, suite_uuid),
+                                                extra_info={"reason": response.get_json()['detail']})
         return suite
     except lm_exceptions.EntityNotFoundException:
         return lm_exceptions.report_problem(404, "Not Found", detail=messages.suite_not_found.format(suite_uuid))
@@ -298,11 +306,17 @@ def _get_instances_or_problem(instance_uuid):
                                                 detail=messages.suite_not_found.format(instance_uuid))
         response = _get_suite_or_problem(instance.test_suite.uuid)
         if isinstance(response, Response):
+            logger.debug("Data: %r", response.get_json())
+            if response.status_code == 404:
+                return lm_exceptions.report_problem(500, "Internal Error",
+                                                    extra_info={"reason": response.get_json()['detail']})
             return lm_exceptions.report_problem(403, "Forbidden", detail=messages.unauthorized_user_instance_access
-                                                .format(current_user.username, instance_uuid), trace=response)
+                                                .format(current_user.username, instance_uuid),
+                                                extra_info={"reason": response.get_json()['detail']})
         return instance
     except lm_exceptions.EntityNotFoundException:
-        return lm_exceptions.report_problem(404, "Not Found", detail=messages.instance_not_found.format(instance_uuid))
+        return lm_exceptions.report_problem(404, "Not Found",
+                                            detail=messages.instance_not_found.format(instance_uuid))
 
 
 @authorized
@@ -330,8 +344,14 @@ def instances_builds_get_by_id(instance_uuid, build_id):
         logger.debug("The test build: %r", build)
         if build:
             return serializers.BuildSummarySchema().dump(build)
+        else:
+            return lm_exceptions\
+                .report_problem(404, "Not Found",
+                                detail=messages.instance_build_not_found.format(build_id, instance_uuid))
     except lm_exceptions.EntityNotFoundException:
-        return lm_exceptions.report_problem(404, "Not Found", detail=messages.instance_build_not_found.format(build_id, instance_uuid))
+        return lm_exceptions\
+            .report_problem(404, "Not Found",
+                            detail=messages.instance_build_not_found.format(build_id, instance_uuid))
     except Exception as e:
         return lm_exceptions.report_problem(500, "Internal Error", extra_info={"exception": str(e)})
 
@@ -350,8 +370,13 @@ def instances_builds_get_logs(instance_uuid, build_id, offset_bytes=0, limit_byt
         logger.debug("offset = %r, limit = %r", offset_bytes, limit_bytes)
         if build:
             return build.get_output(offset_bytes=offset_bytes, limit_bytes=limit_bytes)
+        return lm_exceptions\
+            .report_problem(404, "Not Found",
+                            detail=messages.instance_build_not_found.format(build_id, instance_uuid))
     except lm_exceptions.EntityNotFoundException:
-        return lm_exceptions.report_problem(404, "Not Found", detail=messages.instance_build_not_found.format(build_id, instance_uuid))
+        return lm_exceptions\
+            .report_problem(404, "Not Found",
+                            detail=messages.instance_build_not_found.format(build_id, instance_uuid))
     except ValueError as e:
         return lm_exceptions.report_problem(400, "Bad Request", detail=str(e))
     except Exception as e:
