@@ -161,7 +161,7 @@ class ApiKey(db.Model, ModelMixin):
 class Resource(db.Model, ModelMixin):
 
     id = db.Column('id', db.Integer, primary_key=True)
-    uuid = db.Column(UUID, default=_uuid.uuid4())
+    uuid = db.Column(UUID, default=_uuid.uuid4)
     type = db.Column(db.String, nullable=False)
     name = db.Column(db.String, nullable=True)
     uri = db.Column(db.String, nullable=False)
