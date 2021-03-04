@@ -5,15 +5,13 @@ from abc import ABC, abstractmethod
 from typing import List, Union
 
 import lifemonitor.api.models as models
+import lifemonitor.exceptions as lm_exceptions
 import requests
 from authlib.integrations.base_client import RemoteApp
 from lifemonitor.api.models import db
-from lifemonitor.auth.models import (ExternalServiceAccessAuthorization,
-                                     Resource, User)
+from lifemonitor.auth import models as auth_models
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 from lifemonitor.auth.oauth2.client.services import oauth2_registry
-from lifemonitor.exceptions import (EntityNotFoundException,
-                                    NotAuthorizedException)
 from lifemonitor.utils import ClassManager, download_url
 from sqlalchemy.ext.associationproxy import association_proxy
 
@@ -46,7 +44,7 @@ class WorkflowRegistryClient(ABC):
                 session.headers['Authorization'] = auth.as_http_header()
                 r = session.get(*args, **kwargs)
                 if r.status_code == 401 or r.status_code == 403:
-                    raise NotAuthorizedException(details=r.content)
+                    raise lm_exceptions.NotAuthorizedException(details=r.content)
                 r.raise_for_status()
                 return r
 
@@ -54,7 +52,7 @@ class WorkflowRegistryClient(ABC):
         return download_url(url, target_path,
                             authorization=f'Bearer {self._get_access_token(user.id)["access_token"]}')
 
-    def get_external_id(self, uuid, version, user: User) -> str:
+    def get_external_id(self, uuid, version, user: auth_models.User) -> str:
         """ Return CSV of uuid and version"""
         return ",".join([str(uuid), str(version)])
 
@@ -71,7 +69,7 @@ class WorkflowRegistryClient(ABC):
         pass
 
     @abstractmethod
-    def filter_by_user(workflows: list, user: User):
+    def filter_by_user(workflows: list, user: auth_models.User):
         pass
 
     @classmethod
@@ -79,9 +77,9 @@ class WorkflowRegistryClient(ABC):
         return cls.client_types.get_class(client_type)
 
 
-class WorkflowRegistry(Resource):
+class WorkflowRegistry(auth_models.Resource):
 
-    id = db.Column(db.Integer, db.ForeignKey(Resource.id), primary_key=True)
+    id = db.Column(db.Integer, db.ForeignKey(auth_models.Resource.id), primary_key=True)
     registry_type = db.Column(db.String, nullable=False)
     _client_id = db.Column(db.Integer, db.ForeignKey('oauth2_client.id', ondelete='CASCADE'))
     _server_id = db.Column(db.Integer, db.ForeignKey('oauth2_identity_provider.id', ondelete='CASCADE'))
@@ -113,7 +111,7 @@ class WorkflowRegistry(Resource):
             self.uuid, self.name, self.uri)
 
     @property
-    def api(self) -> Resource:
+    def api(self) -> auth_models.Resource:
         return self.server_credentials.api_resource
 
     def set_name(self, name):
@@ -143,7 +141,7 @@ class WorkflowRegistry(Resource):
             return WorkflowRegistryClient.get_client_class(rtype)(self)
         return self._client
 
-    def get_external_id(self, uuid, version, user: User) -> str:
+    def get_external_id(self, uuid, version, user: auth_models.User) -> str:
         return self.client.get_external_id(uuid, version, user)
 
     def build_ro_link(self, w: models.WorkflowVersion) -> str:
@@ -153,31 +151,31 @@ class WorkflowRegistry(Resource):
         return self.client.download_url(url, user, target_path=target_path)
 
     @property
-    def users(self) -> List[User]:
+    def users(self) -> List[auth_models.User]:
         return self.get_users()
 
     @property
     def registered_workflows(self) -> List[models.WorkflowVersion]:
         return self.ro_crates
 
-    def get_authorization(self, user: User):
-        auths = ExternalServiceAccessAuthorization.find_by_user_and_resource(user, self)
+    def get_authorization(self, user: auth_models.User):
+        auths = auth_models.ExternalServiceAccessAuthorization.find_by_user_and_resource(user, self)
         # check for sub-resource authorizations
         return auths
 
-    def get_user(self, user_id) -> User:
+    def get_user(self, user_id) -> auth_models.User:
         for u in self.users:
             logger.debug(f"Checking {u.id} {user_id}")
             if u.id == user_id:
                 return u
-        raise EntityNotFoundException(User, entity_id=user_id)
+        raise lm_exceptions.EntityNotFoundException(auth_models.User, entity_id=user_id)
 
-    def get_users(self) -> List[User]:
+    def get_users(self) -> List[auth_models.User]:
         try:
             return [i.user for i in OAuthIdentity.query
                     .filter(OAuthIdentity.provider == self.server_credentials).all()]
         except Exception as e:
-            raise EntityNotFoundException(e)
+            raise lm_exceptions.EntityNotFoundException(e)
 
     def get_workflows(self) -> List[models.Workflow]:
         return list({w.workflow for w in self.registered_workflows})
@@ -188,14 +186,14 @@ class WorkflowRegistry(Resource):
             return w.workflow if w is not None else None
         except Exception:
             # if models.Workflow.find_by_uuid(uuid) is None:
-            #     raise EntityNotFoundException(models.Workflow, entity_id=f"{uuid}", exception=str(e))
+            #     raise lm_exceptions.EntityNotFoundException(models.Workflow, entity_id=f"{uuid}", exception=str(e))
             if models.Workflow.find_by_uuid(uuid) is not None:
-                raise NotAuthorizedException()
+                raise lm_exceptions.NotAuthorizedException()
 
-    def get_user_workflows(self, user: User) -> List[models.Workflow]:
+    def get_user_workflows(self, user: auth_models.User) -> List[models.Workflow]:
         return self.client.filter_by_user(self.get_workflows(), user)
 
-    def get_user_workflow_versions(self, user: User) -> List[models.WorkflowVersion]:
+    def get_user_workflow_versions(self, user: auth_models.User) -> List[models.WorkflowVersion]:
         return self.client.filter_by_user(self.registered_workflows, user)
 
     def save(self):
@@ -215,28 +213,28 @@ class WorkflowRegistry(Resource):
         try:
             return cls.query.filter(cls.uuid == uuid).one()
         except Exception as e:
-            raise EntityNotFoundException(WorkflowRegistry, entity_id=uuid, exception=e)
+            raise lm_exceptions.EntityNotFoundException(WorkflowRegistry, entity_id=uuid, exception=e)
 
     @classmethod
     def find_by_name(cls, name):
         try:
             return cls.query.filter(WorkflowRegistry.name == name).one()
         except Exception as e:
-            raise EntityNotFoundException(WorkflowRegistry, entity_id=name, exception=e)
+            raise lm_exceptions.EntityNotFoundException(WorkflowRegistry, entity_id=name, exception=e)
 
     @classmethod
     def find_by_uri(cls, uri):
         try:
             return cls.query.filter(WorkflowRegistry.uri == uri).one()
         except Exception as e:
-            raise EntityNotFoundException(WorkflowRegistry, entity_id=uri, exception=e)
+            raise lm_exceptions.EntityNotFoundException(WorkflowRegistry, entity_id=uri, exception=e)
 
     @classmethod
     def find_by_client_id(cls, client_id):
         try:
             return cls.query.filter_by(client_id=client_id).first()
         except Exception as e:
-            raise EntityNotFoundException(WorkflowRegistry, entity_id=client_id, exception=e)
+            raise lm_exceptions.EntityNotFoundException(WorkflowRegistry, entity_id=client_id, exception=e)
 
     @classmethod
     def get_registry_class(cls, registry_type):
