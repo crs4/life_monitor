@@ -5,6 +5,7 @@ from typing import List, Union
 
 import lifemonitor.api.models as models
 import lifemonitor.exceptions as lm_exceptions
+from lifemonitor import utils as lm_utils
 from lifemonitor.api.models import db
 from lifemonitor.api.models.registries.registry import WorkflowRegistry
 from lifemonitor.api.models.rocrate import ROCrate
@@ -76,7 +77,7 @@ class Workflow(Resource):
             return cls.query\
                 .join(Permission)\
                 .filter(Permission.resource_id == cls.id, Permission.user_id == owner.id)\
-                .filter(cls.uuid == uuid).first()
+                .filter(cls.uuid == lm_utils.uuid_param(uuid)).first()
         except Exception as e:
             raise lm_exceptions.EntityNotFoundException(WorkflowRegistry,
                                                         entity_id=f"{uuid}",
@@ -92,7 +93,7 @@ class WorkflowVersion(ROCrate):
     id = db.Column(db.Integer, db.ForeignKey(ROCrate.id), primary_key=True)
     submitter_id = db.Column(db.Integer, db.ForeignKey(User.id), nullable=False)
     workflow_id = \
-        db.Column(db.Integer, db.ForeignKey("workflow.id"), nullable=True)
+        db.Column(db.Integer, db.ForeignKey("workflow.id"), nullable=False)
     workflow = db.relationship("Workflow", foreign_keys=[workflow_id], cascade="all",
                                backref=db.backref("versions", cascade="all, delete-orphan",
                                                   collection_class=attribute_mapped_collection('version')))
@@ -212,7 +213,7 @@ class WorkflowVersion(ROCrate):
             return cls.query\
                 .join(Permission)\
                 .filter(Permission.resource_id == cls.id, Permission.user_id == owner.id)\
-                .filter(cls.uuid == uuid, cls.version == version).first()
+                .filter(cls.uuid == lm_utils.uuid_param(uuid), cls.version == version).first()
         except Exception as e:
             raise lm_exceptions.EntityNotFoundException(WorkflowVersion,
                                                         entity_id=f"{uuid}_{version}",
@@ -230,8 +231,8 @@ class WorkflowVersion(ROCrate):
         try:
             return cls.query\
                 .join(WorkflowRegistry, cls.hosting_service)\
-                .filter(WorkflowRegistry.uuid == hosting_service.uuid)\
-                .filter(cls.uuid == uuid)\
+                .filter(WorkflowRegistry.uuid == lm_utils.uuid_param(hosting_service.uuid))\
+                .filter(cls.uuid == lm_utils.uuid_param(uuid))\
                 .filter(cls.version == version)\
                 .order_by(WorkflowVersion.version.desc()).one()
         except Exception as e:
@@ -244,5 +245,5 @@ class WorkflowVersion(ROCrate):
         # TODO: replace WorkflowRegistry with a more general Entity
         return cls.query\
             .join(WorkflowRegistry, cls.hosting_service)\
-            .filter(WorkflowRegistry.uuid == hosting_service.uuid)\
+            .filter(WorkflowRegistry.uuid == lm_utils.uuid_param(hosting_service.uuid))\
             .order_by(WorkflowVersion.version.desc()).all()

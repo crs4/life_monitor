@@ -1,5 +1,6 @@
 import glob
 import json
+import uuid
 import logging
 import random
 import shutil
@@ -26,6 +27,10 @@ def bool_from_string(s) -> bool:
     if s.lower() in {'f', 'false', '0'}:
         return False
     raise ValueError(f"Invalid string value for boolean. Got '{s}'")
+
+
+def uuid_param(uuid_value) -> uuid.UUID:
+    return uuid.UUID(uuid_value) if isinstance(uuid_value, str) else uuid_value
 
 
 def to_camel_case(snake_str) -> str:

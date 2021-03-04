@@ -8,6 +8,7 @@ from typing import List
 from authlib.integrations.sqla_oauth2 import OAuth2TokenMixin
 from flask_bcrypt import check_password_hash, generate_password_hash
 from flask_login import AnonymousUserMixin, UserMixin
+from lifemonitor import utils as lm_utils
 from lifemonitor.db import db
 from lifemonitor.models import UUID, ModelMixin
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -160,7 +161,7 @@ class ApiKey(db.Model, ModelMixin):
 class Resource(db.Model, ModelMixin):
 
     id = db.Column('id', db.Integer, primary_key=True)
-    uuid = db.Column(UUID, default=_uuid.uuid4)
+    uuid = db.Column(UUID, default=_uuid.uuid4())
     type = db.Column(db.String, nullable=False)
     name = db.Column(db.String, nullable=True)
     uri = db.Column(db.String, nullable=False)
@@ -200,7 +201,7 @@ class Resource(db.Model, ModelMixin):
 
     @classmethod
     def find_by_uuid(cls, uuid):
-        return cls.query.filter(cls.uuid == uuid).first()
+        return cls.query.filter(cls.uuid == lm_utils.uuid_param(uuid)).first()
 
 
 resource_authorization_table = db.Table(

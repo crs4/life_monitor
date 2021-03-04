@@ -8,6 +8,7 @@ import lifemonitor.api.models as models
 import lifemonitor.exceptions as lm_exceptions
 import requests
 from authlib.integrations.base_client import RemoteApp
+from lifemonitor import utils as lm_utils
 from lifemonitor.api.models import db
 from lifemonitor.auth import models as auth_models
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
@@ -181,7 +182,7 @@ class WorkflowRegistry(auth_models.Resource):
 
     def get_workflow(self, uuid) -> models.Workflow:
         try:
-            w = next((w for w in self.registered_workflows if w.uuid == uuid), None)
+            w = next((w for w in self.registered_workflows if w.uuid == lm_utils.uuid_param(uuid)), None)
             return w.workflow if w is not None else None
         except Exception:
             # if models.Workflow.find_by_uuid(uuid) is None:
@@ -202,7 +203,7 @@ class WorkflowRegistry(auth_models.Resource):
     @classmethod
     def find_by_id(cls, uuid) -> WorkflowRegistry:
         try:
-            return cls.query.filter(cls.uuid == uuid).one()
+            return cls.query.filter(cls.uuid == lm_utils.uuid_param(uuid)).one()
         except Exception as e:
             raise lm_exceptions.EntityNotFoundException(WorkflowRegistry, entity_id=uuid, exception=e)
 

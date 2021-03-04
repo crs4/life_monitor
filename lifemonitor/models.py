@@ -5,14 +5,9 @@ from typing import List
 
 from lifemonitor.db import db
 from sqlalchemy import types
-from sqlalchemy.ext.declarative import declared_attr
 
 
 class ModelMixin(object):
-
-    @declared_attr
-    def __tablename__(cls):
-        return cls.__name__.lower()
 
     def save(self):
         db.session.add(self)
@@ -39,7 +34,7 @@ class UUID(types.TypeDecorator):
     def load_dialect_impl(self, dialect):
         if dialect.name == 'postgresql':
             from sqlalchemy.dialects.postgresql import UUID as _UUID
-            return dialect.type_descriptor(_UUID())
+            return dialect.type_descriptor(_UUID(as_uuid=True))
         else:
             return dialect.type_descriptor(types.CHAR(32))
 
