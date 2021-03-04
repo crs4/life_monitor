@@ -169,7 +169,6 @@ class Resource(db.Model):
 
     id = db.Column('id', db.Integer, primary_key=True)
     uuid = db.Column(db.String, default=_uuid.uuid4)
-    rtype = db.Column(db.String, nullable=False)
     type = db.Column(db.String, nullable=False)
     name = db.Column(db.String, nullable=True)
     uri = db.Column(db.String, nullable=False)
@@ -180,16 +179,11 @@ class Resource(db.Model):
 
     __mapper_args__ = {
         'polymorphic_identity': 'resource',
-        'polymorphic_on': rtype,
+        'polymorphic_on': type,
     }
 
-    # __table_args__ = (
-    #     db.UniqueConstraint(uuid, version),
-    # )
-
-    def __init__(self, type, uri, uuid=None,
+    def __init__(self, uri, uuid=None,
                  name=None, version=None) -> None:
-        self.type = type
         self.uri = uri
         self.name = name
         self.version = version

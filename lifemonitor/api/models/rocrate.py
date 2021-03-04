@@ -39,8 +39,7 @@ class ROCrate(Resource):
 
     def __init__(self, uri, uuid=None, name=None,
                  version=None, hosting_service=None) -> None:
-        super().__init__(self.__class__.__name__, uri,
-                         uuid=uuid, name=name, version=version)
+        super().__init__(uri, uuid=uuid, name=name, version=version)
         self.hosting_service = hosting_service
         self._data = None
 

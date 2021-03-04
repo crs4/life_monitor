@@ -177,7 +177,7 @@ class OAuth2IdentityProvider(db.Model):
         self.name = name
         self.client_id = client_id
         self.client_secret = client_secret
-        self.api_resource = models.Resource("OAuth2IdentityProvider", api_base_url, name=self.name)
+        self.api_resource = models.Resource(api_base_url, name=self.name)
         self.client_kwargs = client_kwargs
         self.authorize_url = authorize_url
         self.access_token_url = access_token_url

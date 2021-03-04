@@ -28,8 +28,7 @@ class Workflow(Resource):
     }
 
     def __init__(self, uri=None, uuid=None, version=None, name=None) -> None:
-        super().__init__(self.__class__.__name__,
-                         uri=uri or f"{self.external_ns}:undefined",
+        super().__init__(uri=uri or f"{self.external_ns}:undefined",
                          uuid=uuid, version=version, name=name)
 
     def __repr__(self):

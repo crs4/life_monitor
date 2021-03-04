@@ -99,8 +99,7 @@ class WorkflowRegistry(auth_models.Resource):
     }
 
     def __init__(self, registry_type, client_credentials, server_credentials):
-        super().__init__(self.__class__.__name__,
-                         server_credentials.api_base_url, name=server_credentials.name)
+        super().__init__(server_credentials.api_base_url, name=server_credentials.name)
         self.registry_type = registry_type
         self.client_credentials = client_credentials
         self.server_credentials = server_credentials
