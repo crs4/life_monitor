@@ -223,7 +223,7 @@ class WorkflowVersion(ROCrate):
                 .filter(Permission.resource_id == cls.id, Permission.user_id == owner.id)\
                 .filter(cls.uuid == uuid, cls.version == version).first()
         except Exception as e:
-            raise lm_exceptions.EntityNotFoundException(WorkflowRegistry,
+            raise lm_exceptions.EntityNotFoundException(WorkflowVersion,
                                                         entity_id=f"{uuid}_{version}",
                                                         exception=str(e))
 
@@ -244,7 +244,7 @@ class WorkflowVersion(ROCrate):
                 .filter(cls.version == version)\
                 .order_by(WorkflowVersion.version.desc()).one()
         except Exception as e:
-            raise lm_exceptions.EntityNotFoundException(WorkflowRegistry,
+            raise lm_exceptions.EntityNotFoundException(WorkflowVersion,
                                                         entity_id=f"{uuid}_{version}",
                                                         exception=str(e))
 
