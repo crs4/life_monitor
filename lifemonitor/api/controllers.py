@@ -210,16 +210,23 @@ def _get_suite_or_problem(suite_uuid):
     try:
         suite = lm.get_suite(suite_uuid)
         if not suite:
-            return lm_exceptions.report_problem(404, "Not Found", detail=messages.suite_not_found.format(suite_uuid))
+            return lm_exceptions.report_problem(404, "Not Found",
+                                                detail=messages.suite_not_found.format(suite_uuid))
 
         response = _get_workflow_or_problem(suite.workflow.uuid, suite.workflow.version)
         if isinstance(response, Response):
             if response.status_code == 404:
                 return lm_exceptions.report_problem(500, "Internal Error",
                                                     extra_info={"reason": response.get_json()['detail']})
+            details_message = ""
+            if current_user and not current_user.is_anonymous:
+                details_message = messages.unauthorized_user_suite_access\
+                    .format(current_user.username, suite_uuid)
+            elif current_registry:
+                details_message = messages.unauthorized_registry_suite_access\
+                    .format(current_registry.name, suite_uuid)
             return lm_exceptions.report_problem(403, "Forbidden",
-                                                detail=messages.unauthorized_user_suite_access
-                                                .format(current_user.username, suite_uuid),
+                                                detail=details_message,
                                                 extra_info={"reason": response.get_json()['detail']})
         return suite
     except lm_exceptions.EntityNotFoundException:
@@ -310,8 +317,14 @@ def _get_instances_or_problem(instance_uuid):
             if response.status_code == 404:
                 return lm_exceptions.report_problem(500, "Internal Error",
                                                     extra_info={"reason": response.get_json()['detail']})
-            return lm_exceptions.report_problem(403, "Forbidden", detail=messages.unauthorized_user_instance_access
-                                                .format(current_user.username, instance_uuid),
+            details_message = ""
+            if current_user and not current_user.is_anonymous:
+                details_message = messages.unauthorized_user_instance_access\
+                    .format(current_user.username, instance_uuid)
+            elif current_registry:
+                details_message = messages.unauthorized_registry_instance_access\
+                    .format(current_registry.name, instance_uuid)
+            return lm_exceptions.report_problem(403, "Forbidden", detail=details_message,
                                                 extra_info={"reason": response.get_json()['detail']})
         return instance
     except lm_exceptions.EntityNotFoundException:
