@@ -184,12 +184,12 @@ class WorkflowRegistry(Resource):
 
     def get_workflow(self, uuid) -> models.Workflow:
         try:
-            return next((w for w in self.registered_workflows if w.uuid == uuid)).workflow
-        except Exception as e:
-            if models.Workflow.find_by_uuid(uuid) is None:
-                raise EntityNotFoundException(models.Workflow,
-                                              entity_id=f"{uuid}", exception=str(e))
-            else:
+            w = next((w for w in self.registered_workflows if w.uuid == uuid), None)
+            return w.workflow if w is not None else None
+        except Exception:
+            # if models.Workflow.find_by_uuid(uuid) is None:
+            #     raise EntityNotFoundException(models.Workflow, entity_id=f"{uuid}", exception=str(e))
+            if models.Workflow.find_by_uuid(uuid) is not None:
                 raise NotAuthorizedException()
 
     def get_user_workflows(self, user: User) -> List[models.Workflow]:
