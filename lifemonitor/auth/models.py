@@ -4,13 +4,13 @@ import datetime
 import logging
 import uuid as _uuid
 from typing import List
-from lifemonitor.models import ModelMixin
+
 from authlib.integrations.sqla_oauth2 import OAuth2TokenMixin
 from flask_bcrypt import check_password_hash, generate_password_hash
 from flask_login import AnonymousUserMixin, UserMixin
 from lifemonitor.db import db
+from lifemonitor.models import UUID, ModelMixin
 from sqlalchemy.ext.hybrid import hybrid_property
-
 
 # Set the module level logger
 logger = logging.getLogger(__name__)
@@ -160,7 +160,7 @@ class ApiKey(db.Model, ModelMixin):
 class Resource(db.Model, ModelMixin):
 
     id = db.Column('id', db.Integer, primary_key=True)
-    uuid = db.Column(db.String, default=_uuid.uuid4)
+    uuid = db.Column(UUID, default=_uuid.uuid4)
     type = db.Column(db.String, nullable=False)
     name = db.Column(db.String, nullable=True)
     uri = db.Column(db.String, nullable=False)

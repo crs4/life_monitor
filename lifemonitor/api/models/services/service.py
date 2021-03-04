@@ -7,9 +7,8 @@ from typing import List
 import lifemonitor.exceptions as lm_exceptions
 from lifemonitor.api import models
 from lifemonitor.api.models import db
-from lifemonitor.models import ModelMixin
+from lifemonitor.models import UUID, ModelMixin
 from lifemonitor.utils import ClassManager
-from sqlalchemy.dialects.postgresql import UUID
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -62,7 +61,7 @@ class TestingServiceTokenManager:
 
 
 class TestingService(db.Model, ModelMixin):
-    uuid = db.Column("uuid", UUID(as_uuid=True), db.ForeignKey(models.TestInstance.uuid), primary_key=True)
+    uuid = db.Column("uuid", UUID, db.ForeignKey(models.TestInstance.uuid), primary_key=True)
     _type = db.Column("type", db.String, nullable=False)
     url = db.Column(db.Text, nullable=False, unique=True)
     _token = None

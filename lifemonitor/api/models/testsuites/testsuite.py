@@ -9,8 +9,7 @@ import lifemonitor.exceptions as lm_exceptions
 import lifemonitor.test_metadata as tm
 from lifemonitor.api.models import db
 from lifemonitor.auth.models import User
-from lifemonitor.models import ModelMixin
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from lifemonitor.models import JSON, UUID, ModelMixin
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -35,11 +34,11 @@ class Test:
 
 
 class TestSuite(db.Model, ModelMixin):
-    uuid = db.Column(UUID(as_uuid=True), primary_key=True, default=_uuid.uuid4)
+    uuid = db.Column(UUID, primary_key=True, default=_uuid.uuid4)
     _workflow_id = db.Column("workflow_id", db.Integer,
                              db.ForeignKey(models.workflows.WorkflowVersion.id), nullable=False)
     workflow = db.relationship("WorkflowVersion", back_populates="test_suites")
-    test_definition = db.Column(JSONB, nullable=False)
+    test_definition = db.Column(JSON, nullable=False)
     submitter_id = db.Column(db.Integer,
                              db.ForeignKey(User.id), nullable=False)
     submitter = db.relationship("User", uselist=False)

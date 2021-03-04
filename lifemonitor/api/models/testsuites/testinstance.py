@@ -7,8 +7,7 @@ from typing import List
 import lifemonitor.api.models as models
 from lifemonitor.api.models import db
 from lifemonitor.exceptions import EntityNotFoundException
-from lifemonitor.models import ModelMixin
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from lifemonitor.models import JSON, UUID, ModelMixin
 
 from .testsuite import TestSuite
 
@@ -17,12 +16,12 @@ logger = logging.getLogger(__name__)
 
 
 class TestInstance(db.Model, ModelMixin):
-    uuid = db.Column(UUID(as_uuid=True), primary_key=True, default=_uuid.uuid4)
+    uuid = db.Column(UUID, primary_key=True, default=_uuid.uuid4)
     _test_suite_uuid = \
-        db.Column("test_suite_uuid", UUID(as_uuid=True), db.ForeignKey(TestSuite.uuid), nullable=False)
+        db.Column("test_suite_uuid", UUID, db.ForeignKey(TestSuite.uuid), nullable=False)
     name = db.Column(db.Text, nullable=False)
     resource = db.Column(db.Text, nullable=False)
-    parameters = db.Column(JSONB, nullable=True)
+    parameters = db.Column(JSON, nullable=True)
     submitter_id = db.Column(db.Integer,
                              db.ForeignKey(models.User.id), nullable=False)
     # configure relationships

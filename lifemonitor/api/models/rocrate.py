@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import os
 import json
 import logging
+import os
 import shutil
 import tempfile
 from pathlib import Path
@@ -10,10 +10,10 @@ from pathlib import Path
 import lifemonitor.exceptions as lm_exceptions
 from lifemonitor.api.models import db
 from lifemonitor.auth.models import Resource
+from lifemonitor.models import JSON
 from lifemonitor.test_metadata import get_old_format_tests
 from lifemonitor.utils import download_url, extract_zip
 from rocrate.rocrate import ROCrate as ROCrateHelper
-from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.hybrid import hybrid_property
 
 # set module level logger
@@ -27,7 +27,7 @@ class ROCrate(Resource):
     hosting_service = db.relationship("Resource", uselist=False,
                                       backref=db.backref("ro_crates", cascade="all, delete-orphan"),
                                       foreign_keys=[hosting_service_id])
-    _metadata = db.Column("metadata", JSONB, nullable=True)
+    _metadata = db.Column("metadata", JSON, nullable=True)
     _test_metadata = None
     _local_path = None
     _metadata_loaded = False

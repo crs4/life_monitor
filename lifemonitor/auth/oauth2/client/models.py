@@ -11,9 +11,8 @@ from lifemonitor.auth import models
 from lifemonitor.db import db
 from lifemonitor.exceptions import (EntityNotFoundException,
                                     LifeMonitorException)
-from lifemonitor.models import ModelMixin
+from lifemonitor.models import JSON, ModelMixin
 from sqlalchemy import DateTime
-from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy.orm.exc import NoResultFound
@@ -59,7 +58,7 @@ class OAuthIdentity(models.ExternalServiceAccessAuthorization, ModelMixin):
     provider_user_id = db.Column(db.String(256), nullable=False)
     provider_id = db.Column(db.Integer, db.ForeignKey("oauth2_identity_provider.id"), nullable=False)
     created_at = db.Column(DateTime, default=datetime.utcnow, nullable=False)
-    token = db.Column(JSONB, nullable=True)
+    token = db.Column(JSON, nullable=True)
     _user_info = None
     provider = db.relationship("OAuth2IdentityProvider", uselist=False, back_populates="identities")
     user = db.relationship(
@@ -147,11 +146,11 @@ class OAuth2IdentityProvider(db.Model, ModelMixin):
     name = db.Column(db.String, nullable=False, unique=True)
     client_id = db.Column(db.String, nullable=False)
     client_secret = db.Column(db.String, nullable=False)
-    client_kwargs = db.Column(JSONB, nullable=True)
+    client_kwargs = db.Column(JSON, nullable=True)
     _authorize_url = db.Column("authorize_url", db.String, nullable=False)
-    authorize_params = db.Column(JSONB, nullable=True)
+    authorize_params = db.Column(JSON, nullable=True)
     _access_token_url = db.Column("access_token_url", db.String, nullable=False)
-    access_token_params = db.Column(JSONB, nullable=True)
+    access_token_params = db.Column(JSON, nullable=True)
     userinfo_endpoint = db.Column(db.String, nullable=False)
     api_resource_id = db.Column(db.Integer, db.ForeignKey("resource.id"), nullable=False)
     api_resource = db.relationship("Resource", cascade="all, delete")

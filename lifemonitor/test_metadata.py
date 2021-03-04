@@ -186,7 +186,7 @@ def get_old_format_tests(crate):
     https://github.com/crs4/life_monitor/wiki/Workflow-Testing-RO-Crate) to
     the old JSON format
     (https://github.com/crs4/life_monitor/wiki/Test-Metadata-Draft-Spec),
-    which is still used in some JSONB columns in the database.
+    which is still used in some JSON columns in the database.
     """
     if not crate.test_dir:
         return None
