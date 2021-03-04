@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, patch
 
 import lifemonitor.api.controllers as controllers
 import lifemonitor.auth as auth
+import lifemonitor.exceptions as lm_exceptions
 import pytest
 from lifemonitor.lang import messages
 from tests.utils import assert_status_code
@@ -35,18 +36,19 @@ def test_get_suite_by_user_without_auth_access_to_workflow(m, request_context, m
     assert auth.current_user == mock_user, "Unexpected user in session"
     logger.debug("Current registry: %r", auth.current_registry)
     assert not auth.current_registry, "Unexpected registry in session"
-    # add one fake workflow
-    data = {"uuid": "123456"}
+    workflow = MagicMock()
+    workflow.uuid = "1111-222"
     suite = MagicMock()
-    w = {'uuid': '11111'}
-    suite.workflow = w
-    m.get_user_workflows.return_value = []
+    suite.uuid = '1111'
+    suite.workflow = workflow
     m.get_suite.return_value = suite
-    response = controllers.suites_get_by_uuid(data["uuid"])
-    m.get_user_workflows.assert_called_once()
+    m.get_user_workflow_version.side_effect = lm_exceptions.NotAuthorizedException
+    response = controllers.suites_get_by_uuid(suite.uuid)
     m.get_suite.assert_called_once()
+    m.get_user_workflow_version.assert_called_once()
     assert response.status_code == 403, "The user should not be able to access"
-    assert messages.unauthorized_user_suite_access.format(mock_user.username, data['uuid']) in response.data.decode()
+    assert messages.unauthorized_user_suite_access\
+        .format(mock_user.username, suite.uuid) in response.data.decode()
 
 
 @patch("lifemonitor.api.controllers.lm")
@@ -56,16 +58,23 @@ def test_get_suite_by_registry_without_auth_access_to_workflow(m, request_contex
     logger.debug("Current registry: %r", auth.current_registry)
     assert auth.current_registry, "Unexpected registry in session"
     # add one fake workflow
-    data = {"uuid": "123456"}
+    mock_registry.name = "MockRegsitry"
+    workflow = MagicMock()
+    workflow.uuid = "1111-222"
+    workflow.version = "1"
     suite = MagicMock()
-    w = {'uuid': '11111'}
-    suite.workflow = w
-    mock_registry.registered_workflows = []
+    suite.uuid = '111111'
+    suite.workflow = workflow
     m.get_suite.return_value = suite
-    response = controllers.suites_get_by_uuid(data["uuid"])
+    # the worklow exists but it is not linked to the registry
+    m.get_registry_workflow_version.side_effect = lm_exceptions.NotAuthorizedException
+    response = controllers.suites_get_by_uuid(suite.uuid)
+    logger.debug("Response: %r", response.data.decode())
     m.get_suite.assert_called_once()
+    m.get_registry_workflow_version.assert_called_once()
     assert response.status_code == 403, "The registry should not be able to access"
-    assert messages.unauthorized_registry_suite_access.format(mock_registry.name, data['uuid']) in response.data.decode()
+    assert messages.unauthorized_registry_suite_access.format(
+        mock_registry.name, suite.uuid) in response.data.decode()
 
 
 @patch("lifemonitor.api.controllers.lm")
@@ -76,13 +85,14 @@ def test_get_suite_by_user(m, request_context, mock_user):
     logger.debug("Current registry: %r", auth.current_registry)
     assert not auth.current_registry, "Unexpected registry in session"
     # add one fake workflow
-    data = {"uuid": "123456"}
+    workflow = MagicMock()
+    workflow.uuid = "1111-222"
+    workflow.version = "1"
     suite = MagicMock()
-    w = {'uuid': '11111'}
-    suite.workflow = w
-    m.get_user_workflows.return_value = [w]
+    suite.uuid = '111111'
+    suite.workflow = workflow
     m.get_suite.return_value = suite
-    response = controllers.suites_get_by_uuid(data["uuid"])
+    response = controllers.suites_get_by_uuid(suite.uuid)
     m.get_suite.assert_called_once()
     assert isinstance(response, dict), "Unexpected result type"
 
@@ -94,13 +104,16 @@ def test_get_suite_by_registry(m, request_context, mock_registry):
     logger.debug("Current registry: %r", auth.current_registry)
     assert auth.current_registry, "Unexpected registry in session"
     # add one fake workflow
-    data = {"uuid": "123456"}
+    mock_registry.name = "MockRegsitry"
+    workflow = MagicMock()
+    workflow.uuid = "1111-222"
+    workflow.version = "1"
     suite = MagicMock()
-    w = {'uuid': '11111'}
-    suite.workflow = w
-    mock_registry.registered_workflows = [w]
+    suite.uuid = '111111'
+    suite.workflow = workflow
     m.get_suite.return_value = suite
-    response = controllers.suites_get_by_uuid(data["uuid"])
+    m.get_registry_workflow_version.return_value = workflow
+    response = controllers.suites_get_by_uuid(suite.uuid)
     m.get_suite.assert_called_once()
     assert isinstance(response, dict), "Unexpected result type"
 
@@ -113,13 +126,14 @@ def test_get_suite_status_by_user(m, request_context, mock_user):
     logger.debug("Current registry: %r", auth.current_registry)
     assert not auth.current_registry, "Unexpected registry in session"
     # add one fake workflow
-    data = {"uuid": "123456"}
+    workflow = MagicMock()
+    workflow.uuid = "1111-222"
+    workflow.version = "1"
     suite = MagicMock()
-    w = {'uuid': '11111'}
-    suite.workflow = w
-    m.get_user_workflows.return_value = [w]
+    suite.uuid = '111111'
+    suite.workflow = workflow
     m.get_suite.return_value = suite
-    response = controllers.suites_get_status(data["uuid"])
+    response = controllers.suites_get_status(suite.uuid)
     m.get_suite.assert_called_once()
     assert isinstance(response, dict), "Unexpected result type"
     logger.debug("The response: %r", response)
@@ -134,14 +148,17 @@ def test_get_suite_status_by_registry(m, request_context, mock_registry):
     logger.debug("Current registry: %r", auth.current_registry)
     assert auth.current_registry, "Unexpected registry in session"
     # add one fake workflow
-    data = {"uuid": "123456"}
+    workflow = MagicMock()
+    workflow.uuid = "1111-222"
+    workflow.version = "1"
     suite = MagicMock()
-    w = {'uuid': '11111'}
-    suite.workflow = w
-    mock_registry.registered_workflows = [w]
+    suite.uuid = '111111'
+    suite.workflow = workflow
     m.get_suite.return_value = suite
-    response = controllers.suites_get_status(data["uuid"])
+    m.get_registry_workflow_version.return_value = suite
+    response = controllers.suites_get_status(suite.suite)
     m.get_suite.assert_called_once()
+    m.get_registry_workflow_version.assert_called_once()
     assert isinstance(response, dict), "Unexpected result type"
     logger.debug("The response: %r", response)
     for p in ["latest_builds", "suite_uuid", "status"]:
@@ -156,13 +173,14 @@ def test_get_suite_instances_by_user(m, request_context, mock_user):
     logger.debug("Current registry: %r", auth.current_registry)
     assert not auth.current_registry, "Unexpected registry in session"
     # add one fake workflow
-    data = {"uuid": "123456"}
+    workflow = MagicMock()
+    workflow.uuid = "1111-222"
+    workflow.version = "1"
     suite = MagicMock()
-    w = {'uuid': '11111'}
-    suite.workflow = w
-    m.get_user_workflows.return_value = [w]
+    suite.uuid = '111111'
+    suite.workflow = workflow
     m.get_suite.return_value = suite
-    response = controllers.suites_get_instances(data["uuid"])
+    response = controllers.suites_get_instances(suite.uuid)
     m.get_suite.assert_called_once()
     assert isinstance(response, dict), "Unexpected result type"
     logger.debug("The response: %r", response)
@@ -176,13 +194,15 @@ def test_get_suite_instances_by_registry(m, request_context, mock_registry):
     logger.debug("Current registry: %r", auth.current_registry)
     assert auth.current_registry, "Unexpected registry in session"
     # add one fake workflow
-    data = {"uuid": "123456"}
+    workflow = MagicMock()
+    workflow.uuid = "1111-222"
+    workflow.version = "1"
     suite = MagicMock()
-    w = {'uuid': '11111'}
-    suite.workflow = w
-    mock_registry.registered_workflows = [w]
+    suite.uuid = '111111'
+    suite.workflow = workflow
     m.get_suite.return_value = suite
-    response = controllers.suites_get_instances(data["uuid"])
+    m.get_registry_workflow_version.return_value = suite
+    response = controllers.suites_get_instances(suite.uuid)
     m.get_suite.assert_called_once()
     assert isinstance(response, dict), "Unexpected result type"
     logger.debug("The response: %r", response)
@@ -197,14 +217,15 @@ def test_delete_suite_by_user(m, request_context, mock_user):
     logger.debug("Current registry: %r", auth.current_registry)
     assert not auth.current_registry, "Unexpected registry in session"
     # add one fake workflow
-    data = {"uuid": "123456"}
+    workflow = MagicMock()
+    workflow.uuid = "1111-222"
+    workflow.version = "1"
     suite = MagicMock()
-    w = {'uuid': '11111'}
-    suite.workflow = w
-    m.get_user_workflows.return_value = [w]
+    suite.uuid = '111111'
+    suite.workflow = workflow
     m.get_suite.return_value = suite
-    m.deregister_test_suite.return_value = data['uuid']
-    response = controllers.suites_delete(data["uuid"])
+    m.deregister_test_suite.return_value = suite.uuid
+    response = controllers.suites_delete(suite.uuid)
     logger.debug("Response: %r", response)
     m.get_suite.assert_called_once()
     m.deregister_test_suite.assert_called_once()
@@ -219,14 +240,15 @@ def test_delete_suite_by_user_unexpected_error(m, request_context, mock_user):
     logger.debug("Current registry: %r", auth.current_registry)
     assert not auth.current_registry, "Unexpected registry in session"
     # add one fake workflow
-    data = {"uuid": "123456"}
+    workflow = MagicMock()
+    workflow.uuid = "1111-222"
+    workflow.version = "1"
     suite = MagicMock()
-    w = {'uuid': '11111'}
-    suite.workflow = w
-    m.get_user_workflows.return_value = [w]
+    suite.uuid = '111111'
+    suite.workflow = workflow
     m.get_suite.return_value = suite
     m.deregister_test_suite.side_effect = RuntimeError()
-    response = controllers.suites_delete(data["uuid"])
+    response = controllers.suites_delete(suite.uuid)
     m.get_suite.assert_called_once()
     m.deregister_test_suite.assert_called_once()
     assert_status_code(500, response.status_code)
@@ -239,14 +261,15 @@ def test_delete_suite_by_registry(m, request_context, mock_registry):
     logger.debug("Current registry: %r", auth.current_registry)
     assert auth.current_registry, "Unexpected registry in session"
     # add one fake workflow
-    data = {"uuid": "123456"}
+    workflow = MagicMock()
+    workflow.uuid = "1111-222"
+    workflow.version = "1"
     suite = MagicMock()
-    w = {'uuid': '11111'}
-    suite.workflow = w
-    mock_registry.registered_workflows = [w]
+    suite.uuid = '111111'
+    suite.workflow = workflow
     m.get_suite.return_value = suite
-    m.deregister_test_suite.return_value = data['uuid']
-    response = controllers.suites_delete(data["uuid"])
+    m.deregister_test_suite.return_value = suite.uuid
+    response = controllers.suites_delete(suite.uuid)
     m.get_suite.assert_called_once()
     m.deregister_test_suite.assert_called_once()
     assert_status_code(204, response[1])
@@ -259,14 +282,15 @@ def test_delete_suite_by_registry_unexpected_error(m, request_context, mock_regi
     logger.debug("Current registry: %r", auth.current_registry)
     assert auth.current_registry, "Unexpected registry in session"
     # add one fake workflow
-    data = {"uuid": "123456"}
+    workflow = MagicMock()
+    workflow.uuid = "1111-222"
+    workflow.version = "1"
     suite = MagicMock()
-    w = {'uuid': '11111'}
-    suite.workflow = w
-    mock_registry.registered_workflows = [w]
+    suite.uuid = '111111'
+    suite.workflow = workflow
     m.get_suite.return_value = suite
     m.deregister_test_suite.return_value = None
-    response = controllers.suites_delete(data["uuid"])
+    response = controllers.suites_delete(suite.uuid)
     m.get_suite.assert_called_once()
     m.deregister_test_suite.assert_called_once()
     assert_status_code(500, response.status_code)
