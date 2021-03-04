@@ -2,10 +2,12 @@
 from __future__ import annotations
 
 import logging
+from typing import List
 
 import lifemonitor.exceptions as lm_exceptions
 from lifemonitor.api import models
 from lifemonitor.api.models import db
+from lifemonitor.models import ModelMixin
 from lifemonitor.utils import ClassManager
 from sqlalchemy.dialects.postgresql import UUID
 
@@ -59,7 +61,7 @@ class TestingServiceTokenManager:
         return self.__token_registry[service_url] if service_url in self.__token_registry else None
 
 
-class TestingService(db.Model):
+class TestingService(db.Model, ModelMixin):
     uuid = db.Column("uuid", UUID(as_uuid=True), db.ForeignKey(models.TestInstance.uuid), primary_key=True)
     _type = db.Column("type", db.String, nullable=False)
     url = db.Column(db.Text, nullable=False, unique=True)
@@ -135,16 +137,8 @@ class TestingService(db.Model):
             data["test_build"] = self.get_test_builds_as_dict(test_output=test_output)
         return data
 
-    def save(self):
-        db.session.add(self)
-        db.session.commit()
-
-    def delete(self):
-        db.session.delete(self)
-        db.session.commit()
-
     @classmethod
-    def all(cls):
+    def all(cls) -> List[TestingService]:
         return cls.query.all()
 
     @classmethod
@@ -156,7 +150,7 @@ class TestingService(db.Model):
         return cls.query.filter(TestingService.url == url).first()
 
     @classmethod
-    def get_instance(cls, service_type, url: str):
+    def get_instance(cls, service_type, url: str) -> TestingService:
         try:
             # return the service obj if the service has already been registered
             instance = cls.find_by_url(url)

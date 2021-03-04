@@ -195,14 +195,6 @@ class WorkflowRegistry(auth_models.Resource):
     def get_user_workflow_versions(self, user: auth_models.User) -> List[models.WorkflowVersion]:
         return self.client.filter_by_user(self.registered_workflows, user)
 
-    def save(self):
-        db.session.add(self)
-        db.session.commit()
-
-    def delete(self):
-        db.session.delete(self)
-        db.session.commit()
-
     @classmethod
     def all(cls) -> List[WorkflowRegistry]:
         return cls.query.all()

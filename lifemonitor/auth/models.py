@@ -4,7 +4,7 @@ import datetime
 import logging
 import uuid as _uuid
 from typing import List
-
+from lifemonitor.models import ModelMixin
 from authlib.integrations.sqla_oauth2 import OAuth2TokenMixin
 from flask_bcrypt import check_password_hash, generate_password_hash
 from flask_login import AnonymousUserMixin, UserMixin
@@ -28,7 +28,7 @@ class Anonymous(AnonymousUserMixin):
         return None
 
 
-class User(UserMixin, db.Model):
+class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(256), unique=True, nullable=False)
     password_hash = db.Column(db.LargeBinary, nullable=True)
@@ -110,7 +110,7 @@ class User(UserMixin, db.Model):
         return cls.query.all()
 
 
-class ApiKey(db.Model):
+class ApiKey(db.Model, ModelMixin):
     SCOPES = ["read", "write"]
 
     key = db.Column(db.String, primary_key=True)
@@ -148,24 +148,16 @@ class ApiKey(db.Model):
                 return False
         return True
 
-    def save(self):
-        db.session.add(self)
-        db.session.commit()
-
-    def delete(self):
-        db.session.delete(self)
-        db.session.commit()
-
     @classmethod
     def find(cls, api_key) -> ApiKey:
         return cls.query.filter(ApiKey.key == api_key).first()
 
     @classmethod
-    def all(cls):
+    def all(cls) -> List[ApiKey]:
         return cls.query.all()
 
 
-class Resource(db.Model):
+class Resource(db.Model, ModelMixin):
 
     id = db.Column('id', db.Integer, primary_key=True)
     uuid = db.Column(db.String, default=_uuid.uuid4)
@@ -205,18 +197,6 @@ class Resource(db.Model):
                 auths.extend(ExternalServiceAccessAuthorization
                              .find_by_user_and_resource(self, getattr(self, subresource)))
         return auths
-
-    def save(self):
-        db.session.add(self)
-        db.session.commit()
-
-    def delete(self):
-        db.session.delete(self)
-        db.session.commit()
-
-    @classmethod
-    def all(cls):
-        return cls.query.all()
 
     @classmethod
     def find_by_uuid(cls, uuid):

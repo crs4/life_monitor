@@ -11,6 +11,7 @@ from lifemonitor.auth import models
 from lifemonitor.db import db
 from lifemonitor.exceptions import (EntityNotFoundException,
                                     LifeMonitorException)
+from lifemonitor.models import ModelMixin
 from sqlalchemy import DateTime
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -53,7 +54,7 @@ class OAuthUserProfile:
         return profile
 
 
-class OAuthIdentity(models.ExternalServiceAccessAuthorization):
+class OAuthIdentity(models.ExternalServiceAccessAuthorization, ModelMixin):
     id = db.Column(db.Integer, db.ForeignKey('external_service_access_authorization.id'), primary_key=True)
     provider_user_id = db.Column(db.String(256), nullable=False)
     provider_id = db.Column(db.Integer, db.ForeignKey("oauth2_identity_provider.id"), nullable=False)
@@ -116,10 +117,6 @@ class OAuthIdentity(models.ExternalServiceAccessAuthorization):
             parts.append('provider="{}"'.format(self.provider))
         return "<{}>".format(" ".join(parts))
 
-    def save(self):
-        db.session.add(self)
-        db.session.commit()
-
     @staticmethod
     def find_by_user_id(user_id, provider_name) -> OAuthIdentity:
         try:
@@ -139,11 +136,11 @@ class OAuthIdentity(models.ExternalServiceAccessAuthorization):
             raise OAuthIdentityNotFoundException(f"{provider_name}_{provider_user_id}")
 
     @classmethod
-    def all(cls):
+    def all(cls) -> List[OAuthIdentity]:
         return cls.query.all()
 
 
-class OAuth2IdentityProvider(db.Model):
+class OAuth2IdentityProvider(db.Model, ModelMixin):
 
     id = db.Column(db.Integer, primary_key=True)
     _type = db.Column("type", db.String, nullable=False)
@@ -257,14 +254,6 @@ class OAuth2IdentityProvider(db.Model):
         except NoResultFound:
             raise OAuthIdentityNotFoundException(f"{provider_user_id}@{self}")
 
-    def save(self):
-        db.session.add(self)
-        db.session.commit()
-
-    def delete(self):
-        db.session.delete(self)
-        db.session.commit()
-
     @classmethod
     def find(cls, name) -> OAuth2IdentityProvider:
         try:
@@ -273,5 +262,5 @@ class OAuth2IdentityProvider(db.Model):
             raise EntityNotFoundException(cls, entity_id=name)
 
     @classmethod
-    def all(cls) -> List(OAuth2IdentityProvider):
+    def all(cls) -> List[OAuth2IdentityProvider]:
         return cls.query.all()

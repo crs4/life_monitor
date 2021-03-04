@@ -106,15 +106,3 @@ class ROCrate(Resource):
             return metadata, test_metadata
         finally:
             shutil.rmtree(roc_path, ignore_errors=True)
-
-    def save(self):
-        db.session.add(self)
-        db.session.commit()
-
-    def delete(self):
-        db.session.delete(self)
-        db.session.commit()
-
-    @classmethod
-    def all(cls):
-        return cls.query.all()

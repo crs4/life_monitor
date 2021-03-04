@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import logging
 import uuid as _uuid
-from typing import Optional
+from typing import List, Optional
 
 import lifemonitor.api.models as models
 import lifemonitor.exceptions as lm_exceptions
 import lifemonitor.test_metadata as tm
 from lifemonitor.api.models import db
 from lifemonitor.auth.models import User
+from lifemonitor.models import ModelMixin
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 # set module level logger
@@ -33,7 +34,7 @@ class Test:
         return self.project.get_test_instance_by_name(self.name)
 
 
-class TestSuite(db.Model):
+class TestSuite(db.Model, ModelMixin):
     uuid = db.Column(UUID(as_uuid=True), primary_key=True, default=_uuid.uuid4)
     _workflow_id = db.Column("workflow_id", db.Integer,
                              db.ForeignKey(models.workflows.WorkflowVersion.id), nullable=False)
@@ -116,16 +117,8 @@ class TestSuite(db.Model):
                                         test["specification"] if "specification" in test else None)
         return result
 
-    def save(self):
-        db.session.add(self)
-        db.session.commit()
-
-    def delete(self):
-        db.session.delete(self)
-        db.session.commit()
-
     @classmethod
-    def all(cls):
+    def all(cls) -> List[TestSuite]:
         return cls.query.all()
 
     @classmethod

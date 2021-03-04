@@ -15,6 +15,7 @@ from authlib.integrations.sqla_oauth2 import (OAuth2AuthorizationCodeMixin,
 from authlib.oauth2.rfc6749 import InvalidRequestError, grants
 from lifemonitor.auth.models import User
 from lifemonitor.db import db
+from lifemonitor.models import ModelMixin
 from werkzeug.security import gen_salt
 
 
@@ -65,7 +66,7 @@ class Client(db.Model, OAuth2ClientMixin):
         return cls.query.all()
 
 
-class Token(db.Model, OAuth2TokenMixin):
+class Token(db.Model, ModelMixin, OAuth2TokenMixin):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(
         db.Integer, db.ForeignKey('user.id', ondelete='CASCADE')
@@ -83,14 +84,6 @@ class Token(db.Model, OAuth2TokenMixin):
     def is_refresh_token_valid(self) -> bool:
         return self if not self.revoked else None
 
-    def save(self):
-        db.session.add(self)
-        db.session.commit()
-
-    def delete(self):
-        db.session.delete(self)
-        db.session.commit()
-
     @classmethod
     def find(cls, access_token):
         return cls.query.filter(Token.access_token == access_token).first()
@@ -100,7 +93,7 @@ class Token(db.Model, OAuth2TokenMixin):
         return cls.query.filter(Token.user == user).all()
 
     @classmethod
-    def all(cls):
+    def all(cls) -> List[Token]:
         return cls.query.all()
 
     @staticmethod

@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import logging
 import uuid as _uuid
+from typing import List
 
 import lifemonitor.api.models as models
 from lifemonitor.api.models import db
 from lifemonitor.exceptions import EntityNotFoundException
+from lifemonitor.models import ModelMixin
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 from .testsuite import TestSuite
@@ -14,7 +16,7 @@ from .testsuite import TestSuite
 logger = logging.getLogger(__name__)
 
 
-class TestInstance(db.Model):
+class TestInstance(db.Model, ModelMixin):
     uuid = db.Column(UUID(as_uuid=True), primary_key=True, default=_uuid.uuid4)
     _test_suite_uuid = \
         db.Column("test_suite_uuid", UUID(as_uuid=True), db.ForeignKey(TestSuite.uuid), nullable=False)
@@ -69,16 +71,8 @@ class TestInstance(db.Model):
             data.update(self.testing_service.get_test_builds_as_dict(test_output=test_output))
         return data
 
-    def save(self):
-        db.session.add(self)
-        db.session.commit()
-
-    def delete(self):
-        db.session.delete(self)
-        db.session.commit()
-
     @classmethod
-    def all(cls):
+    def all(cls) -> List[TestInstance]:
         return cls.query.all()
 
     @classmethod

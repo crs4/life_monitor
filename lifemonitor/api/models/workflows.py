@@ -8,7 +8,7 @@ import lifemonitor.exceptions as lm_exceptions
 from lifemonitor.api.models import db
 from lifemonitor.api.models.registries.registry import WorkflowRegistry
 from lifemonitor.api.models.rocrate import ROCrate
-from lifemonitor.auth.models import Resource, User, Permission
+from lifemonitor.auth.models import Permission, Resource, User
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -198,16 +198,8 @@ class WorkflowVersion(ROCrate):
                                   for s in self.test_suites]
         return data
 
-    def save(self):
-        db.session.add(self)
-        db.session.commit()
-
-    def delete(self):
-        db.session.delete(self)
-        db.session.commit()
-
     @classmethod
-    def all(cls):
+    def all(cls) -> List[WorkflowVersion]:
         return cls.query.all()
 
     @classmethod
