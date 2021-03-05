@@ -75,5 +75,5 @@ class TestInstance(db.Model, ModelMixin):
         return cls.query.all()
 
     @classmethod
-    def find_by_id(cls, uuid) -> TestInstance:
+    def find_by_uuid(cls, uuid) -> TestInstance:
         return cls.query.get(uuid)

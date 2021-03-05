@@ -9,6 +9,7 @@ from lifemonitor.api import models
 from lifemonitor.api.models import db
 from lifemonitor.models import UUID, ModelMixin
 from lifemonitor.utils import ClassManager
+from sqlalchemy.orm.exc import NoResultFound
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -141,12 +142,18 @@ class TestingService(db.Model, ModelMixin):
         return cls.query.all()
 
     @classmethod
-    def find_by_id(cls, uuid) -> TestingService:
+    def find_by_uuid(cls, uuid) -> TestingService:
         return cls.query.get(uuid)
 
     @classmethod
     def find_by_url(cls, url) -> TestingService:
-        return cls.query.filter(TestingService.url == url).first()
+        try:
+            return cls.query.filter(TestingService.url == url).one()
+        except NoResultFound as e:
+            logger.debug(e)
+            return None
+        except Exception as e:
+            raise lm_exceptions.LifeMonitorException(detail=str(e), stack=str(e))
 
     @classmethod
     def get_instance(cls, service_type, url: str) -> TestingService:

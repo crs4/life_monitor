@@ -121,5 +121,5 @@ class TestSuite(db.Model, ModelMixin):
         return cls.query.all()
 
     @classmethod
-    def find_by_id(cls, uuid) -> TestSuite:
+    def find_by_uuid(cls, uuid) -> TestSuite:
         return cls.query.get(uuid)

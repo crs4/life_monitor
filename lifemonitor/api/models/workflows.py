@@ -14,6 +14,7 @@ from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm.collections import attribute_mapped_collection
+from sqlalchemy.orm.exc import NoResultFound
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -77,11 +78,12 @@ class Workflow(Resource):
             return cls.query\
                 .join(Permission)\
                 .filter(Permission.resource_id == cls.id, Permission.user_id == owner.id)\
-                .filter(cls.uuid == lm_utils.uuid_param(uuid)).first()
+                .filter(cls.uuid == lm_utils.uuid_param(uuid)).one()
+        except NoResultFound as e:
+            logger.debug(e)
+            return None
         except Exception as e:
-            raise lm_exceptions.EntityNotFoundException(WorkflowRegistry,
-                                                        entity_id=f"{uuid}",
-                                                        exception=str(e))
+            raise lm_exceptions.LifeMonitorException(detail=str(e), stack=str(e))
 
     @classmethod
     def get_user_workflows(cls, owner: User) -> List[Workflow]:
@@ -213,11 +215,12 @@ class WorkflowVersion(ROCrate):
             return cls.query\
                 .join(Permission)\
                 .filter(Permission.resource_id == cls.id, Permission.user_id == owner.id)\
-                .filter(cls.uuid == lm_utils.uuid_param(uuid), cls.version == version).first()
+                .filter(cls.uuid == lm_utils.uuid_param(uuid), cls.version == version).one()
+        except NoResultFound as e:
+            logger.debug(e)
+            return None
         except Exception as e:
-            raise lm_exceptions.EntityNotFoundException(WorkflowVersion,
-                                                        entity_id=f"{uuid}_{version}",
-                                                        exception=str(e))
+            raise lm_exceptions.LifeMonitorException(detail=str(e), stack=str(e))
 
     @classmethod
     def get_user_workflows(cls, owner: User) -> List[WorkflowVersion]:
@@ -235,10 +238,11 @@ class WorkflowVersion(ROCrate):
                 .filter(cls.uuid == lm_utils.uuid_param(uuid))\
                 .filter(cls.version == version)\
                 .order_by(WorkflowVersion.version.desc()).one()
+        except NoResultFound as e:
+            logger.debug(e)
+            return None
         except Exception as e:
-            raise lm_exceptions.EntityNotFoundException(WorkflowVersion,
-                                                        entity_id=f"{uuid}_{version}",
-                                                        exception=str(e))
+            raise lm_exceptions.LifeMonitorException(detail=str(e), stack=str(e))
 
     @classmethod
     def get_hosted_workflow_versions(cls, hosting_service: Resource) -> List[WorkflowVersion]:

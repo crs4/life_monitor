@@ -120,7 +120,7 @@ class LifeMonitor:
     def deregister_test_suite(test_suite: Union[models.TestSuite, str]) -> str:
         suite = test_suite
         if not isinstance(test_suite, models.TestSuite):
-            suite = models.TestSuite.find_by_id(test_suite)
+            suite = models.TestSuite.find_by_uuid(test_suite)
             if not suite:
                 raise lm_exceptions.EntityNotFoundException(models.TestSuite, test_suite)
         suite.delete()
@@ -181,14 +181,10 @@ class LifeMonitor:
     @staticmethod
     def get_user_workflows(user: User) -> List[models.Workflow]:
         workflows = [w for w in models.Workflow.get_user_workflows(user)]
-        # TODO: replace WorkflowRegistry with a more general Entity
         for svc in models.WorkflowRegistry.all():
-            try:
-                if svc.get_user(user.id):
-                    workflows.extend([w for w in svc.get_user_workflows(user)
-                                      if w not in workflows])
-            except lm_exceptions.lm_exceptions.EntityNotFoundException:
-                pass
+            if svc.get_user(user.id):
+                workflows.extend([w for w in svc.get_user_workflows(user)
+                                  if w not in workflows])
         return workflows
 
     @classmethod
@@ -205,11 +201,11 @@ class LifeMonitor:
 
     @staticmethod
     def get_suite(suite_uuid) -> models.TestSuite:
-        return models.TestSuite.find_by_id(suite_uuid)
+        return models.TestSuite.find_by_uuid(suite_uuid)
 
     @staticmethod
     def get_test_instance(instance_uuid) -> models.TestInstance:
-        return models.TestInstance.find_by_id(instance_uuid)
+        return models.TestInstance.find_by_uuid(instance_uuid)
 
     @staticmethod
     def find_registry_user_identity(registry: models.WorkflowRegistry,

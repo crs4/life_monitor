@@ -169,7 +169,7 @@ class WorkflowRegistry(auth_models.Resource):
             logger.debug(f"Checking {u.id} {user_id}")
             if u.id == user_id:
                 return u
-        raise lm_exceptions.EntityNotFoundException(auth_models.User, entity_id=user_id)
+        return None
 
     def get_users(self) -> List[auth_models.User]:
         try:
@@ -186,8 +186,6 @@ class WorkflowRegistry(auth_models.Resource):
             w = next((w for w in self.registered_workflows if w.uuid == lm_utils.uuid_param(uuid)), None)
             return w.workflow if w is not None else None
         except Exception:
-            # if models.Workflow.find_by_uuid(uuid) is None:
-            #     raise lm_exceptions.EntityNotFoundException(models.Workflow, entity_id=f"{uuid}", exception=str(e))
             if models.Workflow.find_by_uuid(uuid) is not None:
                 raise lm_exceptions.NotAuthorizedException()
 
@@ -208,6 +206,8 @@ class WorkflowRegistry(auth_models.Resource):
         except NoResultFound as e:
             logger.debug(e)
             return None
+        except Exception as e:
+            raise lm_exceptions.LifeMonitorException(detail=str(e), stack=str(e))
 
     @classmethod
     def find_by_name(cls, name):
@@ -226,9 +226,12 @@ class WorkflowRegistry(auth_models.Resource):
     @classmethod
     def find_by_client_id(cls, client_id):
         try:
-            return cls.query.filter_by(client_id=client_id).first()
+            return cls.query.filter_by(client_id=client_id).one()
+        except NoResultFound as e:
+            logger.debug(e)
+            return None
         except Exception as e:
-            raise lm_exceptions.EntityNotFoundException(WorkflowRegistry, entity_id=client_id, exception=e)
+            raise lm_exceptions.LifeMonitorException(detail=str(e), stack=str(e))
 
     @classmethod
     def get_registry_class(cls, registry_type):
