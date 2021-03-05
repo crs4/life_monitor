@@ -15,6 +15,7 @@ from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 from lifemonitor.auth.oauth2.client.services import oauth2_registry
 from lifemonitor.utils import ClassManager, download_url
 from sqlalchemy.ext.associationproxy import association_proxy
+from sqlalchemy.orm.exc import NoResultFound
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -201,11 +202,12 @@ class WorkflowRegistry(auth_models.Resource):
         return cls.query.all()
 
     @classmethod
-    def find_by_id(cls, uuid) -> WorkflowRegistry:
+    def find_by_uuid(cls, uuid) -> WorkflowRegistry:
         try:
-            return cls.query.filter(cls.uuid == lm_utils.uuid_param(uuid)).one()
-        except Exception as e:
-            raise lm_exceptions.EntityNotFoundException(WorkflowRegistry, entity_id=uuid, exception=e)
+            return cls.query.filter(WorkflowRegistry.uuid == lm_utils.uuid_param(uuid)).one()
+        except NoResultFound as e:
+            logger.debug(e)
+            return None
 
     @classmethod
     def find_by_name(cls, name):

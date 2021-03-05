@@ -30,7 +30,10 @@ def bool_from_string(s) -> bool:
 
 
 def uuid_param(uuid_value) -> uuid.UUID:
-    return uuid.UUID(uuid_value) if isinstance(uuid_value, str) else uuid_value
+    if isinstance(uuid_value, str):
+        logger.debug("Converting UUID: %r", uuid_value)
+        uuid_value = uuid.UUID(uuid_value)
+    return uuid_value
 
 
 def to_camel_case(snake_str) -> str:

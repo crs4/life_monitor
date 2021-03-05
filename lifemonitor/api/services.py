@@ -130,7 +130,7 @@ class LifeMonitor:
     @staticmethod
     def get_workflow_registry_by_uuid(registry_uuid) -> models.WorkflowRegistry:
         try:
-            r = models.WorkflowRegistry.find_by_id(registry_uuid)
+            r = models.WorkflowRegistry.find_by_uuid(registry_uuid)
             if not r:
                 raise lm_exceptions.EntityNotFoundException(models.WorkflowRegistry, registry_uuid)
             return r
@@ -256,7 +256,7 @@ class LifeMonitor:
                                  client_id=None, client_secret=None, client_auth_method=None,
                                  api_base_url=None, redirect_uris=None) -> models.WorkflowRegistry:
         try:
-            registry = models.WorkflowRegistry.find_by_id(uuid)
+            registry = models.WorkflowRegistry.find_by_uuid(uuid)
             if not registry:
                 raise lm_exceptions.EntityNotFoundException(models.WorkflowRegistry, entity_id=uuid)
             if name:
@@ -277,4 +277,4 @@ class LifeMonitor:
 
     @staticmethod
     def get_workflow_registry(uuid) -> models.WorkflowRegistry:
-        return models.WorkflowRegistry.find_by_id(uuid)
+        return models.WorkflowRegistry.find_by_uuid(uuid)
