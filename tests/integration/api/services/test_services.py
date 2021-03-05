@@ -22,7 +22,7 @@ def test_workflow_registration(app_client, user1, valid_workflow):
     w, workflow = utils.pick_and_register_workflow(user1, valid_workflow)
     assert workflow is not None, "workflow must be not None"
     assert isinstance(workflow, models.WorkflowVersion), "Object is not an instance of WorkflowVersion"
-    assert (workflow.uuid, workflow.version) == (w['uuid'], w['version']),\
+    assert (str(workflow.uuid), workflow.version) == (w['uuid'], w['version']),\
         "Unexpected workflow ID"
     # assert workflow.external_id is not None, "External ID must be computed if not provided"
     # assert workflow.external_id == w["external_id"], "Invalid external ID"
