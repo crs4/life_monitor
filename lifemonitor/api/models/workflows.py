@@ -26,7 +26,7 @@ class Workflow(Resource):
     external_ns = "external-id:"
 
     __mapper_args__ = {
-        'polymorphic_identity': 'workflow_archive'
+        'polymorphic_identity': 'workflow'
     }
 
     def __init__(self, uri=None, uuid=None, version=None, name=None) -> None:
@@ -105,7 +105,7 @@ class WorkflowVersion(ROCrate):
     roc_link = association_proxy('ro_crate', 'uri')
 
     __mapper_args__ = {
-        'polymorphic_identity': 'workflow'
+        'polymorphic_identity': 'workflow_version'
     }
 
     # TODO: Set additional constraint which cannot be expressed
