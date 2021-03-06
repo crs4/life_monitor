@@ -209,7 +209,7 @@ class WorkflowVersion(ROCrate):
         return cls.query.filter(WorkflowVersion.submitter_id == submitter.id).all()
 
     @classmethod
-    def get_user_workflow(cls, owner: User, uuid, version) -> WorkflowVersion:
+    def get_user_workflow_version(cls, owner: User, uuid, version) -> WorkflowVersion:
         try:
             return cls.query\
                 .join(Workflow, Workflow.id == cls.workflow_id)\
@@ -224,7 +224,7 @@ class WorkflowVersion(ROCrate):
             raise lm_exceptions.LifeMonitorException(detail=str(e), stack=str(e))
 
     @classmethod
-    def get_user_workflows(cls, owner: User) -> List[WorkflowVersion]:
+    def get_user_workflow_versions(cls, owner: User) -> List[WorkflowVersion]:
         return cls.query\
             .join(Permission)\
             .filter(Permission.resource_id == cls.id, Permission.user_id == owner.id).all()

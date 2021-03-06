@@ -156,7 +156,7 @@ class WorkflowRegistry(auth_models.Resource):
         return self.get_users()
 
     @property
-    def registered_workflows(self) -> List[models.WorkflowVersion]:
+    def registered_workflow_versions(self) -> List[models.WorkflowVersion]:
         return self.ro_crates
 
     def get_authorization(self, user: auth_models.User):
@@ -179,11 +179,11 @@ class WorkflowRegistry(auth_models.Resource):
             raise lm_exceptions.EntityNotFoundException(e)
 
     def get_workflows(self) -> List[models.Workflow]:
-        return list({w.workflow for w in self.registered_workflows})
+        return list({w.workflow for w in self.registered_workflow_versions})
 
     def get_workflow(self, uuid) -> models.Workflow:
         try:
-            w = next((w for w in self.registered_workflows if w.workflow.uuid == lm_utils.uuid_param(uuid)), None)
+            w = next((w for w in self.registered_workflow_versions if w.workflow.uuid == lm_utils.uuid_param(uuid)), None)
             return w.workflow if w is not None else None
         except Exception:
             if models.Workflow.find_by_uuid(uuid) is not None:
@@ -193,7 +193,7 @@ class WorkflowRegistry(auth_models.Resource):
         return self.client.filter_by_user(self.get_workflows(), user)
 
     def get_user_workflow_versions(self, user: auth_models.User) -> List[models.WorkflowVersion]:
-        return self.client.filter_by_user(self.registered_workflows, user)
+        return self.client.filter_by_user(self.registered_workflow_versions, user)
 
     @classmethod
     def all(cls) -> List[WorkflowRegistry]:

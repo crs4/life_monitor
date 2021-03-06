@@ -33,7 +33,7 @@ class LifeMonitor:
         if not version:
             w = models.Workflow.get_user_workflow(user, uuid).latest_version
         else:
-            w = models.WorkflowVersion.get_user_workflow(user, uuid, version)
+            w = models.WorkflowVersion.get_user_workflow_version(user, uuid, version)
         if w is None:
             raise lm_exceptions.EntityNotFoundException(models.WorkflowVersion, f"{uuid}_{version}")
         # Check whether the user can access the workflow.
@@ -106,7 +106,7 @@ class LifeMonitor:
     @staticmethod
     def register_test_suite(workflow_uuid, workflow_version,
                             submitter: models.User, test_suite_metadata) -> models.TestSuite:
-        workflow = models.WorkflowVersion.get_user_workflow(submitter, workflow_uuid, workflow_version)
+        workflow = models.WorkflowVersion.get_user_workflow_version(submitter, workflow_uuid, workflow_version)
         if not workflow:
             raise lm_exceptions.EntityNotFoundException(models.WorkflowVersion, (workflow_uuid, workflow_version))
         # For now only the workflow submitter can add test suites
@@ -167,7 +167,7 @@ class LifeMonitor:
 
     @staticmethod
     def get_registry_workflow(registry: models.WorkflowRegistry) -> models.Workflow:
-        return registry.registered_workflows
+        return registry.registered_workflow_versions
 
     @staticmethod
     def get_registry_workflow_versions(registry: models.WorkflowRegistry, uuid) -> List[models.WorkflowVersion]:

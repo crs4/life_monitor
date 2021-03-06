@@ -274,7 +274,7 @@ def test_get_instance_by_registry_error_not_found(m, request_context, mock_regis
     instance.uuid = '12345'
     instance.test_suite.workflow = workflow
     m.get_test_instance.return_value = instance
-    mock_registry.registered_workflows = [workflow]
+    mock_registry.registered_workflow_versions = [workflow]
     response = controllers.instances_get_by_id(instance['uuid'])
     m.get_test_instance.assert_called_once()
     assert isinstance(response, dict), "Unexpected response type"
@@ -292,7 +292,7 @@ def test_get_instance_build_by_registry_error_not_found(m, request_context, mock
     instance.get_test_build = Mock(side_effect=lm_exceptions.EntityNotFoundException(models.TestBuild))
     instance.test_suite.workflow = workflow
     m.get_test_instance.return_value = instance
-    mock_registry.registered_workflows = [workflow]
+    mock_registry.registered_workflow_versions = [workflow]
     response = controllers.instances_builds_get_by_id(instance['uuid'], '2222')
     m.get_test_instance.assert_called_once()
     assert isinstance(response, Response), "Unexpected response type"
@@ -311,7 +311,7 @@ def test_get_instance_build_by_registry(m, request_context, mock_registry):
     instance.test_builds.return_value = [build]
     instance.test_suite.workflow = workflow
     m.get_test_instance.return_value = instance
-    mock_registry.registered_workflows = [workflow]
+    mock_registry.registered_workflow_versions = [workflow]
     response = controllers.instances_builds_get_by_id(instance['uuid'], build.id)
     m.get_test_instance.assert_called_once()
     assert isinstance(response, dict), "Unexpected response type"

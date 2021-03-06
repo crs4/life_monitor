@@ -297,7 +297,7 @@ def suites_post_instance(suite_uuid):
             registry = g.workflow_registry if "workflow_registry" in g else None
             if registry is None:
                 return "Unable to find a valid WorkflowRegistry", 404
-            if suite.workflow not in registry.registered_workflows:
+            if suite.workflow not in registry.registered_workflow_versions:
                 return f"The registry cannot access suite {suite}", 401
     except lm_exceptions.EntityNotFoundException:
         return "Invalid ID", 400
