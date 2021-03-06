@@ -55,10 +55,7 @@ def workflows_post(body):
     if registry and 'registry_uri' in body:
         return lm_exceptions.report_problem(400, "Bad request",
                                             detail=messages.unexpected_registry_uri)
-    if not registry:
-        if 'registry_uri' not in body:
-            return lm_exceptions.report_problem(400, "Bad request",
-                                                detail=messages.no_registry_uri_provided)
+    if not registry and 'registry_uri' in body:
         registry_uri = body.get('registry_uri', None)
         try:
             registry = lm.get_workflow_registry_by_uri(registry_uri)
