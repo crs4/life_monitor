@@ -8,6 +8,7 @@ not_authorized_registry_access = "User not authorized to access the registry '{}
 input_data_missing = "One or more input data are missing"
 invalid_ro_crate = "RO Crate processing exception"
 workflow_not_found = "Workflow '{}' (ver.{}) not found"
+workflow_version_conflict = "Workflow '{}' (ver.{}) already exists"
 suite_not_found = "Suite '{}' not found"
 instance_not_found = "Test instance '{}' not found"
 instance_build_not_found = "Unable to find the build '{}' on test instance '{}'"

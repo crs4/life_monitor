@@ -102,6 +102,9 @@ def workflows_post(body):
         return lm_exceptions.report_problem(403, "Forbidden", extra_info={"exception": str(e)},
                                             detail=messages.not_authorized_registry_access
                                             .format(registry.name))
+    except lm_exceptions.WorkflowVersionConflictException:
+        raise lm_exceptions.report_problem(409, "Workflow version conflict",
+                                           detail=messages.workflow_version_conflict.format(body['uuid'], body['version']))
     except Exception as e:
         logger.exception(e)
         raise lm_exceptions.LifeMonitorException(title="Internal Error", detail=str(e))

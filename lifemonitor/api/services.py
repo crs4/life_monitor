@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import logging
-from typing import Union, List
+from typing import List, Union
 
 import lifemonitor.exceptions as lm_exceptions
 from lifemonitor.api import models
-from lifemonitor.auth.models import ExternalServiceAuthorizationHeader, User, Permission, RoleType
+from lifemonitor.auth.models import (ExternalServiceAuthorizationHeader,
+                                     Permission, RoleType, User)
 from lifemonitor.auth.oauth2.client import providers
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 from lifemonitor.auth.oauth2.server import server
@@ -65,12 +66,11 @@ class LifeMonitor:
             if workflow_registry:
                 for auth in workflow_submitter.get_authorization(workflow_registry):
                     auth.resources.append(w)
-            else:
-                raise("Unsupported yet")
 
+        if str(workflow_version) in w.versions:
+            raise lm_exceptions.WorkflowVersionConflictException(workflow_uuid, workflow_version)
         wv = w.add_version(workflow_version, roc_link, workflow_submitter,
-                           uuid=workflow_uuid, name=name,
-                           hosting_service=workflow_registry)
+                           name=name, hosting_service=workflow_registry)
         wv.permissions.append(Permission(user=workflow_submitter, roles=[RoleType.owner]))
         if authorization:
             wv.authorizations.append(ExternalServiceAuthorizationHeader(workflow_submitter, header=authorization))
@@ -171,7 +171,7 @@ class LifeMonitor:
 
     @staticmethod
     def get_registry_workflow_versions(registry: models.WorkflowRegistry, uuid) -> List[models.WorkflowVersion]:
-        return registry.get_workflow(uuid)
+        return registry.get_workflow(uuid).versions.values()
 
     @staticmethod
     def get_registry_workflow_version(registry: models.WorkflowRegistry, uuid, version=None) -> models.WorkflowVersion:
