@@ -48,11 +48,14 @@ class WorkflowVersionSchema(BaseSchema):
     class Meta:
         model = models.WorkflowVersion
 
-    uuid = ma.auto_field()
+    uuid = fields.Method("get_uuid")
     version = ma.auto_field()
     roc_link = fields.String(attributes="ro_crate.uri")
     name = ma.auto_field()
     latest_version = fields.Boolean(attributes="latest_version")
+
+    def get_uuid(self, obj):
+        return obj.workflow.uuid
 
 
 class WorkflowVersionDetailsSchema(WorkflowVersionSchema):

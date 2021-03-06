@@ -88,7 +88,7 @@ def workflows_post(body):
             name=body.get('name', None)
         )
         logger.debug("workflows_post. Created workflow '%s' (ver.%s)", w.uuid, w.version)
-        return {'wf_uuid': str(w.uuid), 'wf_version': w.version}, 201
+        return {'wf_uuid': str(w.workflow.uuid), 'wf_version': w.version}, 201
     except KeyError as e:
         return lm_exceptions.report_problem(400, "Bad Request", extra_info={"exception": str(e)},
                                             detail=messages.input_data_missing)
@@ -213,7 +213,7 @@ def _get_suite_or_problem(suite_uuid):
             return lm_exceptions.report_problem(404, "Not Found",
                                                 detail=messages.suite_not_found.format(suite_uuid))
 
-        response = _get_workflow_or_problem(suite.workflow.uuid, suite.workflow.version)
+        response = _get_workflow_or_problem(suite.workflow.workflow.uuid, suite.workflow.version)
         if isinstance(response, Response):
             if response.status_code == 404:
                 return lm_exceptions.report_problem(500, "Internal Error",

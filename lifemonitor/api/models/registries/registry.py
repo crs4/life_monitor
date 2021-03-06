@@ -183,7 +183,7 @@ class WorkflowRegistry(auth_models.Resource):
 
     def get_workflow(self, uuid) -> models.Workflow:
         try:
-            w = next((w for w in self.registered_workflows if w.uuid == lm_utils.uuid_param(uuid)), None)
+            w = next((w for w in self.registered_workflows if w.workflow.uuid == lm_utils.uuid_param(uuid)), None)
             return w.workflow if w is not None else None
         except Exception:
             if models.Workflow.find_by_uuid(uuid) is not None:

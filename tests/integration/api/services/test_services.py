@@ -20,9 +20,30 @@ def test_valid_workflows(valid_workflow):
 def test_workflow_registration(app_client, user1, valid_workflow):
     # pick the test with a valid specification and one test instance
     w, workflow = utils.pick_and_register_workflow(user1, valid_workflow)
+    logger.debug("Registered workflow: %r", workflow)
     assert workflow is not None, "workflow must be not None"
     assert isinstance(workflow, models.WorkflowVersion), "Object is not an instance of WorkflowVersion"
-    assert (str(workflow.uuid), workflow.version) == (w['uuid'], w['version']),\
+    assert (str(workflow.workflow.uuid), workflow.version) == (w['uuid'], w['version']),\
+        "Unexpected workflow ID"
+    assert len(models.Workflow.all()) == 1, "Unexpected number of workflows"
+    assert len(models.WorkflowVersion.all()) == 1, "Unexpected number of workflow_versions"
+    assert len(models.Workflow.find_by_uuid(w['uuid']).versions) == 1, "Unexpected number of workflow_versions"
+    # assert workflow.external_id is not None, "External ID must be computed if not provided"
+    # assert workflow.external_id == w["external_id"], "Invalid external ID"
+    assert workflow.submitter == user1["user"], "Inavalid submitter user"
+    # inspect the suite/test type
+    assert len(workflow.test_suites) == 1, "Expected number of test suites 1"
+    suite = workflow.test_suites[0]
+    assert len(suite.test_instances) == 1, "Expected number of test instances 1"
+    conf = suite.test_instances[0]
+    service = conf.testing_service
+    testing_service_type = getattr(models, "{}TestingService".format(w['testing_service_type'].capitalize()))
+    assert isinstance(service, testing_service_type), "Unexpected type for service"
+
+
+    assert workflow is not None, "workflow must be not None"
+    assert isinstance(workflow, models.WorkflowVersion), "Object is not an instance of WorkflowVersion"
+    assert (workflow.workflow.uuid, workflow.version) == (w['uuid'], w['version']),\
         "Unexpected workflow ID"
     # assert workflow.external_id is not None, "External ID must be computed if not provided"
     # assert workflow.external_id == w["external_id"], "Invalid external ID"
