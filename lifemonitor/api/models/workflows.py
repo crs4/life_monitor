@@ -48,7 +48,6 @@ class Workflow(Resource):
     def add_version(self, version, uri, submitter: User, uuid=None, name=None,
                     hosting_service: models.WorkflowRegistry = None):
         try:
-            uuid = self.uuid if uuid is None else uuid
             if hosting_service and hasattr(hosting_service, 'get_external_id'):
                 self.uri = f"{self.external_ns}{hosting_service.get_external_id(self.uuid, version, submitter)}"
         except lm_exceptions.EntityNotFoundException as e:
