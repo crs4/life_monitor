@@ -1,3 +1,4 @@
+import uuid
 import os
 import pytest
 import logging
@@ -41,6 +42,18 @@ def test_workflow_registration(app_client, user1, valid_workflow):
     assert isinstance(service, testing_service_type), "Unexpected type for service"
 
 
+
+def test_workflow_registry_generic_link(app_client, user1):  # , valid_workflow)
+    w = {
+        'uuid': uuid.uuid4(),
+        'version': '1',
+        'roc_link': "http://172.30.10.100:7777/ro-crate-galaxy-sortchangecase.crate.zip",
+        'name': 'Galaxy workflow from Generic Link',
+        'testing_service_type': 'jenkins'
+    }
+
+    # pick the test with a valid specification and one test instance
+    _, workflow = utils.register_workflow(user1, w)
     assert workflow is not None, "workflow must be not None"
     assert isinstance(workflow, models.WorkflowVersion), "Object is not an instance of WorkflowVersion"
     assert (workflow.workflow.uuid, workflow.version) == (w['uuid'], w['version']),\
@@ -160,7 +173,7 @@ def test_workflow_deregistration(app_client, user1, valid_workflow):
     lm.deregister_user_workflow(wf_data['uuid'], wf_data['version'], user1["user"])
     assert len(models.WorkflowVersion.all()) == number_of_workflows - 1, "Unexpected number of workflows"
     # try to find
-    w = models.WorkflowVersion.get_user_workflow(user1["user"], wf_data['uuid'], wf_data['version'])
+    w = models.WorkflowVersion.get_user_workflow_version(user1["user"], wf_data['uuid'], wf_data['version'])
     assert w is None, "Workflow must not be in the DB"
 
 
@@ -178,11 +191,11 @@ def test_suite_registration(app_client, user1, test_suite_metadata, valid_workfl
     # try to add a new test suite instance
     logger.debug("TestDefinition: %r", test_suite_metadata)
     current_number_of_suites = len(workflow.test_suites)
-    suite = lm.register_test_suite(workflow.uuid, workflow.version,
+    suite = lm.register_test_suite(wf_data['uuid'], wf_data['version'],
                                    user1['user'], test_suite_metadata)
-    logger.debug("Number of suites: %r", len(suite.workflow.test_suites))
-    assert len(suite.workflow.test_suites) == current_number_of_suites + 1, \
-        "Unexpected number of test_suites for the workflow {}".format(suite.workflow.uuid)
+    logger.debug("Number of suites: %r", len(suite.workflow_version.test_suites))
+    assert len(suite.workflow_version.test_suites) == current_number_of_suites + 1, \
+        "Unexpected number of test_suites for the workflow {}".format(suite.workflow_version.uuid)
     logger.debug("Project: %r", suite)
     assert len(suite.tests) == 1, "Unexpected number of tests for the testing project {}".format(suite)
     for t in suite.tests:
