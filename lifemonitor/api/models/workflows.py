@@ -212,11 +212,13 @@ class WorkflowVersion(ROCrate):
     def get_user_workflow(cls, owner: User, uuid, version) -> WorkflowVersion:
         try:
             return cls.query\
-                .join(Permission)\
-                .filter(Permission.resource_id == cls.id, Permission.user_id == owner.id)\
-                .filter(cls.uuid == lm_utils.uuid_param(uuid), cls.version == version).one()
+                .join(Workflow, Workflow.id == cls.workflow_id)\
+                .join(Permission, Permission.resource_id == cls.id)\
+                .filter(Workflow.uuid == lm_utils.uuid_param(uuid))\
+                .filter(Permission.user_id == owner.id)\
+                .filter(cls.version == version).one()
         except NoResultFound as e:
-            logger.debug(e)
+            logger.exception(e)
             return None
         except Exception as e:
             raise lm_exceptions.LifeMonitorException(detail=str(e), stack=str(e))
@@ -233,8 +235,9 @@ class WorkflowVersion(ROCrate):
         try:
             return cls.query\
                 .join(WorkflowRegistry, cls.hosting_service)\
+                .join(Workflow, Workflow.id == cls.workflow_id)\
                 .filter(WorkflowRegistry.uuid == lm_utils.uuid_param(hosting_service.uuid))\
-                .filter(cls.uuid == lm_utils.uuid_param(uuid))\
+                .filter(Workflow.uuid == lm_utils.uuid_param(uuid))\
                 .filter(cls.version == version)\
                 .order_by(WorkflowVersion.version.desc()).one()
         except NoResultFound as e:
