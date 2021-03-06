@@ -213,7 +213,8 @@ def _get_suite_or_problem(suite_uuid):
             return lm_exceptions.report_problem(404, "Not Found",
                                                 detail=messages.suite_not_found.format(suite_uuid))
 
-        response = _get_workflow_or_problem(suite.workflow.workflow.uuid, suite.workflow.version)
+        response = _get_workflow_or_problem(suite.workflow_version.workflow.uuid,
+                                            suite.workflow_version.version)
         if isinstance(response, Response):
             if response.status_code == 404:
                 return lm_exceptions.report_problem(500, "Internal Error",

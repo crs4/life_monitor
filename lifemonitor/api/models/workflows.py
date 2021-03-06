@@ -98,7 +98,7 @@ class WorkflowVersion(ROCrate):
     workflow = db.relationship("Workflow", foreign_keys=[workflow_id], cascade="all",
                                backref=db.backref("versions", cascade="all, delete-orphan",
                                                   collection_class=attribute_mapped_collection('version')))
-    test_suites = db.relationship("TestSuite", back_populates="workflow",
+    test_suites = db.relationship("TestSuite", back_populates="workflow_version",
                                   cascade="all, delete")
     submitter = db.relationship("User", uselist=False)
     roc_link = association_proxy('ro_crate', 'uri')

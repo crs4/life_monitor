@@ -35,9 +35,9 @@ class Test:
 
 class TestSuite(db.Model, ModelMixin):
     uuid = db.Column(UUID, primary_key=True, default=_uuid.uuid4)
-    _workflow_id = db.Column("workflow_id", db.Integer,
-                             db.ForeignKey(models.workflows.WorkflowVersion.id), nullable=False)
-    workflow = db.relationship("WorkflowVersion", back_populates="test_suites")
+    _workflow_version_id = db.Column("workflow_version_id", db.Integer,
+                                     db.ForeignKey(models.workflows.WorkflowVersion.id), nullable=False)
+    workflow_version = db.relationship("WorkflowVersion", back_populates="test_suites")
     test_definition = db.Column(JSON, nullable=False)
     submitter_id = db.Column(db.Integer,
                              db.ForeignKey(User.id), nullable=False)
@@ -49,14 +49,14 @@ class TestSuite(db.Model, ModelMixin):
     def __init__(self,
                  w: models.workflows.WorkflowVersion, submitter: User,
                  test_definition: object) -> None:
-        self.workflow = w
+        self.workflow_version = w
         self.submitter = submitter
         self.test_definition = test_definition
         self._parse_test_definition()
 
     def __repr__(self):
         return '<TestSuite {} of workflow {} (version {})>'.format(
-            self.uuid, self.workflow.uuid, self.workflow.version)
+            self.uuid, self.workflow_version.uuid, self.workflow_version.version)
 
     def _parse_test_definition(self):
         try:
