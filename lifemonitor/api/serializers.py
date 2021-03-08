@@ -11,6 +11,11 @@ from . import models
 logger = logging.getLogger(__name__)
 
 
+def _get_base_url():
+    if 'EXTERNAL_ACCESS_BASE_URL' in current_app.config:
+        return current_app.config['EXTERNAL_ACCESS_BASE_URL']
+    return current_app.config.get("BASE_URL", None)
+
 class WorkflowRegistrySchema(BaseSchema):
     __envelope__ = {"single": None, "many": "items"}
     __model__ = models.WorkflowRegistry
