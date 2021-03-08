@@ -74,6 +74,9 @@ class LifeMonitor:
         wv.permissions.append(Permission(user=workflow_submitter, roles=[RoleType.owner]))
         if authorization:
             wv.authorizations.append(ExternalServiceAuthorizationHeader(workflow_submitter, header=authorization))
+        if name is None:
+            w.name = wv.dataset_name
+            wv.name = wv.dataset_name
         if wv.test_metadata:
             logger.debug("Test metadata found in the crate")
             # FIXME: the test metadata can describe more than one suite
