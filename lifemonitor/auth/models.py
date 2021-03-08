@@ -166,6 +166,9 @@ class Resource(db.Model, ModelMixin):
     name = db.Column(db.String, nullable=True)
     uri = db.Column(db.String, nullable=False)
     version = db.Column(db.String, nullable=True)
+    created = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    modified = db.Column(db.DateTime, default=datetime.datetime.utcnow,
+                         onupdate=datetime.datetime.utcnow)
 
     permissions = db.relationship("Permission", back_populates="resource",
                                   cascade="all, delete-orphan")
