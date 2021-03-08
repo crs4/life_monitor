@@ -78,7 +78,8 @@ def register_workflow(app_user, w):
     # register
     lm = LifeMonitor.get_instance()
     workflow = lm.register_workflow(app_user["user"],
-                                    w['uuid'], w['version'], w['roc_link'], registry, name=w['name'])
+                                    w['uuid'], w['version'], w['roc_link'], registry, name=w['name'],
+                                    authorization=w.get("authorization", None))
     return w, workflow
 
 

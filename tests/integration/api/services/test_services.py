@@ -104,9 +104,10 @@ def test_workflow_registry_generic_link(app_client, user1):  # , valid_workflow)
     w = {
         'uuid': uuid.uuid4(),
         'version': '1',
-        'roc_link': "http://172.30.10.100:7777/ro-crate-galaxy-sortchangecase.crate.zip",
+        'roc_link': "http://webserver:5000/download?file=ro-crate-galaxy-sortchangecase.crate.zip",
         'name': 'Galaxy workflow from Generic Link',
-        'testing_service_type': 'jenkins'
+        'testing_service_type': 'jenkins',
+        'authorization': app_client.application.config['WEB_SERVER_AUTH_TOKEN']
     }
 
     # pick the test with a valid specification and one test instance
