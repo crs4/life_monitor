@@ -58,6 +58,13 @@ class Workflow(Resource):
     def remove_version(self, version: WorkflowVersion):
         self.versions.remove(version)
 
+    def get_user_versions(self, user: models.User) -> List[models.WorkflowVersion]:
+        return models.WorkflowVersion.query\
+            .join(Permission, Permission.resource_id == models.WorkflowVersion.id)\
+            .filter(models.WorkflowVersion.workflow_id == self.id)\
+            .filter(Permission.user_id == user.id)\
+            .all()
+
     def check_health(self) -> dict:
         health = {'healthy': True, 'issues': []}
         for suite in self.test_suites:
@@ -157,7 +164,7 @@ class WorkflowVersion(ROCrate):
         return self.uri
 
     @property
-    def latest_version(self) -> bool:
+    def is_latest(self) -> bool:
         return self.workflow.latest_version.version == self.version
 
     @property
