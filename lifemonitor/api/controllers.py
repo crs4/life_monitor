@@ -182,7 +182,7 @@ def _get_workflow_or_problem(wf_uuid, wf_version):
 def workflows_get_by_id(wf_uuid, wf_version):
     response = _get_workflow_or_problem(wf_uuid, wf_version)
     return response if isinstance(response, Response) \
-        else serializers.WorkflowVersionDetailsSchema().dump(response)
+        else serializers.WorkflowVersionSchema().dump(response)
 
 
 @authorized

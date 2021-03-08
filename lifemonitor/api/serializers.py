@@ -1,7 +1,11 @@
 from __future__ import annotations
 
 import logging
+from urllib.parse import urljoin
 
+from flask import current_app
+from flask.globals import request
+from lifemonitor.auth.serializers import UserSchema
 from lifemonitor.serializers import BaseSchema, ma
 from marshmallow import fields
 
@@ -15,6 +19,37 @@ def _get_base_url():
     if 'EXTERNAL_ACCESS_BASE_URL' in current_app.config:
         return current_app.config['EXTERNAL_ACCESS_BASE_URL']
     return current_app.config.get("BASE_URL", None)
+
+
+class MetadataSchema(BaseSchema):
+
+    class Meta:
+        ordered = True
+
+    base_url = fields.Method("get_base_url")
+    resource = fields.Method("get_self_path")
+    created = fields.DateTime(attribute='created')
+    modified = fields.DateTime(attribute='modified')
+
+    def get_base_url(self, obj):
+        return _get_base_url()
+
+    def get_self_path(self, obj):
+        try:
+            return request.full_path
+        except RuntimeError:
+            # when there is no active HTTP request
+            return None
+
+
+class ResourceSchema(BaseSchema):
+    uuid = fields.String(attribute="uuid")
+    name = fields.String(attribute="name")
+    meta = fields.Method("get_metadata")
+
+    def get_metadata(self, obj):
+        return MetadataSchema().dump(obj)
+
 
 class WorkflowRegistrySchema(BaseSchema):
     __envelope__ = {"single": None, "many": "items"}
@@ -46,32 +81,46 @@ class WorkflowSchema(BaseSchema):
     name = ma.auto_field()
 
 
-class WorkflowVersionSchema(BaseSchema):
+class VersionDetailsSchema(BaseSchema):
+    __envelope__ = {"single": None, "many": "items"}
+
+    uuid = fields.String(attribute="uuid")
+    version = fields.String(attribute="version")
+    is_latest = fields.Boolean(attribute="is_latest")
+    ro_crate = fields.Method("get_rocrate")
+    submitter = ma.Nested(UserSchema(only=('id', 'username')), attribute="submitter")
+
+    def get_rocrate(self, obj):
+        return {
+            'links': {
+                'external': obj.uri,
+                'download': urljoin(_get_base_url(), f"ro_crates/{obj.id}/downloads")
+            }
+        }
+
+
+class WorkflowVersionSchema(ResourceSchema):
     __envelope__ = {"single": None, "many": "items"}
     __model__ = models.WorkflowVersion
 
     class Meta:
         model = models.WorkflowVersion
+        ordered = True
 
-    uuid = fields.Method("get_uuid")
-    version = ma.auto_field()
-    roc_link = fields.String(attributes="ro_crate.uri")
+    uuid = fields.String(attribute="workflow.uuid")
     name = ma.auto_field()
-    latest_version = fields.Boolean(attributes="latest_version")
+    version = fields.Method("get_version")
 
-    def get_uuid(self, obj):
-        return obj.workflow.uuid
-
-
-class WorkflowVersionDetailsSchema(WorkflowVersionSchema):
-    versions = fields.Method("get_versions")
-
-    def get_versions(self, obj: models.WorkflowVersion):
-        return [v.version for v in obj.workflow.versions.values()]
+    def get_version(self, obj):
+        return VersionDetailsSchema().dump(obj)
 
 
 class LatestWorkflowSchema(WorkflowVersionSchema):
-    previous_versions = fields.List(fields.String, attribute="previous_versions")
+    previous_versions = fields.Method("get_versions")
+
+    def get_versions(self, obj: models.WorkflowVersion):
+        return [VersionDetailsSchema(only=("uuid", "version", "submitter")).dump(v)
+                for v in obj.workflow.versions.values() if not v.is_latest]
 
 
 class TestInstanceSchema(BaseSchema):
