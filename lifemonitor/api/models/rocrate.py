@@ -41,13 +41,21 @@ class ROCrate(Resource):
                  version=None, hosting_service=None) -> None:
         super().__init__(uri, uuid=uuid, name=name, version=version)
         self.hosting_service = hosting_service
-        self._data = None
+        self._crate_helper = None
 
     @hybrid_property
     def crate_metadata(self):
         if not self._metadata_loaded:
             self.load_metadata()
         return self._metadata
+
+    @property
+    def dataset_name(self):
+        if not self._metadata_loaded:
+            self.load_metadata()
+        if not self._crate_helper:
+            raise RuntimeError("ROCrate not correctly loaded")
+        return self._crate_helper.name
 
     @property
     def test_metadata(self):
@@ -67,16 +75,13 @@ class ROCrate(Resource):
             try:
                 auth_header = authorization.as_http_header() if authorization else None
                 logger.debug(auth_header)
-                self._metadata, self._test_metadata = \
+                self._crate_helper, self._metadata, self._test_metadata = \
                     self.load_metadata_files(self.uri, authorization_header=auth_header)
                 self._metadata_loaded = True
                 return self._metadata, self._test_metadata
             except Exception as e:
                 errors.append(e)
 
-        # for e in errors:
-        #     logger.debug("Error: %r", e)
-        # logger.debug("Errors: %r", [e for e in errors if isinstance(e, lm_exceptions.NotAuthorizedException)])
         if len([e for e in errors if isinstance(e, lm_exceptions.NotAuthorizedException)]) == len(errors):
             raise lm_exceptions.NotAuthorizedException()
         raise lm_exceptions.LifeMonitorException("ROCrate download error", errors=errors)
@@ -103,6 +108,6 @@ class ROCrate(Resource):
                 metadata = json.load(f)
             # create a new Workflow instance with the loaded metadata
             test_metadata = get_old_format_tests(crate)
-            return metadata, test_metadata
+            return crate, metadata, test_metadata
         finally:
             shutil.rmtree(roc_path, ignore_errors=True)
