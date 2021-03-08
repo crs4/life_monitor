@@ -60,17 +60,6 @@ def test_post_workflows_no_authorization(m, request_context):
         controllers.workflows_post(body={})
 
 
-# @patch("lifemonitor.api.controllers.lm")
-# def test_post_workflow_by_user_error_no_registry_uri(m, request_context, mock_user):
-#     assert not auth.current_user.is_anonymous, "Unexpected user in session"
-#     assert auth.current_user == mock_user, "Unexpected user in session"
-#     assert not auth.current_registry, "Unexpected registry in session"
-#     response = controllers.workflows_post(body={})
-#     assert response.status_code == 400, "Expected a Bad Request"
-#     assert messages.no_registry_uri_provided in response.data.decode(), \
-#         "Unexpected response message"
-
-
 @patch("lifemonitor.api.controllers.lm")
 def test_post_workflow_by_user_error_invalid_registry_uri(m, request_context, mock_user):
     assert not auth.current_user.is_anonymous, "Unexpected user in session"
@@ -268,7 +257,7 @@ def test_get_workflow_by_id(m, request_context, mock_registry):
     logger.debug("Response: %r", response)
     assert isinstance(response, dict), "Unexpected response"
     assert response['uuid'] == data['uuid'], "Unexpected workflow UUID"
-    assert response['version'] == data['version'], "Unexpected workflow version"
+    assert response['version']['version'] == data['version'], "Unexpected workflow version"
     assert 'previous_versions' not in response, "Unexpected list of previous versions"
 
 
@@ -287,5 +276,6 @@ def test_get_latest_workflow_version_by_id(m, request_context, mock_registry):
     logger.debug("Response: %r", response)
     assert isinstance(response, dict), "Unexpected response"
     assert response['uuid'] == data['uuid'], "Unexpected workflow UUID"
-    assert response['version'] == data['version'], "Unexpected workflow version"
-    assert response['previous_versions'] == data['previous_versions'], "Unexpected list of previous versions"
+    assert response['version']['version'] == data['version'], "Unexpected workflow version"
+    previous_versions = [_['version'] for _ in response['previous_versions']]
+    assert previous_versions == data['previous_versions'], "Unexpected list of previous versions"

@@ -42,6 +42,63 @@ def test_workflow_registration(app_client, user1, valid_workflow):
     assert isinstance(service, testing_service_type), "Unexpected type for service"
 
 
+def test_workflow_registration_same_workflow_by_different_users(app_client, user1, user2):  # , valid_workflow):
+
+    lm = LifeMonitor.get_instance()
+
+    # pick the test with a valid specification and one test instance
+    count = 1
+    for user in [user1, user2]:
+        count = count + 1
+        w = utils.pick_workflow(user, "sort-and-change-case")
+        w['name'] = f"{user['user'].username}_Workflow"
+        w['version'] = str(count)
+        logger.debug("Registering workflow: %r", w['uuid'])
+        _, workflow = utils.register_workflow(user, w)
+        assert workflow is not None, "workflow must be not None"
+        assert isinstance(workflow, models.WorkflowVersion), "Object is not an instance of WorkflowVersion"
+        # FIXME: using an ID for version
+        # assert (str(workflow.uuid), workflow.version) == (w['uuid'], w['version']), "Unexpected workflow ID"
+        # assert workflow.external_id is not None, "External ID must be computed if not provided"
+        # assert workflow.external_id == w["external_id"], "Invalid external ID"
+        assert workflow.submitter == user["user"], "Inavalid submitter user"
+        assert str(workflow.workflow.uuid) == w['uuid'], "Invalid workflow UUID"
+        # inspect the suite/test type
+        assert len(workflow.test_suites) == 1, "Expected number of test suites 1"
+        suite = workflow.test_suites[0]
+        assert len(suite.test_instances) == 1, "Expected number of test instances 1"
+        conf = suite.test_instances[0]
+        service = conf.testing_service
+        testing_service_type = getattr(models, "{}TestingService".format(w['testing_service_type'].capitalize()))
+        assert isinstance(service, testing_service_type), "Unexpected type for service"
+
+        r = lm.get_workflow_registries()[0]
+        logger.debug("Registry: %r", r)
+        registry_workflows = lm.get_registry_workflows(r)
+        assert len(registry_workflows) == 1, "Unexpected number of workflows"
+        assert len(r.registered_workflow_versions) == (count - 1), "Unexpected number of workflows versions"
+        logger.debug(r.registered_workflow_versions)
+
+    workflows_user1 = lm.get_user_workflows(user1['user'])
+    workflows_user2 = lm.get_user_workflows(user2['user'])
+    assert len(workflows_user1) > 0, "User1 should have one workflow"
+    assert len(workflows_user1) == len(workflows_user2), "User1 and User2 should have the same workflows"
+    assert workflows_user1[0].uuid == workflows_user2[0].uuid, "Unexpected workflow UUID"
+    logger.debug("WV1: %r", workflows_user1[0].get_user_versions(user1['user']))
+    logger.debug("WV1 (all): %r", workflows_user1[0].versions)
+    logger.debug("WV2: %r", workflows_user2[0].get_user_versions(user2['user']))
+    logger.debug("WV2 (all): %r", workflows_user2[0].versions)
+
+    r = lm.get_workflow_registries()[0]
+    logger.debug("Registry: %r", r)
+    registry_workflows = lm.get_registry_workflows(r)
+    assert len(registry_workflows) == 1, "Unexpected number of workflows"
+    assert len(registry_workflows[0].versions.items()) == 2, "Unexpected number of workflow versions"
+    logger.debug("Registry workflows: %r", registry_workflows)
+    logger.debug("Registry workflow versions: %r", lm.get_registry_workflow_versions(r, registry_workflows[0].uuid))
+    for v in lm.get_registry_workflow_versions(r, registry_workflows[0].uuid):
+        logger.debug("%r (v%s) - submitter: %r", v.uuid, v.version, v.submitter.username)
+
 
 def test_workflow_registry_generic_link(app_client, user1):  # , valid_workflow)
     w = {
