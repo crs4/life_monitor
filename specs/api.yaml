@@ -200,6 +200,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
 
   /workflows/{wf_uuid}:
     get:
@@ -712,6 +714,13 @@ components:
           schema:
             $ref: "#/components/schemas/Error"
 
+    Conflict:
+      description: Conflict with the current state of the target resource.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
     Unauthorized:
       description: Unauthorized
       content:
@@ -839,27 +848,27 @@ components:
       allOf:
         - $ref: "#/components/schemas/Workflow"
         - type: object
-      properties:
-        version:
-          type: string
-        roc_link:
-          type: string
+          properties:
+            version:
+              type: string
+            roc_link:
+              type: string
               writeOnly: true
             submitter_id:
-          type: string
+              type: string
               writeOnly: true            
             ro_crate:
               readOnly: true
               $ref: "#/components/schemas/ROCrate"
             is_latest:
-          type: boolean
-          readOnly: true
+              type: boolean
+              readOnly: true
             submitter:
               $ref: "#/components/schemas/User"
-          readOnly: true
-      required:
-        - version
-        - roc_link
+              readOnly: true
+          required:
+            - version
+            - roc_link
 
     WorkflowVersionDetails:
       allOf:
