@@ -866,6 +866,9 @@ components:
             submitter:
               $ref: "#/components/schemas/User"
               readOnly: true
+            authorization:
+              type: string
+              writeOnly: true
           required:
             - version
             - roc_link

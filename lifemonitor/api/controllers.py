@@ -85,7 +85,8 @@ def workflows_post(body):
             workflow_version=body['version'],
             roc_link=body['roc_link'],
             workflow_registry=registry,
-            name=body.get('name', None)
+            name=body.get('name', None),
+            authorization=body.get('authorization', None)
         )
         logger.debug("workflows_post. Created workflow '%s' (ver.%s)", w.uuid, w.version)
         return {'wf_uuid': str(w.workflow.uuid), 'wf_version': w.version}, 201

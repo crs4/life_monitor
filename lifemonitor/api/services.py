@@ -73,7 +73,8 @@ class LifeMonitor:
                            name=name, hosting_service=workflow_registry)
         wv.permissions.append(Permission(user=workflow_submitter, roles=[RoleType.owner]))
         if authorization:
-            wv.authorizations.append(ExternalServiceAuthorizationHeader(workflow_submitter, header=authorization))
+            auth = ExternalServiceAuthorizationHeader(workflow_submitter, header=authorization)
+            auth.resources.append(wv)
         if name is None:
             w.name = wv.dataset_name
             wv.name = wv.dataset_name
