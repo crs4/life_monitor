@@ -3,8 +3,8 @@ from __future__ import annotations
 import logging
 from urllib.parse import urljoin
 
-from flask import current_app
 from flask.globals import request
+from lifemonitor import utils as lm_utils
 from lifemonitor.auth.serializers import UserSchema
 from lifemonitor.serializers import BaseSchema, ma
 from marshmallow import fields
@@ -13,12 +13,6 @@ from . import models
 
 # set module level logger
 logger = logging.getLogger(__name__)
-
-
-def _get_base_url():
-    if 'EXTERNAL_ACCESS_BASE_URL' in current_app.config:
-        return current_app.config['EXTERNAL_ACCESS_BASE_URL']
-    return current_app.config.get("BASE_URL", None)
 
 
 class MetadataSchema(BaseSchema):
@@ -32,7 +26,7 @@ class MetadataSchema(BaseSchema):
     modified = fields.DateTime(attribute='modified')
 
     def get_base_url(self, obj):
-        return _get_base_url()
+        return lm_utils.get_base_url()
 
     def get_self_path(self, obj):
         try:
@@ -94,7 +88,7 @@ class VersionDetailsSchema(BaseSchema):
         return {
             'links': {
                 'external': obj.uri,
-                'download': urljoin(_get_base_url(), f"ro_crates/{obj.id}/downloads")
+                'download': urljoin(lm_utils.get_base_url(), f"ro_crates/{obj.id}/downloads")
             }
         }
 

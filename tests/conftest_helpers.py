@@ -203,7 +203,7 @@ def seek_user_session(application, index=None):
         wfhub_user_info = user_info_r.json()['data']
         logger.debug("WfHub user info: %r", wfhub_user_info)
         application.config.pop("SEEK_API_KEY", None)
-        login_r = session.get(f"{application.config.get('BASE_URL')}/oauth2/login/seek")
+        login_r = session.get(f"https://{application.config.get('SERVER_NAME')}/oauth2/login/seek")
         logger.debug(login_r.content)
         assert login_r.status_code == 200, "Login Error: status code {} !!!".format(login_r.status_code)
         return OAuthIdentity.find_by_provider_user_id(wfhub_user_info['id'], 'seek').user, session, wfhub_user_info
@@ -287,8 +287,8 @@ def create_authorization_code_access_token(_application,
         g.user = None  # store the user on g to allow the auto login; None to avoid the login
         client_id = client.client_id
         client_secret = client.client_info["client_secret"]
-        authorization_url = f"{application.config['BASE_URL']}/oauth2/authorize"
-        token_url = f"{application.config['BASE_URL']}/oauth2/token"
+        authorization_url = f"https://{application.config['SERVER_NAME']}/oauth2/authorize"
+        token_url = f"https://{application.config['SERVER_NAME']}/oauth2/token"
         # base_url = application.config[f"{registry_type}_API_BASE_URL".upper()]
 
         session.auth = None
@@ -331,7 +331,7 @@ def create_authorization_code_access_token(_application,
 
 
 def create_client_credentials_access_token(application, credentials):
-    token_url = f"{application.config.get('BASE_URL')}/oauth2/token"
+    token_url = f"https://{application.config.get('SERVER_NAME')}/oauth2/token"
     response = requests.post(token_url, data={
         'grant_type': 'client_credentials',
         'client_id': credentials.client_id,

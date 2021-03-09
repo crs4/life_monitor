@@ -1,12 +1,13 @@
 import glob
 import json
-import uuid
 import logging
 import random
 import shutil
+import socket
 import string
 import tempfile
 import urllib
+import uuid
 import zipfile
 from importlib import import_module
 from os.path import basename, dirname, isfile, join
@@ -43,6 +44,16 @@ def to_camel_case(snake_str) -> str:
     :return:
     """
     return ''.join(x.title() for x in snake_str.split('_'))
+
+
+def get_base_url():
+    try:
+        server_name = flask.current_app.config.get("SERVER_NAME", None)
+    except RuntimeError as e:
+        logger.warning(str(e))
+    if server_name is None:
+        server_name = f"{socket.gethostbyname(socket.gethostname())}:8000"
+    return f"https://{server_name}"
 
 
 def _download_from_remote(url, output_stream, authorization=None):
