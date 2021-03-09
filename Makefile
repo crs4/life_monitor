@@ -103,7 +103,7 @@ webserver:
 
 
 ro_crates:
-	@printf "\n$(bold)Preparing ROCrates archive...$(reset)\n" ; \
+	@printf "\n$(bold)Preparing RO-Crate archives...$(reset)\n" ; \
 	docker run --rm --user $(id -u):$(id -g) \
 		       -v $$(pwd)/:/data \
 			   --entrypoint /bin/bash crs4/lifemonitor -c \
