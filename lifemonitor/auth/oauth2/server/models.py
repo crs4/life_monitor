@@ -204,10 +204,7 @@ class AuthorizationCodeGrant(grants.AuthorizationCodeGrant):
         'client_secret_basic', 'client_secret_post', 'none'
     ]
 
-    def create_authorization_code(self, client, grant_user, request):
-        # you can use other method to generate this code
-        code = generate_token(48)
-        item = AuthorizationCode(
+    def save_authorization_code(self, code, request):
             code=code,
             client_id=client.client_id,
             redirect_uri=request.redirect_uri,
