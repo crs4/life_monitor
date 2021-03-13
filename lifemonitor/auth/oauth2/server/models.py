@@ -24,7 +24,7 @@ import time
 from datetime import datetime
 from typing import List
 
-from authlib.common.security import generate_token
+from authlib import oidc
 from authlib.integrations.flask_oauth2 import \
     AuthorizationServer as OAuth2AuthorizationServer
 from authlib.integrations.sqla_oauth2 import (OAuth2AuthorizationCodeMixin,
@@ -272,3 +272,35 @@ class RefreshTokenGrant(grants.RefreshTokenGrant):
         credential.revoked = True
         db.session.add(credential)
         db.session.commit()
+
+
+class OpenIDCode(oidc.core.grants.OpenIDCode):
+
+    __jwt_secret_key__ = None
+
+    def exists_nonce(self, nonce, request):
+        exists = AuthorizationCode.query.filter_by(
+            client_id=request.client_id, nonce=nonce
+        ).first()
+        return bool(exists)
+
+    def get_jwt_config(self, grant):
+        return {
+            'key': self.get_jwt_key(),
+            'alg': 'RS512',
+            'iss': get_base_url(),
+            'exp': current_app.config.get('JWT_EXPIRATION_TIME')
+        }
+
+    def generate_user_info(self, user, scope):
+        user_info = oidc.core.UserInfo(sub=user.id, name=user.username)
+        # if 'email' in scope:
+        #     user_info['email'] = user.email
+        return user_info
+
+    @classmethod
+    def get_jwt_key(cls):
+        if cls.__jwt_secret_key__ is None:
+            with open(current_app.config.get("JWT_SECRET_KEY_PATH")) as kf:
+                cls.__jwt_secret_key__ = "".join(kf.readlines())
+        return cls.__jwt_secret_key__
