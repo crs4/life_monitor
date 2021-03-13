@@ -33,9 +33,12 @@ from authlib.integrations.sqla_oauth2 import (OAuth2AuthorizationCodeMixin,
                                               create_query_client_func,
                                               create_save_token_func)
 from authlib.oauth2.rfc6749 import InvalidRequestError, grants
+from authlib.oauth2.rfc7636 import CodeChallenge
+from flask import current_app
 from lifemonitor.auth.models import User
 from lifemonitor.db import db
 from lifemonitor.models import ModelMixin
+from lifemonitor.utils import get_base_url
 from werkzeug.security import gen_salt
 
 
@@ -132,7 +135,10 @@ class AuthorizationServer(OAuth2AuthorizationServer):
                          query_client=create_query_client_func(db.session, Client),
                          save_token=create_save_token_func(db.session, Token))
         # register it to grant endpoint
-        self.register_grant(AuthorizationCodeGrant)
+        self.register_grant(AuthorizationCodeGrant, [
+            OpenIDCode(require_nonce=True),
+            CodeChallenge(required=True)
+        ])
         # register it to grant endpoint
         self.register_grant(grants.ImplicitGrant)
         # register it to grant endpoint
