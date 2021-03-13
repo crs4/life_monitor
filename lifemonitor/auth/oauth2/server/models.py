@@ -104,6 +104,10 @@ class Token(db.Model, ModelMixin, OAuth2TokenMixin):
     def is_refresh_token_valid(self) -> bool:
         return self if not self.revoked else None
 
+    @property
+    def expires_at(self):
+        return self.issued_at + self.expires_in
+
     @classmethod
     def find(cls, access_token):
         return cls.query.filter(Token.access_token == access_token).first()
