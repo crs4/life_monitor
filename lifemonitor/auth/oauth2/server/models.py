@@ -201,7 +201,7 @@ class AuthorizationCode(db.Model, OAuth2AuthorizationCodeMixin):
 
 class AuthorizationCodeGrant(grants.AuthorizationCodeGrant):
     TOKEN_ENDPOINT_AUTH_METHODS = [
-        'client_secret_basic', 'client_secret_post'
+        'client_secret_basic', 'client_secret_post', 'none'
     ]
 
     def create_authorization_code(self, client, grant_user, request):
