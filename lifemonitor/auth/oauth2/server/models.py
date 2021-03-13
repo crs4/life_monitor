@@ -205,15 +205,21 @@ class AuthorizationCodeGrant(grants.AuthorizationCodeGrant):
     ]
 
     def save_authorization_code(self, code, request):
+        auth_code = AuthorizationCode(
             code=code,
-            client_id=client.client_id,
+            client_id=request.client.client_id,
             redirect_uri=request.redirect_uri,
             scope=request.scope,
-            user_id=grant_user.get_user_id(),
+            user_id=request.user.id,
+            # openid request MAY have "nonce" parameter
+            nonce=request.data.get('nonce', None),
+            # PKCE authentication method
+            code_challenge=request.data.get('code_challenge', None),
+            code_challenge_method=request.data.get('code_challenge_method', None)
         )
-        db.session.add(item)
+        db.session.add(auth_code)
         db.session.commit()
-        return code
+        return auth_code
 
     def query_authorization_code(self, code, client):
         return AuthorizationCode.query.filter_by(
