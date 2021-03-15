@@ -81,6 +81,10 @@ certs:
 	  mv certs/key.pem certs/lm.key && \
 	  chmod 644 certs/*.{key,crt}; \
 	  printf "\n$(done)\n"; \
+	  printf "$(red)Generating JWT keys...$(reset)\n\n" ; \
+	  openssl genrsa -out certs/jwt-key 4096 ; \
+	  openssl rsa -in certs/jwt-key -pubout > certs/jwt-key.pub ; \
+	  printf "\n$(done)\n"; \
 	else \
 	  echo "$(yellow)WARNING: Using existing certificates$(reset)" ; \
 	fi
