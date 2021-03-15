@@ -25,14 +25,14 @@ import logging
 from authlib.integrations.base_client.errors import OAuthError
 from authlib.integrations.flask_client import FlaskRemoteApp
 from authlib.oauth2.rfc6749 import OAuth2Token
-from flask import (Blueprint, abort, current_app, flash, redirect, request,
-                   session, url_for)
+from flask import (Blueprint, abort, current_app, flash, redirect, request, url_for)
 from flask_login import current_user, login_user
 from lifemonitor import exceptions, utils
 from lifemonitor.auth.models import User
 from lifemonitor.auth.oauth2.client.models import (
     OAuth2IdentityProvider, OAuthIdentityNotFoundException)
 from lifemonitor.db import db
+from lifemonitor.utils import NextRouteRegistry, next_route_aware
 
 from .models import OAuthIdentity, OAuthUserProfile
 from .services import config_oauth2_registry, oauth2_registry
@@ -40,8 +40,6 @@ from .utils import RequestHelper
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
-
-_OAUTH2_NEXT_URL = "oauth2.next"
 
 
 def create_blueprint(merge_identity_view):
@@ -88,6 +86,7 @@ def create_blueprint(merge_identity_view):
             return e.description, 401
 
     @blueprint.route('/login/<name>')
+    @next_route_aware
     def login(name):
         # we allow dynamic reconfiguration of the oauth2registry
         # when app is configured in dev or testing mode
@@ -96,10 +95,6 @@ def create_blueprint(merge_identity_view):
         remote = oauth2_registry.create_client(name)
         if remote is None:
             abort(404)
-        # save the 'next' parameter to allow automatic redirect after OAuth2 authorization
-        next_url = request.args.get('next', False)
-        if next_url:
-            session[_OAUTH2_NEXT_URL] = next_url
         redirect_uri = url_for('.authorize', name=name, _external=True)
         conf_key = '{}_AUTHORIZE_PARAMS'.format(name.upper())
         params = current_app.config.get(conf_key, {})
@@ -182,11 +177,7 @@ class AuthorizatonHandler:
                 flash(f"Your account has successfully been linked to the identity {identity}.")
 
             # Determine the right next hop
-            next_url = request.args.get('next')
-            logger.debug("Request redirect (next URL stored on the 'next' request param: %r)", next_url)
-            if not next_url:
-                next_url = session.pop(_OAUTH2_NEXT_URL, False)
-                logger.debug("Request redirect (next URL stored on session: %r)", next_url)
+            next_url = NextRouteRegistry.pop()
             return redirect(next_url, code=307) if next_url \
                 else RequestHelper.response() or redirect('/', code=302)
 

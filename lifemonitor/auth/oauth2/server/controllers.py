@@ -23,6 +23,7 @@ import logging
 from flask import (Blueprint, jsonify, redirect, render_template, request,
                    url_for)
 from flask_login import current_user, login_required
+from lifemonitor.utils import NextRouteRegistry, get_base_url
 
 from .models import Token
 from .services import server
@@ -36,11 +37,13 @@ logger = logging.getLogger(__name__)
 
 
 @blueprint.route('/authorize', methods=['GET', 'POST'])
-@login_required
 def authorize():
     # Login is required since we need to know the current resource owner.
     # The decorator ensures the redirection to the login page when the current
     # user is not authenticated.
+    if not current_user.is_authenticated:
+        NextRouteRegistry.save(route=request.url)
+        return redirect(url_for('auth.login'))
     return _process_authorization()
 
 

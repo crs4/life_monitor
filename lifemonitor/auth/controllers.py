@@ -23,6 +23,7 @@ import logging
 import flask
 from flask import flash, redirect, render_template, request, url_for
 from flask_login import login_required, login_user, logout_user
+from lifemonitor.utils import NextRouteRegistry, next_route_aware
 
 from .. import exceptions
 from . import serializers
@@ -94,7 +95,8 @@ def register():
     return render_template("auth/register.j2", form=form)
 
 
-@blueprint.route("/login/", methods=("GET", "POST"))
+@blueprint.route("/login", methods=("GET", "POST"))
+@next_route_aware
 def login():
     form = LoginForm()
     if form.validate_on_submit():
@@ -102,7 +104,7 @@ def login():
         if user:
             login_user(user)
             flash("You have logged in")
-            return redirect(url_for("auth.index"))
+            return redirect(NextRouteRegistry.pop(url_for("auth.index")))
     return render_template("auth/login.j2", form=form, providers=get_providers())
 
 
