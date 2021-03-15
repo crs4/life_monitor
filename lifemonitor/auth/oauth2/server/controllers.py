@@ -23,7 +23,7 @@ import logging
 from flask import (Blueprint, jsonify, redirect, render_template, request,
                    url_for)
 from flask_login import current_user, login_required
-from lifemonitor.utils import NextRouteRegistry, get_base_url
+from lifemonitor.utils import NextRouteRegistry
 
 from .models import Token
 from .services import server
