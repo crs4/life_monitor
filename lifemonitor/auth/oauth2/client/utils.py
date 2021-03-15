@@ -54,17 +54,14 @@ class RequestHelper:
 
     @classmethod
     def response(cls, key=None):
-        try:
-            request = cls.pop_request(key)
-            logger.debug("Pop the request from session: %r", request)
-            if request:
-                method = getattr(requests, request['method'].lower())
-                logger.debug("The method: %r", method)
-                res = method(request['url'],
-                             params=request['params'],
-                             headers=request['headers'],
-                             data=request['data'])
-                return (res.text, res.status_code, res.headers.items())
-        except Exception as e:
-            logger.debug(e)
-            return False
+        request = cls.pop_request(key)
+        logger.debug("Pop the request from session: %r", request)
+        if request:
+            method = getattr(requests, request['method'].lower())
+            logger.debug("The method: %r", method)
+            res = method(request['url'],
+                         params=request['params'],
+                         headers=request['headers'],
+                         data=request['data'])
+            return (res.text, res.status_code, res.headers.items())
+        return None
