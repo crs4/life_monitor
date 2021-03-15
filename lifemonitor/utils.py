@@ -68,6 +68,7 @@ def to_camel_case(snake_str) -> str:
 
 
 def get_base_url():
+    server_name = None
     try:
         server_name = flask.current_app.config.get("SERVER_NAME", None)
     except RuntimeError as e:
