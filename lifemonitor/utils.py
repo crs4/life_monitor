@@ -28,6 +28,7 @@ import string
 import tempfile
 import urllib
 import uuid
+import functools
 import zipfile
 from importlib import import_module
 from os.path import basename, dirname, isfile, join
@@ -137,6 +138,65 @@ def pop_request_from_session(name):
             "form": flask.session.pop(f'{name}_next_forms')
         }
     return None
+
+
+def next_route_aware(func):
+
+    @functools.wraps(func)
+    def decorated_view(*args, **kwargs):
+        # save the 'next' parameter to allow automatic redirect after OAuth2 authorization
+        NextRouteRegistry.save()
+        return func(*args, **kwargs)
+    return decorated_view
+
+
+class NextRouteRegistry(object):
+
+    __LM_NEXT_ROUTE_REGISTRY__ = "lifemonitor_next_route_registry"
+
+    @classmethod
+    def _get_route_registry(cls):
+        registry = flask.session.get(cls.__LM_NEXT_ROUTE_REGISTRY__, None)
+        if registry is None:
+            registry = []
+        else:
+            registry = json.loads(registry)
+        return registry
+
+    @classmethod
+    def _save_route_registry(cls, registry):
+        flask.session[cls.__LM_NEXT_ROUTE_REGISTRY__] = json.dumps(registry)
+        logger.debug("Route registry saved")
+
+    @classmethod
+    def save(cls, route=None):
+        route = route or flask.request.args.get('next', False)
+        logger.debug("'next' route param found: %r", route)
+        if route:
+            registry = cls._get_route_registry()
+            registry.append(route)
+            logger.debug("Route registry changed: %r", registry)
+            cls._save_route_registry(registry)
+
+    @classmethod
+    def pop(cls, default=None):
+        route = flask.request.args.get('next', None)
+        logger.debug("'next' route as param: %r", route)
+        if route is None:
+            registry = cls._get_route_registry()
+            try:
+                route = registry.pop()
+                logger.debug("Route registry changed: %r", registry)
+                logger.debug("Remove route: %r", route)
+            except IndexError as e:
+                logger.debug(e)
+            finally:
+                cls._save_route_registry(registry)
+        return route or default
+
+    @classmethod
+    def clear(cls):
+        flask.session[cls.__LM_NEXT_ROUTE_REGISTRY__] = json.dumps([])
 
 
 class ClassManager:
