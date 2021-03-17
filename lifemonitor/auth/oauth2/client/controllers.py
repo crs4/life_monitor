@@ -35,7 +35,7 @@ from lifemonitor.db import db
 from lifemonitor.utils import NextRouteRegistry, next_route_aware
 
 from .models import OAuthIdentity, OAuthUserProfile
-from .services import config_oauth2_registry, oauth2_registry
+from .services import config_oauth2_registry, oauth2_registry, save_current_user_identity
 from .utils import RequestHelper
 
 # Config a module level logger
@@ -158,9 +158,14 @@ class AuthorizatonHandler:
                     # OK because they can merge those accounts later.
                     user = User(username=utils.generate_username(user_info))
                     identity.user = user
-                    identity.save()
-                    login_user(user)
-                    flash("OAuth identity linked to the current user account.")
+                    # save user identity on the current session
+                    save_current_user_identity(identity)
+                    if request.args.get("confirm", None) is False:
+                        identity.save()
+                        login_user(user)
+                        flash("OAuth identity linked to the current user account.")
+                    else:
+                        return redirect(url_for('auth.register'))
             else:
                 if identity.user:
                     # If the user is logged in and the token is linked, check if these
@@ -178,6 +183,7 @@ class AuthorizatonHandler:
 
             # Determine the right next hop
             next_url = NextRouteRegistry.pop()
+            flash(f"Logged with your \"{provider.name.capitalize()}\" identity.", category="success")
             return redirect(next_url, code=307) if next_url \
                 else RequestHelper.response() or redirect('/', code=302)
 
