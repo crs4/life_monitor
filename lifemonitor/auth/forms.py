@@ -60,16 +60,16 @@ class RegisterForm(FlaskForm):
     identity = HiddenField("identity")
 
     def create_user(self, identity=None):
-        user = User(username=self.username.data)
-        if identity:
-            identity.user = user
-        else:
-            user.password = self.password.data
-        db.session.add(user)
         try:
+            user = User(username=self.username.data) \
+                if not identity else identity.user
+            if not identity:
+                user.password = self.password.data
+            db.session.add(user)
             db.session.commit()
             return user
-        except IntegrityError:
+        except IntegrityError as e:
+            logger.debug(e)
             self.username.errors.append("This username is already taken")
             db.session.rollback()
             return None

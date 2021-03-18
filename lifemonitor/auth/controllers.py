@@ -30,7 +30,7 @@ from . import serializers
 from .forms import LoginForm, RegisterForm, SetPasswordForm
 from .models import db
 from .oauth2.client.services import (get_current_user_identity, get_providers,
-                                     merge_users)
+                                     merge_users, save_current_user_identity)
 from .services import (authorized, current_registry, current_user,
                        delete_api_key, generate_new_api_key, login_manager)
 
@@ -87,14 +87,33 @@ def profile():
 
 @blueprint.route("/register", methods=("GET", "POST"))
 def register():
+    if flask.request.method == "GET":
+        # properly intialize/clear the session before the registration
+        flask.session["confirm_user_details"] = True
+        save_current_user_identity(None)
+    with db.session.no_autoflush:
+        form = RegisterForm()
+        if form.validate_on_submit():
+            user = form.create_user()
+            if user:
+                login_user(user)
+                flash("Account created", category="success")
+                return redirect(url_for("auth.index"))
+        return render_template("auth/register.j2", form=form,
+                               action='/register', providers=get_providers())
+
+
+@blueprint.route("/register_identity", methods=("GET", "POST"))
+def register_identity():
     with db.session.no_autoflush:
         identity = get_current_user_identity()
         logger.debug("Current provider identity: %r", identity)
-        user = current_user
-        if identity:
-            logger.debug("Provider identity on session: %r", identity)
-            logger.debug("User Info: %r", identity.user_info)
-            user = identity.user
+        if not identity:
+            flash("Unable to register the user")
+            flask.abort(400)
+        logger.debug("Provider identity on session: %r", identity)
+        logger.debug("User Info: %r", identity.user_info)
+        user = identity.user
         form = RegisterForm()
         if form.validate_on_submit():
             user = form.create_user(identity)
@@ -102,7 +121,7 @@ def register():
                 login_user(user)
                 flash("Account created", category="success")
                 return redirect(url_for("auth.index"))
-        return render_template("auth/register.j2", form=form,
+        return render_template("auth/register.j2", form=form, action='/register_identity',
                                identity=identity, user=user, providers=get_providers())
 
 
@@ -110,6 +129,7 @@ def register():
 @next_route_aware
 def login():
     form = LoginForm()
+    flask.session["confirm_user_details"] = True
     if form.validate_on_submit():
         user = form.get_user()
         if user:
@@ -124,6 +144,7 @@ def login():
 def logout():
     logout_user()
     flash("You have logged out", category="success")
+    NextRouteRegistry.clear()
     return redirect(url_for("auth.index"))
 
 

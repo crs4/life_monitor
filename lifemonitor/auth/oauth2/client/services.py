@@ -115,9 +115,10 @@ def merge_users(merge_from: User, merge_into: User, provider: str):
 
 
 def save_current_user_identity(identity: OAuthIdentity):
-    session["oauth2_provider_name"] = identity.provider.name
-    session["oauth2_user_info"] = identity.user_info
-    session["oauth2_user_token"] = identity.token
+    session["oauth2_username"] = identity.user.username if identity else None
+    session["oauth2_provider_name"] = identity.provider.name if identity else None
+    session["oauth2_user_info"] = identity.user_info if identity else None
+    session["oauth2_user_token"] = identity.token if identity else None
     logger.debug("User identity temporary save: %r", identity)
 
 
@@ -128,12 +129,14 @@ def get_current_user_identity():
         token = session.get("oauth2_user_token")
         p = OAuth2IdentityProvider.find(provider_name)
         logger.debug("Provider found: %r", p)
-        return OAuthIdentity(
+        identity = OAuthIdentity(
             provider=p,
             user_info=user_info,
             provider_user_id=user_info["sub"],
             token=token,
         )
+        identity.user = User(username=session["oauth2_username"])
+        return identity
     except exceptions.EntityNotFoundException as e:
         logger.debug(e)
         return None
