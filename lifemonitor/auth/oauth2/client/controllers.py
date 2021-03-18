@@ -25,7 +25,7 @@ import logging
 from authlib.integrations.base_client.errors import OAuthError
 from authlib.integrations.flask_client import FlaskRemoteApp
 from authlib.oauth2.rfc6749 import OAuth2Token
-from flask import (Blueprint, abort, current_app, flash, redirect, request, url_for)
+from flask import (Blueprint, abort, current_app, flash, redirect, request, session, url_for)
 from flask_login import current_user, login_user
 from lifemonitor import exceptions, utils
 from lifemonitor.auth.models import User
@@ -156,16 +156,27 @@ class AuthorizatonHandler:
                     # create a new local user account and log that account in.
                     # This means that one person can make multiple accounts, but it's
                     # OK because they can merge those accounts later.
-                    user = User(username=utils.generate_username(user_info))
+                    user = User()
                     identity.user = user
-                    # save user identity on the current session
-                    save_current_user_identity(identity)
-                    if request.args.get("confirm", None) is False:
+                    # Check whether to review user details
+                    review_details = session.get("confirm_user_details", None)
+                    # Initialize username.
+                    # if the user will be automatically registered (without review)
+                    # we append a random string to the his identity username
+                    identity.user.username = \
+                        utils.generate_username(
+                            user_info,
+                            salt_length=4 if not review_details else 0)
+                    if not review_details:
                         identity.save()
                         login_user(user)
                         flash("OAuth identity linked to the current user account.")
                     else:
-                        return redirect(url_for('auth.register'))
+                        # save the user identity on the current session
+                        save_current_user_identity(identity)
+                        # and redirect the user
+                        # to finalize the registration
+                        return redirect(url_for('auth.register_identity'))
             else:
                 if identity.user:
                     # If the user is logged in and the token is linked, check if these
