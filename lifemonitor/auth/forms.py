@@ -57,17 +57,30 @@ class RegisterForm(FlaskForm):
         ],
     )
     repeat_password = PasswordField("Repeat Password")
+    identity = HiddenField("identity")
 
-    def create_user(self):
+    def create_user(self, identity=None):
         user = User(username=self.username.data)
-        user.password = self.password.data
+        if identity:
+            identity.user = user
+        else:
+            user.password = self.password.data
         db.session.add(user)
         try:
             db.session.commit()
             return user
         except IntegrityError:
             self.username.errors.append("This username is already taken")
+            db.session.rollback()
             return None
+
+    def validate(self, extra_validators=None):
+        # if the current user has an external OAuth2 identity
+        # then we do not validate the password field (which is optional)
+        logger.debug("OAuth identity: %r (%r)", self.identity.raw_data, not self.identity.data)
+        if self.identity.data:
+            return self.username.validate(self)
+        return super().validate(extra_validators=extra_validators)
 
 
 class SetPasswordForm(FlaskForm):
