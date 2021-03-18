@@ -65,7 +65,7 @@ class Seek(OAuth2IdentityProvider):
             'sub': str(data['id']),
             'name': data['attributes']['title'],
             'mbox_sha1sum': data['attributes']['mbox_sha1sum'],
-            # 'preferred_username': data['id'],
+            'preferred_username': data['attributes']['title'].replace(" ", ""),
             'profile': data['links']["self"],
             'picture': data['attributes']['avatar'],
             'website': '',
