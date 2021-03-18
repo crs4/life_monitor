@@ -31,6 +31,8 @@ from .forms import LoginForm, RegisterForm, SetPasswordForm
 from .models import db
 from .oauth2.client.services import (get_current_user_identity, get_providers,
                                      merge_users)
+from .services import (authorized, current_registry, current_user,
+                       delete_api_key, generate_new_api_key, login_manager)
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
@@ -93,13 +95,13 @@ def register():
             logger.debug("Provider identity on session: %r", identity)
             logger.debug("User Info: %r", identity.user_info)
             user = identity.user
-    form = RegisterForm()
-    if form.validate_on_submit():
+        form = RegisterForm()
+        if form.validate_on_submit():
             user = form.create_user(identity)
-        if user:
-            login_user(user)
+            if user:
+                login_user(user)
                 flash("Account created", category="success")
-            return redirect(url_for("auth.index"))
+                return redirect(url_for("auth.index"))
         return render_template("auth/register.j2", form=form,
                                identity=identity, user=user, providers=get_providers())
 
@@ -158,3 +160,28 @@ def merge():
             else:
                 form.username.errors.append("Cannot merge with yourself")
     return render_template("auth/merge.j2", form=form)
+
+
+@blueprint.route("/create_apikey", methods=("POST",))
+@login_required
+def create_apikey():
+    apikey = generate_new_api_key(current_user, 'read write')
+    if apikey:
+        logger.debug("Created a new API key: %r", apikey)
+        flash("API key created!", category="success")
+    else:
+        flash("API key not created!", category="error")
+    return redirect(url_for('auth.profile'))
+
+
+@blueprint.route("/delete_apikey", methods=("POST",))
+@login_required
+def delete_apikey():
+    apikey = request.values.get('apikey', None)
+    logger.debug(request.values)
+    if not apikey:
+        flash("Unable to find the API key")
+    else:
+        delete_api_key(current_user, apikey)
+        flash("API key removed!", category="success")
+    return redirect(url_for('auth.profile'))
