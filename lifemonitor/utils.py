@@ -120,8 +120,10 @@ def load_test_definition_filename(filename):
         return json.load(f)
 
 
-def generate_username(user_info):
-    return ''.join(random.choice(string.ascii_letters + string.digits) for i in range(10))
+def generate_username(user_info, salt_length=4):
+    return "{}{}".format(
+        user_info.preferred_username,
+        ''.join(random.choice(string.ascii_letters + string.digits) for i in range(salt_length)))
 
 
 def push_request_to_session(name):
