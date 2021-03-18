@@ -132,6 +132,12 @@ def generate_new_api_key(user, scope, length=40) -> ApiKey:
     return api_key
 
 
+def delete_api_key(user, api_key) -> ApiKey:
+    api_key = ApiKey.find(api_key)
+    if api_key and api_key.user == user:
+        api_key.delete()
+
+
 def check_api_key(api_key, required_scopes):
     logger.debug("The API Key: %r; scopes required: %r", api_key, required_scopes)
     api_key = ApiKey.find(api_key)
