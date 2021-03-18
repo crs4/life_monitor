@@ -29,8 +29,8 @@ from .. import exceptions
 from . import serializers
 from .forms import LoginForm, RegisterForm, SetPasswordForm
 from .models import db
-from .oauth2.client.services import get_providers, merge_users
-from .services import authorized, current_registry, current_user, login_manager
+from .oauth2.client.services import (get_current_user_identity, get_providers,
+                                     merge_users)
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
@@ -85,14 +85,23 @@ def profile():
 
 @blueprint.route("/register", methods=("GET", "POST"))
 def register():
+    with db.session.no_autoflush:
+        identity = get_current_user_identity()
+        logger.debug("Current provider identity: %r", identity)
+        user = current_user
+        if identity:
+            logger.debug("Provider identity on session: %r", identity)
+            logger.debug("User Info: %r", identity.user_info)
+            user = identity.user
     form = RegisterForm()
     if form.validate_on_submit():
-        user = form.create_user()
+            user = form.create_user(identity)
         if user:
             login_user(user)
-            flash("Account created")
+                flash("Account created", category="success")
             return redirect(url_for("auth.index"))
-    return render_template("auth/register.j2", form=form)
+        return render_template("auth/register.j2", form=form,
+                               identity=identity, user=user, providers=get_providers())
 
 
 @blueprint.route("/login", methods=("GET", "POST"))
@@ -103,7 +112,7 @@ def login():
         user = form.get_user()
         if user:
             login_user(user)
-            flash("You have logged in")
+            flash("You have logged in", category="success")
             return redirect(NextRouteRegistry.pop(url_for("auth.index")))
     return render_template("auth/login.j2", form=form, providers=get_providers())
 
@@ -112,7 +121,7 @@ def login():
 @login_required
 def logout():
     logout_user()
-    flash("You have logged out")
+    flash("You have logged out", category="success")
     return redirect(url_for("auth.index"))
 
 
