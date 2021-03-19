@@ -1313,17 +1313,11 @@ results through the service's API).</p>
     <div class="example-data-content-type">Content-Type: application/json</div>
     <pre class="example"><code>{
   "items" : [ {
-    "roc_link" : "roc_link",
     "name" : "name",
-    "submitter_id" : "submitter_id",
-    "uuid" : "uuid",
-    "version" : "version"
+    "uuid" : "uuid"
   }, {
-    "roc_link" : "roc_link",
     "name" : "name",
-    "submitter_id" : "submitter_id",
-    "uuid" : "uuid",
-    "version" : "version"
+    "uuid" : "uuid"
   } ]
 }</code></pre>
 
@@ -1366,7 +1360,7 @@ results through the service's API).</p>
 
     <h3 class="field-label">Return type</h3>
     <div class="return-type">
-      <a href="#Workflow">Workflow</a>
+      <a href="#WorkflowVersionDetails">WorkflowVersionDetails</a>
       
     </div>
 
@@ -1374,13 +1368,7 @@ results through the service's API).</p>
 
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
-    <pre class="example"><code>{
-  "roc_link" : "roc_link",
-  "name" : "name",
-  "submitter_id" : "submitter_id",
-  "uuid" : "uuid",
-  "version" : "version"
-}</code></pre>
+    <pre class="example"><code>null</code></pre>
 
     <h3 class="field-label">Produces</h3>
     This API call produces the following media types according to the <span class="header">Accept</span> request header;
@@ -1392,7 +1380,7 @@ results through the service's API).</p>
     <h3 class="field-label">Responses</h3>
     <h4 class="field-label">200</h4>
     A Workflow object
-        <a href="#Workflow">Workflow</a>
+        <a href="#WorkflowVersionDetails">WorkflowVersionDetails</a>
     <h4 class="field-label">400</h4>
     The request is malformed
         <a href="#Error">Error</a>
@@ -1428,7 +1416,7 @@ results through the service's API).</p>
 
     <h3 class="field-label">Return type</h3>
     <div class="return-type">
-      <a href="#Workflow">Workflow</a>
+      <a href="#WorkflowVersionDetails">WorkflowVersionDetails</a>
       
     </div>
 
@@ -1445,7 +1433,7 @@ results through the service's API).</p>
     <h3 class="field-label">Responses</h3>
     <h4 class="field-label">200</h4>
     A Workflow object for the latest version of the specified workflow and extended with the list of previous versions that are registered. Information about the previous versions can be retrieved through the <code>/workflows/{wf_uuid}/{wf_version}</code> resource.
-        <a href="#Workflow">Workflow</a>
+        <a href="#WorkflowVersionDetails">WorkflowVersionDetails</a>
     <h4 class="field-label">400</h4>
     The request is malformed
         <a href="#Error">Error</a>
@@ -1494,8 +1482,7 @@ results through the service's API).</p>
     <pre class="example"><code>{
   "workflow" : {
     "name" : "name",
-    "uuid" : "uuid",
-    "version" : "version"
+    "uuid" : "uuid"
   },
   "latest_builds" : [ {
     "instance" : {
@@ -1663,7 +1650,7 @@ results through the service's API).</p>
 
     <h3 class="field-label">Request body</h3>
     <div class="field-items">
-      <div class="param">Workflow <a href="#Workflow">Workflow</a> (required)</div>
+      <div class="param">WorkflowVersion <a href="#WorkflowVersion">WorkflowVersion</a> (required)</div>
 
       <div class="param-desc"><span class="param-type">Body Parameter</span> &mdash;  </div>
 
@@ -1699,6 +1686,9 @@ results through the service's API).</p>
     <h4 class="field-label">404</h4>
     Resource not found
         <a href="#Error">Error</a>
+    <h4 class="field-label">409</h4>
+    Conflict with the current state of the target resource.
+        <a href="#Error">Error</a>
   </div> <!-- method -->
   <hr/>
   <div class="method"><a name="workflowsPut"/>
@@ -1725,7 +1715,7 @@ results through the service's API).</p>
 
     <h3 class="field-label">Request body</h3>
     <div class="field-items">
-      <div class="param">Workflow <a href="#Workflow">Workflow</a> (required)</div>
+      <div class="param">WorkflowVersion <a href="#WorkflowVersion">WorkflowVersion</a> (required)</div>
 
       <div class="param-desc"><span class="param-type">Body Parameter</span> &mdash;  </div>
 
@@ -1784,6 +1774,8 @@ results through the service's API).</p>
     <li><a href="#ListOfTestSuite"><code>ListOfTestSuite</code> - </a></li>
     <li><a href="#ListOfUsers"><code>ListOfUsers</code> - </a></li>
     <li><a href="#ListOfWorkflow"><code>ListOfWorkflow</code> - </a></li>
+    <li><a href="#ROCrate"><code>ROCrate</code> - </a></li>
+    <li><a href="#ROCrate_links"><code>ROCrate_links</code> - </a></li>
     <li><a href="#Registry"><code>Registry</code> - </a></li>
     <li><a href="#TestInstance"><code>TestInstance</code> - </a></li>
     <li><a href="#TestInstance_service"><code>TestInstance_service</code> - </a></li>
@@ -1794,6 +1786,10 @@ results through the service's API).</p>
     <li><a href="#Workflow"><code>Workflow</code> - </a></li>
     <li><a href="#WorkflowStatus"><code>WorkflowStatus</code> - </a></li>
     <li><a href="#WorkflowStatus_workflow"><code>WorkflowStatus_workflow</code> - </a></li>
+    <li><a href="#WorkflowVersion"><code>WorkflowVersion</code> - </a></li>
+    <li><a href="#WorkflowVersionDetails"><code>WorkflowVersionDetails</code> - </a></li>
+    <li><a href="#WorkflowVersionDetails_allOf"><code>WorkflowVersionDetails_allOf</code> - </a></li>
+    <li><a href="#WorkflowVersion_allOf"><code>WorkflowVersion_allOf</code> - </a></li>
   </ol>
 
   <div class="model">
@@ -1905,6 +1901,21 @@ information if dereferenced. </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
+    <h3><a name="ROCrate"><code>ROCrate</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">links (optional)</div><div class="param-desc"><span class="param-type"><a href="#ROCrate_links">ROCrate_links</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="ROCrate_links"><code>ROCrate_links</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">external (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">download (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
     <h3><a name="Registry"><code>Registry</code> - </a> <a class="up" href="#__Models">Up</a></h3>
     <div class='model-description'></div>
     <div class="field-items">
@@ -1970,10 +1981,7 @@ information if dereferenced. </div>
     <div class='model-description'></div>
     <div class="field-items">
       <div class="param">uuid </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
-<div class="param">version </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
-<div class="param">roc_link </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
 <div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
-<div class="param">submitter_id (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
@@ -1990,8 +1998,54 @@ information if dereferenced. </div>
     <div class='model-description'></div>
     <div class="field-items">
       <div class="param">uuid </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
-<div class="param">version </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
 <div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">version </div><div class="param-desc"><span class="param-type"><a href="#WorkflowVersion">WorkflowVersion</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="WorkflowVersion"><code>WorkflowVersion</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">uuid </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">version </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">roc_link </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">submitter_id (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">ro_crate (optional)</div><div class="param-desc"><span class="param-type"><a href="#ROCrate">ROCrate</a></span>  </div>
+<div class="param">is_latest (optional)</div><div class="param-desc"><span class="param-type"><a href="#boolean">Boolean</a></span>  </div>
+<div class="param">submitter (optional)</div><div class="param-desc"><span class="param-type"><a href="#User">User</a></span>  </div>
+<div class="param">authorization (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="WorkflowVersionDetails"><code>WorkflowVersionDetails</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">uuid </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">version (optional)</div><div class="param-desc"><span class="param-type"><a href="#WorkflowVersion">WorkflowVersion</a></span>  </div>
+<div class="param">previous_versions (optional)</div><div class="param-desc"><span class="param-type"><a href="#WorkflowVersion">array[WorkflowVersion]</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="WorkflowVersionDetails_allOf"><code>WorkflowVersionDetails_allOf</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">version (optional)</div><div class="param-desc"><span class="param-type"><a href="#WorkflowVersion">WorkflowVersion</a></span>  </div>
+<div class="param">previous_versions (optional)</div><div class="param-desc"><span class="param-type"><a href="#WorkflowVersion">array[WorkflowVersion]</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="WorkflowVersion_allOf"><code>WorkflowVersion_allOf</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">version </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">roc_link </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">submitter_id (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">ro_crate (optional)</div><div class="param-desc"><span class="param-type"><a href="#ROCrate">ROCrate</a></span>  </div>
+<div class="param">is_latest (optional)</div><div class="param-desc"><span class="param-type"><a href="#boolean">Boolean</a></span>  </div>
+<div class="param">submitter (optional)</div><div class="param-desc"><span class="param-type"><a href="#User">User</a></span>  </div>
+<div class="param">authorization (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
     </div>  <!-- field-items -->
   </div>
   </body>
