@@ -24,9 +24,8 @@ import sys
 import click
 from flask import Blueprint
 from flask.cli import with_appcontext
-
+from lifemonitor.auth.models import ApiKey, User
 from lifemonitor.auth.services import generate_new_api_key
-from lifemonitor.auth.models import User, ApiKey
 
 # set module level logger
 logger = logging.getLogger(__name__)

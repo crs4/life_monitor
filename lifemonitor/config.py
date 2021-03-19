@@ -18,9 +18,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import os
 import logging
+import os
 from typing import List, Type
+
 import dotenv
 
 from .db import db_uri

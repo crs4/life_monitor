@@ -18,12 +18,12 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import logging
 import os
 
-import logging
-from flask_sqlalchemy import SQLAlchemy
 import psycopg2 as psy
 import psycopg2.sql as sql
+from flask_sqlalchemy import SQLAlchemy
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
 # set module level logger

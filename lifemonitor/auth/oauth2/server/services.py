@@ -19,10 +19,10 @@
 # SOFTWARE.
 
 import logging
-from flask import g
-from lifemonitor.auth.oauth2.server.models import Token, AuthorizationServer
-import lifemonitor.auth.services as auth_services
 
+import lifemonitor.auth.services as auth_services
+from flask import g
+from lifemonitor.auth.oauth2.server.models import AuthorizationServer, Token
 
 # Set the module level logger
 logger = logging.getLogger(__name__)

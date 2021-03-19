@@ -188,7 +188,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Workflow"
+              $ref: "#/components/schemas/WorkflowVersion"
       responses:
         "201":
           description: Workflow created
@@ -200,6 +200,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
 
   /workflows/{wf_uuid}:
     get:
@@ -222,13 +224,7 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/Workflow"
-                  - type: object
-                    properties:
-                      previous_versions:
-                        type: array
-                        items:
-                          type: string
+                  - $ref: "#/components/schemas/WorkflowVersionDetails"                  
                     required:
                       - previous_versions
         "400":
@@ -257,7 +253,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Workflow"
+                $ref: "#/components/schemas/WorkflowVersionDetails"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -282,7 +278,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Workflow"
+              $ref: "#/components/schemas/WorkflowVersion"
       responses:
         "204":
           description: "Workflow updated"
@@ -718,6 +714,13 @@ components:
           schema:
             $ref: "#/components/schemas/Error"
 
+    Conflict:
+      description: Conflict with the current state of the target resource.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
     Unauthorized:
       description: Unauthorized
       content:
@@ -819,26 +822,71 @@ components:
     Timestamp:
       type: string
 
+    ROCrate:
+      type: object
+      properties:
+        links:
+          type: object
+          properties:
+            external:
+              type: string
+            download:
+              type: string
+
     Workflow:
       type: object
       properties:
         uuid:
           type: string
-        version:
-          type: string
-        roc_link:
-          type: string
         name:
           type: string
           nullable: true
-        submitter_id:
-          type: string
-          writeOnly: true
       required:
         - uuid
-        - version
-        - roc_link
 
+    WorkflowVersion:
+      allOf:
+        - $ref: "#/components/schemas/Workflow"
+        - type: object
+          properties:
+            version:
+              type: string
+            roc_link:
+              type: string
+              writeOnly: true
+            submitter_id:
+              type: string
+              writeOnly: true            
+            ro_crate:
+              readOnly: true
+              $ref: "#/components/schemas/ROCrate"
+            is_latest:
+              type: boolean
+              readOnly: true
+            submitter:
+              $ref: "#/components/schemas/User"
+              readOnly: true
+            authorization:
+              type: string
+              writeOnly: true
+          required:
+            - version
+            - roc_link
+
+    WorkflowVersionDetails:
+      allOf:
+        - $ref: "#/components/schemas/Workflow"
+        - type: object
+          properties:
+            version:
+              $ref: "#/components/schemas/WorkflowVersion"
+            previous_versions:
+              readOnly: true
+              type: array
+              items:
+                $ref: "#/components/schemas/WorkflowVersion"
+
+    
     ListOfWorkflow:
       type: object
       properties:
@@ -857,10 +905,10 @@ components:
           properties:
             uuid:
               type: string
-            version:
-              type: string
             name:
               type: string
+            version:
+              $ref: "#/components/schemas/WorkflowVersion"
           required:
             - uuid
             - version

@@ -18,10 +18,11 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import os
-import pytest
 import logging
+import os
+
 import lifemonitor.config as lm_cfg
+import pytest
 from lifemonitor.app import create_app
 
 logger = logging.getLogger()

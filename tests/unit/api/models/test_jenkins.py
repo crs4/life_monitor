@@ -18,12 +18,12 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import pytest
 import logging
-from unittest.mock import patch, MagicMock, PropertyMock
-import lifemonitor.api.models as models
-from tests.conftest_helpers import get_random_slice_indexes
+from unittest.mock import MagicMock, PropertyMock, patch
 
+import lifemonitor.api.models as models
+import pytest
+from tests.conftest_helpers import get_random_slice_indexes
 
 logger = logging.getLogger(__name__)
 

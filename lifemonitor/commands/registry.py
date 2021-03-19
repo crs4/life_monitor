@@ -18,10 +18,11 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import logging
 import re
 import sys
+
 import click
-import logging
 from flask import Blueprint
 from flask.cli import with_appcontext
 from lifemonitor.api.services import LifeMonitor

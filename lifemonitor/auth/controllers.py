@@ -21,15 +21,15 @@
 import logging
 
 import flask
-from flask import flash, url_for, request, render_template, redirect
+from flask import flash, redirect, render_template, request, url_for
 from flask_login import login_required, login_user, logout_user
-from .. import common
-from .forms import RegisterForm, LoginForm, SetPasswordForm
-from .models import db
-from . import serializers
-from .oauth2.client.services import merge_users, get_providers
-from .services import authorized, login_manager, current_registry, current_user
 
+from .. import exceptions
+from . import serializers
+from .forms import LoginForm, RegisterForm, SetPasswordForm
+from .models import db
+from .oauth2.client.services import get_providers, merge_users
+from .services import authorized, current_registry, current_user, login_manager
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
@@ -47,9 +47,9 @@ def show_current_user_profile():
     try:
         if current_user and not current_user.is_anonymous:
             return serializers.UserSchema().dump(current_user)
-        raise common.Forbidden(detail="Client type unknown")
+        raise exceptions.Forbidden(detail="Client type unknown")
     except Exception as e:
-        return common.report_problem_from_exception(e)
+        return exceptions.report_problem_from_exception(e)
 
 
 @authorized
@@ -57,9 +57,9 @@ def get_registry_users():
     try:
         if current_registry and current_user.is_anonymous:
             return serializers.UserSchema().dump(current_registry.users, many=True)
-        raise common.Forbidden(detail="Client type unknown")
+        raise exceptions.Forbidden(detail="Client type unknown")
     except Exception as e:
-        return common.report_problem_from_exception(e)
+        return exceptions.report_problem_from_exception(e)
 
 
 @authorized
@@ -67,9 +67,9 @@ def get_registry_user(user_id):
     try:
         if current_registry:
             return serializers.UserSchema().dump(current_registry.get_user(user_id))
-        raise common.Forbidden(detail="Client type unknown")
+        raise exceptions.Forbidden(detail="Client type unknown")
     except Exception as e:
-        return common.report_problem_from_exception(e)
+        return exceptions.report_problem_from_exception(e)
 
 
 @blueprint.route("/", methods=("GET",))

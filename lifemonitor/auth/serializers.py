@@ -19,9 +19,11 @@
 # SOFTWARE.
 
 from __future__ import annotations
-from . import models
+
+from lifemonitor.serializers import BaseSchema, ma
 from marshmallow import fields
-from lifemonitor.serializers import ma, BaseSchema
+
+from . import models
 
 
 class ProviderSchema(BaseSchema):

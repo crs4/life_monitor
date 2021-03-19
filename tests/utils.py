@@ -19,6 +19,7 @@
 # SOFTWARE.
 
 import logging
+
 import lifemonitor.db as lm_db
 from lifemonitor.api import models
 from lifemonitor.api.services import LifeMonitor
@@ -91,11 +92,14 @@ def pick_workflow(app_user, name=None):
 
 def register_workflow(app_user, w):
     # get the registry
-    r = models.WorkflowRegistry.find_by_uri(w["registry_uri"])
+    registry = None
+    if 'registry_uri' in w:
+        registry = models.WorkflowRegistry.find_by_uri(w["registry_uri"])
     # register
     lm = LifeMonitor.get_instance()
-    workflow = lm.register_workflow(r, app_user["user"],
-                                    w['uuid'], w['version'], w['roc_link'], name=w['name'])
+    workflow = lm.register_workflow(app_user["user"],
+                                    w['uuid'], w['version'], w['roc_link'], registry, name=w['name'],
+                                    authorization=w.get("authorization", None))
     return w, workflow
 
 

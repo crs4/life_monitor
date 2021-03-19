@@ -19,11 +19,13 @@
 # SOFTWARE.
 
 import logging
+
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, HiddenField
-from wtforms.validators import DataRequired, Optional, EqualTo
 from sqlalchemy.exc import IntegrityError
-from .models import db, User
+from wtforms import HiddenField, PasswordField, StringField
+from wtforms.validators import DataRequired, EqualTo, Optional
+
+from .models import User, db
 
 # Set the module level logger
 logger = logging.getLogger(__name__)

@@ -1,7 +1,6 @@
 version: "3.5"
 
 services:
-  
   lmtests:
     image: crs4/lifemonitor
     user: "${USER_UID}:${USER_GID}"
@@ -30,6 +29,16 @@ services:
       - "./settings.conf:/lm/settings.conf:ro" # default settings
     ports:
       - "8000"
+    networks:
+      - life_monitor
+
+  webserver:
+    image: crs4/lifemonitor-tests:webserver
+    env_file: ./tests/settings.conf
+    volumes:
+      - "./tests/config/data:/data"
+    ports:
+      - "5000"
     networks:
       - life_monitor
 

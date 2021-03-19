@@ -21,13 +21,48 @@
 from __future__ import annotations
 
 import logging
-from . import models
-from marshmallow import fields
-from lifemonitor.serializers import ma, BaseSchema
+from urllib.parse import urljoin
 
+from flask.globals import request
+from lifemonitor import utils as lm_utils
+from lifemonitor.auth.serializers import UserSchema
+from lifemonitor.serializers import BaseSchema, ma
+from marshmallow import fields
+
+from . import models
 
 # set module level logger
 logger = logging.getLogger(__name__)
+
+
+class MetadataSchema(BaseSchema):
+
+    class Meta:
+        ordered = True
+
+    base_url = fields.Method("get_base_url")
+    resource = fields.Method("get_self_path")
+    created = fields.DateTime(attribute='created')
+    modified = fields.DateTime(attribute='modified')
+
+    def get_base_url(self, obj):
+        return lm_utils.get_base_url()
+
+    def get_self_path(self, obj):
+        try:
+            return request.full_path
+        except RuntimeError:
+            # when there is no active HTTP request
+            return None
+
+
+class ResourceSchema(BaseSchema):
+    uuid = fields.String(attribute="uuid")
+    name = fields.String(attribute="name")
+    meta = fields.Method("get_metadata")
+
+    def get_metadata(self, obj):
+        return MetadataSchema().dump(obj)
 
 
 class WorkflowRegistrySchema(BaseSchema):
@@ -51,19 +86,55 @@ class ListOfWorkflowRegistriesSchema(BaseSchema):
 
 class WorkflowSchema(BaseSchema):
     __envelope__ = {"single": None, "many": "items"}
-    __model__ = models.Workflow
+    __model__ = models.WorkflowVersion
 
     class Meta:
-        model = models.Workflow
+        model = models.WorkflowVersion
 
     uuid = ma.auto_field()
-    version = ma.auto_field()
-    roc_link = ma.auto_field()
     name = ma.auto_field()
 
 
-class LatestWorkflowSchema(WorkflowSchema):
-    previous_versions = fields.List(fields.String, attribute="previous_versions")
+class VersionDetailsSchema(BaseSchema):
+    __envelope__ = {"single": None, "many": "items"}
+
+    uuid = fields.String(attribute="uuid")
+    version = fields.String(attribute="version")
+    is_latest = fields.Boolean(attribute="is_latest")
+    ro_crate = fields.Method("get_rocrate")
+    submitter = ma.Nested(UserSchema(only=('id', 'username')), attribute="submitter")
+
+    def get_rocrate(self, obj):
+        return {
+            'links': {
+                'external': obj.uri,
+                'download': urljoin(lm_utils.get_base_url(), f"ro_crates/{obj.id}/downloads")
+            }
+        }
+
+
+class WorkflowVersionSchema(ResourceSchema):
+    __envelope__ = {"single": None, "many": "items"}
+    __model__ = models.WorkflowVersion
+
+    class Meta:
+        model = models.WorkflowVersion
+        ordered = True
+
+    uuid = fields.String(attribute="workflow.uuid")
+    name = ma.auto_field()
+    version = fields.Method("get_version")
+
+    def get_version(self, obj):
+        return VersionDetailsSchema().dump(obj)
+
+
+class LatestWorkflowSchema(WorkflowVersionSchema):
+    previous_versions = fields.Method("get_versions")
+
+    def get_versions(self, obj: models.WorkflowVersion):
+        return [VersionDetailsSchema(only=("uuid", "version", "submitter")).dump(v)
+                for v in obj.workflow.versions.values() if not v.is_latest]
 
 
 class TestInstanceSchema(BaseSchema):
@@ -112,7 +183,7 @@ class WorkflowStatusSchema(BaseSchema):
     class Meta:
         model = models.WorkflowStatus
 
-    workflow = ma.Nested(WorkflowSchema(only=("uuid", "version", "name")))
+    workflow = ma.Nested(WorkflowVersionSchema(only=("uuid", "version", "name")))
     aggregate_test_status = fields.String(attribute="aggregated_status")
     latest_builds = ma.Nested(BuildSummarySchema(), many=True)
 

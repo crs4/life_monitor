@@ -18,20 +18,19 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from functools import wraps
 import logging
-
-# Config a module level logger
 import secrets
+from functools import wraps
+
 import flask_login
 from flask import g, request, url_for
-
+from lifemonitor.auth.models import Anonymous, ApiKey, User
+from lifemonitor.exceptions import LifeMonitorException
+from lifemonitor.lang import messages
 from werkzeug.local import LocalProxy
 from werkzeug.wrappers import Response
-from lifemonitor.lang import messages
-from lifemonitor.common import LifeMonitorException
-from lifemonitor.auth.models import ApiKey, User, Anonymous
 
+# Config a module level logger
 logger = logging.getLogger(__name__)
 
 # setup login manager

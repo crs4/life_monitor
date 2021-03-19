@@ -18,19 +18,19 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import pytest
 import logging
-
-import lifemonitor.auth as auth
-import lifemonitor.common as common
-import lifemonitor.api.models as models
-import lifemonitor.api.controllers as controllers
-import lifemonitor.api.serializers as serializers
-from lifemonitor.lang import messages
 from unittest.mock import MagicMock, patch
-from tests.utils import assert_status_code
-from lifemonitor.auth.oauth2.client.models import OAuthIdentityNotFoundException
 
+import lifemonitor.api.controllers as controllers
+import lifemonitor.api.models as models
+import lifemonitor.api.serializers as serializers
+import lifemonitor.auth as auth
+import lifemonitor.exceptions as lm_exceptions
+import pytest
+from lifemonitor.auth.oauth2.client.models import \
+    OAuthIdentityNotFoundException
+from lifemonitor.lang import messages
+from tests.utils import assert_status_code
 
 logger = logging.getLogger(__name__)
 
@@ -81,24 +81,13 @@ def test_post_workflows_no_authorization(m, request_context):
 
 
 @patch("lifemonitor.api.controllers.lm")
-def test_post_workflow_by_user_error_no_registry_uri(m, request_context, mock_user):
-    assert not auth.current_user.is_anonymous, "Unexpected user in session"
-    assert auth.current_user == mock_user, "Unexpected user in session"
-    assert not auth.current_registry, "Unexpected registry in session"
-    response = controllers.workflows_post(body={})
-    assert response.status_code == 400, "Expected a Bad Request"
-    assert messages.no_registry_uri_provided in response.data.decode(), \
-        "Unexpected response message"
-
-
-@patch("lifemonitor.api.controllers.lm")
 def test_post_workflow_by_user_error_invalid_registry_uri(m, request_context, mock_user):
     assert not auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_user == mock_user, "Unexpected user in session"
     assert not auth.current_registry, "Unexpected registry in session"
     # add one fake workflow
     data = {"registry_uri": "123456"}
-    m.get_workflow_registry_by_uri.side_effect = common.EntityNotFoundException(models.WorkflowRegistry)
+    m.get_workflow_registry_by_uri.side_effect = lm_exceptions.EntityNotFoundException(models.WorkflowRegistry)
     response = controllers.workflows_post(body=data)
     m.get_workflow_registry_by_uri.assert_called_once_with(data["registry_uri"]), \
         "get_workflow_registry_by_uri should be used"
@@ -137,6 +126,8 @@ def test_post_workflow_by_user(m, request_context, mock_user):
     w = MagicMock()
     w.uuid = data['uuid']
     w.version = data['version']
+    w.workflow = MagicMock()
+    w.workflow.uuid = data['uuid']
     m.register_workflow.return_value = w
     response = controllers.workflows_post(body=data)
     m.get_workflow_registry_by_uri.assert_called_once_with(data["registry_uri"]), \
@@ -201,6 +192,8 @@ def test_post_workflow_by_registry(m, request_context, mock_registry):
     w = MagicMock()
     w.uuid = data['uuid']
     w.version = data['version']
+    w.workflow = MagicMock()
+    w.workflow.uuid = data['uuid']
     m.register_workflow.return_value = w
     response = controllers.workflows_post(body=data)
     logger.debug("Response: %r", response)
@@ -223,7 +216,7 @@ def test_post_workflow_by_registry_invalid_rocrate(m, request_context, mock_regi
     w = MagicMock()
     w.uuid = data['uuid']
     w.version = data['version']
-    m.register_workflow.side_effect = common.NotValidROCrateException()
+    m.register_workflow.side_effect = lm_exceptions.NotValidROCrateException()
     response = controllers.workflows_post(body=data)
     logger.debug("Response: %r", response)
     assert_status_code(response.status_code, 400)
@@ -244,7 +237,7 @@ def test_post_workflow_by_registry_not_authorized(m, request_context, mock_regis
     w = MagicMock()
     w.uuid = data['uuid']
     w.version = data['version']
-    m.register_workflow.side_effect = common.NotAuthorizedException()
+    m.register_workflow.side_effect = lm_exceptions.NotAuthorizedException()
     response = controllers.workflows_post(body=data)
     logger.debug("Response: %r", response)
     assert_status_code(response.status_code, 403)
@@ -256,14 +249,14 @@ def test_post_workflow_by_registry_not_authorized(m, request_context, mock_regis
 def test_get_workflow_by_id_error_not_found(m, request_context, mock_registry):
     assert auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry, "Unexpected registry in session"
-    m.get_registry_workflow.side_effect = common.EntityNotFoundException(models.Workflow)
+    m.get_registry_workflow_version.side_effect = lm_exceptions.EntityNotFoundException(models.WorkflowVersion)
     response = controllers.workflows_get_by_id(wf_uuid="12345", wf_version="1")
     logger.debug("Response: %r", response)
     assert_status_code(response.status_code, 404)
     assert messages.workflow_not_found\
         .format("12345", "1") in response.data.decode()
     # test when the service return None
-    m.get_registry_workflow.return_value = None
+    m.get_registry_workflow_version.return_value = None
     response = controllers.workflows_get_by_id(wf_uuid="12345", wf_version="1")
     logger.debug("Response: %r", response)
     assert_status_code(response.status_code, 404)
@@ -275,14 +268,16 @@ def test_get_workflow_by_id_error_not_found(m, request_context, mock_registry):
 def test_get_workflow_by_id(m, request_context, mock_registry):
     assert auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry, "Unexpected registry in session"
-    data = {"uuid": "12345", "version": "2", "roc_link": "https://somelink", "previous_versions": ["1"]}
-    m.get_registry_workflow.return_value = data
+    data = {"uuid": "12345", "version": "2", "roc_link": "https://somelink"}
+    w = models.Workflow(uuid=data["uuid"])
+    wv = w.add_version(data["version"], data["roc_link"], {})
+    m.get_registry_workflow_version.return_value = wv
     response = controllers.workflows_get_by_id(data['uuid'], data['version'])
-    m.get_registry_workflow.assert_called_once_with(mock_registry, data['uuid'], data['version'])
+    m.get_registry_workflow_version.assert_called_once_with(mock_registry, data['uuid'], data['version'])
     logger.debug("Response: %r", response)
     assert isinstance(response, dict), "Unexpected response"
     assert response['uuid'] == data['uuid'], "Unexpected workflow UUID"
-    assert response['version'] == data['version'], "Unexpected workflow version"
+    assert response['version']['version'] == data['version'], "Unexpected workflow version"
     assert 'previous_versions' not in response, "Unexpected list of previous versions"
 
 
@@ -291,11 +286,16 @@ def test_get_latest_workflow_version_by_id(m, request_context, mock_registry):
     assert auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry, "Unexpected registry in session"
     data = {"uuid": "12345", "version": "2", "roc_link": "https://somelink", "previous_versions": ["1"]}
-    m.get_registry_workflow.return_value = data
+    w = models.Workflow(uuid=data["uuid"])
+    wv = w.add_version("1", data["roc_link"], {})
+    wv = w.add_version(data["version"], data["roc_link"], {})
+    m.get_registry_workflow_version.return_value = wv
+    logger.debug("Mock workflow version: %r", w)
     response = controllers.workflows_get_latest_version_by_id(data['uuid'])
-    m.get_registry_workflow.assert_called_once_with(mock_registry, data['uuid'], None)
+    m.get_registry_workflow_version.assert_called_once_with(mock_registry, data['uuid'], None)
     logger.debug("Response: %r", response)
     assert isinstance(response, dict), "Unexpected response"
     assert response['uuid'] == data['uuid'], "Unexpected workflow UUID"
-    assert response['version'] == data['version'], "Unexpected workflow version"
-    assert response['previous_versions'] == data['previous_versions'], "Unexpected list of previous versions"
+    assert response['version']['version'] == data['version'], "Unexpected workflow version"
+    previous_versions = [_['version'] for _ in response['previous_versions']]
+    assert previous_versions == data['previous_versions'], "Unexpected list of previous versions"

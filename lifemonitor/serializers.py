@@ -18,10 +18,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from marshmallow import pre_load, post_dump, post_load, fields
-from flask_marshmallow import Marshmallow
-
 import logging
+
+from flask_marshmallow import Marshmallow
+from marshmallow import fields, post_dump, post_load, pre_load
 
 logger = logging.getLogger(__name__)
 

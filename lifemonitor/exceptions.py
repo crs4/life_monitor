@@ -19,7 +19,8 @@
 # SOFTWARE.
 
 import logging
-from flask import Response, request, current_app
+
+from flask import Response, current_app, request
 from lifemonitor import serializers
 from werkzeug.exceptions import HTTPException
 
@@ -112,6 +113,16 @@ class EntityNotFoundException(LifeMonitorException):
 
     def __str__(self):
         return self.detail
+
+
+class WorkflowVersionConflictException(LifeMonitorException):
+
+    def __init__(self, workflow_uuid, workflow_version, detail=None, **kwargs) -> None:
+        if not detail:
+            detail = f"Version v{workflow_version} of the workflow {workflow_uuid} already registered"
+        super().__init__(
+            title="Workflow version conflict",
+            detail=detail, status=409, **kwargs)
 
 
 class NotValidROCrateException(LifeMonitorException):

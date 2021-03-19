@@ -18,17 +18,17 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import os
 import logging
-from flask import Flask, jsonify
+import os
 
-from .db import db
-from . import commands
-from .serializers import ma
 import lifemonitor.config as config
+from flask import Flask, jsonify
 from lifemonitor.routes import register_routes
-from .common import handle_exception
 
+from . import commands
+from .db import db
+from .exceptions import handle_exception
+from .serializers import ma
 
 # set module level logger
 logger = logging.getLogger(__name__)

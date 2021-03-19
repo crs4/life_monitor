@@ -18,21 +18,23 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import re
-import os
 import json
-import uuid
-import random
-import pytest
-import string
 import logging
-from lifemonitor import auth
+import os
+import random
+import re
+import string
+import uuid
+from unittest.mock import MagicMock
+
 import lifemonitor.db as lm_db
+import pytest
+from lifemonitor import auth
+from lifemonitor.api.models import TestSuite, User
 from lifemonitor.api.services import LifeMonitor
-from lifemonitor.api.models import User, TestSuite
+
 from . import conftest_helpers as helpers
 from .conftest_types import ClientAuthenticationMethod, RegistryType
-from unittest.mock import MagicMock
 
 # set the module level logger
 logger = logging.getLogger(__name__)

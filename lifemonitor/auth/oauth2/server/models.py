@@ -19,22 +19,24 @@
 # SOFTWARE.
 
 from __future__ import annotations
+
 import time
-from typing import List
-from authlib.integrations.flask_oauth2 import AuthorizationServer as OAuth2AuthorizationServer
-from authlib.oauth2.rfc6749 import grants, InvalidRequestError
-from authlib.common.security import generate_token
-from authlib.integrations.sqla_oauth2 import (
-    OAuth2AuthorizationCodeMixin,
-    OAuth2ClientMixin,
-    OAuth2TokenMixin,
-    create_query_client_func,
-    create_save_token_func
-)
-from lifemonitor.db import db
-from werkzeug.security import gen_salt
-from lifemonitor.auth.models import User
 from datetime import datetime
+from typing import List
+
+from authlib.common.security import generate_token
+from authlib.integrations.flask_oauth2 import \
+    AuthorizationServer as OAuth2AuthorizationServer
+from authlib.integrations.sqla_oauth2 import (OAuth2AuthorizationCodeMixin,
+                                              OAuth2ClientMixin,
+                                              OAuth2TokenMixin,
+                                              create_query_client_func,
+                                              create_save_token_func)
+from authlib.oauth2.rfc6749 import InvalidRequestError, grants
+from lifemonitor.auth.models import User
+from lifemonitor.db import db
+from lifemonitor.models import ModelMixin
+from werkzeug.security import gen_salt
 
 
 class Client(db.Model, OAuth2ClientMixin):
@@ -50,6 +52,8 @@ class Client(db.Model, OAuth2ClientMixin):
             cascade="all, delete-orphan",
         ),
     )
+
+    __tablename__ = "oauth2_client"
 
     @property
     def redirect_uris(self):
@@ -82,29 +86,23 @@ class Client(db.Model, OAuth2ClientMixin):
         return cls.query.all()
 
 
-class Token(db.Model, OAuth2TokenMixin):
+class Token(db.Model, ModelMixin, OAuth2TokenMixin):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(
         db.Integer, db.ForeignKey('user.id', ondelete='CASCADE')
     )
     user = db.relationship('User')
     client_id = db.Column(db.String,
-                          db.ForeignKey('client.client_id', ondelete='CASCADE'))
+                          db.ForeignKey('oauth2_client.client_id', ondelete='CASCADE'))
     client = db.relationship('Client')
+
+    __tablename__ = "oauth2_client_token"
 
     def is_expired(self) -> bool:
         return self.check_token_expiration(self.expires_at)
 
     def is_refresh_token_valid(self) -> bool:
         return self if not self.revoked else None
-
-    def save(self):
-        db.session.add(self)
-        db.session.commit()
-
-    def delete(self):
-        db.session.delete(self)
-        db.session.commit()
 
     @classmethod
     def find(cls, access_token):
@@ -115,7 +113,7 @@ class Token(db.Model, OAuth2TokenMixin):
         return cls.query.filter(Token.user == user).all()
 
     @classmethod
-    def all(cls):
+    def all(cls) -> List[Token]:
         return cls.query.all()
 
     @staticmethod

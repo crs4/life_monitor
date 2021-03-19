@@ -19,6 +19,7 @@
 # SOFTWARE.
 
 import logging
+
 import requests
 from flask import request, session
 

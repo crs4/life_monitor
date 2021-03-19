@@ -18,19 +18,24 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import uuid
 import logging
-import pytest
+import uuid
 from unittest.mock import MagicMock
-import lifemonitor.api.models as models
 
+import lifemonitor.api.models as models
+import lifemonitor.exceptions as lm_exceptions
+import pytest
 
 logger = logging.getLogger(__name__)
 
 
 @pytest.fixture
 def workflow():
-    return models.Workflow(MagicMock(), MagicMock(), uuid.uuid4(), "1", "https://link")
+    # uuid, version, submitter: User, roc_link,
+    #  registry: models.WorkflowRegistry = None,
+    #  roc_metadata = None, external_id = None, name = None
+    return models.WorkflowVersion(MagicMock(), uuid.uuid4(), "1", MagicMock(),
+                                  "https://link", MagicMock())
 
 
 @pytest.fixture
@@ -55,7 +60,7 @@ def suite(error_description, request):
         test_instance.last_test_build = MagicMock()
         if i is None:
             test_instance.last_test_build.is_successful.side_effect = \
-                models.TestingServiceException(error_description)
+                lm_exceptions.TestingServiceException(error_description)
         else:
             test_instance.last_test_build.is_successful.return_value = i
     return suite
