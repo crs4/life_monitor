@@ -18,8 +18,8 @@
   <div class="card card-primary card-outline">
     <div class="card-body box-profile">
       <div class="text-center">
-        <img class="profile-user-img img-fluid img-circle" 
-             src="{{ url_for('auth.static', filename='auth/img/avatar5.png') }}"
+        <img class="profile-user-img img-fluid img-circle"
+             src="{{ current_user.picture or url_for('auth.static', filename='img/avatar/default-user-avatar.jpg') }}"
              alt="User profile picture">
       </div>
 
