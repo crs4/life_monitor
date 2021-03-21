@@ -1,0 +1,13 @@
+.DS_Store
+.idea
+.vscode
+.cache
+.ipynb_checkpoints
+.ipython
+*env
+**/__pycache__
+**/.npm
+*.pyc
+docker/Dockerfile
+package-lock.json
+**/node_modules

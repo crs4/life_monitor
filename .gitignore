@@ -14,8 +14,11 @@
 instance
 *env
 **/__pycache__
+**/.npm
 *.pyc
 ./certs
+**/node_modules
+lifemonitor/static/dist
 docker-compose.yml
 utils/certs/data
 tests/config/data/crates/*.zip
