@@ -53,10 +53,13 @@ COPY --chown=lm:lm lifemonitor /lm/lifemonitor
 FROM node:14.16.0-alpine3.12 as node
 
 RUN mkdir -p /static && apk add bash
-COPY lifemonitor/static/src /static/src
 WORKDIR /static/src
+COPY lifemonitor/static/src/package.json /static/src/package.json
 RUN npm install 
-# separated run to use node_modules cache from the previous layer
+# Copy and build static files
+# Use a separated run to take advantage 
+# of node_modules cache from the previous layer
+COPY lifemonitor/static/src /static/src
 RUN npm run production 
 
 
