@@ -1,4 +1,4 @@
-FROM python:3.7-buster
+FROM python:3.7-buster as base
 
 # Install base requirements
 RUN apt-get update -q \
@@ -46,3 +46,23 @@ COPY --chown=lm:lm app.py /lm/
 COPY --chown=lm:lm specs /lm/specs
 COPY --chown=lm:lm lifemonitor /lm/lifemonitor
 
+
+##################################################################
+## Node Stage
+##################################################################
+FROM node:14.16.0-alpine3.12 as node
+
+RUN mkdir -p /static && apk add bash
+COPY lifemonitor/static/src /static/src
+WORKDIR /static/src
+RUN npm install 
+# separated run to use node_modules cache from the previous layer
+RUN npm run production 
+
+
+##################################################################
+## Target Stage
+##################################################################
+FROM base as target
+
+COPY --from=node --chown=lm:lm /static/dist /lm/lifemonitor/static/dist
