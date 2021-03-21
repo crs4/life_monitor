@@ -1,31 +1,137 @@
 {% extends 'auth/base.j2' %}
+{% import 'auth/macros.j2' as macros %}
+{% block body_class %} login-page {% endblock %}
+{% block body_style %}
+  {% if current_user.is_authenticated %}
+  height: auto;
+  {% endif %}
+  padding: 40px; 
+{% endblock %}
+
+
 {% block body %}
-<h1>LifeMonitor</h1>
+
 {% if current_user.is_authenticated %}
-  <p>You are logged in as <strong>{{ current_user.username }}</strong></p>
-  <ul>
-    <li>
-      You{% if not current_user.has_password %} do not{% endif %} have a password set for your account.
+
+  {{ macros.render_logo(style="width: 55%;", class="logo text-center") }}
+
+  <div class="card card-primary card-outline">
+    <div class="card-body box-profile">
+      <div class="text-center">
+        <img class="profile-user-img img-fluid img-circle" 
+             src="{{ url_for('auth.static', filename='auth/img/avatar5.png') }}"
+             alt="User profile picture">
+      </div>
+
+      <h3 class="profile-username text-center">{{ current_user.username }}</h3>
+
+      <p class="text-muted text-center">(id. {{ current_user.id }})</p>
+
+      
+      <div class="list-group list-group-unbordered mb-3 text-center">
+       You{% if not current_user.has_password %} do not{% endif %} have a password set for your account.
       {% if not current_user.has_password %}
         <a href="{{ url_for("auth.set_password") }}">Set a password</a>
       {% endif %}
-    </li>
-    {% for p in providers %}
-    <li>
-      {% if p.name in current_user.oauth_identity %}
-        Your user ID on <strong>{{p.name.capitalize()}}</strong> is: <strong>{{ current_user.oauth_identity[p.name].provider_user_id }}</strong>
-      {% else %}
-        You have not linked a <strong>{{p.name.capitalize()}}</strong> account.
-        <a href="/oauth2/login/{{p.name}}">Link <strong>{{p.name.capitalize()}}</strong> account</a>
-      {% endif %}
-    </li>
-    {% endfor %}
+      </div>
 
+      <div class="">
+        <div class="card-header">
+          <h3 class="card-title"><b>Connected accounts</b></h3>
+        </div>
+        
+        <div class="card-body p-0">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th style="width: 5px"></th>
+                <th>Provider</th>                
+                <th>ID</th>
+                <th style="width: 40px"></th>
+              </tr>
+            </thead>
+            <tbody>
+            {% for p in providers %}
+              <tr>
+                <td>{{ macros.render_provider_fa_icon(p, color="black") }}</td>
+                <td>{{p.name.capitalize()}}</td>
+                <td>{% if p.name in current_user.oauth_identity %}
+                  {{ current_user.oauth_identity[p.name].provider_user_id }}
+                  {% endif %}</td>
+                {% if p.name in current_user.oauth_identity %}
+                <td><span class="badge bg-success">CONNECTED</span></td>
+                {% else %}
+                <td>
+                  <span class="badge bg-primary">
+                    <a class="" href="/oauth2/login/{{p.name}}">CONNECT</a>
+                  </span>
+                </td>
+                {% endif %}
+              </tr>
+            {% endfor %}   
+            </tbody>
+          </table>
+        </div>
+      </div>
+      
     
-  </ul>
-  <a href="{{ url_for("auth.logout") }}">Log out</a>
-{% else %}
-  You are not logged in.
-  <a href="{{ url_for("auth.login") }}">Log in</a>
+      <div class="" style="margin-top: 20px;">
+        <div class="card-header">
+          <h3 class="card-title"><b>API keys</b></h3>
+        </div>
+
+        <div class="card-body p-0">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th style="width: 10px">#</th>
+                <th>Key</th>
+                <th style="width: 40px">
+                <form method="POST"
+                        action="{{ url_for('auth.create_apikey') }}">   
+                  <button class="btn btn-link" type="submit" style="padding: 0">
+                      <span class="badge bg-primary">NEW</span>
+                  </button>
+                </form>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for k in current_user.api_keys %}
+              <tr>
+                <td>{{loop.index}}</td>
+                <td class="text-sm-left">{{k.key}}</td>                
+                <td>
+                  <form method="POST"
+                        action="{{ url_for('auth.delete_apikey') }}">                  
+                    <input type="hidden" name="apikey" value="{{k.key}}" />
+                    <button class="btn btn-link" type="submit" style="padding: 0">
+                      <span class="badge bg-danger">
+                      DELETE
+                      </span>
+                    </button>
+                  </form>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>      
+    
+    </div>
+  </div>
+  
+  <div class="">
+    <a href="{{ url_for("auth.logout") }}" 
+      class="btn btn-primary btn-block"><b>Log out</b></a>
+  </div>
+
+{% else %}  
+  {{ macros.render_logo() }}
+  <div style="padding: 50px;">
+  <a class="btn btn-primary btn-lg" role="button" href="{{ url_for('auth.login') }}">Log in</a>
+  </div>
 {% endif %}
+
 {% endblock %}

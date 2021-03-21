@@ -1,4 +1,42 @@
+{% macro render_logo(class="logo", style=None, href=Non) %}
+<div class="{{class}}">
+  <a {% if href %}href={{href}}{% endif %}>
+    <img
+      src="{{ url_for('auth.static', filename='img/logo/lm/LifeMonitorLogo.png') }}"
+      alt="LifeMonitor Logo"
+      class="img-fluid card-img-top"
+      {% if style %}style="{{style}}"{% endif %}
+    />
+  </a>
+</div>
+{% endmacro%}
+
+
 {% macro messages() -%}
+  {% set messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}    
+    {% for category, message in messages %}
+    <script>
+      $(function() {
+        var Toast = Swal.mixin({
+          toast: true,
+          position: 'bottom-end',
+          showConfirmButton: false,
+          timer: 3000
+        });
+
+        Toast.fire({
+            icon: '{% if category == "message" %}info{% else %}{{category}}{% endif %}',
+            title: '<span style="padding: 0 6px">{{ message }}</span>'
+        })
+      });
+    </script>      
+    {% endfor %}    
+  {% endif %}
+{%- endmacro %}
+
+
+{% macro messages_as_list() -%}
   {% set messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
     <ul class="flash">
@@ -8,6 +46,7 @@
     </ul>
   {% endif %}
 {%- endmacro %}
+
 
 {% macro render_field(field) -%}
   {{ field.label }}
@@ -19,4 +58,87 @@
     {% endfor %}
     </ul>
   {% endif %}
+{%- endmacro %}
+
+
+{% macro render_custom_fieldx(field) -%}
+  <input
+      name="{{ field.name }}"
+      formControlName="{{ field.name }}"
+      type="{{ field.name }}"
+      class="form-control is-invalid"
+      placeholder="{{ field.name.capitalize() }}"
+    />
+{%- endmacro %}
+
+
+{% macro render_custom_field(field, value=None) -%}
+<div class="form-group">
+  <div class="input-group mb-3">
+    <input type="{{ field.name if field.name != 'repeat_password' else 'password' }}" 
+          name="{{ field.name }}"
+          {% if value %}value="{{value}}"{% endif %}
+          class="form-control {% if field.errors %} is-invalid {% endif %}" 
+          placeholder="{{field.name.capitalize().replace('_', ' ')}}"
+          aria-invalid="true">
+    <div class="input-group-append">
+      <div class="input-group-text">
+        {% if field.name == 'username' %}
+        <span class="fas fa-user-circle"></span>
+        {% elif field.name == 'email' %}
+        <span class="fas fa-envelope"></span>
+        {% elif field.name == 'password' %}
+        <span class="fas fa-key"></span>
+        {% elif field.name == 'repeat_password' %}
+        <span class="fas fa-unlock-alt"></span>
+        {% endif %}
+      </div>
+    </div>
+    <div class="invalid-feedback">
+      {% if field.errors %}
+        {% for error in field.errors %}
+          <span class="error">{{ error }}</span>
+        {% endfor %}
+      {% endif %}
+    </div>
+  </div>          
+</div>
+{%- endmacro %}
+
+
+
+{% macro render_provider_fa_icon(provider, color="white") -%}
+{% if provider.name == "github" %}
+<i class="fab fa-github mr-2"></i>
+{% elif provider.type == "seek" %}
+{% if color == "white" %}
+<img style="width: 1.5em;margin: 3px;"src="{{ url_for('auth.static', filename='img/logo/wfhub/workflowhub-128.png') }}" />
+{% else %}
+<img style="width: 1em;"src="{{ url_for('auth.static', filename='img/logo/wfhub/workflowhub-128-black.png') }}" />
+{% endif %}
+{% elif provider.type == "google" %}
+<i class="fab fa-google mr-2"></i>
+{% endif %}
+{%- endmacro %}
+
+{% macro render_provider_btn_class(provider) -%}
+{% if provider.name == "github" %}
+btn-dark
+{% elif provider.type == "seek" %}
+btn-primary
+{% elif provider.type == "google" %}
+btn-red
+{% endif %}
+{%- endmacro %}
+
+{% macro render_provider_signin_button(provider) -%}
+<a href="/oauth2/login/{{provider.name}}" class="btn btn-block {{render_provider_btn_class(provider)}}">
+  {{render_provider_fa_icon(provider)}} Sign in using {{provider.name.capitalize()}}
+</a>
+{%- endmacro %}
+
+{% macro render_provider_signup_button(provider) -%}
+<a href="/oauth2/login/{{provider.name}}" class="btn btn-block {{render_provider_btn_class(provider)}}">
+  {{render_provider_fa_icon(provider)}} Sign up using {{provider.name.capitalize()}}
+</a>
 {%- endmacro %}

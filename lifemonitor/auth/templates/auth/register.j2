@@ -1,17 +1,52 @@
 {% extends 'auth/base.j2' %}
 {% import 'auth/macros.j2' as macros %}
+
+{% block body_class %} sidebar-mini sidebar-open login-page {% endblock %}
+
 {% block body %}
-  <h1>Register</h1>
-  <form method="POST">
-    {{ form.hidden_tag() }}
-    {{ macros.render_field(form.username) }}
-    {{ macros.render_field(form.password) }}
-    {{ macros.render_field(form.repeat_password) }}
-    <div class="buttons">
-      <input type="submit" value="Register">
+
+<div class="login-box">
+ 
+  {{ macros.render_logo(class="login-logo", style="margin-left: -10px; width: auto") }}
+  
+  <div class="card shadow-lg p-3 mb-5 bg-white rounded">
+   
+    <div class="card-body login-card-body">
+      <h5 class="login-box-msg text-bold">Sign Up</h5>
+
+      <form method="POST" action="{{action}}" >
+        {% if identity %}
+        {{ form.identity(value=identity.user_info.sub) | safe }}        
+        {% endif %}
+        {{ macros.render_custom_field(form.username, value=user.username if user else "") }}
+        {% if not identity %}
+        {{ macros.render_custom_field(form.password) }}
+        {{ macros.render_custom_field(form.repeat_password) }}
+        {% endif %}
+        {{ form.hidden_tag() }}
+
+        <div class="text-center mb-3">            
+          <button type="submit"
+              class="btn btn-block btn-primary">
+            Register
+          </button>          
+        </div>
+      </form>
+
+      <div class="social-auth-links text-center mb-3">        
+        <p class="text-bold">- OR -</p>
+        {% for p in providers %}
+          {{ macros.render_provider_signup_button(p) }}          
+        {% endfor %}
+      </div>
+      
+      <p></p>
+      <p class="mb-0">
+        Do you have an account?
+        <a href="{{ url_for("auth.login") }}" class="text-center">Sign In</a>
+      </p>
     </div>
-  </form>
-  <p>If you want to login instead,
-    <a href="{{ url_for("auth.login") }}">go to the login page</a>.
-  </p>
-{% endblock %}
+  </div>
+</div>
+
+{% endblock body %}

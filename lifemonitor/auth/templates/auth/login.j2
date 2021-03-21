@@ -1,23 +1,59 @@
 {% extends 'auth/base.j2' %}
 {% import 'auth/macros.j2' as macros %}
+
+{% block body_class %} login-page {% endblock %}
+{% block body_style %} height: auto; {% endblock %}
+
 {% block body %}
-  <h1>Login on LifeMonitor</h1>
-  <br><br>
-  <form method="POST">
-    {{ form.hidden_tag() }}
-    {{ macros.render_field(form.username) }}
-    {{ macros.render_field(form.password) }}
-    <div class="buttons">
-      <input type="submit" value="Log In">
+
+<div class="login-box" style="margin: 50px 0;">
+ 
+  {{ macros.render_logo(class="login-logo", style="margin-left: -10px; width: auto") }}
+  
+  <div class="card shadow-lg p-3 mb-5 bg-white rounded">
+   
+    <div class="card-body login-card-body">
+      <h5 class="login-box-msg text-bold">Sign in</h5>
+
+      <form method="POST">
+      
+        {{ form.hidden_tag() }}
+        {{ macros.render_custom_field(form.username) }}
+        {{ macros.render_custom_field(form.password) }}
+
+        <div class="row">
+          <div class="col-7">
+            <div class="icheck-primary">
+              <input type="checkbox" id="remember" />
+              <label for="remember"> Remember Me </label>
+            </div>
+          </div>
+          <div class="col-5">            
+            <button type="submit"
+               class="btn btn-block btn-primary">
+              Sign in
+            </button>
+          </div>
+        </div>
+      </form>
+
+      <div class="social-auth-links text-center mb-3">
+        
+        <p>- OR -</p>
+
+        {% for p in providers %}
+          {{ macros.render_provider_signin_button(p) }}          
+        {% endfor %}
+
+      </div>
+      
+      <p></p>
+      <p class="mb-0">
+        Don’t have an account?
+        <a href="{{ url_for("auth.register") }}" class="text-center">SignUp</a>
+      </p>
     </div>
-  </form>
-  <p>OR</p>
-  {% for p in providers %}
-  <ul>
-    <li><a href="/oauth2/login/{{p.name}}">Login with {{p.name.capitalize()}}</a></li>
-  </ul>
-  {% endfor %}
-  <!--<p>If you want to create a new account, log in with a social provider or
-    <a href="{{ url_for("auth.register") }}">go to the registration page</a>.
-  </p>-->
-{% endblock %}
+  </div>
+</div>
+
+{% endblock body %}
