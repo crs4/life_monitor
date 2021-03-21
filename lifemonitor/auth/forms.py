@@ -65,6 +65,8 @@ class RegisterForm(FlaskForm):
                 if not identity else identity.user
             if not identity:
                 user.password = self.password.data
+            else:
+                user.picture = identity.user_info["picture"]
             db.session.add(user)
             db.session.commit()
             return user
