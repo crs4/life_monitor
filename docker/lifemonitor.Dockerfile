@@ -54,12 +54,12 @@ FROM node:14.16.0-alpine3.12 as node
 
 RUN mkdir -p /static && apk add bash
 WORKDIR /static/src
-COPY lifemonitor/static/src/package.json /static/src/package.json
+COPY lifemonitor/static/src/package.json package.json
 RUN npm install 
 # Copy and build static files
 # Use a separated run to take advantage 
 # of node_modules cache from the previous layer
-COPY lifemonitor/static/src /static/src
+COPY lifemonitor/static/src .
 RUN npm run production 
 
 
