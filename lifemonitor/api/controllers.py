@@ -117,8 +117,8 @@ def workflows_post(body):
                                             detail=messages.invalid_ro_crate)
     except lm_exceptions.NotAuthorizedException as e:
         return lm_exceptions.report_problem(403, "Forbidden", extra_info={"exception": str(e)},
-                                            detail=messages.not_authorized_registry_access
-                                            .format(registry.name))
+                                            detail=messages.not_authorized_registry_access.format(registry.name)
+                                            if registry else messages.not_authorized_workflow_access)
     except lm_exceptions.WorkflowVersionConflictException:
         return lm_exceptions.report_problem(409, "Workflow version conflict",
                                             detail=messages.workflow_version_conflict.format(body['uuid'], body['version']))
