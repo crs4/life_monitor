@@ -13,7 +13,7 @@
 
 {% if current_user.is_authenticated %}
 
-  {{ macros.render_logo(style="width: 55%;", class="logo text-center") }}
+  {{ macros.render_logo(style="width: 30%;", class="logo text-center") }}
 
   <div class="card card-primary card-outline">
     <div class="card-body box-profile">
@@ -128,7 +128,7 @@
   </div>
 
 {% else %}  
-  {{ macros.render_logo() }}
+  {{ macros.render_logo(style="width: 50%") }}
   <div style="padding: 50px;">
   <a class="btn btn-primary btn-lg" role="button" href="{{ url_for('auth.login') }}">Log in</a>
   </div>

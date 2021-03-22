@@ -1,11 +1,10 @@
 {% macro render_logo(class="logo", style=None, href=Non) %}
-<div class="{{class}}">
+<div class="{{class}}" {% if style %}style="{{style}}"{% endif %}>
   <a {% if href %}href={{href}}{% endif %}>
     <img
       src="{{ url_for('auth.static', filename='img/logo/lm/LifeMonitorLogo.png') }}"
       alt="LifeMonitor Logo"
-      class="img-fluid card-img-top"
-      {% if style %}style="{{style}}"{% endif %}
+      class="img-fluid card-img-top"      
     />
   </a>
 </div>
