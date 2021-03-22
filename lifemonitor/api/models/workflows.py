@@ -59,7 +59,12 @@ class Workflow(Resource):
 
     @hybrid_property
     def external_id(self):
-        return self.uri.replace(self.external_ns, "")
+        r = self.uri.replace(self.external_ns, "")
+        return r if len(r) > 0 else None
+
+    @external_id.setter
+    def external_id(self, value):
+        self.uri = f"{self.external_ns}{value}"
 
     @hybrid_property
     def latest_version(self) -> WorkflowVersion:
