@@ -20,17 +20,16 @@
 
 import json
 import logging
+import uuid
 
 import pytest
 from lifemonitor.api import models
-from tests import utils
-from tests.conftest_types import ClientAuthenticationMethod
-
-from lifemonitor.auth.models import ApiKey
-from lifemonitor.auth.oauth2.server.models import Token
 from lifemonitor.api.models import WorkflowVersion
 from lifemonitor.auth import current_user
-
+from lifemonitor.auth.models import ApiKey
+from lifemonitor.auth.oauth2.server.models import Token
+from tests import utils
+from tests.conftest_types import ClientAuthenticationMethod
 
 logger = logging.getLogger()
 
@@ -90,9 +89,6 @@ def test_empty_workflows(app_client, client_auth_method, user1, user1_auth):
 
 
 @pytest.mark.parametrize("client_auth_method", [
-    #    ClientAuthenticationMethod.BASIC,
-    ClientAuthenticationMethod.API_KEY,
-    ClientAuthenticationMethod.AUTHORIZATION_CODE,
     ClientAuthenticationMethod.CLIENT_CREDENTIALS,
     ClientAuthenticationMethod.REGISTRY_CODE_FLOW
 ], indirect=True)
@@ -103,16 +99,88 @@ def test_workflow_registration(app_client, client_auth_method,
     workflow = utils.pick_workflow(user1, valid_workflow)
     logger.debug("Selected workflow: %r", workflow)
     logger.debug("Using oauth2 user: %r", user1)
+    # When the client is a registry and it uses the ClientCredentials auth flow,
+    # it must provide the submitter ID
     if client_auth_method == ClientAuthenticationMethod.CLIENT_CREDENTIALS:  # ClientCredentials case
-        del workflow['registry_uri']
         workflow['submitter_id'] = \
             list(user1["user"].oauth_identity.values())[0].provider_user_id
-    elif client_auth_method == ClientAuthenticationMethod.AUTHORIZATION_CODE:
-        workflow['registry_uri'] = client_credentials_registry.uri
-    elif client_auth_method == ClientAuthenticationMethod.REGISTRY_CODE_FLOW:
-        del workflow['registry_uri']
-        # del workflow['submitter_id'] # already deleted
-    assert workflow['name'] is not None, "MMMMM"
+    logger.debug("The BODY: %r", workflow)
+    response = app_client.post(utils.build_workflow_path(),
+                               json=workflow, headers=user1_auth)
+    logger.debug("The actual response: %r", response.data)
+    utils.assert_status_code(201, response.status_code)
+    data = json.loads(response.data)
+    logger.debug("Response data: %r", data)
+    assert data['wf_uuid'] == workflow['uuid'] and data['wf_version'] == workflow['version'], \
+        "Response should be equal to the workflow UUID"
+
+
+@pytest.mark.parametrize("client_auth_method", [
+    #    ClientAuthenticationMethod.BASIC,
+    ClientAuthenticationMethod.API_KEY,
+    ClientAuthenticationMethod.AUTHORIZATION_CODE
+], indirect=True)
+def test_workflow_registration_by_registry_uri(app_client, client_auth_method,
+                                               user1, user1_auth, client_credentials_registry, valid_workflow):
+    logger.debug("User: %r", user1)
+    logger.debug("headers: %r", user1_auth)
+    workflow = utils.pick_workflow(user1, valid_workflow)
+    logger.debug("Selected workflow: %r", workflow)
+    logger.debug("Using oauth2 user: %r", user1)
+    # Set the registry reference
+    workflow['registry'] = workflow['registry_uri']
+    logger.debug("The BODY: %r", workflow)
+    response = app_client.post(utils.build_workflow_path(),
+                               json=workflow, headers=user1_auth)
+
+    logger.debug("The actual response: %r", response.data)
+    utils.assert_status_code(201, response.status_code)
+    data = json.loads(response.data)
+    logger.debug("Response data: %r", data)
+    assert data['wf_uuid'] == workflow['uuid'] and data['wf_version'] == workflow['version'], \
+        "Response should be equal to the workflow UUID"
+
+
+@pytest.mark.parametrize("client_auth_method", [
+    #    ClientAuthenticationMethod.BASIC,
+    ClientAuthenticationMethod.API_KEY,
+    ClientAuthenticationMethod.AUTHORIZATION_CODE
+], indirect=True)
+def test_workflow_registration_by_registry_name(app_client, client_auth_method,
+                                                user1, user1_auth, client_credentials_registry, valid_workflow):
+    logger.debug("User: %r", user1)
+    logger.debug("headers: %r", user1_auth)
+    workflow = utils.pick_workflow(user1, valid_workflow)
+    logger.debug("Selected workflow: %r", workflow)
+    logger.debug("Using oauth2 user: %r", user1)
+    # Set the registry reference
+    workflow['registry'] = workflow['registry_name']
+    logger.debug("The BODY: %r", workflow)
+    response = app_client.post(utils.build_workflow_path(),
+                               json=workflow, headers=user1_auth)
+
+    logger.debug("The actual response: %r", response.data)
+    utils.assert_status_code(201, response.status_code)
+    data = json.loads(response.data)
+    logger.debug("Response data: %r", data)
+    assert data['wf_uuid'] == workflow['uuid'] and data['wf_version'] == workflow['version'], \
+        "Response should be equal to the workflow UUID"
+
+
+@pytest.mark.parametrize("client_auth_method", [
+    #    ClientAuthenticationMethod.BASIC,
+    ClientAuthenticationMethod.API_KEY,
+    ClientAuthenticationMethod.AUTHORIZATION_CODE
+], indirect=True)
+def test_workflow_registration_by_registry_uuid(app_client, client_auth_method,
+                                                user1, user1_auth, client_credentials_registry, valid_workflow):
+    logger.debug("User: %r", user1)
+    logger.debug("headers: %r", user1_auth)
+    workflow = utils.pick_workflow(user1, valid_workflow)
+    logger.debug("Selected workflow: %r", workflow)
+    logger.debug("Using oauth2 user: %r", user1)
+    # Set the registry reference
+    workflow['registry'] = client_credentials_registry.uuid
     logger.debug("The BODY: %r", workflow)
     response = app_client.post(utils.build_workflow_path(),
                                json=workflow, headers=user1_auth)
@@ -139,15 +207,13 @@ def test_workflow_registration_default_name(app_client, client_auth_method,
     workflow = utils.pick_workflow(user1, valid_workflow)
     logger.debug("Selected workflow: %r", workflow)
     logger.debug("Using oauth2 user: %r", user1)
-    if client_auth_method == ClientAuthenticationMethod.CLIENT_CREDENTIALS:  # ClientCredentials case
-        del workflow['registry_uri']
+    # When the client is a registry and it uses the ClientCredentials auth flow,
+    # it must provide the submitter ID
+    if client_auth_method == ClientAuthenticationMethod.CLIENT_CREDENTIALS:
         workflow['submitter_id'] = \
             list(user1["user"].oauth_identity.values())[0].provider_user_id
-    elif client_auth_method == ClientAuthenticationMethod.AUTHORIZATION_CODE:
-        workflow['registry_uri'] = client_credentials_registry.uri
-    elif client_auth_method == ClientAuthenticationMethod.REGISTRY_CODE_FLOW:
-        del workflow['registry_uri']
-        # del workflow['submitter_id'] # already deleted
+    elif client_auth_method in [ClientAuthenticationMethod.AUTHORIZATION_CODE, ClientAuthenticationMethod.API_KEY]:
+        workflow['registry'] = client_credentials_registry.uri
     del workflow['name']
     assert not hasattr(workflow, 'name'), "Name should not be defined by the user"
 
@@ -186,14 +252,13 @@ def test_workflow_registration_same_workflow_by_different_users(app_client, clie
         logger.debug("User: %r", user)
         logger.debug("headers: %r", user_auth)
         logger.debug("Using oauth2 user: %r", user)
-        if client_auth_method == ClientAuthenticationMethod.CLIENT_CREDENTIALS:  # ClientCredentials case
-            del workflow['registry_uri']
+        # When the client is a registry and it uses the ClientCredentials auth flow,
+        # it must provide the submitter ID
+        if client_auth_method == ClientAuthenticationMethod.CLIENT_CREDENTIALS:
             workflow['submitter_id'] = \
-                list(user["user"].oauth_identity.values())[0].provider_user_id
-        elif client_auth_method == ClientAuthenticationMethod.AUTHORIZATION_CODE:
-            workflow['registry_uri'] = client_credentials_registry.uri
-        elif client_auth_method == ClientAuthenticationMethod.REGISTRY_CODE_FLOW:
-            del workflow['registry_uri']
+                list(user1["user"].oauth_identity.values())[0].provider_user_id
+        elif client_auth_method in [ClientAuthenticationMethod.AUTHORIZATION_CODE, ClientAuthenticationMethod.API_KEY]:
+            workflow['registry'] = client_credentials_registry.uri
         logger.debug("The BODY: %r", workflow)
         response = app_client.post(utils.build_workflow_path(),
                                    json=workflow, headers=user_auth)
@@ -216,18 +281,17 @@ def test_workflow_registration_generic_link(app_client, client_auth_method,
                                             user1, user1_auth, client_credentials_registry, valid_workflow):
     logger.debug("User: %r", user1)
     logger.debug("headers: %r", user1_auth)
-    workflow = utils.pick_workflow(user1, valid_workflow)
+
+    workflow = {
+        'uuid': str(uuid.uuid4()),
+        'version': '1',
+        'roc_link': "http://webserver:5000/download?file=ro-crate-galaxy-sortchangecase.crate.zip",
+        'name': 'Galaxy workflow from Generic Link',
+        'testing_service_type': 'jenkins',
+        'authorization': app_client.application.config['WEB_SERVER_AUTH_TOKEN']
+    }
     logger.debug("Selected workflow: %r", workflow)
     logger.debug("Using oauth2 user: %r", user1)
-    if client_auth_method == ClientAuthenticationMethod.CLIENT_CREDENTIALS:  # ClientCredentials case
-        del workflow['registry_uri']
-        workflow['submitter_id'] = \
-            list(user1["user"].oauth_identity.values())[0].provider_user_id
-    elif client_auth_method == ClientAuthenticationMethod.AUTHORIZATION_CODE:
-        workflow['registry_uri'] = client_credentials_registry.uri
-    elif client_auth_method == ClientAuthenticationMethod.REGISTRY_CODE_FLOW:
-        del workflow['registry_uri']
-        # del workflow['submitter_id'] # already deleted
     assert workflow['name'] is not None, "MMMMM"
     logger.debug("The BODY: %r", workflow)
     response = app_client.post(utils.build_workflow_path(),
