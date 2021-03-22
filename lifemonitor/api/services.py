@@ -151,6 +151,18 @@ class LifeMonitor:
         logger.debug("Deleted TestSuite: %r", suite.uuid)
         return suite.uuid
 
+    @classmethod
+    def get_workflow_registry_by_generic_reference(cls, registry_reference) -> models.WorkflowRegistry:
+        try:
+            return cls.get_workflow_registry_by_name(registry_reference)
+        except lm_exceptions.EntityNotFoundException:
+            pass
+        try:
+            return cls.get_workflow_registry_by_uri(registry_reference)
+        except lm_exceptions.EntityNotFoundException:
+            pass
+        return cls.get_workflow_registry_by_uuid(registry_reference)
+
     @staticmethod
     def get_workflow_registry_by_uuid(registry_uuid) -> models.WorkflowRegistry:
         try:
