@@ -97,8 +97,10 @@ def register_workflow(app_user, w):
         registry = models.WorkflowRegistry.find_by_uri(w["registry_uri"])
     # register
     lm = LifeMonitor.get_instance()
-    workflow = lm.register_workflow(app_user["user"],
-                                    w['uuid'], w['version'], w['roc_link'], registry, name=w['name'],
+    workflow = lm.register_workflow(w['roc_link'], app_user["user"], w['version'],
+                                    workflow_uuid=w['uuid'],
+                                    workflow_registry=registry,
+                                    name=w['name'],
                                     authorization=w.get("authorization", None))
     return w, workflow
 
