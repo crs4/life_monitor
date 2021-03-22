@@ -838,11 +838,15 @@ components:
       properties:
         uuid:
           type: string
+        identifier:
+          type: string
         name:
           type: string
           nullable: true
-      required:
-        - uuid
+      # required:
+      #   - uuid
+
+    
 
     WorkflowVersion:
       allOf:
