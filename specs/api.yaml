@@ -851,6 +851,10 @@ components:
           properties:
             version:
               type: string
+            registry:
+              type: string              
+              writeOnly: true
+              description: "An identifier of the workflow registry (i.e., name, uri or uuid)"
             roc_link:
               type: string
               writeOnly: true
