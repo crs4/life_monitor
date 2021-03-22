@@ -21,7 +21,7 @@
 from __future__ import annotations
 
 import logging
-from typing import List, Union
+from typing import List, Union, Optional
 
 import lifemonitor.exceptions as lm_exceptions
 from lifemonitor.api import models
@@ -72,7 +72,7 @@ class LifeMonitor:
     @staticmethod
     def register_workflow(workflow_submitter: User,
                           workflow_uuid, workflow_version, roc_link,
-                          workflow_registry: models.WorkflowRegistry = None,
+                          workflow_registry: Optional[models.WorkflowRegistry] = None,
                           authorization=None, name=None):
 
         # find or create a user workflow
