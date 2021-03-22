@@ -70,18 +70,18 @@ class LifeMonitor:
         return w
 
     @staticmethod
-    def register_workflow(workflow_submitter: User,
-                          workflow_uuid, workflow_version, roc_link,
+    def register_workflow(roc_link, workflow_submitter: User, workflow_version,
+                          workflow_uuid=None, workflow_identifier=None,
                           workflow_registry: Optional[models.WorkflowRegistry] = None,
                           authorization=None, name=None):
 
         # find or create a user workflow
         if workflow_registry:
-            w = workflow_registry.get_workflow(workflow_uuid)
+            w = workflow_registry.get_workflow(workflow_uuid or workflow_identifier)
         else:
             w = models.Workflow.get_user_workflow(workflow_submitter, workflow_uuid)
         if not w:
-            w = models.Workflow(uuid=workflow_uuid, name=name)
+            w = models.Workflow(uuid=workflow_uuid, identifier=workflow_identifier, name=name)
             w.permissions.append(Permission(user=workflow_submitter, roles=[RoleType.owner]))
             if workflow_registry:
                 for auth in workflow_submitter.get_authorization(workflow_registry):
