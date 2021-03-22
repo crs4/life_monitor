@@ -70,17 +70,17 @@ def workflow_registries_get_current():
 
 @authorized
 def workflows_post(body):
-    registry = current_registry
-    if registry and 'registry_uri' in body:
+    registry = current_registry._get_current_object()
+    if registry and 'registry' in body:
         return lm_exceptions.report_problem(400, "Bad request",
                                             detail=messages.unexpected_registry_uri)
-    if not registry and 'registry_uri' in body:
-        registry_uri = body.get('registry_uri', None)
+    if not registry and 'registry' in body:
+        registry_ref = body.get('registry', None)
         try:
-            registry = lm.get_workflow_registry_by_uri(registry_uri)
+            registry = lm.get_workflow_registry_by_generic_reference(registry_ref)
         except lm_exceptions.EntityNotFoundException:
             return lm_exceptions.report_problem(404, "Not Found",
-                                                detail=messages.no_registry_found.format(registry_uri))
+                                                detail=messages.no_registry_found.format(registry_ref))
     submitter = current_user
     if not current_user or current_user.is_anonymous:  # the client is a registry
         try:
