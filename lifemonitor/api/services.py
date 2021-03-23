@@ -89,6 +89,12 @@ class LifeMonitor:
 
         if str(workflow_version) in w.versions:
             raise lm_exceptions.WorkflowVersionConflictException(workflow_uuid, workflow_version)
+        if not roc_link:
+            if not workflow_registry:
+                raise ValueError("Missing ROC link")
+            else:
+                roc_link = workflow_registry.build_ro_link(workflow_submitter, w.external_id)
+        
         wv = w.add_version(workflow_version, roc_link, workflow_submitter,
                            name=name, hosting_service=workflow_registry)
         wv.permissions.append(Permission(user=workflow_submitter, roles=[RoleType.owner]))
