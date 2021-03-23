@@ -177,9 +177,10 @@ class TravisTestingService(TestingService):
                         raise TestingServiceException(status=response.status_code,
                                                       detail=str(response.content))
                 job_output = response['content']
-                logger.debug("Job output length: %r", len(job_output))
-                output += job_output
-                offset += len(job_output)
+                if job_output:
+                    logger.debug("Job output length: %r", len(job_output))
+                    output += job_output
+                    offset += len(job_output)
                 current_job_index += 1
             # filter output
             return output[offset_bytes:(offset_bytes + len(output) if limit_bytes == 0 else limit_bytes)]
