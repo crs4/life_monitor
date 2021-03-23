@@ -130,6 +130,7 @@ def test_workflow_registration_by_external_id(app_client, client_auth_method,
     workflow['identifier'] = workflow['external_id']
     wf_uuid = workflow['uuid']
     del workflow['uuid']
+    del workflow['roc_link']
     # When the client is a registry and it uses the ClientCredentials auth flow,
     # it must provide the submitter ID
     if client_auth_method == ClientAuthenticationMethod.CLIENT_CREDENTIALS:  # ClientCredentials case
