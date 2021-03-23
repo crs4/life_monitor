@@ -126,7 +126,9 @@ def workflows_post(body):
                                             if registry else messages.not_authorized_workflow_access)
     except lm_exceptions.WorkflowVersionConflictException:
         return lm_exceptions.report_problem(409, "Workflow version conflict",
-                                            detail=messages.workflow_version_conflict.format(body['uuid'], body['version']))
+                                            detail=messages.workflow_version_conflict
+                                            .format(body.get('uuid', None) or body.get('identifier', None),
+                                                    body['version']))
     except Exception as e:
         logger.exception(e)
         raise lm_exceptions.LifeMonitorException(title="Internal Error", detail=str(e))
@@ -336,7 +338,7 @@ def _get_instances_or_problem(instance_uuid):
         instance = lm.get_test_instance(instance_uuid)
         if not instance:
             return lm_exceptions.report_problem(404, "Not Found",
-                                                detail=messages.suite_not_found.format(instance_uuid))
+                                                detail=messages.instance_not_found.format(instance_uuid))
         response = _get_suite_or_problem(instance.test_suite.uuid)
         if isinstance(response, Response):
             logger.debug("Data: %r", response.get_json())
