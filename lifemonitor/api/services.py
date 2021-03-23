@@ -94,7 +94,7 @@ class LifeMonitor:
                 raise ValueError("Missing ROC link")
             else:
                 roc_link = workflow_registry.build_ro_link(workflow_submitter, w.external_id)
-        
+
         wv = w.add_version(workflow_version, roc_link, workflow_submitter,
                            name=name, hosting_service=workflow_registry)
         wv.permissions.append(Permission(user=workflow_submitter, roles=[RoleType.owner]))
