@@ -22,7 +22,7 @@ import logging
 import os
 
 import lifemonitor.config as config
-from flask import Flask, jsonify
+from flask import Flask, jsonify, redirect
 from flask_cors import CORS
 from lifemonitor.routes import register_routes
 
@@ -70,6 +70,10 @@ def create_app(env=None, settings=None, init_app=True, **kwargs):
     @app.route("/health")
     def health():
         return jsonify("healthy")
+
+    @app.route("/openapi.html")
+    def openapi():
+        return redirect('/static/apidocs.html')
 
     return app
 
