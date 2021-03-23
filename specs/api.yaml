@@ -172,8 +172,8 @@ paths:
           application/json:
             schema:
               oneOf:
-                - $ref: "#/components/schemas/GenericWorkflowVersion"
                 - $ref: "#/components/schemas/RegistryWorkflowVersion"
+                - $ref: "#/components/schemas/GenericWorkflowVersion"
       responses:
         "201":
           description: Workflow created
@@ -205,8 +205,6 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
 
-    
-
   /workflows/{wf_uuid}:
     get:
       summary: "Get information about latest version of specified workflow"
@@ -228,7 +226,7 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/WorkflowVersionDetails"                  
+                  - $ref: "#/components/schemas/WorkflowVersionDetails"
                     required:
                       - previous_versions
         "400":
@@ -854,9 +852,6 @@ components:
       type: object
       description: Generic workflow
       properties:
-        roc_link:
-          type: string
-          description: "Link to the workflow RO-Crate"
         version:
           type: string
         uuid:
@@ -866,12 +861,16 @@ components:
         registry:
           type: string
           description: "An identifier of the workflow registry (i.e., name, uri or uuid)"
+          nullable: true
         authorization:
           type: string
+          nullable: true
+        roc_link:
+          type: string
+          description: "Link to the workflow RO-Crate"
       required:
         - roc_link
         - version
-    
 
     RegistryWorkflowVersion:
       type: object
@@ -883,18 +882,17 @@ components:
           type: string
         name:
           type: string
-          nullable: true        
+          nullable: true
         registry:
-          type: string              
+          type: string
           description: "An identifier of the workflow registry (i.e., name, uri or uuid)"
+          nullable: true
         submitter_id:
           type: string
+          nullable: true
         authorization:
           type: string
-          writeOnly: true
-        roc_link:
-          type: string
-          description: "Explicit link to the workflow RO-Crate"
+          nullable: true
       required:
         - identifier
         - version
@@ -908,7 +906,7 @@ components:
               type: string
             submitter_id:
               type: string
-              writeOnly: true            
+              writeOnly: true
             ro_crate:
               readOnly: true
               $ref: "#/components/schemas/ROCrate"
