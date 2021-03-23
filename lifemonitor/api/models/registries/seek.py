@@ -63,8 +63,9 @@ class SeekWorkflowRegistryClient(WorkflowRegistryClient):
             raise RuntimeError(f"ERROR: unable to get workflow (status code: {r.status_code})")
         return r.json()['data']
 
-    def build_ro_link(self, w: models.WorkflowVersion) -> str:
-        return "{}?version={}".format(os.path.join(self.uri, "workflow", w.uuid), w.version)
+    def build_ro_link(self, user, w: Union[models.WorkflowVersion, str]) -> str:
+        workflow = self.get_workflow_metadata(user, w)
+        return f'{workflow["attributes"]["content_blobs"][0]["link"]}/download'
 
     def filter_by_user(self, workflows: list, user: User):
         result = []
