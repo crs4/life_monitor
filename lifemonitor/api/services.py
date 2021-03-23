@@ -225,8 +225,11 @@ class LifeMonitor:
         workflows = [w for w in models.Workflow.get_user_workflows(user)]
         for svc in models.WorkflowRegistry.all():
             if svc.get_user(user.id):
-                workflows.extend([w for w in svc.get_user_workflows(user)
-                                  if w not in workflows])
+                try:
+                    workflows.extend([w for w in svc.get_user_workflows(user)
+                                      if w not in workflows])
+                except lm_exceptions.NotAuthorizedException as e:
+                    logger.debug(e)
         return workflows
 
     @classmethod
