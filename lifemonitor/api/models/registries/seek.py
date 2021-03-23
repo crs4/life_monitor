@@ -85,8 +85,4 @@ class SeekWorkflowRegistryClient(WorkflowRegistryClient):
 
     def get_external_uuid(self, identifier, version, user) -> str:
         """ Return CSV of uuid and version"""
-        matches = [w['meta']['uuid'] for w in self.get_workflows_metadata(user, details=True)
-                   if str(w['id']) == str(identifier)]
-        if len(matches) != 1:
-            raise EntityNotFoundException(models.WorkflowVersion, f"{identifier}_{version}")
-        return matches[0]
+        return self.get_workflow_metadata(user, identifier)['meta']['uuid']
