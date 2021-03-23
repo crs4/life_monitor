@@ -6,6 +6,10 @@
 nameOverride: ""
 fullnameOverride: ""
 
+# The name and port number of the server (e.g.: 'lm.local:8000'),
+# used as base_url on all the links returned by the API
+#externalServerName: https://api.lifemonitor.eu
+
 serviceAccount:
   # Specifies whether a service account should be created
   create: true
@@ -38,6 +42,12 @@ identity_providers:
   github:
     client_id: 
     client_secret: 
+
+# System credentials to access testing services
+testing_services:
+  travis:
+    # api_url: https://api.travis-ci.org
+    token:
 
 lifemonitor:
   replicaCount: 1

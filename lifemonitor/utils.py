@@ -78,6 +78,15 @@ def get_base_url():
     return f"https://{server_name}"
 
 
+def get_external_server_url():
+    external_server_url = None
+    try:
+        external_server_url = flask.current_app.config.get("EXTERNAL_SERVER_URL", None)
+    except RuntimeError as e:
+        logger.warning(str(e))
+    return get_base_url() if not external_server_url else external_server_url
+
+
 def _download_from_remote(url, output_stream, authorization=None):
     with requests.Session() as session:
         if authorization:
