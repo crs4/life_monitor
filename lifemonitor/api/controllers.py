@@ -97,9 +97,13 @@ def workflows_post(body):
             return lm_exceptions.report_problem(401, "Unauthorized",
                                                 detail=messages.no_user_oauth_identity_on_registry
                                                 .format(submitter_id or current_user.id, registry.name))
+    roc_link = body.get('roc_link', None)
+    if not registry and not roc_link:
+        return lm_exceptions.report_problem(400, "Bad Request", extra_info={"missing input": "roc_link"},
+                                            detail=messages.input_data_missing)
     try:
         w = lm.register_workflow(
-            roc_link=body['roc_link'],
+            roc_link=roc_link,
             workflow_submitter=submitter,
             workflow_version=body['version'],
             workflow_uuid=body.get('uuid', None),
