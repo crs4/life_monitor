@@ -876,22 +876,22 @@ components:
     RegistryWorkflowVersion:
       type: object
       description: Registry workflow
-          properties:
+      properties:
         identifier:
           type: string
-            version:
-              type: string
+        version:
+          type: string
         name:
           type: string
           nullable: true        
-            registry:
-              type: string              
-              description: "An identifier of the workflow registry (i.e., name, uri or uuid)"
+        registry:
+          type: string              
+          description: "An identifier of the workflow registry (i.e., name, uri or uuid)"
         submitter_id:
           type: string
         authorization:
-              type: string
-              writeOnly: true
+          type: string
+          writeOnly: true
         roc_link:
           type: string
           description: "Explicit link to the workflow RO-Crate"
