@@ -136,7 +136,7 @@ class LifeMonitor:
         if not workflow:
             raise lm_exceptions.EntityNotFoundException(models.WorkflowVersion, (workflow_uuid, workflow_version))
         if workflow.submitter != user:
-            raise lm_exceptions.NotAuthorizedException("Only the workflow submitter can add test suites")
+            raise lm_exceptions.NotAuthorizedException("Only the workflow submitter can delete the workflow")
         workflow.delete()
         logger.debug("Deleted workflow wf_uuid: %r - version: %r", workflow_uuid, workflow_version)
         return workflow_uuid, workflow_version
