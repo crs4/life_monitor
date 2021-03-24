@@ -24,6 +24,7 @@ from unittest.mock import MagicMock
 import lifemonitor.api.models as models
 import pytest
 import requests
+import urllib
 from tests.conftest_helpers import get_random_slice_indexes, get_travis_token
 
 logger = logging.getLogger(__name__)
@@ -34,6 +35,11 @@ token = get_travis_token()
 
 @pytest.fixture
 def travis_url():
+    return 'https://travis-ci.org'
+
+
+@pytest.fixture
+def travis_api_url():
     return 'https://api.travis-ci.org'
 
 
@@ -69,18 +75,37 @@ def travis_job_info(travis_service, test_instance):
     return travis_service.get_project_metadata(test_instance)
 
 
+def test_slug_repo_name(travis_service: models.TravisTestingService):
+    slug_repo_name = "owner/repo"
+    slug_repo_safe = urllib.parse.quote(slug_repo_name, safe='')
+    test_instance = MagicMock()
+    for repo in (f'/{slug_repo_name}', f'/github/{slug_repo_name}',
+                 f'/{slug_repo_name}/', f'/{slug_repo_name}/build', f'/{slug_repo_name}/builds'):
+        test_instance.resource = f'/{repo}'
+        assert travis_service.get_repo_id(test_instance) == slug_repo_safe, "Unexpected slug repo name"
+
+
+def test_repo_id(travis_service: models.TravisTestingService):
+    slug_repo_name = "12345"
+    slug_repo_safe = urllib.parse.quote(slug_repo_name, safe='')
+    test_instance = MagicMock()
+    for repo in (f'/{slug_repo_name}', f'/repo/{slug_repo_name}',
+                 f'/{slug_repo_name}/', f'/{slug_repo_name}/build', f'/{slug_repo_name}/builds'):
+        test_instance.resource = f'/{repo}'
+        assert travis_service.get_repo_id(test_instance) == slug_repo_safe, "Unexpected slug repo name"
+
+
 @pytest.mark.skipif(not token, reason="Travis token not set")
-def test_service_token(travis_url):
-    service = models.TravisTestingService(travis_url)
-    logger.debug(service)
-    tk = models.TestingServiceTokenManager.get_instance().get_token(travis_url)
+def test_service_token(travis_service: models.TravisTestingService):
+    tk = travis_service.token
+    assert tk, "The Travis token should be set"
     assert token == tk.secret, "Unexpected Travis token"
 
 
 @pytest.mark.skipif(not token, reason="Travis token not set")
 def test_connection(travis_service):
     logger.debug("Testing service base url: %r", travis_service.url)
-    response = requests.get(travis_service.url)
+    response = requests.get(travis_service.api_base_url)
     assert response.status_code == 200, "Unable to connect to the TravisCI testing service"
     logger.debug("The response: %r", response.json())
     assert type(response.json()) == dict, "Unexpected response type"
@@ -88,15 +113,10 @@ def test_connection(travis_service):
 
 
 @pytest.mark.skipif(not token, reason="Travis token not set")
-def test_repo_id(travis_service, test_instance, travis_job):
-    assert travis_service.get_repo_id(test_instance) == travis_job, "Unexpected repo ID"
-
-
-@pytest.mark.skipif(not token, reason="Travis token not set")
-def test_build_url(travis_service, travis_url, travis_job):
+def test_build_url(travis_service, travis_api_url, travis_job):
     url = travis_service._build_url(travis_job)
     logger.debug(url)
-    assert url == "{}/{}".format(travis_url, travis_job), "Invalid url"
+    assert url == "{}/{}".format(travis_api_url, travis_job), "Invalid url"
 
 
 @pytest.mark.skipif(not token, reason="Travis token not set")
