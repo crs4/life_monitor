@@ -81,6 +81,10 @@ certs:
 	  mv certs/key.pem certs/lm.key && \
 	  chmod 644 certs/*.{key,crt}; \
 	  printf "\n$(done)\n"; \
+	  printf "$(red)Generating JWT keys...$(reset)\n\n" ; \
+	  openssl genrsa -out certs/jwt-key 4096 ; \
+	  openssl rsa -in certs/jwt-key -pubout > certs/jwt-key.pub ; \
+	  printf "\n$(done)\n"; \
 	else \
 	  echo "$(yellow)WARNING: Using existing certificates$(reset)" ; \
 	fi
@@ -103,7 +107,7 @@ webserver:
 
 
 ro_crates:
-	@printf "\n$(bold)Preparing ROCrates archive...$(reset)\n" ; \
+	@printf "\n$(bold)Preparing RO-Crate archives...$(reset)\n" ; \
 	docker run --rm --user $(id -u):$(id -g) \
 		       -v $$(pwd)/:/data \
 			   --entrypoint /bin/bash crs4/lifemonitor -c \

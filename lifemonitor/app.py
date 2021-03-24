@@ -23,6 +23,7 @@ import os
 
 import lifemonitor.config as config
 from flask import Flask, jsonify
+from flask_cors import CORS
 from lifemonitor.routes import register_routes
 
 from . import commands
@@ -50,6 +51,8 @@ def create_app(env=None, settings=None, init_app=True, **kwargs):
     flask_app_instance_path = getattr(app_config, "FLASK_APP_INSTANCE_PATH", None)
     # create Flask app instance
     app = Flask(__name__, instance_relative_config=True, instance_path=flask_app_instance_path, **kwargs)
+    # enable CORS
+    CORS(app)
     # register handler for app specific exception
     app.register_error_handler(Exception, handle_exception)
     # set config object

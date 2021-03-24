@@ -53,6 +53,7 @@ class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(256), unique=True, nullable=False)
     password_hash = db.Column(db.LargeBinary, nullable=True)
+    picture = db.Column(db.String(), nullable=True)
 
     permissions = db.relationship("Permission", back_populates="user",
                                   cascade="all, delete-orphan")

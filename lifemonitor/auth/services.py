@@ -18,6 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import base64
 import logging
 import secrets
 from functools import wraps
@@ -48,6 +49,21 @@ class NotAuthorizedException(LifeMonitorException):
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
+
+
+@login_manager.header_loader
+def load_user_from_header(header_val):
+    try:
+        if "Basic" in header_val:
+            header_val = header_val.replace('Basic ', '', 1)
+            header_val = base64.b64decode(header_val).decode()
+            username, password = header_val.split(':')
+            user = User.query.filter_by(username=username).first()
+            if user and user.verify_password(password):
+                return user
+    except TypeError:
+        pass
+    return None
 
 
 def login_user(user):
@@ -113,6 +129,12 @@ def generate_new_api_key(user, scope, length=40) -> ApiKey:
     api_key = ApiKey(key=secrets.token_urlsafe(length), user=user, scope=scope)
     api_key.save()
     return api_key
+
+
+def delete_api_key(user, api_key) -> ApiKey:
+    api_key = ApiKey.find(api_key)
+    if api_key and api_key.user == user:
+        api_key.delete()
 
 
 def check_api_key(api_key, required_scopes):

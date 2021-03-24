@@ -24,7 +24,7 @@ import time
 from datetime import datetime
 from typing import List
 
-from authlib.common.security import generate_token
+from authlib import oidc
 from authlib.integrations.flask_oauth2 import \
     AuthorizationServer as OAuth2AuthorizationServer
 from authlib.integrations.sqla_oauth2 import (OAuth2AuthorizationCodeMixin,
@@ -33,9 +33,12 @@ from authlib.integrations.sqla_oauth2 import (OAuth2AuthorizationCodeMixin,
                                               create_query_client_func,
                                               create_save_token_func)
 from authlib.oauth2.rfc6749 import InvalidRequestError, grants
+from authlib.oauth2.rfc7636 import CodeChallenge
+from flask import current_app
 from lifemonitor.auth.models import User
 from lifemonitor.db import db
 from lifemonitor.models import ModelMixin
+from lifemonitor.utils import get_base_url
 from werkzeug.security import gen_salt
 
 
@@ -104,6 +107,10 @@ class Token(db.Model, ModelMixin, OAuth2TokenMixin):
     def is_refresh_token_valid(self) -> bool:
         return self if not self.revoked else None
 
+    @property
+    def expires_at(self):
+        return self.issued_at + self.expires_in
+
     @classmethod
     def find(cls, access_token):
         return cls.query.filter(Token.access_token == access_token).first()
@@ -128,7 +135,10 @@ class AuthorizationServer(OAuth2AuthorizationServer):
                          query_client=create_query_client_func(db.session, Client),
                          save_token=create_save_token_func(db.session, Token))
         # register it to grant endpoint
-        self.register_grant(AuthorizationCodeGrant)
+        self.register_grant(AuthorizationCodeGrant, [
+            OpenIDCode(require_nonce=True),
+            CodeChallenge(required=True)
+        ])
         # register it to grant endpoint
         self.register_grant(grants.ImplicitGrant)
         # register it to grant endpoint
@@ -197,22 +207,25 @@ class AuthorizationCode(db.Model, OAuth2AuthorizationCodeMixin):
 
 class AuthorizationCodeGrant(grants.AuthorizationCodeGrant):
     TOKEN_ENDPOINT_AUTH_METHODS = [
-        'client_secret_basic', 'client_secret_post'
+        'client_secret_basic', 'client_secret_post', 'none'
     ]
 
-    def create_authorization_code(self, client, grant_user, request):
-        # you can use other method to generate this code
-        code = generate_token(48)
-        item = AuthorizationCode(
+    def save_authorization_code(self, code, request):
+        auth_code = AuthorizationCode(
             code=code,
-            client_id=client.client_id,
+            client_id=request.client.client_id,
             redirect_uri=request.redirect_uri,
             scope=request.scope,
-            user_id=grant_user.get_user_id(),
+            user_id=request.user.id,
+            # openid request MAY have "nonce" parameter
+            nonce=request.data.get('nonce', None),
+            # PKCE authentication method
+            code_challenge=request.data.get('code_challenge', None),
+            code_challenge_method=request.data.get('code_challenge_method', None)
         )
-        db.session.add(item)
+        db.session.add(auth_code)
         db.session.commit()
-        return code
+        return auth_code
 
     def query_authorization_code(self, code, client):
         return AuthorizationCode.query.filter_by(
@@ -265,3 +278,35 @@ class RefreshTokenGrant(grants.RefreshTokenGrant):
         credential.revoked = True
         db.session.add(credential)
         db.session.commit()
+
+
+class OpenIDCode(oidc.core.grants.OpenIDCode):
+
+    __jwt_secret_key__ = None
+
+    def exists_nonce(self, nonce, request):
+        exists = AuthorizationCode.query.filter_by(
+            client_id=request.client_id, nonce=nonce
+        ).first()
+        return bool(exists)
+
+    def get_jwt_config(self, grant):
+        return {
+            'key': self.get_jwt_key(),
+            'alg': 'RS512',
+            'iss': get_base_url(),
+            'exp': current_app.config.get('JWT_EXPIRATION_TIME')
+        }
+
+    def generate_user_info(self, user, scope):
+        user_info = oidc.core.UserInfo(sub=user.id, name=user.username)
+        # if 'email' in scope:
+        #     user_info['email'] = user.email
+        return user_info
+
+    @classmethod
+    def get_jwt_key(cls):
+        if cls.__jwt_secret_key__ is None:
+            with open(current_app.config.get("JWT_SECRET_KEY_PATH")) as kf:
+                cls.__jwt_secret_key__ = "".join(kf.readlines())
+        return cls.__jwt_secret_key__

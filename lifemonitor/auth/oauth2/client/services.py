@@ -24,13 +24,14 @@ import logging
 
 from authlib.integrations.flask_client import FlaskRemoteApp, OAuth
 from authlib.oauth2.rfc6749 import OAuth2Token
-from flask import current_app
+from flask import current_app, session
 from flask_login import current_user
 from lifemonitor.db import db
+from lifemonitor import exceptions
 
 from ...models import User
 # Config a module level logger
-from .models import OAuthIdentity
+from .models import OAuthIdentity, OAuth2IdentityProvider
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
@@ -111,3 +112,31 @@ def merge_users(merge_from: User, merge_into: User, provider: str):
     db.session.delete(merge_from)
     db.session.commit()
     return merge_into
+
+
+def save_current_user_identity(identity: OAuthIdentity):
+    session["oauth2_username"] = identity.user.username if identity else None
+    session["oauth2_provider_name"] = identity.provider.name if identity else None
+    session["oauth2_user_info"] = identity.user_info if identity else None
+    session["oauth2_user_token"] = identity.token if identity else None
+    logger.debug("User identity temporary save: %r", identity)
+
+
+def get_current_user_identity():
+    try:
+        provider_name = session.get("oauth2_provider_name")
+        user_info = session.get("oauth2_user_info")
+        token = session.get("oauth2_user_token")
+        p = OAuth2IdentityProvider.find(provider_name)
+        logger.debug("Provider found: %r", p)
+        identity = OAuthIdentity(
+            provider=p,
+            user_info=user_info,
+            provider_user_id=user_info["sub"],
+            token=token,
+        )
+        identity.user = User(username=session["oauth2_username"])
+        return identity
+    except exceptions.EntityNotFoundException as e:
+        logger.debug(e)
+        return None

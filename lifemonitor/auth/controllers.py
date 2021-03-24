@@ -23,20 +23,23 @@ import logging
 import flask
 from flask import flash, redirect, render_template, request, url_for
 from flask_login import login_required, login_user, logout_user
+from lifemonitor.utils import NextRouteRegistry, next_route_aware
 
 from .. import exceptions
 from . import serializers
 from .forms import LoginForm, RegisterForm, SetPasswordForm
 from .models import db
-from .oauth2.client.services import get_providers, merge_users
-from .services import authorized, current_registry, current_user, login_manager
+from .oauth2.client.services import (get_current_user_identity, get_providers,
+                                     merge_users, save_current_user_identity)
+from .services import (authorized, current_registry, current_user,
+                       delete_api_key, generate_new_api_key, login_manager)
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
 
 blueprint = flask.Blueprint("auth", __name__,
                             template_folder='templates',
-                            static_folder="static", static_url_path='/static/auth')
+                            static_folder="static", static_url_path='/static')
 
 # Set the login view
 login_manager.login_view = "auth.login"
@@ -84,25 +87,55 @@ def profile():
 
 @blueprint.route("/register", methods=("GET", "POST"))
 def register():
-    form = RegisterForm()
-    if form.validate_on_submit():
-        user = form.create_user()
-        if user:
-            login_user(user)
-            flash("Account created")
-            return redirect(url_for("auth.index"))
-    return render_template("auth/register.j2", form=form)
+    if flask.request.method == "GET":
+        # properly intialize/clear the session before the registration
+        flask.session["confirm_user_details"] = True
+        save_current_user_identity(None)
+    with db.session.no_autoflush:
+        form = RegisterForm()
+        if form.validate_on_submit():
+            user = form.create_user()
+            if user:
+                login_user(user)
+                flash("Account created", category="success")
+                return redirect(url_for("auth.index"))
+        return render_template("auth/register.j2", form=form,
+                               action='/register', providers=get_providers())
 
 
-@blueprint.route("/login/", methods=("GET", "POST"))
+@blueprint.route("/register_identity", methods=("GET", "POST"))
+def register_identity():
+    with db.session.no_autoflush:
+        identity = get_current_user_identity()
+        logger.debug("Current provider identity: %r", identity)
+        if not identity:
+            flash("Unable to register the user")
+            flask.abort(400)
+        logger.debug("Provider identity on session: %r", identity)
+        logger.debug("User Info: %r", identity.user_info)
+        user = identity.user
+        form = RegisterForm()
+        if form.validate_on_submit():
+            user = form.create_user(identity)
+            if user:
+                login_user(user)
+                flash("Account created", category="success")
+                return redirect(url_for("auth.index"))
+        return render_template("auth/register.j2", form=form, action='/register_identity',
+                               identity=identity, user=user, providers=get_providers())
+
+
+@blueprint.route("/login", methods=("GET", "POST"))
+@next_route_aware
 def login():
     form = LoginForm()
+    flask.session["confirm_user_details"] = True
     if form.validate_on_submit():
         user = form.get_user()
         if user:
             login_user(user)
-            flash("You have logged in")
-            return redirect(url_for("auth.index"))
+            flash("You have logged in", category="success")
+            return redirect(NextRouteRegistry.pop(url_for("auth.index")))
     return render_template("auth/login.j2", form=form, providers=get_providers())
 
 
@@ -110,7 +143,8 @@ def login():
 @login_required
 def logout():
     logout_user()
-    flash("You have logged out")
+    flash("You have logged out", category="success")
+    NextRouteRegistry.clear()
     return redirect(url_for("auth.index"))
 
 
@@ -147,3 +181,28 @@ def merge():
             else:
                 form.username.errors.append("Cannot merge with yourself")
     return render_template("auth/merge.j2", form=form)
+
+
+@blueprint.route("/create_apikey", methods=("POST",))
+@login_required
+def create_apikey():
+    apikey = generate_new_api_key(current_user, 'read write')
+    if apikey:
+        logger.debug("Created a new API key: %r", apikey)
+        flash("API key created!", category="success")
+    else:
+        flash("API key not created!", category="error")
+    return redirect(url_for('auth.profile'))
+
+
+@blueprint.route("/delete_apikey", methods=("POST",))
+@login_required
+def delete_apikey():
+    apikey = request.values.get('apikey', None)
+    logger.debug(request.values)
+    if not apikey:
+        flash("Unable to find the API key")
+    else:
+        delete_api_key(current_user, apikey)
+        flash("API key removed!", category="success")
+    return redirect(url_for('auth.profile'))
