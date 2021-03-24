@@ -46,7 +46,7 @@ class MetadataSchema(BaseSchema):
     modified = fields.DateTime(attribute='modified')
 
     def get_base_url(self, obj):
-        return lm_utils.get_base_url()
+        return lm_utils.get_external_server_url()
 
     def get_self_path(self, obj):
         try:
@@ -108,7 +108,7 @@ class VersionDetailsSchema(BaseSchema):
         return {
             'links': {
                 'external': obj.uri,
-                'download': urljoin(lm_utils.get_base_url(), f"ro_crates/{obj.id}/downloads")
+                'download': urljoin(lm_utils.get_external_server_url(), f"ro_crates/{obj.id}/downloads")
             }
         }
 
