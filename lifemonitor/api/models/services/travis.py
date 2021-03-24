@@ -46,6 +46,19 @@ class TravisTestingService(TestingService):
         'Travis-API-Version': '3'
     }
 
+    __dot_com = 'https://api.travis-ci.com'
+    __dot_org = 'https://api.travis-ci.org'
+
+    @property
+    def api_base_url(self):
+        if self.url == 'https://travis-ci.org':
+            return self.__dot_org
+        elif self.url == 'https://travis-ci.com':
+            return self.__dot_com
+        if self.url not in [self.__dot_com, self.__dot_org]:
+            raise ValueError("Invalid API url")
+        return self.url
+
     def _build_headers(self, token: models.TestingServiceToken = None):
         headers = self.__headers__.copy()
         token = token if token else self.token
@@ -55,7 +68,7 @@ class TravisTestingService(TestingService):
 
     def _build_url(self, path, params=None):
         query = "?" + urllib.parse.urlencode(params) if params else ""
-        return urllib.parse.urljoin(self.url, path + query)
+        return urllib.parse.urljoin(self.api_base_url, path + query)
 
     def _get(self, path, token: models.TestingServiceToken = None, params=None) -> object:
         logger.debug("Getting resource: %r", self._build_url(path, params))
