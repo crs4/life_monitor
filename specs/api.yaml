@@ -3,14 +3,14 @@
 openapi: "3.0.0"
 
 info:
-  version: "0.1.0"
+  version: "0.2.0-beta1"
   title: "Life Monitor API"
   description: "Workflow sustainability service"
 
 servers:
   - url: /
     description: >
-      Version 0.1.0 of API.
+      Version 0.2.0-beta1 of API.
 
 paths:
   /users:
@@ -159,6 +159,35 @@ paths:
           $ref: "#/components/responses/NotFound"
 
   /workflows:
+    post:
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "workflows_post"
+      summary: "Register a workflow"
+      security:
+        - api_key: ["read", "write"]
+        - oauth2: ["read", "write"]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: "#/components/schemas/RegistryWorkflowVersion"
+                - $ref: "#/components/schemas/GenericWorkflowVersion"
+      responses:
+        "201":
+          description: Workflow created
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
     get:
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "workflows_get"
@@ -175,33 +204,6 @@ paths:
                 $ref: "#/components/schemas/ListOfWorkflow"
         "401":
           $ref: "#/components/responses/Unauthorized"
-
-    post:
-      x-openapi-router-controller: lifemonitor.api.controllers
-      operationId: "workflows_post"
-      summary: "Register a workflow"
-      security:
-        - api_key: ["read", "write"]
-        - oauth2: ["read", "write"]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/WorkflowVersion"
-      responses:
-        "201":
-          description: Workflow created
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "409":
-          $ref: "#/components/responses/Conflict"
 
   /workflows/{wf_uuid}:
     get:
@@ -224,7 +226,7 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/WorkflowVersionDetails"                  
+                  - $ref: "#/components/schemas/WorkflowVersionDetails"
                     required:
                       - previous_versions
         "400":
@@ -263,35 +265,35 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
-    put:
-      x-openapi-router-controller: lifemonitor.api.controllers
-      operationId: "workflows_put"
-      summary: "Modify an existing workflow"
-      security:
-        - api_key: ["read", "write"]
-        - oauth2: ["read", "write"]
-      parameters:
-        - $ref: "#/components/parameters/wf_uuid"
-        - $ref: "#/components/parameters/wf_version"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/WorkflowVersion"
-      responses:
-        "204":
-          description: "Workflow updated"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "501":
-          description: "Not implemented"
+    # put:
+    #   x-openapi-router-controller: lifemonitor.api.controllers
+    #   operationId: "workflows_put"
+    #   summary: "Modify an existing workflow"
+    #   security:
+    #     - api_key: ["read", "write"]
+    #     - oauth2: ["read", "write"]
+    #   parameters:
+    #     - $ref: "#/components/parameters/wf_uuid"
+    #     - $ref: "#/components/parameters/wf_version"
+    #   requestBody:
+    #     required: true
+    #     content:
+    #       application/json:
+    #         schema:
+    #           $ref: "#/components/schemas/WorkflowVersion"
+    #   responses:
+    #     "204":
+    #       description: "Workflow updated"
+    #     "400":
+    #       $ref: "#/components/responses/BadRequest"
+    #     "401":
+    #       $ref: "#/components/responses/Unauthorized"
+    #     "403":
+    #       $ref: "#/components/responses/Forbidden"
+    #     "404":
+    #       $ref: "#/components/responses/NotFound"
+    #     "501":
+    #       description: "Not implemented"
 
     delete:
       x-openapi-router-controller: lifemonitor.api.controllers
@@ -838,11 +840,62 @@ components:
       properties:
         uuid:
           type: string
+        identifier:
+          type: string
         name:
           type: string
           nullable: true
       required:
         - uuid
+
+    GenericWorkflowVersion:
+      type: object
+      description: Generic workflow
+      properties:
+        version:
+          type: string
+        uuid:
+          type: string
+        name:
+          type: string
+        registry:
+          type: string
+          description: "An identifier of the workflow registry (i.e., name, uri or uuid)"
+          nullable: true
+        authorization:
+          type: string
+          nullable: true
+        roc_link:
+          type: string
+          description: "Link to the workflow RO-Crate"
+      required:
+        - roc_link
+        - version
+
+    RegistryWorkflowVersion:
+      type: object
+      description: Registry workflow
+      properties:
+        identifier:
+          type: string
+        version:
+          type: string
+        name:
+          type: string
+          nullable: true
+        registry:
+          type: string
+          description: "An identifier of the workflow registry (i.e., name, uri or uuid)"
+          nullable: true
+        submitter_id:
+          type: string
+          nullable: true
+        authorization:
+          type: string
+          nullable: true
+      required:
+        - identifier
+        - version
 
     WorkflowVersion:
       allOf:
@@ -851,12 +904,9 @@ components:
           properties:
             version:
               type: string
-            roc_link:
-              type: string
-              writeOnly: true
             submitter_id:
               type: string
-              writeOnly: true            
+              writeOnly: true
             ro_crate:
               readOnly: true
               $ref: "#/components/schemas/ROCrate"
@@ -866,12 +916,8 @@ components:
             submitter:
               $ref: "#/components/schemas/User"
               readOnly: true
-            authorization:
-              type: string
-              writeOnly: true
           required:
             - version
-            - roc_link
 
     WorkflowVersionDetails:
       allOf:
@@ -886,7 +932,6 @@ components:
               items:
                 $ref: "#/components/schemas/WorkflowVersion"
 
-    
     ListOfWorkflow:
       type: object
       properties:

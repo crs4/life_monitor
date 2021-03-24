@@ -86,10 +86,10 @@ def test_post_workflow_by_user_error_invalid_registry_uri(m, request_context, mo
     assert auth.current_user == mock_user, "Unexpected user in session"
     assert not auth.current_registry, "Unexpected registry in session"
     # add one fake workflow
-    data = {"registry_uri": "123456"}
-    m.get_workflow_registry_by_uri.side_effect = lm_exceptions.EntityNotFoundException(models.WorkflowRegistry)
+    data = {"registry": "123456"}
+    m.get_workflow_registry_by_generic_reference.side_effect = lm_exceptions.EntityNotFoundException(models.WorkflowRegistry)
     response = controllers.workflows_post(body=data)
-    m.get_workflow_registry_by_uri.assert_called_once_with(data["registry_uri"]), \
+    m.get_workflow_registry_by_generic_reference.assert_called_once_with(data["registry"]), \
         "get_workflow_registry_by_uri should be used"
     logger.debug("Response: %r, %r", response, str(response.data))
     assert response.status_code == 404, "Unexpected Workflow registry"
@@ -101,10 +101,10 @@ def test_post_workflow_by_user_error_missing_input_data(m, request_context, mock
     assert auth.current_user == mock_user, "Unexpected user in session"
     assert not auth.current_registry, "Unexpected registry in session"
     # add one fake workflow
-    data = {"registry_uri": "123456"}
-    m.get_workflow_registry_by_uri.return_value = MagicMock()
+    data = {"registry": "123456"}
+    m.get_workflow_registry_by_generic_reference.return_value = MagicMock()
     response = controllers.workflows_post(body=data)
-    m.get_workflow_registry_by_uri.assert_called_once_with(data["registry_uri"]), \
+    m.get_workflow_registry_by_generic_reference.assert_called_once_with(data["registry"]), \
         "get_workflow_registry_by_uri should be used"
     logger.debug("Response: %r, %r", response, str(response.data))
     assert_status_code(response.status_code, 400)
@@ -117,12 +117,12 @@ def test_post_workflow_by_user(m, request_context, mock_user):
     assert not auth.current_registry, "Unexpected registry in session"
     # add one fake workflow
     data = {
-        "registry_uri": "123456",
+        "registry": "123456",
         "uuid": "1212121212121212",
         "version": "1.0",
         "roc_link": "https://registry.org/roc_crate/download"
     }
-    m.get_workflow_registry_by_uri.return_value = MagicMock()
+    m.get_workflow_registry_by_generic_reference.return_value = MagicMock()
     w = MagicMock()
     w.uuid = data['uuid']
     w.version = data['version']
@@ -130,7 +130,7 @@ def test_post_workflow_by_user(m, request_context, mock_user):
     w.workflow.uuid = data['uuid']
     m.register_workflow.return_value = w
     response = controllers.workflows_post(body=data)
-    m.get_workflow_registry_by_uri.assert_called_once_with(data["registry_uri"]), \
+    m.get_workflow_registry_by_generic_reference.assert_called_once_with(data["registry"]), \
         "get_workflow_registry_by_uri should be used"
     assert_status_code(response[1], 201)
     assert response[0]["wf_uuid"] == data['uuid'] and \
@@ -142,7 +142,7 @@ def test_post_workflow_by_registry_error_registry_uri(m, request_context, mock_r
     assert auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry, "Unexpected registry in session"
     # add one fake workflow
-    data = {"registry_uri": "123456"}
+    data = {"registry": "123456"}
     response = controllers.workflows_post(body=data)
     logger.debug("Response: %r, %r", response, str(response.data))
     assert_status_code(response.status_code, 400)

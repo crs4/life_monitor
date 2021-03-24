@@ -78,8 +78,12 @@ class WorkflowRegistryClient(ABC):
         """ Return CSV of uuid and version"""
         return ",".join([str(uuid), str(version)])
 
+    def get_external_uuid(self, identifier, version, user: auth_models.User) -> str:
+        """ Return CSV of identifier and version"""
+        return ",".join([str(identifier), str(version)])
+
     @abstractmethod
-    def build_ro_link(self, w: models.WorkflowVersion) -> str:
+    def build_ro_link(self, user, w: Union[models.WorkflowVersion, str]) -> str:
         pass
 
     @abstractmethod
@@ -162,11 +166,14 @@ class WorkflowRegistry(auth_models.Resource):
             return WorkflowRegistryClient.get_client_class(rtype)(self)
         return self._client
 
+    def get_external_uuid(self, external_id, version, user: auth_models.User) -> str:
+        return self.client.get_external_uuid(external_id, version, user)
+
     def get_external_id(self, uuid, version, user: auth_models.User) -> str:
         return self.client.get_external_id(uuid, version, user)
 
-    def build_ro_link(self, w: models.WorkflowVersion) -> str:
-        return self.client.build_ro_link(w)
+    def build_ro_link(self, user, w: Union[models.WorkflowVersion, str]) -> str:
+        return self.client.build_ro_link(user, w)
 
     def download_url(self, url, user, target_path=None):
         return self.client.download_url(url, user, target_path=target_path)
@@ -201,12 +208,15 @@ class WorkflowRegistry(auth_models.Resource):
     def get_workflows(self) -> List[models.Workflow]:
         return list({w.workflow for w in self.registered_workflow_versions})
 
-    def get_workflow(self, uuid) -> models.Workflow:
+    def get_workflow(self, uuid_or_identifier) -> models.Workflow:
         try:
-            w = next((w for w in self.registered_workflow_versions if w.workflow.uuid == lm_utils.uuid_param(uuid)), None)
+            w = next((w for w in self.registered_workflow_versions if w.workflow.uuid == lm_utils.uuid_param(uuid_or_identifier)), None)
+            return w.workflow if w is not None else None
+        except ValueError:
+            w = next((w for w in self.registered_workflow_versions if w.workflow.external_id == uuid_or_identifier), None)
             return w.workflow if w is not None else None
         except Exception:
-            if models.Workflow.find_by_uuid(uuid) is not None:
+            if models.Workflow.find_by_uuid(uuid_or_identifier) is not None:
                 raise lm_exceptions.NotAuthorizedException()
 
     def get_user_workflows(self, user: auth_models.User) -> List[models.Workflow]:

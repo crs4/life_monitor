@@ -21,7 +21,7 @@
 from __future__ import annotations
 
 import logging
-from typing import List, Union
+from typing import List, Union, Optional
 
 import lifemonitor.exceptions as lm_exceptions
 from lifemonitor.api import models
@@ -70,18 +70,18 @@ class LifeMonitor:
         return w
 
     @staticmethod
-    def register_workflow(workflow_submitter: User,
-                          workflow_uuid, workflow_version, roc_link,
-                          workflow_registry: models.WorkflowRegistry = None,
+    def register_workflow(roc_link, workflow_submitter: User, workflow_version,
+                          workflow_uuid=None, workflow_identifier=None,
+                          workflow_registry: Optional[models.WorkflowRegistry] = None,
                           authorization=None, name=None):
 
         # find or create a user workflow
         if workflow_registry:
-            w = workflow_registry.get_workflow(workflow_uuid)
+            w = workflow_registry.get_workflow(workflow_uuid or workflow_identifier)
         else:
             w = models.Workflow.get_user_workflow(workflow_submitter, workflow_uuid)
         if not w:
-            w = models.Workflow(uuid=workflow_uuid, name=name)
+            w = models.Workflow(uuid=workflow_uuid, identifier=workflow_identifier, name=name)
             w.permissions.append(Permission(user=workflow_submitter, roles=[RoleType.owner]))
             if workflow_registry:
                 for auth in workflow_submitter.get_authorization(workflow_registry):
@@ -89,6 +89,12 @@ class LifeMonitor:
 
         if str(workflow_version) in w.versions:
             raise lm_exceptions.WorkflowVersionConflictException(workflow_uuid, workflow_version)
+        if not roc_link:
+            if not workflow_registry:
+                raise ValueError("Missing ROC link")
+            else:
+                roc_link = workflow_registry.build_ro_link(workflow_submitter, w.external_id)
+
         wv = w.add_version(workflow_version, roc_link, workflow_submitter,
                            name=name, hosting_service=workflow_registry)
         wv.permissions.append(Permission(user=workflow_submitter, roles=[RoleType.owner]))
@@ -151,6 +157,18 @@ class LifeMonitor:
         logger.debug("Deleted TestSuite: %r", suite.uuid)
         return suite.uuid
 
+    @classmethod
+    def get_workflow_registry_by_generic_reference(cls, registry_reference) -> models.WorkflowRegistry:
+        try:
+            return cls.get_workflow_registry_by_name(registry_reference)
+        except lm_exceptions.EntityNotFoundException:
+            pass
+        try:
+            return cls.get_workflow_registry_by_uri(registry_reference)
+        except lm_exceptions.EntityNotFoundException:
+            pass
+        return cls.get_workflow_registry_by_uuid(registry_reference)
+
     @staticmethod
     def get_workflow_registry_by_uuid(registry_uuid) -> models.WorkflowRegistry:
         try:
@@ -207,8 +225,11 @@ class LifeMonitor:
         workflows = [w for w in models.Workflow.get_user_workflows(user)]
         for svc in models.WorkflowRegistry.all():
             if svc.get_user(user.id):
-                workflows.extend([w for w in svc.get_user_workflows(user)
-                                  if w not in workflows])
+                try:
+                    workflows.extend([w for w in svc.get_user_workflows(user)
+                                      if w not in workflows])
+                except lm_exceptions.NotAuthorizedException as e:
+                    logger.debug(e)
         return workflows
 
     @classmethod

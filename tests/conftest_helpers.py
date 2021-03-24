@@ -197,6 +197,7 @@ def seek_workflow(application, provider, public, to_skip=None, index_user=0):
                         'version': str(workflow["attributes"]["versions"][0]['version']),  # pick the first version
                         'name': workflow["attributes"]["title"],
                         'roc_link': f'{workflow["attributes"]["content_blobs"][0]["link"]}/download',
+                        'registry_name': 'seek',
                         'registry_uri': application.config["SEEK_API_BASE_URL"],
                         'valid': re.search("invalid", workflow["attributes"]["title"]),
                         # TODO: replace the naive identification of service type

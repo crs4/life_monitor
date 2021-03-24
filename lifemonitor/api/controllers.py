@@ -70,17 +70,17 @@ def workflow_registries_get_current():
 
 @authorized
 def workflows_post(body):
-    registry = current_registry
-    if registry and 'registry_uri' in body:
+    registry = current_registry._get_current_object()
+    if registry and 'registry' in body:
         return lm_exceptions.report_problem(400, "Bad request",
                                             detail=messages.unexpected_registry_uri)
-    if not registry and 'registry_uri' in body:
-        registry_uri = body.get('registry_uri', None)
+    if not registry and 'registry' in body:
+        registry_ref = body.get('registry', None)
         try:
-            registry = lm.get_workflow_registry_by_uri(registry_uri)
+            registry = lm.get_workflow_registry_by_generic_reference(registry_ref)
         except lm_exceptions.EntityNotFoundException:
             return lm_exceptions.report_problem(404, "Not Found",
-                                                detail=messages.no_registry_found.format(registry_uri))
+                                                detail=messages.no_registry_found.format(registry_ref))
     submitter = current_user
     if not current_user or current_user.is_anonymous:  # the client is a registry
         try:
@@ -97,12 +97,17 @@ def workflows_post(body):
             return lm_exceptions.report_problem(401, "Unauthorized",
                                                 detail=messages.no_user_oauth_identity_on_registry
                                                 .format(submitter_id or current_user.id, registry.name))
+    roc_link = body.get('roc_link', None)
+    if not registry and not roc_link:
+        return lm_exceptions.report_problem(400, "Bad Request", extra_info={"missing input": "roc_link"},
+                                            detail=messages.input_data_missing)
     try:
         w = lm.register_workflow(
+            roc_link=roc_link,
             workflow_submitter=submitter,
-            workflow_uuid=body['uuid'],
             workflow_version=body['version'],
-            roc_link=body['roc_link'],
+            workflow_uuid=body.get('uuid', None),
+            workflow_identifier=body.get('identifier', None),
             workflow_registry=registry,
             name=body.get('name', None),
             authorization=body.get('authorization', None)
@@ -117,11 +122,13 @@ def workflows_post(body):
                                             detail=messages.invalid_ro_crate)
     except lm_exceptions.NotAuthorizedException as e:
         return lm_exceptions.report_problem(403, "Forbidden", extra_info={"exception": str(e)},
-                                            detail=messages.not_authorized_registry_access
-                                            .format(registry.name))
+                                            detail=messages.not_authorized_registry_access.format(registry.name)
+                                            if registry else messages.not_authorized_workflow_access)
     except lm_exceptions.WorkflowVersionConflictException:
         return lm_exceptions.report_problem(409, "Workflow version conflict",
-                                            detail=messages.workflow_version_conflict.format(body['uuid'], body['version']))
+                                            detail=messages.workflow_version_conflict
+                                            .format(body.get('uuid', None) or body.get('identifier', None),
+                                                    body['version']))
     except Exception as e:
         logger.exception(e)
         raise lm_exceptions.LifeMonitorException(title="Internal Error", detail=str(e))
@@ -331,7 +338,7 @@ def _get_instances_or_problem(instance_uuid):
         instance = lm.get_test_instance(instance_uuid)
         if not instance:
             return lm_exceptions.report_problem(404, "Not Found",
-                                                detail=messages.suite_not_found.format(instance_uuid))
+                                                detail=messages.instance_not_found.format(instance_uuid))
         response = _get_suite_or_problem(instance.test_suite.uuid)
         if isinstance(response, Response):
             logger.debug("Data: %r", response.get_json())

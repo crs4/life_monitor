@@ -49,9 +49,11 @@ class Workflow(Resource):
         'polymorphic_identity': 'workflow'
     }
 
-    def __init__(self, uri=None, uuid=None, version=None, name=None) -> None:
-        super().__init__(uri=uri or f"{self.external_ns}:undefined",
+    def __init__(self, uri=None, uuid=None, identifier=None, version=None, name=None) -> None:
+        super().__init__(uri=uri or f"{self.external_ns}",
                          uuid=uuid, version=version, name=name)
+        if identifier is not None:
+            self.external_id = identifier
 
     def __repr__(self):
         return '<Workflow ({}), name: {}>'.format(
@@ -59,7 +61,12 @@ class Workflow(Resource):
 
     @hybrid_property
     def external_id(self):
-        return self.uri.replace(self.external_ns, "")
+        r = self.uri.replace(self.external_ns, "")
+        return r if len(r) > 0 else None
+
+    @external_id.setter
+    def external_id(self, value):
+        self.uri = f"{self.external_ns}{value}"
 
     @hybrid_property
     def latest_version(self) -> WorkflowVersion:
@@ -68,8 +75,11 @@ class Workflow(Resource):
     def add_version(self, version, uri, submitter: User, uuid=None, name=None,
                     hosting_service: models.WorkflowRegistry = None):
         try:
-            if hosting_service and hasattr(hosting_service, 'get_external_id'):
-                self.uri = f"{self.external_ns}{hosting_service.get_external_id(self.uuid, version, submitter)}"
+            if hosting_service:
+                if self.external_id and hasattr(hosting_service, 'get_external_uuid'):
+                    self.uuid = hosting_service.get_external_uuid(self.external_id, version, submitter)
+                elif not self.external_id and hasattr(hosting_service, 'get_external_id'):
+                    self.external_id = hosting_service.get_external_id(self.uuid, version, submitter)
         except lm_exceptions.EntityNotFoundException as e:
             raise lm_exceptions.NotAuthorizedException(details=str(e))
         return WorkflowVersion(self, uri, version, submitter, uuid=uuid, name=name,
