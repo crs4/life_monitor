@@ -105,6 +105,10 @@ class TestingService(db.Model, ModelMixin):
         return f'<TestingService {self.url}, ({self.uuid})>'
 
     @property
+    def api_base_url(self):
+        return self.url
+
+    @property
     def token(self):
         if not self._token:
             logger.debug("Querying the token registry for the service %r...", self.url)
