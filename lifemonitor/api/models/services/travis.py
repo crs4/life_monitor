@@ -79,12 +79,13 @@ class TravisTestingService(TestingService):
     def get_repo_id(test_instance: models.TestInstance):
         # extract the job name from the resource path
         logger.debug(f"Getting project metadata - resource: {test_instance.resource}")
-        job_name = re.sub("(?s:.*)/", "", test_instance.resource.strip('/'))
-        logger.debug(f"The repo ID: {job_name}")
-        if not job_name or len(job_name) == 0:
+        repo = re.sub(r'^(/)?(repo/)?(github/)?(.+)', r'\4', test_instance.resource.strip('/(build(s)?)?'))
+        repo_slug = urllib.parse.quote(repo, safe='')
+        logger.debug(f"The repo ID: {repo_slug}")
+        if not repo_slug or len(repo_slug) == 0:
             raise TestingServiceException(
                 f"Unable to get the Jenkins job from the resource {test_instance.resource}")
-        return job_name
+        return repo_slug
 
     def is_workflow_healthy(self, test_instance: models.TestInstance) -> bool:
         return self.get_last_test_build(test_instance).is_successful()
