@@ -113,6 +113,9 @@ class TestingService(db.Model, ModelMixin):
         if not self._token:
             logger.debug("Querying the token registry for the service %r...", self.url)
             self._token = models.TestingServiceTokenManager.get_instance().get_token(self.url)
+            if not self._token:
+                logger.debug("Querying the token registry for the API service %r...", self.api_base_url)
+                self._token = models.TestingServiceTokenManager.get_instance().get_token(self.api_base_url)
         logger.debug("Set token for the testing service %r (type: %r): %r", self.url, self._type, self._token is not None)
         return self._token
 
