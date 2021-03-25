@@ -49,11 +49,29 @@ class LifeMonitor:
         self.__instance = self
 
     @staticmethod
-    def _find_and_check_workflow_version(user: User, uuid, version=None):
+    def _find_and_check_shared_workflow_version(user: User, uuid, version=None) -> models.WorkflowVersion:
+        for svc in models.WorkflowRegistry.all():
+            try:
+                if svc.get_user(user.id):
+                    for w in svc.get_user_workflows(user):
+                        if str(w.uuid) == str(uuid):
+                            return w.versions[version] if version else w.latest_version
+            except lm_exceptions.NotAuthorizedException as e:
+                logger.debug(e)
+        return None
+
+    @classmethod
+    def _find_and_check_workflow_version(cls, user: User, uuid, version=None):
+        w = None
         if not version:
-            w = models.Workflow.get_user_workflow(user, uuid).latest_version
+            _w = models.Workflow.get_user_workflow(user, uuid)
+            if _w:
+                w = _w.latest_version
         else:
             w = models.WorkflowVersion.get_user_workflow_version(user, uuid, version)
+        if not w:
+            w = cls._find_and_check_shared_workflow_version(user, uuid, version=version)
+
         if w is None:
             raise lm_exceptions.EntityNotFoundException(models.WorkflowVersion, f"{uuid}_{version}")
         # Check whether the user can access the workflow.
@@ -65,7 +83,7 @@ class LifeMonitor:
             # if the user is not the submitter
             # and the workflow is associated with a registry
             # then we try to check whether the user is allowed to view the workflow
-            if w.workflow_registry is None or w not in w.workflow_registry.get_user_workflows(user):
+            if w.workflow_registry is None or w.workflow not in w.workflow_registry.get_user_workflows(user):
                 raise lm_exceptions.NotAuthorizedException(f"User {user.username} is not allowed to access workflow")
         return w
 
@@ -118,7 +136,7 @@ class LifeMonitor:
         if not workflow:
             raise lm_exceptions.EntityNotFoundException(models.WorkflowVersion, (workflow_uuid, workflow_version))
         if workflow.submitter != user:
-            raise lm_exceptions.NotAuthorizedException("Only the workflow submitter can add test suites")
+            raise lm_exceptions.NotAuthorizedException("Only the workflow submitter can delete the workflow")
         workflow.delete()
         logger.debug("Deleted workflow wf_uuid: %r - version: %r", workflow_uuid, workflow_version)
         return workflow_uuid, workflow_version
