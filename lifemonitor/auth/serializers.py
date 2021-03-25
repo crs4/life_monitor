@@ -58,7 +58,6 @@ class UserSchema(BaseSchema):
 
     id = ma.auto_field()
     username = ma.auto_field()
-    #identity = fields.Nested(IdentitySchema(), attribute="current_identity")
     # Uncomment to include all identities
     identity = fields.Dict(attribute="current_identity",
                            keys=fields.String(),

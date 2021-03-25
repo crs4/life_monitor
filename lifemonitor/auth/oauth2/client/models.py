@@ -22,7 +22,6 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime
-from importlib import import_module
 from typing import List
 from urllib.parse import urljoin
 
@@ -262,16 +261,6 @@ class OAuth2IdentityProvider(db.Model, ModelMixin):
             'userinfo_endpoint': self.userinfo_endpoint,
             'userinfo_compliance_fix': self.normalize_userinfo,
         }
-
-    def normalize_userinfo(self, client, data):
-        m = f"lifemonitor.auth.oauth2.client.providers.{self.type}"
-        try:
-            mod = import_module(m)
-            return getattr(mod, "normalize_userinfo")(client, data)
-        except ModuleNotFoundError:
-            raise LifeMonitorException(f"ModuleNotFoundError: Unable to load module {m}")
-        except AttributeError:
-            raise LifeMonitorException(f"Unable to create an instance of WorkflowRegistryClient from module {m}")
 
     def find_identity_by_provider_user_id(self, provider_user_id):
         try:

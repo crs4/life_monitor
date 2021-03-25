@@ -755,12 +755,10 @@ components:
           type: string
           description: The user's username, unique among all LifeMonitor accounts
         identity:
-          #$ref: "#/components/schemas/UserIdentity"
           nullable: true
           type: object
           additionalProperties:
-          $ref: "#/components/schemas/UserIdentity"
-
+            $ref: "#/components/schemas/UserIdentity"
       required:
         - id
 
