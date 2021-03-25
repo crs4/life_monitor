@@ -41,7 +41,8 @@ class ProviderSchema(BaseSchema):
 
 class IdentitySchema(BaseSchema):
     sub = fields.String(attribute="provider_user_id")
-    iss = fields.String(attribute="provider.api_base_url")
+    name = fields.String(attribute="user_info.name")
+    username = fields.String(attribute="user_info.preferred_username")
     email = fields.String(attribute="user_info.email")
     mbox_sha1sum = fields.String(attribute="user_info.mbox_sha1sum")
     profile = fields.String(attribute="user_info.profile")
@@ -59,6 +60,6 @@ class UserSchema(BaseSchema):
     id = ma.auto_field()
     username = ma.auto_field()
     # Uncomment to include all identities
-    identity = fields.Dict(attribute="current_identity",
-                           keys=fields.String(),
-                           values=fields.Nested(IdentitySchema()))
+    identities = fields.Dict(attribute="current_identity",
+                             keys=fields.String(),
+                             values=fields.Nested(IdentitySchema()))
