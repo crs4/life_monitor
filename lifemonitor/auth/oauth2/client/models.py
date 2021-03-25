@@ -30,6 +30,7 @@ import requests
 from lifemonitor.auth import models
 from lifemonitor.db import db
 from lifemonitor.exceptions import (EntityNotFoundException,
+                                    NotAuthorizedException,
                                     LifeMonitorException)
 from lifemonitor.models import JSON, ModelMixin
 from sqlalchemy import DateTime
@@ -209,8 +210,14 @@ class OAuth2IdentityProvider(db.Model, ModelMixin):
         return "Bearer"
 
     def get_user_info(self, provider_user_id, token, normalized=True):
-        data = requests.get(urljoin(self.api_base_url, self.userinfo_endpoint),
-                            headers={'Authorization': f'Bearer {token}'})
+        access_token = token['access_token'] if isinstance(token, dict) else token
+        response = requests.get(urljoin(self.api_base_url, self.userinfo_endpoint),
+                                headers={'Authorization': f'Bearer {access_token}'})
+        if response.status_code in (401, 403):
+            raise NotAuthorizedException(detail=f"Unable to get user info from provider {self.name}")
+        if response.status_code != 200:
+            raise LifeMonitorException(details=response.content)
+        data = response.json()
         return data if not normalized else self.normalize_userinfo(None, data)
 
     @property
