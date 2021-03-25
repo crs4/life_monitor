@@ -273,8 +273,12 @@ class OAuth2IdentityProvider(db.Model, ModelMixin):
             raise NotAuthorizedException(detail=f"Unable to get user info from provider {self.name}")
         if response.status_code != 200:
             raise LifeMonitorException(details=response.content)
-        data = response.json()
-        return data if not normalized else self.normalize_userinfo(None, data)
+        try:
+            data = response.json()
+        except Exception as e:
+            raise LifeMonitorException(title="Unable to decode user data", details=str(e))
+        return data if not normalized \
+            else self.normalize_userinfo(OAuth2Registry.get_instance().get_client(self.name), data)
 
     @property
     def api_base_url(self):
@@ -318,6 +322,21 @@ class OAuth2IdentityProvider(db.Model, ModelMixin):
             'userinfo_endpoint': self.userinfo_endpoint,
             'userinfo_compliance_fix': self.normalize_userinfo,
         }
+
+    def normalize_userinfo(self, client, data):
+        errors = []
+        for client_type in (self.name, self.type):
+            logger.debug(f"Searching with {client_type}")
+            try:
+                m = f"lifemonitor.auth.oauth2.client.providers.{client_type}"
+                mod = import_module(m)
+                return getattr(mod, "normalize_userinfo")(client, data)
+            except ModuleNotFoundError:
+                errors.append(f"ModuleNotFoundError: Unable to load module {m}")
+            except AttributeError:
+                errors.append(f"Unable to create an instance of WorkflowRegistryClient from module {m}")
+
+        raise LifeMonitorException(f"Unable to load utility to normalize user info from provider {self.name}")
 
     def find_identity_by_provider_user_id(self, provider_user_id):
         try:
