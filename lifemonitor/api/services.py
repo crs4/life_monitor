@@ -54,7 +54,7 @@ class LifeMonitor:
             try:
                 if svc.get_user(user.id):
                     for w in svc.get_user_workflows(user):
-                        if str(w.uuid) == uuid:
+                        if str(w.uuid) == str(uuid):
                             return w.versions[version] if version else w.latest_version
             except lm_exceptions.NotAuthorizedException as e:
                 logger.debug(e)
