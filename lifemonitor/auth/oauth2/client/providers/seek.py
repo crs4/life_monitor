@@ -59,7 +59,6 @@ class Seek(OAuth2IdentityProvider):
 
     @staticmethod
     def normalize_userinfo(client, data):
-        logger.debug("User data: %r", data)
         data = data["data"]
         params = {
             'sub': str(data['id']),
