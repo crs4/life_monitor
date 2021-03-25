@@ -57,6 +57,9 @@ class Seek(OAuth2IdentityProvider):
                          client_kwargs=client_kwargs,
                          **kwargs)
 
+    def __repr__(self) -> str:
+        return f"Seek Provider {self.name}"
+
     @staticmethod
     def normalize_userinfo(client, data):
         data = data["data"]
