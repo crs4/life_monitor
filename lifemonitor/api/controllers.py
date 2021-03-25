@@ -353,7 +353,7 @@ def _get_instances_or_problem(instance_uuid):
                 details_message = messages.unauthorized_registry_instance_access\
                     .format(current_registry.name, instance_uuid)
             return lm_exceptions.report_problem(403, "Forbidden", detail=details_message,
-                                                extra_info={"reason": response.get_json()['detail']})
+                                                extra_info={"reason": response.get_json()})
         return instance
     except lm_exceptions.EntityNotFoundException:
         return lm_exceptions.report_problem(404, "Not Found",
