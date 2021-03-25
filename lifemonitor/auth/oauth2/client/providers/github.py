@@ -41,11 +41,14 @@ def normalize_userinfo(client, data):
     # That is because a user can choose to make his/her email private.
     # If that is the case we get all the users emails regardless if private or note
     # and use the one he/she has marked as `primary`
-    if params.get('email') is None:
-        resp = client.get('user/emails')
-        resp.raise_for_status()
-        data = resp.json()
-        params["email"] = next(email['email'] for email in data if email['primary'])
+    try:
+        if params.get('email') is None:
+            resp = client.get('user/emails')
+            resp.raise_for_status()
+            data = resp.json()
+            params["email"] = next(email['email'] for email in data if email['primary'])
+    except Exception as e:
+        logger.warning("Unable to get user email. Reason: %r", str(e))
     return params
 
 
