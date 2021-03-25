@@ -22,48 +22,21 @@ from __future__ import annotations
 
 import logging
 
-from authlib.integrations.flask_client import FlaskRemoteApp, OAuth
-from authlib.oauth2.rfc6749 import OAuth2Token
 from flask import current_app, session
-from flask_login import current_user
-from lifemonitor.db import db
 from lifemonitor import exceptions
+from lifemonitor.db import db
 
 from ...models import User
-# Config a module level logger
-from .models import OAuthIdentity, OAuth2IdentityProvider
+from .models import OAuth2IdentityProvider, OAuth2Registry, OAuthIdentity
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
 
-
-def fetch_token(name):
-    logger.debug("NAME: %s", name)
-    logger.debug("CURRENT APP: %r", current_app.config)
-    api_key = current_app.config.get("{}_API_KEY".format(name.upper()), None)
-    if api_key:
-        logger.debug("FOUND an API KEY for the OAuth Service '%s': %s", name, api_key)
-        return {"access_token": api_key}
-    identity = OAuthIdentity.find_by_user_id(current_user.id, name)
-    logger.debug("The token: %r", identity.token)
-    return OAuth2Token(identity.token)
-
-
-def update_token(name, token, refresh_token=None, access_token=None):
-    if access_token or refresh_token:
-        identity = OAuthIdentity.find_by_user_id(current_user.id, name)
-    else:
-        return
-
-    # update old token
-    identity.set_token(token)
-    identity.save()
-
+# Cache list of providers
+current_providers_list = []
 
 # Create an instance of OAuth registry for oauth clients.
-oauth2_registry = OAuth(fetch_token=fetch_token, update_token=update_token)
-
-current_providers_list = []
+oauth2_registry = OAuth2Registry.get_instance()
 
 
 def get_providers():
@@ -87,11 +60,7 @@ def config_oauth2_registry(app, providers=None):
     try:
         oauth2_backends = providers or get_providers()
         for backend in oauth2_backends:
-            class RemoteApp(FlaskRemoteApp):
-                NAME = backend.name
-                OAUTH_APP_CONFIG = backend.oauth_config
-
-            oauth2_registry.register(RemoteApp.NAME, overwrite=True, client_cls=RemoteApp)
+            oauth2_registry.register_client(backend)
         oauth2_registry.init_app(app)
     except Exception as e:
         logger.debug(e)
