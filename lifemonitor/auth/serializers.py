@@ -29,18 +29,23 @@ from . import models
 class ProviderSchema(BaseSchema):
     uuid = fields.String()
     name = fields.String()
-    type = fields.String()
+    type = fields.Method('get_type')
     uri = fields.String(attribute="api_base_url")
     userinfo_endpoint = fields.String()
+
+    def get_type(self, object):
+        return object.type \
+            if object.type == 'oauth2_identity_provider' \
+            else 'registry'
 
 
 class IdentitySchema(BaseSchema):
     sub = fields.String(attribute="provider_user_id")
-    # iss = fields.String(attribute="provider.api_base_url")
-    # email = fields.String(attribute="user_info.email")
-    # mbox_sha1sum = fields.String(attribute="user_info.mbox_sha1sum")
-    # profile = fields.String(attribute="user_info.profile")
-    # picture = fields.String(attribute="user_info.picture")
+    iss = fields.String(attribute="provider.api_base_url")
+    email = fields.String(attribute="user_info.email")
+    mbox_sha1sum = fields.String(attribute="user_info.mbox_sha1sum")
+    profile = fields.String(attribute="user_info.profile")
+    picture = fields.String(attribute="user_info.picture")
     provider = fields.Nested(ProviderSchema())
 
 
@@ -53,8 +58,8 @@ class UserSchema(BaseSchema):
 
     id = ma.auto_field()
     username = ma.auto_field()
-    identity = fields.Nested(IdentitySchema(), attribute="current_identity")
+    #identity = fields.Nested(IdentitySchema(), attribute="current_identity")
     # Uncomment to include all identities
-    # identities = fields.Dict(attribute="oauth_identity",
-    #                          keys=fields.String(),
-    #                          values=fields.Nested(IdentitySchema()))
+    identity = fields.Dict(attribute="current_identity",
+                           keys=fields.String(),
+                           values=fields.Nested(IdentitySchema()))
