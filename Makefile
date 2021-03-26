@@ -72,7 +72,7 @@ compose-files: docker-compose.base.yml \
 certs:
 	@# Generate certificates if they do not exist \
 	if ! [[ -f "certs/lm.key" && -f "certs/lm.key" && -f "certs/lifemonitor.ca.crt" ]]; then \
-	  printf "$(red)Generating certificates...$(reset)\n\n" ; \
+	  printf "\n$(bold)Generating certificates...$(reset)\n" ; \
 	  mkdir -p certs && \
 	  ./utils/certs/gencerts.sh && \
 	  cp utils/certs/data/ca.* certs/ && \
@@ -87,7 +87,7 @@ certs:
 	fi \
 	# Generate JWT keys if they do not exist \
 	if ! [[ -f "certs/jwt-key" && -f "certs/jwt-key.pub" ]]; then \
-	  printf "$(red)Generating JWT keys...$(reset)\n\n" ; \
+	  printf "\n$(bold)Generating JWT keys...$(reset)\n" ; \
 	  openssl genrsa -out certs/jwt-key 4096 ; \
 	  openssl rsa -in certs/jwt-key -pubout > certs/jwt-key.pub ; \
 	  printf "\n$(done)\n"; \
