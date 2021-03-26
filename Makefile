@@ -72,7 +72,7 @@ compose-files: docker-compose.base.yml \
 certs:
 	@# Generate certificates if they do not exist \
 	if ! [[ -f "certs/lm.key" && -f "certs/lm.key" && -f "certs/lifemonitor.ca.crt" ]]; then \
-	  printf "$(red)Generating certificates...$(reset)\n\n" ; \
+	  printf "\n$(bold)Generating certificates...$(reset)\n" ; \
 	  mkdir -p certs && \
 	  ./utils/certs/gencerts.sh && \
 	  cp utils/certs/data/ca.* certs/ && \
@@ -87,7 +87,7 @@ certs:
 	fi \
 	# Generate JWT keys if they do not exist \
 	if ! [[ -f "certs/jwt-key" && -f "certs/jwt-key.pub" ]]; then \
-	  printf "$(red)Generating JWT keys...$(reset)\n\n" ; \
+	  printf "\n$(bold)Generating JWT keys...$(reset)\n" ; \
 	  openssl genrsa -out certs/jwt-key 4096 ; \
 	  openssl rsa -in certs/jwt-key -pubout > certs/jwt-key.pub ; \
 	  printf "\n$(done)\n"; \
@@ -135,7 +135,7 @@ start: images compose-files ## Start LifeMonitor in a Production environment
 	               -f docker-compose.prod.yml \
 				   -f docker-compose.base.yml \
 				   config)" > docker-compose.yml \
-	&& docker-compose -f docker-compose.yml up -d ;\
+	&& docker-compose -f docker-compose.yml up -d db init lm nginx ;\
 	printf "$(done)\n"
 
 start-dev: images compose-files ## Start LifeMonitor in a Development environment
@@ -146,7 +146,7 @@ start-dev: images compose-files ## Start LifeMonitor in a Development environmen
 	               -f docker-compose.base.yml \
 				   -f docker-compose.dev.yml \
 				   config)" > docker-compose.yml \
-	&& docker-compose -f docker-compose.yml up -d ;\
+	&& docker-compose -f docker-compose.yml up -d db init lm ;\
 	printf "$(done)\n"
 
 start-testing: compose-files aux_images ro_crates images ## Start LifeMonitor in a Testing environment
@@ -170,7 +170,7 @@ start-nginx: certs docker-compose.prod.yml ## Start a nginx front-end proxy for 
 	echo "$$(USER_UID=$$(id -u) USER_GID=$$(id -g) \
 			 docker-compose $${base} \
 					-f docker-compose.prod.yml \
-				    -f docker-compose.yml config)" > docker-compose.yml \
+				    -f docker-compose.base.yml config)" > docker-compose.yml \
 		  && docker-compose up -d nginx ; \
 	printf "$(done)\n"
 
@@ -179,7 +179,7 @@ start-aux-services: aux_images ro_crates docker-compose.extra.yml ## Start auxil
 	base=$$(if [[ -f "docker-compose.yml" ]]; then echo "-f docker-compose.yml"; fi) ; \
 	echo "$$(USER_UID=$$(id -u) USER_GID=$$(id -g) \
 	      docker-compose $${base} -f docker-compose.extra.yml config)" > docker-compose.yml \
-	      && docker-compose up -d seek jenkins webserver; \
+	      && docker-compose up -d seek jenkins ; \
 	printf "$(done)\n"
 
 # start-jupyter: aux_images docker-compose.extra.yml ## Start jupyter service
@@ -217,58 +217,76 @@ stop-aux-services: docker-compose.extra.yml ## Stop all auxiliary services (i.e.
 	printf "$(done)\n"
 
 # stop-jupyter: docker-compose.jupyter.yml ## Stop jupyter service
-# 	@echo "$(bold)Teardown auxiliary services...$(reset)" ; \
+# 	@echo "$(bold)Stopping auxiliary services...$(reset)" ; \
 # 	docker-compose -f docker-compose.jupyter.yml --log-level ERROR stop ; \
 # 	printf "$(done)\n"
 
 stop-nginx: docker-compose.yml ## Stop the nginx front-end proxy for the LifeMonitor back-end
-	@echo "$(bold)Teardown nginx service...$(reset)" ; \
+	@echo "$(bold)Stopping nginx service...$(reset)" ; \
 	docker-compose -f docker-compose.yml stop nginx ; \
 	printf "$(done)\n"
 
-stop-testing: compose-files ## Teardown all the services in the Testing Environment
-	@echo "$(bold)Teardown services...$(reset)" ; \
+stop-testing: compose-files ## Stop all the services in the Testing Environment
+	@echo "$(bold)Stopping services...$(reset)" ; \
 	USER_UID=$$(id -u) USER_GID=$$(id -g) \
 	docker-compose -f docker-compose.extra.yml \
 				   -f docker-compose.base.yml \
 				   -f docker-compose.dev.yml \
 				   -f docker-compose.test.yml \
-				   --log-level ERROR down ; \
+				   --log-level ERROR stop db lmtests seek jenkins webserver ; \
 	printf "$(done)\n"
 
-stop-dev: compose-files ## Teardown all services in the Develop Environment
-	@echo "$(bold)Teardown services...$(reset)" ; \
+stop-dev: compose-files ## Stop all services in the Develop Environment
+	@echo "$(bold)Stopping development services...$(reset)" ; \
 	USER_UID=$$(id -u) USER_GID=$$(id -g) \
 	docker-compose -f docker-compose.base.yml \
 				   -f docker-compose.dev.yml \
-				   --log-level ERROR down ; \
+				   stop init lm db ; \
 	printf "$(done)\n"
 
-stop: compose-files ## Teardown all the services in the Production Environment
-	@echo "$(bold)Teardown services...$(reset)" ; \
+stop: compose-files ## Stop all the services in the Production Environment
+	@echo "$(bold)Stopping production services...$(reset)" ; \
 	USER_UID=$$(id -u) USER_GID=$$(id -g) \
 	docker-compose -f docker-compose.base.yml \
 				   -f docker-compose.prod.yml \
-				   --log-level ERROR down ; \
+				   --log-level ERROR stop init nginx lm db ; \
 	printf "$(done)\n"
 
-stop-all: ## Teardown all the services
-	@echo "$(bold)Teardown services...$(reset)" ; \
-	USER_UID=$$(id -u) USER_GID=$$(id -g) \
-	docker-compose -f docker-compose.extra.yml \
-				   -f docker-compose.base.yml \
-				   -f docker-compose.prod.yml \
-				   -f docker-compose.dev.yml \
-				   -f docker-compose.test.yml \
-				   --log-level ERROR down ; \
-	result=$$?; \
-	if [[ $${result} != 0 ]]; then \
-		printf "$(yellow)WARNING: the actual compose file has not been removed.$(reset)"; \
-		else rm -f docker-compose.yml ; printf "$(done)\n" ; fi ; 
+stop-all: ## Stop all the services
+	@if [[ -f "docker-compose.yml" ]]; then \
+		echo "$(bold)Stopping all services...$(reset)" ; \
+		USER_UID=$$(id -u) USER_GID=$$(id -g) \
+		docker-compose stop ; \
+		printf "$(done)\n" ; \
+	else \
+		printf "\n$(yellow)WARNING: nothing to remove. 'docker-compose.yml' file not found!$(reset)\n\n" ; \
+	fi
 	
-
-clean: stop stop-dev stop-testenv ## Clean up the working environment (i.e., running services, certs and temp files)
-	rm -rf certs docker-compose.yml
+down: ## Teardown all the services
+	@if [[ -f "docker-compose.yml" ]]; then \
+	echo "$(bold)Teardown all services...$(reset)" ; \
+	USER_UID=$$(id -u) USER_GID=$$(id -g) \
+	docker-compose down ; \
+	printf "$(done)\n" ; \
+	else \
+		printf "\n$(yellow)WARNING: nothing to remove. 'docker-compose.yml' file not found!$(reset)\n\n" ; \
+	fi
+	
+clean: ## Clean up the working environment (i.e., running services, network, volumes, certs and temp files)
+	@if [[ -f "docker-compose.yml" ]]; then \
+		echo "$(bold)Teardown all services...$(reset)" ; \
+		USER_UID=$$(id -u) USER_GID=$$(id -g) \
+		docker-compose down -v --remove-orphans ; \
+		printf "$(done)\n"; \
+		else \
+			printf "$(yellow)WARNING: nothing to remove. 'docker-compose.yml' file not found!$(reset)\n" ; \
+	fi
+	@printf "\n$(bold)Removing certs...$(reset) " ; \
+	rm -rf certs
+	@printf "$(done)\n"
+	@printf "\n$(bold)Removing temp files...$(reset) " ; \
+	rm -rf docker-compose.yml
+	@printf "$(done)\n\n"
 
 .DEFAULT_GOAL := help
 
@@ -279,4 +297,4 @@ help: ## Show help
 		start start-dev start-testing start-nginx start-aux-services \
 		run-tests tests \
 		stop-aux-services stop-nginx stop-testing \
-		stop-dev stop stop-all clean
+		stop-dev stop stop-all down clean
