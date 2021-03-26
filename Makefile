@@ -70,9 +70,10 @@ compose-files: docker-compose.base.yml \
 	docker-compose.test.yml
 
 certs:
-	@if [[ ! -d "certs" ]]; then \
+	@# Generate certificates if they do not exist \
+	if ! [[ -f "certs/lm.key" && -f "certs/lm.key" && -f "certs/lifemonitor.ca.crt" ]]; then \
 	  printf "$(red)Generating certificates...$(reset)\n\n" ; \
-	  mkdir certs && \
+	  mkdir -p certs && \
 	  ./utils/certs/gencerts.sh && \
 	  cp utils/certs/data/ca.* certs/ && \
 	  cp utils/certs/data/lm/*.pem certs/ && \
@@ -81,12 +82,17 @@ certs:
 	  mv certs/key.pem certs/lm.key && \
 	  chmod 644 certs/*.{key,crt}; \
 	  printf "\n$(done)\n"; \
+	else \
+	  echo "$(yellow)WARNING: Using existing certificates$(reset)" ; \
+	fi \
+	# Generate JWT keys if they do not exist \
+	if ! [[ -f "certs/jwt-key" && -f "certs/jwt-key.pub" ]]; then \
 	  printf "$(red)Generating JWT keys...$(reset)\n\n" ; \
 	  openssl genrsa -out certs/jwt-key 4096 ; \
 	  openssl rsa -in certs/jwt-key -pubout > certs/jwt-key.pub ; \
 	  printf "\n$(done)\n"; \
 	else \
-	  echo "$(yellow)WARNING: Using existing certificates$(reset)" ; \
+	  echo "$(yellow)WARNING: Using existing JWT keys $(reset)" ; \
 	fi
 
 lifemonitor: docker/lifemonitor.Dockerfile certs
