@@ -170,7 +170,7 @@ start-nginx: certs docker-compose.prod.yml ## Start a nginx front-end proxy for 
 	echo "$$(USER_UID=$$(id -u) USER_GID=$$(id -g) \
 			 docker-compose $${base} \
 					-f docker-compose.prod.yml \
-				    -f docker-compose.yml config)" > docker-compose.yml \
+				    -f docker-compose.base.yml config)" > docker-compose.yml \
 		  && docker-compose up -d nginx ; \
 	printf "$(done)\n"
 
