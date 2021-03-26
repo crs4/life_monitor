@@ -123,3 +123,6 @@ jobs:
           done
         env:
           TAGS: ${{ steps.docker_meta.outputs.tags }}
+      # Clean up
+      - name: Clean up working environment
+        run: make clean
