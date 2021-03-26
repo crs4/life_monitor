@@ -267,7 +267,7 @@ stop-all: ## Teardown all the services
 		else rm -f docker-compose.yml ; printf "$(done)\n" ; fi ; 
 	
 
-clean: stop stop-dev stop-testenv
+clean: stop stop-dev stop-testenv ## Clean up the working environment (i.e., running services, certs and temp files)
 	rm -rf certs docker-compose.yml
 
 .DEFAULT_GOAL := help
