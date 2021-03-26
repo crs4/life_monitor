@@ -106,7 +106,7 @@ jobs:
           TRAVIS_TESTING_SERVICE_TOKEN: ${{ secrets.TRAVIS_TESTING_SERVICE_TOKEN }}
       # Teardown testing environment
       - name: Teardown testing environment
-        run: make stop-all
+        run: make down
       # DockerHub Login
       - name: Login to DockerHub
         uses: docker/login-action@v1
