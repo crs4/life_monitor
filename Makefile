@@ -272,8 +272,21 @@ down: ## Teardown all the services
 		printf "\n$(yellow)WARNING: nothing to remove. 'docker-compose.yml' file not found!$(reset)\n\n" ; \
 	fi
 	
-clean: stop stop-dev stop-testenv ## Clean up the working environment (i.e., running services, certs and temp files)
-	rm -rf certs docker-compose.yml
+clean: ## Clean up the working environment (i.e., running services, network, volumes, certs and temp files)
+	@if [[ -f "docker-compose.yml" ]]; then \
+		echo "$(bold)Teardown all services...$(reset)" ; \
+		USER_UID=$$(id -u) USER_GID=$$(id -g) \
+		docker-compose down -v --remove-orphans ; \
+		printf "$(done)\n"; \
+		else \
+			printf "$(yellow)WARNING: nothing to remove. 'docker-compose.yml' file not found!$(reset)\n" ; \
+	fi
+	@printf "\n$(bold)Removing certs...$(reset) " ; \
+	rm -rf certs
+	@printf "$(done)\n"
+	@printf "\n$(bold)Removing temp files...$(reset) " ; \
+	rm -rf docker-compose.yml
+	@printf "$(done)\n\n"
 
 .DEFAULT_GOAL := help
 
