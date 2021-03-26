@@ -135,7 +135,7 @@ start: images compose-files ## Start LifeMonitor in a Production environment
 	               -f docker-compose.prod.yml \
 				   -f docker-compose.base.yml \
 				   config)" > docker-compose.yml \
-	&& docker-compose -f docker-compose.yml up -d ;\
+	&& docker-compose -f docker-compose.yml up -d db init lm nginx ;\
 	printf "$(done)\n"
 
 start-dev: images compose-files ## Start LifeMonitor in a Development environment
@@ -146,7 +146,7 @@ start-dev: images compose-files ## Start LifeMonitor in a Development environmen
 	               -f docker-compose.base.yml \
 				   -f docker-compose.dev.yml \
 				   config)" > docker-compose.yml \
-	&& docker-compose -f docker-compose.yml up -d ;\
+	&& docker-compose -f docker-compose.yml up -d db init lm ;\
 	printf "$(done)\n"
 
 start-testing: compose-files aux_images ro_crates images ## Start LifeMonitor in a Testing environment
