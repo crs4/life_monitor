@@ -179,7 +179,7 @@ start-aux-services: aux_images ro_crates docker-compose.extra.yml ## Start auxil
 	base=$$(if [[ -f "docker-compose.yml" ]]; then echo "-f docker-compose.yml"; fi) ; \
 	echo "$$(USER_UID=$$(id -u) USER_GID=$$(id -g) \
 	      docker-compose $${base} -f docker-compose.extra.yml config)" > docker-compose.yml \
-	      && docker-compose up -d seek jenkins webserver; \
+	      && docker-compose up -d seek jenkins ; \
 	printf "$(done)\n"
 
 # start-jupyter: aux_images docker-compose.extra.yml ## Start jupyter service
