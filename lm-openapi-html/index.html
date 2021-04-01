@@ -256,12 +256,19 @@ font-style: italic;
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
     <pre class="example"><code>{
-  "identity" : {
-    "sub" : "sub",
-    "provider" : {
+  "identities" : {
+    "key" : {
+      "sub" : "sub",
+      "provider" : {
+        "name" : "name",
+        "type" : "type",
+        "uri" : "uri"
+      },
+      "profile" : "profile",
       "name" : "name",
-      "type" : "type",
-      "uri" : "uri"
+      "email" : "email",
+      "picture" : "picture",
+      "username" : "username"
     }
   },
   "id" : 0,
@@ -318,23 +325,37 @@ font-style: italic;
     <div class="example-data-content-type">Content-Type: application/json</div>
     <pre class="example"><code>{
   "items" : [ {
-    "identity" : {
-      "sub" : "sub",
-      "provider" : {
+    "identities" : {
+      "key" : {
+        "sub" : "sub",
+        "provider" : {
+          "name" : "name",
+          "type" : "type",
+          "uri" : "uri"
+        },
+        "profile" : "profile",
         "name" : "name",
-        "type" : "type",
-        "uri" : "uri"
+        "email" : "email",
+        "picture" : "picture",
+        "username" : "username"
       }
     },
     "id" : 0,
     "username" : "username"
   }, {
-    "identity" : {
-      "sub" : "sub",
-      "provider" : {
+    "identities" : {
+      "key" : {
+        "sub" : "sub",
+        "provider" : {
+          "name" : "name",
+          "type" : "type",
+          "uri" : "uri"
+        },
+        "profile" : "profile",
         "name" : "name",
-        "type" : "type",
-        "uri" : "uri"
+        "email" : "email",
+        "picture" : "picture",
+        "username" : "username"
       }
     },
     "id" : 0,
@@ -678,12 +699,19 @@ font-style: italic;
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
     <pre class="example"><code>{
-  "identity" : {
-    "sub" : "sub",
-    "provider" : {
+  "identities" : {
+    "key" : {
+      "sub" : "sub",
+      "provider" : {
+        "name" : "name",
+        "type" : "type",
+        "uri" : "uri"
+      },
+      "profile" : "profile",
       "name" : "name",
-      "type" : "type",
-      "uri" : "uri"
+      "email" : "email",
+      "picture" : "picture",
+      "username" : "username"
     }
   },
   "id" : 0,
@@ -1927,7 +1955,7 @@ information if dereferenced. </div>
     <div class="field-items">
       <div class="param">id </div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span> An identifier for the user, unique among all LifeMonitor accounts and never reused </div>
 <div class="param">username (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> The user's username, unique among all LifeMonitor accounts </div>
-<div class="param">identity (optional)</div><div class="param-desc"><span class="param-type"><a href="#UserIdentity">UserIdentity</a></span>  </div>
+<div class="param">identities (optional)</div><div class="param-desc"><span class="param-type"><a href="#UserIdentity">map[String, UserIdentity]</a></span>  </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
@@ -1935,6 +1963,11 @@ information if dereferenced. </div>
     <div class='model-description'>A user identity issued by an identity provider.</div>
     <div class="field-items">
       <div class="param">sub </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> An identifier for the user, unique among all provider accounts and never reused </div>
+<div class="param">username (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">email (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">picture (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">profile (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
 <div class="param">provider </div><div class="param-desc"><span class="param-type"><a href="#IdentityProvider">IdentityProvider</a></span>  </div>
     </div>  <!-- field-items -->
   </div>
