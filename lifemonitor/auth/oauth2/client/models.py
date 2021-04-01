@@ -27,10 +27,15 @@ from typing import List
 from urllib.parse import urljoin
 
 import requests
+from authlib.integrations.flask_client import FlaskRemoteApp, OAuth
+from authlib.oauth2.rfc6749 import OAuth2Token
+from flask import current_app
+from flask_login import current_user
 from lifemonitor.auth import models
 from lifemonitor.db import db
 from lifemonitor.exceptions import (EntityNotFoundException,
-                                    LifeMonitorException)
+                                    LifeMonitorException,
+                                    NotAuthorizedException)
 from lifemonitor.models import JSON, ModelMixin
 from sqlalchemy import DateTime
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -159,6 +164,58 @@ class OAuthIdentity(models.ExternalServiceAccessAuthorization, ModelMixin):
         return cls.query.all()
 
 
+class OAuth2Registry(OAuth):
+
+    __instance = None
+
+    @classmethod
+    def get_instance(cls) -> OAuth2Registry:
+        if not cls.__instance:
+            cls.__instance = cls()
+        return cls.__instance
+
+    def __init__(self, app=None, cache=None):
+        if self.__instance:
+            raise RuntimeError("OAuth2Registry instance already exists!")
+        super().__init__(app=app, cache=cache,
+                         fetch_token=self.fetch_token, update_token=self.update_token)
+
+    def get_client(self, name):
+        try:
+            return self._clients[name]
+        except ValueError:
+            raise LifeMonitorException(f"Unable to load the '{name}' OAuth2 client")
+
+    def register_client(self, client_config):
+        class OAuth2Client(FlaskRemoteApp):
+            NAME = client_config.name
+            OAUTH_APP_CONFIG = client_config.oauth_config
+
+        super().register(client_config.name, overwrite=True, client_cls=OAuth2Client)
+
+    @staticmethod
+    def fetch_token(name):
+        logger.debug("NAME: %s", name)
+        logger.debug("CURRENT APP: %r", current_app.config)
+        api_key = current_app.config.get("{}_API_KEY".format(name.upper()), None)
+        if api_key:
+            logger.debug("FOUND an API KEY for the OAuth Service '%s': %s", name, api_key)
+            return {"access_token": api_key}
+        identity = OAuthIdentity.find_by_user_id(current_user.id, name)
+        logger.debug("The token: %r", identity.token)
+        return OAuth2Token(identity.token)
+
+    @staticmethod
+    def update_token(name, token, refresh_token=None, access_token=None):
+        if access_token or refresh_token:
+            identity = OAuthIdentity.find_by_user_id(current_user.id, name)
+        else:
+            return
+        # update old token
+        identity.set_token(token)
+        identity.save()
+
+
 class OAuth2IdentityProvider(db.Model, ModelMixin):
 
     id = db.Column(db.Integer, primary_key=True)
@@ -209,9 +266,19 @@ class OAuth2IdentityProvider(db.Model, ModelMixin):
         return "Bearer"
 
     def get_user_info(self, provider_user_id, token, normalized=True):
-        data = requests.get(urljoin(self.api_base_url, self.userinfo_endpoint),
-                            headers={'Authorization': f'Bearer {token}'})
-        return data if not normalized else self.normalize_userinfo(None, data)
+        access_token = token['access_token'] if isinstance(token, dict) else token
+        response = requests.get(urljoin(self.api_base_url, self.userinfo_endpoint),
+                                headers={'Authorization': f'Bearer {access_token}'})
+        if response.status_code in (401, 403):
+            raise NotAuthorizedException(detail=f"Unable to get user info from provider {self.name}")
+        if response.status_code != 200:
+            raise LifeMonitorException(details=response.content)
+        try:
+            data = response.json()
+        except Exception as e:
+            raise LifeMonitorException(title="Unable to decode user data", details=str(e))
+        return data if not normalized \
+            else self.normalize_userinfo(OAuth2Registry.get_instance().get_client(self.name), data)
 
     @property
     def api_base_url(self):
@@ -257,14 +324,19 @@ class OAuth2IdentityProvider(db.Model, ModelMixin):
         }
 
     def normalize_userinfo(self, client, data):
-        m = f"lifemonitor.auth.oauth2.client.providers.{self.type}"
-        try:
-            mod = import_module(m)
-            return getattr(mod, "normalize_userinfo")(client, data)
-        except ModuleNotFoundError:
-            raise LifeMonitorException(f"ModuleNotFoundError: Unable to load module {m}")
-        except AttributeError:
-            raise LifeMonitorException(f"Unable to create an instance of WorkflowRegistryClient from module {m}")
+        errors = []
+        for client_type in (self.name, self.type):
+            logger.debug(f"Searching with {client_type}")
+            try:
+                m = f"lifemonitor.auth.oauth2.client.providers.{client_type}"
+                mod = import_module(m)
+                return getattr(mod, "normalize_userinfo")(client, data)
+            except ModuleNotFoundError:
+                errors.append(f"ModuleNotFoundError: Unable to load module {m}")
+            except AttributeError:
+                errors.append(f"Unable to create an instance of WorkflowRegistryClient from module {m}")
+
+        raise LifeMonitorException(f"Unable to load utility to normalize user info from provider {self.name}")
 
     def find_identity_by_provider_user_id(self, provider_user_id):
         try:

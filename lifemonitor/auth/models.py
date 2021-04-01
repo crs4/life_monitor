@@ -78,11 +78,13 @@ class User(db.Model, UserMixin):
 
     @property
     def current_identity(self):
-        from .services import current_registry
+        from .services import current_registry, current_user
+        if not current_user.is_anonymous:
+            return self.oauth_identity
         if current_registry:
-            for i in self.oauth_identity.values():
+            for p, i in self.oauth_identity.items():
                 if i.provider == current_registry.server_credentials:
-                    return i
+                    return {p: i}
         return None
 
     @property

@@ -754,9 +754,11 @@ components:
         username:
           type: string
           description: The user's username, unique among all LifeMonitor accounts
-        identity:
-          $ref: "#/components/schemas/UserIdentity"
+        identities:
           nullable: true
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/UserIdentity"
       required:
         - id
 
@@ -766,7 +768,22 @@ components:
       properties:
         sub:
           type: string
-          description: An identifier for the user, unique among all provider accounts and never reused
+          description: An identifier for the user, unique among all provider accounts and never reused        
+        username:
+          type: string
+          nullable: true
+        name:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+        picture:
+          type: string
+          nullable: true
+        profile:
+          type: string
+          nullable: true
         provider:
           $ref: "#/components/schemas/IdentityProvider"
       required:
