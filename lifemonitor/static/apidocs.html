@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;600&family=Roboto+Mono&display=swap"
+      rel="stylesheet"
+    />
+    <script
+      type="text/javascript"
+      src="https://unpkg.com/rapidoc/dist/rapidoc-min.js"
+    ></script>
+    <style>
+      rapi-doc {
+        width: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <rapi-doc
+      spec-url="./api.yaml"
+      sort-endpoints-by="method"
+      show-header="false"
+      render-style="read"
+      regular-font="Open Sans"
+      mono-font="Roboto Mono"
+      font-size="large"
+      bg-color="#fff"
+      text-color="#003333"
+      nav-bg-color="#003333"
+      nav-text-color="#fff"
+      nav-hover-bg-color="#1f8787"
+      nav-hover-text-color="#f9b233"
+      nav-accent-color="#1f8787"
+      primary-color="#1f8787"
+      theme="light"
+      schema-description-expanded="false"
+    >
+      <div
+        slot="nav-logo"
+        style="display: flex; align-items: center; justify-content: center"
+      >
+        <img
+          src="/static/img/logo/lm/LifeMonitorLogo.png"
+          style="width: 150px"
+        />
+      </div>
+    </rapi-doc>
+  </body>
+</html>

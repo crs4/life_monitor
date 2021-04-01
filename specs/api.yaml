@@ -401,28 +401,28 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
-    delete:
-      x-openapi-router-controller: lifemonitor.api.controllers
-      operationId: "suites_delete"
-      summary: "Delete a test suite"
-      security:
-        - api_key: ["read", "write"]
-        - oauth2: ["read", "write"]
-      parameters:
-        - $ref: "#/components/parameters/suite_uuid"
-      responses:
-        "204":
-          description: Deleted
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "501":
-          description: "Not implemented"
+    # delete:
+    #   x-openapi-router-controller: lifemonitor.api.controllers
+    #   operationId: "suites_delete"
+    #   summary: "Delete a test suite"
+    #   security:
+    #     - api_key: ["read", "write"]
+    #     - oauth2: ["read", "write"]
+    #   parameters:
+    #     - $ref: "#/components/parameters/suite_uuid"
+    #   responses:
+    #     "204":
+    #       description: Deleted
+    #     "400":
+    #       $ref: "#/components/responses/BadRequest"
+    #     "401":
+    #       $ref: "#/components/responses/Unauthorized"
+    #     "403":
+    #       $ref: "#/components/responses/Forbidden"
+    #     "404":
+    #       $ref: "#/components/responses/NotFound"
+    #     "501":
+    #       description: "Not implemented"
 
   /suites/{suite_uuid}/status:
     get:
