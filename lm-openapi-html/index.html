@@ -208,7 +208,6 @@ font-style: italic;
   <li><a href="#instancesGetBuilds"><code><span class="http-method">get</span> /instances/{instance_uuid}/latest-builds</code></a></li>
   <li><a href="#instancesGetById"><code><span class="http-method">get</span> /instances/{instance_uuid}</code></a></li>
   <li><a href="#showCurrentUserProfile"><code><span class="http-method">get</span> /users/current</code></a></li>
-  <li><a href="#suitesDelete"><code><span class="http-method">delete</span> /suites/{suite_uuid}</code></a></li>
   <li><a href="#suitesGetByUuid"><code><span class="http-method">get</span> /suites/{suite_uuid}</code></a></li>
   <li><a href="#suitesGetInstances"><code><span class="http-method">get</span> /suites/{suite_uuid}/instances</code></a></li>
   <li><a href="#suitesGetStatus"><code><span class="http-method">get</span> /suites/{suite_uuid}/status</code></a></li>
@@ -741,57 +740,6 @@ font-style: italic;
     <h4 class="field-label">404</h4>
     Resource not found
         <a href="#Error">Error</a>
-  </div> <!-- method -->
-  <hr/>
-  <div class="method"><a name="suitesDelete"/>
-    <div class="method-path">
-    <a class="up" href="#__Methods">Up</a>
-    <pre class="delete"><code class="huge"><span class="http-method">delete</span> /suites/{suite_uuid}</code></pre></div>
-    <div class="method-summary">Delete a test suite (<span class="nickname">suitesDelete</span>)</div>
-    <div class="method-notes"></div>
-
-    <h3 class="field-label">Path parameters</h3>
-    <div class="field-items">
-      <div class="param">suite_uuid (required)</div>
-
-      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; TestSuite's Unique identifier default: null </div>
-    </div>  <!-- field-items -->
-
-
-
-
-
-
-
-    <!--Todo: process Response Object and its headers, schema, examples -->
-
-
-    <h3 class="field-label">Produces</h3>
-    This API call produces the following media types according to the <span class="header">Accept</span> request header;
-    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
-    <ul>
-      <li><code>application/json</code></li>
-    </ul>
-
-    <h3 class="field-label">Responses</h3>
-    <h4 class="field-label">204</h4>
-    Deleted
-        <a href="#"></a>
-    <h4 class="field-label">400</h4>
-    The request is malformed
-        <a href="#Error">Error</a>
-    <h4 class="field-label">401</h4>
-    Unauthorized
-        <a href="#Error">Error</a>
-    <h4 class="field-label">403</h4>
-    Forbidden
-        <a href="#Error">Error</a>
-    <h4 class="field-label">404</h4>
-    Resource not found
-        <a href="#Error">Error</a>
-    <h4 class="field-label">501</h4>
-    Not implemented
-        <a href="#"></a>
   </div> <!-- method -->
   <hr/>
   <div class="method"><a name="suitesGetByUuid"/>
