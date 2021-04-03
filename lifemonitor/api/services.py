@@ -21,7 +21,7 @@
 from __future__ import annotations
 
 import logging
-from typing import List, Union, Optional
+from typing import List, Optional, Union
 
 import lifemonitor.exceptions as lm_exceptions
 from lifemonitor.api import models
@@ -30,6 +30,7 @@ from lifemonitor.auth.models import (ExternalServiceAuthorizationHeader,
 from lifemonitor.auth.oauth2.client import providers
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 from lifemonitor.auth.oauth2.server import server
+from lifemonitor.utils import OpenApiSpecs
 
 logger = logging.getLogger()
 
@@ -292,6 +293,7 @@ class LifeMonitor:
             user = User.find_by_username("admin")
             if not user:
                 raise lm_exceptions.EntityNotFoundException(User, entity_id="admin")
+            registry_scopes = " ".join(OpenApiSpecs.get_instance().registry_scopes.keys())
             server_credentials = providers.new_instance(provider_type=type,
                                                         name=name,
                                                         client_id=client_id,
@@ -301,7 +303,7 @@ class LifeMonitor:
                 server.create_client(user, name, server_credentials.api_base_url,
                                      ['client_credentials', 'authorization_code', 'refresh_token'],
                                      ["code", "token"],
-                                     "read write",
+                                     registry_scopes,
                                      redirect_uris.split(',')
                                      if isinstance(redirect_uris, str)
                                      else redirect_uris,
