@@ -64,7 +64,7 @@ class LifeMonitor:
     @classmethod
     def _find_and_check_workflow_version(cls, user: User, uuid, version=None):
         w = None
-        if not version:
+        if not version or version == "latest":
             _w = models.Workflow.get_user_workflow(user, uuid)
             if _w:
                 w = _w.latest_version
@@ -240,7 +240,9 @@ class LifeMonitor:
     @staticmethod
     def get_registry_workflow_version(registry: models.WorkflowRegistry, uuid, version=None) -> models.WorkflowVersion:
         w = registry.get_workflow(uuid)
-        return w.latest_version if version is None else w.versions[version]
+        if w is None:
+            raise lm_exceptions.EntityNotFoundException(models.WorkflowVersion, f"{uuid}_{version}")
+        return w.latest_version if version is None or version == "latest" else w.versions[version]
 
     @staticmethod
     def get_user_workflows(user: User) -> List[models.Workflow]:
