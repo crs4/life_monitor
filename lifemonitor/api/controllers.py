@@ -23,7 +23,7 @@ import logging
 import connexion
 import lifemonitor.exceptions as lm_exceptions
 import werkzeug.exceptions as http_exceptions
-from flask import Response, g
+from flask import Response, g, request
 from lifemonitor.api import serializers
 from lifemonitor.api.services import LifeMonitor
 from lifemonitor.auth import authorized, current_registry, current_user
@@ -69,6 +69,151 @@ def workflow_registries_get_current():
 
 
 @authorized
+def workflows_get():
+    workflows = []
+    if current_user and not current_user.is_anonymous:
+        workflows.extend(lm.get_user_workflows(current_user))
+    elif current_registry:
+        workflows.extend(lm.get_registry_workflows(current_registry))
+    else:
+        return lm_exceptions.report_problem(401, "Unauthorized", detail=messages.no_user_in_session)
+    logger.debug("workflows_get. Got %s workflows (user: %s)", len(workflows), current_user)
+    return serializers.WorkflowSchema().dump(workflows, many=True)
+
+
+def _get_workflow_or_problem(wf_uuid, wf_version):
+    try:
+        wf = None
+        if current_user and not current_user.is_anonymous:
+            wf = lm.get_user_workflow_version(current_user, wf_uuid, wf_version)
+        elif current_registry:
+            wf = lm.get_registry_workflow_version(current_registry, wf_uuid, wf_version)
+        else:
+            return lm_exceptions.report_problem(403, "Forbidden",
+                                                detail=messages.no_user_in_session)
+        if wf is None:
+            return lm_exceptions.report_problem(404, "Not Found",
+                                                detail=messages.workflow_not_found.format(wf_uuid, wf_version))
+        return wf
+    except lm_exceptions.EntityNotFoundException as e:
+        return lm_exceptions.report_problem(404, "Not Found", extra_info={"exception": str(e)},
+                                            detail=messages.workflow_not_found.format(wf_uuid, wf_version))
+    except lm_exceptions.NotAuthorizedException as e:
+        return lm_exceptions.report_problem(403, "Forbidden", extra_info={"exception": str(e)},
+                                            detail=messages.unauthorized_workflow_access.format(wf_uuid))
+
+
+@authorized
+def workflows_get_by_id(wf_uuid, wf_version):
+    response = _get_workflow_or_problem(wf_uuid, wf_version)
+    return response if isinstance(response, Response) \
+        else serializers.WorkflowVersionSchema().dump(response)
+
+
+@authorized
+def workflows_get_latest_version_by_id(wf_uuid):
+    response = _get_workflow_or_problem(wf_uuid, None)
+    exclude = ('previous_versions',) \
+        if request.args.get('previous_versions', 'false').lower() == 'false' else ()
+    logger.debug("Previous versions: %r", exclude)
+    return response if isinstance(response, Response) \
+        else serializers.LatestWorkflowSchema(exclude=exclude).dump(response)
+
+
+@authorized
+def workflows_get_versions_by_id(wf_uuid):
+    response = _get_workflow_or_problem(wf_uuid, None)
+    return response if isinstance(response, Response) \
+        else serializers.ListOfWorkflowVersions().dump(response.workflow)
+
+
+@authorized
+def workflows_get_status(wf_uuid):
+    wf_version = request.args.get('version', 'latest').lower()
+    response = _get_workflow_or_problem(wf_uuid, wf_version)
+    return response if isinstance(response, Response) \
+        else serializers.WorkflowStatusSchema().dump(response)
+
+
+@authorized
+def registry_workflows_get():
+    workflows = lm.get_registry_workflows(current_registry)
+    logger.debug("workflows_get. Got %s workflows (registry: %s)", len(workflows), current_registry)
+    return serializers.WorkflowSchema().dump(workflows, many=True)
+
+
+@authorized
+def registry_workflows_post(body):
+    if not current_registry:
+        return lm_exceptions.report_problem(401, "Unauthorized", detail=messages.no_registry_found)
+    return workflows_post(body)
+
+
+@authorized
+def registry_user_workflows_get(user_id):
+    if not current_registry:
+        return lm_exceptions.report_problem(401, "Unauthorized", detail=messages.no_registry_found)
+    try:
+        identity = lm.find_registry_user_identity(current_registry, external_id=user_id)
+        workflows = lm.get_user_registry_workflows(identity.user, current_registry)
+        logger.debug("workflows_get. Got %s workflows (user: %s)", len(workflows), current_user)
+        return serializers.WorkflowSchema().dump(workflows, many=True)
+    except OAuthIdentityNotFoundException:
+        return lm_exceptions.report_problem(401, "Unauthorized",
+                                            detail=messages.no_user_oauth_identity_on_registry
+                                            .format(user_id, current_registry.name))
+
+
+@authorized
+def registry_user_workflows_post(user_id, body):
+    if not current_registry:
+        return lm_exceptions.report_problem(401, "Unauthorized", detail=messages.no_registry_found)
+    return workflows_post(body, _submitter_id=user_id)
+
+
+@authorized
+def user_workflows_get():
+    if not current_user or current_user.is_anonymous:
+        return lm_exceptions.report_problem(401, "Unauthorized", detail=messages.no_user_in_session)
+    workflows = lm.get_user_workflows(current_user)
+    logger.debug("workflows_get. Got %s workflows (user: %s)", len(workflows), current_user)
+    return serializers.WorkflowSchema().dump(workflows, many=True)
+
+
+@authorized
+def user_workflows_post(body):
+    if not current_user or current_user.is_anonymous:
+        return lm_exceptions.report_problem(401, "Unauthorized", detail=messages.no_user_in_session)
+    return workflows_post(body)
+
+
+@authorized
+def user_registry_workflows_get(registry_uuid):
+    if not current_user or current_user.is_anonymous:
+        return lm_exceptions.report_problem(401, "Unauthorized", detail=messages.no_user_in_session)
+    logger.debug("Registry UUID: %r", registry_uuid)
+    try:
+        registry = lm.get_workflow_registry_by_uuid(registry_uuid)
+        workflows = lm.get_user_registry_workflows(current_user, registry)
+        logger.debug("workflows_get. Got %s workflows (user: %s)", len(workflows), current_user)
+        return serializers.WorkflowSchema().dump(workflows, many=True)
+    except lm_exceptions.EntityNotFoundException:
+        return lm_exceptions.report_problem(404, "Not Found",
+                                            detail=messages.no_registry_found.format(registry_uuid))
+
+
+@authorized
+def user_registry_workflows_post(registry_uuid, body):
+    if not current_user or current_user.is_anonymous:
+        return lm_exceptions.report_problem(401, "Unauthorized", detail=messages.no_user_in_session)
+    try:
+        registry = lm.get_workflow_registry_by_uuid(registry_uuid)
+        return workflows_post(body, _registry=registry)
+    except lm_exceptions.EntityNotFoundException:
+        return lm_exceptions.report_problem(404, "Not Found",
+                                            detail=messages.no_registry_found.format(registry_uuid))
+
+
 @authorized
 def workflows_post(body, _registry=None, _submitter_id=None):
     registry = _registry or current_registry._get_current_object()
@@ -173,63 +318,8 @@ def workflows_delete(wf_uuid, wf_version):
 
 
 @authorized
-def workflows_get():
-    workflows = []
-    if current_user and not current_user.is_anonymous:
-        workflows.extend(lm.get_user_workflows(current_user))
-    elif current_registry:
-        workflows.extend(lm.get_registry_workflows(current_registry))
-    else:
-        return lm_exceptions.report_problem(401, "Unauthorized", detail=messages.no_user_in_session)
-    logger.debug("workflows_get. Got %s workflows (user: %s)", len(workflows), current_user)
-    return serializers.WorkflowSchema().dump(workflows, many=True)
-
-
-def _get_workflow_or_problem(wf_uuid, wf_version):
-    try:
-        wf = None
-        if current_user and not current_user.is_anonymous:
-            wf = lm.get_user_workflow_version(current_user, wf_uuid, wf_version)
-        elif current_registry:
-            wf = lm.get_registry_workflow_version(current_registry, wf_uuid, wf_version)
-        else:
-            return lm_exceptions.report_problem(403, "Forbidden",
-                                                detail=messages.no_user_in_session)
-        if wf is None:
-            return lm_exceptions.report_problem(404, "Not Found",
-                                                detail=messages.workflow_not_found.format(wf_uuid, wf_version))
-        return wf
-    except lm_exceptions.EntityNotFoundException as e:
-        return lm_exceptions.report_problem(404, "Not Found", extra_info={"exception": str(e)},
-                                            detail=messages.workflow_not_found.format(wf_uuid, wf_version))
-    except lm_exceptions.NotAuthorizedException as e:
-        return lm_exceptions.report_problem(403, "Forbidden", extra_info={"exception": str(e)},
-                                            detail=messages.unauthorized_workflow_access.format(wf_uuid))
-
-
-@authorized
-def workflows_get_by_id(wf_uuid, wf_version):
-    response = _get_workflow_or_problem(wf_uuid, wf_version)
-    return response if isinstance(response, Response) \
-        else serializers.WorkflowVersionSchema().dump(response)
-
-
-@authorized
-def workflows_get_latest_version_by_id(wf_uuid):
-    response = _get_workflow_or_problem(wf_uuid, None)
-    return response if isinstance(response, Response) \
-        else serializers.LatestWorkflowSchema().dump(response)
-
-
-@authorized
-def workflows_get_status(wf_uuid, wf_version):
-    response = _get_workflow_or_problem(wf_uuid, wf_version)
-    return response if isinstance(response, Response) \
-        else serializers.WorkflowStatusSchema().dump(response.status)
-
-
-@authorized
-def workflows_get_suites(wf_uuid, wf_version):
+def workflows_get_suites(wf_uuid, wf_version=None):
+    wf_version = wf_version or request.args.get('version', 'latest').lower()
     response = _get_workflow_or_problem(wf_uuid, wf_version)
     return response if isinstance(response, Response) \
         else serializers.SuiteSchema().dump(response.test_suites, many=True)
@@ -367,6 +457,11 @@ def instances_get_by_id(instance_uuid):
     response = _get_instances_or_problem(instance_uuid)
     return response if isinstance(response, Response) \
         else serializers.TestInstanceSchema().dump(response)
+
+
+@authorized
+def instances_delete_by_id(instance_uuid):
+    pass
 
 
 @authorized
