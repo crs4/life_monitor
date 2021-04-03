@@ -23,7 +23,7 @@ import logging
 import flask
 from flask import flash, redirect, render_template, request, url_for
 from flask_login import login_required, login_user, logout_user
-from lifemonitor.utils import NextRouteRegistry, next_route_aware
+from lifemonitor.utils import NextRouteRegistry, OpenApiSpecs, next_route_aware
 
 from .. import exceptions
 from . import serializers
@@ -186,7 +186,8 @@ def merge():
 @blueprint.route("/create_apikey", methods=("POST",))
 @login_required
 def create_apikey():
-    apikey = generate_new_api_key(current_user, 'read write')
+    apikey = generate_new_api_key(
+        current_user, " ".join(OpenApiSpecs.get_instance().apikey_scopes.keys()))
     if apikey:
         logger.debug("Created a new API key: %r", apikey)
         flash("API key created!", category="success")
