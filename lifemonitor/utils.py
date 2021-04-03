@@ -162,6 +162,72 @@ def next_route_aware(func):
     return decorated_view
 
 
+class OpenApiSpecs(object):
+
+    __instance = None
+    _specs = None
+
+    def __init__(self):
+        if self.__instance:
+            raise RuntimeError("OpenApiSpecs instance already exists!")
+        self.__instance = self
+
+    @classmethod
+    def get_instance(cls):
+        if not cls.__instance:
+            cls.__instance = cls()
+        return cls.__instance
+
+    @staticmethod
+    def load():
+        response = requests.get(f"{get_base_url()}/openapi.json", verify=False)
+        if not response or response.status_code != 200:
+            logger.error(response.content)
+            raise RuntimeError("Unable to load OpenApi specs")
+        return response.json()
+
+    @property
+    def specs(self):
+        if not self._specs:
+            self._specs = self.load()
+        return self._specs.copy()
+
+    @property
+    def components(self):
+        return self.specs['components']
+
+    @property
+    def securitySchemes(self):
+        return self.specs["components"]["securitySchemes"]
+
+    def getSecuritySchemeScopes(self, securityScheme):
+        try:
+            scopes = {}
+            scheme = self.securitySchemes[securityScheme]
+            if "flows" in scheme:
+                for flow in scheme['flows']:
+                    scopes.update({s: d for s, d in scheme['flows'][flow]['scopes'].items()})
+            return scopes
+        except KeyError:
+            raise ValueError("Invalid security scheme")
+
+    @property
+    def apikey_scopes(self):
+        skip = ["registry.workflow.read", "registry.workflow.write", "registry.user.workflow.read", "registry.user.workflow.write"]
+        return {k: v for k, v in self.all_scopes.items() if k not in skip}
+
+    @property
+    def registry_scopes(self):
+        return self.getSecuritySchemeScopes('RegistryClientCredentials')
+
+    @property
+    def all_scopes(self):
+        scopes = {}
+        for scheme in self.securitySchemes:
+            scopes.update(self.getSecuritySchemeScopes(scheme))
+        return scopes
+
+
 class NextRouteRegistry(object):
 
     __LM_NEXT_ROUTE_REGISTRY__ = "lifemonitor_next_route_registry"
