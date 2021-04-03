@@ -147,13 +147,17 @@ class LifeMonitor:
 
     @staticmethod
     def deregister_registry_workflow(workflow_uuid, workflow_version, registry: models.WorkflowRegistry):
-        workflow = registry.get_workflow(workflow_uuid).versions[workflow_version]
-        logger.debug("WorkflowVersion to delete: %r", workflow)
+        workflow = registry.get_workflow(workflow_uuid)
         if not workflow:
             raise lm_exceptions.EntityNotFoundException(models.WorkflowVersion, (workflow_uuid, workflow_version))
-        workflow.delete()
-        logger.debug("Deleted workflow wf_uuid: %r - version: %r", workflow_uuid, workflow_version)
-        return workflow_uuid, workflow_version
+        logger.debug("WorkflowVersion to delete: %r", workflow)
+        try:
+            workflow_version = workflow.versions[workflow_version]
+            workflow.delete()
+            logger.debug("Deleted workflow wf_uuid: %r - version: %r", workflow_uuid, workflow_version)
+            return workflow_uuid, workflow_version
+        except KeyError:
+            raise lm_exceptions.EntityNotFoundException(models.WorkflowVersion, (workflow_uuid, workflow_version))
 
     @staticmethod
     def register_test_suite(workflow_uuid, workflow_version,
