@@ -237,6 +237,14 @@ class WorkflowVersion(ROCrate):
                                   for s in self.test_suites]
         return data
 
+    def delete(self):
+        if len(self.workflow.versions) > 1:
+            workflow = self.workflow
+            self.workflow.remove_version(self)
+            workflow.save()
+        else:
+            self.workflow.delete()
+
     @classmethod
     def all(cls) -> List[WorkflowVersion]:
         return cls.query.all()
