@@ -46,11 +46,15 @@ class TestInstance(db.Model, ModelMixin):
                              db.ForeignKey(models.User.id), nullable=True)
     # configure relationships
     submitter = db.relationship("User", uselist=False)
-    test_suite = db.relationship("TestSuite", back_populates="test_instances")
+    test_suite = db.relationship("TestSuite",
+                                 back_populates="test_instances",
+                                 foreign_keys=[_test_suite_uuid])
+    testing_service_id = db.Column(UUID, db.ForeignKey("testing_service.uuid"), nullable=False)
     testing_service = db.relationship("TestingService",
-                                      back_populates="test_instances",
+                                      foreign_keys=[testing_service_id],
+                                      backref=db.backref("test_instances", cascade="all, delete-orphan"),
                                       uselist=False,
-                                      cascade="save-update, merge, delete, delete-orphan")
+                                      cascade="all")
 
     def __init__(self, testing_suite: TestSuite, submitter: models.User,
                  test_name, test_resource, testing_service: models.TestingService) -> None:

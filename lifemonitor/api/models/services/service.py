@@ -23,6 +23,7 @@ from __future__ import annotations
 import logging
 from typing import List
 
+import uuid as _uuid
 import lifemonitor.exceptions as lm_exceptions
 from lifemonitor.api import models
 from lifemonitor.api.models import db
@@ -81,13 +82,10 @@ class TestingServiceTokenManager:
 
 
 class TestingService(db.Model, ModelMixin):
-    uuid = db.Column("uuid", UUID, db.ForeignKey(models.TestInstance.uuid), primary_key=True)
+    uuid = db.Column("uuid", UUID, primary_key=True, default=_uuid.uuid4)
     _type = db.Column("type", db.String, nullable=False)
     url = db.Column(db.Text, nullable=False, unique=True)
     _token = None
-
-    # configure relationships
-    test_instances = db.relationship("TestInstance", back_populates="testing_service")
 
     # configure the class manager
     service_type_registry = ClassManager('lifemonitor.api.models.services', class_suffix='TestingService', skip=['__init__', 'service'])
