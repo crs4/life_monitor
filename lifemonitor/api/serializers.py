@@ -27,7 +27,7 @@ from flask.globals import request
 from lifemonitor import utils as lm_utils
 from lifemonitor.auth.serializers import UserSchema
 from lifemonitor.serializers import BaseSchema, ma
-from marshmallow import fields
+from marshmallow import fields, post_dump
 
 from . import models
 
@@ -56,13 +56,16 @@ class MetadataSchema(BaseSchema):
             return None
 
 
-class ResourceSchema(BaseSchema):
-    uuid = fields.String(attribute="uuid")
-    name = fields.String(attribute="name")
+class ResourceMetadataSchema(BaseSchema):
     meta = fields.Method("get_metadata")
 
     def get_metadata(self, obj):
         return MetadataSchema().dump(obj)
+
+
+class ResourceSchema(ResourceMetadataSchema):
+    uuid = fields.String(attribute="uuid")
+    name = fields.String(attribute="name")
 
 
 class WorkflowRegistrySchema(BaseSchema):
@@ -74,8 +77,11 @@ class WorkflowRegistrySchema(BaseSchema):
 
     uuid = ma.auto_field()
     uri = ma.auto_field()
-    type = ma.auto_field()
+    type = fields.Method("get_type")
     name = fields.String(attributes="server_credentials.name")
+
+    def get_type(self, obj):
+        return obj.type.replace('_registry', '')
 
 
 class ListOfWorkflowRegistriesSchema(BaseSchema):
@@ -93,6 +99,11 @@ class WorkflowSchema(BaseSchema):
 
     uuid = ma.auto_field()
     name = ma.auto_field()
+
+
+class RegistryWorkflowSchema(WorkflowSchema):
+
+    registry = fields.Nested(WorkflowRegistrySchema(), attribute="")
 
 
 class VersionDetailsSchema(BaseSchema):
@@ -131,9 +142,36 @@ class WorkflowVersionSchema(ResourceSchema):
     uuid = fields.String(attribute="workflow.uuid")
     name = ma.auto_field()
     version = fields.Method("get_version")
+    registry = ma.Nested(WorkflowRegistrySchema(), attribute="workflow_registry")
 
     def get_version(self, obj):
         return VersionDetailsSchema().dump(obj)
+
+    @post_dump
+    def remove_skip_values(self, data, **kwargs):
+        return {
+            key: value for key, value in data.items()
+            if value is not None
+        }
+
+
+class ListOfWorkflowVersions(ResourceMetadataSchema):
+    __envelope__ = {"single": None, "many": "items"}
+    __model__ = models.Workflow
+
+    class Meta:
+        model = models.Workflow
+        ordered = True
+
+    workflow = fields.Method("get_workflow")
+    versions = fields.Method("get_versions")
+
+    def get_workflow(self, obj: models.Workflow):
+        return WorkflowSchema().dump(obj)
+
+    def get_versions(self, obj: models.Workflow):
+        return [VersionDetailsSchema(only=("uuid", "version", "ro_crate", "submitter")).dump(v)
+                for v in obj.versions.values()]
 
 
 class LatestWorkflowSchema(WorkflowVersionSchema):
@@ -153,15 +191,16 @@ class TestInstanceSchema(BaseSchema):
 
     uuid = ma.auto_field()
     name = ma.auto_field()
+    resource = ma.auto_field()
     service = fields.Method("get_testing_service")
 
     def get_testing_service(self, obj):
         logger.debug("Test current obj: %r", obj)
+        assert obj.testing_service, "Missing testing service"
         return {
             'uuid': obj.testing_service.uuid,
             'url': obj.testing_service.url,
-            'type': obj.testing_service._type,
-            'resource': obj.resource
+            'type': obj.testing_service._type.replace('_testing_service', '')
         }
 
 
@@ -183,16 +222,16 @@ class BuildSummarySchema(BaseSchema):
         return obj.get_output(0, 131072)
 
 
-class WorkflowStatusSchema(BaseSchema):
+class WorkflowStatusSchema(WorkflowVersionSchema):
     __envelope__ = {"single": None, "many": "items"}
     __model__ = models.WorkflowStatus
 
     class Meta:
         model = models.WorkflowStatus
 
-    workflow = ma.Nested(WorkflowVersionSchema(only=("uuid", "version", "name")))
-    aggregate_test_status = fields.String(attribute="aggregated_status")
-    latest_builds = ma.Nested(BuildSummarySchema(), many=True)
+    aggregate_test_status = fields.String(attribute="status.aggregated_status")
+    latest_builds = ma.Nested(BuildSummarySchema(),
+                              attribute="status.latest_builds", many=True)
 
 
 class SuiteSchema(BaseSchema):
