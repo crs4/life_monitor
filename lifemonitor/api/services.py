@@ -100,10 +100,11 @@ class LifeMonitor:
             w = models.Workflow.get_user_workflow(workflow_submitter, workflow_uuid)
         if not w:
             w = models.Workflow(uuid=workflow_uuid, identifier=workflow_identifier, name=name)
-            w.permissions.append(Permission(user=workflow_submitter, roles=[RoleType.owner]))
-            if workflow_registry:
-                for auth in workflow_submitter.get_authorization(workflow_registry):
-                    auth.resources.append(w)
+            if workflow_submitter:
+                w.permissions.append(Permission(user=workflow_submitter, roles=[RoleType.owner]))
+                if workflow_registry:
+                    for auth in workflow_submitter.get_authorization(workflow_registry):
+                        auth.resources.append(w)
 
         if str(workflow_version) in w.versions:
             raise lm_exceptions.WorkflowVersionConflictException(workflow_uuid, workflow_version)
@@ -115,7 +116,9 @@ class LifeMonitor:
 
         wv = w.add_version(workflow_version, roc_link, workflow_submitter,
                            name=name, hosting_service=workflow_registry)
-        wv.permissions.append(Permission(user=workflow_submitter, roles=[RoleType.owner]))
+
+        if workflow_submitter:
+            wv.permissions.append(Permission(user=workflow_submitter, roles=[RoleType.owner]))
         if authorization:
             auth = ExternalServiceAuthorizationHeader(workflow_submitter, header=authorization)
             auth.resources.append(wv)

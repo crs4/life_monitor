@@ -69,8 +69,9 @@ def workflow_registries_get_current():
 
 
 @authorized
-def workflows_post(body):
-    registry = current_registry._get_current_object()
+@authorized
+def workflows_post(body, _registry=None, _submitter_id=None):
+    registry = _registry or current_registry._get_current_object()
     if registry and 'registry' in body:
         return lm_exceptions.report_problem(400, "Bad request",
                                             detail=messages.unexpected_registry_uri)
@@ -81,15 +82,16 @@ def workflows_post(body):
         except lm_exceptions.EntityNotFoundException:
             return lm_exceptions.report_problem(404, "Not Found",
                                                 detail=messages.no_registry_found.format(registry_ref))
-    submitter = current_user
-    if not current_user or current_user.is_anonymous:  # the client is a registry
+    submitter = current_user if current_user and not current_user.is_anonymous else None
+    if not submitter:
         try:
-            submitter_id = body['submitter_id']
-            # Try to find the identity of the submitter
-            identity = lm.find_registry_user_identity(registry,
-                                                      internal_id=current_user.id,
-                                                      external_id=submitter_id)
-            submitter = identity.user
+            submitter_id = body.get('submitter_id', _submitter_id)
+            if submitter_id:
+                # Try to find the identity of the submitter
+                identity = lm.find_registry_user_identity(registry,
+                                                          internal_id=current_user.id,
+                                                          external_id=submitter_id)
+                submitter = identity.user
         except KeyError:
             return lm_exceptions.report_problem(400, "Bad request",
                                                 detail=messages.no_submitter_id_provided)

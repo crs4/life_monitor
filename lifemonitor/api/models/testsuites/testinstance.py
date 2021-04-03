@@ -43,7 +43,7 @@ class TestInstance(db.Model, ModelMixin):
     resource = db.Column(db.Text, nullable=False)
     parameters = db.Column(JSON, nullable=True)
     submitter_id = db.Column(db.Integer,
-                             db.ForeignKey(models.User.id), nullable=False)
+                             db.ForeignKey(models.User.id), nullable=True)
     # configure relationships
     submitter = db.relationship("User", uselist=False)
     test_suite = db.relationship("TestSuite", back_populates="test_instances")

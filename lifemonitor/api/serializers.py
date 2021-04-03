@@ -112,6 +112,13 @@ class VersionDetailsSchema(BaseSchema):
             }
         }
 
+    @post_dump
+    def remove_skip_values(self, data, **kwargs):
+        return {
+            key: value for key, value in data.items()
+            if value is not None
+        }
+
 
 class WorkflowVersionSchema(ResourceSchema):
     __envelope__ = {"single": None, "many": "items"}

@@ -60,7 +60,7 @@ class TestSuite(db.Model, ModelMixin):
     workflow_version = db.relationship("WorkflowVersion", back_populates="test_suites")
     test_definition = db.Column(JSON, nullable=False)
     submitter_id = db.Column(db.Integer,
-                             db.ForeignKey(User.id), nullable=False)
+                             db.ForeignKey(User.id), nullable=True)
     submitter = db.relationship("User", uselist=False)
     test_instances = db.relationship("TestInstance",
                                      back_populates="test_suite",

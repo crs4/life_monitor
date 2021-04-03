@@ -129,7 +129,7 @@ class Workflow(Resource):
 
 class WorkflowVersion(ROCrate):
     id = db.Column(db.Integer, db.ForeignKey(ROCrate.id), primary_key=True)
-    submitter_id = db.Column(db.Integer, db.ForeignKey(User.id), nullable=False)
+    submitter_id = db.Column(db.Integer, db.ForeignKey(User.id), nullable=True)
     workflow_id = \
         db.Column(db.Integer, db.ForeignKey("workflow.id"), nullable=False)
     workflow = db.relationship("Workflow", foreign_keys=[workflow_id], cascade="all",
@@ -180,7 +180,7 @@ class WorkflowVersion(ROCrate):
     @hybrid_property
     def authorizations(self):
         auths = [a for a in self._authorizations]
-        if self.hosting_service:
+        if self.hosting_service and self.submitter:
             for auth in self.submitter.get_authorization(self.hosting_service):
                 auths.append(auth)
         return auths
