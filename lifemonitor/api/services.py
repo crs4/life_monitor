@@ -260,6 +260,17 @@ class LifeMonitor:
                     logger.debug(e)
         return workflows
 
+    @staticmethod
+    def get_user_registry_workflows(user: User, registry: models.WorkflowRegistry) -> List[models.Workflow]:
+        workflows = []
+        if registry.get_user(user.id):
+            try:
+                workflows.extend([w for w in registry.get_user_workflows(user)
+                                  if w not in workflows])
+            except lm_exceptions.NotAuthorizedException as e:
+                logger.debug(e)
+        return workflows
+
     @classmethod
     def get_user_workflow(cls, user: models.User, uuid, version=None) -> models.Workflow:
         return cls._find_and_check_workflow_version(user, uuid, version).workflow
