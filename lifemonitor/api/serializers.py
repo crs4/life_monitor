@@ -170,7 +170,8 @@ class ListOfWorkflowVersions(ResourceMetadataSchema):
         return WorkflowSchema().dump(obj)
 
     def get_versions(self, obj: models.Workflow):
-        return [VersionDetailsSchema(only=("uuid", "version", "ro_crate", "submitter")).dump(v)
+        return [VersionDetailsSchema(only=("uuid", "version", "ro_crate",
+                                           "submitter", "is_latest")).dump(v)
                 for v in obj.versions.values()]
 
 
