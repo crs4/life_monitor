@@ -248,6 +248,11 @@ def workflows_post(body, _registry=None, _submitter_id=None):
     if not registry and not roc_link:
         return lm_exceptions.report_problem(400, "Bad Request", extra_info={"missing input": "roc_link"},
                                             detail=messages.input_data_missing)
+
+    # at least one between 'uuid' or 'identifier' must be provided
+    if not body.get('uuid', None) and not body.get('identifier', None):
+        return lm_exceptions.report_problem(400, "Bad Request", extra_info={"missing input": "uuid or identifier"},
+                                            detail=messages.input_data_missing)
     try:
         w = lm.register_workflow(
             roc_link=roc_link,
