@@ -35,12 +35,14 @@ _INSTANCES_ENDPOINT = '/instances'
 
 def build_users_path(user_id=None):
     return f"{_USERS_ENDPOINT}/{user_id}"
-    
+
+
 def build_registry_users_path(user_id=None):
     base = f"{_REGISTRIES_ENDPOINT}/current/users"
     if user_id:
         return f"{base}/{user_id}"
     return base
+
 
 def build_registries_path(registry_uuid=None):
     if registry_uuid:

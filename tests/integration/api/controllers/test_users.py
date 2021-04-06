@@ -50,7 +50,7 @@ def test_get_user_registries(app_client, client_auth_method, user1, user1_auth):
 def test_get_user_registries_no_authorization(app_client, client_auth_method, user1, user1_auth):
     response = app_client.get(utils.build_registry_users_path(), headers=user1_auth)
     if client_auth_method == ClientAuthenticationMethod.API_KEY:
-        utils.assert_status_code(401, response.status_code)    
+        utils.assert_status_code(401, response.status_code)
     else:
         utils.assert_status_code(403, response.status_code)
 
