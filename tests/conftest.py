@@ -231,6 +231,18 @@ def valid_workflow(request):
 
 
 @pytest.fixture
+def generic_workflow(app_client):
+    return {
+        'uuid': str(uuid.uuid4()),
+        'version': '1',
+        'roc_link': "http://webserver:5000/download?file=ro-crate-galaxy-sortchangecase.crate.zip",
+        'name': 'Galaxy workflow from Generic Link',
+        'testing_service_type': 'jenkins',
+        'authorization': app_client.application.config['WEB_SERVER_AUTH_TOKEN']
+    }
+
+
+@pytest.fixture
 def test_suite_metadata():
     with open(os.path.join(base_path, "config/data/test-metadata/test-metadata.json")) as df:
         return json.load(df)

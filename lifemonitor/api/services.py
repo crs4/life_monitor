@@ -226,6 +226,10 @@ class LifeMonitor:
             raise lm_exceptions.EntityNotFoundException(models.WorkflowRegistry, registry_name)
 
     @staticmethod
+    def get_workflow(wf_uuid) -> models.Workflow:
+        return models.Workflow.find_by_uuid(wf_uuid)
+
+    @staticmethod
     def get_workflows() -> List[models.Workflow]:
         return models.Workflow.all()
 

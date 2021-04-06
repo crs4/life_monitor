@@ -35,6 +35,7 @@ from lifemonitor.app import create_app, initialize_app
 from lifemonitor.auth.models import User
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 from lifemonitor.auth.services import generate_new_api_key
+from lifemonitor.utils import OpenApiSpecs
 from tests import utils
 
 from .conftest_types import ClientAuthenticationMethod
@@ -283,12 +284,24 @@ def _fake_callback_uri():
     return "http://fake_client_uri"
 
 
-def create_authorization_code_flow_client(_admin_user):
+def registry_scopes():
+    return " ".join(OpenApiSpecs.get_instance().registry_client_scopes.keys())
+
+
+def registry_code_flow_scopes():
+    return " ".join(OpenApiSpecs.get_instance().registry_code_flow_scopes.keys())
+
+
+def auth_code_flow_scopes():
+    return " ".join(OpenApiSpecs.get_instance().authorization_code_scopes.keys())
+
+
+def create_authorization_code_flow_client(_admin_user, _is_registry=False):
     from lifemonitor.auth.oauth2.server import server
     client = server.create_client(_admin_user,
                                   "test_code_flow", _fake_callback_uri(),
                                   ['authorization_code', 'token', 'id_token'],
-                                  ["code", "token"], "read write",
+                                  ["code", "token"], registry_code_flow_scopes() if _is_registry else auth_code_flow_scopes(),
                                   _fake_callback_uri(), "client_secret_post")
     logger.debug("Registered client: %r", client)
     return client
@@ -297,7 +310,7 @@ def create_authorization_code_flow_client(_admin_user):
 
 def create_authorization_code_access_token(_application,
                                            _authorization_code_flow_client,
-                                           _user=None, _session=None):
+                                           _user=None, _session=None, _is_registry=False):
     """ Parametric fixture: available params are {seek}"""
     try:
         client = _authorization_code_flow_client
@@ -320,7 +333,7 @@ def create_authorization_code_access_token(_application,
             "confirm": "true",
             "state": "5ca75bd30",
             "redirect_uri": _fake_callback_uri(),
-            "scope": "read write"
+            "scope": registry_code_flow_scopes() if _is_registry else auth_code_flow_scopes()
         }, data={"client_secret": client_secret}, allow_redirects=False)
         logger.debug("The Response: %r", auth_response.content)
         assert auth_response.status_code == 302, "No redirection with auth code"
@@ -357,7 +370,7 @@ def create_client_credentials_access_token(application, credentials):
         'grant_type': 'client_credentials',
         'client_id': credentials.client_id,
         'client_secret': credentials.client_secret,
-        'scope': 'read write'
+        'scope': registry_scopes()
     })
     logger.debug("TOKEN RESPONSE: %r", response.content)
     assert response.status_code == 200, "Error"
@@ -370,21 +383,21 @@ def create_app_client_headers(_client_auth_method, _application,
     registry = _client_credentials_registry
     access_token = api_key = None
     if _client_auth_method == ClientAuthenticationMethod.AUTHORIZATION_CODE:
-        _client = create_authorization_code_flow_client(_app_user)
+        _client = create_authorization_code_flow_client(_app_user, _is_registry=False)
         access_token = create_authorization_code_access_token(
             _application, _client,
-            _user=_app_user, _session=_app_user_session)["access_token"]
+            _user=_app_user, _session=_app_user_session, _is_registry=False)["access_token"]
     elif _client_auth_method == ClientAuthenticationMethod.REGISTRY_CODE_FLOW:
         _client = _client_credentials_registry.client_credentials
         access_token = create_authorization_code_access_token(
             _application, _client,
-            _user=_app_user, _session=_app_user_session)["access_token"]
+            _user=_app_user, _session=_app_user_session, _is_registry=True)["access_token"]
     elif _client_auth_method == ClientAuthenticationMethod.CLIENT_CREDENTIALS:
         _client = None
         access_token = create_client_credentials_access_token(
             _application, registry.client_credentials)["access_token"]
     elif _client_auth_method == ClientAuthenticationMethod.API_KEY:
-        api_key = generate_new_api_key(_app_user, "read write").key
+        api_key = generate_new_api_key(_app_user, " ".join(OpenApiSpecs.get_instance().apikey_scopes.keys())).key
     try:
         headers = None
         if access_token:
