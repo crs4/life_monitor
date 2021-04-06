@@ -151,19 +151,6 @@ def test_post_workflow_by_registry_error_registry_uri(m, request_context, mock_r
 
 
 @patch("lifemonitor.api.controllers.lm")
-def test_post_workflow_by_registry_error_missing_submitter_id(m, request_context, mock_registry):
-    assert auth.current_user.is_anonymous, "Unexpected user in session"
-    assert auth.current_registry, "Unexpected registry in session"
-    # add one fake workflow
-    data = {}
-    response = controllers.workflows_post(body=data)
-    logger.debug("Response: %r, %r", response, str(response.data))
-    assert_status_code(response.status_code, 400)
-    assert messages.no_submitter_id_provided in response.data.decode(),\
-        "Unexpected error message"
-
-
-@patch("lifemonitor.api.controllers.lm")
 def test_post_workflow_by_registry_error_submitter_not_found(m, request_context, mock_registry):
     assert auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry, "Unexpected registry in session"
@@ -280,22 +267,3 @@ def test_get_workflow_by_id(m, request_context, mock_registry):
     assert response['version']['version'] == data['version'], "Unexpected workflow version"
     assert 'previous_versions' not in response, "Unexpected list of previous versions"
 
-
-@patch("lifemonitor.api.controllers.lm")
-def test_get_latest_workflow_version_by_id(m, request_context, mock_registry):
-    assert auth.current_user.is_anonymous, "Unexpected user in session"
-    assert auth.current_registry, "Unexpected registry in session"
-    data = {"uuid": "12345", "version": "2", "roc_link": "https://somelink", "previous_versions": ["1"]}
-    w = models.Workflow(uuid=data["uuid"])
-    wv = w.add_version("1", data["roc_link"], {})
-    wv = w.add_version(data["version"], data["roc_link"], {})
-    m.get_registry_workflow_version.return_value = wv
-    logger.debug("Mock workflow version: %r", w)
-    response = controllers.workflows_get_latest_version_by_id(data['uuid'])
-    m.get_registry_workflow_version.assert_called_once_with(mock_registry, data['uuid'], None)
-    logger.debug("Response: %r", response)
-    assert isinstance(response, dict), "Unexpected response"
-    assert response['uuid'] == data['uuid'], "Unexpected workflow UUID"
-    assert response['version']['version'] == data['version'], "Unexpected workflow version"
-    previous_versions = [_['version'] for _ in response['previous_versions']]
-    assert previous_versions == data['previous_versions'], "Unexpected list of previous versions"
