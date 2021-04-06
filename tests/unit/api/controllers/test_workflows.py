@@ -266,4 +266,3 @@ def test_get_workflow_by_id(m, request_context, mock_registry):
     assert response['uuid'] == data['uuid'], "Unexpected workflow UUID"
     assert response['version']['version'] == data['version'], "Unexpected workflow version"
     assert 'previous_versions' not in response, "Unexpected list of previous versions"
-
