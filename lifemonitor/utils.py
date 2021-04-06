@@ -180,11 +180,8 @@ class OpenApiSpecs(object):
 
     @staticmethod
     def load():
-        response = requests.get(f"{get_base_url()}/openapi.json", verify=False)
-        if not response or response.status_code != 200:
-            logger.error(response.content)
-            raise RuntimeError("Unable to load OpenApi specs")
-        return response.json()
+        with open('./specs/api.yaml') as file:
+            return yaml.load(file, Loader=yaml.FullLoader)
 
     @property
     def specs(self):
