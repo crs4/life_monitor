@@ -18,6 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import functools
 import glob
 import json
 import logging
@@ -28,13 +29,13 @@ import string
 import tempfile
 import urllib
 import uuid
-import functools
 import zipfile
 from importlib import import_module
 from os.path import basename, dirname, isfile, join
 
 import flask
 import requests
+import yaml
 
 from .exceptions import NotAuthorizedException, NotValidROCrateException
 
@@ -215,7 +216,21 @@ class OpenApiSpecs(object):
 
     @property
     def registry_scopes(self):
+        scopes = self.registry_client_scopes
+        scopes.update(self.registry_code_flow_scopes)
+        return scopes
+
+    @property
+    def registry_client_scopes(self):
         return self.getSecuritySchemeScopes('RegistryClientCredentials')
+
+    @property
+    def registry_code_flow_scopes(self):
+        return self.getSecuritySchemeScopes('RegistryCodeFlow')
+
+    @property
+    def authorization_code_scopes(self):
+        return self.getSecuritySchemeScopes('AuthorizationCodeFlow')
 
     @property
     def all_scopes(self):
