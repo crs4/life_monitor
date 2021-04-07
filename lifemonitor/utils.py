@@ -191,6 +191,14 @@ class OpenApiSpecs(object):
         return self._specs.copy()
 
     @property
+    def info(self):
+        return self.specs['info']
+
+    @property
+    def version(self):
+        return self.specs['info']['version']
+
+    @property
     def components(self):
         return self.specs['components']
 
