@@ -37,7 +37,7 @@ import flask
 import requests
 import yaml
 
-from .exceptions import NotAuthorizedException, NotValidROCrateException
+from . import exceptions as lm_exceptions
 
 logger = logging.getLogger()
 
@@ -94,7 +94,7 @@ def _download_from_remote(url, output_stream, authorization=None):
             session.headers['Authorization'] = authorization
         with session.get(url, stream=True) as r:
             if r.status_code == 401 or r.status_code == 403:
-                raise NotAuthorizedException(details=r.content)
+                raise lm_exceptions.NotAuthorizedException(details=r.content)
             r.raise_for_status()
             for chunk in r.iter_content(chunk_size=8192):
                 output_stream.write(chunk)
@@ -122,7 +122,7 @@ def extract_zip(archive_path, target_path=None):
             zip_ref.extractall(target_path)
         return target_path
     except Exception as e:
-        raise NotValidROCrateException(e)
+        raise lm_exceptions.NotValidROCrateException(e)
 
 
 def load_test_definition_filename(filename):
