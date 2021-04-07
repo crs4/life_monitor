@@ -23,10 +23,11 @@ from __future__ import annotations
 import logging
 from urllib.parse import urljoin
 
-from flask.globals import request
 from lifemonitor import utils as lm_utils
 from lifemonitor.auth.serializers import UserSchema
-from lifemonitor.serializers import BaseSchema, ma
+from lifemonitor.serializers import (BaseSchema, ListOfItems,
+                                     ResourceMetadataSchema, ResourceSchema,
+                                     ma)
 from marshmallow import fields, post_dump
 
 from . import models
@@ -35,40 +36,7 @@ from . import models
 logger = logging.getLogger(__name__)
 
 
-class MetadataSchema(BaseSchema):
-
-    class Meta:
-        ordered = True
-
-    base_url = fields.Method("get_base_url")
-    resource = fields.Method("get_self_path")
-    created = fields.DateTime(attribute='created')
-    modified = fields.DateTime(attribute='modified')
-
-    def get_base_url(self, obj):
-        return lm_utils.get_external_server_url()
-
-    def get_self_path(self, obj):
-        try:
-            return request.full_path
-        except RuntimeError:
-            # when there is no active HTTP request
-            return None
-
-
-class ResourceMetadataSchema(BaseSchema):
-    meta = fields.Method("get_metadata")
-
-    def get_metadata(self, obj):
-        return MetadataSchema().dump(obj)
-
-
-class ResourceSchema(ResourceMetadataSchema):
-    uuid = fields.String(attribute="uuid")
-    name = fields.String(attribute="name")
-
-
-class WorkflowRegistrySchema(BaseSchema):
+class WorkflowRegistrySchema(ResourceMetadataSchema):
     __envelope__ = {"single": None, "many": "items"}
     __model__ = models.WorkflowRegistry
 
@@ -84,13 +52,11 @@ class WorkflowRegistrySchema(BaseSchema):
         return obj.type.replace('_registry', '')
 
 
-class ListOfWorkflowRegistriesSchema(BaseSchema):
-    __envelope__ = {"single": None, "many": "items"}
-
-    items = fields.Nested(WorkflowRegistrySchema(), many=True)
+class ListOfWorkflowRegistriesSchema(ListOfItems):
+    __item_scheme__ = WorkflowRegistrySchema
 
 
-class WorkflowSchema(BaseSchema):
+class WorkflowSchema(ResourceMetadataSchema):
     __envelope__ = {"single": None, "many": "items"}
     __model__ = models.WorkflowVersion
 
@@ -101,9 +67,12 @@ class WorkflowSchema(BaseSchema):
     name = ma.auto_field()
 
 
-class RegistryWorkflowSchema(WorkflowSchema):
+class ListOfWorkflows(ListOfItems):
+    __item_scheme__ = WorkflowSchema
 
-    registry = fields.Nested(WorkflowRegistrySchema(), attribute="")
+
+class RegistryWorkflowSchema(WorkflowSchema):
+    registry = fields.Nested(WorkflowRegistrySchema(exclude=('meta',)), attribute="")
 
 
 class VersionDetailsSchema(BaseSchema):
@@ -119,7 +88,7 @@ class VersionDetailsSchema(BaseSchema):
         return {
             'links': {
                 'external': obj.uri,
-                'download': urljoin(lm_utils.get_external_server_url(), f"ro_crates/{obj.id}/downloads")
+                'download': urljoin(lm_utils.get_external_server_url(), f"ro_crates/{obj.id}/download")
             }
         }
 
@@ -142,7 +111,8 @@ class WorkflowVersionSchema(ResourceSchema):
     uuid = fields.String(attribute="workflow.uuid")
     name = ma.auto_field()
     version = fields.Method("get_version")
-    registry = ma.Nested(WorkflowRegistrySchema(), attribute="workflow_registry")
+    registry = ma.Nested(WorkflowRegistrySchema(exclude=('meta',)),
+                         attribute="workflow_registry")
 
     def get_version(self, obj):
         return VersionDetailsSchema().dump(obj)
@@ -156,7 +126,7 @@ class WorkflowVersionSchema(ResourceSchema):
 
 
 class ListOfWorkflowVersions(ResourceMetadataSchema):
-    __envelope__ = {"single": None, "many": "items"}
+    __envelope__ = {"single": None, "many": None}
     __model__ = models.Workflow
 
     class Meta:
@@ -167,7 +137,7 @@ class ListOfWorkflowVersions(ResourceMetadataSchema):
     versions = fields.Method("get_versions")
 
     def get_workflow(self, obj: models.Workflow):
-        return WorkflowSchema().dump(obj)
+        return WorkflowSchema(exclude=('meta',)).dump(obj)
 
     def get_versions(self, obj: models.Workflow):
         return [VersionDetailsSchema(only=("uuid", "version", "ro_crate",
@@ -183,7 +153,7 @@ class LatestWorkflowSchema(WorkflowVersionSchema):
                 for v in obj.workflow.versions.values() if not v.is_latest]
 
 
-class TestInstanceSchema(BaseSchema):
+class TestInstanceSchema(ResourceMetadataSchema):
     __envelope__ = {"single": None, "many": None}
     __model__ = models.TestInstance
 
@@ -205,7 +175,7 @@ class TestInstanceSchema(BaseSchema):
         }
 
 
-class BuildSummarySchema(BaseSchema):
+class BuildSummarySchema(ResourceMetadataSchema):
     __envelope__ = {"single": None, "many": None}
     __model__ = models.TestBuild
 
@@ -215,7 +185,7 @@ class BuildSummarySchema(BaseSchema):
     build_id = fields.String(attribute="id")
     suite_uuid = fields.String(attribute="test_instance.test_suite.uuid")
     status = fields.String()
-    instance = ma.Nested(TestInstanceSchema(), attribute="test_instance")
+    instance = ma.Nested(TestInstanceSchema(exclude=('meta',)), attribute="test_instance")
     timestamp = fields.String()
     last_logs = fields.Method("get_last_logs")
 
@@ -231,11 +201,11 @@ class WorkflowStatusSchema(WorkflowVersionSchema):
         model = models.WorkflowStatus
 
     aggregate_test_status = fields.String(attribute="status.aggregated_status")
-    latest_builds = ma.Nested(BuildSummarySchema(),
+    latest_builds = ma.Nested(BuildSummarySchema(exclude=('meta',)),
                               attribute="status.latest_builds", many=True)
 
 
-class SuiteSchema(BaseSchema):
+class SuiteSchema(ResourceMetadataSchema):
     __envelope__ = {"single": None, "many": "items"}
     __model__ = models.TestSuite
 
@@ -244,11 +214,15 @@ class SuiteSchema(BaseSchema):
 
     uuid = ma.auto_field()
     test_suite_metadata = fields.Dict(attribute="test_definition")  # TODO: rename the property to metadata
-    instances = fields.Nested(TestInstanceSchema(),
+    instances = fields.Nested(TestInstanceSchema(exclude=('meta',)),
                               attribute="test_instances", many=True)
 
 
-class SuiteStatusSchema(BaseSchema):
+class ListOfSuites(ListOfItems):
+    __item_scheme__ = SuiteSchema
+
+
+class SuiteStatusSchema(ResourceMetadataSchema):
     __envelope__ = {"single": None, "many": "items"}
     __model__ = models.SuiteStatus
 
@@ -257,14 +231,12 @@ class SuiteStatusSchema(BaseSchema):
 
     suite_uuid = fields.String(attribute="suite.uuid")
     status = fields.String(attribute="aggregated_status")
-    latest_builds = fields.Nested(BuildSummarySchema(), many=True)
+    latest_builds = fields.Nested(BuildSummarySchema(exclude=('meta',)), many=True)
 
 
-class ListOfTestInstancesSchema(BaseSchema):
-    __envelope__ = {"single": None, "many": "items"}
-
-    items = fields.Nested(TestInstanceSchema(), attribute="test_instances", many=True)
+class ListOfTestInstancesSchema(ListOfItems):
+    __item_scheme__ = TestInstanceSchema
 
 
-class ListOfTestBuildsSchema(BuildSummarySchema):
-    __envelope__ = {"single": None, "many": "items"}
+class ListOfTestBuildsSchema(ListOfItems):
+    __item_scheme__ = BuildSummarySchema
