@@ -20,11 +20,16 @@
 
 import logging
 
+from flask.globals import request
 from flask_marshmallow import Marshmallow
 from marshmallow import fields, post_dump, post_load, pre_load
 
+from . import utils as lm_utils
+
+# set logger
 logger = logging.getLogger(__name__)
 
+# init
 ma = Marshmallow()
 
 
@@ -51,6 +56,54 @@ class BaseSchema(ma.SQLAlchemySchema):
     @post_load
     def make_object(self, data, **kwargs):
         return self.__model__(**data) if self.__model__ else data
+
+
+class MetadataSchema(BaseSchema):
+
+    class Meta:
+        ordered = True
+
+    api_version = fields.Method("get_api_version")
+    base_url = fields.Method("get_base_url")
+    resource = fields.Method("get_self_path")
+    created = fields.DateTime(attribute='created')
+    modified = fields.DateTime(attribute='modified')
+
+    def get_api_version(self, obj):
+        return lm_utils.OpenApiSpecs.get_instance().version
+
+    def get_base_url(self, obj):
+        return lm_utils.get_external_server_url()
+
+    def get_self_path(self, obj):
+        try:
+            return request.full_path.strip('?')
+        except RuntimeError:
+            # when there is no active HTTP request
+            return None
+
+
+class ResourceMetadataSchema(BaseSchema):
+    meta = fields.Method("get_metadata")
+
+    def get_metadata(self, obj):
+        return MetadataSchema().dump(obj)
+
+
+class ResourceSchema(ResourceMetadataSchema):
+    uuid = fields.String(attribute="uuid")
+    name = fields.String(attribute="name")
+
+
+class ListOfItems(ResourceMetadataSchema):
+    __envelope__ = {"single": None, "many": None}
+    __item_scheme__ = None
+
+    items = fields.Method("get_items")
+
+    def get_items(self, obj):
+        return [self.__item_scheme__(exclude=("meta",), many=False).dump(_) for _ in obj] \
+            if self.__item_scheme__ else None
 
 
 class ProblemDetailsSchema(BaseSchema):
