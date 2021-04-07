@@ -49,7 +49,7 @@ def _row_to_dict(row):
 def workflow_registries_get():
     registries = lm.get_workflow_registries()
     logger.debug("registries_get. Got %s registries", len(registries))
-    return serializers.WorkflowRegistrySchema().dump(registries, many=True)
+    return serializers.ListOfWorkflowRegistriesSchema().dump(registries)
 
 
 # @authorized
@@ -78,7 +78,7 @@ def workflows_get():
     else:
         return lm_exceptions.report_problem(401, "Unauthorized", detail=messages.no_user_in_session)
     logger.debug("workflows_get. Got %s workflows (user: %s)", len(workflows), current_user)
-    return serializers.WorkflowSchema().dump(workflows, many=True)
+    return serializers.ListOfWorkflows().dump(workflows)
 
 
 def _get_workflow_or_problem(wf_uuid, wf_version):
@@ -139,7 +139,7 @@ def workflows_get_status(wf_uuid):
 def registry_workflows_get():
     workflows = lm.get_registry_workflows(current_registry)
     logger.debug("workflows_get. Got %s workflows (registry: %s)", len(workflows), current_registry)
-    return serializers.WorkflowSchema().dump(workflows, many=True)
+    return serializers.ListOfWorkflows().dump(workflows)
 
 
 @authorized
@@ -157,7 +157,7 @@ def registry_user_workflows_get(user_id):
         identity = lm.find_registry_user_identity(current_registry, external_id=user_id)
         workflows = lm.get_user_registry_workflows(identity.user, current_registry)
         logger.debug("workflows_get. Got %s workflows (user: %s)", len(workflows), current_user)
-        return serializers.WorkflowSchema().dump(workflows, many=True)
+        return serializers.ListOfWorkflows().dump(workflows)
     except OAuthIdentityNotFoundException:
         return lm_exceptions.report_problem(401, "Unauthorized",
                                             detail=messages.no_user_oauth_identity_on_registry
@@ -177,7 +177,7 @@ def user_workflows_get():
         return lm_exceptions.report_problem(401, "Unauthorized", detail=messages.no_user_in_session)
     workflows = lm.get_user_workflows(current_user)
     logger.debug("workflows_get. Got %s workflows (user: %s)", len(workflows), current_user)
-    return serializers.WorkflowSchema().dump(workflows, many=True)
+    return serializers.ListOfWorkflows().dump(workflows)
 
 
 @authorized
@@ -196,7 +196,7 @@ def user_registry_workflows_get(registry_uuid):
         registry = lm.get_workflow_registry_by_uuid(registry_uuid)
         workflows = lm.get_user_registry_workflows(current_user, registry)
         logger.debug("workflows_get. Got %s workflows (user: %s)", len(workflows), current_user)
-        return serializers.WorkflowSchema().dump(workflows, many=True)
+        return serializers.ListOfWorkflows().dump(workflows)
     except lm_exceptions.EntityNotFoundException:
         return lm_exceptions.report_problem(404, "Not Found",
                                             detail=messages.no_registry_found.format(registry_uuid))
@@ -327,7 +327,7 @@ def workflows_get_suites(wf_uuid, wf_version=None):
     wf_version = wf_version or request.args.get('version', 'latest').lower()
     response = _get_workflow_or_problem(wf_uuid, wf_version)
     return response if isinstance(response, Response) \
-        else serializers.SuiteSchema().dump(response.test_suites, many=True)
+        else serializers.ListOfSuites().dump(response.test_suites)
 
 
 def _get_suite_or_problem(suite_uuid):
@@ -376,7 +376,7 @@ def suites_get_status(suite_uuid):
 def suites_get_instances(suite_uuid):
     response = _get_suite_or_problem(suite_uuid)
     return response if isinstance(response, Response) \
-        else serializers.ListOfTestInstancesSchema().dump(response)
+        else serializers.ListOfTestInstancesSchema().dump(response.test_instances)
 
 
 def suites_post(wf_uuid, wf_version, body):
@@ -474,7 +474,7 @@ def instances_get_builds(instance_uuid, limit):
     response = _get_instances_or_problem(instance_uuid)
     logger.info("Number of builds to load: %r", limit)
     return response if isinstance(response, Response) \
-        else serializers.ListOfTestBuildsSchema().dump(response.get_test_builds(limit=limit), many=True)
+        else serializers.ListOfTestBuildsSchema().dump(response.get_test_builds(limit=limit))
 
 
 @authorized

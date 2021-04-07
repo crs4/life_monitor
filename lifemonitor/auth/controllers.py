@@ -59,7 +59,7 @@ def show_current_user_profile():
 def get_registry_users():
     try:
         if current_registry and current_user.is_anonymous:
-            return serializers.UserSchema().dump(current_registry.users, many=True)
+            return serializers.ListOfUsers().dump(current_registry.users)
         raise exceptions.Forbidden(detail="Client type unknown")
     except Exception as e:
         return exceptions.report_problem_from_exception(e)
