@@ -1315,6 +1315,8 @@ components:
           required:
             - identifier
         - $ref: "#/components/schemas/WorkflowVersionBase"
+      example:
+        { "identifier": "15", "name": "COVID-19 Workflow", "version": "1.0" }
 
     WorkflowVersion:
       type: object
