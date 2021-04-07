@@ -56,7 +56,7 @@ def test_get_workflows_with_user(m, request_context, mock_user):
     response = controllers.workflows_get()
     m.get_user_workflows.assert_called_once()
     assert isinstance(response, dict), "Unexpected result type"
-    assert response == serializers.WorkflowSchema().dump([data], many=True)
+    assert response == serializers.ListOfWorkflows().dump([data])
 
 
 @patch("lifemonitor.api.controllers.lm")
@@ -69,7 +69,7 @@ def test_get_workflows_with_registry(m, request_context, mock_registry):
     response = controllers.workflows_get()
     m.get_registry_workflows.assert_called_once()
     assert isinstance(response, dict), "Unexpected result type"
-    assert response == serializers.WorkflowSchema().dump([data], many=True)
+    assert response == serializers.ListOfWorkflows().dump([data])
 
 
 @patch("lifemonitor.api.controllers.lm")
