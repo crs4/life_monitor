@@ -24,11 +24,11 @@ import logging
 
 from .testsuite import Test, TestSuite
 from .testbuild import BuildStatus, TestBuild
-from .testinstance import TestInstance
+from .testinstance import TestInstance, ManagedTestInstance
 
 
 # set module level logger
 logger = logging.getLogger(__name__)
 
 
-__all__ = ["Test", "BuildStatus", "TestBuild", "Test", "TestSuite", "TestInstance"]
+__all__ = ["Test", "BuildStatus", "TestBuild", "Test", "TestSuite", "TestInstance", "ManagedTestInstance"]

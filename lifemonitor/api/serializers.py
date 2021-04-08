@@ -163,6 +163,7 @@ class TestInstanceSchema(ResourceMetadataSchema):
     uuid = ma.auto_field()
     name = ma.auto_field()
     resource = ma.auto_field()
+    managed = fields.Boolean(attribute="managed")
     service = fields.Method("get_testing_service")
 
     def get_testing_service(self, obj):
