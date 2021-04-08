@@ -23,7 +23,7 @@ import logging
 import connexion
 import lifemonitor.exceptions as lm_exceptions
 import werkzeug.exceptions as http_exceptions
-from flask import Response, g, request
+from flask import Response, request
 from lifemonitor.api import serializers
 from lifemonitor.api.services import LifeMonitor
 from lifemonitor.auth import authorized, current_registry, current_user
