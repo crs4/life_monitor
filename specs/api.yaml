@@ -1372,7 +1372,7 @@ components:
                 [
                   {
                     uuid: "21ac72ec-b9a5-49e0-b5a6-1322b8b54552",
-                    version: "1.0",
+                    version: "0.1",
                     ro_crate:
                       {
                         links:
