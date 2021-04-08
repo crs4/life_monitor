@@ -231,6 +231,11 @@ def valid_workflow(request):
 
 
 @pytest.fixture
+def random_valid_workflow():
+    return helpers.get_valid_workflow()
+
+
+@pytest.fixture
 def generic_workflow(app_client):
     return {
         'uuid': str(uuid.uuid4()),
@@ -239,6 +244,32 @@ def generic_workflow(app_client):
         'name': 'Galaxy workflow from Generic Link',
         'testing_service_type': 'jenkins',
         'authorization': app_client.application.config['WEB_SERVER_AUTH_TOKEN']
+    }
+
+
+@pytest.fixture
+def unmanaged_test_instance(app_client):
+    return {
+        "managed": False,
+        "name": "test_instance",
+        "service": {
+            "type": "travis",
+            "url": "https://travis-ci.org/"
+        },
+        "resource": "github/crs4/pydoop"
+    }
+
+
+@pytest.fixture
+def managed_test_instance(app_client):
+    return {
+        "managed": True,
+        "name": "test_instance",
+        "service": {
+            "type": "travis",
+            "url": "https://travis-ci.org/"
+        },
+        "resource": "github/crs4/pydoop"
     }
 
 

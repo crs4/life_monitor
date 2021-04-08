@@ -147,6 +147,11 @@ def get_valid_workflows():
     return wfs
 
 
+def get_valid_workflow(name=None):
+    wfs = get_valid_workflows()
+    return wfs[name] if name else random.choice(wfs)
+
+
 def get_user_workflows(_application, _registry_type, _public=True, _to_skip=None, index_user=0):
     """ Parametric fixture: available params are {wfhub}"""
     try:

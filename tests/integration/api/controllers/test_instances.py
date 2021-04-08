@@ -36,6 +36,99 @@ logger = logging.getLogger()
     ClientAuthenticationMethod.CLIENT_CREDENTIALS,
     ClientAuthenticationMethod.REGISTRY_CODE_FLOW
 ], indirect=True)
+def test_add_unmanaged_instance(app_client, client_auth_method, user1, user1_auth,
+                                random_valid_workflow, unmanaged_test_instance):
+    w, workflow = utils.pick_and_register_workflow(user1, random_valid_workflow)
+    assert len(workflow.test_suites) > 0, "Unexpected number of test suites"
+    suite = workflow.test_suites[0]
+    logger.debug("The test suite: %r", suite)
+    # get/check number of instances before
+    num_of_instances = len(suite.test_instances)
+    assert num_of_instances > 0, "Unexpected number of test instances"
+    # post new unmanaged instance
+    response = app_client.post(f"{utils.build_suites_path(suite.uuid)}/instances",
+                               headers=user1_auth, json=unmanaged_test_instance)
+    logger.debug(response)
+    utils.assert_status_code(201, response.status_code)
+    response_data = json.loads(response.data)
+    assert "test_instance_uuid" in response_data, "Unexpcted response: missing 'test_instance_uuid'"
+    # check number of instances after
+    assert len(suite.test_instances) == num_of_instances + 1, "Unexpected number of instances"
+
+
+@pytest.mark.parametrize("client_auth_method", [
+    #    ClientAuthenticationMethod.BASIC,
+    ClientAuthenticationMethod.API_KEY,
+    ClientAuthenticationMethod.AUTHORIZATION_CODE,
+    ClientAuthenticationMethod.CLIENT_CREDENTIALS,
+    ClientAuthenticationMethod.REGISTRY_CODE_FLOW
+], indirect=True)
+def test_add_managed_instance(app_client, client_auth_method,
+                              user1, user1_auth,
+                              random_valid_workflow, managed_test_instance):
+    w, workflow = utils.pick_and_register_workflow(user1, random_valid_workflow)
+    assert len(workflow.test_suites) > 0, "Unexpected number of test suites"
+    suite = workflow.test_suites[0]
+    logger.debug("The test suite: %r", suite)
+    # get/check number of instances before
+    num_of_instances = len(suite.test_instances)
+    assert num_of_instances > 0, "Unexpected number of test instances"
+    # post new unmanaged instance
+    response = app_client.post(f"{utils.build_suites_path(suite.uuid)}/instances",
+                               headers=user1_auth, json=managed_test_instance)
+    logger.debug(response)
+    utils.assert_status_code(501, response.status_code)
+    # check number of instances after
+    assert len(suite.test_instances) == num_of_instances, "Unexpected number of instances"
+
+
+@pytest.mark.parametrize("client_auth_method", [
+    #    ClientAuthenticationMethod.BASIC,
+    ClientAuthenticationMethod.API_KEY,
+    ClientAuthenticationMethod.AUTHORIZATION_CODE,
+    ClientAuthenticationMethod.CLIENT_CREDENTIALS,
+    ClientAuthenticationMethod.REGISTRY_CODE_FLOW
+], indirect=True)
+def test_remove_instance(app_client, client_auth_method,
+                         user1, user1_auth,
+                         random_valid_workflow, unmanaged_test_instance):
+    w, workflow = utils.pick_and_register_workflow(user1, random_valid_workflow)
+    assert len(workflow.test_suites) > 0, "Unexpected number of test suites"
+    suite = workflow.test_suites[0]
+    logger.debug("The test suite: %r", suite)
+    current_number_of_instances = len(suite.test_instances)
+    assert current_number_of_instances > 0, "Unexpected number of test instances"
+
+    delta = 5
+    for i in range(1, delta + 1):
+        suite.add_test_instance(user1['user'],
+                                unmanaged_test_instance['managed'],
+                                unmanaged_test_instance['name'],
+                                unmanaged_test_instance['service']['type'],
+                                unmanaged_test_instance['service']['url'],
+                                unmanaged_test_instance['resource'])
+        assert len(suite.test_instances) == current_number_of_instances + i, \
+            "Unexpected number of test instances"
+    count = 0
+    current_number_of_instances += delta
+    assert current_number_of_instances > 0, "Unexpected number of test instances"
+    for instance in suite.test_instances:
+        logger.debug("Removing instance: %r", instance)
+        response = app_client.delete(f"{utils.build_instances_path(instance.uuid)}",
+                                     headers=user1_auth)
+        utils.assert_status_code(204, response.status_code)
+        count += 1
+        assert len(suite.test_instances) == current_number_of_instances - count
+    assert len(suite.test_instances) == 0, "Unexpected number of instances"
+
+
+@pytest.mark.parametrize("client_auth_method", [
+    #    ClientAuthenticationMethod.BASIC,
+    ClientAuthenticationMethod.API_KEY,
+    ClientAuthenticationMethod.AUTHORIZATION_CODE,
+    ClientAuthenticationMethod.CLIENT_CREDENTIALS,
+    ClientAuthenticationMethod.REGISTRY_CODE_FLOW
+], indirect=True)
 def test_get_instance(app_client, client_auth_method, user1, user1_auth, valid_workflow):
     w, workflow = utils.pick_and_register_workflow(user1, valid_workflow)
     assert len(workflow.test_suites) > 0, "Unexpected number of test suites"
