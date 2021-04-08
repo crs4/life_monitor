@@ -717,11 +717,11 @@ paths:
         instance.  That is, a specific test suite hosted and executed on a
         specific testing service.
 
-        Two types of test instances can be created:  **managed** and **unmanaged**.
+        Two types of test instances can be created:
 
-        1. A *managed test instance* is managed by LifeMonitor on its
+        1. **"managed"** *test instances* are managed by LifeMonitor on its
         own testing infrastructure (not supported yet).
-        2. An *unmanaged test instance* is hosted on an external testing service
+        2. **"unmanaged"** *test instances* are hosted on an external testing service
         and LifeMonitor can only monitor it (query information about test
         results through the service's API).
       parameters:
@@ -731,15 +731,18 @@ paths:
         content:
           application/json:
             schema:
-              allOf:
-                - properties:
-                    managed:
-                      type: boolean
-                  required:
-                    - managed
-                - oneOf:
-                    - $ref: "#/components/schemas/TestInstance"
-                    - $ref: "#/components/schemas/ManagedTestInstanceCreationData"
+              $ref: "#/components/schemas/TestInstance"
+              # at the moment we can distiguish between managed and unmanaged
+              # through the "managed" property.
+              #              
+              # oneOf:
+              #   - $ref: "#/components/schemas/TestInstance"
+              #   - $ref: "#/components/schemas/ManagedTestInstanceCreationData"
+              # discriminator:
+              #   propertyName: discriminatorProperty
+              #   mapping:
+              #     valueA: "#/components/schemas/TestInstance"
+              #     valueB: "#/components/schemas/ManagedTestInstanceCreationData"
       responses:
         "201":
           description: Instance created
@@ -1596,30 +1599,63 @@ components:
         - type
         - url
 
-    TestInstance:
+    TestInstanceBase:
       type: object
       properties:
-        uuid:
-          type: string
+        managed:
+          type: boolean
           description: |
-            A universal unique identifier for the TestInstance
-          readOnly: true
-          example: ba5bbdc3-d9fb-4381-a1d8-96a8ac5594d7
-        name:
-          type: string
-          description: |
-            The name assigned to the test instance
-          example: test_instance_1
-        service:
-          $ref: "#/components/schemas/TestingService"
-        resource:
-          type: string
-          description: |
-            The relative path of the test project on the testing service
-          example: github/seek4science/seek
+            `true` for **managed**; 
+            `false` for **unmanaged**
+          example: false
       required:
-        - service
-        - resource
+        - managed
+
+    TestInstance:
+      description: "Test Instance"
+      allOf:
+        - type: object
+          properties:
+            uuid:
+              type: string
+              description: |
+                A universal unique identifier for the TestInstance
+              readOnly: true
+              example: ba5bbdc3-d9fb-4381-a1d8-96a8ac5594d7
+            name:
+              type: string
+              description: |
+                The name assigned to the test instance
+              example: test_instance_1
+            service:
+              $ref: "#/components/schemas/TestingService"
+            resource:
+              type: string
+              description: |
+                The relative path of the test project on the testing service
+              example: github/seek4science/seek
+          required:
+            - service
+            - resource
+        - $ref: "#/components/schemas/TestInstanceBase"
+      example:
+        {
+          "managed": false,
+          "name": "test_instance_1",
+          "service": { "type": "travis", "url": "https://travis-ci.org/" },
+          "resource": "github/seek4science/seek",
+        }
+
+    ManagedTestInstanceCreationData:
+      description: "Managed Test Instance"
+      allOf:
+        - type: object
+          description: |
+            This object collects the information to be provided for the creation of
+            a managed test instance.  At the moment it's empty.
+        - $ref: "#/components/schemas/TestInstanceBase"
+
+      example: { "managed": true, "name": "unmanaged_test_instance_1" }
 
     ListOfTestInstance:
       type: object
@@ -1630,12 +1666,6 @@ components:
             $ref: "#/components/schemas/TestInstance"
       required:
         - items
-
-    ManagedTestInstanceCreationData:
-      type: object
-      description: |
-        This object collects the information to be provided for the creation of
-        a managed test instance.  At the moment it's empty.
 
     Error:
       type: object

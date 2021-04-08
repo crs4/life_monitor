@@ -411,23 +411,28 @@ def suites_delete(suite_uuid):
 
 def suites_post_instance(suite_uuid):
     try:
-        suite = lm.get_suite(suite_uuid)
-        if not suite:
-            return {"code": "404", "message": "Resource not found"}, 404
-        if current_user and not current_user.is_anonymous:
-            user_workflows = lm.get_user_workflows(current_user)
-            if suite.workflow not in user_workflows:
-                return f"The user cannot access suite {suite}", 401
-        else:
-            registry = g.workflow_registry if "workflow_registry" in g else None
-            if registry is None:
-                return "Unable to find a valid WorkflowRegistry", 404
-            if suite.workflow not in registry.registered_workflow_versions:
-                return f"The registry cannot access suite {suite}", 401
+        response = _get_suite_or_problem(suite_uuid)
+        if isinstance(response, Response):
+            return response
+        # data as JSON
+        data = request.get_json()
+        # notify that 'managed' are not supported
+        if data['managed'] is True:
+            return lm_exceptions.report_problem(501, "Not implemented yet",
+                                                detail="Only unmanaged test instances are supported!")
+        submitter = current_user if current_user and not current_user.is_anonymous else None
+        test_instance = lm.register_test_instance(response, submitter,
+                                                  data['managed'],
+                                                  data['name'],
+                                                  data['service']['type'],
+                                                  data['service']['url'],
+                                                  data['resource'])
+        return {'test_instance_uuid': str(test_instance.uuid)}, 201
+    except KeyError as e:
+        return lm_exceptions.report_problem(400, "Bad Request", extra_info={"exception": str(e)},
+                                            detail=messages.input_data_missing)
     except lm_exceptions.EntityNotFoundException:
         return "Invalid ID", 400
-
-    return "Not implemented", 501
 
 
 def _get_instances_or_problem(instance_uuid):
@@ -466,7 +471,22 @@ def instances_get_by_id(instance_uuid):
 
 @authorized
 def instances_delete_by_id(instance_uuid):
-    pass
+
+    try:
+        response = _get_instances_or_problem(instance_uuid)
+        if isinstance(response, Response):
+            return response
+        lm.deregister_test_instance(response)
+        return connexion.NoContent, 204
+    except lm_exceptions.EntityNotFoundException as e:
+        return lm_exceptions.report_problem(404, "Not Found", extra_info={"exception": str(e.detail)},
+                                            detail=messages.instance_not_found.format(instance_uuid))
+    except OAuthIdentityNotFoundException as e:
+        return lm_exceptions.report_problem(401, "Unauthorized", extra_info={"exception": str(e)})
+    except lm_exceptions.NotAuthorizedException as e:
+        return lm_exceptions.report_problem(403, "Forbidden", extra_info={"exception": str(e)})
+    except Exception as e:
+        raise lm_exceptions.LifeMonitorException(title="Internal Error", detail=str(e))
 
 
 @authorized

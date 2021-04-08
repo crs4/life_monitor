@@ -64,7 +64,7 @@ class TestSuite(db.Model, ModelMixin):
     submitter = db.relationship("User", uselist=False)
     test_instances = db.relationship("TestInstance",
                                      back_populates="test_suite",
-                                     cascade="all, delete")
+                                     cascade="all, delete-orphan")
 
     def __init__(self,
                  w: models.workflows.WorkflowVersion, submitter: User,
@@ -115,11 +115,12 @@ class TestSuite(db.Model, ModelMixin):
                      for t in self.test_instances]
         }
 
-    def add_test_instance(self, submitter: User,
+    def add_test_instance(self, submitter: User, managed: bool,
                           test_name, testing_service_type, testing_service_url, testing_service_resource):
         testing_service = \
             models.TestingService.get_instance(testing_service_type, testing_service_url)
-        test_instance = models.TestInstance(self, submitter, test_name, testing_service_resource, testing_service)
+        instance_cls = models.TestInstance if not managed else models.ManagedTestInstance
+        test_instance = instance_cls(self, submitter, test_name, testing_service_resource, testing_service)
         logger.debug("Created TestInstance: %r", test_instance)
         return test_instance
 

@@ -186,6 +186,35 @@ class LifeMonitor:
         logger.debug("Deleted TestSuite: %r", suite.uuid)
         return suite.uuid
 
+    @staticmethod
+    def register_test_instance(test_suite: Union[models.TestSuite, str],
+                               submitter: User,
+                               managed: bool,
+                               test_name, testing_service_type,
+                               testing_service_url, testing_service_resource):
+        suite = test_suite
+        if not isinstance(test_suite, models.TestSuite):
+            suite = models.TestSuite.find_by_uuid(test_suite)
+            if not suite:
+                raise lm_exceptions.EntityNotFoundException(models.TestSuite, test_suite)
+        test_instance = suite.add_test_instance(submitter,
+                                                managed,
+                                                test_name,
+                                                testing_service_type, testing_service_url,
+                                                testing_service_resource)
+        test_instance.save()
+        return test_instance
+
+    @staticmethod
+    def deregister_test_instance(test_instance: Union[models.TestInstance, str]):
+        instance = test_instance
+        if not isinstance(instance, models.TestInstance):
+            instance = models.TestSuite.find_by_uuid(instance)
+            if not instance:
+                raise lm_exceptions.EntityNotFoundException(models.TestInstance, test_instance)
+        instance.delete()
+        return instance.uuid
+
     @classmethod
     def get_workflow_registry_by_generic_reference(cls, registry_reference) -> models.WorkflowRegistry:
         try:
