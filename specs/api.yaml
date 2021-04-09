@@ -8,11 +8,10 @@ info:
   description: |
     *"Workflow sustainability service"*
 
-    Life Monitor aims to facilitate the execution, 
-    monitoring and sharing of tests for workflows over time, 
-    ensuring that deviations from correct operation are detected and communicated 
-    to the workflow authors so that they might be solved, 
-    thus extending the useful life of the workflow.
+    Life Monitor aims to facilitate the sharing, execution and monitoring of
+    workflow tests over time, ensuring that deviations from the workflow's
+    correct operation are detected and communicated to the workflow authors so
+    that they might be solved, thus extending the useful life of the workflow.
 
     Life Monitor is being developed as part of the [EOSC-Life project](https://www.eosc-life.eu/).
 
