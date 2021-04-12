@@ -8,11 +8,10 @@ info:
   description: |
     *"Workflow sustainability service"*
 
-    Life Monitor aims to facilitate the execution, 
-    monitoring and sharing of tests for workflows over time, 
-    ensuring that deviations from correct operation are detected and communicated 
-    to the workflow authors so that they might be solved, 
-    thus extending the useful life of the workflow.
+    Life Monitor aims to facilitate the sharing, execution and monitoring of
+    workflow tests over time, ensuring that deviations from the workflow's
+    correct operation are detected and communicated to the workflow authors so
+    that they might be solved, thus extending the useful life of the workflow.
 
     Life Monitor is being developed as part of the [EOSC-Life project](https://www.eosc-life.eu/).
 
@@ -186,7 +185,7 @@ paths:
       tags: ["Registry Client"]
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "registry_workflows_post"
-      summary: "Push workflow version"
+      summary: "Post workflow version"
       description: |
         Submit a new version of a workflow indexed by the current registry client or user.
 
@@ -241,7 +240,7 @@ paths:
       tags: ["Users"]
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "user_registry_workflows_post"
-      summary: "Push registry workflow"
+      summary: "Post registry workflow"
       description: |
         Submit a new workflow version indexed on a given registry.
       security:
@@ -297,7 +296,7 @@ paths:
       tags: ["Registry Client"]
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "registry_user_workflows_post"
-      summary: "Push user's workflow version"
+      summary: "Post user's workflow version"
       description: |
         Submit a registry user's workflow version indexed by the current registry client.
       security:
@@ -352,7 +351,7 @@ paths:
       tags: ["Users"]
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "user_workflows_post"
-      summary: "Push workflow"
+      summary: "Post workflow"
       description: |
         Submit a new workflow version.
       security:
@@ -734,7 +733,7 @@ paths:
               $ref: "#/components/schemas/TestInstance"
               # at the moment we can distiguish between managed and unmanaged
               # through the "managed" property.
-              #              
+              #
               # oneOf:
               #   - $ref: "#/components/schemas/TestInstance"
               #   - $ref: "#/components/schemas/ManagedTestInstanceCreationData"
@@ -1249,7 +1248,7 @@ components:
           description: |
             An optional authorization header.
 
-            The `authorization` parameter might be required to download 
+            The `authorization` parameter might be required to download
             the RO-Crate containing the workflow if it is not directly
             accessible to the user for download
             (e.g., `authorization: "ApiKey 1234567890"`).
@@ -1344,7 +1343,7 @@ components:
           type: boolean
           readOnly: true
           description: |
-            `true` if the workflow version is the latest, 
+            `true` if the workflow version is the latest,
             `false` otherwise.
           example: true
         submitter:
@@ -1512,7 +1511,7 @@ components:
         build_id:
           type: string
           description: |
-            An identifier for this build, 
+            An identifier for this build,
             as provided by the testing service back-end
           example: 167444
         suite_uuid:
@@ -1554,7 +1553,7 @@ components:
         build_id:
           type: string
           description: |
-            An identifier for this build, 
+            An identifier for this build,
             as provided by the testing service back-end
         suite_uuid:
           type: string
@@ -1605,7 +1604,7 @@ components:
         managed:
           type: boolean
           description: |
-            `true` for **managed**; 
+            `true` for **managed**;
             `false` for **unmanaged**
           example: false
       required:
@@ -1723,7 +1722,7 @@ components:
       x-tokenInfoFunc: lifemonitor.auth.oauth2.server.services.get_token_scopes
       description: |
         Allow a registry client to directly interact with the LifeMonitor API.
-        The client can query which of its users and workflows have been registered 
+        The client can query which of its users and workflows have been registered
         with the LifeMonitor service, register test suites for that workflows
         and query their status.
       flows:
@@ -1746,7 +1745,7 @@ components:
       x-tokenInfoFunc: lifemonitor.auth.oauth2.server.services.get_token_scopes
       description: |
         Allow a registry client to interact with LifeMonitor on behalf of a user.
-        The registry client can submit test suites 
+        The registry client can submit test suites
         for its user's workflows and query their status.
       flows:
         authorizationCode:
