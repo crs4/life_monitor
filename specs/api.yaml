@@ -6,7 +6,7 @@ info:
   version: "0.2.0-beta2"
   title: "Life Monitor API"
   description: |
-    *"Workflow sustainability service"*
+    *Workflow sustainability service*
 
     Life Monitor aims to facilitate the sharing, execution and monitoring of
     workflow tests over time, ensuring that deviations from the workflow's
@@ -18,7 +18,7 @@ info:
 servers:
   - url: /
     description: >
-      Version 0.2.0-beta1 of API.
+      Version 0.2.0-beta2 of API.
 
 paths:
   /registries:
@@ -27,7 +27,7 @@ paths:
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "workflow_registries_get"
       summary: "List registries"
-      description: "Get all known workflow registries"
+      description: "List all known workflow registries"
       responses:
         "200":
           description: List of workflow registries
@@ -49,7 +49,7 @@ paths:
       tags: ["Registries"]
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "workflow_registries_get_by_uuid"
-      summary: "Get info"
+      summary: "Get a registry"
       description: "Get information about the workflow registry with the specified uuid"
       parameters:
         - $ref: "#/components/parameters/registry_uuid"
@@ -74,16 +74,16 @@ paths:
       tags: ["Users"]
       x-openapi-router-controller: lifemonitor.auth.controllers
       operationId: "show_current_user_profile"
-      summary: Get profile
+      summary: Get the current user
       description: |
-        Get information about the current logged user
+        Get information about the current (authenticated) user
       security:
         - apiKey: ["user.profile"]
         - RegistryCodeFlow: ["user.profile"]
         - AuthorizationCodeFlow: ["user.profile"]
       responses:
         "200":
-          description: User profile info
+          description: User profile
           content:
             application/json:
               schema:
@@ -102,9 +102,9 @@ paths:
       tags: ["Registry Client"]
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "workflow_registries_get_current"
-      summary: "Get info"
+      summary: "Get the current registry client"
       description: |
-        Get information about the current workflow registry.
+        Get information about the current workflow registry client
 
         **Notice.** Only workflow registries interacting with LifeMonitor as OAuth2 clients
         can query this endpoint.
@@ -133,7 +133,8 @@ paths:
       operationId: "get_registry_users"
       summary: "List users"
       description: |
-        Get users of the current workflow registry client.
+        List all users of the current workflow registry client who have linked
+        their registry account to their LifeMonitor identity.
 
         **Notice.** Only workflow registries interacting with LifeMonitor as OAuth2 clients
         can query this endpoint.
@@ -143,7 +144,7 @@ paths:
         - RegistryCodeFlow: ["registry.user"]
       responses:
         "200":
-          description: List of registry users which have linked their registry account with their LifeMonitor identity.
+          description: List of users.
           content:
             application/json:
               schema:
@@ -164,7 +165,7 @@ paths:
       operationId: "registry_workflows_get"
       summary: List workflows
       description: |
-        List registry workflows pushed on LifeMonitor.
+        List all workflows in the current registry that have been registered with LifeMonitor.
 
         **Notice.** Only workflow registries interacting with LifeMonitor as OAuth2 clients
         can query this endpoint.
@@ -173,7 +174,7 @@ paths:
         - RegistryCodeFlow: ["registry.workflow.read"]
       responses:
         "200":
-          description: A JSON array of Workflow objects
+          description: List of workflows
           content:
             application/json:
               schema:
@@ -202,7 +203,7 @@ paths:
                 - $ref: "#/components/schemas/RegistryWorkflowVersion"
       responses:
         "201":
-          description: Workflow created
+          description: Workflow created by this operation
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -219,9 +220,9 @@ paths:
       tags: ["Users"]
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "user_registry_workflows_get"
-      summary: List registry user's workflows
+      summary: List registry workflows
       description: |
-        List registry workflows pushed on LifeMonitor by the current logged user.
+        List workflows from the given registry that have been registered on LifeMonitor by the current (authenticated) user.
       security:
         - apiKey: ["user.workflow.read"]
         - AuthorizationCodeFlow: ["user.workflow.read"]
@@ -229,7 +230,7 @@ paths:
         - $ref: "#/components/parameters/registry_uuid"
       responses:
         "200":
-          description: A JSON array of Workflow objects
+          description: List of workflows
           content:
             application/json:
               schema:
@@ -242,7 +243,7 @@ paths:
       operationId: "user_registry_workflows_post"
       summary: "Post registry workflow"
       description: |
-        Submit a new workflow version indexed on a given registry.
+        Submit a new workflow version indexed on the given registry.
       security:
         - apiKey: ["user.workflow.write"]
         - AuthorizationCodeFlow: ["user.workflow.write"]
@@ -256,7 +257,7 @@ paths:
               $ref: "#/components/schemas/RegistryWorkflowVersion"
       responses:
         "201":
-          description: Workflow created
+          description: Workflow created by this operation
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -273,9 +274,9 @@ paths:
       tags: ["Registry Client"]
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "registry_user_workflows_get"
-      summary: List user's workflows
+      summary: List workflows for a user
       description: |
-        List registry workflows registered on LifeMonitor by a given registry user.
+        List registry workflows registered on LifeMonitor by the given registry user.
 
         **Notice.** Only workflow registries interacting with LifeMonitor as OAuth2 clients
         can query this endpoint.
@@ -285,7 +286,7 @@ paths:
         - $ref: "#/components/parameters/user_id"
       responses:
         "200":
-          description: A JSON array of Workflow objects
+          description: List of workflows
           content:
             application/json:
               schema:
@@ -296,9 +297,9 @@ paths:
       tags: ["Registry Client"]
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "registry_user_workflows_post"
-      summary: "Post user's workflow version"
+      summary: "Post workflow version for a user"
       description: |
-        Submit a registry user's workflow version indexed by the current registry client.
+        Submit a new version of a workflow indexed by the current registry client for the given registry user
       security:
         - RegistryClientCredentials: ["registry.user.workflow.write"]
       parameters:
@@ -313,7 +314,7 @@ paths:
                 - $ref: "#/components/schemas/RegistryWorkflowVersion"
       responses:
         "201":
-          description: Workflow created
+          description: The workflow created by this operation
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -330,16 +331,16 @@ paths:
       tags: ["Users"]
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "user_workflows_get"
-      summary: "List user's workflows"
+      summary: "List workflows for the current user"
       description: |
-        Get all workflows registered by the current user
+        List all workflows registered by the current user
       security:
         - apiKey: ["user.workflow.read"]
         - RegistryCodeFlow: ["user.workflow.read"]
         - AuthorizationCodeFlow: ["user.workflow.read"]
       responses:
         "200":
-          description: A JSON array of Workflow objects
+          description: A list of Workflows
           content:
             application/json:
               schema:
@@ -365,7 +366,7 @@ paths:
               $ref: "#/components/schemas/GenericWorkflowVersion"
       responses:
         "201":
-          description: Workflow created
+          description: The workflow created by this operation
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -384,7 +385,7 @@ paths:
       summary: "List workflows"
       tags: ["Workflows"]
       description: |
-        Get all registered workflows for the current authenticated user or registry client.
+        List all registered workflows for the current (authenticated) user or registry client.
       security:
         - apiKey: ["workflow.read"]
         - RegistryClientCredentials: ["workflow.read"]
@@ -392,7 +393,7 @@ paths:
         - AuthorizationCodeFlow: ["workflow.read"]
       responses:
         "200":
-          description: A JSON array of Workflow objects
+          description: List of Workflows
           content:
             application/json:
               schema:
@@ -1186,7 +1187,7 @@ components:
           type: string
           description: |
             An alphanumeric string used to denote the registry.
-            Only `_` and `-` are admitted, no spaces or other special characters.
+            Only `_` and `-` are allowed, no spaces or other special characters.
           example: workflowhub_dev
         type:
           description: "Registry type"
