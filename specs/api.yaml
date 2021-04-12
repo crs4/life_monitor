@@ -403,8 +403,8 @@ paths:
 
   /workflows/{wf_uuid}:
     get:
-      summary: Get info
-      description: "Get information about a registered workflow"
+      summary: Get a workflow
+      description: "Get information about the workflow registered with the given uuid"
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "workflows_get_latest_version_by_id"
       tags: ["Workflows"]
@@ -440,7 +440,7 @@ paths:
     get:
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "workflows_get_versions_by_id"
-      summary: "List versions"
+      summary: "List workflow versions"
       description: "Get the list of registered versions for a given workflow"
       tags: ["Workflows"]
       security:
@@ -526,8 +526,8 @@ paths:
     delete:
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "workflows_delete"
-      summary: "Remove version"
-      description: "Delete a workflow version"
+      summary: "Delete a workflow version"
+      description: "Delete the specified version of the specified workflow"
       tags: ["Workflows"]
       security:
         - apiKey: ["workflow.write"]
@@ -553,8 +553,8 @@ paths:
     get:
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "workflows_get_status"
-      summary: "Get status"
-      description: "Get test statuses for a given workflow and workflow version"
+      summary: "Get workflow test status"
+      description: "Get test status for a given workflow and workflow version"
       tags: ["Workflows"]
       security:
         - apiKey: ["workflow.read"]
@@ -582,9 +582,9 @@ paths:
 
   /workflows/{wf_uuid}/suites:
     get:
-      summary: "List suites"
+      summary: "List workflow test suites"
       description: >
-        Get collection of test suites associated with workflow.  Test suites
+        Get collection of test suites associated with the workflow. Test suites
         are collected from the RO-crate received with the creation of a new
         version of a workflow.
       x-openapi-router-controller: lifemonitor.api.controllers
@@ -600,7 +600,7 @@ paths:
         - $ref: "#/components/parameters/version"
       responses:
         "200":
-          description: List of TestSuites associated with the specified workflow version
+          description: List of test suites associated with the specified workflow version
           content:
             application/json:
               schema:
@@ -616,8 +616,8 @@ paths:
 
   /suites/{suite_uuid}:
     get:
-      summary: "Get info"
-      description: "Get info about a test suite."
+      summary: "Get a test suite"
+      description: "Get information about the test suite with the specified uuid."
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "suites_get_by_uuid"
       tags: ["Test Suites"]
@@ -646,8 +646,8 @@ paths:
 
   /suites/{suite_uuid}/status:
     get:
-      summary: "Get status"
-      description: "Get status of latest build for this test suite for each known instance"
+      summary: "Get test suite status"
+      description: "Get the status of the latest build for each known instance of the specified test suite"
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "suites_get_status"
       tags: ["Test Suites"]
@@ -672,8 +672,8 @@ paths:
 
   /suites/{suite_uuid}/instances:
     get:
-      summary: "Get test instances"
-      description: "Get all instances of this suite present on testing services"
+      summary: "List test instances"
+      description: "List all instances of this suite present on testing services"
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "suites_get_instances"
       tags: ["Test Suites"]
@@ -701,7 +701,7 @@ paths:
           $ref: "#/components/responses/NotFound"
 
     post:
-      summary: "Register instance"
+      summary: "Post instance"
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "suites_post_instance"
       tags: ["Test Instances"]
@@ -711,19 +711,15 @@ paths:
         - RegistryCodeFlow: ["workflow.write"]
         - AuthorizationCodeFlow: ["workflow.write"]
       description: |
-        Register or add an instance that executes this test suite.
+        Register an instance of the specified test suite, hosted and executed
+        on a specific testing service.
 
-        POSTing this resource results in the creation of a new test suite
-        instance.  That is, a specific test suite hosted and executed on a
-        specific testing service.
+        There are two main types of test instances:
 
-        Two types of test instances can be created:
-
-        1. **"managed"** *test instances* are managed by LifeMonitor on its
-        own testing infrastructure (not supported yet).
-        2. **"unmanaged"** *test instances* are hosted on an external testing service
-        and LifeMonitor can only monitor it (query information about test
-        results through the service's API).
+        1. **"managed"** (not supported yet): directly managed by LifeMonitor
+        2. **"unmanaged"**: hosted on an external testing service and monitored
+        by LifeMonitor (LifeMonitor retrieves information on the test status
+        through the service's API).
       parameters:
         - $ref: "#/components/parameters/suite_uuid"
       requestBody:
@@ -745,7 +741,7 @@ paths:
               #     valueB: "#/components/schemas/ManagedTestInstanceCreationData"
       responses:
         "201":
-          description: Instance created
+          description: Instance created by this operation
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -759,8 +755,8 @@ paths:
 
   /instances/{instance_uuid}:
     get:
-      summary: "Get info"
-      description: "Get summary of a test instance"
+      summary: "Get a test instance"
+      description: "Get information about a test instance"
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "instances_get_by_id"
       tags: ["Test Instances"]
@@ -773,7 +769,7 @@ paths:
         - $ref: "#/components/parameters/instance_uuid"
       responses:
         "200":
-          description: "Build summary list"
+          description: "A test instance object"
           content:
             application/json:
               schema:
@@ -790,8 +786,8 @@ paths:
     delete:
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "instances_delete_by_id"
-      summary: "Remove instance"
-      description: "Delete a test instance"
+      summary: "Delete a test instance"
+      description: "Delete the test instance with the specified uuid"
       tags: ["Test Instances"]
       security:
         - apiKey: ["workflow.write"]
@@ -814,8 +810,8 @@ paths:
 
   /instances/{instance_uuid}/latest-builds:
     get:
-      summary: "Get latest test builds"
-      description: "Get summaries of latest builds on the specified instance"
+      summary: "Get the latest test instance builds"
+      description: "Get information on the latest builds for the specified instance"
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "instances_get_builds"
       tags: ["Test Instances"]
@@ -829,7 +825,7 @@ paths:
         - $ref: "#/components/parameters/limit"
       responses:
         "200":
-          description: "Build summary list"
+          description: "A list of test instance objects"
           content:
             application/json:
               schema:
@@ -845,8 +841,8 @@ paths:
 
   /instances/{instance_uuid}/builds/{build_id}:
     get:
-      summary: "Get test build"
-      description: "Get summary of the specified build on the specified instance"
+      summary: "Get a test instance build"
+      description: "Get information on the specified build on the specified test instance"
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "instances_builds_get_by_id"
       tags: ["Test Instances"]
@@ -860,7 +856,7 @@ paths:
         - $ref: "#/components/parameters/build_id"
       responses:
         "200":
-          description: "Log data"
+          description: "A build summary object"
           content:
             application/json:
               schema:
@@ -876,8 +872,8 @@ paths:
 
   /instances/{instance_uuid}/builds/{build_id}/logs:
     get:
-      summary: "Get test build logs"
-      description: "Get the build logs for the specified build and instance"
+      summary: "Get test instance build logs"
+      description: "Get the build logs for the specified test instance and build"
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "instances_builds_get_logs"
       tags: ["Test Instances"]
