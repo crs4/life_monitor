@@ -106,8 +106,8 @@ paths:
       description: |
         Get information about the current workflow registry client
 
-        **Notice.** Only workflow registries interacting with LifeMonitor as OAuth2 clients
-        can query this endpoint.
+        **Note:** only workflow registries interacting with LifeMonitor as
+        OAuth2 clients can use this endpoint.
       security:
         - RegistryClientCredentials: ["registry.info"]
         - RegistryCodeFlow: ["registry.info"]
@@ -136,8 +136,8 @@ paths:
         List all users of the current workflow registry client who have linked
         their registry account to their LifeMonitor identity.
 
-        **Notice.** Only workflow registries interacting with LifeMonitor as OAuth2 clients
-        can query this endpoint.
+        **Note:** only workflow registries interacting with LifeMonitor as
+        OAuth2 clients can use this endpoint.
       tags: ["Registry Client"]
       security:
         - RegistryClientCredentials: ["registry.user"]
@@ -167,8 +167,8 @@ paths:
       description: |
         List all workflows in the current registry that have been registered with LifeMonitor.
 
-        **Notice.** Only workflow registries interacting with LifeMonitor as OAuth2 clients
-        can query this endpoint.
+        **Note:** only workflow registries interacting with LifeMonitor as
+        OAuth2 clients can use this endpoint.
       security:
         - RegistryClientCredentials: ["registry.workflow.read"]
         - RegistryCodeFlow: ["registry.workflow.read"]
@@ -190,6 +190,8 @@ paths:
       description: |
         Submit a new version of a workflow indexed by the current registry client or user.
 
+        **Note:** only workflow registries interacting with LifeMonitor as
+        OAuth2 clients can use this endpoint.
       security:
         - RegistryClientCredentials: ["registry.workflow.write"]
         - RegistryCodeFlow: ["registry.workflow.write"]
@@ -278,8 +280,8 @@ paths:
       description: |
         List registry workflows registered on LifeMonitor by the given registry user.
 
-        **Notice.** Only workflow registries interacting with LifeMonitor as OAuth2 clients
-        can query this endpoint.
+        **Note:** only workflow registries interacting with LifeMonitor as
+        OAuth2 clients can use this endpoint.
       security:
         - RegistryClientCredentials: ["registry.user.workflow.read"]
       parameters:
@@ -300,6 +302,9 @@ paths:
       summary: "Post workflow version for a user"
       description: |
         Submit a new version of a workflow indexed by the current registry client for the given registry user
+
+        **Note:** only workflow registries interacting with LifeMonitor as
+        OAuth2 clients can use this endpoint.
       security:
         - RegistryClientCredentials: ["registry.user.workflow.write"]
       parameters:
