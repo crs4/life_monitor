@@ -62,25 +62,6 @@ class TestSuite(db.Model, ModelMixin):
         return '<TestSuite {} of workflow {} (version {})>'.format(
             self.uuid, self.workflow_version.uuid, self.workflow_version.version)
 
-    def _parse_test_definition(self):
-        try:
-            for test in self.test_definition["test"]:
-                test = tm.Test.from_json(test)
-                for instance in test.instance:
-                    logger.debug("Instance: %r", instance)
-                    testing_service = models.TestingService.get_instance(
-                        instance.service.type,
-                        instance.service.url
-                    )
-                    assert testing_service, "Testing service not initialized"
-                    logger.debug("Created TestService: %r", testing_service)
-                    test_instance = models.TestInstance(self, self.submitter,
-                                                        test.name, instance.service.resource,
-                                                        testing_service)
-                    logger.debug("Created TestInstance: %r", test_instance)
-        except KeyError as e:
-            raise lm_exceptions.SpecificationNotValidException(f"Missing property: {e}")
-
     @property
     def status(self) -> models.SuiteStatus:
         return models.SuiteStatus(self)
@@ -99,12 +80,14 @@ class TestSuite(db.Model, ModelMixin):
                      for t in self.test_instances]
         }
 
-    def add_test_instance(self, submitter: User, managed: bool,
-                          test_name, testing_service_type, testing_service_url, testing_service_resource):
+    def add_test_instance(self, submitter: User, managed: bool, test_name: str,
+                          testing_service_type, testing_service_url, testing_service_resource,
+                          roc_instance: str = None):
         testing_service = \
             models.TestingService.get_instance(testing_service_type, testing_service_url)
+        assert testing_service, "Testing service not initialized"
         instance_cls = models.TestInstance if not managed else models.ManagedTestInstance
-        test_instance = instance_cls(self, submitter, test_name, testing_service_resource, testing_service)
+        test_instance = instance_cls(self, submitter, test_name, testing_service_resource, testing_service, roc_instance)
         logger.debug("Created TestInstance: %r", test_instance)
         return test_instance
 

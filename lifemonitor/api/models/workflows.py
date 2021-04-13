@@ -217,8 +217,9 @@ class WorkflowVersion(ROCrate):
     def is_healthy(self) -> Union[bool, str]:
         return self.check_health()["healthy"]
 
-    def add_test_suite(self, submitter: User, test_suite_metadata):
-        return models.TestSuite(self, submitter, test_suite_metadata)
+    def add_test_suite(self, submitter: User,
+                       name: str = None, roc_suite: str = None, definition: object = None):
+        return models.TestSuite(self, submitter, name=name, roc_suite=roc_suite, definition=definition)
 
     @property
     def submitter_identity(self):
