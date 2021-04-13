@@ -84,13 +84,22 @@ class VersionDetailsSchema(BaseSchema):
     ro_crate = fields.Method("get_rocrate")
     submitter = ma.Nested(UserSchema(only=('id', 'username')), attribute="submitter")
 
+    class Meta:
+        model = models.WorkflowVersion
+        additional = ('rocrate_metadata',)
+
     def get_rocrate(self, obj):
-        return {
+        rocrate = {
             'links': {
                 'external': obj.uri,
                 'download': urljoin(lm_utils.get_external_server_url(), f"ro_crates/{obj.id}/download")
             }
         }
+        rocrate['metadata'] = obj.crate_metadata
+        if 'rocrate_metadata' in self.exclude or \
+                self.only and 'rocrate_metadata' not in self.only:
+            del rocrate['metadata']
+        return rocrate
 
     @post_dump
     def remove_skip_values(self, data, **kwargs):

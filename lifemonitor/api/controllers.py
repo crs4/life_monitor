@@ -113,11 +113,14 @@ def workflows_get_by_id(wf_uuid, wf_version):
 @authorized
 def workflows_get_latest_version_by_id(wf_uuid):
     response = _get_workflow_or_problem(wf_uuid, None)
-    exclude = ('previous_versions',) \
-        if request.args.get('previous_versions', 'false').lower() == 'false' else ()
+    exclude = ['previous_versions'] \
+        if request.args.get('previous_versions', 'false').lower() == 'false' else []
     logger.debug("Previous versions: %r", exclude)
+    rocrate_metadata = request.args.get('ro_crate', 'false').lower() == 'true'
     return response if isinstance(response, Response) \
-        else serializers.LatestWorkflowSchema(exclude=exclude).dump(response)
+        else serializers.WorkflowVersionSchema(
+            exclude=exclude, rocrate_metadata=rocrate_metadata).dump(response)
+
 
 
 @authorized

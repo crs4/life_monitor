@@ -31,7 +31,7 @@ import lifemonitor.exceptions as lm_exceptions
 from lifemonitor.api.models import db
 from lifemonitor.auth.models import Resource
 from lifemonitor.models import JSON
-from lifemonitor.test_metadata import get_old_format_tests
+from lifemonitor.test_metadata import get_old_format_tests, get_roc_suites
 from lifemonitor.utils import download_url, extract_zip
 from rocrate.rocrate import ROCrate as ROCrateHelper
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -48,9 +48,9 @@ class ROCrate(Resource):
                                       backref=db.backref("ro_crates", cascade="all, delete-orphan"),
                                       foreign_keys=[hosting_service_id])
     _metadata = db.Column("metadata", JSON, nullable=True)
-    _test_metadata = None
     _local_path = None
     _metadata_loaded = False
+    __roc_helper = None
 
     __mapper_args__ = {
         'polymorphic_identity': 'ro_crate',
@@ -61,7 +61,7 @@ class ROCrate(Resource):
                  version=None, hosting_service=None) -> None:
         super().__init__(uri, uuid=uuid, name=name, version=version)
         self.hosting_service = hosting_service
-        self._crate_helper = None
+        self.__roc_helper = None
 
     @hybrid_property
     def crate_metadata(self):
@@ -69,19 +69,29 @@ class ROCrate(Resource):
             self.load_metadata()
         return self._metadata
 
-    @property
-    def dataset_name(self):
-        if not self._metadata_loaded:
-            self.load_metadata()
-        if not self._crate_helper:
-            raise RuntimeError("ROCrate not correctly loaded")
-        return self._crate_helper.name
+    @hybrid_property
+    def roc_suites(self):
+        return get_roc_suites(self._roc_helper)
+
+    def get_roc_suite(self, roc_suite_identifier):
+        try:
+            return self.roc_suites[roc_suite_identifier]
+        except KeyError:
+            logger.warning("Unable to find the roc_suite with identifier: %r", roc_suite_identifier)
+        return None
 
     @property
-    def test_metadata(self):
-        if not self._metadata_loaded:
-            self.load_metadata()
-        return self._test_metadata
+    def dataset_name(self):
+        return self._roc_helper.name
+
+    @property
+    def _roc_helper(self):
+        if not self.__roc_helper:
+            if not self._metadata_loaded:
+                self.load_metadata()
+        if not self.__roc_helper:
+            raise RuntimeError("ROCrate not correctly loaded")
+        return self.__roc_helper
 
     def _get_authorizations(self):
         authorizations = self.authorizations.copy()
@@ -95,10 +105,10 @@ class ROCrate(Resource):
             try:
                 auth_header = authorization.as_http_header() if authorization else None
                 logger.debug(auth_header)
-                self._crate_helper, self._metadata, self._test_metadata = \
+                self.__roc_helper, self._metadata = \
                     self.load_metadata_files(self.uri, authorization_header=auth_header)
                 self._metadata_loaded = True
-                return self._metadata, self._test_metadata
+                return self._metadata
             except Exception as e:
                 errors.append(e)
 
@@ -126,8 +136,6 @@ class ROCrate(Resource):
             metadata_path = Path(roc_posix_path) / crate.metadata.id
             with open(metadata_path, "rt") as f:
                 metadata = json.load(f)
-            # create a new Workflow instance with the loaded metadata
-            test_metadata = get_old_format_tests(crate)
-            return crate, metadata, test_metadata
+            return crate, metadata
         finally:
             shutil.rmtree(roc_path, ignore_errors=True)
