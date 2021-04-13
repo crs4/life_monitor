@@ -31,7 +31,7 @@ import lifemonitor.exceptions as lm_exceptions
 from lifemonitor.api.models import db
 from lifemonitor.auth.models import Resource
 from lifemonitor.models import JSON
-from lifemonitor.test_metadata import get_old_format_tests, get_roc_suites
+from lifemonitor.test_metadata import get_roc_suites
 from lifemonitor.utils import download_url, extract_zip
 from rocrate.rocrate import ROCrate as ROCrateHelper
 from sqlalchemy.ext.hybrid import hybrid_property
