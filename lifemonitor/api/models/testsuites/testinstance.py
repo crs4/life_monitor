@@ -26,7 +26,6 @@ from typing import List
 
 import lifemonitor.api.models as models
 from lifemonitor.api.models import db
-from lifemonitor.exceptions import EntityNotFoundException
 from lifemonitor.models import JSON, UUID, ModelMixin
 
 from .testsuite import TestSuite
