@@ -77,12 +77,6 @@ class TestInstance(db.Model, ModelMixin):
         return self.type != 'unmanaged'
 
     @property
-    def test(self):
-        if not self.test_suite:
-            raise EntityNotFoundException(models.Test)
-        return self.test_suite.tests[self.name]
-
-    @property
     def last_test_build(self):
         return self.testing_service.get_last_test_build(self)
 

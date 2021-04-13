@@ -35,24 +35,6 @@ from lifemonitor.models import JSON, UUID, ModelMixin
 logger = logging.getLogger(__name__)
 
 
-class Test:
-
-    def __init__(self,
-                 project: TestSuite,
-                 name: str, specification: object) -> None:
-        self.name = name
-        self.project = project
-        self.specification = specification
-
-    def __repr__(self):
-        return '<Test {} of testing project {} (workflow {}, version {})>'.format(
-            self.name, self.project, self.project.workflow.uuid, self.project.workflow.version)
-
-    @property
-    def instances(self) -> list:
-        return self.project.get_test_instance_by_name(self.name)
-
-
 class TestSuite(db.Model, ModelMixin):
     uuid = db.Column(UUID, primary_key=True, default=_uuid.uuid4)
     _workflow_version_id = db.Column("workflow_version_id", db.Integer,
@@ -123,19 +105,6 @@ class TestSuite(db.Model, ModelMixin):
         test_instance = instance_cls(self, submitter, test_name, testing_service_resource, testing_service)
         logger.debug("Created TestInstance: %r", test_instance)
         return test_instance
-
-    @property
-    def tests(self) -> Optional[dict]:
-        if not self.test_definition:
-            raise lm_exceptions.SpecificationNotDefinedException('Not test definition for the test suite {}'.format(self.uuid))
-        if "test" not in self.test_definition:
-            raise lm_exceptions.SpecificationNotValidException("'test' property not found")
-        # TODO: implement a caching mechanism: with a custom setter for the test_definition collection
-        result = {}
-        for test in self.test_definition["test"]:
-            result[test["name"]] = Test(self, test["name"],
-                                        test["specification"] if "specification" in test else None)
-        return result
 
     @classmethod
     def all(cls) -> List[TestSuite]:
