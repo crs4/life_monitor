@@ -123,8 +123,21 @@ class WorkflowVersionSchema(ResourceSchema):
     registry = ma.Nested(WorkflowRegistrySchema(exclude=('meta',)),
                          attribute="workflow_registry")
 
+    previous_versions = fields.Method("get_versions")
+    rocrate_metadata = False
+
+    def __init__(self, *args, rocrate_metadata=False, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.rocrate_metadata = rocrate_metadata
+
     def get_version(self, obj):
-        return VersionDetailsSchema().dump(obj)
+        exclude = ('rocrate_metadata',) if not self.rocrate_metadata else ()
+        return VersionDetailsSchema(exclude=exclude).dump(obj)
+
+    def get_versions(self, obj: models.WorkflowVersion):
+        schema = VersionDetailsSchema(only=("uuid", "version", "submitter"))
+        return [schema.dump(v)
+                for v in obj.workflow.versions.values() if not v.is_latest]
 
     @post_dump
     def remove_skip_values(self, data, **kwargs):
@@ -158,7 +171,8 @@ class LatestWorkflowSchema(WorkflowVersionSchema):
     previous_versions = fields.Method("get_versions")
 
     def get_versions(self, obj: models.WorkflowVersion):
-        return [VersionDetailsSchema(only=("uuid", "version", "submitter")).dump(v)
+        schema = VersionDetailsSchema(only=("uuid", "version", "submitter"))
+        return [schema.dump(v)
                 for v in obj.workflow.versions.values() if not v.is_latest]
 
 
@@ -170,6 +184,7 @@ class TestInstanceSchema(ResourceMetadataSchema):
         model = models.TestInstance
 
     uuid = ma.auto_field()
+    roc_instance = ma.auto_field()
     name = ma.auto_field()
     resource = ma.auto_field()
     managed = fields.Boolean(attribute="managed")
@@ -223,9 +238,14 @@ class SuiteSchema(ResourceMetadataSchema):
         model = models.TestSuite
 
     uuid = ma.auto_field()
-    test_suite_metadata = fields.Dict(attribute="test_definition")  # TODO: rename the property to metadata
+    roc_suite = fields.String(attribute="roc_suite")
+    definition = fields.Method("get_definition")
     instances = fields.Nested(TestInstanceSchema(exclude=('meta',)),
                               attribute="test_instances", many=True)
+
+    def get_definition(self, obj):
+        to_skip = ['path']
+        return {k: v for k, v in obj.definition.items() if k not in to_skip}
 
 
 class ListOfSuites(ListOfItems):
