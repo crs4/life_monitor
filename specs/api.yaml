@@ -1245,6 +1245,8 @@ components:
       type: object
       description: Info about the workflow RO-Crate used to register the workflow on LifeMonitor
       properties:
+        metadata:
+          $ref: "#/components/schemas/WorkflowTestingROCrate"
         links:
           type: object
           properties:
@@ -1468,7 +1470,7 @@ components:
         - "all_failing"
         - "not_available"
 
-    TestSuiteMetadata:
+    WorkflowTestingROCrate:
       type: object
       description: |
         [Workflow Testing RO-Crate](https://github.com/crs4/life_monitor/wiki/Workflow-Testing-RO-Crate)
@@ -1477,6 +1479,25 @@ components:
         description: Workflow RO-Crate Test
         url: https://github.com/crs4/life_monitor/wiki/Workflow-Testing-RO-Crate
 
+    TestSuiteDefinition:
+      type: object
+      description: |
+        Test Suite metadata
+      properties:
+        test_engine:
+          type: object
+          description: |
+            Software application that runs workflow tests according to a definition.
+          properties:
+            type:
+              type: string
+              description: Type of the software engine (e.g., planemo, etc.)
+              example: planemo
+            version:
+              type: string
+              description: Version of the software engine
+              example: ">=0.70"
+
     TestSuite:
       type: object
       properties:
@@ -1484,15 +1505,18 @@ components:
           type: string
           description: Universal unique identifier of the test suite
           example: e3208b02-69b6-4e32-a3dc-b93967d30e2c
-        test_suite_metadata:
-          $ref: "#/components/schemas/TestSuiteMetadata"
+        roc_suite:
+          type: string
+          description: RO-Crate identifier of the TestSuite
+          example: "#test1"
+        definition:
+          $ref: "#/components/schemas/TestSuiteDefinition"
         instances:
           type: array
           items:
             $ref: "#/components/schemas/TestInstance"
       required:
         - uuid
-        - test_suite_metadata
         - instances
 
     ListOfTestSuite:
@@ -1628,6 +1652,11 @@ components:
     TestInstanceBase:
       type: object
       properties:
+        roc_instance:
+          type: string
+          description: RO-Crate identifier of the test instance
+          example: "#test1_1"
+          readOnly: true
         managed:
           type: boolean
           description: |
@@ -1816,7 +1845,3 @@ components:
             workflow.write: Post workflows to LifeMonitor, including test suites and instances
             testingService.read: Get information about testing services
             testingService.write: Register testing services
-
-  examples:
-    test_metadata:
-      externalValue: "examples/test-metadata.json"
