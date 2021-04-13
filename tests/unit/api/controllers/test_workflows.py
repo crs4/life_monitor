@@ -258,6 +258,7 @@ def test_get_workflow_by_id(m, request_context, mock_registry):
     data = {"uuid": "12345", "version": "2", "roc_link": "https://somelink"}
     w = models.Workflow(uuid=data["uuid"])
     wv = w.add_version(data["version"], data["roc_link"], {})
+    wv._metadata_loaded = True
     m.get_registry_workflow_version.return_value = wv
     response = controllers.workflows_get_by_id(data['uuid'], data['version'])
     m.get_registry_workflow_version.assert_called_once_with(mock_registry, data['uuid'], data['version'])
@@ -265,4 +266,4 @@ def test_get_workflow_by_id(m, request_context, mock_registry):
     assert isinstance(response, dict), "Unexpected response"
     assert response['uuid'] == data['uuid'], "Unexpected workflow UUID"
     assert response['version']['version'] == data['version'], "Unexpected workflow version"
-    assert 'previous_versions' not in response, "Unexpected list of previous versions"
+    assert 'previous_versions' in response, "Missing list of previous versions"

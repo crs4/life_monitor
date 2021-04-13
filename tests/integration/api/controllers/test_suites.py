@@ -49,7 +49,7 @@ def test_get_suite(app_client, client_auth_method, user1, user1_auth, valid_work
     logger.debug("Response data: %r", data)
     # redundant check: the validation is performed by the connexion framework
     assert data['uuid'] == str(suite.uuid), "Invalid UUID"
-    for p in ["test_suite_metadata", "instances"]:
+    for p in ["roc_suite", "definition", "instances"]:
         assert p in data, f"Missing required property {p}"
 
 

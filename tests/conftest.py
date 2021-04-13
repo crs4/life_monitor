@@ -275,8 +275,27 @@ def managed_test_instance(app_client):
 
 @pytest.fixture
 def test_suite_metadata():
-    with open(os.path.join(base_path, "config/data/test-metadata/test-metadata.json")) as df:
-        return json.load(df)
+    return {
+        'roc_suite': '#test1',
+        'name': 'test1',
+        'instances': [
+                {
+                    'roc_instance': '#test1_1',
+                    'name': 'test1_1',
+                    'resource': 'job/test/',
+                    'service': {
+                        'type': 'jenkins',
+                        'url': 'http://jenkins:8080/'}
+                }
+        ],
+        'definition': {
+            'test_engine': {
+                'type': 'planemo',
+                'version': '>=0.70'
+            },
+            'path': 'test1/sort-and-change-case-test.yml'
+        }
+    }
 
 
 @pytest.fixture
