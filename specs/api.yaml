@@ -1713,14 +1713,17 @@ components:
       name: ApiKey
       x-apikeyInfoFunc: lifemonitor.auth.services.check_api_key
       description: |
-        Authenticate user when interacting with the LifeMonitor API.
+        Allows a **user** to interact with the LifeMonitor API. It acts as a
+        static authentication token and can be generated via the LifeMonitor
+        user interface after logging in. This authentication method can be
+        used to quickly try API calls via the API docs interface or `curl`.
     RegistryClientCredentials:
       type: oauth2
       x-tokenInfoFunc: lifemonitor.auth.oauth2.server.services.get_token_scopes
       description: |
-        Allow a registry client to directly interact with the LifeMonitor API.
+        Allows a **registry client** to directly interact with the LifeMonitor API.
         The client can query which of its users and workflows have been registered
-        with the LifeMonitor service, register test suites for those workflows
+        with the LifeMonitor service, register workflows
         and query their status.
       flows:
         clientCredentials:
@@ -1741,9 +1744,9 @@ components:
       type: oauth2
       x-tokenInfoFunc: lifemonitor.auth.oauth2.server.services.get_token_scopes
       description: |
-        Allow a registry client to interact with LifeMonitor on behalf of a user.
-        The registry client can submit test suites
-        for its user's workflows and query their status.
+        Allows a **registry client** to interact with the LifeMonitor API on behalf of a user.
+        For instance, the client can register
+        workflows belonging to the user and query their status.
       flows:
         authorizationCode:
           tokenUrl: "oauth2/token"
@@ -1766,7 +1769,9 @@ components:
       type: oauth2
       x-tokenInfoFunc: lifemonitor.auth.oauth2.server.services.get_token_scopes
       description: |
-        Allow an OAuth2 client to interact with LifeMonitor on behalf of a user.
+        Allows an OAuth2 client to interact with LifeMonitor on behalf of a
+        **user**. This authentication method is appropriate for applications
+        that need to interact with LifeMonitor as a user.
       flows:
         authorizationCode:
           tokenUrl: "oauth2/token"
