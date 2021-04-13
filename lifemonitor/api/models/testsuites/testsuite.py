@@ -37,10 +37,12 @@ logger = logging.getLogger(__name__)
 
 class TestSuite(db.Model, ModelMixin):
     uuid = db.Column(UUID, primary_key=True, default=_uuid.uuid4)
+    name = db.Column(db.String, nullable=True)
+    roc_suite = db.Column(db.String, nullable=True)
+    definition = db.Column(JSON, nullable=True)
     _workflow_version_id = db.Column("workflow_version_id", db.Integer,
                                      db.ForeignKey(models.workflows.WorkflowVersion.id), nullable=False)
     workflow_version = db.relationship("WorkflowVersion", back_populates="test_suites")
-    test_definition = db.Column(JSON, nullable=False)
     submitter_id = db.Column(db.Integer,
                              db.ForeignKey(User.id), nullable=True)
     submitter = db.relationship("User", uselist=False)
@@ -50,11 +52,12 @@ class TestSuite(db.Model, ModelMixin):
 
     def __init__(self,
                  w: models.workflows.WorkflowVersion, submitter: User,
-                 test_definition: object) -> None:
+                 name: str = None, roc_suite: str = None, definition: object = None) -> None:
         self.workflow_version = w
         self.submitter = submitter
-        self.test_definition = test_definition
-        self._parse_test_definition()
+        self.name = name
+        self.roc_suite = roc_suite
+        self.definition = definition
 
     def __repr__(self):
         return '<TestSuite {} of workflow {} (version {})>'.format(
