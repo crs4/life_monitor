@@ -170,8 +170,8 @@ class LifeMonitor:
         """ Create a TestSuite instance (with its related TestInstance)
             from an intermediate JSON representation like:
                 {
-                    "name": <ROC_SUITE_ID>.replace('#',''),
                     "roc_suite": <ROC_SUITE_ID>,
+                    "name": ...,
                     "definition": {
                         "test_engine": {
                             "type": t,
@@ -179,14 +179,17 @@ class LifeMonitor:
                         },
                         "path": ...,
                     },
-                    "instances": {
-                        "name": <ROC_INSTANCE_ID>,
-                        "resource": ...,
-                        "service": {
-                            "type": ...,
-                            "url": ...,
-                        },
-                    }
+                    "instances": [
+                        {
+                            "roc_instance": <ROC_INSTANCE_ID>,
+                            "name": ...,
+                            "resource": ...,
+                            "service": {
+                                "type": ...,
+                                "url": ...,
+                            },
+                        }
+                    ]
                 }
         """
         try:

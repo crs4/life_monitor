@@ -187,8 +187,8 @@ def get_roc_suites(crate):
     The result is a dict of the following form:
 
         <ROC_SUITE_ID>: {
-            "name": <ROC_SUITE_ID>.replace('#',''),
             "roc_suite": <ROC_SUITE_ID>,
+            "name": ...,
             "definition": {
                 "test_engine": {
                     "type": t,
@@ -196,14 +196,17 @@ def get_roc_suites(crate):
                 },
                 "path": ...,
             },
-            "instances": {
-                "name": <ROC_INSTANCE_ID>,
-                "resource": ...,
-                "service": {
-                    "type": ...,
-                    "url": ...,
-                },
-            }
+            "instances": [
+                {
+                    "roc_instance": <ROC_INSTANCE_ID>,
+                    "name": ...,
+                    "resource": ...,
+                    "service": {
+                        "type": ...,
+                        "url": ...,
+                    },
+                }
+            ]
         }
     """
     if not crate.test_dir:
