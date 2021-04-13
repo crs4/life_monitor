@@ -64,7 +64,7 @@ paths:
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "workflow_registries_get_by_uuid"
       summary: "Get a registry"
-      description: "Get information about the workflow registry with the specified uuid"
+      description: "Get information about the specified workflow registry"
       parameters:
         - $ref: "#/components/parameters/registry_uuid"
       responses:
@@ -200,9 +200,9 @@ paths:
       tags: ["Registry Client Operations"]
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "registry_workflows_post"
-      summary: "Post workflow version"
+      summary: "Submit workflow"
       description: |
-        Submit a new version of a workflow indexed by the current registry client or user.
+        Submit (a new version of) a workflow indexed by the current registry client.
 
         **Note:** only workflow registries interacting with LifeMonitor as
         OAuth2 clients can use this endpoint.
@@ -238,7 +238,7 @@ paths:
       operationId: "user_registry_workflows_get"
       summary: List registry workflows
       description: |
-        List workflows from the given registry that have been posted to
+        List workflows from the specified registry that have been submitted to
         LifeMonitor by the current (authenticated) user.
       security:
         - apiKey: ["user.workflow.read"]
@@ -258,9 +258,9 @@ paths:
       tags: ["Registries"]
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "user_registry_workflows_post"
-      summary: "Post registry workflow"
+      summary: "Submit registry workflow"
       description: |
-        Submit a new workflow version indexed on the given registry as the
+        Submit (a new version of) a workflow indexed on the specified registry as the
         current (authenticated) user
       security:
         - apiKey: ["user.workflow.write"]
@@ -294,7 +294,7 @@ paths:
       operationId: "registry_user_workflows_get"
       summary: List workflows for a user
       description: |
-        List registry workflows registered on LifeMonitor by the given registry user.
+        List registry workflows registered on LifeMonitor by the specified registry user.
 
         **Note:** only workflow registries interacting with LifeMonitor as
         OAuth2 clients can use this endpoint.
@@ -315,9 +315,9 @@ paths:
       tags: ["Registry Client Operations"]
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "registry_user_workflows_post"
-      summary: "Post workflow version for a user"
+      summary: "Submit workflow for a user"
       description: |
-        Submit a new version of a workflow indexed by the current registry client for the given registry user
+        Submit (a new version of) a workflow indexed by the current registry client for the specified registry user
 
         **Note:** only workflow registries interacting with LifeMonitor as
         OAuth2 clients can use this endpoint.
@@ -354,7 +354,7 @@ paths:
       operationId: "user_workflows_get"
       summary: "List workflows for the current user"
       description: |
-        List all workflows registered by the current user
+        List all workflows submitted by the current user
       security:
         - apiKey: ["user.workflow.read"]
         - RegistryCodeFlow: ["user.workflow.read"]
@@ -373,9 +373,9 @@ paths:
       tags: ["Users"]
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "user_workflows_post"
-      summary: "Post workflow"
+      summary: "Submit workflow as the current user"
       description: |
-        Submit a new workflow version.
+        Submit (a new version of) a workflow.
       security:
         - apiKey: ["user.workflow.write"]
         - AuthorizationCodeFlow: ["user.workflow.write"]
@@ -425,7 +425,7 @@ paths:
   /workflows/{wf_uuid}:
     get:
       summary: Get a workflow
-      description: "Get information about the workflow registered with the given uuid"
+      description: "Get information about the specified workflow"
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "workflows_get_latest_version_by_id"
       tags: ["Workflows"]
@@ -462,7 +462,7 @@ paths:
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "workflows_get_versions_by_id"
       summary: "List workflow versions"
-      description: "Get the list of registered versions for a given workflow"
+      description: "List all versions of the specified workflow"
       tags: ["Workflows"]
       security:
         - apiKey: ["workflow.read"]
@@ -575,7 +575,7 @@ paths:
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "workflows_get_status"
       summary: "Get workflow test status"
-      description: "Get test status for a given workflow and workflow version"
+      description: "Get the test status for the specified workflow and workflow version"
       tags: ["Workflows"]
       security:
         - apiKey: ["workflow.read"]
@@ -605,9 +605,9 @@ paths:
     get:
       summary: "List workflow test suites"
       description: >
-        Get collection of test suites associated with the workflow. Test suites
-        are collected from the RO-crate received with the creation of a new
-        version of a workflow.
+        List all test suites associated with the specified workflow. Test suites
+        are collected from the RO-crate received with the submission of (a new
+        version of) a workflow.
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "workflows_get_suites"
       tags: ["Workflows"]
@@ -621,7 +621,7 @@ paths:
         - $ref: "#/components/parameters/version"
       responses:
         "200":
-          description: List of test suites associated with the specified workflow version
+          description: List of test suites associated with the specified workflow and workflow version
           content:
             application/json:
               schema:
@@ -638,7 +638,7 @@ paths:
   /suites/{suite_uuid}:
     get:
       summary: "Get a test suite"
-      description: "Get information about the test suite with the specified uuid."
+      description: "Get information about the specified test suite."
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "suites_get_by_uuid"
       tags: ["Test Suites"]
@@ -668,7 +668,7 @@ paths:
   /suites/{suite_uuid}/status:
     get:
       summary: "Get test suite status"
-      description: "Get the status of the latest build for each known instance of the specified test suite"
+      description: "Get the status of the latest build for each instance of the specified test suite"
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "suites_get_status"
       tags: ["Test Suites"]
@@ -693,8 +693,8 @@ paths:
 
   /suites/{suite_uuid}/instances:
     get:
-      summary: "List test instances"
-      description: "List all instances of this suite present on testing services"
+      summary: "List test instances for a suite"
+      description: "List all instances of the specified test suite"
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "suites_get_instances"
       tags: ["Test Suites"]
@@ -722,7 +722,7 @@ paths:
           $ref: "#/components/responses/NotFound"
 
     post:
-      summary: "Post a test instance"
+      summary: "Submit a test instance for a suite"
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "suites_post_instance"
       tags: ["Test Suites"]
@@ -732,7 +732,7 @@ paths:
         - RegistryCodeFlow: ["workflow.write"]
         - AuthorizationCodeFlow: ["workflow.write"]
       description: |
-        Post a test instance of the specified test suite.
+        Submit a new test instance for the specified test suite.
 
         There are two main types of test instances:
 
@@ -776,7 +776,7 @@ paths:
   /instances/{instance_uuid}:
     get:
       summary: "Get a test instance"
-      description: "Get information about a test instance"
+      description: "Get information about the specified test instance"
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "instances_get_by_id"
       tags: ["Test Instances"]
@@ -807,7 +807,7 @@ paths:
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "instances_delete_by_id"
       summary: "Delete a test instance"
-      description: "Delete the test instance with the specified uuid"
+      description: "Delete the specified test instance"
       tags: ["Test Instances"]
       security:
         - apiKey: ["workflow.write"]
@@ -831,7 +831,7 @@ paths:
   /instances/{instance_uuid}/latest-builds:
     get:
       summary: "Get the latest test instance builds"
-      description: "Get information on the latest builds for the specified instance"
+      description: "Get information on the latest builds for the specified test instance"
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "instances_get_builds"
       tags: ["Test Instances"]
@@ -934,7 +934,7 @@ components:
     registry_uuid:
       name: "registry_uuid"
       description: |
-        Universal unique identifier of the Workflow registry.
+        Universal unique identifier of the workflow registry.
 
         (provided by the endpoint [`[GET] /registries`](#get-/registries))
       in: path
@@ -1197,7 +1197,7 @@ components:
       properties:
         uuid:
           type: string
-          description: Universal unique identifier of the registry
+          description: Universal unique identifier of the workflow registry
           example: aa16c6a9-571f-4a62-976f-60ea514ad2c1
         name:
           type: string
@@ -1321,7 +1321,7 @@ components:
         - $ref: "#/components/schemas/WorkflowVersionBase"
 
     RegistryWorkflowVersion:
-      description: A workflow version indexed by a given registry.
+      description: A (version of a) workflow indexed by a registry.
       allOf:
         - type: object
           properties:
@@ -1736,7 +1736,8 @@ components:
         Allows a **user** to interact with the LifeMonitor API. It acts as a
         static authentication token and can be generated via the LifeMonitor
         user interface after logging in. This authentication method can be
-        used to quickly try API calls via the API docs interface or `curl`.
+        used to quickly try API calls via the API docs interface or tools like
+        `curl`.
     RegistryClientCredentials:
       type: oauth2
       x-tokenInfoFunc: lifemonitor.auth.oauth2.server.services.get_token_scopes
