@@ -437,6 +437,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/wf_uuid"
         - $ref: "#/components/parameters/previous_versions"
+        - $ref: "#/components/parameters/rocrate_specs"
       responses:
         "200":
           description: >
@@ -982,6 +983,15 @@ components:
         default: false
       description: "`true` to include all versions of a workflow"
       example: "true"
+    rocrate_specs:
+      name: "ro_crate"
+      in: query
+      schema:
+        type: boolean
+        default: false
+      description: |
+        `true` to include RO-Crate metadata, `false` otherwise.
+      example: "false"
     suite_uuid:
       name: "suite_uuid"
       description: "Universal unique identifier of the test suite"
