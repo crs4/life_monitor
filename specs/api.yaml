@@ -20,6 +20,20 @@ servers:
     description: >
       Version 0.2.0-beta2 of API.
 
+tags:
+  - name: Registries
+    description: Operations related to workflow registries (e.g., WorkflowHub)
+  - name: Users
+    description: Operations related to users
+  - name: Workflows
+    description: Operations related to workflows
+  - name: Test Suites
+    description: Operations related to test suites
+  - name: Test Instances
+    description: Operations related to test instances
+  - name: Registry Client Operations
+    description: Operations reserved to registry clients
+
 paths:
   /registries:
     get:
@@ -99,7 +113,7 @@ paths:
 
   /registries/current:
     get:
-      tags: ["Registry Client"]
+      tags: ["Registry Client Operations"]
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "workflow_registries_get_current"
       summary: "Get the current registry client"
@@ -138,7 +152,7 @@ paths:
 
         **Note:** only workflow registries interacting with LifeMonitor as
         OAuth2 clients can use this endpoint.
-      tags: ["Registry Client"]
+      tags: ["Registry Client Operations"]
       security:
         - RegistryClientCredentials: ["registry.user"]
         - RegistryCodeFlow: ["registry.user"]
@@ -160,7 +174,7 @@ paths:
 
   /registries/current/workflows:
     get:
-      tags: ["Registry Client"]
+      tags: ["Registry Client Operations"]
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "registry_workflows_get"
       summary: List workflows
@@ -183,7 +197,7 @@ paths:
           $ref: "#/components/responses/Unauthorized"
 
     post:
-      tags: ["Registry Client"]
+      tags: ["Registry Client Operations"]
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "registry_workflows_post"
       summary: "Post workflow version"
@@ -219,12 +233,13 @@ paths:
 
   /registries/{registry_uuid}/workflows:
     get:
-      tags: ["Users"]
+      tags: ["Registries"]
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "user_registry_workflows_get"
       summary: List registry workflows
       description: |
-        List workflows from the given registry that have been registered on LifeMonitor by the current (authenticated) user.
+        List workflows from the given registry that have been posted to
+        LifeMonitor by the current (authenticated) user.
       security:
         - apiKey: ["user.workflow.read"]
         - AuthorizationCodeFlow: ["user.workflow.read"]
@@ -240,12 +255,13 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
     post:
-      tags: ["Users"]
+      tags: ["Registries"]
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "user_registry_workflows_post"
       summary: "Post registry workflow"
       description: |
-        Submit a new workflow version indexed on the given registry.
+        Submit a new workflow version indexed on the given registry as the
+        current (authenticated) user
       security:
         - apiKey: ["user.workflow.write"]
         - AuthorizationCodeFlow: ["user.workflow.write"]
@@ -273,7 +289,7 @@ paths:
 
   /users/{user_id}/workflows:
     get:
-      tags: ["Registry Client"]
+      tags: ["Registry Client Operations"]
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "registry_user_workflows_get"
       summary: List workflows for a user
@@ -296,7 +312,7 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
     post:
-      tags: ["Registry Client"]
+      tags: ["Registry Client Operations"]
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "registry_user_workflows_post"
       summary: "Post workflow version for a user"
@@ -706,18 +722,17 @@ paths:
           $ref: "#/components/responses/NotFound"
 
     post:
-      summary: "Post instance"
+      summary: "Post a test instance"
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "suites_post_instance"
-      tags: ["Test Instances"]
+      tags: ["Test Suites"]
       security:
         - apiKey: ["workflow.write"]
         - RegistryClientCredentials: ["workflow.write"]
         - RegistryCodeFlow: ["workflow.write"]
         - AuthorizationCodeFlow: ["workflow.write"]
       description: |
-        Register an instance of the specified test suite, hosted and executed
-        on a specific testing service.
+        Post a test instance of the specified test suite.
 
         There are two main types of test instances:
 
