@@ -29,5 +29,5 @@ on the parts of the API that are relevant.
 
 Follow [this link to see the API documentation and examples](https://api-lifemonitor-dev.rahtiapp.fi/static/apidocs.html).  You can find the raw YAML API specifications in [the source code repository](https://github.com/crs4/life_monitor/tree/master/specs).  
 
-<img alt="Life Monitor client types" src="images/lm_client_types.png" width="600" />
+<img alt="Life Monitor client types" src="images/lm_client_types.png" width="900" />
 
