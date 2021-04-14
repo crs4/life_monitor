@@ -29,8 +29,9 @@ useful life of the workflows.
 
 ## How to use it
 
-At the moment, the Life Monitor can be used through its [REST
-API](./lm_api_specs.md).
+At the moment, the Life Monitor can be used through its [**REST
+API**](lm_api_specs.md).  Follow the link for [**documentation and
+specifications**](lm_api_specs.md).
 
 Integration with the [Workflow Hub](https://workflowhub.eu/) is in the works, as
 well as a web interface and a command line client.
@@ -45,30 +46,30 @@ is the [Workflow RO-crate](https://about.workflowhub.eu/Workflow-RO-Crate/) and
 Life Monitor is still in early development.  Here is our planned development road map.
 
 
-* End of 2020
-  [x] Support for receiving workflow POSTs as Workflow RO-crate;
-  [x] Relatively stable interface and implementation for test outcome retrieval;
-  [x] Complete first version of Workflow RO-crate draft test specification;
-  * Support monitoring tests running on external testing services (`test.instance` within the WRO-crate test specs).
-    [x] TravisCI
-    [x] Jenkins
+End of 2020
+- [x] Support for receiving workflow POSTs as Workflow RO-crate;
+- [x] Relatively stable interface and implementation for test outcome retrieval;
+- [x] Complete first version of Workflow RO-crate draft test specification;
+- Support monitoring tests running on external testing services (`test.instance` within the WRO-crate test specs).
+    - [x] TravisCI
+    - [x] Jenkins
 
-* Spring 2021
-  [x] Workflow testing RO-crate template creation (integrated in
-[ro-crate-py](https://github.com/ResearchObject/ro-crate-py))
-  [ ] Alpha release on <https://lifemonitor.eu>
+Spring 2021
+  - [x] Workflow testing RO-crate template creation (integrated in
+        [ro-crate-py](https://github.com/ResearchObject/ro-crate-py))
+  - [ ] Alpha release on <https://lifemonitor.eu>
 
-* Mid 2021
-  [ ] WorkflowHub integration?
-  [ ] Command line client
-  [ ] Web interface
-  * Support monitoring tests running on external testing services (`test.instance` within the WRO-crate test specs).
-    [ ] Github Actions
+Mid 2021
+  - [ ] WorkflowHub integration?
+  - [ ] Command line client
+  - [ ] Web interface
+  - Support monitoring tests running on external testing services (`test.instance` within the WRO-crate test specs).
+      - [ ] Github Actions
 
-* Later
-  * Internal testing service managed by LifeMonitor;
-  * Programmable periodic test execution.
-  * Support workflow test creation
+Later
+  - Internal testing service managed by LifeMonitor;
+  - Programmable periodic test execution.
+  - Support workflow test creation
 
 
 ## Acknowledgements

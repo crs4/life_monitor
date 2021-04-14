@@ -1,0 +1,12 @@
+---
+---
+
+@import "{{ site.theme }}";
+
+/*
+Override the bold fond-weight when hovering over links as it frequently makes the
+text move.
+*/
+a:hover, a:focus {
+    font-weight: normal;
+}
