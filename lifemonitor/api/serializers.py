@@ -147,7 +147,7 @@ class LatestWorkflowVersionSchema(WorkflowVersionSchema):
                 for v in obj.workflow.versions.values() if not v.is_latest]
 
 
-class ListOfWorkflowVersions(VersionDetailsSchema):
+class ListOfWorkflowVersions(ResourceMetadataSchema):
 
     class Meta:
         model = models.Workflow
@@ -219,7 +219,6 @@ class BuildSummarySchema(ResourceMetadataSchema):
 class WorkflowVersionListItem(WorkflowSchema):
 
     latest_version = fields.String(attribute="latest_version.version")
-
     status = fields.Method("get_status")
 
     def get_status(self, workflow):

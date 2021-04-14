@@ -1470,8 +1470,9 @@ components:
                       latest_build:
                         description: "The most recent build on some test instance"
                         $ref: "#/components/schemas/BuildSummary"
-      required:
-        - items
+                        nullable: true
+          required:
+            - items
 
     WorkflowStatus:
       allOf:
