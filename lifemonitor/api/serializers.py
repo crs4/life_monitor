@@ -123,7 +123,6 @@ class WorkflowVersionSchema(ResourceSchema):
     registry = ma.Nested(WorkflowRegistrySchema(exclude=('meta',)),
                          attribute="workflow_registry")
 
-    previous_versions = fields.Method("get_versions")
     rocrate_metadata = False
 
     def __init__(self, *args, rocrate_metadata=False, **kwargs):
@@ -134,17 +133,22 @@ class WorkflowVersionSchema(ResourceSchema):
         exclude = ('rocrate_metadata',) if not self.rocrate_metadata else ()
         return VersionDetailsSchema(exclude=exclude).dump(obj)
 
-    def get_versions(self, obj: models.WorkflowVersion):
-        schema = VersionDetailsSchema(only=("uuid", "version", "submitter"))
-        return [schema.dump(v)
-                for v in obj.workflow.versions.values() if not v.is_latest]
-
     @post_dump
     def remove_skip_values(self, data, **kwargs):
         return {
             key: value for key, value in data.items()
             if value is not None
         }
+
+
+class LatestWorkflowVersionSchema(WorkflowVersionSchema):
+
+    previous_versions = fields.Method("get_versions")
+
+    def get_versions(self, obj: models.WorkflowVersion):
+        schema = VersionDetailsSchema(only=("uuid", "version", "ro_crate"))
+        return [schema.dump(v)
+                for v in obj.workflow.versions.values() if not v.is_latest]
 
 
 class ListOfWorkflowVersions(ResourceMetadataSchema):

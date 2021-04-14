@@ -118,7 +118,7 @@ def workflows_get_latest_version_by_id(wf_uuid):
     logger.debug("Previous versions: %r", exclude)
     rocrate_metadata = request.args.get('ro_crate', 'false').lower() == 'true'
     return response if isinstance(response, Response) \
-        else serializers.WorkflowVersionSchema(
+        else serializers.LatestWorkflowVersionSchema(
             exclude=exclude, rocrate_metadata=rocrate_metadata).dump(response)
 
 

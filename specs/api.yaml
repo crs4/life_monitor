@@ -443,8 +443,8 @@ paths:
           description: >
             A Workflow object for the latest version of the specified workflow
             and extended with the list of previous versions that are registered.
-            Information about the previous versions can be retrieved through the
-            `/workflows/{wf_uuid}/versions/{wf_version}` resource.
+            Information about the previous versions can also be retrieved through the
+            `/workflows/{wf_uuid}/versions` resource.
           content:
             application/json:
               schema:
@@ -990,7 +990,7 @@ components:
         type: boolean
         default: false
       description: |
-        `true` to include RO-Crate metadata, `false` otherwise.
+        `true` to include the RO-Crate metadata of the workflow
       example: "false"
     suite_uuid:
       name: "suite_uuid"
@@ -1241,12 +1241,10 @@ components:
       type: string
       example: 1616427012.0
 
-    ROCrate:
+    ROCrateBase:
       type: object
       description: Info about the workflow RO-Crate used to register the workflow on LifeMonitor
       properties:
-        metadata:
-          $ref: "#/components/schemas/WorkflowTestingROCrate"
         links:
           type: object
           properties:
@@ -1260,6 +1258,15 @@ components:
               description: |
                 A link to download the workflow RO-Crate used to register the workflow on LifeMonitor
               example: https://api.lifemonitor.eu/ro_crates/11/download
+
+    ROCrate:
+      type: object
+      description: Info about the workflow RO-Crate used to register the workflow on LifeMonitor
+      allOf:
+        - properties:
+            metadata:
+              $ref: "#/components/schemas/WorkflowTestingROCrate"
+        - $ref: "#/components/schemas/ROCrateBase"
 
     WorkflowBase:
       type: object
@@ -1349,7 +1356,7 @@ components:
       example:
         { "identifier": "15", "name": "COVID-19 Workflow", "version": "1.0" }
 
-    WorkflowVersion:
+    WorkflowVersionMin:
       type: object
       properties:
         uuid:
@@ -1367,20 +1374,29 @@ components:
           writeOnly: true
         ro_crate:
           readOnly: true
-          $ref: "#/components/schemas/ROCrate"
-        is_latest:
-          type: boolean
-          readOnly: true
-          description: |
-            `true` if the workflow version is the latest,
-            `false` otherwise.
-          example: true
-        submitter:
-          $ref: "#/components/schemas/User"
-          readOnly: true
-          nullable: true
+          $ref: "#/components/schemas/ROCrateBase"
       required:
         - version
+
+    WorkflowVersion:
+      allOf:
+        - $ref: "#/components/schemas/WorkflowVersionMin"
+        - type: object
+          properties:
+            ro_crate:
+              readOnly: true
+              $ref: "#/components/schemas/ROCrate"
+            is_latest:
+              type: boolean
+              readOnly: true
+              description: |
+                `true` if the workflow version is the latest, 
+                `false` otherwise.
+              example: true
+            submitter:
+              $ref: "#/components/schemas/User"
+              readOnly: true
+              nullable: true
 
     WorkflowDetails:
       allOf:
@@ -1395,7 +1411,7 @@ components:
               readOnly: true
               type: array
               items:
-                $ref: "#/components/schemas/WorkflowVersion"
+                $ref: "#/components/schemas/WorkflowVersionMin"
               example:
                 [
                   {
@@ -1409,7 +1425,6 @@ components:
                             download: "https://api.lifemonitor.eu/ro_crates/10/download",
                           },
                       },
-                    is_latest: false,
                     submitter: { id: 501, username: "lm" },
                   },
                 ]
