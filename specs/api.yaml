@@ -1697,7 +1697,9 @@ components:
       properties:
         roc_instance:
           type: string
-          description: RO-Crate identifier of the test instance
+          description: |
+            RO-Crate identifier of the test instance if the instance comes 
+            from a Workflow RO-Crate
           example: "#test1_1"
           readOnly: true
         managed:

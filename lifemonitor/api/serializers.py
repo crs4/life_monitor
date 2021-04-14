@@ -197,6 +197,13 @@ class TestInstanceSchema(ResourceMetadataSchema):
             'type': obj.testing_service._type.replace('_testing_service', '')
         }
 
+    @post_dump
+    def remove_skip_values(self, data, **kwargs):
+        return {
+            key: value for key, value in data.items()
+            if value is not None
+        }
+
 
 class BuildSummarySchema(ResourceMetadataSchema):
     __envelope__ = {"single": None, "many": None}
@@ -275,6 +282,13 @@ class SuiteSchema(ResourceMetadataSchema):
     def get_definition(self, obj):
         to_skip = ['path']
         return {k: v for k, v in obj.definition.items() if k not in to_skip}
+
+    @post_dump
+    def remove_skip_values(self, data, **kwargs):
+        return {
+            key: value for key, value in data.items()
+            if value is not None
+        }
 
 
 class ListOfSuites(ListOfItems):
