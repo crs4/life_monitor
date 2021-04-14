@@ -44,32 +44,37 @@ def test_get_workflows_no_authorization(m, request_context):
 
 
 @patch("lifemonitor.api.controllers.lm")
-def test_get_workflows_with_user(m, request_context, mock_user):
+def test_get_workflows_with_user(m, request_context, mock_user, fake_uri):
     # add one user to the current session
     assert not auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_user == mock_user, "Unexpected user in session"
     logger.debug("Current registry: %r", auth.current_registry)
     assert not auth.current_registry, "Unexpected registry in session"
     # add one fake workflow
-    data = {"uuid": "123456"}
-    m.get_user_workflows.return_value = [data]
+    data = {"uuid": "123456", "version": "1.0", "uri": fake_uri}
+    w = models.Workflow(uuid=data['uuid'])
+    w.add_version(data["version"], data['uri'], MagicMock())
+    m.get_user_workflows.return_value = [w]
     response = controllers.workflows_get()
     m.get_user_workflows.assert_called_once()
     assert isinstance(response, dict), "Unexpected result type"
-    assert response == serializers.ListOfWorkflows().dump([data])
+    logger.debug("Response: %r", response)
+    assert response == serializers.ListOfWorkflows(workflow_status=True).dump([w])
 
 
 @patch("lifemonitor.api.controllers.lm")
-def test_get_workflows_with_registry(m, request_context, mock_registry):
+def test_get_workflows_with_registry(m, request_context, mock_registry, fake_uri):
     assert auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry, "Unexpected registry in session"
     # add one fake workflow
-    data = {"uuid": "123456"}
-    m.get_registry_workflows.return_value = [data]
+    data = {"uuid": "123456", "version": "1.0", "uri": fake_uri}
+    w = models.Workflow(uuid=data['uuid'])
+    w.add_version(data["version"], data['uri'], MagicMock())
+    m.get_registry_workflows.return_value = [w]
     response = controllers.workflows_get()
     m.get_registry_workflows.assert_called_once()
     assert isinstance(response, dict), "Unexpected result type"
-    assert response == serializers.ListOfWorkflows().dump([data])
+    assert response == serializers.ListOfWorkflows(workflow_status=True).dump([w])
 
 
 @patch("lifemonitor.api.controllers.lm")
