@@ -67,10 +67,6 @@ class WorkflowSchema(ResourceMetadataSchema):
     name = ma.auto_field()
 
 
-class ListOfWorkflows(ListOfItems):
-    __item_scheme__ = WorkflowSchema
-
-
 class RegistryWorkflowSchema(WorkflowSchema):
     registry = fields.Nested(WorkflowRegistrySchema(exclude=('meta',)), attribute="")
 
@@ -151,9 +147,7 @@ class LatestWorkflowVersionSchema(WorkflowVersionSchema):
                 for v in obj.workflow.versions.values() if not v.is_latest]
 
 
-class ListOfWorkflowVersions(ResourceMetadataSchema):
-    __envelope__ = {"single": None, "many": None}
-    __model__ = models.Workflow
+class ListOfWorkflowVersions(VersionDetailsSchema):
 
     class Meta:
         model = models.Workflow
@@ -220,6 +214,38 @@ class BuildSummarySchema(ResourceMetadataSchema):
 
     def get_last_logs(self, obj):
         return obj.get_output(0, 131072)
+
+
+class WorkflowVersionListItem(WorkflowSchema):
+
+    latest_version = fields.String(attribute="latest_version.version")
+
+    status = fields.Method("get_status")
+
+    def get_status(self, workflow):
+        return {
+            "aggregate_test_status": workflow.latest_version.status.aggregated_status,
+            "latest_build": self.get_latest_build(workflow)
+        }
+
+    def get_latest_build(self, workflow):
+        latest_builds = workflow.latest_version.status.latest_builds
+        if latest_builds and len(latest_builds) > 0:
+            return BuildSummarySchema(exclude=('meta',)).dump(latest_builds[0])
+        return None
+
+
+class ListOfWorkflows(ListOfItems):
+    __item_scheme__ = WorkflowVersionListItem
+
+    def __init__(self, *args, workflow_status: bool = False, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.workflow_status = workflow_status
+
+    def get_items(self, obj):
+        exclude = ("meta",) if self.workflow_status else ("meta", "status")
+        return [self.__item_scheme__(exclude=exclude, many=False).dump(_) for _ in obj] \
+            if self.__item_scheme__ else None
 
 
 class WorkflowStatusSchema(WorkflowVersionSchema):

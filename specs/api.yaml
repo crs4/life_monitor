@@ -186,6 +186,8 @@ paths:
       security:
         - RegistryClientCredentials: ["registry.workflow.read"]
         - RegistryCodeFlow: ["registry.workflow.read"]
+      parameters:
+        - $ref: "#/components/parameters/wf_status"
       responses:
         "200":
           description: List of workflows
@@ -245,6 +247,7 @@ paths:
         - AuthorizationCodeFlow: ["user.workflow.read"]
       parameters:
         - $ref: "#/components/parameters/registry_uuid"
+        - $ref: "#/components/parameters/wf_status"
       responses:
         "200":
           description: List of workflows
@@ -302,6 +305,7 @@ paths:
         - RegistryClientCredentials: ["registry.user.workflow.read"]
       parameters:
         - $ref: "#/components/parameters/user_id"
+        - $ref: "#/components/parameters/wf_status"
       responses:
         "200":
           description: List of workflows
@@ -359,6 +363,8 @@ paths:
         - apiKey: ["user.workflow.read"]
         - RegistryCodeFlow: ["user.workflow.read"]
         - AuthorizationCodeFlow: ["user.workflow.read"]
+      parameters:
+        - $ref: "#/components/parameters/wf_status"
       responses:
         "200":
           description: A list of Workflows
@@ -412,6 +418,8 @@ paths:
         - RegistryClientCredentials: ["workflow.read"]
         - RegistryCodeFlow: ["workflow.read"]
         - AuthorizationCodeFlow: ["workflow.read"]
+      parameters:
+        - $ref: "#/components/parameters/wf_status"
       responses:
         "200":
           description: List of Workflows
@@ -967,6 +975,14 @@ components:
         type: string
       required: true
       example: "1.0"
+    wf_status:
+      name: "status"
+      in: query
+      schema:
+        type: boolean
+      description: |
+        `true` to include a summary of the workflow status
+      example: "false"
     version:
       name: "version"
       in: query
@@ -1442,7 +1458,18 @@ components:
         items:
           type: array
           items:
-            $ref: "#/components/schemas/Workflow"
+            allOf:
+              - $ref: "#/components/schemas/Workflow"
+              - properties:
+                  status:
+                    type: object
+                    description: Summary of the workflow status
+                    properties:
+                      aggregate_test_status:
+                        $ref: "#/components/schemas/AggregateTestStatus"
+                      latest_build:
+                        description: "The most recent build on some test instance"
+                        $ref: "#/components/schemas/BuildSummary"
       required:
         - items
 

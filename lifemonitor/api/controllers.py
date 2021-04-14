@@ -78,7 +78,8 @@ def workflows_get():
     else:
         return lm_exceptions.report_problem(401, "Unauthorized", detail=messages.no_user_in_session)
     logger.debug("workflows_get. Got %s workflows (user: %s)", len(workflows), current_user)
-    return serializers.ListOfWorkflows().dump(workflows)
+    workflow_status = request.args.get('status', 'true').lower() == 'true'
+    return serializers.ListOfWorkflows(workflow_status=workflow_status).dump(workflows)
 
 
 def _get_workflow_or_problem(wf_uuid, wf_version):
@@ -141,7 +142,8 @@ def workflows_get_status(wf_uuid):
 def registry_workflows_get():
     workflows = lm.get_registry_workflows(current_registry)
     logger.debug("workflows_get. Got %s workflows (registry: %s)", len(workflows), current_registry)
-    return serializers.ListOfWorkflows().dump(workflows)
+    workflow_status = request.args.get('status', 'true').lower() == 'true'
+    return serializers.ListOfWorkflows(workflow_status=workflow_status).dump(workflows)
 
 
 @authorized
@@ -159,7 +161,8 @@ def registry_user_workflows_get(user_id):
         identity = lm.find_registry_user_identity(current_registry, external_id=user_id)
         workflows = lm.get_user_registry_workflows(identity.user, current_registry)
         logger.debug("workflows_get. Got %s workflows (user: %s)", len(workflows), current_user)
-        return serializers.ListOfWorkflows().dump(workflows)
+        workflow_status = request.args.get('status', 'true').lower() == 'true'
+        return serializers.ListOfWorkflows(workflow_status=workflow_status).dump(workflows)
     except OAuthIdentityNotFoundException:
         return lm_exceptions.report_problem(401, "Unauthorized",
                                             detail=messages.no_user_oauth_identity_on_registry
@@ -179,7 +182,8 @@ def user_workflows_get():
         return lm_exceptions.report_problem(401, "Unauthorized", detail=messages.no_user_in_session)
     workflows = lm.get_user_workflows(current_user)
     logger.debug("workflows_get. Got %s workflows (user: %s)", len(workflows), current_user)
-    return serializers.ListOfWorkflows().dump(workflows)
+    workflow_status = request.args.get('status', 'true').lower() == 'true'
+    return serializers.ListOfWorkflows(workflow_status=workflow_status).dump(workflows)
 
 
 @authorized
@@ -198,7 +202,8 @@ def user_registry_workflows_get(registry_uuid):
         registry = lm.get_workflow_registry_by_uuid(registry_uuid)
         workflows = lm.get_user_registry_workflows(current_user, registry)
         logger.debug("workflows_get. Got %s workflows (user: %s)", len(workflows), current_user)
-        return serializers.ListOfWorkflows().dump(workflows)
+        workflow_status = request.args.get('status', 'true').lower() == 'true'
+        return serializers.ListOfWorkflows(workflow_status=workflow_status).dump(workflows)
     except lm_exceptions.EntityNotFoundException:
         return lm_exceptions.report_problem(404, "Not Found",
                                             detail=messages.no_registry_found.format(registry_uuid))
