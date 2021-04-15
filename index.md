@@ -30,8 +30,7 @@ useful life of the workflows.
 ## How to use it
 
 At the moment, the Life Monitor can be used through its [REST
-API](lm_api_specs).  **Follow the link** for [documentation and
-specifications](lm_api_specs).
+API](lm_api_specs).
 
 Integration with the [Workflow Hub](https://workflowhub.eu/) is in the works, as
 well as a web interface and a command line client.
@@ -50,7 +49,7 @@ Life Monitor is still in early development.  Here is our planned development roa
 - [x] Support for receiving workflow POSTs as Workflow RO-crate;
 - [x] Relatively stable interface and implementation for test outcome retrieval;
 - [x] Complete first version of Workflow RO-crate draft test specification;
-- Support monitoring tests running on external testing services (`test.instance` within the WRO-crate test specs).
+- Support monitoring tests running on external testing services:
     - [x] TravisCI
     - [x] Jenkins
 
@@ -63,7 +62,7 @@ Life Monitor is still in early development.  Here is our planned development roa
   - [ ] WorkflowHub integration?
   - [ ] Command line client
   - [ ] Web interface
-  - Support monitoring tests running on external testing services (`test.instance` within the WRO-crate test specs).
+  - Support monitoring tests running on external testing services:
       - [ ] Github Actions
 
 #### Later
