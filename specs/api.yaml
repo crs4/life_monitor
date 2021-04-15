@@ -186,6 +186,8 @@ paths:
       security:
         - RegistryClientCredentials: ["registry.workflow.read"]
         - RegistryCodeFlow: ["registry.workflow.read"]
+      parameters:
+        - $ref: "#/components/parameters/wf_status"
       responses:
         "200":
           description: List of workflows
@@ -245,6 +247,7 @@ paths:
         - AuthorizationCodeFlow: ["user.workflow.read"]
       parameters:
         - $ref: "#/components/parameters/registry_uuid"
+        - $ref: "#/components/parameters/wf_status"
       responses:
         "200":
           description: List of workflows
@@ -302,6 +305,7 @@ paths:
         - RegistryClientCredentials: ["registry.user.workflow.read"]
       parameters:
         - $ref: "#/components/parameters/user_id"
+        - $ref: "#/components/parameters/wf_status"
       responses:
         "200":
           description: List of workflows
@@ -359,6 +363,8 @@ paths:
         - apiKey: ["user.workflow.read"]
         - RegistryCodeFlow: ["user.workflow.read"]
         - AuthorizationCodeFlow: ["user.workflow.read"]
+      parameters:
+        - $ref: "#/components/parameters/wf_status"
       responses:
         "200":
           description: A list of Workflows
@@ -412,6 +418,8 @@ paths:
         - RegistryClientCredentials: ["workflow.read"]
         - RegistryCodeFlow: ["workflow.read"]
         - AuthorizationCodeFlow: ["workflow.read"]
+      parameters:
+        - $ref: "#/components/parameters/wf_status"
       responses:
         "200":
           description: List of Workflows
@@ -437,13 +445,14 @@ paths:
       parameters:
         - $ref: "#/components/parameters/wf_uuid"
         - $ref: "#/components/parameters/previous_versions"
+        - $ref: "#/components/parameters/rocrate_specs"
       responses:
         "200":
           description: >
             A Workflow object for the latest version of the specified workflow
             and extended with the list of previous versions that are registered.
-            Information about the previous versions can be retrieved through the
-            `/workflows/{wf_uuid}/versions/{wf_version}` resource.
+            Information about the previous versions can also be retrieved through the
+            `/workflows/{wf_uuid}/versions` resource.
           content:
             application/json:
               schema:
@@ -966,6 +975,14 @@ components:
         type: string
       required: true
       example: "1.0"
+    wf_status:
+      name: "status"
+      in: query
+      schema:
+        type: boolean
+      description: |
+        `true` to include a summary of the workflow status
+      example: "false"
     version:
       name: "version"
       in: query
@@ -982,6 +999,15 @@ components:
         default: false
       description: "`true` to include all versions of a workflow"
       example: "true"
+    rocrate_specs:
+      name: "ro_crate"
+      in: query
+      schema:
+        type: boolean
+        default: false
+      description: |
+        `true` to include the RO-Crate metadata of the workflow
+      example: "false"
     suite_uuid:
       name: "suite_uuid"
       description: "Universal unique identifier of the test suite"
@@ -1231,7 +1257,7 @@ components:
       type: string
       example: 1616427012.0
 
-    ROCrate:
+    ROCrateBase:
       type: object
       description: Info about the workflow RO-Crate used to register the workflow on LifeMonitor
       properties:
@@ -1248,6 +1274,15 @@ components:
               description: |
                 A link to download the workflow RO-Crate used to register the workflow on LifeMonitor
               example: https://api.lifemonitor.eu/ro_crates/11/download
+
+    ROCrate:
+      type: object
+      description: Info about the workflow RO-Crate used to register the workflow on LifeMonitor
+      allOf:
+        - properties:
+            metadata:
+              $ref: "#/components/schemas/WorkflowTestingROCrate"
+        - $ref: "#/components/schemas/ROCrateBase"
 
     WorkflowBase:
       type: object
@@ -1337,7 +1372,7 @@ components:
       example:
         { "identifier": "15", "name": "COVID-19 Workflow", "version": "1.0" }
 
-    WorkflowVersion:
+    WorkflowVersionMin:
       type: object
       properties:
         uuid:
@@ -1355,20 +1390,29 @@ components:
           writeOnly: true
         ro_crate:
           readOnly: true
-          $ref: "#/components/schemas/ROCrate"
-        is_latest:
-          type: boolean
-          readOnly: true
-          description: |
-            `true` if the workflow version is the latest,
-            `false` otherwise.
-          example: true
-        submitter:
-          $ref: "#/components/schemas/User"
-          readOnly: true
-          nullable: true
+          $ref: "#/components/schemas/ROCrateBase"
       required:
         - version
+
+    WorkflowVersion:
+      allOf:
+        - $ref: "#/components/schemas/WorkflowVersionMin"
+        - type: object
+          properties:
+            ro_crate:
+              readOnly: true
+              $ref: "#/components/schemas/ROCrate"
+            is_latest:
+              type: boolean
+              readOnly: true
+              description: |
+                `true` if the workflow version is the latest, 
+                `false` otherwise.
+              example: true
+            submitter:
+              $ref: "#/components/schemas/User"
+              readOnly: true
+              nullable: true
 
     WorkflowDetails:
       allOf:
@@ -1383,7 +1427,7 @@ components:
               readOnly: true
               type: array
               items:
-                $ref: "#/components/schemas/WorkflowVersion"
+                $ref: "#/components/schemas/WorkflowVersionMin"
               example:
                 [
                   {
@@ -1397,7 +1441,6 @@ components:
                             download: "https://api.lifemonitor.eu/ro_crates/10/download",
                           },
                       },
-                    is_latest: false,
                     submitter: { id: 501, username: "lm" },
                   },
                 ]
@@ -1415,9 +1458,21 @@ components:
         items:
           type: array
           items:
-            $ref: "#/components/schemas/Workflow"
-      required:
-        - items
+            allOf:
+              - $ref: "#/components/schemas/Workflow"
+              - properties:
+                  status:
+                    type: object
+                    description: Summary of the workflow status
+                    properties:
+                      aggregate_test_status:
+                        $ref: "#/components/schemas/AggregateTestStatus"
+                      latest_build:
+                        description: "The most recent build on some test instance"
+                        $ref: "#/components/schemas/BuildSummary"
+                        nullable: true
+          required:
+            - items
 
     WorkflowStatus:
       allOf:
@@ -1458,7 +1513,7 @@ components:
         - "all_failing"
         - "not_available"
 
-    TestSuiteMetadata:
+    WorkflowTestingROCrate:
       type: object
       description: |
         [Workflow Testing RO-Crate](https://github.com/crs4/life_monitor/wiki/Workflow-Testing-RO-Crate)
@@ -1467,6 +1522,25 @@ components:
         description: Workflow RO-Crate Test
         url: https://github.com/crs4/life_monitor/wiki/Workflow-Testing-RO-Crate
 
+    TestSuiteDefinition:
+      type: object
+      description: |
+        Test Suite metadata
+      properties:
+        test_engine:
+          type: object
+          description: |
+            Software application that runs workflow tests according to a definition.
+          properties:
+            type:
+              type: string
+              description: Type of the software engine (e.g., planemo, etc.)
+              example: planemo
+            version:
+              type: string
+              description: Version of the software engine
+              example: ">=0.70"
+
     TestSuite:
       type: object
       properties:
@@ -1474,15 +1548,18 @@ components:
           type: string
           description: Universal unique identifier of the test suite
           example: e3208b02-69b6-4e32-a3dc-b93967d30e2c
-        test_suite_metadata:
-          $ref: "#/components/schemas/TestSuiteMetadata"
+        roc_suite:
+          type: string
+          description: RO-Crate identifier of the TestSuite
+          example: "#test1"
+        definition:
+          $ref: "#/components/schemas/TestSuiteDefinition"
         instances:
           type: array
           items:
             $ref: "#/components/schemas/TestInstance"
       required:
         - uuid
-        - test_suite_metadata
         - instances
 
     ListOfTestSuite:
@@ -1618,6 +1695,13 @@ components:
     TestInstanceBase:
       type: object
       properties:
+        roc_instance:
+          type: string
+          description: |
+            RO-Crate identifier of the test instance if the instance comes 
+            from a Workflow RO-Crate
+          example: "#test1_1"
+          readOnly: true
         managed:
           type: boolean
           description: |
@@ -1806,7 +1890,3 @@ components:
             workflow.write: Post workflows to LifeMonitor, including test suites and instances
             testingService.read: Get information about testing services
             testingService.write: Register testing services
-
-  examples:
-    test_metadata:
-      externalValue: "examples/test-metadata.json"

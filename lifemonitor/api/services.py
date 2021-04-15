@@ -91,8 +91,8 @@ class LifeMonitor:
                 raise lm_exceptions.NotAuthorizedException(f"User {user.username} is not allowed to access workflow")
         return w
 
-    @staticmethod
-    def register_workflow(roc_link, workflow_submitter: User, workflow_version,
+    @classmethod
+    def register_workflow(cls, roc_link, workflow_submitter: User, workflow_version,
                           workflow_uuid=None, workflow_identifier=None,
                           workflow_registry: Optional[models.WorkflowRegistry] = None,
                           authorization=None, name=None):
@@ -129,10 +129,13 @@ class LifeMonitor:
         if name is None:
             w.name = wv.dataset_name
             wv.name = wv.dataset_name
-        if wv.test_metadata:
-            logger.debug("Test metadata found in the crate")
-            # FIXME: the test metadata can describe more than one suite
-            wv.add_test_suite(workflow_submitter, wv.test_metadata)
+
+        # parse roc_metadata and register suites and instances
+        try:
+            for _, raw_suite in wv.roc_suites.items():
+                cls._init_test_suite_from_json(wv, workflow_submitter, raw_suite)
+        except KeyError as e:
+            raise lm_exceptions.SpecificationNotValidException(f"Missing property: {e}")
         w.save()
         return wv
 
@@ -163,7 +166,51 @@ class LifeMonitor:
             raise lm_exceptions.EntityNotFoundException(models.WorkflowVersion, (workflow_uuid, workflow_version))
 
     @staticmethod
-    def register_test_suite(workflow_uuid, workflow_version,
+    def _init_test_suite_from_json(wv: models.WorkflowVersion, submitter: models.User, raw_suite):
+        """ Create a TestSuite instance (with its related TestInstance)
+            from an intermediate JSON representation like:
+                {
+                    "roc_suite": <ROC_SUITE_ID>,
+                    "name": ...,
+                    "definition": {
+                        "test_engine": {
+                            "type": t,
+                            "version": ...,
+                        },
+                        "path": ...,
+                    },
+                    "instances": [
+                        {
+                            "roc_instance": <ROC_INSTANCE_ID>,
+                            "name": ...,
+                            "resource": ...,
+                            "service": {
+                                "type": ...,
+                                "url": ...,
+                            },
+                        }
+                    ]
+                }
+        """
+        try:
+            suite = wv.add_test_suite(submitter, raw_suite['name'],
+                                      roc_suite=raw_suite['roc_suite'],
+                                      definition=raw_suite['definition'])
+            for raw_instance in raw_suite["instances"]:
+                logger.debug("Instance: %r", raw_instance)
+                test_instance = suite.add_test_instance(submitter, raw_instance.get('managed', False),
+                                                        raw_instance["name"],
+                                                        raw_instance["service"]["type"],
+                                                        raw_instance["service"]["url"],
+                                                        raw_instance["resource"],
+                                                        raw_instance['roc_instance'])
+                logger.debug("Created TestInstance: %r", test_instance)
+            return suite
+        except KeyError as e:
+            raise lm_exceptions.SpecificationNotValidException(f"Missing property: {e}")
+
+    @classmethod
+    def register_test_suite(cls, workflow_uuid, workflow_version,
                             submitter: models.User, test_suite_metadata) -> models.TestSuite:
         workflow = models.WorkflowVersion.get_user_workflow_version(submitter, workflow_uuid, workflow_version)
         if not workflow:
@@ -171,7 +218,8 @@ class LifeMonitor:
         # For now only the workflow submitter can add test suites
         if workflow.submitter != submitter:
             raise lm_exceptions.NotAuthorizedException("Only the workflow submitter can add test suites")
-        suite = workflow.add_test_suite(submitter, test_suite_metadata)
+        assert isinstance(workflow, models.WorkflowVersion)
+        suite = cls._init_test_suite_from_json(workflow, submitter, test_suite_metadata)
         suite.save()
         return suite
 

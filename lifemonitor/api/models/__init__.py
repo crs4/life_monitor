@@ -36,7 +36,7 @@ from .registries import WorkflowRegistry, WorkflowRegistryClient
 from .workflows import Workflow, WorkflowVersion
 
 # 'testsuites' package
-from .testsuites import Test, TestSuite, TestInstance, ManagedTestInstance, BuildStatus, TestBuild
+from .testsuites import TestSuite, TestInstance, ManagedTestInstance, BuildStatus, TestBuild
 
 # 'testing_services'
 from .services import TestingService, \
@@ -49,7 +49,7 @@ __all__ = [
     "db", "User", "ROCrate",
     "Status", "AggregateTestStatus", "WorkflowStatus", "SuiteStatus",
     "WorkflowRegistry", "WorkflowRegistryClient", "WorkflowVersion", "Workflow",
-    "Test", "TestSuite", "TestInstance", "ManagedTestInstance",
+    "TestSuite", "TestInstance", "ManagedTestInstance",
     "BuildStatus", "TestBuild", "JenkinsTestBuild", "TravisTestBuild",
     "TestingService", "JenkinsTestingService", "TravisTestingService",
     "TestingServiceToken", "TestingServiceTokenManager"

@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import logging
 
-from .testsuite import Test, TestSuite
+from .testsuite import TestSuite
 from .testbuild import BuildStatus, TestBuild
 from .testinstance import TestInstance, ManagedTestInstance
 
@@ -31,4 +31,4 @@ from .testinstance import TestInstance, ManagedTestInstance
 logger = logging.getLogger(__name__)
 
 
-__all__ = ["Test", "BuildStatus", "TestBuild", "Test", "TestSuite", "TestInstance", "ManagedTestInstance"]
+__all__ = ["BuildStatus", "TestBuild", "TestSuite", "TestInstance", "ManagedTestInstance"]

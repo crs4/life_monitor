@@ -307,5 +307,6 @@ def test_get_workflow_suites(app_client, client_auth_method, user1, user1_auth, 
     # redundant check: the validation is performed by the connexion framework
     suite = data['items'][0]
     assert suite['uuid'], "Invalid UUID"
-    assert "test_suite_metadata" in suite, "Missing required test_suite_metadata"
+    assert "roc_suite" in suite, "Missing required roc_suite"
+    assert "definition" in suite, "Missing required definition"
     assert "instances" in suite, "Missing required instances"

@@ -26,7 +26,6 @@ from typing import List
 
 import lifemonitor.api.models as models
 from lifemonitor.api.models import db
-from lifemonitor.exceptions import EntityNotFoundException
 from lifemonitor.models import JSON, UUID, ModelMixin
 
 from .testsuite import TestSuite
@@ -40,7 +39,8 @@ class TestInstance(db.Model, ModelMixin):
     type = db.Column(db.String(20), nullable=False)
     _test_suite_uuid = \
         db.Column("test_suite_uuid", UUID, db.ForeignKey(TestSuite.uuid), nullable=False)
-    name = db.Column(db.Text, nullable=False)
+    name = db.Column(db.String, nullable=False)
+    roc_instance = db.Column(db.String, nullable=True)
     resource = db.Column(db.Text, nullable=False)
     parameters = db.Column(JSON, nullable=True)
     submitter_id = db.Column(db.Integer,
@@ -62,10 +62,12 @@ class TestInstance(db.Model, ModelMixin):
     }
 
     def __init__(self, testing_suite: TestSuite, submitter: models.User,
-                 test_name, test_resource, testing_service: models.TestingService) -> None:
+                 test_name, test_resource, testing_service: models.TestingService,
+                 roc_instance: str = None) -> None:
         self.test_suite = testing_suite
         self.submitter = submitter
         self.name = test_name
+        self.roc_instance = roc_instance
         self.resource = test_resource
         self.testing_service = testing_service
 
@@ -73,14 +75,12 @@ class TestInstance(db.Model, ModelMixin):
         return '<TestInstance {} on TestSuite {}>'.format(self.uuid, self.test_suite.uuid)
 
     @property
-    def managed(self):
-        return self.type != 'unmanaged'
+    def is_roc_instance(self):
+        return self.roc_instance is not None
 
     @property
-    def test(self):
-        if not self.test_suite:
-            raise EntityNotFoundException(models.Test)
-        return self.test_suite.tests[self.name]
+    def managed(self):
+        return self.type != 'unmanaged'
 
     @property
     def last_test_build(self):

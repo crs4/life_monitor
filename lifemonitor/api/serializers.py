@@ -67,10 +67,6 @@ class WorkflowSchema(ResourceMetadataSchema):
     name = ma.auto_field()
 
 
-class ListOfWorkflows(ListOfItems):
-    __item_scheme__ = WorkflowSchema
-
-
 class RegistryWorkflowSchema(WorkflowSchema):
     registry = fields.Nested(WorkflowRegistrySchema(exclude=('meta',)), attribute="")
 
@@ -84,13 +80,22 @@ class VersionDetailsSchema(BaseSchema):
     ro_crate = fields.Method("get_rocrate")
     submitter = ma.Nested(UserSchema(only=('id', 'username')), attribute="submitter")
 
+    class Meta:
+        model = models.WorkflowVersion
+        additional = ('rocrate_metadata',)
+
     def get_rocrate(self, obj):
-        return {
+        rocrate = {
             'links': {
                 'external': obj.uri,
                 'download': urljoin(lm_utils.get_external_server_url(), f"ro_crates/{obj.id}/download")
             }
         }
+        rocrate['metadata'] = obj.crate_metadata
+        if 'rocrate_metadata' in self.exclude or \
+                self.only and 'rocrate_metadata' not in self.only:
+            del rocrate['metadata']
+        return rocrate
 
     @post_dump
     def remove_skip_values(self, data, **kwargs):
@@ -114,8 +119,15 @@ class WorkflowVersionSchema(ResourceSchema):
     registry = ma.Nested(WorkflowRegistrySchema(exclude=('meta',)),
                          attribute="workflow_registry")
 
+    rocrate_metadata = False
+
+    def __init__(self, *args, rocrate_metadata=False, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.rocrate_metadata = rocrate_metadata
+
     def get_version(self, obj):
-        return VersionDetailsSchema().dump(obj)
+        exclude = ('rocrate_metadata',) if not self.rocrate_metadata else ()
+        return VersionDetailsSchema(exclude=exclude).dump(obj)
 
     @post_dump
     def remove_skip_values(self, data, **kwargs):
@@ -125,9 +137,17 @@ class WorkflowVersionSchema(ResourceSchema):
         }
 
 
+class LatestWorkflowVersionSchema(WorkflowVersionSchema):
+
+    previous_versions = fields.Method("get_versions")
+
+    def get_versions(self, obj: models.WorkflowVersion):
+        schema = VersionDetailsSchema(only=("uuid", "version", "ro_crate"))
+        return [schema.dump(v)
+                for v in obj.workflow.versions.values() if not v.is_latest]
+
+
 class ListOfWorkflowVersions(ResourceMetadataSchema):
-    __envelope__ = {"single": None, "many": None}
-    __model__ = models.Workflow
 
     class Meta:
         model = models.Workflow
@@ -149,7 +169,8 @@ class LatestWorkflowSchema(WorkflowVersionSchema):
     previous_versions = fields.Method("get_versions")
 
     def get_versions(self, obj: models.WorkflowVersion):
-        return [VersionDetailsSchema(only=("uuid", "version", "submitter")).dump(v)
+        schema = VersionDetailsSchema(only=("uuid", "version", "submitter"))
+        return [schema.dump(v)
                 for v in obj.workflow.versions.values() if not v.is_latest]
 
 
@@ -161,6 +182,7 @@ class TestInstanceSchema(ResourceMetadataSchema):
         model = models.TestInstance
 
     uuid = ma.auto_field()
+    roc_instance = ma.auto_field()
     name = ma.auto_field()
     resource = ma.auto_field()
     managed = fields.Boolean(attribute="managed")
@@ -173,6 +195,13 @@ class TestInstanceSchema(ResourceMetadataSchema):
             'uuid': obj.testing_service.uuid,
             'url': obj.testing_service.url,
             'type': obj.testing_service._type.replace('_testing_service', '')
+        }
+
+    @post_dump
+    def remove_skip_values(self, data, **kwargs):
+        return {
+            key: value for key, value in data.items()
+            if value is not None
         }
 
 
@@ -192,6 +221,37 @@ class BuildSummarySchema(ResourceMetadataSchema):
 
     def get_last_logs(self, obj):
         return obj.get_output(0, 131072)
+
+
+class WorkflowVersionListItem(WorkflowSchema):
+
+    latest_version = fields.String(attribute="latest_version.version")
+    status = fields.Method("get_status")
+
+    def get_status(self, workflow):
+        return {
+            "aggregate_test_status": workflow.latest_version.status.aggregated_status,
+            "latest_build": self.get_latest_build(workflow)
+        }
+
+    def get_latest_build(self, workflow):
+        latest_builds = workflow.latest_version.status.latest_builds
+        if latest_builds and len(latest_builds) > 0:
+            return BuildSummarySchema(exclude=('meta',)).dump(latest_builds[0])
+        return None
+
+
+class ListOfWorkflows(ListOfItems):
+    __item_scheme__ = WorkflowVersionListItem
+
+    def __init__(self, *args, workflow_status: bool = False, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.workflow_status = workflow_status
+
+    def get_items(self, obj):
+        exclude = ("meta",) if self.workflow_status else ("meta", "status")
+        return [self.__item_scheme__(exclude=exclude, many=False).dump(_) for _ in obj] \
+            if self.__item_scheme__ else None
 
 
 class WorkflowStatusSchema(WorkflowVersionSchema):
@@ -214,9 +274,21 @@ class SuiteSchema(ResourceMetadataSchema):
         model = models.TestSuite
 
     uuid = ma.auto_field()
-    test_suite_metadata = fields.Dict(attribute="test_definition")  # TODO: rename the property to metadata
+    roc_suite = fields.String(attribute="roc_suite")
+    definition = fields.Method("get_definition")
     instances = fields.Nested(TestInstanceSchema(exclude=('meta',)),
                               attribute="test_instances", many=True)
+
+    def get_definition(self, obj):
+        to_skip = ['path']
+        return {k: v for k, v in obj.definition.items() if k not in to_skip}
+
+    @post_dump
+    def remove_skip_values(self, data, **kwargs):
+        return {
+            key: value for key, value in data.items()
+            if value is not None
+        }
 
 
 class ListOfSuites(ListOfItems):
