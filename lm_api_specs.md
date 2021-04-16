@@ -3,7 +3,7 @@
 **Life Monitor (LM)** exposes its functionalities through a RESTful API defined with
 [OpenAPI](https://swagger.io/specification).
 
-### Actors
+## Clients
 
 The LM API is designed with _two types_ of **clients** in mind:
 
@@ -40,7 +40,7 @@ _AuthorizationCodeFlow_ or _RegistryCodeFlow_;
   be queried only by clients authorised through an OAuth2
 _RegistryClientCredentials_ or _RegistryCodeFlow_.
 
-### Useful resources
+## Useful resources
 
 - [API documentation and examples](https://api-lifemonitor-dev.rahtiapp.fi/static/apidocs.html).
 - [YAML API specifications](https://github.com/crs4/life_monitor/tree/master/specs).
