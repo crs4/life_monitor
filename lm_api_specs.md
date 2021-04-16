@@ -34,12 +34,12 @@ The authorisation mechanisms available for clients are:
 * **OAuth2 Client Credentials**, only available for trusted workflow registries (see *RegistryClientCredentials*);
 * **OAuth2 Authorization Code**, available for both generic clients (see *AuthorizationCodeFlow*) and registry clients (see *RegistryCodeFlow*).
 
-Clients can query API endpoints accordingly to the authorisation mechanism they adopt.
+Clients can query API endpoints according to the authorisation mechanism they adopt.
 There are in fact resources which are _"contextual"_ to the actor which the client is acting on behalf of and the type of "impersonated" actor is determined by the authorisation grant in use. Examples of contextual resources are:
 
-- `/users/current/*`, which assume an authenticated _user_ and thus can be queried only by clients authorised through an _API key_ or an _OAuth2 Authorization Code flow_;
+- `/users/current/*`, which assume an authenticated _user_ and thus can be queried only by clients authorised through an _API key_, an OAuth2 _AuthorizationCodeFlow_ or _RegistryCodeFlow_;
 
-- `/registries/current/*`, which assume an authenticated _registry_ and thus can be queried only by clients authorised through an _API key_ or an _OAuth2 Authorization Code flow_.
+- `/registries/current/*`, which assume an authenticated _registry_ and thus can be queried only by clients authorised through an OAuth2 _RegistryClientCredentials_ or _RegistryCodeFlow_.
 
 ### Useful resources
 
