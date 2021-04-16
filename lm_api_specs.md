@@ -5,33 +5,16 @@
 
 ### Actors
 
-The LM API is designed with _two types_ of **actors** in mind:
+The LM API is designed with _two types_ of **clients** in mind:
 
-1. **Users**
-2. **Registries**
+1. **Generic Client**: can manage a user's workflows and associated workflow tests;
 
-Both can manage their own workflows and associated workflow tests through the LM
-API. In addition, Registries can _act on their users' behalf_, and thus, they
-can manage workflows and workflow tests that belong to their users. For
-instance, you may register a workflow on the [Workflow Hub
-registry](https://workflowhub.eu/) and it may in turn register on your behalf
-the workflow's tests with the Life Monitor.
+2. **Registry Client**: can act on their users’ behalf and manage their users'
+   workflows and associated workflow tests. For instance, you may register a
+   workflow on the [Workflow Hub registry](https://workflowhub.eu/) and it (as a
+   Registry Client) may in turn register on your behalf the workflow's tests with
+   the Life Monitor.
 
-### Clients
-
-Thanks to the RESTful implementation and the adoption of OAuth 2.0 as
-authorisation protocol, the LM API provides support for a variety of different
-clients (e.g., scripting tools, web apps, etc.).
-
-Clients allow users and registries to interact with the LifeMonitor API.  With
-respect to the actors they support, we can distinguish between:
-
-- **Generic Clients**: can act on behalf of a user to register user's workflows
-  and associated workflow tests;
-
-- **Registry Clients**: allow a registry to submit its own workflows and
-  associated workflow tests. In addition, registries can act on their users’
-behalf and submit their users' workflows and associated workflow tests.
 
 <img alt="Life Monitor client types" src="images/lm_clients.png" width="900" />
 
