@@ -209,13 +209,10 @@ def get_roc_suites(crate):
             ]
         }
     """
-    if not crate.test_dir:
-        return None
-    about = crate.test_dir["about"]
-    if not about:
+    if not crate.test_suites:
         return None
     rval = {}
-    for suite in about:
+    for suite in crate.test_suites:
         suite_data = {
             "roc_suite": suite.id,
             "name": suite.name,
