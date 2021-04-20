@@ -180,18 +180,25 @@ font-style: italic;
   </head>
   <body>
   <h1>Life Monitor API</h1>
-    <div class="app-desc">Workflow sustainability service</div>
+    <div class="app-desc"><p><em>Workflow sustainability service</em></p>
+<p>Life Monitor aims to facilitate the sharing, execution and monitoring of
+workflow tests over time, ensuring that deviations from the workflow's
+correct operation are detected and communicated to the workflow authors so
+that they might be solved, thus extending the useful life of the workflow.</p>
+<p>Life Monitor is being developed as part of the <a href="https://www.eosc-life.eu/">EOSC-Life project</a>.</p>
+</div>
     <div class="app-desc">More information: <a href="https://openapi-generator.tech">https://openapi-generator.tech</a></div>
     <div class="app-desc">Contact Info: <a href="team@openapitools.org">team@openapitools.org</a></div>
-    <div class="app-desc">Version: 0.2.0-beta1</div>
+    <div class="app-desc">Version: 0.2.0-beta2</div>
     <div class="app-desc">BasePath:</div>
     <div class="license-info">All rights reserved</div>
     <div class="license-url">http://apache.org/licenses/LICENSE-2.0.html</div>
   <h2>Access</h2>
     <ol>
+      <li>OAuth AuthorizationUrl:oauth2/authorizeTokenUrl:oauth2/token</li>
+      <li>OAuth AuthorizationUrl:TokenUrl:oauth2/token</li>
+      <li>OAuth AuthorizationUrl:oauth2/authorizeTokenUrl:oauth2/token</li>
       <li>APIKey KeyParamName:ApiKey KeyInQuery:false KeyInHeader:true</li>
-      <li>OAuth AuthorizationUrl:TokenUrl:/oauth2/token</li>
-      <li>OAuth AuthorizationUrl:/oauth2/authorizeTokenUrl:/oauth2/token</li>
     </ol>
 
   <h2><a name="__Methods">Methods</a></h2>
@@ -199,279 +206,69 @@ font-style: italic;
 
   <h3>Table of Contents </h3>
   <div class="method-summary"></div>
-  <h4><a href="#Default">Default</a></h4>
+  <h4><a href="#Registries">Registries</a></h4>
   <ul>
-  <li><a href="#getRegistryUser"><code><span class="http-method">get</span> /users/{user_id}</code></a></li>
-  <li><a href="#getRegistryUsers"><code><span class="http-method">get</span> /users</code></a></li>
+  <li><a href="#userRegistryWorkflowsGet"><code><span class="http-method">get</span> /registries/{registry_uuid}/workflows</code></a></li>
+  <li><a href="#userRegistryWorkflowsPost"><code><span class="http-method">post</span> /registries/{registry_uuid}/workflows</code></a></li>
+  <li><a href="#workflowRegistriesGet"><code><span class="http-method">get</span> /registries</code></a></li>
+  <li><a href="#workflowRegistriesGetByUuid"><code><span class="http-method">get</span> /registries/{registry_uuid}</code></a></li>
+  </ul>
+  <h4><a href="#RegistryClientOperations">RegistryClientOperations</a></h4>
+  <ul>
+  <li><a href="#getRegistryUsers"><code><span class="http-method">get</span> /registries/current/users</code></a></li>
+  <li><a href="#registryUserWorkflowsGet"><code><span class="http-method">get</span> /users/{user_id}/workflows</code></a></li>
+  <li><a href="#registryUserWorkflowsPost"><code><span class="http-method">post</span> /users/{user_id}/workflows</code></a></li>
+  <li><a href="#registryWorkflowsGet"><code><span class="http-method">get</span> /registries/current/workflows</code></a></li>
+  <li><a href="#registryWorkflowsPost"><code><span class="http-method">post</span> /registries/current/workflows</code></a></li>
+  <li><a href="#workflowRegistriesGetCurrent"><code><span class="http-method">get</span> /registries/current</code></a></li>
+  </ul>
+  <h4><a href="#TestInstances">TestInstances</a></h4>
+  <ul>
   <li><a href="#instancesBuildsGetById"><code><span class="http-method">get</span> /instances/{instance_uuid}/builds/{build_id}</code></a></li>
   <li><a href="#instancesBuildsGetLogs"><code><span class="http-method">get</span> /instances/{instance_uuid}/builds/{build_id}/logs</code></a></li>
+  <li><a href="#instancesDeleteById"><code><span class="http-method">delete</span> /instances/{instance_uuid}</code></a></li>
   <li><a href="#instancesGetBuilds"><code><span class="http-method">get</span> /instances/{instance_uuid}/latest-builds</code></a></li>
   <li><a href="#instancesGetById"><code><span class="http-method">get</span> /instances/{instance_uuid}</code></a></li>
-  <li><a href="#showCurrentUserProfile"><code><span class="http-method">get</span> /users/current</code></a></li>
+  </ul>
+  <h4><a href="#TestSuites">TestSuites</a></h4>
+  <ul>
   <li><a href="#suitesGetByUuid"><code><span class="http-method">get</span> /suites/{suite_uuid}</code></a></li>
   <li><a href="#suitesGetInstances"><code><span class="http-method">get</span> /suites/{suite_uuid}/instances</code></a></li>
   <li><a href="#suitesGetStatus"><code><span class="http-method">get</span> /suites/{suite_uuid}/status</code></a></li>
   <li><a href="#suitesPostInstance"><code><span class="http-method">post</span> /suites/{suite_uuid}/instances</code></a></li>
-  <li><a href="#workflowRegistriesGet"><code><span class="http-method">get</span> /registries</code></a></li>
-  <li><a href="#workflowRegistriesGetByUuid"><code><span class="http-method">get</span> /registries/{registry_uuid}</code></a></li>
-  <li><a href="#workflowRegistriesGetCurrent"><code><span class="http-method">get</span> /registries/current</code></a></li>
-  <li><a href="#workflowsDelete"><code><span class="http-method">delete</span> /workflows/{wf_uuid}/{wf_version}</code></a></li>
+  </ul>
+  <h4><a href="#Users">Users</a></h4>
+  <ul>
+  <li><a href="#showCurrentUserProfile"><code><span class="http-method">get</span> /users/current</code></a></li>
+  <li><a href="#userWorkflowsGet"><code><span class="http-method">get</span> /users/current/workflows</code></a></li>
+  <li><a href="#userWorkflowsPost"><code><span class="http-method">post</span> /users/current/workflows</code></a></li>
+  </ul>
+  <h4><a href="#Workflows">Workflows</a></h4>
+  <ul>
+  <li><a href="#workflowsDelete"><code><span class="http-method">delete</span> /workflows/{wf_uuid}/versions/{wf_version}</code></a></li>
   <li><a href="#workflowsGet"><code><span class="http-method">get</span> /workflows</code></a></li>
-  <li><a href="#workflowsGetById"><code><span class="http-method">get</span> /workflows/{wf_uuid}/{wf_version}</code></a></li>
   <li><a href="#workflowsGetLatestVersionById"><code><span class="http-method">get</span> /workflows/{wf_uuid}</code></a></li>
-  <li><a href="#workflowsGetStatus"><code><span class="http-method">get</span> /workflows/{wf_uuid}/{wf_version}/status</code></a></li>
-  <li><a href="#workflowsGetSuites"><code><span class="http-method">get</span> /workflows/{wf_uuid}/{wf_version}/suites</code></a></li>
-  <li><a href="#workflowsPost"><code><span class="http-method">post</span> /workflows</code></a></li>
+  <li><a href="#workflowsGetStatus"><code><span class="http-method">get</span> /workflows/{wf_uuid}/status</code></a></li>
+  <li><a href="#workflowsGetSuites"><code><span class="http-method">get</span> /workflows/{wf_uuid}/suites</code></a></li>
+  <li><a href="#workflowsGetVersionsById"><code><span class="http-method">get</span> /workflows/{wf_uuid}/versions</code></a></li>
   </ul>
 
-  <h1><a name="Default">Default</a></h1>
-  <div class="method"><a name="getRegistryUser"/>
+  <h1><a name="Registries">Registries</a></h1>
+  <div class="method"><a name="userRegistryWorkflowsGet"/>
     <div class="method-path">
     <a class="up" href="#__Methods">Up</a>
-    <pre class="get"><code class="huge"><span class="http-method">get</span> /users/{user_id}</code></pre></div>
-    <div class="method-summary">Get a user of the current registry (<span class="nickname">getRegistryUser</span>)</div>
-    <div class="method-notes"></div>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /registries/{registry_uuid}/workflows</code></pre></div>
+    <div class="method-summary">List registry workflows (<span class="nickname">userRegistryWorkflowsGet</span>)</div>
+    <div class="method-notes">List workflows from the specified registry that have been submitted to
+LifeMonitor by the current (authenticated) user.</div>
 
     <h3 class="field-label">Path parameters</h3>
     <div class="field-items">
-      <div class="param">user_id (required)</div>
+      <div class="param">registry_uuid (required)</div>
 
-      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; User's Unique identifier default: null </div>
-    </div>  <!-- field-items -->
-
-
-
-
-
-
-    <h3 class="field-label">Return type</h3>
-    <div class="return-type">
-      <a href="#User">User</a>
-      
-    </div>
-
-    <!--Todo: process Response Object and its headers, schema, examples -->
-
-    <h3 class="field-label">Example data</h3>
-    <div class="example-data-content-type">Content-Type: application/json</div>
-    <pre class="example"><code>{
-  "identities" : {
-    "key" : {
-      "sub" : "sub",
-      "provider" : {
-        "name" : "name",
-        "type" : "type",
-        "uri" : "uri"
-      },
-      "profile" : "profile",
-      "name" : "name",
-      "email" : "email",
-      "picture" : "picture",
-      "username" : "username"
-    }
-  },
-  "id" : 0,
-  "username" : "username"
-}</code></pre>
-
-    <h3 class="field-label">Produces</h3>
-    This API call produces the following media types according to the <span class="header">Accept</span> request header;
-    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
-    <ul>
-      <li><code>application/json</code></li>
-    </ul>
-
-    <h3 class="field-label">Responses</h3>
-    <h4 class="field-label">200</h4>
-    Get a registry user
-        <a href="#User">User</a>
-    <h4 class="field-label">400</h4>
-    The request is malformed
-        <a href="#Error">Error</a>
-    <h4 class="field-label">401</h4>
-    Unauthorized
-        <a href="#Error">Error</a>
-    <h4 class="field-label">403</h4>
-    Forbidden
-        <a href="#Error">Error</a>
-    <h4 class="field-label">404</h4>
-    Resource not found
-        <a href="#Error">Error</a>
-  </div> <!-- method -->
-  <hr/>
-  <div class="method"><a name="getRegistryUsers"/>
-    <div class="method-path">
-    <a class="up" href="#__Methods">Up</a>
-    <pre class="get"><code class="huge"><span class="http-method">get</span> /users</code></pre></div>
-    <div class="method-summary">Get users of the current registry (<span class="nickname">getRegistryUsers</span>)</div>
-    <div class="method-notes"></div>
-
-
-
-
-
-
-
-    <h3 class="field-label">Return type</h3>
-    <div class="return-type">
-      <a href="#ListOfUsers">ListOfUsers</a>
-      
-    </div>
-
-    <!--Todo: process Response Object and its headers, schema, examples -->
-
-    <h3 class="field-label">Example data</h3>
-    <div class="example-data-content-type">Content-Type: application/json</div>
-    <pre class="example"><code>{
-  "items" : [ {
-    "identities" : {
-      "key" : {
-        "sub" : "sub",
-        "provider" : {
-          "name" : "name",
-          "type" : "type",
-          "uri" : "uri"
-        },
-        "profile" : "profile",
-        "name" : "name",
-        "email" : "email",
-        "picture" : "picture",
-        "username" : "username"
-      }
-    },
-    "id" : 0,
-    "username" : "username"
-  }, {
-    "identities" : {
-      "key" : {
-        "sub" : "sub",
-        "provider" : {
-          "name" : "name",
-          "type" : "type",
-          "uri" : "uri"
-        },
-        "profile" : "profile",
-        "name" : "name",
-        "email" : "email",
-        "picture" : "picture",
-        "username" : "username"
-      }
-    },
-    "id" : 0,
-    "username" : "username"
-  } ]
-}</code></pre>
-
-    <h3 class="field-label">Produces</h3>
-    This API call produces the following media types according to the <span class="header">Accept</span> request header;
-    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
-    <ul>
-      <li><code>application/json</code></li>
-    </ul>
-
-    <h3 class="field-label">Responses</h3>
-    <h4 class="field-label">200</h4>
-    List of registry users
-        <a href="#ListOfUsers">ListOfUsers</a>
-    <h4 class="field-label">400</h4>
-    The request is malformed
-        <a href="#Error">Error</a>
-    <h4 class="field-label">401</h4>
-    Unauthorized
-        <a href="#Error">Error</a>
-    <h4 class="field-label">403</h4>
-    Forbidden
-        <a href="#Error">Error</a>
-    <h4 class="field-label">404</h4>
-    Resource not found
-        <a href="#Error">Error</a>
-  </div> <!-- method -->
-  <hr/>
-  <div class="method"><a name="instancesBuildsGetById"/>
-    <div class="method-path">
-    <a class="up" href="#__Methods">Up</a>
-    <pre class="get"><code class="huge"><span class="http-method">get</span> /instances/{instance_uuid}/builds/{build_id}</code></pre></div>
-    <div class="method-summary">Get summary of the specified build on the specified instance (<span class="nickname">instancesBuildsGetById</span>)</div>
-    <div class="method-notes"></div>
-
-    <h3 class="field-label">Path parameters</h3>
-    <div class="field-items">
-      <div class="param">instance_uuid (required)</div>
-
-      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Test service Instance Unique identifier default: null </div><div class="param">build_id (required)</div>
-
-      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Build identifier default: null </div>
-    </div>  <!-- field-items -->
-
-
-
-
-
-
-    <h3 class="field-label">Return type</h3>
-    <div class="return-type">
-      <a href="#BuildSummary">BuildSummary</a>
-      
-    </div>
-
-    <!--Todo: process Response Object and its headers, schema, examples -->
-
-    <h3 class="field-label">Example data</h3>
-    <div class="example-data-content-type">Content-Type: application/json</div>
-    <pre class="example"><code>{
-  "instance" : {
-    "service" : {
-      "resource" : "resource",
-      "type" : "type",
-      "url" : "url"
-    },
-    "name" : "name"
-  },
-  "build_id" : "build_id",
-  "last_logs" : "last_logs",
-  "suite_uuid" : "suite_uuid",
-  "timestamp" : "timestamp"
-}</code></pre>
-
-    <h3 class="field-label">Produces</h3>
-    This API call produces the following media types according to the <span class="header">Accept</span> request header;
-    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
-    <ul>
-      <li><code>application/json</code></li>
-    </ul>
-
-    <h3 class="field-label">Responses</h3>
-    <h4 class="field-label">200</h4>
-    Log data
-        <a href="#BuildSummary">BuildSummary</a>
-    <h4 class="field-label">400</h4>
-    The request is malformed
-        <a href="#Error">Error</a>
-    <h4 class="field-label">401</h4>
-    Unauthorized
-        <a href="#Error">Error</a>
-    <h4 class="field-label">403</h4>
-    Forbidden
-        <a href="#Error">Error</a>
-    <h4 class="field-label">404</h4>
-    Resource not found
-        <a href="#Error">Error</a>
-  </div> <!-- method -->
-  <hr/>
-  <div class="method"><a name="instancesBuildsGetLogs"/>
-    <div class="method-path">
-    <a class="up" href="#__Methods">Up</a>
-    <pre class="get"><code class="huge"><span class="http-method">get</span> /instances/{instance_uuid}/builds/{build_id}/logs</code></pre></div>
-    <div class="method-summary">Get the build logs for the specified build and instance (<span class="nickname">instancesBuildsGetLogs</span>)</div>
-    <div class="method-notes"></div>
-
-    <h3 class="field-label">Path parameters</h3>
-    <div class="field-items">
-      <div class="param">instance_uuid (required)</div>
-
-      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Test service Instance Unique identifier default: null </div><div class="param">build_id (required)</div>
-
-      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Build identifier default: null </div>
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; <p>Universal unique identifier of the workflow registry.</p>
+<p>(provided by the endpoint <a href="#get-/registries"><code>[GET] /registries</code></a>)</p>
+ default: null </div>
     </div>  <!-- field-items -->
 
 
@@ -479,76 +276,15 @@ font-style: italic;
 
     <h3 class="field-label">Query parameters</h3>
     <div class="field-items">
-      <div class="param">offset_bytes (optional)</div>
+      <div class="param">status (optional)</div>
 
-      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Number of bytes to skip while fetching the log default: 0 </div><div class="param">limit_bytes (optional)</div>
-
-      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Maximum number of log bytes to retrieve default: 131072 </div>
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include a summary of the workflow status default: null </div>
     </div>  <!-- field-items -->
 
 
     <h3 class="field-label">Return type</h3>
     <div class="return-type">
-      
-      String
-    </div>
-
-    <!--Todo: process Response Object and its headers, schema, examples -->
-
-
-    <h3 class="field-label">Produces</h3>
-    This API call produces the following media types according to the <span class="header">Accept</span> request header;
-    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
-    <ul>
-      <li><code>application/json</code></li>
-    </ul>
-
-    <h3 class="field-label">Responses</h3>
-    <h4 class="field-label">200</h4>
-    Log data
-        <a href="#String">String</a>
-    <h4 class="field-label">400</h4>
-    The request is malformed
-        <a href="#Error">Error</a>
-    <h4 class="field-label">401</h4>
-    Unauthorized
-        <a href="#Error">Error</a>
-    <h4 class="field-label">403</h4>
-    Forbidden
-        <a href="#Error">Error</a>
-    <h4 class="field-label">404</h4>
-    Resource not found
-        <a href="#Error">Error</a>
-  </div> <!-- method -->
-  <hr/>
-  <div class="method"><a name="instancesGetBuilds"/>
-    <div class="method-path">
-    <a class="up" href="#__Methods">Up</a>
-    <pre class="get"><code class="huge"><span class="http-method">get</span> /instances/{instance_uuid}/latest-builds</code></pre></div>
-    <div class="method-summary">Get summaries of latest builds on the specified instance (<span class="nickname">instancesGetBuilds</span>)</div>
-    <div class="method-notes"></div>
-
-    <h3 class="field-label">Path parameters</h3>
-    <div class="field-items">
-      <div class="param">instance_uuid (required)</div>
-
-      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Test service Instance Unique identifier default: null </div>
-    </div>  <!-- field-items -->
-
-
-
-
-    <h3 class="field-label">Query parameters</h3>
-    <div class="field-items">
-      <div class="param">limit (optional)</div>
-
-      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Maximum number of items to retrieve default: 10 </div>
-    </div>  <!-- field-items -->
-
-
-    <h3 class="field-label">Return type</h3>
-    <div class="return-type">
-      <a href="#ListOfBuildSummary">ListOfBuildSummary</a>
+      <a href="#ListOfWorkflow">ListOfWorkflow</a>
       
     </div>
 
@@ -557,33 +293,7 @@ font-style: italic;
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
     <pre class="example"><code>{
-  "items" : [ {
-    "instance" : {
-      "service" : {
-        "resource" : "resource",
-        "type" : "type",
-        "url" : "url"
-      },
-      "name" : "name"
-    },
-    "build_id" : "build_id",
-    "last_logs" : "last_logs",
-    "suite_uuid" : "suite_uuid",
-    "timestamp" : "timestamp"
-  }, {
-    "instance" : {
-      "service" : {
-        "resource" : "resource",
-        "type" : "type",
-        "url" : "url"
-      },
-      "name" : "name"
-    },
-    "build_id" : "build_id",
-    "last_logs" : "last_logs",
-    "suite_uuid" : "suite_uuid",
-    "timestamp" : "timestamp"
-  } ]
+  "items" : [ "", "" ]
 }</code></pre>
 
     <h3 class="field-label">Produces</h3>
@@ -595,399 +305,28 @@ font-style: italic;
 
     <h3 class="field-label">Responses</h3>
     <h4 class="field-label">200</h4>
-    Build summary list
-        <a href="#ListOfBuildSummary">ListOfBuildSummary</a>
-    <h4 class="field-label">400</h4>
-    The request is malformed
-        <a href="#Error">Error</a>
+    List of workflows
+        <a href="#ListOfWorkflow">ListOfWorkflow</a>
     <h4 class="field-label">401</h4>
     Unauthorized
         <a href="#Error">Error</a>
-    <h4 class="field-label">403</h4>
-    Forbidden
-        <a href="#Error">Error</a>
-    <h4 class="field-label">404</h4>
-    Resource not found
-        <a href="#Error">Error</a>
   </div> <!-- method -->
   <hr/>
-  <div class="method"><a name="instancesGetById"/>
+  <div class="method"><a name="userRegistryWorkflowsPost"/>
     <div class="method-path">
     <a class="up" href="#__Methods">Up</a>
-    <pre class="get"><code class="huge"><span class="http-method">get</span> /instances/{instance_uuid}</code></pre></div>
-    <div class="method-summary">Get summary of a test instance (<span class="nickname">instancesGetById</span>)</div>
-    <div class="method-notes"></div>
+    <pre class="post"><code class="huge"><span class="http-method">post</span> /registries/{registry_uuid}/workflows</code></pre></div>
+    <div class="method-summary">Submit registry workflow (<span class="nickname">userRegistryWorkflowsPost</span>)</div>
+    <div class="method-notes">Submit (a new version of) a workflow indexed on the specified registry as the
+current (authenticated) user</div>
 
     <h3 class="field-label">Path parameters</h3>
     <div class="field-items">
-      <div class="param">instance_uuid (required)</div>
+      <div class="param">registry_uuid (required)</div>
 
-      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Test service Instance Unique identifier default: null </div>
-    </div>  <!-- field-items -->
-
-
-
-
-
-
-    <h3 class="field-label">Return type</h3>
-    <div class="return-type">
-      <a href="#TestInstance">TestInstance</a>
-      
-    </div>
-
-    <!--Todo: process Response Object and its headers, schema, examples -->
-
-    <h3 class="field-label">Example data</h3>
-    <div class="example-data-content-type">Content-Type: application/json</div>
-    <pre class="example"><code>{
-  "service" : {
-    "resource" : "resource",
-    "type" : "type",
-    "url" : "url"
-  },
-  "name" : "name"
-}</code></pre>
-
-    <h3 class="field-label">Produces</h3>
-    This API call produces the following media types according to the <span class="header">Accept</span> request header;
-    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
-    <ul>
-      <li><code>application/json</code></li>
-    </ul>
-
-    <h3 class="field-label">Responses</h3>
-    <h4 class="field-label">200</h4>
-    Build summary list
-        <a href="#TestInstance">TestInstance</a>
-    <h4 class="field-label">400</h4>
-    The request is malformed
-        <a href="#Error">Error</a>
-    <h4 class="field-label">401</h4>
-    Unauthorized
-        <a href="#Error">Error</a>
-    <h4 class="field-label">403</h4>
-    Forbidden
-        <a href="#Error">Error</a>
-    <h4 class="field-label">404</h4>
-    Resource not found
-        <a href="#Error">Error</a>
-  </div> <!-- method -->
-  <hr/>
-  <div class="method"><a name="showCurrentUserProfile"/>
-    <div class="method-path">
-    <a class="up" href="#__Methods">Up</a>
-    <pre class="get"><code class="huge"><span class="http-method">get</span> /users/current</code></pre></div>
-    <div class="method-summary">Get the profile of the current logged user (<span class="nickname">showCurrentUserProfile</span>)</div>
-    <div class="method-notes"></div>
-
-
-
-
-
-
-
-    <h3 class="field-label">Return type</h3>
-    <div class="return-type">
-      <a href="#User">User</a>
-      
-    </div>
-
-    <!--Todo: process Response Object and its headers, schema, examples -->
-
-    <h3 class="field-label">Example data</h3>
-    <div class="example-data-content-type">Content-Type: application/json</div>
-    <pre class="example"><code>{
-  "identities" : {
-    "key" : {
-      "sub" : "sub",
-      "provider" : {
-        "name" : "name",
-        "type" : "type",
-        "uri" : "uri"
-      },
-      "profile" : "profile",
-      "name" : "name",
-      "email" : "email",
-      "picture" : "picture",
-      "username" : "username"
-    }
-  },
-  "id" : 0,
-  "username" : "username"
-}</code></pre>
-
-    <h3 class="field-label">Produces</h3>
-    This API call produces the following media types according to the <span class="header">Accept</span> request header;
-    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
-    <ul>
-      <li><code>application/json</code></li>
-    </ul>
-
-    <h3 class="field-label">Responses</h3>
-    <h4 class="field-label">200</h4>
-    User profile info
-        <a href="#User">User</a>
-    <h4 class="field-label">400</h4>
-    The request is malformed
-        <a href="#Error">Error</a>
-    <h4 class="field-label">401</h4>
-    Unauthorized
-        <a href="#Error">Error</a>
-    <h4 class="field-label">403</h4>
-    Forbidden
-        <a href="#Error">Error</a>
-    <h4 class="field-label">404</h4>
-    Resource not found
-        <a href="#Error">Error</a>
-  </div> <!-- method -->
-  <hr/>
-  <div class="method"><a name="suitesGetByUuid"/>
-    <div class="method-path">
-    <a class="up" href="#__Methods">Up</a>
-    <pre class="get"><code class="huge"><span class="http-method">get</span> /suites/{suite_uuid}</code></pre></div>
-    <div class="method-summary">Get info about a single test suite (<span class="nickname">suitesGetByUuid</span>)</div>
-    <div class="method-notes"></div>
-
-    <h3 class="field-label">Path parameters</h3>
-    <div class="field-items">
-      <div class="param">suite_uuid (required)</div>
-
-      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; TestSuite's Unique identifier default: null </div>
-    </div>  <!-- field-items -->
-
-
-
-
-
-
-    <h3 class="field-label">Return type</h3>
-    <div class="return-type">
-      <a href="#TestSuite">TestSuite</a>
-      
-    </div>
-
-    <!--Todo: process Response Object and its headers, schema, examples -->
-
-    <h3 class="field-label">Example data</h3>
-    <div class="example-data-content-type">Content-Type: application/json</div>
-    <pre class="example"><code>{
-  "test_suite_metadata" : "{}",
-  "instances" : [ {
-    "service" : {
-      "resource" : "resource",
-      "type" : "type",
-      "url" : "url"
-    },
-    "name" : "name"
-  }, {
-    "service" : {
-      "resource" : "resource",
-      "type" : "type",
-      "url" : "url"
-    },
-    "name" : "name"
-  } ],
-  "uuid" : "uuid"
-}</code></pre>
-
-    <h3 class="field-label">Produces</h3>
-    This API call produces the following media types according to the <span class="header">Accept</span> request header;
-    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
-    <ul>
-      <li><code>application/json</code></li>
-    </ul>
-
-    <h3 class="field-label">Responses</h3>
-    <h4 class="field-label">200</h4>
-    TestSuite object
-        <a href="#TestSuite">TestSuite</a>
-    <h4 class="field-label">400</h4>
-    The request is malformed
-        <a href="#Error">Error</a>
-    <h4 class="field-label">401</h4>
-    Unauthorized
-        <a href="#Error">Error</a>
-    <h4 class="field-label">403</h4>
-    Forbidden
-        <a href="#Error">Error</a>
-    <h4 class="field-label">404</h4>
-    Resource not found
-        <a href="#Error">Error</a>
-  </div> <!-- method -->
-  <hr/>
-  <div class="method"><a name="suitesGetInstances"/>
-    <div class="method-path">
-    <a class="up" href="#__Methods">Up</a>
-    <pre class="get"><code class="huge"><span class="http-method">get</span> /suites/{suite_uuid}/instances</code></pre></div>
-    <div class="method-summary">Get all instances of this suite present on testing services (<span class="nickname">suitesGetInstances</span>)</div>
-    <div class="method-notes"></div>
-
-    <h3 class="field-label">Path parameters</h3>
-    <div class="field-items">
-      <div class="param">suite_uuid (required)</div>
-
-      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; TestSuite's Unique identifier default: null </div>
-    </div>  <!-- field-items -->
-
-
-
-
-
-
-    <h3 class="field-label">Return type</h3>
-    <div class="return-type">
-      <a href="#ListOfTestInstance">ListOfTestInstance</a>
-      
-    </div>
-
-    <!--Todo: process Response Object and its headers, schema, examples -->
-
-    <h3 class="field-label">Example data</h3>
-    <div class="example-data-content-type">Content-Type: application/json</div>
-    <pre class="example"><code>{
-  "items" : [ {
-    "service" : {
-      "resource" : "resource",
-      "type" : "type",
-      "url" : "url"
-    },
-    "name" : "name"
-  }, {
-    "service" : {
-      "resource" : "resource",
-      "type" : "type",
-      "url" : "url"
-    },
-    "name" : "name"
-  } ]
-}</code></pre>
-
-    <h3 class="field-label">Produces</h3>
-    This API call produces the following media types according to the <span class="header">Accept</span> request header;
-    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
-    <ul>
-      <li><code>application/json</code></li>
-    </ul>
-
-    <h3 class="field-label">Responses</h3>
-    <h4 class="field-label">200</h4>
-    List of test instances for this test suite
-        <a href="#ListOfTestInstance">ListOfTestInstance</a>
-    <h4 class="field-label">400</h4>
-    The request is malformed
-        <a href="#Error">Error</a>
-    <h4 class="field-label">401</h4>
-    Unauthorized
-        <a href="#Error">Error</a>
-    <h4 class="field-label">403</h4>
-    Forbidden
-        <a href="#Error">Error</a>
-    <h4 class="field-label">404</h4>
-    Resource not found
-        <a href="#Error">Error</a>
-  </div> <!-- method -->
-  <hr/>
-  <div class="method"><a name="suitesGetStatus"/>
-    <div class="method-path">
-    <a class="up" href="#__Methods">Up</a>
-    <pre class="get"><code class="huge"><span class="http-method">get</span> /suites/{suite_uuid}/status</code></pre></div>
-    <div class="method-summary">Get status of latest build for this test suite for each known instance (<span class="nickname">suitesGetStatus</span>)</div>
-    <div class="method-notes"></div>
-
-    <h3 class="field-label">Path parameters</h3>
-    <div class="field-items">
-      <div class="param">suite_uuid (required)</div>
-
-      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; TestSuite's Unique identifier default: null </div>
-    </div>  <!-- field-items -->
-
-
-
-
-
-
-    <h3 class="field-label">Return type</h3>
-    <div class="return-type">
-      <a href="#TestSuiteStatus">TestSuiteStatus</a>
-      
-    </div>
-
-    <!--Todo: process Response Object and its headers, schema, examples -->
-
-    <h3 class="field-label">Example data</h3>
-    <div class="example-data-content-type">Content-Type: application/json</div>
-    <pre class="example"><code>{
-  "latest_builds" : [ {
-    "instance" : {
-      "service" : {
-        "resource" : "resource",
-        "type" : "type",
-        "url" : "url"
-      },
-      "name" : "name"
-    },
-    "build_id" : "build_id",
-    "last_logs" : "last_logs",
-    "suite_uuid" : "suite_uuid",
-    "timestamp" : "timestamp"
-  }, {
-    "instance" : {
-      "service" : {
-        "resource" : "resource",
-        "type" : "type",
-        "url" : "url"
-      },
-      "name" : "name"
-    },
-    "build_id" : "build_id",
-    "last_logs" : "last_logs",
-    "suite_uuid" : "suite_uuid",
-    "timestamp" : "timestamp"
-  } ],
-  "suite_uuid" : "suite_uuid"
-}</code></pre>
-
-    <h3 class="field-label">Produces</h3>
-    This API call produces the following media types according to the <span class="header">Accept</span> request header;
-    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
-    <ul>
-      <li><code>application/json</code></li>
-    </ul>
-
-    <h3 class="field-label">Responses</h3>
-    <h4 class="field-label">200</h4>
-    TestSuiteStatus object
-        <a href="#TestSuiteStatus">TestSuiteStatus</a>
-    <h4 class="field-label">400</h4>
-    The request is malformed
-        <a href="#Error">Error</a>
-    <h4 class="field-label">404</h4>
-    Resource not found
-        <a href="#Error">Error</a>
-  </div> <!-- method -->
-  <hr/>
-  <div class="method"><a name="suitesPostInstance"/>
-    <div class="method-path">
-    <a class="up" href="#__Methods">Up</a>
-    <pre class="post"><code class="huge"><span class="http-method">post</span> /suites/{suite_uuid}/instances</code></pre></div>
-    <div class="method-summary">Register or add an instance that executes this test suite (<span class="nickname">suitesPostInstance</span>)</div>
-    <div class="method-notes"><p>POSTing this resource results in the creation of a new test suite
-instance.  That is, a specific test suite hosted and executed on a
-specific testing service.</p>
-<p>Two types of test instances can be created:  managed and unmanaged.
-A <em>managed</em> test instance is managed by LifeMonitor on its
-own testing infrastructure (not supported yet).
-An <em>unmanaged</em> test instance is hosted on an external testing service
-and LifeMonitor can only monitor it (query information about test
-results through the service's API).</p>
-</div>
-
-    <h3 class="field-label">Path parameters</h3>
-    <div class="field-items">
-      <div class="param">suite_uuid (required)</div>
-
-      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; TestSuite's Unique identifier default: null </div>
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; <p>Universal unique identifier of the workflow registry.</p>
+<p>(provided by the endpoint <a href="#get-/registries"><code>[GET] /registries</code></a>)</p>
+ default: null </div>
     </div>  <!-- field-items -->
 
     <h3 class="field-label">Consumes</h3>
@@ -998,7 +337,7 @@ results through the service's API).</p>
 
     <h3 class="field-label">Request body</h3>
     <div class="field-items">
-      <div class="param">UNKNOWN_BASE_TYPE <a href="#UNKNOWN_BASE_TYPE">UNKNOWN_BASE_TYPE</a> (required)</div>
+      <div class="param">RegistryWorkflowVersion <a href="#RegistryWorkflowVersion">RegistryWorkflowVersion</a> (required)</div>
 
       <div class="param-desc"><span class="param-type">Body Parameter</span> &mdash;  </div>
 
@@ -1020,7 +359,7 @@ results through the service's API).</p>
 
     <h3 class="field-label">Responses</h3>
     <h4 class="field-label">201</h4>
-    Instance created
+    Workflow created by this operation
         <a href="#"></a>
     <h4 class="field-label">400</h4>
     The request is malformed
@@ -1034,17 +373,17 @@ results through the service's API).</p>
     <h4 class="field-label">404</h4>
     Resource not found
         <a href="#Error">Error</a>
-    <h4 class="field-label">501</h4>
-    Not implemented
-        <a href="#"></a>
+    <h4 class="field-label">409</h4>
+    Conflict with the current state of the target resource.
+        <a href="#Error">Error</a>
   </div> <!-- method -->
   <hr/>
   <div class="method"><a name="workflowRegistriesGet"/>
     <div class="method-path">
     <a class="up" href="#__Methods">Up</a>
     <pre class="get"><code class="huge"><span class="http-method">get</span> /registries</code></pre></div>
-    <div class="method-summary">Get all known workflow registries (<span class="nickname">workflowRegistriesGet</span>)</div>
-    <div class="method-notes"></div>
+    <div class="method-summary">List registries (<span class="nickname">workflowRegistriesGet</span>)</div>
+    <div class="method-notes">List all known workflow registries</div>
 
 
 
@@ -1064,13 +403,13 @@ results through the service's API).</p>
     <div class="example-data-content-type">Content-Type: application/json</div>
     <pre class="example"><code>{
   "items" : [ {
-    "name" : "name",
-    "uuid" : "uuid",
-    "uri" : "uri"
+    "name" : "workflowhub_dev",
+    "uuid" : "aa16c6a9-571f-4a62-976f-60ea514ad2c1",
+    "uri" : "https://dev.workflowhub.eu/"
   }, {
-    "name" : "name",
-    "uuid" : "uuid",
-    "uri" : "uri"
+    "name" : "workflowhub_dev",
+    "uuid" : "aa16c6a9-571f-4a62-976f-60ea514ad2c1",
+    "uri" : "https://dev.workflowhub.eu/"
   } ]
 }</code></pre>
 
@@ -1103,14 +442,16 @@ results through the service's API).</p>
     <div class="method-path">
     <a class="up" href="#__Methods">Up</a>
     <pre class="get"><code class="huge"><span class="http-method">get</span> /registries/{registry_uuid}</code></pre></div>
-    <div class="method-summary">Get the workflow registry with the specified uuid (<span class="nickname">workflowRegistriesGetByUuid</span>)</div>
-    <div class="method-notes"></div>
+    <div class="method-summary">Get a registry (<span class="nickname">workflowRegistriesGetByUuid</span>)</div>
+    <div class="method-notes">Get information about the specified workflow registry</div>
 
     <h3 class="field-label">Path parameters</h3>
     <div class="field-items">
       <div class="param">registry_uuid (required)</div>
 
-      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Workflow Registry's Unique identifier default: null </div>
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; <p>Universal unique identifier of the workflow registry.</p>
+<p>(provided by the endpoint <a href="#get-/registries"><code>[GET] /registries</code></a>)</p>
+ default: null </div>
     </div>  <!-- field-items -->
 
 
@@ -1129,9 +470,9 @@ results through the service's API).</p>
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
     <pre class="example"><code>{
-  "name" : "name",
-  "uuid" : "uuid",
-  "uri" : "uri"
+  "name" : "workflowhub_dev",
+  "uuid" : "aa16c6a9-571f-4a62-976f-60ea514ad2c1",
+  "uri" : "https://dev.workflowhub.eu/"
 }</code></pre>
 
     <h3 class="field-label">Produces</h3>
@@ -1143,7 +484,7 @@ results through the service's API).</p>
 
     <h3 class="field-label">Responses</h3>
     <h4 class="field-label">200</h4>
-    Get a workflow registry by uuid
+    Workflow registry
         <a href="#Registry">Registry</a>
     <h4 class="field-label">400</h4>
     The request is malformed
@@ -1159,12 +500,314 @@ results through the service's API).</p>
         <a href="#Error">Error</a>
   </div> <!-- method -->
   <hr/>
+  <h1><a name="RegistryClientOperations">RegistryClientOperations</a></h1>
+  <div class="method"><a name="getRegistryUsers"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /registries/current/users</code></pre></div>
+    <div class="method-summary">List users (<span class="nickname">getRegistryUsers</span>)</div>
+    <div class="method-notes"><p>List all users of the current workflow registry client who have linked
+their registry account to their LifeMonitor identity.</p>
+<p><strong>Note:</strong> only workflow registries interacting with LifeMonitor as
+OAuth2 clients can use this endpoint.</p>
+</div>
+
+
+
+
+
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#ListOfUsers">ListOfUsers</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "items" : [ {
+    "id" : 501,
+    "username" : "lm"
+  }, {
+    "id" : 501,
+    "username" : "lm"
+  } ]
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    List of users.
+        <a href="#ListOfUsers">ListOfUsers</a>
+    <h4 class="field-label">400</h4>
+    The request is malformed
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">403</h4>
+    Forbidden
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Resource not found
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="registryUserWorkflowsGet"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /users/{user_id}/workflows</code></pre></div>
+    <div class="method-summary">List workflows for a user (<span class="nickname">registryUserWorkflowsGet</span>)</div>
+    <div class="method-notes"><p>List registry workflows registered on LifeMonitor by the specified registry user.</p>
+<p><strong>Note:</strong> only workflow registries interacting with LifeMonitor as
+OAuth2 clients can use this endpoint.</p>
+</div>
+
+    <h3 class="field-label">Path parameters</h3>
+    <div class="field-items">
+      <div class="param">user_id (required)</div>
+
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Registry user's identifier default: null </div>
+    </div>  <!-- field-items -->
+
+
+
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">status (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include a summary of the workflow status default: null </div>
+    </div>  <!-- field-items -->
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#ListOfWorkflow">ListOfWorkflow</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "items" : [ "", "" ]
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    List of workflows
+        <a href="#ListOfWorkflow">ListOfWorkflow</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="registryUserWorkflowsPost"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="post"><code class="huge"><span class="http-method">post</span> /users/{user_id}/workflows</code></pre></div>
+    <div class="method-summary">Submit workflow for a user (<span class="nickname">registryUserWorkflowsPost</span>)</div>
+    <div class="method-notes"><p>Submit (a new version of) a workflow indexed by the current registry client for the specified registry user</p>
+<p><strong>Note:</strong> only workflow registries interacting with LifeMonitor as
+OAuth2 clients can use this endpoint.</p>
+</div>
+
+    <h3 class="field-label">Path parameters</h3>
+    <div class="field-items">
+      <div class="param">user_id (required)</div>
+
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Registry user's identifier default: null </div>
+    </div>  <!-- field-items -->
+
+    <h3 class="field-label">Consumes</h3>
+    This API call consumes the following media types via the <span class="header">Content-Type</span> request header:
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Request body</h3>
+    <div class="field-items">
+      <div class="param">UNKNOWN_BASE_TYPE <a href="#UNKNOWN_BASE_TYPE">UNKNOWN_BASE_TYPE</a> (required)</div>
+
+      <div class="param-desc"><span class="param-type">Body Parameter</span> &mdash;  </div>
+
+    </div>  <!-- field-items -->
+
+
+
+
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">201</h4>
+    The workflow created by this operation
+        <a href="#"></a>
+    <h4 class="field-label">400</h4>
+    The request is malformed
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">403</h4>
+    Forbidden
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Resource not found
+        <a href="#Error">Error</a>
+    <h4 class="field-label">409</h4>
+    Conflict with the current state of the target resource.
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="registryWorkflowsGet"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /registries/current/workflows</code></pre></div>
+    <div class="method-summary">List workflows (<span class="nickname">registryWorkflowsGet</span>)</div>
+    <div class="method-notes"><p>List all workflows in the current registry that have been registered with LifeMonitor.</p>
+<p><strong>Note:</strong> only workflow registries interacting with LifeMonitor as
+OAuth2 clients can use this endpoint.</p>
+</div>
+
+
+
+
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">status (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include a summary of the workflow status default: null </div>
+    </div>  <!-- field-items -->
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#ListOfWorkflow">ListOfWorkflow</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "items" : [ "", "" ]
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    List of workflows
+        <a href="#ListOfWorkflow">ListOfWorkflow</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="registryWorkflowsPost"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="post"><code class="huge"><span class="http-method">post</span> /registries/current/workflows</code></pre></div>
+    <div class="method-summary">Submit workflow (<span class="nickname">registryWorkflowsPost</span>)</div>
+    <div class="method-notes"><p>Submit (a new version of) a workflow indexed by the current registry client.</p>
+<p><strong>Note:</strong> only workflow registries interacting with LifeMonitor as
+OAuth2 clients can use this endpoint.</p>
+</div>
+
+
+    <h3 class="field-label">Consumes</h3>
+    This API call consumes the following media types via the <span class="header">Content-Type</span> request header:
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Request body</h3>
+    <div class="field-items">
+      <div class="param">UNKNOWN_BASE_TYPE <a href="#UNKNOWN_BASE_TYPE">UNKNOWN_BASE_TYPE</a> (required)</div>
+
+      <div class="param-desc"><span class="param-type">Body Parameter</span> &mdash;  </div>
+
+    </div>  <!-- field-items -->
+
+
+
+
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">201</h4>
+    Workflow created by this operation
+        <a href="#"></a>
+    <h4 class="field-label">400</h4>
+    The request is malformed
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">403</h4>
+    Forbidden
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Resource not found
+        <a href="#Error">Error</a>
+    <h4 class="field-label">409</h4>
+    Conflict with the current state of the target resource.
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
   <div class="method"><a name="workflowRegistriesGetCurrent"/>
     <div class="method-path">
     <a class="up" href="#__Methods">Up</a>
     <pre class="get"><code class="huge"><span class="http-method">get</span> /registries/current</code></pre></div>
-    <div class="method-summary">Get the current workflow registry (<span class="nickname">workflowRegistriesGetCurrent</span>)</div>
-    <div class="method-notes"></div>
+    <div class="method-summary">Get the current registry client (<span class="nickname">workflowRegistriesGetCurrent</span>)</div>
+    <div class="method-notes"><p>Get information about the current workflow registry client</p>
+<p><strong>Note:</strong> only workflow registries interacting with LifeMonitor as
+OAuth2 clients can use this endpoint.</p>
+</div>
 
 
 
@@ -1183,9 +826,9 @@ results through the service's API).</p>
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
     <pre class="example"><code>{
-  "name" : "name",
-  "uuid" : "uuid",
-  "uri" : "uri"
+  "name" : "workflowhub_dev",
+  "uuid" : "aa16c6a9-571f-4a62-976f-60ea514ad2c1",
+  "uri" : "https://dev.workflowhub.eu/"
 }</code></pre>
 
     <h3 class="field-label">Produces</h3>
@@ -1197,7 +840,7 @@ results through the service's API).</p>
 
     <h3 class="field-label">Responses</h3>
     <h4 class="field-label">200</h4>
-    Current workflow registry
+    Current workflow registry client
         <a href="#Registry">Registry</a>
     <h4 class="field-label">400</h4>
     The request is malformed
@@ -1213,20 +856,830 @@ results through the service's API).</p>
         <a href="#Error">Error</a>
   </div> <!-- method -->
   <hr/>
+  <h1><a name="TestInstances">TestInstances</a></h1>
+  <div class="method"><a name="instancesBuildsGetById"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /instances/{instance_uuid}/builds/{build_id}</code></pre></div>
+    <div class="method-summary">Get a test instance build (<span class="nickname">instancesBuildsGetById</span>)</div>
+    <div class="method-notes">Get information on the specified build on the specified test instance</div>
+
+    <h3 class="field-label">Path parameters</h3>
+    <div class="field-items">
+      <div class="param">instance_uuid (required)</div>
+
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Universal unique identifier of the test instance default: null </div><div class="param">build_id (required)</div>
+
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Build identifier default: null </div>
+    </div>  <!-- field-items -->
+
+
+
+
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#BuildSummary">BuildSummary</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "instance" : {
+    "managed" : false,
+    "name" : "test_instance_1",
+    "service" : {
+      "type" : "travis",
+      "url" : "https://travis-ci.org/"
+    },
+    "resource" : "github/seek4science/seek"
+  },
+  "build_id" : "167444",
+  "last_logs" : "[INFO] Workflow test passed",
+  "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+  "timestamp" : "1616427012"
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    A build summary object
+        <a href="#BuildSummary">BuildSummary</a>
+    <h4 class="field-label">400</h4>
+    The request is malformed
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">403</h4>
+    Forbidden
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Resource not found
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="instancesBuildsGetLogs"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /instances/{instance_uuid}/builds/{build_id}/logs</code></pre></div>
+    <div class="method-summary">Get test instance build logs (<span class="nickname">instancesBuildsGetLogs</span>)</div>
+    <div class="method-notes">Get the build logs for the specified test instance and build</div>
+
+    <h3 class="field-label">Path parameters</h3>
+    <div class="field-items">
+      <div class="param">instance_uuid (required)</div>
+
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Universal unique identifier of the test instance default: null </div><div class="param">build_id (required)</div>
+
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Build identifier default: null </div>
+    </div>  <!-- field-items -->
+
+
+
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">offset_bytes (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Number of bytes to skip while fetching the log default: 0 </div><div class="param">limit_bytes (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Maximum number of log bytes to retrieve default: 131072 </div>
+    </div>  <!-- field-items -->
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      
+      String
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>"[15/April/2021:13:55:36 -0700] \"GET /workflow.cwl HTTP/1.0\" 200 2326\n[15/April/2021:13:55:36 -0700] \"GET /workflow.cwl HTTP/1.0\" 200 2326\n[15/April/2021:13:55:36 -0700] \"GET /workflow.cwl HTTP/1.0\" 200 2326\n"</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    Log data
+        <a href="#String">String</a>
+    <h4 class="field-label">400</h4>
+    The request is malformed
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">403</h4>
+    Forbidden
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Resource not found
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="instancesDeleteById"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="delete"><code class="huge"><span class="http-method">delete</span> /instances/{instance_uuid}</code></pre></div>
+    <div class="method-summary">Delete a test instance (<span class="nickname">instancesDeleteById</span>)</div>
+    <div class="method-notes">Delete the specified test instance</div>
+
+    <h3 class="field-label">Path parameters</h3>
+    <div class="field-items">
+      <div class="param">instance_uuid (required)</div>
+
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Universal unique identifier of the test instance default: null </div>
+    </div>  <!-- field-items -->
+
+
+
+
+
+
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">204</h4>
+    Deleted
+        <a href="#"></a>
+    <h4 class="field-label">400</h4>
+    The request is malformed
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">403</h4>
+    Forbidden
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Resource not found
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="instancesGetBuilds"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /instances/{instance_uuid}/latest-builds</code></pre></div>
+    <div class="method-summary">Get the latest test instance builds (<span class="nickname">instancesGetBuilds</span>)</div>
+    <div class="method-notes">Get information on the latest builds for the specified test instance</div>
+
+    <h3 class="field-label">Path parameters</h3>
+    <div class="field-items">
+      <div class="param">instance_uuid (required)</div>
+
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Universal unique identifier of the test instance default: null </div>
+    </div>  <!-- field-items -->
+
+
+
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">limit (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Maximum number of items to retrieve default: 10 </div>
+    </div>  <!-- field-items -->
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#ListOfBuildSummary">ListOfBuildSummary</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "items" : [ {
+    "instance" : {
+      "managed" : false,
+      "name" : "test_instance_1",
+      "service" : {
+        "type" : "travis",
+        "url" : "https://travis-ci.org/"
+      },
+      "resource" : "github/seek4science/seek"
+    },
+    "build_id" : "167444",
+    "last_logs" : "[INFO] Workflow test passed",
+    "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+    "timestamp" : "1616427012"
+  }, {
+    "instance" : {
+      "managed" : false,
+      "name" : "test_instance_1",
+      "service" : {
+        "type" : "travis",
+        "url" : "https://travis-ci.org/"
+      },
+      "resource" : "github/seek4science/seek"
+    },
+    "build_id" : "167444",
+    "last_logs" : "[INFO] Workflow test passed",
+    "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+    "timestamp" : "1616427012"
+  } ]
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    A list of test instance objects
+        <a href="#ListOfBuildSummary">ListOfBuildSummary</a>
+    <h4 class="field-label">400</h4>
+    The request is malformed
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">403</h4>
+    Forbidden
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Resource not found
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="instancesGetById"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /instances/{instance_uuid}</code></pre></div>
+    <div class="method-summary">Get a test instance (<span class="nickname">instancesGetById</span>)</div>
+    <div class="method-notes">Get information about the specified test instance</div>
+
+    <h3 class="field-label">Path parameters</h3>
+    <div class="field-items">
+      <div class="param">instance_uuid (required)</div>
+
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Universal unique identifier of the test instance default: null </div>
+    </div>  <!-- field-items -->
+
+
+
+
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#TestInstance">TestInstance</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "managed" : false,
+  "name" : "test_instance_1",
+  "service" : {
+    "type" : "travis",
+    "url" : "https://travis-ci.org/"
+  },
+  "resource" : "github/seek4science/seek"
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    A test instance object
+        <a href="#TestInstance">TestInstance</a>
+    <h4 class="field-label">400</h4>
+    The request is malformed
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">403</h4>
+    Forbidden
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Resource not found
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <h1><a name="TestSuites">TestSuites</a></h1>
+  <div class="method"><a name="suitesGetByUuid"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /suites/{suite_uuid}</code></pre></div>
+    <div class="method-summary">Get a test suite (<span class="nickname">suitesGetByUuid</span>)</div>
+    <div class="method-notes">Get information about the specified test suite.</div>
+
+    <h3 class="field-label">Path parameters</h3>
+    <div class="field-items">
+      <div class="param">suite_uuid (required)</div>
+
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Universal unique identifier of the test suite default: null </div>
+    </div>  <!-- field-items -->
+
+
+
+
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#TestSuite">TestSuite</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "roc_suite" : "#test1",
+  "instances" : [ {
+    "managed" : false,
+    "name" : "test_instance_1",
+    "service" : {
+      "type" : "travis",
+      "url" : "https://travis-ci.org/"
+    },
+    "resource" : "github/seek4science/seek"
+  }, {
+    "managed" : false,
+    "name" : "test_instance_1",
+    "service" : {
+      "type" : "travis",
+      "url" : "https://travis-ci.org/"
+    },
+    "resource" : "github/seek4science/seek"
+  } ],
+  "definition" : {
+    "test_engine" : {
+      "type" : "planemo",
+      "version" : ">=0.70"
+    }
+  },
+  "uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c"
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    TestSuite object
+        <a href="#TestSuite">TestSuite</a>
+    <h4 class="field-label">400</h4>
+    The request is malformed
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">403</h4>
+    Forbidden
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Resource not found
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="suitesGetInstances"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /suites/{suite_uuid}/instances</code></pre></div>
+    <div class="method-summary">List test instances for a suite (<span class="nickname">suitesGetInstances</span>)</div>
+    <div class="method-notes">List all instances of the specified test suite</div>
+
+    <h3 class="field-label">Path parameters</h3>
+    <div class="field-items">
+      <div class="param">suite_uuid (required)</div>
+
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Universal unique identifier of the test suite default: null </div>
+    </div>  <!-- field-items -->
+
+
+
+
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#ListOfTestInstance">ListOfTestInstance</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "items" : [ {
+    "managed" : false,
+    "name" : "test_instance_1",
+    "service" : {
+      "type" : "travis",
+      "url" : "https://travis-ci.org/"
+    },
+    "resource" : "github/seek4science/seek"
+  }, {
+    "managed" : false,
+    "name" : "test_instance_1",
+    "service" : {
+      "type" : "travis",
+      "url" : "https://travis-ci.org/"
+    },
+    "resource" : "github/seek4science/seek"
+  } ]
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    List of test instances for this test suite
+        <a href="#ListOfTestInstance">ListOfTestInstance</a>
+    <h4 class="field-label">400</h4>
+    The request is malformed
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">403</h4>
+    Forbidden
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Resource not found
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="suitesGetStatus"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /suites/{suite_uuid}/status</code></pre></div>
+    <div class="method-summary">Get test suite status (<span class="nickname">suitesGetStatus</span>)</div>
+    <div class="method-notes">Get the status of the latest build for each instance of the specified test suite</div>
+
+    <h3 class="field-label">Path parameters</h3>
+    <div class="field-items">
+      <div class="param">suite_uuid (required)</div>
+
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Universal unique identifier of the test suite default: null </div>
+    </div>  <!-- field-items -->
+
+
+
+
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#TestSuiteStatus">TestSuiteStatus</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "latest_builds" : [ {
+    "instance" : {
+      "managed" : false,
+      "name" : "test_instance_1",
+      "service" : {
+        "type" : "travis",
+        "url" : "https://travis-ci.org/"
+      },
+      "resource" : "github/seek4science/seek"
+    },
+    "build_id" : "167444",
+    "last_logs" : "[INFO] Workflow test passed",
+    "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+    "timestamp" : "1616427012"
+  }, {
+    "instance" : {
+      "managed" : false,
+      "name" : "test_instance_1",
+      "service" : {
+        "type" : "travis",
+        "url" : "https://travis-ci.org/"
+      },
+      "resource" : "github/seek4science/seek"
+    },
+    "build_id" : "167444",
+    "last_logs" : "[INFO] Workflow test passed",
+    "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+    "timestamp" : "1616427012"
+  } ],
+  "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c"
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    TestSuiteStatus object
+        <a href="#TestSuiteStatus">TestSuiteStatus</a>
+    <h4 class="field-label">400</h4>
+    The request is malformed
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Resource not found
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="suitesPostInstance"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="post"><code class="huge"><span class="http-method">post</span> /suites/{suite_uuid}/instances</code></pre></div>
+    <div class="method-summary">Submit a test instance for a suite (<span class="nickname">suitesPostInstance</span>)</div>
+    <div class="method-notes"><p>Submit a new test instance for the specified test suite.</p>
+<p>There are two main types of test instances:</p>
+<ol>
+<li><strong>&quot;managed&quot;</strong> (not supported yet): directly managed by LifeMonitor</li>
+<li><strong>&quot;unmanaged&quot;</strong>: hosted on an external testing service and monitored
+by LifeMonitor (LifeMonitor retrieves information on the test status
+through the service's API).</li>
+</ol>
+</div>
+
+    <h3 class="field-label">Path parameters</h3>
+    <div class="field-items">
+      <div class="param">suite_uuid (required)</div>
+
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Universal unique identifier of the test suite default: null </div>
+    </div>  <!-- field-items -->
+
+    <h3 class="field-label">Consumes</h3>
+    This API call consumes the following media types via the <span class="header">Content-Type</span> request header:
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Request body</h3>
+    <div class="field-items">
+      <div class="param">TestInstance <a href="#TestInstance">TestInstance</a> (required)</div>
+
+      <div class="param-desc"><span class="param-type">Body Parameter</span> &mdash;  </div>
+
+    </div>  <!-- field-items -->
+
+
+
+
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">201</h4>
+    Instance created by this operation
+        <a href="#"></a>
+    <h4 class="field-label">400</h4>
+    The request is malformed
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">403</h4>
+    Forbidden
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Resource not found
+        <a href="#Error">Error</a>
+    <h4 class="field-label">501</h4>
+    Not implemented
+        <a href="#"></a>
+  </div> <!-- method -->
+  <hr/>
+  <h1><a name="Users">Users</a></h1>
+  <div class="method"><a name="showCurrentUserProfile"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /users/current</code></pre></div>
+    <div class="method-summary">Get the current user (<span class="nickname">showCurrentUserProfile</span>)</div>
+    <div class="method-notes">Get information about the current (authenticated) user</div>
+
+
+
+
+
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#UserProfile">UserProfile</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>null</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    User profile
+        <a href="#UserProfile">UserProfile</a>
+    <h4 class="field-label">400</h4>
+    The request is malformed
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">403</h4>
+    Forbidden
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Resource not found
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="userWorkflowsGet"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /users/current/workflows</code></pre></div>
+    <div class="method-summary">List workflows for the current user (<span class="nickname">userWorkflowsGet</span>)</div>
+    <div class="method-notes">List all workflows submitted by the current user</div>
+
+
+
+
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">status (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include a summary of the workflow status default: null </div>
+    </div>  <!-- field-items -->
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#ListOfWorkflow">ListOfWorkflow</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "items" : [ "", "" ]
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    A list of Workflows
+        <a href="#ListOfWorkflow">ListOfWorkflow</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="userWorkflowsPost"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="post"><code class="huge"><span class="http-method">post</span> /users/current/workflows</code></pre></div>
+    <div class="method-summary">Submit workflow as the current user (<span class="nickname">userWorkflowsPost</span>)</div>
+    <div class="method-notes">Submit (a new version of) a workflow.</div>
+
+
+    <h3 class="field-label">Consumes</h3>
+    This API call consumes the following media types via the <span class="header">Content-Type</span> request header:
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Request body</h3>
+    <div class="field-items">
+      <div class="param">GenericWorkflowVersion <a href="#GenericWorkflowVersion">GenericWorkflowVersion</a> (required)</div>
+
+      <div class="param-desc"><span class="param-type">Body Parameter</span> &mdash;  </div>
+
+    </div>  <!-- field-items -->
+
+
+
+
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">201</h4>
+    The workflow created by this operation
+        <a href="#"></a>
+    <h4 class="field-label">400</h4>
+    The request is malformed
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">403</h4>
+    Forbidden
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Resource not found
+        <a href="#Error">Error</a>
+    <h4 class="field-label">409</h4>
+    Conflict with the current state of the target resource.
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <h1><a name="Workflows">Workflows</a></h1>
   <div class="method"><a name="workflowsDelete"/>
     <div class="method-path">
     <a class="up" href="#__Methods">Up</a>
-    <pre class="delete"><code class="huge"><span class="http-method">delete</span> /workflows/{wf_uuid}/{wf_version}</code></pre></div>
-    <div class="method-summary">Delete a workflow (<span class="nickname">workflowsDelete</span>)</div>
-    <div class="method-notes"></div>
+    <pre class="delete"><code class="huge"><span class="http-method">delete</span> /workflows/{wf_uuid}/versions/{wf_version}</code></pre></div>
+    <div class="method-summary">Delete a workflow version (<span class="nickname">workflowsDelete</span>)</div>
+    <div class="method-notes">Delete the specified version of the specified workflow</div>
 
     <h3 class="field-label">Path parameters</h3>
     <div class="field-items">
       <div class="param">wf_uuid (required)</div>
 
-      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Workflow's Unique identifier default: null </div><div class="param">wf_version (required)</div>
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Universal unique identifier of the workflow default: null </div><div class="param">wf_version (required)</div>
 
-      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Workflow's version default: null </div>
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Workflow version default: null </div>
     </div>  <!-- field-items -->
 
 
@@ -1267,13 +1720,19 @@ results through the service's API).</p>
     <div class="method-path">
     <a class="up" href="#__Methods">Up</a>
     <pre class="get"><code class="huge"><span class="http-method">get</span> /workflows</code></pre></div>
-    <div class="method-summary">Get all known workflows (<span class="nickname">workflowsGet</span>)</div>
-    <div class="method-notes"></div>
+    <div class="method-summary">List workflows (<span class="nickname">workflowsGet</span>)</div>
+    <div class="method-notes">List all registered workflows for the current (authenticated) user or registry client.</div>
 
 
 
 
 
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">status (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include a summary of the workflow status default: null </div>
+    </div>  <!-- field-items -->
 
 
     <h3 class="field-label">Return type</h3>
@@ -1287,15 +1746,7 @@ results through the service's API).</p>
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
     <pre class="example"><code>{
-  "items" : [ {
-    "identifier" : "identifier",
-    "name" : "name",
-    "uuid" : "uuid"
-  }, {
-    "identifier" : "identifier",
-    "name" : "name",
-    "uuid" : "uuid"
-  } ]
+  "items" : [ "", "" ]
 }</code></pre>
 
     <h3 class="field-label">Produces</h3>
@@ -1307,37 +1758,43 @@ results through the service's API).</p>
 
     <h3 class="field-label">Responses</h3>
     <h4 class="field-label">200</h4>
-    A JSON array of Workflow objects
+    List of Workflows
         <a href="#ListOfWorkflow">ListOfWorkflow</a>
     <h4 class="field-label">401</h4>
     Unauthorized
         <a href="#Error">Error</a>
   </div> <!-- method -->
   <hr/>
-  <div class="method"><a name="workflowsGetById"/>
+  <div class="method"><a name="workflowsGetLatestVersionById"/>
     <div class="method-path">
     <a class="up" href="#__Methods">Up</a>
-    <pre class="get"><code class="huge"><span class="http-method">get</span> /workflows/{wf_uuid}/{wf_version}</code></pre></div>
-    <div class="method-summary">Get information about the specified version of the specified workflow (<span class="nickname">workflowsGetById</span>)</div>
-    <div class="method-notes"></div>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /workflows/{wf_uuid}</code></pre></div>
+    <div class="method-summary">Get a workflow (<span class="nickname">workflowsGetLatestVersionById</span>)</div>
+    <div class="method-notes">Get information about the specified workflow</div>
 
     <h3 class="field-label">Path parameters</h3>
     <div class="field-items">
       <div class="param">wf_uuid (required)</div>
 
-      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Workflow's Unique identifier default: null </div><div class="param">wf_version (required)</div>
-
-      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Workflow's version default: null </div>
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Universal unique identifier of the workflow default: null </div>
     </div>  <!-- field-items -->
 
 
 
 
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">previous_versions (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include all versions of a workflow default: false </div><div class="param">ro_crate (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include the RO-Crate metadata of the workflow default: false </div>
+    </div>  <!-- field-items -->
 
 
     <h3 class="field-label">Return type</h3>
     <div class="return-type">
-      <a href="#WorkflowVersionDetails">WorkflowVersionDetails</a>
+      <a href="#WorkflowDetails">WorkflowDetails</a>
       
     </div>
 
@@ -1356,61 +1813,8 @@ results through the service's API).</p>
 
     <h3 class="field-label">Responses</h3>
     <h4 class="field-label">200</h4>
-    A Workflow object
-        <a href="#WorkflowVersionDetails">WorkflowVersionDetails</a>
-    <h4 class="field-label">400</h4>
-    The request is malformed
-        <a href="#Error">Error</a>
-    <h4 class="field-label">401</h4>
-    Unauthorized
-        <a href="#Error">Error</a>
-    <h4 class="field-label">403</h4>
-    Forbidden
-        <a href="#Error">Error</a>
-    <h4 class="field-label">404</h4>
-    Resource not found
-        <a href="#Error">Error</a>
-  </div> <!-- method -->
-  <hr/>
-  <div class="method"><a name="workflowsGetLatestVersionById"/>
-    <div class="method-path">
-    <a class="up" href="#__Methods">Up</a>
-    <pre class="get"><code class="huge"><span class="http-method">get</span> /workflows/{wf_uuid}</code></pre></div>
-    <div class="method-summary">Get information about latest version of specified workflow (<span class="nickname">workflowsGetLatestVersionById</span>)</div>
-    <div class="method-notes"></div>
-
-    <h3 class="field-label">Path parameters</h3>
-    <div class="field-items">
-      <div class="param">wf_uuid (required)</div>
-
-      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Workflow's Unique identifier default: null </div>
-    </div>  <!-- field-items -->
-
-
-
-
-
-
-    <h3 class="field-label">Return type</h3>
-    <div class="return-type">
-      <a href="#WorkflowVersionDetails">WorkflowVersionDetails</a>
-      
-    </div>
-
-    <!--Todo: process Response Object and its headers, schema, examples -->
-
-
-    <h3 class="field-label">Produces</h3>
-    This API call produces the following media types according to the <span class="header">Accept</span> request header;
-    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
-    <ul>
-      <li><code>application/json</code></li>
-    </ul>
-
-    <h3 class="field-label">Responses</h3>
-    <h4 class="field-label">200</h4>
-    A Workflow object for the latest version of the specified workflow and extended with the list of previous versions that are registered. Information about the previous versions can be retrieved through the <code>/workflows/{wf_uuid}/{wf_version}</code> resource.
-        <a href="#WorkflowVersionDetails">WorkflowVersionDetails</a>
+    A Workflow object for the latest version of the specified workflow and extended with the list of previous versions that are registered. Information about the previous versions can also be retrieved through the <code>/workflows/{wf_uuid}/versions</code> resource.
+        <a href="#WorkflowDetails">WorkflowDetails</a>
     <h4 class="field-label">400</h4>
     The request is malformed
         <a href="#Error">Error</a>
@@ -1428,22 +1832,26 @@ results through the service's API).</p>
   <div class="method"><a name="workflowsGetStatus"/>
     <div class="method-path">
     <a class="up" href="#__Methods">Up</a>
-    <pre class="get"><code class="huge"><span class="http-method">get</span> /workflows/{wf_uuid}/{wf_version}/status</code></pre></div>
-    <div class="method-summary">Get test statuses for a given workflow and workflow version (<span class="nickname">workflowsGetStatus</span>)</div>
-    <div class="method-notes"></div>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /workflows/{wf_uuid}/status</code></pre></div>
+    <div class="method-summary">Get workflow test status (<span class="nickname">workflowsGetStatus</span>)</div>
+    <div class="method-notes">Get the test status for the specified workflow and workflow version</div>
 
     <h3 class="field-label">Path parameters</h3>
     <div class="field-items">
       <div class="param">wf_uuid (required)</div>
 
-      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Workflow's Unique identifier default: null </div><div class="param">wf_version (required)</div>
-
-      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Workflow's version default: null </div>
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Universal unique identifier of the workflow default: null </div>
     </div>  <!-- field-items -->
 
 
 
 
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">version (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Workflow version default: latest </div>
+    </div>  <!-- field-items -->
 
 
     <h3 class="field-label">Return type</h3>
@@ -1456,39 +1864,7 @@ results through the service's API).</p>
 
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
-    <pre class="example"><code>{
-  "workflow" : {
-    "name" : "name",
-    "uuid" : "uuid"
-  },
-  "latest_builds" : [ {
-    "instance" : {
-      "service" : {
-        "resource" : "resource",
-        "type" : "type",
-        "url" : "url"
-      },
-      "name" : "name"
-    },
-    "build_id" : "build_id",
-    "last_logs" : "last_logs",
-    "suite_uuid" : "suite_uuid",
-    "timestamp" : "timestamp"
-  }, {
-    "instance" : {
-      "service" : {
-        "resource" : "resource",
-        "type" : "type",
-        "url" : "url"
-      },
-      "name" : "name"
-    },
-    "build_id" : "build_id",
-    "last_logs" : "last_logs",
-    "suite_uuid" : "suite_uuid",
-    "timestamp" : "timestamp"
-  } ]
-}</code></pre>
+    <pre class="example"><code>null</code></pre>
 
     <h3 class="field-label">Produces</h3>
     This API call produces the following media types according to the <span class="header">Accept</span> request header;
@@ -1499,7 +1875,7 @@ results through the service's API).</p>
 
     <h3 class="field-label">Responses</h3>
     <h4 class="field-label">200</h4>
-    Test status for the specified workflow and version
+    Test status for the specified version of the workflow
         <a href="#WorkflowStatus">WorkflowStatus</a>
     <h4 class="field-label">400</h4>
     The request is malformed
@@ -1518,22 +1894,26 @@ results through the service's API).</p>
   <div class="method"><a name="workflowsGetSuites"/>
     <div class="method-path">
     <a class="up" href="#__Methods">Up</a>
-    <pre class="get"><code class="huge"><span class="http-method">get</span> /workflows/{wf_uuid}/{wf_version}/suites</code></pre></div>
-    <div class="method-summary">Get the test suites associated with the specified workflow and version (<span class="nickname">workflowsGetSuites</span>)</div>
-    <div class="method-notes">Get collection of test suites associated with workflow.  Test suites are collected from the RO-crate received with the creation of a new version of a workflow.</div>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /workflows/{wf_uuid}/suites</code></pre></div>
+    <div class="method-summary">List workflow test suites (<span class="nickname">workflowsGetSuites</span>)</div>
+    <div class="method-notes">List all test suites associated with the specified workflow. Test suites are collected from the RO-crate received with the submission of (a new version of) a workflow.</div>
 
     <h3 class="field-label">Path parameters</h3>
     <div class="field-items">
       <div class="param">wf_uuid (required)</div>
 
-      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Workflow's Unique identifier default: null </div><div class="param">wf_version (required)</div>
-
-      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Workflow's version default: null </div>
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Universal unique identifier of the workflow default: null </div>
     </div>  <!-- field-items -->
 
 
 
 
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">version (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Workflow version default: latest </div>
+    </div>  <!-- field-items -->
 
 
     <h3 class="field-label">Return type</h3>
@@ -1548,41 +1928,57 @@ results through the service's API).</p>
     <div class="example-data-content-type">Content-Type: application/json</div>
     <pre class="example"><code>{
   "items" : [ {
-    "test_suite_metadata" : "{}",
+    "roc_suite" : "#test1",
     "instances" : [ {
+      "managed" : false,
+      "name" : "test_instance_1",
       "service" : {
-        "resource" : "resource",
-        "type" : "type",
-        "url" : "url"
+        "type" : "travis",
+        "url" : "https://travis-ci.org/"
       },
-      "name" : "name"
+      "resource" : "github/seek4science/seek"
     }, {
+      "managed" : false,
+      "name" : "test_instance_1",
       "service" : {
-        "resource" : "resource",
-        "type" : "type",
-        "url" : "url"
+        "type" : "travis",
+        "url" : "https://travis-ci.org/"
       },
-      "name" : "name"
+      "resource" : "github/seek4science/seek"
     } ],
-    "uuid" : "uuid"
+    "definition" : {
+      "test_engine" : {
+        "type" : "planemo",
+        "version" : ">=0.70"
+      }
+    },
+    "uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c"
   }, {
-    "test_suite_metadata" : "{}",
+    "roc_suite" : "#test1",
     "instances" : [ {
+      "managed" : false,
+      "name" : "test_instance_1",
       "service" : {
-        "resource" : "resource",
-        "type" : "type",
-        "url" : "url"
+        "type" : "travis",
+        "url" : "https://travis-ci.org/"
       },
-      "name" : "name"
+      "resource" : "github/seek4science/seek"
     }, {
+      "managed" : false,
+      "name" : "test_instance_1",
       "service" : {
-        "resource" : "resource",
-        "type" : "type",
-        "url" : "url"
+        "type" : "travis",
+        "url" : "https://travis-ci.org/"
       },
-      "name" : "name"
+      "resource" : "github/seek4science/seek"
     } ],
-    "uuid" : "uuid"
+    "definition" : {
+      "test_engine" : {
+        "type" : "planemo",
+        "version" : ">=0.70"
+      }
+    },
+    "uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c"
   } ]
 }</code></pre>
 
@@ -1595,7 +1991,7 @@ results through the service's API).</p>
 
     <h3 class="field-label">Responses</h3>
     <h4 class="field-label">200</h4>
-    List of TestSuites associated with the specified workflow version
+    List of test suites associated with the specified workflow and workflow version
         <a href="#ListOfTestSuite">ListOfTestSuite</a>
     <h4 class="field-label">400</h4>
     The request is malformed
@@ -1611,31 +2007,30 @@ results through the service's API).</p>
         <a href="#Error">Error</a>
   </div> <!-- method -->
   <hr/>
-  <div class="method"><a name="workflowsPost"/>
+  <div class="method"><a name="workflowsGetVersionsById"/>
     <div class="method-path">
     <a class="up" href="#__Methods">Up</a>
-    <pre class="post"><code class="huge"><span class="http-method">post</span> /workflows</code></pre></div>
-    <div class="method-summary">Register a workflow (<span class="nickname">workflowsPost</span>)</div>
-    <div class="method-notes"></div>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /workflows/{wf_uuid}/versions</code></pre></div>
+    <div class="method-summary">List workflow versions (<span class="nickname">workflowsGetVersionsById</span>)</div>
+    <div class="method-notes">List all versions of the specified workflow</div>
 
-
-    <h3 class="field-label">Consumes</h3>
-    This API call consumes the following media types via the <span class="header">Content-Type</span> request header:
-    <ul>
-      <li><code>application/json</code></li>
-    </ul>
-
-    <h3 class="field-label">Request body</h3>
+    <h3 class="field-label">Path parameters</h3>
     <div class="field-items">
-      <div class="param">UNKNOWN_BASE_TYPE <a href="#UNKNOWN_BASE_TYPE">UNKNOWN_BASE_TYPE</a> (required)</div>
+      <div class="param">wf_uuid (required)</div>
 
-      <div class="param-desc"><span class="param-type">Body Parameter</span> &mdash;  </div>
-
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Universal unique identifier of the workflow default: null </div>
     </div>  <!-- field-items -->
 
 
 
 
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      
+      Object
+    </div>
 
     <!--Todo: process Response Object and its headers, schema, examples -->
 
@@ -1648,9 +2043,9 @@ results through the service's API).</p>
     </ul>
 
     <h3 class="field-label">Responses</h3>
-    <h4 class="field-label">201</h4>
-    Workflow created
-        <a href="#"></a>
+    <h4 class="field-label">200</h4>
+    A WorkflowVersion object
+        <a href="#Object">Object</a>
     <h4 class="field-label">400</h4>
     The request is malformed
         <a href="#Error">Error</a>
@@ -1662,9 +2057,6 @@ results through the service's API).</p>
         <a href="#Error">Error</a>
     <h4 class="field-label">404</h4>
     Resource not found
-        <a href="#Error">Error</a>
-    <h4 class="field-label">409</h4>
-    Conflict with the current state of the target resource.
         <a href="#Error">Error</a>
   </div> <!-- method -->
   <hr/>
@@ -1680,30 +2072,51 @@ results through the service's API).</p>
     <li><a href="#BuildSummary"><code>BuildSummary</code> - </a></li>
     <li><a href="#Error"><code>Error</code> - </a></li>
     <li><a href="#GenericWorkflowVersion"><code>GenericWorkflowVersion</code> - </a></li>
+    <li><a href="#GenericWorkflowVersion_allOf"><code>GenericWorkflowVersion_allOf</code> - </a></li>
     <li><a href="#IdentityProvider"><code>IdentityProvider</code> - </a></li>
+    <li><a href="#IdentityProviderType"><code>IdentityProviderType</code> - </a></li>
     <li><a href="#ListOfBuildSummary"><code>ListOfBuildSummary</code> - </a></li>
     <li><a href="#ListOfRegistries"><code>ListOfRegistries</code> - </a></li>
     <li><a href="#ListOfTestInstance"><code>ListOfTestInstance</code> - </a></li>
     <li><a href="#ListOfTestSuite"><code>ListOfTestSuite</code> - </a></li>
     <li><a href="#ListOfUsers"><code>ListOfUsers</code> - </a></li>
     <li><a href="#ListOfWorkflow"><code>ListOfWorkflow</code> - </a></li>
+    <li><a href="#ManagedTestInstanceCreationData"><code>ManagedTestInstanceCreationData</code> - </a></li>
     <li><a href="#ROCrate"><code>ROCrate</code> - </a></li>
-    <li><a href="#ROCrate_links"><code>ROCrate_links</code> - </a></li>
+    <li><a href="#ROCrateBase"><code>ROCrateBase</code> - </a></li>
+    <li><a href="#ROCrateBase_links"><code>ROCrateBase_links</code> - </a></li>
+    <li><a href="#ROCrate_allOf"><code>ROCrate_allOf</code> - </a></li>
     <li><a href="#Registry"><code>Registry</code> - </a></li>
+    <li><a href="#RegistryType"><code>RegistryType</code> - </a></li>
     <li><a href="#RegistryWorkflowVersion"><code>RegistryWorkflowVersion</code> - </a></li>
+    <li><a href="#RegistryWorkflowVersion_allOf"><code>RegistryWorkflowVersion_allOf</code> - </a></li>
     <li><a href="#TestInstance"><code>TestInstance</code> - </a></li>
-    <li><a href="#TestInstance_service"><code>TestInstance_service</code> - </a></li>
+    <li><a href="#TestInstanceBase"><code>TestInstanceBase</code> - </a></li>
+    <li><a href="#TestInstance_allOf"><code>TestInstance_allOf</code> - </a></li>
     <li><a href="#TestSuite"><code>TestSuite</code> - </a></li>
+    <li><a href="#TestSuiteDefinition"><code>TestSuiteDefinition</code> - </a></li>
+    <li><a href="#TestSuiteDefinition_test_engine"><code>TestSuiteDefinition_test_engine</code> - </a></li>
     <li><a href="#TestSuiteStatus"><code>TestSuiteStatus</code> - </a></li>
+    <li><a href="#TestingService"><code>TestingService</code> - </a></li>
+    <li><a href="#TestingServiceType"><code>TestingServiceType</code> - </a></li>
     <li><a href="#User"><code>User</code> - </a></li>
     <li><a href="#UserIdentity"><code>UserIdentity</code> - </a></li>
+    <li><a href="#UserProfile"><code>UserProfile</code> - </a></li>
+    <li><a href="#UserProfile_allOf"><code>UserProfile_allOf</code> - </a></li>
     <li><a href="#Workflow"><code>Workflow</code> - </a></li>
+    <li><a href="#WorkflowBase"><code>WorkflowBase</code> - </a></li>
+    <li><a href="#WorkflowDetails"><code>WorkflowDetails</code> - </a></li>
+    <li><a href="#WorkflowDetails_allOf"><code>WorkflowDetails_allOf</code> - </a></li>
     <li><a href="#WorkflowStatus"><code>WorkflowStatus</code> - </a></li>
-    <li><a href="#WorkflowStatus_workflow"><code>WorkflowStatus_workflow</code> - </a></li>
+    <li><a href="#WorkflowStatus_allOf"><code>WorkflowStatus_allOf</code> - </a></li>
     <li><a href="#WorkflowVersion"><code>WorkflowVersion</code> - </a></li>
-    <li><a href="#WorkflowVersionDetails"><code>WorkflowVersionDetails</code> - </a></li>
-    <li><a href="#WorkflowVersionDetails_allOf"><code>WorkflowVersionDetails_allOf</code> - </a></li>
+    <li><a href="#WorkflowVersionBase"><code>WorkflowVersionBase</code> - </a></li>
+    <li><a href="#WorkflowVersionBase_allOf"><code>WorkflowVersionBase_allOf</code> - </a></li>
+    <li><a href="#WorkflowVersionMin"><code>WorkflowVersionMin</code> - </a></li>
+    <li><a href="#WorkflowVersionStatus"><code>WorkflowVersionStatus</code> - </a></li>
+    <li><a href="#WorkflowVersionStatus_allOf"><code>WorkflowVersionStatus_allOf</code> - </a></li>
     <li><a href="#WorkflowVersion_allOf"><code>WorkflowVersion_allOf</code> - </a></li>
+    <li><a href="#Workflow_allOf"><code>Workflow_allOf</code> - </a></li>
   </ol>
 
   <div class="model">
@@ -1716,11 +2129,13 @@ results through the service's API).</p>
     <h3><a name="Build"><code>Build</code> - </a> <a class="up" href="#__Models">Up</a></h3>
     <div class='model-description'></div>
     <div class="field-items">
-      <div class="param">build_id </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
-<div class="param">suite_uuid </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+      <div class="param">build_id </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> An identifier for this build,
+as provided by the testing service back-end </div>
+<div class="param">suite_uuid </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Universal unique identifier of the test suite </div>
 <div class="param">status </div><div class="param-desc"><span class="param-type"><a href="#BuildStatus">BuildStatus</a></span>  </div>
 <div class="param">instance </div><div class="param-desc"><span class="param-type"><a href="#TestInstance">TestInstance</a></span>  </div>
 <div class="param">timestamp </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">duration (optional)</div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span> Build duration in ms </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
@@ -1733,12 +2148,13 @@ results through the service's API).</p>
     <h3><a name="BuildSummary"><code>BuildSummary</code> - </a> <a class="up" href="#__Models">Up</a></h3>
     <div class='model-description'></div>
     <div class="field-items">
-      <div class="param">build_id </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
-<div class="param">suite_uuid </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+      <div class="param">build_id </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> An identifier for this build,
+as provided by the testing service back-end </div>
+<div class="param">suite_uuid </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Universal unique identifier of the test suite </div>
 <div class="param">status (optional)</div><div class="param-desc"><span class="param-type"><a href="#BuildStatus">BuildStatus</a></span>  </div>
 <div class="param">instance </div><div class="param-desc"><span class="param-type"><a href="#TestInstance">TestInstance</a></span>  </div>
-<div class="param">timestamp </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
-<div class="param">last_logs (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Last few lines of build log, if available </div>
+<div class="param">timestamp </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A timestamp for the start time of the build </div>
+<div class="param">last_logs (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Last lines of the build log, if available </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
@@ -1765,24 +2181,43 @@ information if dereferenced. </div>
   </div>
   <div class="model">
     <h3><a name="GenericWorkflowVersion"><code>GenericWorkflowVersion</code> - </a> <a class="up" href="#__Models">Up</a></h3>
-    <div class='model-description'>Generic workflow</div>
+    <div class='model-description'>A generic workflow version</div>
     <div class="field-items">
-      <div class="param">version </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
-<div class="param">uuid (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
-<div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
-<div class="param">registry (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> An identifier of the workflow registry (i.e., name, uri or uuid) </div>
-<div class="param">authorization (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
-<div class="param">roc_link </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Link to the workflow RO-Crate </div>
+      <div class="param">roc_link </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Link to the workflow RO-Crate </div>
+<div class="param">uuid </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Universal unique identifier of the workflow. </div>
+<div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A name for the workflow. If not provided, the RO-Crate dataset name is used as default. </div>
+<div class="param">authorization (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> <p>An optional authorization header.</p>
+<p>The <code>authorization</code> parameter might be required to download
+the RO-Crate containing the workflow if it is not directly
+accessible to the user for download
+(e.g., <code>authorization: &quot;ApiKey 1234567890&quot;</code>).</p>
+ </div>
+<div class="param">version </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A string identifying the workflow version (e.g., 1.0) </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="GenericWorkflowVersion_allOf"><code>GenericWorkflowVersion_allOf</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">roc_link </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Link to the workflow RO-Crate </div>
+<div class="param">uuid </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Universal unique identifier of the workflow. </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
     <h3><a name="IdentityProvider"><code>IdentityProvider</code> - </a> <a class="up" href="#__Models">Up</a></h3>
     <div class='model-description'></div>
     <div class="field-items">
-      <div class="param">type </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
-<div class="param">name </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
-<div class="param">uri </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+      <div class="param">type </div><div class="param-desc"><span class="param-type"><a href="#IdentityProviderType">IdentityProviderType</a></span>  </div>
+<div class="param">name </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> The name assigned to the identity provider when registered on LifeMonitor </div>
+<div class="param">uri </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> The URI of the identity provider </div>
+<div class="param">userinfo_endpoint (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> URI of the API endpoint to get the user profile from the identity provider </div>
     </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="IdentityProviderType"><code>IdentityProviderType</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+          </div>  <!-- field-items -->
   </div>
   <div class="model">
     <h3><a name="ListOfBuildSummary"><code>ListOfBuildSummary</code> - </a> <a class="up" href="#__Models">Up</a></h3>
@@ -1821,89 +2256,180 @@ information if dereferenced. </div>
   </div>
   <div class="model">
     <h3><a name="ListOfWorkflow"><code>ListOfWorkflow</code> - </a> <a class="up" href="#__Models">Up</a></h3>
-    <div class='model-description'></div>
+    <div class='model-description'>List of workflows</div>
     <div class="field-items">
-      <div class="param">items </div><div class="param-desc"><span class="param-type"><a href="#Workflow">array[Workflow]</a></span>  </div>
+      <div class="param">items (optional)</div><div class="param-desc"><span class="param-type"><a href="#Workflow">array[Workflow]</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="ManagedTestInstanceCreationData"><code>ManagedTestInstanceCreationData</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'>Managed Test Instance</div>
+    <div class="field-items">
+      <div class="param">roc_instance (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> RO-Crate identifier of the test instance if the instance comes
+from a Workflow RO-Crate </div>
+<div class="param">managed </div><div class="param-desc"><span class="param-type"><a href="#boolean">Boolean</a></span> <code>true</code> for <strong>managed</strong>;
+<code>false</code> for <strong>unmanaged</strong> </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
     <h3><a name="ROCrate"><code>ROCrate</code> - </a> <a class="up" href="#__Models">Up</a></h3>
-    <div class='model-description'></div>
+    <div class='model-description'>Info about the workflow RO-Crate used to register the workflow on LifeMonitor</div>
     <div class="field-items">
-      <div class="param">links (optional)</div><div class="param-desc"><span class="param-type"><a href="#ROCrate_links">ROCrate_links</a></span>  </div>
+      <div class="param">metadata (optional)</div><div class="param-desc"><span class="param-type"><a href="#">Object</a></span> <a href="https://github.com/crs4/life_monitor/wiki/Workflow-Testing-RO-Crate">Workflow Testing RO-Crate</a>
+metadata </div>
+<div class="param">links (optional)</div><div class="param-desc"><span class="param-type"><a href="#ROCrateBase_links">ROCrateBase_links</a></span>  </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
-    <h3><a name="ROCrate_links"><code>ROCrate_links</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <h3><a name="ROCrateBase"><code>ROCrateBase</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'>Info about the workflow RO-Crate used to register the workflow on LifeMonitor</div>
+    <div class="field-items">
+      <div class="param">links (optional)</div><div class="param-desc"><span class="param-type"><a href="#ROCrateBase_links">ROCrateBase_links</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="ROCrateBase_links"><code>ROCrateBase_links</code> - </a> <a class="up" href="#__Models">Up</a></h3>
     <div class='model-description'></div>
     <div class="field-items">
-      <div class="param">external (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
-<div class="param">download (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+      <div class="param">external (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> The link to the workflow RO-Crate used to register the workflow on LifeMonitor </div>
+<div class="param">download (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A link to download the workflow RO-Crate used to register the workflow on LifeMonitor </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="ROCrate_allOf"><code>ROCrate_allOf</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">metadata (optional)</div><div class="param-desc"><span class="param-type"><a href="#">Object</a></span> <a href="https://github.com/crs4/life_monitor/wiki/Workflow-Testing-RO-Crate">Workflow Testing RO-Crate</a>
+metadata </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
     <h3><a name="Registry"><code>Registry</code> - </a> <a class="up" href="#__Models">Up</a></h3>
-    <div class='model-description'></div>
+    <div class='model-description'>Workflow registry</div>
     <div class="field-items">
-      <div class="param">uuid </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
-<div class="param">name </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
-<div class="param">uri </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+      <div class="param">uuid </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Universal unique identifier of the workflow registry </div>
+<div class="param">name </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> An alphanumeric string used to denote the registry.
+Only <code>_</code> and <code>-</code> are allowed, no spaces or other special characters. </div>
+<div class="param">type (optional)</div><div class="param-desc"><span class="param-type"><a href="#RegistryType">RegistryType</a></span>  </div>
+<div class="param">uri </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> The URI of the registry </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
-    <h3><a name="RegistryWorkflowVersion"><code>RegistryWorkflowVersion</code> - </a> <a class="up" href="#__Models">Up</a></h3>
-    <div class='model-description'>Registry workflow</div>
+    <h3><a name="RegistryType"><code>RegistryType</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'>Supported registry types</div>
     <div class="field-items">
-      <div class="param">identifier </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
-<div class="param">version </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
-<div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
-<div class="param">registry (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> An identifier of the workflow registry (i.e., name, uri or uuid) </div>
-<div class="param">submitter_id (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
-<div class="param">authorization (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+          </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="RegistryWorkflowVersion"><code>RegistryWorkflowVersion</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'>A (version of a) workflow indexed by a registry.</div>
+    <div class="field-items">
+      <div class="param">identifier </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> The identifier of the workflow on the registry </div>
+<div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A name for the workflow. If not provided, the RO-Crate dataset name is used as default. </div>
+<div class="param">authorization (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> <p>An optional authorization header.</p>
+<p>The <code>authorization</code> parameter might be required to download
+the RO-Crate containing the workflow if it is not directly
+accessible to the user for download
+(e.g., <code>authorization: &quot;ApiKey 1234567890&quot;</code>).</p>
+ </div>
+<div class="param">version </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A string identifying the workflow version (e.g., 1.0) </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="RegistryWorkflowVersion_allOf"><code>RegistryWorkflowVersion_allOf</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">identifier </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> The identifier of the workflow on the registry </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
     <h3><a name="TestInstance"><code>TestInstance</code> - </a> <a class="up" href="#__Models">Up</a></h3>
-    <div class='model-description'></div>
+    <div class='model-description'>Test Instance</div>
     <div class="field-items">
-      <div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
-<div class="param">service </div><div class="param-desc"><span class="param-type"><a href="#TestInstance_service">TestInstance_service</a></span>  </div>
+      <div class="param">uuid (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Universal unique identifier of the test instance </div>
+<div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> The name assigned to the test instance </div>
+<div class="param">service </div><div class="param-desc"><span class="param-type"><a href="#TestingService">TestingService</a></span>  </div>
+<div class="param">resource </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> The relative path of the test project on the testing service </div>
+<div class="param">roc_instance (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> RO-Crate identifier of the test instance if the instance comes
+from a Workflow RO-Crate </div>
+<div class="param">managed </div><div class="param-desc"><span class="param-type"><a href="#boolean">Boolean</a></span> <code>true</code> for <strong>managed</strong>;
+<code>false</code> for <strong>unmanaged</strong> </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
-    <h3><a name="TestInstance_service"><code>TestInstance_service</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <h3><a name="TestInstanceBase"><code>TestInstanceBase</code> - </a> <a class="up" href="#__Models">Up</a></h3>
     <div class='model-description'></div>
     <div class="field-items">
-      <div class="param">type </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
-<div class="param">url </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
-<div class="param">resource (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+      <div class="param">roc_instance (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> RO-Crate identifier of the test instance if the instance comes
+from a Workflow RO-Crate </div>
+<div class="param">managed </div><div class="param-desc"><span class="param-type"><a href="#boolean">Boolean</a></span> <code>true</code> for <strong>managed</strong>;
+<code>false</code> for <strong>unmanaged</strong> </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="TestInstance_allOf"><code>TestInstance_allOf</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">uuid (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Universal unique identifier of the test instance </div>
+<div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> The name assigned to the test instance </div>
+<div class="param">service </div><div class="param-desc"><span class="param-type"><a href="#TestingService">TestingService</a></span>  </div>
+<div class="param">resource </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> The relative path of the test project on the testing service </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
     <h3><a name="TestSuite"><code>TestSuite</code> - </a> <a class="up" href="#__Models">Up</a></h3>
     <div class='model-description'></div>
     <div class="field-items">
-      <div class="param">uuid </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
-<div class="param">test_suite_metadata </div><div class="param-desc"><span class="param-type"><a href="#">Object</a></span> To be determined. </div>
+      <div class="param">uuid </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Universal unique identifier of the test suite </div>
+<div class="param">roc_suite (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> RO-Crate identifier of the TestSuite </div>
+<div class="param">definition (optional)</div><div class="param-desc"><span class="param-type"><a href="#TestSuiteDefinition">TestSuiteDefinition</a></span>  </div>
 <div class="param">instances </div><div class="param-desc"><span class="param-type"><a href="#TestInstance">array[TestInstance]</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="TestSuiteDefinition"><code>TestSuiteDefinition</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'>Test Suite metadata</div>
+    <div class="field-items">
+      <div class="param">test_engine (optional)</div><div class="param-desc"><span class="param-type"><a href="#TestSuiteDefinition_test_engine">TestSuiteDefinition_test_engine</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="TestSuiteDefinition_test_engine"><code>TestSuiteDefinition_test_engine</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'>Software application that runs workflow tests according to a definition.</div>
+    <div class="field-items">
+      <div class="param">type (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Type of the software engine (e.g., planemo, etc.) </div>
+<div class="param">version (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Version of the software engine </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
     <h3><a name="TestSuiteStatus"><code>TestSuiteStatus</code> - </a> <a class="up" href="#__Models">Up</a></h3>
     <div class='model-description'></div>
     <div class="field-items">
-      <div class="param">suite_uuid </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+      <div class="param">suite_uuid </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Universal unique identifier of the test suite </div>
 <div class="param">status </div><div class="param-desc"><span class="param-type"><a href="#AggregateTestStatus">AggregateTestStatus</a></span>  </div>
 <div class="param">latest_builds (optional)</div><div class="param-desc"><span class="param-type"><a href="#BuildSummary">array[BuildSummary]</a></span>  </div>
     </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="TestingService"><code>TestingService</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">type </div><div class="param-desc"><span class="param-type"><a href="#TestingServiceType">TestingServiceType</a></span>  </div>
+<div class="param">url </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> The base URL of the testing service </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="TestingServiceType"><code>TestingServiceType</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'>Supported testing service back-ends</div>
+    <div class="field-items">
+          </div>  <!-- field-items -->
   </div>
   <div class="model">
     <h3><a name="User"><code>User</code> - </a> <a class="up" href="#__Models">Up</a></h3>
     <div class='model-description'></div>
     <div class="field-items">
       <div class="param">id </div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span> An identifier for the user, unique among all LifeMonitor accounts and never reused </div>
-<div class="param">username (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> The user's username, unique among all LifeMonitor accounts </div>
-<div class="param">identities (optional)</div><div class="param-desc"><span class="param-type"><a href="#UserIdentity">map[String, UserIdentity]</a></span>  </div>
+<div class="param">username </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> The user's login name, unique among all LifeMonitor accounts </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
@@ -1911,83 +2437,192 @@ information if dereferenced. </div>
     <div class='model-description'>A user identity issued by an identity provider.</div>
     <div class="field-items">
       <div class="param">sub </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> An identifier for the user, unique among all provider accounts and never reused </div>
-<div class="param">username (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
-<div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
-<div class="param">email (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
-<div class="param">picture (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">username (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> User's login name </div>
+<div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> User's first and family name, if available </div>
+<div class="param">email (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> User's email </div>
+<div class="param">picture (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> User's picture (URI) </div>
 <div class="param">profile (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
 <div class="param">provider </div><div class="param-desc"><span class="param-type"><a href="#IdentityProvider">IdentityProvider</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="UserProfile"><code>UserProfile</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">id </div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span> An identifier for the user, unique among all LifeMonitor accounts and never reused </div>
+<div class="param">username </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> The user's login name, unique among all LifeMonitor accounts </div>
+<div class="param">identities (optional)</div><div class="param-desc"><span class="param-type"><a href="#UserIdentity">map[String, UserIdentity]</a></span> A dict of <code>&lt;provider_name&gt;:&lt;UserIdentity&gt;</code> items. </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="UserProfile_allOf"><code>UserProfile_allOf</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">identities (optional)</div><div class="param-desc"><span class="param-type"><a href="#UserIdentity">map[String, UserIdentity]</a></span> A dict of <code>&lt;provider_name&gt;:&lt;UserIdentity&gt;</code> items. </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
     <h3><a name="Workflow"><code>Workflow</code> - </a> <a class="up" href="#__Models">Up</a></h3>
     <div class='model-description'></div>
     <div class="field-items">
-      <div class="param">uuid </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
-<div class="param">identifier (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
-<div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+      <div class="param">uuid </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Universal unique identifier of the workflow.
+If not provided, it will be auto-generated by the system. </div>
+<div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A name for the workflow. If not provided, the RO-Crate dataset name is used as default. </div>
+<div class="param">authorization (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> <p>An optional authorization header.</p>
+<p>The <code>authorization</code> parameter might be required to download
+the RO-Crate containing the workflow if it is not directly
+accessible to the user for download
+(e.g., <code>authorization: &quot;ApiKey 1234567890&quot;</code>).</p>
+ </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="WorkflowBase"><code>WorkflowBase</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'>Generic workflow</div>
+    <div class="field-items">
+      <div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A name for the workflow. If not provided, the RO-Crate dataset name is used as default. </div>
+<div class="param">authorization (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> <p>An optional authorization header.</p>
+<p>The <code>authorization</code> parameter might be required to download
+the RO-Crate containing the workflow if it is not directly
+accessible to the user for download
+(e.g., <code>authorization: &quot;ApiKey 1234567890&quot;</code>).</p>
+ </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="WorkflowDetails"><code>WorkflowDetails</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">uuid </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Universal unique identifier of the workflow.
+If not provided, it will be auto-generated by the system. </div>
+<div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A name for the workflow. If not provided, the RO-Crate dataset name is used as default. </div>
+<div class="param">authorization (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> <p>An optional authorization header.</p>
+<p>The <code>authorization</code> parameter might be required to download
+the RO-Crate containing the workflow if it is not directly
+accessible to the user for download
+(e.g., <code>authorization: &quot;ApiKey 1234567890&quot;</code>).</p>
+ </div>
+<div class="param">version </div><div class="param-desc"><span class="param-type"><a href="#WorkflowVersion">WorkflowVersion</a></span>  </div>
+<div class="param">previous_versions (optional)</div><div class="param-desc"><span class="param-type"><a href="#WorkflowVersionMin">array[WorkflowVersionMin]</a></span>  </div>
+<div class="param">registry (optional)</div><div class="param-desc"><span class="param-type"><a href="#Registry">Registry</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="WorkflowDetails_allOf"><code>WorkflowDetails_allOf</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">version </div><div class="param-desc"><span class="param-type"><a href="#WorkflowVersion">WorkflowVersion</a></span>  </div>
+<div class="param">previous_versions (optional)</div><div class="param-desc"><span class="param-type"><a href="#WorkflowVersionMin">array[WorkflowVersionMin]</a></span>  </div>
+<div class="param">registry (optional)</div><div class="param-desc"><span class="param-type"><a href="#Registry">Registry</a></span>  </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
     <h3><a name="WorkflowStatus"><code>WorkflowStatus</code> - </a> <a class="up" href="#__Models">Up</a></h3>
     <div class='model-description'></div>
     <div class="field-items">
-      <div class="param">workflow (optional)</div><div class="param-desc"><span class="param-type"><a href="#WorkflowStatus_workflow">WorkflowStatus_workflow</a></span>  </div>
+      <div class="param">uuid </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Universal unique identifier of the workflow.
+If not provided, it will be auto-generated by the system. </div>
+<div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A name for the workflow. If not provided, the RO-Crate dataset name is used as default. </div>
+<div class="param">authorization (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> <p>An optional authorization header.</p>
+<p>The <code>authorization</code> parameter might be required to download
+the RO-Crate containing the workflow if it is not directly
+accessible to the user for download
+(e.g., <code>authorization: &quot;ApiKey 1234567890&quot;</code>).</p>
+ </div>
+<div class="param">version (optional)</div><div class="param-desc"><span class="param-type"><a href="#WorkflowVersion">WorkflowVersion</a></span>  </div>
 <div class="param">aggregate_test_status (optional)</div><div class="param-desc"><span class="param-type"><a href="#AggregateTestStatus">AggregateTestStatus</a></span>  </div>
 <div class="param">latest_builds (optional)</div><div class="param-desc"><span class="param-type"><a href="#BuildSummary">array[BuildSummary]</a></span> Latest builds, one for each test instance </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
-    <h3><a name="WorkflowStatus_workflow"><code>WorkflowStatus_workflow</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <h3><a name="WorkflowStatus_allOf"><code>WorkflowStatus_allOf</code> - </a> <a class="up" href="#__Models">Up</a></h3>
     <div class='model-description'></div>
     <div class="field-items">
-      <div class="param">uuid </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
-<div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
-<div class="param">version </div><div class="param-desc"><span class="param-type"><a href="#WorkflowVersion">WorkflowVersion</a></span>  </div>
+      <div class="param">version (optional)</div><div class="param-desc"><span class="param-type"><a href="#WorkflowVersion">WorkflowVersion</a></span>  </div>
+<div class="param">aggregate_test_status (optional)</div><div class="param-desc"><span class="param-type"><a href="#AggregateTestStatus">AggregateTestStatus</a></span>  </div>
+<div class="param">latest_builds (optional)</div><div class="param-desc"><span class="param-type"><a href="#BuildSummary">array[BuildSummary]</a></span> Latest builds, one for each test instance </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
     <h3><a name="WorkflowVersion"><code>WorkflowVersion</code> - </a> <a class="up" href="#__Models">Up</a></h3>
     <div class='model-description'></div>
     <div class="field-items">
-      <div class="param">uuid </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
-<div class="param">identifier (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
-<div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
-<div class="param">version </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+      <div class="param">uuid (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> An internal unique identifier for the workflow version. </div>
+<div class="param">version </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A string identifying the version of the workflow </div>
 <div class="param">submitter_id (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
 <div class="param">ro_crate (optional)</div><div class="param-desc"><span class="param-type"><a href="#ROCrate">ROCrate</a></span>  </div>
-<div class="param">is_latest (optional)</div><div class="param-desc"><span class="param-type"><a href="#boolean">Boolean</a></span>  </div>
+<div class="param">is_latest (optional)</div><div class="param-desc"><span class="param-type"><a href="#boolean">Boolean</a></span> <code>true</code> if the workflow version is the latest,
+<code>false</code> otherwise. </div>
 <div class="param">submitter (optional)</div><div class="param-desc"><span class="param-type"><a href="#User">User</a></span>  </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
-    <h3><a name="WorkflowVersionDetails"><code>WorkflowVersionDetails</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <h3><a name="WorkflowVersionBase"><code>WorkflowVersionBase</code> - </a> <a class="up" href="#__Models">Up</a></h3>
     <div class='model-description'></div>
     <div class="field-items">
-      <div class="param">uuid </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
-<div class="param">identifier (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
-<div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
-<div class="param">version (optional)</div><div class="param-desc"><span class="param-type"><a href="#WorkflowVersion">WorkflowVersion</a></span>  </div>
-<div class="param">previous_versions (optional)</div><div class="param-desc"><span class="param-type"><a href="#WorkflowVersion">array[WorkflowVersion]</a></span>  </div>
+      <div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A name for the workflow. If not provided, the RO-Crate dataset name is used as default. </div>
+<div class="param">authorization (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> <p>An optional authorization header.</p>
+<p>The <code>authorization</code> parameter might be required to download
+the RO-Crate containing the workflow if it is not directly
+accessible to the user for download
+(e.g., <code>authorization: &quot;ApiKey 1234567890&quot;</code>).</p>
+ </div>
+<div class="param">version </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A string identifying the workflow version (e.g., 1.0) </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
-    <h3><a name="WorkflowVersionDetails_allOf"><code>WorkflowVersionDetails_allOf</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <h3><a name="WorkflowVersionBase_allOf"><code>WorkflowVersionBase_allOf</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'>Base workflow version</div>
+    <div class="field-items">
+      <div class="param">version </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A string identifying the workflow version (e.g., 1.0) </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="WorkflowVersionMin"><code>WorkflowVersionMin</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">uuid (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> An internal unique identifier for the workflow version. </div>
+<div class="param">version </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A string identifying the version of the workflow </div>
+<div class="param">submitter_id (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
+<div class="param">ro_crate (optional)</div><div class="param-desc"><span class="param-type"><a href="#ROCrateBase">ROCrateBase</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="WorkflowVersionStatus"><code>WorkflowVersionStatus</code> - </a> <a class="up" href="#__Models">Up</a></h3>
     <div class='model-description'></div>
     <div class="field-items">
       <div class="param">version (optional)</div><div class="param-desc"><span class="param-type"><a href="#WorkflowVersion">WorkflowVersion</a></span>  </div>
-<div class="param">previous_versions (optional)</div><div class="param-desc"><span class="param-type"><a href="#WorkflowVersion">array[WorkflowVersion]</a></span>  </div>
+<div class="param">workflow (optional)</div><div class="param-desc"><span class="param-type"><a href="#Workflow">Workflow</a></span>  </div>
+<div class="param">aggregate_test_status (optional)</div><div class="param-desc"><span class="param-type"><a href="#AggregateTestStatus">AggregateTestStatus</a></span>  </div>
+<div class="param">latest_builds (optional)</div><div class="param-desc"><span class="param-type"><a href="#BuildSummary">array[BuildSummary]</a></span> Latest builds, one for each test instance </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="WorkflowVersionStatus_allOf"><code>WorkflowVersionStatus_allOf</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">version (optional)</div><div class="param-desc"><span class="param-type"><a href="#WorkflowVersion">WorkflowVersion</a></span>  </div>
+<div class="param">workflow (optional)</div><div class="param-desc"><span class="param-type"><a href="#Workflow">Workflow</a></span>  </div>
+<div class="param">aggregate_test_status (optional)</div><div class="param-desc"><span class="param-type"><a href="#AggregateTestStatus">AggregateTestStatus</a></span>  </div>
+<div class="param">latest_builds (optional)</div><div class="param-desc"><span class="param-type"><a href="#BuildSummary">array[BuildSummary]</a></span> Latest builds, one for each test instance </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
     <h3><a name="WorkflowVersion_allOf"><code>WorkflowVersion_allOf</code> - </a> <a class="up" href="#__Models">Up</a></h3>
     <div class='model-description'></div>
     <div class="field-items">
-      <div class="param">version </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
-<div class="param">submitter_id (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
-<div class="param">ro_crate (optional)</div><div class="param-desc"><span class="param-type"><a href="#ROCrate">ROCrate</a></span>  </div>
-<div class="param">is_latest (optional)</div><div class="param-desc"><span class="param-type"><a href="#boolean">Boolean</a></span>  </div>
+      <div class="param">ro_crate (optional)</div><div class="param-desc"><span class="param-type"><a href="#ROCrate">ROCrate</a></span>  </div>
+<div class="param">is_latest (optional)</div><div class="param-desc"><span class="param-type"><a href="#boolean">Boolean</a></span> <code>true</code> if the workflow version is the latest,
+<code>false</code> otherwise. </div>
 <div class="param">submitter (optional)</div><div class="param-desc"><span class="param-type"><a href="#User">User</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="Workflow_allOf"><code>Workflow_allOf</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">uuid </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Universal unique identifier of the workflow.
+If not provided, it will be auto-generated by the system. </div>
     </div>  <!-- field-items -->
   </div>
   </body>
