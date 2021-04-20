@@ -44,32 +44,37 @@ def test_get_workflows_no_authorization(m, request_context):
 
 
 @patch("lifemonitor.api.controllers.lm")
-def test_get_workflows_with_user(m, request_context, mock_user):
+def test_get_workflows_with_user(m, request_context, mock_user, fake_uri):
     # add one user to the current session
     assert not auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_user == mock_user, "Unexpected user in session"
     logger.debug("Current registry: %r", auth.current_registry)
     assert not auth.current_registry, "Unexpected registry in session"
     # add one fake workflow
-    data = {"uuid": "123456"}
-    m.get_user_workflows.return_value = [data]
+    data = {"uuid": "123456", "version": "1.0", "uri": fake_uri}
+    w = models.Workflow(uuid=data['uuid'])
+    w.add_version(data["version"], data['uri'], MagicMock())
+    m.get_user_workflows.return_value = [w]
     response = controllers.workflows_get()
     m.get_user_workflows.assert_called_once()
     assert isinstance(response, dict), "Unexpected result type"
-    assert response == serializers.WorkflowSchema().dump([data], many=True)
+    logger.debug("Response: %r", response)
+    assert response == serializers.ListOfWorkflows(workflow_status=True).dump([w])
 
 
 @patch("lifemonitor.api.controllers.lm")
-def test_get_workflows_with_registry(m, request_context, mock_registry):
+def test_get_workflows_with_registry(m, request_context, mock_registry, fake_uri):
     assert auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry, "Unexpected registry in session"
     # add one fake workflow
-    data = {"uuid": "123456"}
-    m.get_registry_workflows.return_value = [data]
+    data = {"uuid": "123456", "version": "1.0", "uri": fake_uri}
+    w = models.Workflow(uuid=data['uuid'])
+    w.add_version(data["version"], data['uri'], MagicMock())
+    m.get_registry_workflows.return_value = [w]
     response = controllers.workflows_get()
     m.get_registry_workflows.assert_called_once()
     assert isinstance(response, dict), "Unexpected result type"
-    assert response == serializers.WorkflowSchema().dump([data], many=True)
+    assert response == serializers.ListOfWorkflows(workflow_status=True).dump([w])
 
 
 @patch("lifemonitor.api.controllers.lm")
@@ -147,19 +152,6 @@ def test_post_workflow_by_registry_error_registry_uri(m, request_context, mock_r
     logger.debug("Response: %r, %r", response, str(response.data))
     assert_status_code(response.status_code, 400)
     assert messages.unexpected_registry_uri in response.data.decode(),\
-        "Unexpected error message"
-
-
-@patch("lifemonitor.api.controllers.lm")
-def test_post_workflow_by_registry_error_missing_submitter_id(m, request_context, mock_registry):
-    assert auth.current_user.is_anonymous, "Unexpected user in session"
-    assert auth.current_registry, "Unexpected registry in session"
-    # add one fake workflow
-    data = {}
-    response = controllers.workflows_post(body=data)
-    logger.debug("Response: %r, %r", response, str(response.data))
-    assert_status_code(response.status_code, 400)
-    assert messages.no_submitter_id_provided in response.data.decode(),\
         "Unexpected error message"
 
 
@@ -271,6 +263,7 @@ def test_get_workflow_by_id(m, request_context, mock_registry):
     data = {"uuid": "12345", "version": "2", "roc_link": "https://somelink"}
     w = models.Workflow(uuid=data["uuid"])
     wv = w.add_version(data["version"], data["roc_link"], {})
+    wv._metadata_loaded = True
     m.get_registry_workflow_version.return_value = wv
     response = controllers.workflows_get_by_id(data['uuid'], data['version'])
     m.get_registry_workflow_version.assert_called_once_with(mock_registry, data['uuid'], data['version'])
@@ -279,23 +272,3 @@ def test_get_workflow_by_id(m, request_context, mock_registry):
     assert response['uuid'] == data['uuid'], "Unexpected workflow UUID"
     assert response['version']['version'] == data['version'], "Unexpected workflow version"
     assert 'previous_versions' not in response, "Unexpected list of previous versions"
-
-
-@patch("lifemonitor.api.controllers.lm")
-def test_get_latest_workflow_version_by_id(m, request_context, mock_registry):
-    assert auth.current_user.is_anonymous, "Unexpected user in session"
-    assert auth.current_registry, "Unexpected registry in session"
-    data = {"uuid": "12345", "version": "2", "roc_link": "https://somelink", "previous_versions": ["1"]}
-    w = models.Workflow(uuid=data["uuid"])
-    wv = w.add_version("1", data["roc_link"], {})
-    wv = w.add_version(data["version"], data["roc_link"], {})
-    m.get_registry_workflow_version.return_value = wv
-    logger.debug("Mock workflow version: %r", w)
-    response = controllers.workflows_get_latest_version_by_id(data['uuid'])
-    m.get_registry_workflow_version.assert_called_once_with(mock_registry, data['uuid'], None)
-    logger.debug("Response: %r", response)
-    assert isinstance(response, dict), "Unexpected response"
-    assert response['uuid'] == data['uuid'], "Unexpected workflow UUID"
-    assert response['version']['version'] == data['version'], "Unexpected workflow version"
-    previous_versions = [_['version'] for _ in response['previous_versions']]
-    assert previous_versions == data['previous_versions'], "Unexpected list of previous versions"

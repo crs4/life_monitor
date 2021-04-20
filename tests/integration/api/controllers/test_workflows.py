@@ -20,10 +20,8 @@
 
 import json
 import logging
-import uuid
 
 import pytest
-from lifemonitor.api import models
 from lifemonitor.api.models import WorkflowVersion
 from lifemonitor.auth import current_user
 from lifemonitor.auth.models import ApiKey
@@ -73,40 +71,19 @@ def test_config_params(app_client, client_auth_method, user1, user1_auth):
 
 
 @pytest.mark.parametrize("client_auth_method", [
-    #    ClientAuthenticationMethod.BASIC,
     ClientAuthenticationMethod.API_KEY,
-    ClientAuthenticationMethod.AUTHORIZATION_CODE,
-    ClientAuthenticationMethod.CLIENT_CREDENTIALS,
-    ClientAuthenticationMethod.REGISTRY_CODE_FLOW
 ], indirect=True)
-def test_empty_workflows(app_client, client_auth_method, user1, user1_auth):
-    response = app_client.get(utils.build_workflow_path(), headers=user1_auth)
-    utils.assert_status_code(200, response.status_code)
-    assert response.data, "Empty response"
-    data = json.loads(response.data)
-    logger.debug("Response %r", data)
-    assert len(data['items']) == 0, "Invalid number of workflows"
-
-
-@pytest.mark.parametrize("client_auth_method", [
-    ClientAuthenticationMethod.CLIENT_CREDENTIALS,
-    ClientAuthenticationMethod.REGISTRY_CODE_FLOW
-], indirect=True)
-def test_workflow_registration(app_client, client_auth_method,
-                               user1, user1_auth, client_credentials_registry, valid_workflow):
+def test_workflow_registration_check_default_name(app_client, client_auth_method,
+                                                  user1, user1_auth, client_credentials_registry, valid_workflow):
     logger.debug("User: %r", user1)
     logger.debug("headers: %r", user1_auth)
     workflow = utils.pick_workflow(user1, valid_workflow)
     logger.debug("Selected workflow: %r", workflow)
     logger.debug("Using oauth2 user: %r", user1)
-    # When the client is a registry and it uses the ClientCredentials auth flow,
-    # it must provide the submitter ID
-    if client_auth_method == ClientAuthenticationMethod.CLIENT_CREDENTIALS:  # ClientCredentials case
-        workflow['submitter_id'] = \
-            list(user1["user"].oauth_identity.values())[0].provider_user_id
-    logger.debug("The BODY: %r", workflow)
-    response = app_client.post(utils.build_workflow_path(),
-                               json=workflow, headers=user1_auth)
+    # prepare body
+    body = {'identifier': workflow['external_id'], 'version': workflow['version']}
+    logger.debug("The BODY: %r", body)
+    response = app_client.post(f'/registries/{client_credentials_registry.uuid}/workflows', json=body, headers=user1_auth)
     logger.debug("The actual response: %r", response.data)
     utils.assert_status_code(201, response.status_code)
     data = json.loads(response.data)
@@ -114,115 +91,27 @@ def test_workflow_registration(app_client, client_auth_method,
     assert data['wf_uuid'] == workflow['uuid'] and data['wf_version'] == workflow['version'], \
         "Response should be equal to the workflow UUID"
 
-
-@pytest.mark.parametrize("client_auth_method", [
-    ClientAuthenticationMethod.CLIENT_CREDENTIALS,
-    ClientAuthenticationMethod.REGISTRY_CODE_FLOW
-], indirect=True)
-def test_workflow_registration_by_external_id(app_client, client_auth_method,
-                                              user1, user1_auth, client_credentials_registry, valid_workflow):
-    logger.debug("User: %r", user1)
-    logger.debug("headers: %r", user1_auth)
-    workflow = utils.pick_workflow(user1, valid_workflow)
-    logger.debug("Selected workflow: %r", workflow)
-    logger.debug("Using oauth2 user: %r", user1)
-    # Remove the UUID and set the external identifier
-    workflow['identifier'] = workflow['external_id']
-    wf_uuid = workflow['uuid']
-    del workflow['uuid']
-    del workflow['roc_link']
-    # When the client is a registry and it uses the ClientCredentials auth flow,
-    # it must provide the submitter ID
-    if client_auth_method == ClientAuthenticationMethod.CLIENT_CREDENTIALS:  # ClientCredentials case
-        workflow['submitter_id'] = \
-            list(user1["user"].oauth_identity.values())[0].provider_user_id
-    logger.debug("The BODY: %r", workflow)
-    response = app_client.post(utils.build_workflow_path(),
-                               json=workflow, headers=user1_auth)
-    logger.debug("The actual response: %r", response.data)
-    utils.assert_status_code(201, response.status_code)
-    data = json.loads(response.data)
-    logger.debug("Response data: %r", data)
-    assert data['wf_uuid'] == wf_uuid and data['wf_version'] == workflow['version'], \
-        "Response should be equal to the workflow UUID"
-
-
-@pytest.mark.parametrize("client_auth_method", [
-    ClientAuthenticationMethod.CLIENT_CREDENTIALS,
-    ClientAuthenticationMethod.REGISTRY_CODE_FLOW
-], indirect=True)
-def test_workflow_registration_by_external_id_auto_roc_link(
-        app_client, client_auth_method,
-        user1, user1_auth, client_credentials_registry, valid_workflow):
-    logger.debug("User: %r", user1)
-    logger.debug("headers: %r", user1_auth)
-    workflow = utils.pick_workflow(user1, valid_workflow)
-    logger.debug("Selected workflow: %r", workflow)
-    logger.debug("Using oauth2 user: %r", user1)
-    # Remove the UUID and set the external identifier
-    workflow['identifier'] = workflow['external_id']
-    wf_uuid = workflow['uuid']
-    del workflow['uuid']
-    del workflow['roc_link']
-    # When the client is a registry and it uses the ClientCredentials auth flow,
-    # it must provide the submitter ID
-    if client_auth_method == ClientAuthenticationMethod.CLIENT_CREDENTIALS:  # ClientCredentials case
-        workflow['submitter_id'] = \
-            list(user1["user"].oauth_identity.values())[0].provider_user_id
-    logger.debug("The BODY: %r", workflow)
-    response = app_client.post(utils.build_workflow_path(),
-                               json=workflow, headers=user1_auth)
-    logger.debug("The actual response: %r", response.data)
-    utils.assert_status_code(201, response.status_code)
-    data = json.loads(response.data)
-    logger.debug("Response data: %r", data)
-    assert data['wf_uuid'] == wf_uuid and data['wf_version'] == workflow['version'], \
-        "Response should be equal to the workflow UUID"
+    wf = utils.get_workflow_data(data['wf_uuid'])
+    assert wf, "Unable to load workflow data"
+    assert str(wf.uuid) == data['wf_uuid'], "Unexpected workflow uuid"
+    assert wf.latest_version.version == data['wf_version'], "Unexpected workflow uuid"
+    assert wf.name == workflow['name'], "Unexpected workflow name"
 
 
 @pytest.mark.parametrize("client_auth_method", [
     ClientAuthenticationMethod.API_KEY,
-    ClientAuthenticationMethod.AUTHORIZATION_CODE
 ], indirect=True)
-def test_workflow_registration_without_roc_link(
-        app_client, client_auth_method,
-        user1, user1_auth, client_credentials_registry, valid_workflow):
+def test_workflow_registration_check_custom_name(app_client, client_auth_method,
+                                                 user1, user1_auth, client_credentials_registry, valid_workflow):
     logger.debug("User: %r", user1)
     logger.debug("headers: %r", user1_auth)
     workflow = utils.pick_workflow(user1, valid_workflow)
     logger.debug("Selected workflow: %r", workflow)
     logger.debug("Using oauth2 user: %r", user1)
-    del workflow['roc_link']
-    workflow['registry'] = workflow['registry_uri']
-    logger.debug("The BODY: %r", workflow)
-    response = app_client.post(utils.build_workflow_path(),
-                               json=workflow, headers=user1_auth)
-    # if the client is not a registry client
-    # the roc_link MUST be provided to register the workflow
-    logger.debug("The actual response: %r", response.data)
-    utils.assert_status_code(500, response.status_code)
-    data = json.loads(response.data)
-    logger.debug("Response data: %r", data)
-
-
-@pytest.mark.parametrize("client_auth_method", [
-    #    ClientAuthenticationMethod.BASIC,
-    ClientAuthenticationMethod.API_KEY,
-    ClientAuthenticationMethod.AUTHORIZATION_CODE
-], indirect=True)
-def test_workflow_registration_by_registry_uri(app_client, client_auth_method,
-                                               user1, user1_auth, client_credentials_registry, valid_workflow):
-    logger.debug("User: %r", user1)
-    logger.debug("headers: %r", user1_auth)
-    workflow = utils.pick_workflow(user1, valid_workflow)
-    logger.debug("Selected workflow: %r", workflow)
-    logger.debug("Using oauth2 user: %r", user1)
-    # Set the registry reference
-    workflow['registry'] = workflow['registry_uri']
-    logger.debug("The BODY: %r", workflow)
-    response = app_client.post(utils.build_workflow_path(),
-                               json=workflow, headers=user1_auth)
-
+    # prepare body
+    body = {'identifier': workflow['external_id'], 'version': workflow['version'], 'name': "MyWorkflow"}
+    logger.debug("The BODY: %r", body)
+    response = app_client.post(f'/registries/{client_credentials_registry.uuid}/workflows', json=body, headers=user1_auth)
     logger.debug("The actual response: %r", response.data)
     utils.assert_status_code(201, response.status_code)
     data = json.loads(response.data)
@@ -230,169 +119,11 @@ def test_workflow_registration_by_registry_uri(app_client, client_auth_method,
     assert data['wf_uuid'] == workflow['uuid'] and data['wf_version'] == workflow['version'], \
         "Response should be equal to the workflow UUID"
 
-
-@pytest.mark.parametrize("client_auth_method", [
-    #    ClientAuthenticationMethod.BASIC,
-    ClientAuthenticationMethod.API_KEY,
-    ClientAuthenticationMethod.AUTHORIZATION_CODE
-], indirect=True)
-def test_workflow_registration_by_registry_name(app_client, client_auth_method,
-                                                user1, user1_auth, client_credentials_registry, valid_workflow):
-    logger.debug("User: %r", user1)
-    logger.debug("headers: %r", user1_auth)
-    workflow = utils.pick_workflow(user1, valid_workflow)
-    logger.debug("Selected workflow: %r", workflow)
-    logger.debug("Using oauth2 user: %r", user1)
-    # Set the registry reference
-    workflow['registry'] = workflow['registry_name']
-    logger.debug("The BODY: %r", workflow)
-    response = app_client.post(utils.build_workflow_path(),
-                               json=workflow, headers=user1_auth)
-
-    logger.debug("The actual response: %r", response.data)
-    utils.assert_status_code(201, response.status_code)
-    data = json.loads(response.data)
-    logger.debug("Response data: %r", data)
-    assert data['wf_uuid'] == workflow['uuid'] and data['wf_version'] == workflow['version'], \
-        "Response should be equal to the workflow UUID"
-
-
-@pytest.mark.parametrize("client_auth_method", [
-    #    ClientAuthenticationMethod.BASIC,
-    ClientAuthenticationMethod.API_KEY,
-    ClientAuthenticationMethod.AUTHORIZATION_CODE
-], indirect=True)
-def test_workflow_registration_by_registry_uuid(app_client, client_auth_method,
-                                                user1, user1_auth, client_credentials_registry, valid_workflow):
-    logger.debug("User: %r", user1)
-    logger.debug("headers: %r", user1_auth)
-    workflow = utils.pick_workflow(user1, valid_workflow)
-    logger.debug("Selected workflow: %r", workflow)
-    logger.debug("Using oauth2 user: %r", user1)
-    # Set the registry reference
-    workflow['registry'] = client_credentials_registry.uuid
-    logger.debug("The BODY: %r", workflow)
-    response = app_client.post(utils.build_workflow_path(),
-                               json=workflow, headers=user1_auth)
-
-    logger.debug("The actual response: %r", response.data)
-    utils.assert_status_code(201, response.status_code)
-    data = json.loads(response.data)
-    logger.debug("Response data: %r", data)
-    assert data['wf_uuid'] == workflow['uuid'] and data['wf_version'] == workflow['version'], \
-        "Response should be equal to the workflow UUID"
-
-
-@pytest.mark.parametrize("client_auth_method", [
-    #    ClientAuthenticationMethod.BASIC,
-    ClientAuthenticationMethod.API_KEY,
-    ClientAuthenticationMethod.AUTHORIZATION_CODE,
-    ClientAuthenticationMethod.CLIENT_CREDENTIALS,
-    ClientAuthenticationMethod.REGISTRY_CODE_FLOW
-], indirect=True)
-def test_workflow_registration_default_name(app_client, client_auth_method,
-                                            user1, user1_auth, client_credentials_registry, valid_workflow):
-    logger.debug("User: %r", user1)
-    logger.debug("headers: %r", user1_auth)
-    workflow = utils.pick_workflow(user1, valid_workflow)
-    logger.debug("Selected workflow: %r", workflow)
-    logger.debug("Using oauth2 user: %r", user1)
-    # When the client is a registry and it uses the ClientCredentials auth flow,
-    # it must provide the submitter ID
-    if client_auth_method == ClientAuthenticationMethod.CLIENT_CREDENTIALS:
-        workflow['submitter_id'] = \
-            list(user1["user"].oauth_identity.values())[0].provider_user_id
-    elif client_auth_method in [ClientAuthenticationMethod.AUTHORIZATION_CODE, ClientAuthenticationMethod.API_KEY]:
-        workflow['registry'] = client_credentials_registry.uri
-    del workflow['name']
-    assert not hasattr(workflow, 'name'), "Name should not be defined by the user"
-
-    logger.debug("The BODY: %r", workflow)
-    response = app_client.post(utils.build_workflow_path(),
-                               json=workflow, headers=user1_auth)
-
-    logger.debug("The actual response: %r", response.data)
-    utils.assert_status_code(201, response.status_code)
-    data = json.loads(response.data)
-    logger.debug("Response data: %r", data)
-    assert data['wf_uuid'] == workflow['uuid'] and data['wf_version'] == workflow['version'], \
-        "Response should be equal to the workflow UUID"
-    # check name
-    response = app_client.get(utils.build_workflow_path(workflow), headers=user1_auth)
-    utils.assert_status_code(200, response.status_code)
-    data = json.loads(response.data)
-    assert data['name'] == valid_workflow, "Invalid workflow name"
-
-
-@pytest.mark.parametrize("client_auth_method", [
-    #    ClientAuthenticationMethod.BASIC,
-    ClientAuthenticationMethod.API_KEY,
-    ClientAuthenticationMethod.AUTHORIZATION_CODE,
-    ClientAuthenticationMethod.CLIENT_CREDENTIALS,
-    ClientAuthenticationMethod.REGISTRY_CODE_FLOW
-], indirect=True)
-def test_workflow_registration_same_workflow_by_different_users(app_client, client_auth_method,
-                                                                user1, user1_auth, user2, user2_auth,
-                                                                client_credentials_registry):
-    original_workflow = utils.pick_workflow(user1, name='sort-and-change-case')
-    assert len(models.Workflow.all()) == 0, "Unexpected number of workflows"
-    for user, user_auth in [(user1, user1_auth), (user2, user2_auth)]:
-        workflow = original_workflow.copy()
-        logger.debug("Selected workflow: %r", workflow)
-        logger.debug("User: %r", user)
-        logger.debug("headers: %r", user_auth)
-        logger.debug("Using oauth2 user: %r", user)
-        # When the client is a registry and it uses the ClientCredentials auth flow,
-        # it must provide the submitter ID
-        if client_auth_method == ClientAuthenticationMethod.CLIENT_CREDENTIALS:
-            workflow['submitter_id'] = \
-                list(user1["user"].oauth_identity.values())[0].provider_user_id
-        elif client_auth_method in [ClientAuthenticationMethod.AUTHORIZATION_CODE, ClientAuthenticationMethod.API_KEY]:
-            workflow['registry'] = client_credentials_registry.uri
-        logger.debug("The BODY: %r", workflow)
-        response = app_client.post(utils.build_workflow_path(),
-                                   json=workflow, headers=user_auth)
-        logger.debug("The actual response: %r", response.data)
-        if user == user1:
-            utils.assert_status_code(201, response.status_code)
-            data = json.loads(response.data)
-            logger.debug("Response data: %r", data)
-            assert data['wf_uuid'] == workflow['uuid'] and data['wf_version'] == workflow['version'], \
-                "Response should be equal to the workflow UUID"
-        else:
-            utils.assert_status_code(409, response.status_code)
-
-
-@pytest.mark.parametrize("client_auth_method", [
-    #    ClientAuthenticationMethod.BASIC,
-    ClientAuthenticationMethod.API_KEY
-], indirect=True)
-def test_workflow_registration_generic_link(app_client, client_auth_method,
-                                            user1, user1_auth, client_credentials_registry, valid_workflow):
-    logger.debug("User: %r", user1)
-    logger.debug("headers: %r", user1_auth)
-
-    workflow = {
-        'uuid': str(uuid.uuid4()),
-        'version': '1',
-        'roc_link': "http://webserver:5000/download?file=ro-crate-galaxy-sortchangecase.crate.zip",
-        'name': 'Galaxy workflow from Generic Link',
-        'testing_service_type': 'jenkins',
-        'authorization': app_client.application.config['WEB_SERVER_AUTH_TOKEN']
-    }
-    logger.debug("Selected workflow: %r", workflow)
-    logger.debug("Using oauth2 user: %r", user1)
-    assert workflow['name'] is not None, "MMMMM"
-    logger.debug("The BODY: %r", workflow)
-    response = app_client.post(utils.build_workflow_path(),
-                               json=workflow, headers=user1_auth)
-
-    logger.debug("The actual response: %r", response.data)
-    utils.assert_status_code(201, response.status_code)
-    data = json.loads(response.data)
-    logger.debug("Response data: %r", data)
-    assert data['wf_uuid'] == workflow['uuid'] and data['wf_version'] == workflow['version'], \
-        "Response should be equal to the workflow UUID"
+    wf = utils.get_workflow_data(data['wf_uuid'])
+    assert wf, "Unable to load workflow data"
+    assert str(wf.uuid) == data['wf_uuid'], "Unexpected workflow uuid"
+    assert wf.latest_version.version == data['wf_version'], "Unexpected workflow uuid"
+    assert wf.name == body['name'], "Unexpected workflow name"
 
 
 @pytest.mark.parametrize("client_auth_method", [
@@ -448,7 +179,7 @@ def test_delete_workflows(app_client, client_auth_method, user1, user1_auth):
     assert len(workflows) > 0, "Unexpected number of workflows"
     for w in [x for x in user1['workflows'] if x['name'] in [_.name for _ in workflows]]:
         logger.debug("User1 Auth Headers: %r", user1_auth)
-        r = app_client.delete(utils.build_workflow_path(w), headers=user1_auth)
+        r = app_client.delete(utils.build_workflow_path(w, version_as_subpath=True), headers=user1_auth)
         logger.debug("Delete Response: %r", r.data)
         assert r.status_code == 204, f"Error when deleting the workflow {w}"
     assert len(WorkflowVersion.all()) == 0, "Unexpected number of workflow after delete"
@@ -491,7 +222,7 @@ def test_get_workflow_latest_version(app_client, client_auth_method, user1, user
     workflows = json.loads(response.data)
     logger.debug("Workflows: %r", workflows)
 
-    url = f"{utils.build_workflow_path()}/{workflow['uuid']}"
+    url = f"{utils.build_workflow_path()}/{workflow['uuid']}?previous_versions=true"
     logger.debug("URL: %r", url)
     response = app_client.get(url, headers=user1_auth)
     logger.debug(response)
@@ -511,7 +242,7 @@ def test_get_workflow_latest_version(app_client, client_auth_method, user1, user
     ClientAuthenticationMethod.CLIENT_CREDENTIALS,
     ClientAuthenticationMethod.REGISTRY_CODE_FLOW
 ], indirect=True)
-def test_get_workflow_version(app_client, client_auth_method, user1, user1_auth, valid_workflow):
+def test_get_workflow_versions(app_client, client_auth_method, user1, user1_auth, valid_workflow):
     workflow = utils.pick_workflow(user1, valid_workflow)
     wv1 = workflow.copy()
     wv2 = workflow.copy()
@@ -521,24 +252,20 @@ def test_get_workflow_version(app_client, client_auth_method, user1, user1_auth,
     utils.register_workflow(user1, wv1)
     utils.register_workflow(user1, wv2)
 
-    response = app_client.get(utils.build_workflow_path(), headers=user1_auth)
+    url = f"{utils.build_workflow_path()}/{workflow['uuid']}/versions"
+    logger.debug("URL: %r", url)
+    response = app_client.get(url, headers=user1_auth)
+    logger.debug(response)
     utils.assert_status_code(response.status_code, 200)
-    workflows = json.loads(response.data)
-    logger.debug("Workflows: %r", workflows)
+    data = json.loads(response.data)
+    logger.debug("Response data: %r", data)
 
-    # Check version 1 and 2
-    for v_id in (1, 2):
-        url = f"{utils.build_workflow_path()}/{workflow['uuid']}/{v_id}"
-        logger.debug("URL: %r", url)
-        response = app_client.get(url, headers=user1_auth)
-        logger.debug(response)
-        utils.assert_status_code(response.status_code, 200)
-        data = json.loads(response.data)
-        logger.debug("Response data: %r", data)
-        assert data['uuid'] == workflow['uuid'], "Unexpected workflow ID"
-        assert data['version']['version'] == f"{v_id}", "Unexpected workflow version number: it should the latest (=2)"
-        assert data['version']['is_latest'] is (v_id == 2), \
-            "It shouldn't be the latest version"
+    assert data['workflow']['uuid'] == workflow['uuid'], "Unexpected workflow ID"
+    assert 'versions' in data, "Unable to find versions field"
+    # Check versions
+    assert len(data['versions']) == 2, "Unexpected number of versions"
+    assert data['versions'][0]['is_latest'] is (data['versions'][0]['version'] == "2"), \
+        "It shouldn't be the latest version"
 
 
 @pytest.mark.parametrize("client_auth_method", [
@@ -550,13 +277,13 @@ def test_get_workflow_version(app_client, client_auth_method, user1, user1_auth,
 ], indirect=True)
 def test_get_workflow_status(app_client, client_auth_method, user1, user1_auth, valid_workflow):
     w, workflow = utils.pick_and_register_workflow(user1, valid_workflow)
-    response = app_client.get(f"{utils.build_workflow_path(w)}/status", headers=user1_auth)
+    response = app_client.get(f"{utils.build_workflow_path(w, subpath='status')}", headers=user1_auth)
     logger.debug(response)
     utils.assert_status_code(response.status_code, 200)
     data = json.loads(response.data)
     logger.debug("Response data: %r", data)
-    assert data['workflow']['uuid'] == w['uuid'], "Unexpected workflow ID"
-    assert data['workflow']['version']['version'] == w['version'], "Unexpected workflow version number: it should the latest (=2)"
+    assert data['uuid'] == w['uuid'], "Unexpected workflow ID"
+    assert data['version']['version'] == w['version'], "Unexpected workflow version number: it should the latest (=2)"
     assert "aggregate_test_status" in data, "Missing required aggregate_test_status"
     assert "latest_builds" in data, "Missing required latest_builds"
 
@@ -568,9 +295,9 @@ def test_get_workflow_status(app_client, client_auth_method, user1, user1_auth, 
     ClientAuthenticationMethod.CLIENT_CREDENTIALS,
     ClientAuthenticationMethod.REGISTRY_CODE_FLOW
 ], indirect=True)
-def test_get_workflow_suite(app_client, client_auth_method, user1, user1_auth, valid_workflow):
+def test_get_workflow_suites(app_client, client_auth_method, user1, user1_auth, valid_workflow):
     w, workflow = utils.pick_and_register_workflow(user1, valid_workflow)
-    response = app_client.get(f"{utils.build_workflow_path(w)}/suites", headers=user1_auth)
+    response = app_client.get(f"{utils.build_workflow_path(w, subpath='suites')}", headers=user1_auth)
     logger.debug(response)
     utils.assert_status_code(response.status_code, 200)
     data = json.loads(response.data)
@@ -580,5 +307,6 @@ def test_get_workflow_suite(app_client, client_auth_method, user1, user1_auth, v
     # redundant check: the validation is performed by the connexion framework
     suite = data['items'][0]
     assert suite['uuid'], "Invalid UUID"
-    assert "test_suite_metadata" in suite, "Missing required test_suite_metadata"
+    assert "roc_suite" in suite, "Missing required roc_suite"
+    assert "definition" in suite, "Missing required definition"
     assert "instances" in suite, "Missing required instances"

@@ -20,7 +20,7 @@
 
 from __future__ import annotations
 
-from lifemonitor.serializers import BaseSchema, ma
+from lifemonitor.serializers import BaseSchema, ResourceMetadataSchema, ListOfItems, ma
 from marshmallow import fields
 
 from . import models
@@ -50,7 +50,7 @@ class IdentitySchema(BaseSchema):
     provider = fields.Nested(ProviderSchema())
 
 
-class UserSchema(BaseSchema):
+class UserSchema(ResourceMetadataSchema):
     __envelope__ = {"single": None, "many": "items"}
     __model__ = models.User
 
@@ -63,3 +63,7 @@ class UserSchema(BaseSchema):
     identities = fields.Dict(attribute="current_identity",
                              keys=fields.String(),
                              values=fields.Nested(IdentitySchema()))
+
+
+class ListOfUsers(ListOfItems):
+    __item_scheme__ = UserSchema

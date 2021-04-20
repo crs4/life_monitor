@@ -3,95 +3,45 @@
 openapi: "3.0.0"
 
 info:
-  version: "0.2.0-beta1"
+  version: "0.2.0-beta2"
   title: "Life Monitor API"
-  description: "Workflow sustainability service"
+  description: |
+    *Workflow sustainability service*
+
+    Life Monitor aims to facilitate the sharing, execution and monitoring of
+    workflow tests over time, ensuring that deviations from the workflow's
+    correct operation are detected and communicated to the workflow authors so
+    that they might be solved, thus extending the useful life of the workflow.
+
+    Life Monitor is being developed as part of the [EOSC-Life project](https://www.eosc-life.eu/).
 
 servers:
   - url: /
     description: >
-      Version 0.2.0-beta1 of API.
+      Version 0.2.0-beta2 of API.
+
+tags:
+  - name: Registries
+    description: Operations related to workflow registries (e.g., WorkflowHub)
+  - name: Users
+    description: Operations related to users
+  - name: Workflows
+    description: Operations related to workflows
+  - name: Test Suites
+    description: Operations related to test suites
+  - name: Test Instances
+    description: Operations related to test instances
+  - name: Registry Client Operations
+    description: Operations reserved to registry clients
 
 paths:
-  /users:
-    get:
-      x-openapi-router-controller: lifemonitor.auth.controllers
-      operationId: "get_registry_users"
-      summary: "Get users of the current registry"
-      security:
-        - api_key: ["read"]
-        - oauth2: ["read"]
-      responses:
-        "200":
-          description: List of registry users
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ListOfUsers"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-
-  /users/{user_id}:
-    get:
-      x-openapi-router-controller: lifemonitor.auth.controllers
-      operationId: "get_registry_user"
-      summary: "Get a user of the current registry"
-      parameters:
-        - $ref: "#/components/parameters/user_id"
-      security:
-        - api_key: ["read"]
-        - oauth2: ["read"]
-      responses:
-        "200":
-          description: Get a registry user
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/User"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-
-  /users/current:
-    get:
-      x-openapi-router-controller: lifemonitor.auth.controllers
-      operationId: "show_current_user_profile"
-      summary: "Get the profile of the current logged user"
-      security:
-        - api_key: ["read"]
-        - oauth2: ["read"]
-      responses:
-        "200":
-          description: User profile info
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/User"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-
   /registries:
     get:
+      tags: ["Registries"]
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "workflow_registries_get"
-      summary: "Get all known workflow registries"
+      summary: "List registries"
+      description: "List all known workflow registries"
       responses:
         "200":
           description: List of workflow registries
@@ -110,21 +60,48 @@ paths:
 
   /registries/{registry_uuid}:
     get:
+      tags: ["Registries"]
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "workflow_registries_get_by_uuid"
-      summary: "Get the workflow registry with the specified uuid"
+      summary: "Get a registry"
+      description: "Get information about the specified workflow registry"
       parameters:
         - $ref: "#/components/parameters/registry_uuid"
-      security:
-        - api_key: ["read"]
-        - oauth2: ["read"]
       responses:
         "200":
-          description: Get a workflow registry by uuid
+          description: Workflow registry
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Registry"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /users/current:
+    get:
+      tags: ["Users"]
+      x-openapi-router-controller: lifemonitor.auth.controllers
+      operationId: "show_current_user_profile"
+      summary: Get the current user
+      description: |
+        Get information about the current (authenticated) user
+      security:
+        - apiKey: ["user.profile"]
+        - RegistryCodeFlow: ["user.profile"]
+        - AuthorizationCodeFlow: ["user.profile"]
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -136,15 +113,21 @@ paths:
 
   /registries/current:
     get:
+      tags: ["Registry Client Operations"]
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "workflow_registries_get_current"
-      summary: "Get the current workflow registry"
+      summary: "Get the current registry client"
+      description: |
+        Get information about the current workflow registry client
+
+        **Note:** only workflow registries interacting with LifeMonitor as
+        OAuth2 clients can use this endpoint.
       security:
-        - api_key: ["read"]
-        - oauth2: ["read"]
+        - RegistryClientCredentials: ["registry.info"]
+        - RegistryCodeFlow: ["registry.info"]
       responses:
         "200":
-          description: Current workflow registry
+          description: Current workflow registry client
           content:
             application/json:
               schema:
@@ -158,25 +141,87 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
-  /workflows:
-    post:
-      x-openapi-router-controller: lifemonitor.api.controllers
-      operationId: "workflows_post"
-      summary: "Register a workflow"
+  /registries/current/users:
+    get:
+      x-openapi-router-controller: lifemonitor.auth.controllers
+      operationId: "get_registry_users"
+      summary: "List users"
+      description: |
+        List all users of the current workflow registry client who have linked
+        their registry account to their LifeMonitor identity.
+
+        **Note:** only workflow registries interacting with LifeMonitor as
+        OAuth2 clients can use this endpoint.
+      tags: ["Registry Client Operations"]
       security:
-        - api_key: ["read", "write"]
-        - oauth2: ["read", "write"]
+        - RegistryClientCredentials: ["registry.user"]
+        - RegistryCodeFlow: ["registry.user"]
+      responses:
+        "200":
+          description: List of users.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListOfUsers"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /registries/current/workflows:
+    get:
+      tags: ["Registry Client Operations"]
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "registry_workflows_get"
+      summary: List workflows
+      description: |
+        List all workflows in the current registry that have been registered with LifeMonitor.
+
+        **Note:** only workflow registries interacting with LifeMonitor as
+        OAuth2 clients can use this endpoint.
+      security:
+        - RegistryClientCredentials: ["registry.workflow.read"]
+        - RegistryCodeFlow: ["registry.workflow.read"]
+      parameters:
+        - $ref: "#/components/parameters/wf_status"
+      responses:
+        "200":
+          description: List of workflows
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListOfWorkflow"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+    post:
+      tags: ["Registry Client Operations"]
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "registry_workflows_post"
+      summary: "Submit workflow"
+      description: |
+        Submit (a new version of) a workflow indexed by the current registry client.
+
+        **Note:** only workflow registries interacting with LifeMonitor as
+        OAuth2 clients can use this endpoint.
+      security:
+        - RegistryClientCredentials: ["registry.workflow.write"]
+        - RegistryCodeFlow: ["registry.workflow.write"]
       requestBody:
         required: true
         content:
           application/json:
             schema:
               oneOf:
-                - $ref: "#/components/schemas/RegistryWorkflowVersion"
                 - $ref: "#/components/schemas/GenericWorkflowVersion"
+                - $ref: "#/components/schemas/RegistryWorkflowVersion"
       responses:
         "201":
-          description: Workflow created
+          description: Workflow created by this operation
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -188,16 +233,196 @@ paths:
         "409":
           $ref: "#/components/responses/Conflict"
 
+  /registries/{registry_uuid}/workflows:
+    get:
+      tags: ["Registries"]
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "user_registry_workflows_get"
+      summary: List registry workflows
+      description: |
+        List workflows from the specified registry that have been submitted to
+        LifeMonitor by the current (authenticated) user.
+      security:
+        - apiKey: ["user.workflow.read"]
+        - AuthorizationCodeFlow: ["user.workflow.read"]
+      parameters:
+        - $ref: "#/components/parameters/registry_uuid"
+        - $ref: "#/components/parameters/wf_status"
+      responses:
+        "200":
+          description: List of workflows
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListOfWorkflow"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags: ["Registries"]
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "user_registry_workflows_post"
+      summary: "Submit registry workflow"
+      description: |
+        Submit (a new version of) a workflow indexed on the specified registry as the
+        current (authenticated) user
+      security:
+        - apiKey: ["user.workflow.write"]
+        - AuthorizationCodeFlow: ["user.workflow.write"]
+      parameters:
+        - $ref: "#/components/parameters/registry_uuid"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegistryWorkflowVersion"
+      responses:
+        "201":
+          description: Workflow created by this operation
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /users/{user_id}/workflows:
+    get:
+      tags: ["Registry Client Operations"]
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "registry_user_workflows_get"
+      summary: List workflows for a user
+      description: |
+        List registry workflows registered on LifeMonitor by the specified registry user.
+
+        **Note:** only workflow registries interacting with LifeMonitor as
+        OAuth2 clients can use this endpoint.
+      security:
+        - RegistryClientCredentials: ["registry.user.workflow.read"]
+      parameters:
+        - $ref: "#/components/parameters/user_id"
+        - $ref: "#/components/parameters/wf_status"
+      responses:
+        "200":
+          description: List of workflows
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListOfWorkflow"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags: ["Registry Client Operations"]
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "registry_user_workflows_post"
+      summary: "Submit workflow for a user"
+      description: |
+        Submit (a new version of) a workflow indexed by the current registry client for the specified registry user
+
+        **Note:** only workflow registries interacting with LifeMonitor as
+        OAuth2 clients can use this endpoint.
+      security:
+        - RegistryClientCredentials: ["registry.user.workflow.write"]
+      parameters:
+        - $ref: "#/components/parameters/user_id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: "#/components/schemas/GenericWorkflowVersion"
+                - $ref: "#/components/schemas/RegistryWorkflowVersion"
+      responses:
+        "201":
+          description: The workflow created by this operation
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /users/current/workflows:
+    get:
+      tags: ["Users"]
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "user_workflows_get"
+      summary: "List workflows for the current user"
+      description: |
+        List all workflows submitted by the current user
+      security:
+        - apiKey: ["user.workflow.read"]
+        - RegistryCodeFlow: ["user.workflow.read"]
+        - AuthorizationCodeFlow: ["user.workflow.read"]
+      parameters:
+        - $ref: "#/components/parameters/wf_status"
+      responses:
+        "200":
+          description: A list of Workflows
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListOfWorkflow"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+    post:
+      tags: ["Users"]
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "user_workflows_post"
+      summary: "Submit workflow as the current user"
+      description: |
+        Submit (a new version of) a workflow.
+      security:
+        - apiKey: ["user.workflow.write"]
+        - AuthorizationCodeFlow: ["user.workflow.write"]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenericWorkflowVersion"
+      responses:
+        "201":
+          description: The workflow created by this operation
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /workflows:
     get:
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "workflows_get"
-      summary: "Get all known workflows"
+      summary: "List workflows"
+      tags: ["Workflows"]
+      description: |
+        List all registered workflows for the current (authenticated) user or registry client.
       security:
-        - api_key: ["read"]
-        - oauth2: ["read"]
+        - apiKey: ["workflow.read"]
+        - RegistryClientCredentials: ["workflow.read"]
+        - RegistryCodeFlow: ["workflow.read"]
+        - AuthorizationCodeFlow: ["workflow.read"]
+      parameters:
+        - $ref: "#/components/parameters/wf_status"
       responses:
         "200":
-          description: A JSON array of Workflow objects
+          description: List of Workflows
           content:
             application/json:
               schema:
@@ -207,28 +432,87 @@ paths:
 
   /workflows/{wf_uuid}:
     get:
-      summary: "Get information about latest version of specified workflow"
+      summary: Get a workflow
+      description: "Get information about the specified workflow"
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "workflows_get_latest_version_by_id"
+      tags: ["Workflows"]
       security:
-        - api_key: ["read"]
-        - oauth2: ["read"]
+        - apiKey: ["workflow.read"]
+        - AuthorizationCodeFlow: ["workflow.read"]
+        - RegistryClientCredentials: ["workflow.read"]
+        - RegistryCodeFlow: ["workflow.read"]
       parameters:
         - $ref: "#/components/parameters/wf_uuid"
+        - $ref: "#/components/parameters/previous_versions"
+        - $ref: "#/components/parameters/rocrate_specs"
       responses:
         "200":
           description: >
             A Workflow object for the latest version of the specified workflow
             and extended with the list of previous versions that are registered.
-            Information about the previous versions can be retrieved through the
-            `/workflows/{wf_uuid}/{wf_version}` resource.
+            Information about the previous versions can also be retrieved through the
+            `/workflows/{wf_uuid}/versions` resource.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowDetails"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /workflows/{wf_uuid}/versions:
+    get:
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "workflows_get_versions_by_id"
+      summary: "List workflow versions"
+      description: "List all versions of the specified workflow"
+      tags: ["Workflows"]
+      security:
+        - apiKey: ["workflow.read"]
+        - RegistryClientCredentials: ["workflow.read"]
+        - RegistryCodeFlow: ["workflow.read"]
+        - AuthorizationCodeFlow: ["workflow.read"]
+      parameters:
+        - $ref: "#/components/parameters/wf_uuid"
+      responses:
+        "200":
+          description: A WorkflowVersion object
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/WorkflowVersionDetails"
-                    required:
-                      - previous_versions
+                  - type: object
+                    properties:
+                      versions:
+                        readOnly: true
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/WorkflowVersion"
+                        example:
+                          [
+                            {
+                              uuid: "21ac72ec-b9a5-49e0-b5a6-1322b8b54552",
+                              version: "1.0",
+                              ro_crate:
+                                {
+                                  links:
+                                    {
+                                      external: "https://dev.workflowhub.eu/workflows/142/content_blobs/240/download",
+                                      download: "https://api.lifemonitor.eu/ro_crates/10/download",
+                                    },
+                                },
+                              is_latest: false,
+                              submitter: { id: 501, username: "lm" },
+                            },
+                          ]
+                      workflow:
+                        $ref: "#/components/schemas/Workflow"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -238,39 +522,13 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
-  /workflows/{wf_uuid}/{wf_version}:
-    get:
-      x-openapi-router-controller: lifemonitor.api.controllers
-      operationId: "workflows_get_by_id"
-      summary: "Get information about the specified version of the specified workflow"
-      security:
-        - api_key: ["read"]
-        - oauth2: ["read"]
-      parameters:
-        - $ref: "#/components/parameters/wf_uuid"
-        - $ref: "#/components/parameters/wf_version"
-      responses:
-        "200":
-          description: A Workflow object
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/WorkflowVersionDetails"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-
+  /workflows/{wf_uuid}/versions/{wf_version}:
     # put:
     #   x-openapi-router-controller: lifemonitor.api.controllers
     #   operationId: "workflows_put"
     #   summary: "Modify an existing workflow"
     #   security:
-    #     - api_key: ["read", "write"]
+    #     - apiKey: ["read", "write"]
     #     - oauth2: ["read", "write"]
     #   parameters:
     #     - $ref: "#/components/parameters/wf_uuid"
@@ -298,10 +556,14 @@ paths:
     delete:
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "workflows_delete"
-      summary: "Delete a workflow"
+      summary: "Delete a workflow version"
+      description: "Delete the specified version of the specified workflow"
+      tags: ["Workflows"]
       security:
-        - api_key: ["read", "write"]
-        - oauth2: ["read", "write"]
+        - apiKey: ["workflow.write"]
+        - RegistryClientCredentials: ["workflow.write"]
+        - RegistryCodeFlow: ["workflow.write"]
+        - AuthorizationCodeFlow: ["workflow.write"]
       parameters:
         - $ref: "#/components/parameters/wf_uuid"
         - $ref: "#/components/parameters/wf_version"
@@ -317,20 +579,24 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
-  /workflows/{wf_uuid}/{wf_version}/status:
+  /workflows/{wf_uuid}/status:
     get:
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "workflows_get_status"
-      summary: "Get test statuses for a given workflow and workflow version"
+      summary: "Get workflow test status"
+      description: "Get the test status for the specified workflow and workflow version"
+      tags: ["Workflows"]
       security:
-        - api_key: ["read"]
-        - oauth2: ["read"]
+        - apiKey: ["workflow.read"]
+        - RegistryClientCredentials: ["workflow.read"]
+        - RegistryCodeFlow: ["workflow.read"]
+        - AuthorizationCodeFlow: ["workflow.read"]
       parameters:
         - $ref: "#/components/parameters/wf_uuid"
-        - $ref: "#/components/parameters/wf_version"
+        - $ref: "#/components/parameters/version"
       responses:
         "200":
-          description: Test status for the specified workflow and version
+          description: Test status for the specified version of the workflow
           content:
             application/json:
               schema:
@@ -344,24 +610,27 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
-  /workflows/{wf_uuid}/{wf_version}/suites:
+  /workflows/{wf_uuid}/suites:
     get:
-      summary: "Get the test suites associated with the specified workflow and version"
+      summary: "List workflow test suites"
+      description: >
+        List all test suites associated with the specified workflow. Test suites
+        are collected from the RO-crate received with the submission of (a new
+        version of) a workflow.
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "workflows_get_suites"
+      tags: ["Workflows"]
       security:
-        - api_key: ["read"]
-        - oauth2: ["read"]
-      description: >
-        Get collection of test suites associated with workflow.  Test suites
-        are collected from the RO-crate received with the creation of a new
-        version of a workflow.
+        - apiKey: ["workflow.read"]
+        - RegistryClientCredentials: ["workflow.read"]
+        - RegistryCodeFlow: ["workflow.read"]
+        - AuthorizationCodeFlow: ["workflow.read"]
       parameters:
         - $ref: "#/components/parameters/wf_uuid"
-        - $ref: "#/components/parameters/wf_version"
+        - $ref: "#/components/parameters/version"
       responses:
         "200":
-          description: List of TestSuites associated with the specified workflow version
+          description: List of test suites associated with the specified workflow and workflow version
           content:
             application/json:
               schema:
@@ -377,12 +646,16 @@ paths:
 
   /suites/{suite_uuid}:
     get:
-      summary: "Get info about a single test suite"
+      summary: "Get a test suite"
+      description: "Get information about the specified test suite."
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "suites_get_by_uuid"
+      tags: ["Test Suites"]
       security:
-        - api_key: ["read"]
-        - oauth2: ["read"]
+        - apiKey: ["workflow.read"]
+        - RegistryClientCredentials: ["workflow.read"]
+        - RegistryCodeFlow: ["workflow.read"]
+        - AuthorizationCodeFlow: ["workflow.read"]
       parameters:
         - $ref: "#/components/parameters/suite_uuid"
       responses:
@@ -401,38 +674,18 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
-    # delete:
-    #   x-openapi-router-controller: lifemonitor.api.controllers
-    #   operationId: "suites_delete"
-    #   summary: "Delete a test suite"
-    #   security:
-    #     - api_key: ["read", "write"]
-    #     - oauth2: ["read", "write"]
-    #   parameters:
-    #     - $ref: "#/components/parameters/suite_uuid"
-    #   responses:
-    #     "204":
-    #       description: Deleted
-    #     "400":
-    #       $ref: "#/components/responses/BadRequest"
-    #     "401":
-    #       $ref: "#/components/responses/Unauthorized"
-    #     "403":
-    #       $ref: "#/components/responses/Forbidden"
-    #     "404":
-    #       $ref: "#/components/responses/NotFound"
-    #     "501":
-    #       description: "Not implemented"
-
   /suites/{suite_uuid}/status:
     get:
-      summary: >
-        Get status of latest build for this test suite for each known instance
+      summary: "Get test suite status"
+      description: "Get the status of the latest build for each instance of the specified test suite"
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "suites_get_status"
+      tags: ["Test Suites"]
       security:
-        - api_key: ["read"]
-        - oauth2: ["read"]
+        - apiKey: ["workflow.read"]
+        - RegistryClientCredentials: ["workflow.read"]
+        - RegistryCodeFlow: ["workflow.read"]
+        - AuthorizationCodeFlow: ["workflow.read"]
       parameters:
         - $ref: "#/components/parameters/suite_uuid"
       responses:
@@ -449,12 +702,16 @@ paths:
 
   /suites/{suite_uuid}/instances:
     get:
-      summary: "Get all instances of this suite present on testing services"
+      summary: "List test instances for a suite"
+      description: "List all instances of the specified test suite"
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "suites_get_instances"
+      tags: ["Test Suites"]
       security:
-        - api_key: ["read"]
-        - oauth2: ["read"]
+        - apiKey: ["workflow.read"]
+        - RegistryClientCredentials: ["workflow.read"]
+        - RegistryCodeFlow: ["workflow.read"]
+        - AuthorizationCodeFlow: ["workflow.read"]
       parameters:
         - $ref: "#/components/parameters/suite_uuid"
       responses:
@@ -474,23 +731,24 @@ paths:
           $ref: "#/components/responses/NotFound"
 
     post:
-      summary: "Register or add an instance that executes this test suite"
+      summary: "Submit a test instance for a suite"
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "suites_post_instance"
+      tags: ["Test Suites"]
       security:
-        - api_key: ["read", "write"]
-        - oauth2: ["read", "write"]
+        - apiKey: ["workflow.write"]
+        - RegistryClientCredentials: ["workflow.write"]
+        - RegistryCodeFlow: ["workflow.write"]
+        - AuthorizationCodeFlow: ["workflow.write"]
       description: |
-        POSTing this resource results in the creation of a new test suite
-        instance.  That is, a specific test suite hosted and executed on a
-        specific testing service.
+        Submit a new test instance for the specified test suite.
 
-        Two types of test instances can be created:  managed and unmanaged.
-        A *managed* test instance is managed by LifeMonitor on its
-        own testing infrastructure (not supported yet).
-        An *unmanaged* test instance is hosted on an external testing service
-        and LifeMonitor can only monitor it (query information about test
-        results through the service's API).
+        There are two main types of test instances:
+
+        1. **"managed"** (not supported yet): directly managed by LifeMonitor
+        2. **"unmanaged"**: hosted on an external testing service and monitored
+        by LifeMonitor (LifeMonitor retrieves information on the test status
+        through the service's API).
       parameters:
         - $ref: "#/components/parameters/suite_uuid"
       requestBody:
@@ -498,18 +756,21 @@ paths:
         content:
           application/json:
             schema:
-              allOf:
-                - properties:
-                    managed:
-                      type: boolean
-                  required:
-                    - managed
-                - anyOf:
-                    - $ref: "#/components/schemas/TestInstance"
-                    - $ref: "#/components/schemas/ManagedTestInstanceCreationData"
+              $ref: "#/components/schemas/TestInstance"
+              # at the moment we can distiguish between managed and unmanaged
+              # through the "managed" property.
+              #
+              # oneOf:
+              #   - $ref: "#/components/schemas/TestInstance"
+              #   - $ref: "#/components/schemas/ManagedTestInstanceCreationData"
+              # discriminator:
+              #   propertyName: discriminatorProperty
+              #   mapping:
+              #     valueA: "#/components/schemas/TestInstance"
+              #     valueB: "#/components/schemas/ManagedTestInstanceCreationData"
       responses:
         "201":
-          description: Instance created
+          description: Instance created by this operation
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -523,18 +784,21 @@ paths:
 
   /instances/{instance_uuid}:
     get:
-      summary: >
-        Get summary of a test instance
+      summary: "Get a test instance"
+      description: "Get information about the specified test instance"
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "instances_get_by_id"
+      tags: ["Test Instances"]
       security:
-        - api_key: ["read"]
-        - oauth2: ["read"]
+        - apiKey: ["workflow.read"]
+        - RegistryClientCredentials: ["workflow.read"]
+        - RegistryCodeFlow: ["workflow.read"]
+        - AuthorizationCodeFlow: ["workflow.read"]
       parameters:
         - $ref: "#/components/parameters/instance_uuid"
       responses:
         "200":
-          description: "Build summary list"
+          description: "A test instance object"
           content:
             application/json:
               schema:
@@ -548,21 +812,49 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+    delete:
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "instances_delete_by_id"
+      summary: "Delete a test instance"
+      description: "Delete the specified test instance"
+      tags: ["Test Instances"]
+      security:
+        - apiKey: ["workflow.write"]
+        - RegistryClientCredentials: ["workflow.write"]
+        - RegistryCodeFlow: ["workflow.write"]
+        - AuthorizationCodeFlow: ["workflow.write"]
+      parameters:
+        - $ref: "#/components/parameters/instance_uuid"
+      responses:
+        "204":
+          description: Deleted
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   /instances/{instance_uuid}/latest-builds:
     get:
-      summary: >
-        Get summaries of latest builds on the specified instance
+      summary: "Get the latest test instance builds"
+      description: "Get information on the latest builds for the specified test instance"
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "instances_get_builds"
+      tags: ["Test Instances"]
       security:
-        - api_key: ["read"]
-        - oauth2: ["read"]
+        - apiKey: ["workflow.read"]
+        - RegistryClientCredentials: ["workflow.read"]
+        - RegistryCodeFlow: ["workflow.read"]
+        - AuthorizationCodeFlow: ["workflow.read"]
       parameters:
         - $ref: "#/components/parameters/instance_uuid"
         - $ref: "#/components/parameters/limit"
       responses:
         "200":
-          description: "Build summary list"
+          description: "A list of test instance objects"
           content:
             application/json:
               schema:
@@ -578,18 +870,22 @@ paths:
 
   /instances/{instance_uuid}/builds/{build_id}:
     get:
-      summary: "Get summary of the specified build on the specified instance"
+      summary: "Get a test instance build"
+      description: "Get information on the specified build on the specified test instance"
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "instances_builds_get_by_id"
+      tags: ["Test Instances"]
       security:
-        - api_key: ["read"]
-        - oauth2: ["read"]
+        - apiKey: ["workflow.read"]
+        - RegistryClientCredentials: ["workflow.read"]
+        - RegistryCodeFlow: ["workflow.read"]
+        - AuthorizationCodeFlow: ["workflow.read"]
       parameters:
         - $ref: "#/components/parameters/instance_uuid"
         - $ref: "#/components/parameters/build_id"
       responses:
         "200":
-          description: "Log data"
+          description: "A build summary object"
           content:
             application/json:
               schema:
@@ -605,12 +901,16 @@ paths:
 
   /instances/{instance_uuid}/builds/{build_id}/logs:
     get:
-      summary: "Get the build logs for the specified build and instance"
+      summary: "Get test instance build logs"
+      description: "Get the build logs for the specified test instance and build"
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "instances_builds_get_logs"
+      tags: ["Test Instances"]
       security:
-        - api_key: ["read"]
-        - oauth2: ["read"]
+        - apiKey: ["workflow.read"]
+        - RegistryClientCredentials: ["workflow.read"]
+        - RegistryCodeFlow: ["workflow.read"]
+        - AuthorizationCodeFlow: ["workflow.read"]
       parameters:
         - $ref: "#/components/parameters/instance_uuid"
         - $ref: "#/components/parameters/build_id"
@@ -623,6 +923,12 @@ paths:
             application/json:
               schema:
                 type: string
+                description: |
+                  Log messages from the test build
+                example: |
+                  [15/April/2021:13:55:36 -0700] "GET /workflow.cwl HTTP/1.0" 200 2326
+                  [15/April/2021:13:55:36 -0700] "GET /workflow.cwl HTTP/1.0" 200 2326
+                  [15/April/2021:13:55:36 -0700] "GET /workflow.cwl HTTP/1.0" 200 2326
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -636,46 +942,88 @@ components:
   parameters:
     registry_uuid:
       name: "registry_uuid"
-      description: "Workflow Registry's Unique identifier"
+      description: |
+        Universal unique identifier of the workflow registry.
+
+        (provided by the endpoint [`[GET] /registries`](#get-/registries))
       in: path
       schema:
         type: string
       required: true
+      example: aa16c6a9-571f-4a62-976f-60ea514ad2c1
     user_id:
       name: "user_id"
-      description: "User's Unique identifier"
+      description: "Registry user's identifier"
       in: path
       schema:
-        type: integer
+        type: string
       required: true
+      example: 501
     wf_uuid:
       name: "wf_uuid"
-      description: "Workflow's Unique identifier"
+      description: "Universal unique identifier of the workflow"
       in: path
       schema:
         type: string
       required: true
+      example: 123e4567-e89b-12d3-a456-426614174000
     wf_version:
       name: "wf_version"
-      description: "Workflow's version"
+      description: "Workflow version"
       in: path
       schema:
         type: string
       required: true
+      example: "1.0"
+    wf_status:
+      name: "status"
+      in: query
+      schema:
+        type: boolean
+      description: |
+        `true` to include a summary of the workflow status
+      example: "false"
+    version:
+      name: "version"
+      in: query
+      schema:
+        type: string
+        default: latest
+      description: "Workflow version"
+      example: "1.0"
+    previous_versions:
+      name: "previous_versions"
+      in: query
+      schema:
+        type: boolean
+        default: false
+      description: "`true` to include all versions of a workflow"
+      example: "true"
+    rocrate_specs:
+      name: "ro_crate"
+      in: query
+      schema:
+        type: boolean
+        default: false
+      description: |
+        `true` to include the RO-Crate metadata of the workflow
+      example: "false"
     suite_uuid:
       name: "suite_uuid"
-      description: "TestSuite's Unique identifier"
+      description: "Universal unique identifier of the test suite"
       in: path
       schema:
         type: string
       required: true
+      example: e3208b02-69b6-4e32-a3dc-b93967d30e2c
     instance_uuid:
       name: "instance_uuid"
-      description: "Test service Instance Unique identifier"
+      description: "Universal unique identifier of the test instance"
       in: path
       schema:
         type: string
       required: true
+      example: ba5bbdc3-d9fb-4381-a1d8-96a8ac5594d7
     build_id:
       name: "build_id"
       description: "Build identifier"
@@ -683,6 +1031,7 @@ components:
       schema:
         type: string
       required: true
+      example: 167444
     limit:
       name: "limit"
       in: query
@@ -751,16 +1100,38 @@ components:
         id:
           type: integer
           description: An identifier for the user, unique among all LifeMonitor accounts and never reused
+          example: 501
         username:
           type: string
-          description: The user's username, unique among all LifeMonitor accounts
-        identities:
-          nullable: true
-          type: object
-          additionalProperties:
-            $ref: "#/components/schemas/UserIdentity"
+          description: The user's login name, unique among all LifeMonitor accounts
+          example: lm
       required:
         - id
+        - username
+
+    UserProfile:
+      allOf:
+        - $ref: "#/components/schemas/User"
+        - type: object
+          properties:
+            identities:
+              type: object
+              description: |
+                A dict of `<provider_name>:<UserIdentity>` items.
+              additionalProperties:
+                $ref: "#/components/schemas/UserIdentity"
+              example:
+                "seek":
+                  {
+                    "sub": 1,
+                    "username": "lm",
+                    "provider":
+                      {
+                        "type": "seek",
+                        "name": "workflowhub",
+                        "uri": "https://workflowhub.eu/",
+                      },
+                  }
 
     UserIdentity:
       type: object
@@ -768,19 +1139,28 @@ components:
       properties:
         sub:
           type: string
-          description: An identifier for the user, unique among all provider accounts and never reused        
+          description: An identifier for the user, unique among all provider accounts and never reused
+          example: 1
         username:
           type: string
           nullable: true
+          description: "User's login name"
+          example: jdoe
         name:
           type: string
           nullable: true
+          description: "User's first and family name, if available"
+          example: "John Doe"
         email:
           type: string
           nullable: true
+          description: "User's email"
+          example: jdoe@example.com
         picture:
           type: string
           nullable: true
+          description: "User's picture (URI)"
+          example: http://example.com/some_picture.jpg
         profile:
           type: string
           nullable: true
@@ -790,15 +1170,32 @@ components:
         - sub
         - provider
 
+    IdentityProviderType:
+      type: string
+      enum:
+        - "registry"
+        - "oauth2_identity_provider"
+
     IdentityProvider:
       type: object
       properties:
         type:
           type: string
+          $ref: "#/components/schemas/IdentityProviderType"
+          description: Type of identity provider
+          example: registry
         name:
           type: string
+          description: |
+            The name assigned to the identity provider when registered on LifeMonitor
+          example: workflowhub
         uri:
           type: string
+          description: The URI of the identity provider
+          example: https://workflowhub.eu/
+        userinfo_endpoint:
+          type: string
+          description: URI of the API endpoint to get the user profile from the identity provider
       required:
         - name
         - type
@@ -814,15 +1211,33 @@ components:
       required:
         - items
 
+    RegistryType:
+      type: string
+      description: "Supported registry types"
+      enum:
+        - "seek"
+
     Registry:
       type: object
+      description: Workflow registry
       properties:
         uuid:
           type: string
+          description: Universal unique identifier of the workflow registry
+          example: aa16c6a9-571f-4a62-976f-60ea514ad2c1
         name:
           type: string
+          description: |
+            An alphanumeric string used to denote the registry.
+            Only `_` and `-` are allowed, no spaces or other special characters.
+          example: workflowhub_dev
+        type:
+          description: "Registry type"
+          $ref: "#/components/schemas/RegistryType"
         uri:
           type: string
+          description: The URI of the registry
+          example: https://dev.workflowhub.eu/
       required:
         - uuid
         - name
@@ -840,147 +1255,255 @@ components:
 
     Timestamp:
       type: string
+      example: 1616427012.0
 
-    ROCrate:
+    ROCrateBase:
       type: object
+      description: Info about the workflow RO-Crate used to register the workflow on LifeMonitor
       properties:
         links:
           type: object
           properties:
             external:
               type: string
+              description: |
+                The link to the workflow RO-Crate used to register the workflow on LifeMonitor
+              example: "https://dev.workflowhub.eu/workflows/152/content_blobs/240/download"
             download:
               type: string
+              description: |
+                A link to download the workflow RO-Crate used to register the workflow on LifeMonitor
+              example: https://api.lifemonitor.eu/ro_crates/11/download
 
-    Workflow:
+    ROCrate:
       type: object
-      properties:
-        uuid:
-          type: string
-        identifier:
-          type: string
-        name:
-          type: string
-          nullable: true
-      required:
-        - uuid
+      description: Info about the workflow RO-Crate used to register the workflow on LifeMonitor
+      allOf:
+        - properties:
+            metadata:
+              $ref: "#/components/schemas/WorkflowTestingROCrate"
+        - $ref: "#/components/schemas/ROCrateBase"
 
-    GenericWorkflowVersion:
+    WorkflowBase:
       type: object
       description: Generic workflow
       properties:
-        version:
-          type: string
-        uuid:
-          type: string
         name:
           type: string
-        registry:
-          type: string
-          description: "An identifier of the workflow registry (i.e., name, uri or uuid)"
-          nullable: true
+          description: |
+            A name for the workflow. If not provided, the RO-Crate dataset name is used as default.
+          example: "COVID-19 Workflow"
         authorization:
           type: string
           nullable: true
-        roc_link:
-          type: string
-          description: "Link to the workflow RO-Crate"
-      required:
-        - roc_link
-        - version
+          writeOnly: true
+          description: |
+            An optional authorization header.
+
+            The `authorization` parameter might be required to download
+            the RO-Crate containing the workflow if it is not directly
+            accessible to the user for download
+            (e.g., `authorization: "ApiKey 1234567890"`).
+          example: "Bearer xxx__ZRBhqf9eeRasjqMw90pgEeMpTZ7__"
+
+    WorkflowVersionBase:
+      allOf:
+        - $ref: "#/components/schemas/WorkflowBase"
+        - type: object
+          description: Base workflow version
+          properties:
+            version:
+              type: string
+              description: A string identifying the workflow version (e.g., 1.0)
+              example: "1.0"
+              writeOnly: true
+          required:
+            - version
+
+    Workflow:
+      allOf:
+        - type: object
+          properties:
+            uuid:
+              type: string
+              description: |
+                Universal unique identifier of the workflow.
+                If not provided, it will be auto-generated by the system.
+              example: 123e4567-e89b-12d3-a456-426614174000
+          required:
+            - uuid
+        - $ref: "#/components/schemas/WorkflowBase"
+
+    GenericWorkflowVersion:
+      description: A generic workflow version
+      allOf:
+        - type: object
+          properties:
+            roc_link:
+              type: string
+              description: |
+                Link to the workflow RO-Crate
+              example: http://webserver:5000/download?file=ro-crate-galaxy-sortchangecase.crate.zip
+            uuid:
+              type: string
+              description: |
+                Universal unique identifier of the workflow.
+              example: 123e4567-e89b-12d3-a456-426614174000
+          required:
+            - uuid
+            - roc_link
+            - version
+        - $ref: "#/components/schemas/WorkflowVersionBase"
 
     RegistryWorkflowVersion:
+      description: A (version of a) workflow indexed by a registry.
+      allOf:
+        - type: object
+          properties:
+            identifier:
+              type: string
+              description: |
+                The identifier of the workflow on the registry
+              writeOnly: true
+              example: "15"
+          required:
+            - identifier
+        - $ref: "#/components/schemas/WorkflowVersionBase"
+      example:
+        { "identifier": "15", "name": "COVID-19 Workflow", "version": "1.0" }
+
+    WorkflowVersionMin:
       type: object
-      description: Registry workflow
       properties:
-        identifier:
+        uuid:
           type: string
+          description: |
+            An internal unique identifier for the workflow version.
+          example: 123e4567-e44b-12f3-a456-426614174123
+          readOnly: true
         version:
           type: string
-        name:
-          type: string
-          nullable: true
-        registry:
-          type: string
-          description: "An identifier of the workflow registry (i.e., name, uri or uuid)"
-          nullable: true
+          description: A string identifying the version of the workflow
+          example: "1.0"
         submitter_id:
           type: string
-          nullable: true
-        authorization:
-          type: string
-          nullable: true
+          writeOnly: true
+        ro_crate:
+          readOnly: true
+          $ref: "#/components/schemas/ROCrateBase"
       required:
-        - identifier
         - version
 
     WorkflowVersion:
       allOf:
-        - $ref: "#/components/schemas/Workflow"
+        - $ref: "#/components/schemas/WorkflowVersionMin"
         - type: object
           properties:
-            version:
-              type: string
-            submitter_id:
-              type: string
-              writeOnly: true
             ro_crate:
               readOnly: true
               $ref: "#/components/schemas/ROCrate"
             is_latest:
               type: boolean
               readOnly: true
+              description: |
+                `true` if the workflow version is the latest, 
+                `false` otherwise.
+              example: true
             submitter:
               $ref: "#/components/schemas/User"
               readOnly: true
+              nullable: true
+
+    WorkflowDetails:
+      allOf:
+        - $ref: "#/components/schemas/Workflow"
+          readOnly: true
+        - type: object
+          properties:
+            version:
+              $ref: "#/components/schemas/WorkflowVersion"
+              readOnly: true
+            previous_versions:
+              readOnly: true
+              type: array
+              items:
+                $ref: "#/components/schemas/WorkflowVersionMin"
+              example:
+                [
+                  {
+                    uuid: "21ac72ec-b9a5-49e0-b5a6-1322b8b54552",
+                    version: "0.1",
+                    ro_crate:
+                      {
+                        links:
+                          {
+                            external: "https://dev.workflowhub.eu/workflows/142/content_blobs/240/download",
+                            download: "https://api.lifemonitor.eu/ro_crates/10/download",
+                          },
+                      },
+                    submitter: { id: 501, username: "lm" },
+                  },
+                ]
+            registry:
+              $ref: "#/components/schemas/Registry"
+              readOnly: true
+              nullable: true
           required:
             - version
 
-    WorkflowVersionDetails:
+    ListOfWorkflow:
+      type: object
+      description: List of workflows
+      properties:
+        items:
+          type: array
+          items:
+            allOf:
+              - $ref: "#/components/schemas/Workflow"
+              - properties:
+                  status:
+                    type: object
+                    description: Summary of the workflow status
+                    properties:
+                      aggregate_test_status:
+                        $ref: "#/components/schemas/AggregateTestStatus"
+                      latest_build:
+                        description: "The most recent build on some test instance"
+                        $ref: "#/components/schemas/BuildSummary"
+                        nullable: true
+          required:
+            - items
+
+    WorkflowStatus:
       allOf:
         - $ref: "#/components/schemas/Workflow"
         - type: object
           properties:
             version:
               $ref: "#/components/schemas/WorkflowVersion"
-            previous_versions:
-              readOnly: true
+            aggregate_test_status:
+              $ref: "#/components/schemas/AggregateTestStatus"
+            latest_builds:
+              description: "Latest builds, one for each test instance"
               type: array
               items:
-                $ref: "#/components/schemas/WorkflowVersion"
+                $ref: "#/components/schemas/BuildSummary"
 
-    ListOfWorkflow:
-      type: object
-      properties:
-        items:
-          type: array
-          items:
-            $ref: "#/components/schemas/Workflow"
-      required:
-        - items
-
-    WorkflowStatus:
-      type: object
-      properties:
-        workflow:
-          type: object
+    WorkflowVersionStatus:
+      allOf:
+        - type: object
           properties:
-            uuid:
-              type: string
-            name:
-              type: string
             version:
               $ref: "#/components/schemas/WorkflowVersion"
-          required:
-            - uuid
-            - version
-        aggregate_test_status:
-          $ref: "#/components/schemas/AggregateTestStatus"
-        latest_builds:
-          description: "Latest builds, one for each test instance"
-          type: array
-          items:
-            $ref: "#/components/schemas/BuildSummary"
+            workflow:
+              $ref: "#/components/schemas/Workflow"
+            aggregate_test_status:
+              $ref: "#/components/schemas/AggregateTestStatus"
+            latest_builds:
+              description: "Latest builds, one for each test instance"
+              type: array
+              items:
+                $ref: "#/components/schemas/BuildSummary"
 
     AggregateTestStatus:
       type: string
@@ -990,21 +1513,53 @@ components:
         - "all_failing"
         - "not_available"
 
+    WorkflowTestingROCrate:
+      type: object
+      description: |
+        [Workflow Testing RO-Crate](https://github.com/crs4/life_monitor/wiki/Workflow-Testing-RO-Crate)
+        metadata
+      externalDocs:
+        description: Workflow RO-Crate Test
+        url: https://github.com/crs4/life_monitor/wiki/Workflow-Testing-RO-Crate
+
+    TestSuiteDefinition:
+      type: object
+      description: |
+        Test Suite metadata
+      properties:
+        test_engine:
+          type: object
+          description: |
+            Software application that runs workflow tests according to a definition.
+          properties:
+            type:
+              type: string
+              description: Type of the software engine (e.g., planemo, etc.)
+              example: planemo
+            version:
+              type: string
+              description: Version of the software engine
+              example: ">=0.70"
+
     TestSuite:
       type: object
       properties:
         uuid:
           type: string
-        test_suite_metadata:
-          type: object
-          description: "To be determined."
+          description: Universal unique identifier of the test suite
+          example: e3208b02-69b6-4e32-a3dc-b93967d30e2c
+        roc_suite:
+          type: string
+          description: RO-Crate identifier of the TestSuite
+          example: "#test1"
+        definition:
+          $ref: "#/components/schemas/TestSuiteDefinition"
         instances:
           type: array
           items:
             $ref: "#/components/schemas/TestInstance"
       required:
         - uuid
-        - test_suite_metadata
         - instances
 
     ListOfTestSuite:
@@ -1022,6 +1577,8 @@ components:
       properties:
         suite_uuid:
           type: string
+          description: Universal unique identifier of the test suite
+          example: e3208b02-69b6-4e32-a3dc-b93967d30e2c
         status:
           $ref: "#/components/schemas/AggregateTestStatus"
         latest_builds:
@@ -1047,17 +1604,27 @@ components:
       properties:
         build_id:
           type: string
+          description: |
+            An identifier for this build,
+            as provided by the testing service back-end
+          example: 167444
         suite_uuid:
           type: string
+          description: Universal unique identifier of the test suite
+          example: e3208b02-69b6-4e32-a3dc-b93967d30e2c
         status:
           $ref: "#/components/schemas/BuildStatus"
         instance:
           $ref: "#/components/schemas/TestInstance"
         timestamp:
-          $ref: "#/components/schemas/Timestamp"
+          type: string
+          description: |
+            A timestamp for the start time of the build
+          example: 1616427012.0
         last_logs:
           type: string
-          description: "Last few lines of build log, if available"
+          description: "Last lines of the build log, if available"
+          example: "[INFO] Workflow test passed"
       required:
         - build_id
         - suite_uuid
@@ -1079,15 +1646,23 @@ components:
       properties:
         build_id:
           type: string
+          description: |
+            An identifier for this build,
+            as provided by the testing service back-end
         suite_uuid:
           type: string
+          description: Universal unique identifier of the test suite
+          example: e3208b02-69b6-4e32-a3dc-b93967d30e2c
         status:
           $ref: "#/components/schemas/BuildStatus"
         instance:
           $ref: "#/components/schemas/TestInstance"
         timestamp:
           $ref: "#/components/schemas/Timestamp"
-          # other things to be added
+        duration:
+          type: integer
+          description: Build duration in ms
+          example: 2648
       required:
         - build_id
         - suite_uuid
@@ -1095,25 +1670,92 @@ components:
         - instance
         - timestamp
 
-    TestInstance:
+    TestingServiceType:
+      type: string
+      description: Supported testing service back-ends
+      enum:
+        - travis
+        - jenkins
+
+    TestingService:
       type: object
       properties:
-        name:
+        type:
+          description: The type of testing service
+          $ref: "#/components/schemas/TestingServiceType"
+          example: "travis"
+        url:
           type: string
-        service:
-          type: object
+          description: "The base URL of the testing service"
+          example: https://travis-ci.org/
+      required:
+        - type
+        - url
+
+    TestInstanceBase:
+      type: object
+      properties:
+        roc_instance:
+          type: string
+          description: |
+            RO-Crate identifier of the test instance if the instance comes 
+            from a Workflow RO-Crate
+          example: "#test1_1"
+          readOnly: true
+        managed:
+          type: boolean
+          description: |
+            `true` for **managed**;
+            `false` for **unmanaged**
+          example: false
+      required:
+        - managed
+
+    TestInstance:
+      description: "Test Instance"
+      allOf:
+        - type: object
           properties:
-            type:
+            uuid:
               type: string
-            url:
+              description: |
+                Universal unique identifier of the test instance
+              readOnly: true
+              example: ba5bbdc3-d9fb-4381-a1d8-96a8ac5594d7
+            name:
               type: string
+              description: |
+                The name assigned to the test instance
+              example: test_instance_1
+            service:
+              $ref: "#/components/schemas/TestingService"
             resource:
               type: string
+              description: |
+                The relative path of the test project on the testing service
+              example: github/seek4science/seek
           required:
-            - type
-            - url
-      required:
-        - service
+            - service
+            - resource
+        - $ref: "#/components/schemas/TestInstanceBase"
+      example:
+        {
+          "managed": false,
+          "name": "test_instance_1",
+          "service": { "type": "travis", "url": "https://travis-ci.org/" },
+          "resource": "github/seek4science/seek",
+        }
+
+    ManagedTestInstanceCreationData:
+      description: "Managed Test Instance"
+      allOf:
+        - type: object
+          description: |
+            Information to be provided for the creation of
+            a managed test instance.  At the moment it's empty.
+        - $ref: "#/components/schemas/TestInstanceBase"
+
+      example: { "managed": true, "name": "unmanaged_test_instance_1" }
 
     ListOfTestInstance:
       type: object
@@ -1124,12 +1766,6 @@ components:
             $ref: "#/components/schemas/TestInstance"
       required:
         - items
-
-    ManagedTestInstanceCreationData:
-      type: object
-      description: |
-        This object collects the information to be provided for the creation of
-        a managed test instance.  At the moment it's empty.
 
     Error:
       type: object
@@ -1175,27 +1811,82 @@ components:
         - status
 
   securitySchemes:
-    api_key:
+    apiKey:
       type: apiKey
       in: header
       name: ApiKey
       x-apikeyInfoFunc: lifemonitor.auth.services.check_api_key
-    oauth2:
+      description: |
+        Allows a **user** to interact with the LifeMonitor API. It acts as a
+        static authentication token and can be generated via the LifeMonitor
+        user interface after logging in. This authentication method can be
+        used to quickly try API calls via the API docs interface or tools like
+        `curl`.
+    RegistryClientCredentials:
       type: oauth2
       x-tokenInfoFunc: lifemonitor.auth.oauth2.server.services.get_token_scopes
+      description: |
+        Allows a **registry client** to directly interact with the LifeMonitor API.
+        The client can query which of its users and workflows have been registered
+        with the LifeMonitor service, register workflows
+        and query their status.
+      flows:
+        clientCredentials:
+          tokenUrl: "oauth2/token"
+          scopes:
+            registry.info: Get information about the current registry client
+            registry.user: Get information about users of the current registry
+            registry.workflow.read: Get information about registry workflows posted to LifeMonitor, including test suites and instances
+            registry.workflow.write: Post registry workflows to LifeMonitor, including test suites and instances
+            registry.user.workflow.read: Get information about registry user's workflows posted to LifeMonitor, including test suites and instances
+            registry.user.workflow.write: Post registry user's workflows to LifeMonitor, including test suites and instances
+            workflow.read: Get information about workflows posted to LifeMonitor, including test suites and instances
+            workflow.write: Post workflows to LifeMonitor, including test suites and instances
+            testingService.read: Get information about testing services
+            testingService.write: Register testing services
+
+    RegistryCodeFlow:
+      type: oauth2
+      x-tokenInfoFunc: lifemonitor.auth.oauth2.server.services.get_token_scopes
+      description: |
+        Allows a **registry client** to interact with the LifeMonitor API on behalf of a user.
+        For instance, the client can register
+        workflows belonging to the user and query their status.
       flows:
         authorizationCode:
-          tokenUrl: "/oauth2/token"
-          authorizationUrl: "/oauth2/authorize"
+          tokenUrl: "oauth2/token"
+          authorizationUrl: "oauth2/authorize"
           scopes:
-            read: Read data and metadata (including that of private resources)
-            write: Write data and metadata of private resources
-        clientCredentials:
-          tokenUrl: "/oauth2/token"
-          scopes:
-            read: Read data and metadata (including that of private resources)
-            write: Write data and metadata of private resources
+            user.profile: Get basic information about the current user profile
+            user.workflow.read: Get information about user's workflows posted to LifeMonitor, including test suites and instances
+            registry.info: Get information about the current registry client
+            registry.user: Get information about users of the current registry
+            registry.workflow.read: Get information about registry workflows posted to LifeMonitor, including test suites and instances
+            registry.workflow.write: Post registry workflows to LifeMonitor, including test suites and instances
+            registry.user.workflow.read: Get information about registry user's workflows posted to LifeMonitor, including test suites and instances
+            registry.user.workflow.write: Post registry user's workflows to LifeMonitor, including test suites and instances
+            workflow.read: Get information about workflows posted to LifeMonitor, including test suites and instances
+            workflow.write: Post workflows to LifeMonitor, including test suites and instances
+            testingService.read: Get information about testing services
+            testingService.write: Register testing services
 
-  examples:
-    test_metadata:
-      externalValue: "examples/test-metadata.json"
+    AuthorizationCodeFlow:
+      type: oauth2
+      x-tokenInfoFunc: lifemonitor.auth.oauth2.server.services.get_token_scopes
+      description: |
+        Allows an OAuth2 client to interact with LifeMonitor on behalf of a
+        **user**. This authentication method is appropriate for applications
+        that need to interact with LifeMonitor as a user.
+      flows:
+        authorizationCode:
+          tokenUrl: "oauth2/token"
+          authorizationUrl: "oauth2/authorize"
+          scopes:
+            registry.info: Get information about the current registry client
+            user.profile: Get basic information about the current user profile
+            user.workflow.read: Get information about user's workflows posted to LifeMonitor, including test suites and instances
+            user.workflow.write: Post user's workflows to LifeMonitor, including test suites and instances
+            workflow.read: Get information about workflows posted to LifeMonitor, including test suites and instances
+            workflow.write: Post workflows to LifeMonitor, including test suites and instances
+            testingService.read: Get information about testing services
+            testingService.write: Register testing services

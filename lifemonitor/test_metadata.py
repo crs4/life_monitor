@@ -180,48 +180,66 @@ def read_planemo(fname):
     return rval
 
 
-def get_old_format_tests(crate):
-    """\
-    Convert tests in the crate (defined as specified in
-    https://github.com/crs4/life_monitor/wiki/Workflow-Testing-RO-Crate) to
-    the old JSON format
-    (https://github.com/crs4/life_monitor/wiki/Test-Metadata-Draft-Spec),
-    which is still used in some JSON columns in the database.
+def get_roc_suites(crate):
+    """
+    Generate a DTO of test suites
+    extracted from a Workflow Test RO-Crate.
+    The result is a dict of the following form:
+
+        <ROC_SUITE_ID>: {
+            "roc_suite": <ROC_SUITE_ID>,
+            "name": ...,
+            "definition": {
+                "test_engine": {
+                    "type": t,
+                    "version": ...,
+                },
+                "path": ...,
+            },
+            "instances": [
+                {
+                    "roc_instance": <ROC_INSTANCE_ID>,
+                    "name": ...,
+                    "resource": ...,
+                    "service": {
+                        "type": ...,
+                        "url": ...,
+                    },
+                }
+            ]
+        }
     """
     if not crate.test_dir:
         return None
     about = crate.test_dir["about"]
     if not about:
         return None
-    rval = {
-        "tmpformat": "ro/workflow/test-metadata/0.1",
-        "@id": "test-metadata.json",
-        "test": [],
-    }
+    rval = {}
     for suite in about:
-        old_suite_json = {
+        suite_data = {
+            "roc_suite": suite.id,
             "name": suite.name,
         }
-        rval["test"].append(old_suite_json)
+        rval[suite.id] = suite_data
         instance = suite.instance
-        old_instance_json = []
-        old_suite_json["instance"] = old_instance_json
+        suite_data["instances"] = []
         if instance:
             for inst in suite.instance:
                 t = _TO_OLD_TYPES.get(inst.service.id, "unknown")
-                old_instance_json.append({
+                suite_data["instances"].append({
+                    "roc_instance": inst.id,
                     "name": inst.name,
+                    "resource": inst.resource,
                     "service": {
                         "type": t,
                         "url": inst.url,
-                        "resource": inst.resource,
                     },
                 })
         definition = suite.definition
         if definition:
             path = Path(definition.id).relative_to(crate.test_dir.id)
             t = _TO_OLD_TYPES.get(definition.conformsTo.id, "unknown")
-            old_suite_json["definition"] = {
+            suite_data["definition"] = {
                 "test_engine": {
                     "type": t,
                     "version": definition.engineVersion,
@@ -229,5 +247,5 @@ def get_old_format_tests(crate):
                 "path": str(path),
             }
         else:
-            old_suite_json["definition"] = {}
+            suite_data["definition"] = {}
     return rval

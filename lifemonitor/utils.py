@@ -18,6 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import functools
 import glob
 import json
 import logging
@@ -28,15 +29,15 @@ import string
 import tempfile
 import urllib
 import uuid
-import functools
 import zipfile
 from importlib import import_module
 from os.path import basename, dirname, isfile, join
 
 import flask
 import requests
+import yaml
 
-from .exceptions import NotAuthorizedException, NotValidROCrateException
+from . import exceptions as lm_exceptions
 
 logger = logging.getLogger()
 
@@ -93,7 +94,7 @@ def _download_from_remote(url, output_stream, authorization=None):
             session.headers['Authorization'] = authorization
         with session.get(url, stream=True) as r:
             if r.status_code == 401 or r.status_code == 403:
-                raise NotAuthorizedException(details=r.content)
+                raise lm_exceptions.NotAuthorizedException(details=r.content)
             r.raise_for_status()
             for chunk in r.iter_content(chunk_size=8192):
                 output_stream.write(chunk)
@@ -121,7 +122,7 @@ def extract_zip(archive_path, target_path=None):
             zip_ref.extractall(target_path)
         return target_path
     except Exception as e:
-        raise NotValidROCrateException(e)
+        raise lm_exceptions.NotValidROCrateException(e)
 
 
 def load_test_definition_filename(filename):
@@ -160,6 +161,91 @@ def next_route_aware(func):
         NextRouteRegistry.save()
         return func(*args, **kwargs)
     return decorated_view
+
+
+class OpenApiSpecs(object):
+
+    __instance = None
+    _specs = None
+
+    def __init__(self):
+        if self.__instance:
+            raise RuntimeError("OpenApiSpecs instance already exists!")
+        self.__instance = self
+
+    @classmethod
+    def get_instance(cls):
+        if not cls.__instance:
+            cls.__instance = cls()
+        return cls.__instance
+
+    @staticmethod
+    def load():
+        with open('./specs/api.yaml') as file:
+            return yaml.load(file, Loader=yaml.FullLoader)
+
+    @property
+    def specs(self):
+        if not self._specs:
+            self._specs = self.load()
+        return self._specs.copy()
+
+    @property
+    def info(self):
+        return self.specs['info']
+
+    @property
+    def version(self):
+        return self.specs['info']['version']
+
+    @property
+    def components(self):
+        return self.specs['components']
+
+    @property
+    def securitySchemes(self):
+        return self.specs["components"]["securitySchemes"]
+
+    def getSecuritySchemeScopes(self, securityScheme):
+        try:
+            scopes = {}
+            scheme = self.securitySchemes[securityScheme]
+            if "flows" in scheme:
+                for flow in scheme['flows']:
+                    scopes.update({s: d for s, d in scheme['flows'][flow]['scopes'].items()})
+            return scopes
+        except KeyError:
+            raise ValueError("Invalid security scheme")
+
+    @property
+    def apikey_scopes(self):
+        skip = ["registry.workflow.read", "registry.workflow.write", "registry.user.workflow.read", "registry.user.workflow.write"]
+        return {k: v for k, v in self.all_scopes.items() if k not in skip}
+
+    @property
+    def registry_scopes(self):
+        scopes = self.registry_client_scopes
+        scopes.update(self.registry_code_flow_scopes)
+        return scopes
+
+    @property
+    def registry_client_scopes(self):
+        return self.getSecuritySchemeScopes('RegistryClientCredentials')
+
+    @property
+    def registry_code_flow_scopes(self):
+        return self.getSecuritySchemeScopes('RegistryCodeFlow')
+
+    @property
+    def authorization_code_scopes(self):
+        return self.getSecuritySchemeScopes('AuthorizationCodeFlow')
+
+    @property
+    def all_scopes(self):
+        scopes = {}
+        for scheme in self.securitySchemes:
+            scopes.update(self.getSecuritySchemeScopes(scheme))
+        return scopes
 
 
 class NextRouteRegistry(object):

@@ -18,7 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import json
+
 import logging
 import os
 import random
@@ -231,9 +231,71 @@ def valid_workflow(request):
 
 
 @pytest.fixture
+def random_valid_workflow():
+    return helpers.get_valid_workflow()
+
+
+@pytest.fixture
+def generic_workflow(app_client):
+    return {
+        'uuid': str(uuid.uuid4()),
+        'version': '1',
+        'roc_link': "http://webserver:5000/download?file=ro-crate-galaxy-sortchangecase.crate.zip",
+        'name': 'Galaxy workflow from Generic Link',
+        'testing_service_type': 'jenkins',
+        'authorization': app_client.application.config['WEB_SERVER_AUTH_TOKEN']
+    }
+
+
+@pytest.fixture
+def unmanaged_test_instance(app_client):
+    return {
+        "managed": False,
+        "name": "test_instance",
+        "service": {
+            "type": "travis",
+            "url": "https://travis-ci.org/"
+        },
+        "resource": "github/crs4/pydoop"
+    }
+
+
+@pytest.fixture
+def managed_test_instance(app_client):
+    return {
+        "managed": True,
+        "name": "test_instance",
+        "service": {
+            "type": "travis",
+            "url": "https://travis-ci.org/"
+        },
+        "resource": "github/crs4/pydoop"
+    }
+
+
+@pytest.fixture
 def test_suite_metadata():
-    with open(os.path.join(base_path, "config/data/test-metadata/test-metadata.json")) as df:
-        return json.load(df)
+    return {
+        'roc_suite': '#test1',
+        'name': 'test1',
+        'instances': [
+                {
+                    'roc_instance': '#test1_1',
+                    'name': 'test1_1',
+                    'resource': 'job/test/',
+                    'service': {
+                        'type': 'jenkins',
+                        'url': 'http://jenkins:8080/'}
+                }
+        ],
+        'definition': {
+            'test_engine': {
+                'type': 'planemo',
+                'version': '>=0.70'
+            },
+            'path': 'test1/sort-and-change-case-test.yml'
+        }
+    }
 
 
 @pytest.fixture

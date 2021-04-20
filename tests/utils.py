@@ -34,9 +34,14 @@ _INSTANCES_ENDPOINT = '/instances'
 
 
 def build_users_path(user_id=None):
+    return f"{_USERS_ENDPOINT}/{user_id}"
+
+
+def build_registry_users_path(user_id=None):
+    base = f"{_REGISTRIES_ENDPOINT}/current/users"
     if user_id:
-        return f"{_USERS_ENDPOINT}/{user_id}"
-    return _USERS_ENDPOINT
+        return f"{base}/{user_id}"
+    return base
 
 
 def build_registries_path(registry_uuid=None):
@@ -45,9 +50,14 @@ def build_registries_path(registry_uuid=None):
     return _REGISTRIES_ENDPOINT
 
 
-def build_workflow_path(workflow=None):
+def build_workflow_path(workflow=None, version_as_subpath=False, subpath=None):
     if workflow:
-        return f"{_WORKFLOWS_ENDPOINT}/{workflow['uuid']}/{workflow['version']}"
+        w = f"{_WORKFLOWS_ENDPOINT}/{workflow['uuid']}"
+        if version_as_subpath:
+            w = f"{w}/versions/{workflow['version']}"
+        if subpath:
+            w = f"{w}/{subpath}"
+        return f"{w}?version={workflow['version']}" if not version_as_subpath else w
     return _WORKFLOWS_ENDPOINT
 
 
@@ -124,3 +134,7 @@ def not_shared_workflows(user1, user2, skip=None):
     return [w for w in user1['workflows']
             if skip and w['name'] not in skip
             if w['uuid'] not in [_['uuid'] for _ in user2['workflows']]]
+
+
+def get_workflow_data(wf_uuid):
+    return LifeMonitor.get_instance().get_workflow(wf_uuid)

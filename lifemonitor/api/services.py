@@ -21,7 +21,7 @@
 from __future__ import annotations
 
 import logging
-from typing import List, Union, Optional
+from typing import List, Optional, Union
 
 import lifemonitor.exceptions as lm_exceptions
 from lifemonitor.api import models
@@ -30,6 +30,7 @@ from lifemonitor.auth.models import (ExternalServiceAuthorizationHeader,
 from lifemonitor.auth.oauth2.client import providers
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 from lifemonitor.auth.oauth2.server import server
+from lifemonitor.utils import OpenApiSpecs
 
 logger = logging.getLogger()
 
@@ -55,7 +56,10 @@ class LifeMonitor:
                 if svc.get_user(user.id):
                     for w in svc.get_user_workflows(user):
                         if str(w.uuid) == str(uuid):
-                            return w.versions[version] if version else w.latest_version
+                            if not version:
+                                return w.latest_version
+                            elif version and version in w.versions:
+                                return w.versions[version]
             except lm_exceptions.NotAuthorizedException as e:
                 logger.debug(e)
         return None
@@ -63,7 +67,7 @@ class LifeMonitor:
     @classmethod
     def _find_and_check_workflow_version(cls, user: User, uuid, version=None):
         w = None
-        if not version:
+        if not version or version == "latest":
             _w = models.Workflow.get_user_workflow(user, uuid)
             if _w:
                 w = _w.latest_version
@@ -87,8 +91,8 @@ class LifeMonitor:
                 raise lm_exceptions.NotAuthorizedException(f"User {user.username} is not allowed to access workflow")
         return w
 
-    @staticmethod
-    def register_workflow(roc_link, workflow_submitter: User, workflow_version,
+    @classmethod
+    def register_workflow(cls, roc_link, workflow_submitter: User, workflow_version,
                           workflow_uuid=None, workflow_identifier=None,
                           workflow_registry: Optional[models.WorkflowRegistry] = None,
                           authorization=None, name=None):
@@ -100,10 +104,11 @@ class LifeMonitor:
             w = models.Workflow.get_user_workflow(workflow_submitter, workflow_uuid)
         if not w:
             w = models.Workflow(uuid=workflow_uuid, identifier=workflow_identifier, name=name)
-            w.permissions.append(Permission(user=workflow_submitter, roles=[RoleType.owner]))
-            if workflow_registry:
-                for auth in workflow_submitter.get_authorization(workflow_registry):
-                    auth.resources.append(w)
+            if workflow_submitter:
+                w.permissions.append(Permission(user=workflow_submitter, roles=[RoleType.owner]))
+                if workflow_registry:
+                    for auth in workflow_submitter.get_authorization(workflow_registry):
+                        auth.resources.append(w)
 
         if str(workflow_version) in w.versions:
             raise lm_exceptions.WorkflowVersionConflictException(workflow_uuid, workflow_version)
@@ -115,17 +120,22 @@ class LifeMonitor:
 
         wv = w.add_version(workflow_version, roc_link, workflow_submitter,
                            name=name, hosting_service=workflow_registry)
-        wv.permissions.append(Permission(user=workflow_submitter, roles=[RoleType.owner]))
+
+        if workflow_submitter:
+            wv.permissions.append(Permission(user=workflow_submitter, roles=[RoleType.owner]))
         if authorization:
             auth = ExternalServiceAuthorizationHeader(workflow_submitter, header=authorization)
             auth.resources.append(wv)
         if name is None:
             w.name = wv.dataset_name
             wv.name = wv.dataset_name
-        if wv.test_metadata:
-            logger.debug("Test metadata found in the crate")
-            # FIXME: the test metadata can describe more than one suite
-            wv.add_test_suite(workflow_submitter, wv.test_metadata)
+
+        # parse roc_metadata and register suites and instances
+        try:
+            for _, raw_suite in wv.roc_suites.items():
+                cls._init_test_suite_from_json(wv, workflow_submitter, raw_suite)
+        except KeyError as e:
+            raise lm_exceptions.SpecificationNotValidException(f"Missing property: {e}")
         w.save()
         return wv
 
@@ -143,16 +153,64 @@ class LifeMonitor:
 
     @staticmethod
     def deregister_registry_workflow(workflow_uuid, workflow_version, registry: models.WorkflowRegistry):
-        workflow = registry.get_workflow(workflow_uuid).versions[workflow_version]
-        logger.debug("WorkflowVersion to delete: %r", workflow)
+        workflow = registry.get_workflow(workflow_uuid)
         if not workflow:
             raise lm_exceptions.EntityNotFoundException(models.WorkflowVersion, (workflow_uuid, workflow_version))
-        workflow.delete()
-        logger.debug("Deleted workflow wf_uuid: %r - version: %r", workflow_uuid, workflow_version)
-        return workflow_uuid, workflow_version
+        logger.debug("WorkflowVersion to delete: %r", workflow)
+        try:
+            workflow_version = workflow.versions[workflow_version]
+            workflow.delete()
+            logger.debug("Deleted workflow wf_uuid: %r - version: %r", workflow_uuid, workflow_version)
+            return workflow_uuid, workflow_version
+        except KeyError:
+            raise lm_exceptions.EntityNotFoundException(models.WorkflowVersion, (workflow_uuid, workflow_version))
 
     @staticmethod
-    def register_test_suite(workflow_uuid, workflow_version,
+    def _init_test_suite_from_json(wv: models.WorkflowVersion, submitter: models.User, raw_suite):
+        """ Create a TestSuite instance (with its related TestInstance)
+            from an intermediate JSON representation like:
+                {
+                    "roc_suite": <ROC_SUITE_ID>,
+                    "name": ...,
+                    "definition": {
+                        "test_engine": {
+                            "type": t,
+                            "version": ...,
+                        },
+                        "path": ...,
+                    },
+                    "instances": [
+                        {
+                            "roc_instance": <ROC_INSTANCE_ID>,
+                            "name": ...,
+                            "resource": ...,
+                            "service": {
+                                "type": ...,
+                                "url": ...,
+                            },
+                        }
+                    ]
+                }
+        """
+        try:
+            suite = wv.add_test_suite(submitter, raw_suite['name'],
+                                      roc_suite=raw_suite['roc_suite'],
+                                      definition=raw_suite['definition'])
+            for raw_instance in raw_suite["instances"]:
+                logger.debug("Instance: %r", raw_instance)
+                test_instance = suite.add_test_instance(submitter, raw_instance.get('managed', False),
+                                                        raw_instance["name"],
+                                                        raw_instance["service"]["type"],
+                                                        raw_instance["service"]["url"],
+                                                        raw_instance["resource"],
+                                                        raw_instance['roc_instance'])
+                logger.debug("Created TestInstance: %r", test_instance)
+            return suite
+        except KeyError as e:
+            raise lm_exceptions.SpecificationNotValidException(f"Missing property: {e}")
+
+    @classmethod
+    def register_test_suite(cls, workflow_uuid, workflow_version,
                             submitter: models.User, test_suite_metadata) -> models.TestSuite:
         workflow = models.WorkflowVersion.get_user_workflow_version(submitter, workflow_uuid, workflow_version)
         if not workflow:
@@ -160,7 +218,8 @@ class LifeMonitor:
         # For now only the workflow submitter can add test suites
         if workflow.submitter != submitter:
             raise lm_exceptions.NotAuthorizedException("Only the workflow submitter can add test suites")
-        suite = workflow.add_test_suite(submitter, test_suite_metadata)
+        assert isinstance(workflow, models.WorkflowVersion)
+        suite = cls._init_test_suite_from_json(workflow, submitter, test_suite_metadata)
         suite.save()
         return suite
 
@@ -174,6 +233,35 @@ class LifeMonitor:
         suite.delete()
         logger.debug("Deleted TestSuite: %r", suite.uuid)
         return suite.uuid
+
+    @staticmethod
+    def register_test_instance(test_suite: Union[models.TestSuite, str],
+                               submitter: User,
+                               managed: bool,
+                               test_name, testing_service_type,
+                               testing_service_url, testing_service_resource):
+        suite = test_suite
+        if not isinstance(test_suite, models.TestSuite):
+            suite = models.TestSuite.find_by_uuid(test_suite)
+            if not suite:
+                raise lm_exceptions.EntityNotFoundException(models.TestSuite, test_suite)
+        test_instance = suite.add_test_instance(submitter,
+                                                managed,
+                                                test_name,
+                                                testing_service_type, testing_service_url,
+                                                testing_service_resource)
+        test_instance.save()
+        return test_instance
+
+    @staticmethod
+    def deregister_test_instance(test_instance: Union[models.TestInstance, str]):
+        instance = test_instance
+        if not isinstance(instance, models.TestInstance):
+            instance = models.TestSuite.find_by_uuid(instance)
+            if not instance:
+                raise lm_exceptions.EntityNotFoundException(models.TestInstance, test_instance)
+        instance.delete()
+        return instance.uuid
 
     @classmethod
     def get_workflow_registry_by_generic_reference(cls, registry_reference) -> models.WorkflowRegistry:
@@ -218,6 +306,10 @@ class LifeMonitor:
             raise lm_exceptions.EntityNotFoundException(models.WorkflowRegistry, registry_name)
 
     @staticmethod
+    def get_workflow(wf_uuid) -> models.Workflow:
+        return models.Workflow.find_by_uuid(wf_uuid)
+
+    @staticmethod
     def get_workflows() -> List[models.Workflow]:
         return models.Workflow.all()
 
@@ -236,7 +328,9 @@ class LifeMonitor:
     @staticmethod
     def get_registry_workflow_version(registry: models.WorkflowRegistry, uuid, version=None) -> models.WorkflowVersion:
         w = registry.get_workflow(uuid)
-        return w.latest_version if version is None else w.versions[version]
+        if w is None:
+            raise lm_exceptions.EntityNotFoundException(models.WorkflowVersion, f"{uuid}_{version}")
+        return w.latest_version if version is None or version == "latest" else w.versions[version]
 
     @staticmethod
     def get_user_workflows(user: User) -> List[models.Workflow]:
@@ -248,6 +342,17 @@ class LifeMonitor:
                                       if w not in workflows])
                 except lm_exceptions.NotAuthorizedException as e:
                     logger.debug(e)
+        return workflows
+
+    @staticmethod
+    def get_user_registry_workflows(user: User, registry: models.WorkflowRegistry) -> List[models.Workflow]:
+        workflows = []
+        if registry.get_user(user.id):
+            try:
+                workflows.extend([w for w in registry.get_user_workflows(user)
+                                  if w not in workflows])
+            except lm_exceptions.NotAuthorizedException as e:
+                logger.debug(e)
         return workflows
 
     @classmethod
@@ -289,6 +394,7 @@ class LifeMonitor:
             user = User.find_by_username("admin")
             if not user:
                 raise lm_exceptions.EntityNotFoundException(User, entity_id="admin")
+            registry_scopes = " ".join(OpenApiSpecs.get_instance().registry_scopes.keys())
             server_credentials = providers.new_instance(provider_type=type,
                                                         name=name,
                                                         client_id=client_id,
@@ -298,7 +404,7 @@ class LifeMonitor:
                 server.create_client(user, name, server_credentials.api_base_url,
                                      ['client_credentials', 'authorization_code', 'refresh_token'],
                                      ["code", "token"],
-                                     "read write",
+                                     registry_scopes,
                                      redirect_uris.split(',')
                                      if isinstance(redirect_uris, str)
                                      else redirect_uris,

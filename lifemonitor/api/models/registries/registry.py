@@ -61,14 +61,22 @@ class WorkflowRegistryClient(ABC):
         return OAuthIdentity.find_by_user_id(user_id, self.registry.name).token
 
     def _get(self, user, *args, **kwargs):
-        with requests.Session() as session:
-            for auth in user.get_authorization(self.registry):
-                session.headers['Authorization'] = auth.as_http_header()
-                r = session.get(*args, **kwargs)
-                if r.status_code == 401 or r.status_code == 403:
-                    raise lm_exceptions.NotAuthorizedException(details=r.content)
-                r.raise_for_status()
-                return r
+        authorizations = []
+        if user:
+            authorizations.extend([
+                auth.as_http_header() for auth in user.get_authorization(self.registry)])
+        authorizations.append(None)
+        response = None
+        for auth in authorizations:
+            with requests.Session() as session:
+                session.headers['Authorization'] = auth
+                response = session.get(*args, **kwargs)
+                if response.status_code == 200:
+                    break
+        if response.status_code == 401 or response.status_code == 403:
+            raise lm_exceptions.NotAuthorizedException(details=response.content)
+        response.raise_for_status()
+        return response
 
     def download_url(self, url, user, target_path=None):
         return download_url(url, target_path,

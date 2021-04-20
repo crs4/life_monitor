@@ -22,13 +22,13 @@ from __future__ import annotations
 
 import logging
 
-from .testsuite import Test, TestSuite
+from .testsuite import TestSuite
 from .testbuild import BuildStatus, TestBuild
-from .testinstance import TestInstance
+from .testinstance import TestInstance, ManagedTestInstance
 
 
 # set module level logger
 logger = logging.getLogger(__name__)
 
 
-__all__ = ["Test", "BuildStatus", "TestBuild", "Test", "TestSuite", "TestInstance"]
+__all__ = ["BuildStatus", "TestBuild", "TestSuite", "TestInstance", "ManagedTestInstance"]

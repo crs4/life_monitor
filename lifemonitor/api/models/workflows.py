@@ -23,6 +23,7 @@ from __future__ import annotations
 import logging
 from typing import List, Union
 
+
 import lifemonitor.api.models as models
 import lifemonitor.exceptions as lm_exceptions
 from lifemonitor import utils as lm_utils
@@ -74,14 +75,17 @@ class Workflow(Resource):
 
     def add_version(self, version, uri, submitter: User, uuid=None, name=None,
                     hosting_service: models.WorkflowRegistry = None):
-        try:
-            if hosting_service:
-                if self.external_id and hasattr(hosting_service, 'get_external_uuid'):
+        if hosting_service:
+            if self.external_id and hasattr(hosting_service, 'get_external_uuid'):
+                try:
                     self.uuid = hosting_service.get_external_uuid(self.external_id, version, submitter)
-                elif not self.external_id and hasattr(hosting_service, 'get_external_id'):
+                except RuntimeError as e:
+                    raise lm_exceptions.NotAuthorizedException(details=str(e))
+            elif not self.external_id and hasattr(hosting_service, 'get_external_id'):
+                try:
                     self.external_id = hosting_service.get_external_id(self.uuid, version, submitter)
-        except lm_exceptions.EntityNotFoundException as e:
-            raise lm_exceptions.NotAuthorizedException(details=str(e))
+                except lm_exceptions.EntityNotFoundException:
+                    logger.warning("Unable to associate an external ID to the workflow")
         return WorkflowVersion(self, uri, version, submitter, uuid=uuid, name=name,
                                hosting_service=hosting_service)
 
@@ -129,7 +133,7 @@ class Workflow(Resource):
 
 class WorkflowVersion(ROCrate):
     id = db.Column(db.Integer, db.ForeignKey(ROCrate.id), primary_key=True)
-    submitter_id = db.Column(db.Integer, db.ForeignKey(User.id), nullable=False)
+    submitter_id = db.Column(db.Integer, db.ForeignKey(User.id), nullable=True)
     workflow_id = \
         db.Column(db.Integer, db.ForeignKey("workflow.id"), nullable=False)
     workflow = db.relationship("Workflow", foreign_keys=[workflow_id], cascade="all",
@@ -180,7 +184,7 @@ class WorkflowVersion(ROCrate):
     @hybrid_property
     def authorizations(self):
         auths = [a for a in self._authorizations]
-        if self.hosting_service:
+        if self.hosting_service and self.submitter:
             for auth in self.submitter.get_authorization(self.hosting_service):
                 auths.append(auth)
         return auths
@@ -213,8 +217,9 @@ class WorkflowVersion(ROCrate):
     def is_healthy(self) -> Union[bool, str]:
         return self.check_health()["healthy"]
 
-    def add_test_suite(self, submitter: User, test_suite_metadata):
-        return models.TestSuite(self, submitter, test_suite_metadata)
+    def add_test_suite(self, submitter: User,
+                       name: str = None, roc_suite: str = None, definition: object = None):
+        return models.TestSuite(self, submitter, name=name, roc_suite=roc_suite, definition=definition)
 
     @property
     def submitter_identity(self):
@@ -236,6 +241,14 @@ class WorkflowVersion(ROCrate):
             data['test_suite'] = [s.to_dict(test_build=test_build, test_output=test_output)
                                   for s in self.test_suites]
         return data
+
+    def delete(self):
+        if len(self.workflow.versions) > 1:
+            workflow = self.workflow
+            self.workflow.remove_version(self)
+            workflow.save()
+        else:
+            self.workflow.delete()
 
     @classmethod
     def all(cls) -> List[WorkflowVersion]:

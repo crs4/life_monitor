@@ -268,8 +268,8 @@ class ExternalServiceAccessAuthorization(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     type = db.Column(db.String, nullable=False)
-    user_id = db.Column('user_id', db.Integer,
-                        db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
+    user_id = db.Column(db.Integer,
+                        db.ForeignKey(User.id, ondelete='CASCADE'), nullable=True)
 
     resources = db.relationship("Resource",
                                 secondary=resource_authorization_table,

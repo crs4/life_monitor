@@ -23,7 +23,7 @@ import logging
 import flask
 from flask import flash, redirect, render_template, request, url_for
 from flask_login import login_required, login_user, logout_user
-from lifemonitor.utils import NextRouteRegistry, next_route_aware
+from lifemonitor.utils import NextRouteRegistry, OpenApiSpecs, next_route_aware
 
 from .. import exceptions
 from . import serializers
@@ -59,7 +59,7 @@ def show_current_user_profile():
 def get_registry_users():
     try:
         if current_registry and current_user.is_anonymous:
-            return serializers.UserSchema().dump(current_registry.users, many=True)
+            return serializers.ListOfUsers().dump(current_registry.users)
         raise exceptions.Forbidden(detail="Client type unknown")
     except Exception as e:
         return exceptions.report_problem_from_exception(e)
@@ -186,7 +186,8 @@ def merge():
 @blueprint.route("/create_apikey", methods=("POST",))
 @login_required
 def create_apikey():
-    apikey = generate_new_api_key(current_user, 'read write')
+    apikey = generate_new_api_key(
+        current_user, " ".join(OpenApiSpecs.get_instance().apikey_scopes.keys()))
     if apikey:
         logger.debug("Created a new API key: %r", apikey)
         flash("API key created!", category="success")
