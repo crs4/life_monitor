@@ -15,30 +15,57 @@
 
   {{ macros.render_logo(style="max-width: 300px;", class="img-fluid logo text-center m-5") }}
 
-  <div class="card card-primary card-outline" style="min-width: 700px;">
-    <div class="card-body box-profile">
-      <div class="text-center">
-        <img class="profile-user-img img-fluid img-circle"
-             src="{{ current_user.picture or url_for('auth.static', filename='img/avatar/default-user-avatar.jpg') }}"
-             alt="User profile picture">
-      </div>
+   <!-- Main content -->
+      <div class="container-fluid">
+        <div class="row">
+          <div class="col-md-3">
 
-      <h3 class="profile-username text-center">{{ current_user.username }}</h3>
+            <!-- Profile Image -->
+            <div class="card card-primary card-outline">
+              <div class="card-body box-profile">
+                <div class="text-center">
+                  <img class="profile-user-img img-fluid img-circle"
+                       src="{{ current_user.picture or url_for('auth.static', filename='img/avatar/default-user-avatar.jpg') }}"
+                       alt="User profile picture">
+                </div>
 
-      <p class="text-muted text-center">(id. {{ current_user.id }})</p>
+                <h3 class="profile-username text-center">{{ current_user.username }}</h3>
 
+                <p class="text-muted text-center">(id. {{ current_user.id }})</p>
 
-      <div class="list-group list-group-unbordered mb-3 text-center">
-       You{% if not current_user.has_password %} do not{% endif %} have a password set for your account.
-      {% if not current_user.has_password %}
-        <a href="{{ url_for("auth.set_password") }}">Set a password</a>
-      {% endif %}
-      </div>
+                <div class="list-group list-group-unbordered mb-3 text-center">
+                  You{% if not current_user.has_password %} do not{% endif %} have a password set for your account.
+                  {% if not current_user.has_password %}
+                    <a href="{{ url_for("auth.set_password") }}">Set a password</a>
+                  {% endif %}
+                  {% if current_user.has_password %}
+                    <a href="{{ url_for("auth.set_password") }}">Change a password</a>
+                  {% endif %}
+                </div>
 
-      <div class="">
-        <div class="card-header">
-          <h3 class="card-title"><b>Connected accounts</b></h3>
-        </div>
+                <ul class="list-group list-group-unbordered mb-3">
+                  <li class="list-group-item">
+                    <b>Accounts</b> <a class="float-right">{{ current_user.oauth_identity|length }}</a>
+                  </li>
+                  <li class="list-group-item">
+                    <b>API Keys</b> <a class="float-right">{{ current_user.api_keys|length }}</a>
+                  </li>
+                  <li class="list-group-item">
+                    <b>OAuth Apps</b> <a class="float-right">{{ current_user.clients|length }}</a>
+                  </li>
+                  <li class="list-group-item">
+                    <b>Workflows</b> <a class="float-right">{{ current_user.workflows|length }}</a>
+                  </li>
+                </ul>
+
+                <a href="{{ url_for("auth.logout") }}" class="btn btn-primary btn-block">
+                   <b>Log out</b>
+                </a>
+              </div>
+              <!-- /.card-body -->
+            </div>
+            <!-- /.card -->
+          </div>
 
         <div class="card-body p-0">
           <table class="table table-striped">
