@@ -45,13 +45,12 @@ def fix_tools_path(crate_dir, def_path):
         shutil.copytree(tools_path, new_tools_path)
 
 
-# pip install planemo
 def check_workflow(crate, crate_dir):
-    main_workflow = crate.root_dataset["mainEntity"]
+    main_workflow = crate.mainEntity
     print("main workflow:", main_workflow.id)
-    for suite in crate.test_dir["about"]:
+    for suite in crate.test_suites:
         def_path = crate_dir / suite.definition.id
-        workflow = suite["mainEntity"]
+        workflow = suite["mainEntity"] or main_workflow
         workflow_path = crate_dir / workflow.id
         print("running suite:", suite.id)
         print("definition path:", def_path)

@@ -9,6 +9,7 @@
             "PlanemoEngine": "https://w3id.org/ro/terms/test#PlanemoEngine",
             "JenkinsService": "https://w3id.org/ro/terms/test#JenkinsService",
             "TravisService": "https://w3id.org/ro/terms/test#TravisService",
+            "GithubService": "https://w3id.org/ro/terms/test#GithubService",
             "instance": "https://w3id.org/ro/terms/test#instance",
             "runsOn": "https://w3id.org/ro/terms/test#runsOn",
             "resource": "https://w3id.org/ro/terms/test#resource",
@@ -52,6 +53,11 @@
                 {
                     "@id": "test/test1/sort-and-change-case-test.yml"
                 }
+            ],
+            "mentions": [
+                {
+                    "@id": "#test1"
+                }
             ]
         },
         {
@@ -68,12 +74,7 @@
         },
         {
             "@id": "test/",
-            "@type": "Dataset",
-            "about": [
-                {
-                    "@id": "#test1"
-                }
-            ]
+            "@type": "Dataset"
         },
         {
             "@id": "LICENSE",
