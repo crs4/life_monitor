@@ -66,95 +66,128 @@
             </div>
             <!-- /.card -->
           </div>
+          <!-- /.col -->
+          <div class="col-md-9">
+            <div class="card">
+              <div class="card-header p-2">
+                <ul class="nav nav-pills">
+                  <li class="nav-item"><a class="nav-link active" href="#accounts" data-toggle="tab">Accounts</a></li>
+                  <li class="nav-item"><a class="nav-link" href="#apikeys" data-toggle="tab">API Keys</a></li>
+                </ul>
+              </div><!-- /.card-header -->
+              <div class="card-body">
+                <div class="tab-content">
+                  <div class="active tab-pane" id="accounts">
 
-        <div class="card-body p-0">
-          <table class="table table-striped">
-            <thead>
-              <tr>
-                <th style="width: 5px"></th>
-                <th>Provider</th>
-                <th>ID</th>
-                <th style="width: 40px"></th>
-              </tr>
-            </thead>
-            <tbody>
-            {% for p in providers %}
-              <tr>
-                <td>{{ macros.render_provider_fa_icon(p, color="black") }}</td>
-                <td>{{p.name.capitalize()}}</td>
-                <td>{% if p.name in current_user.oauth_identity %}
-                  {{ current_user.oauth_identity[p.name].provider_user_id }}
-                  {% endif %}</td>
-                {% if p.name in current_user.oauth_identity %}
-                <td><span class="badge bg-success">CONNECTED</span></td>
-                {% else %}
-                <td>
-                  <span class="badge bg-primary">
-                    <a class="" href="/oauth2/login/{{p.name}}">CONNECT</a>
-                  </span>
-                </td>
-                {% endif %}
-              </tr>
-            {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                    {# <div class="m-2 p-2">
+                      External accounts connected to Life Monitor.
+                    </div> #}
 
+                    <div class="card-header">
+                      <h3 class="card-title"><b>Connected accounts</b></h3>
+                    </div>
 
-      <div class="" style="margin-top: 20px;">
-        <div class="card-header">
-          <h3 class="card-title"><b>API keys</b></h3>
-        </div>
+                    <div class="card-body p-0">
+                      <table class="table table-striped">
+                        <thead>
+                          <tr>
+                            <th style="width: 5px"></th>
+                            <th>Provider</th>
+                            <th style="width: 5px">ID</th>
+                            <th style="width: 40px"></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                        {% for p in providers %}
+                          <tr>
+                            <td>{{ macros.render_provider_fa_icon(p, color="black") }}</td>
+                            <td>{{p.name.capitalize()}}</td>
+                            <td>{% if p.name in current_user.oauth_identity %}
+                              {{ current_user.oauth_identity[p.name].provider_user_id }}
+                              {% endif %}</td>
+                            {% if p.name in current_user.oauth_identity %}
+                            <td><span class="badge bg-success">CONNECTED</span></td>
+                            {% else %}
+                            <td>
+                              <span class="badge bg-primary">
+                                <a class="" href="/oauth2/login/{{p.name}}">CONNECT</a>
+                              </span>
+                            </td>
+                            {% endif %}
+                          </tr>
+                        {% endfor %}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                  <!-- /.tab-pane -->
+                  <div class="tab-pane" id="apikeys">
+                    <!-- The timeline -->
+                    <div class="" style="margin-top: 20px;">
 
-        <div class="card-body p-0">
-          <table class="table table-striped">
-            <thead>
-              <tr>
-                <th style="width: 10px">#</th>
-                <th style="min-width: 500px">Key</th>
-                <th></th>
-                <th style="width: 44px">
-                <form method="POST"
-                        action="{{ url_for('auth.create_apikey') }}">
-                  <button class="btn btn-link" type="submit" style="padding: 0">
-                      <span class="badge bg-primary">NEW</span>
-                  </button>
-                </form>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for k in current_user.api_keys %}
-              <tr class="apikey-container">
-                <td>{{loop.index}}</td>
-                <td id="apikey_{{loop.index}}" class="apikey text-sm-left">{{k.key}}</td>
-                <td><span class="fas fa-eye text-center" onclick="clickApiKey(this)"></span></td>
-                <td>
-                  <form method="POST"
-                        action="{{ url_for('auth.delete_apikey') }}">
-                    <input type="hidden" name="apikey" value="{{k.key}}" />
-                    <button class="btn btn-link" type="submit" style="padding: 0">
-                      <span class="badge bg-danger">
-                      DELETE
-                      </span>
-                    </button>
-                  </form>
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                      <div class="m-2 p-2">
+                        Allow a user to interact with the LifeMonitor API.
+                        An API key acts as a static authentication token and can be generated via the LifeMonitor
+                        user interface after logging in. This authentication method can be used to quickly
+                        try API calls via the API docs interface or tools like <span class="text-monospace">curl</span>.
+                      </div>
+
+                      <div class="card-header">
+                        <h3 class="card-title"><b>API keys</b></h3>
+                      </div>
+
+                      <div class="card-body p-0">
+                        <table class="table table-striped">
+                          <thead>
+                            <tr>
+                              <th style="width: 10px">#</th>
+                              <th>Key</th>
+                              <th style="width: 10px"></th>
+                              <th style="width: 44px">
+                              <form method="POST"
+                                      action="{{ url_for('auth.create_apikey') }}">
+                                <button class="btn btn-link" type="submit" style="padding: 0">
+                                    <span class="badge bg-primary">NEW</span>
+                                </button>
+                              </form>
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {% for k in current_user.api_keys %}
+                            <tr class="apikey-container">
+                              <td>{{loop.index}}</td>
+                              <td id="apikey_{{loop.index}}" class="apikey text-sm-left">{{k.key}}</td>
+                              <td><span class="fas fa-eye text-center" onclick="clickApiKey(this)"></span></td>
+                              <td>
+                                <form method="POST"
+                                      action="{{ url_for('auth.delete_apikey') }}">
+                                  <input type="hidden" name="apikey" value="{{k.key}}" />
+                                  <button class="btn btn-link" type="submit" style="padding: 0">
+                                    <span class="badge bg-danger">
+                                    DELETE
+                                    </span>
+                                  </button>
+                                </form>
+                              </td>
+                            </tr>
+                            {% endfor %}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
 
     </div>
   </div>
-
-  <div class="">
-    <a href="{{ url_for("auth.logout") }}"
-      class="btn btn-primary btn-block"><b>Log out</b></a>
-  </div>
+            </div>
+            <!-- /.card -->
+          </div>
+          <!-- /.col -->
+        </div>
+        <!-- /.row -->
+      </div><!-- /.container-fluid -->
+    <!-- /.content -->
 
 {% else %}
   {{ macros.render_logo(style="width: 50%") }}
@@ -162,6 +195,7 @@
   <a class="btn btn-primary btn-lg" role="button" href="{{ url_for('auth.login') }}">Log in</a>
   </div>
 {% endif %}
+</div>
 
 
 <script>
