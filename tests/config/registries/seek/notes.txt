@@ -6,6 +6,7 @@ admin
 username: admin
 password: workflowhub
 api-key: ZRBhqf9eeRasjqMw90pgEeMpTZ7__-w_571S7__D
+visible-workflows: 1
 
 
 user1
@@ -15,18 +16,21 @@ password: workflowhub
 project: Default, SharedProject, User1Project
 institutions: Default
 api-key: S9_41Cb2Wm8Ho9qOd0FDjs4zhJNwhSESe-dfwqt-
-visible-workflows: 4
+visible-workflows: 5
 workflows:
     - name: sort-and-change-case
       projects: User1Project
       public: true
     - name: basefreqsum
-      projects: Shared
+      projects: SharedProject
       public: false
     - name: sort-and-change-case-invalid-service-url
       projects: User1Project
       public: false
     - name: sort-and-change-case-invalid-service-type
+      projects: User1Project
+      public: false
+    - name: sort-and-change-case-travis
       projects: User1Project
       public: false
 
@@ -38,4 +42,3 @@ projects: Default, SharedProject
 institutions: Default
 api-token: 30GcRIdyV7uGvfXYa1squEW6IT3-n1zCjYxQY4Tt
 visible-workflows: 2
-
