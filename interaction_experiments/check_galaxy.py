@@ -31,13 +31,13 @@ import tempfile
 from rocrate.rocrate import ROCrate
 
 
-GALAXY_IMG = "bgruening/galaxy-stable:20.05"
+GALAXY_IMG = "bgruening/galaxy-stable:20.09"
 PLANEMO_ENTITY = "https://w3id.org/ro/terms/test#PlanemoEngine"
 
 
 def dump_test_suites(crate):
     print("test suites:")
-    for suite in crate.test_dir["about"]:
+    for suite in crate.test_suites:
         print(" ", suite.id)
         print("    workflow:", suite["mainEntity"].id)
         print("    instances:")
@@ -53,13 +53,12 @@ def dump_test_suites(crate):
         print("     engine version:", suite.definition.engineVersion)
 
 
-# pip install planemo
 def check_workflow(crate, crate_dir):
-    main_workflow = crate.root_dataset["mainEntity"]
+    main_workflow = crate.mainEntity
     print("main workflow:", main_workflow.id)
-    suite = crate.test_dir["about"][0]
+    suite = crate.test_suites[0]
     def_path = crate_dir / suite.definition.id
-    workflow = suite["mainEntity"]
+    workflow = suite["mainEntity"] or main_workflow
     workflow_path = crate_dir / workflow.id
     print("running suite:", suite.id)
     print("definition path:", def_path)

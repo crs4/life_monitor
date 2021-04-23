@@ -136,7 +136,7 @@ class TestingService(db.Model, ModelMixin):
         raise lm_exceptions.NotImplementedException()
 
     def get_test_builds(self, test_instance: models.TestInstance, limit=10) -> list:
-        raise lm_exceptions.ßNotImplementedException()
+        raise lm_exceptions.NotImplementedException()
 
     def get_test_builds_as_dict(self, test_instance: models.TestInstance, test_output):
         last_test_build = self.last_test_build

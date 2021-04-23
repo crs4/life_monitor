@@ -89,7 +89,7 @@ patch_metadata_graph_node('crates/ro-crate-galaxy-sortchangecase-travis/ro-crate
                                   "@id": "https://w3id.org/ro/terms/test#TravisService"
                               },
                               "url": "https://api.travis-ci.org",
-                              "resource": "repo/1002447"
+                              "resource": "github/crs4/pydoop"
                           })
 
 patch_metadata_graph_node('crates/ro-crate-galaxy-sortchangecase-travis/ro-crate-metadata.json',
