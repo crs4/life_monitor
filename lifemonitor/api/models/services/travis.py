@@ -84,7 +84,7 @@ class TravisTestingService(TestingService):
         logger.debug(f"The repo ID: {repo_slug}")
         if not repo_slug or len(repo_slug) == 0:
             raise TestingServiceException(
-                f"Unable to get the Jenkins job from the resource {test_instance.resource}")
+                f"Unable to get the Travis job from the resource {test_instance.resource}")
         return repo_slug
 
     def is_workflow_healthy(self, test_instance: models.TestInstance) -> bool:
