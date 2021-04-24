@@ -36,12 +36,12 @@ ingress:
         hosts:
           - *hostname
 
-# OAuth2 settings to enable LifeMonitor to use 
+# OAuth2 settings to enable LifeMonitor to use
 # external OAuth2 services as Identity Providers
 identity_providers:
   github:
-    client_id: 
-    client_secret: 
+    client_id:
+    client_secret:
 
 # System credentials to access testing services
 testing_services: {}
@@ -370,7 +370,7 @@ nginx:
   ##
   # extraEnvVarsSecret:
 
-  
+
   ## Custom server block to be added to NGINX configuration
   # serverBlock: |-
   #   # set upstream server
