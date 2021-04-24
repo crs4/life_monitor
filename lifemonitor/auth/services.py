@@ -51,9 +51,10 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 
-@login_manager.header_loader
-def load_user_from_header(header_val):
+@login_manager.request_loader
+def load_user_from_header(_req):
     try:
+        header_val = request.headers.get('Authorization', None)
         if "Basic" in header_val:
             header_val = header_val.replace('Basic ', '', 1)
             header_val = base64.b64decode(header_val).decode()
