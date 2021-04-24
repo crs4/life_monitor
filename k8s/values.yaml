@@ -82,6 +82,7 @@ lifemonitor:
     password: admin
 
   environment: production
+  log_level: INFO
 
   service:
     type: ClusterIP

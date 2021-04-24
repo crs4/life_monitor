@@ -20,12 +20,12 @@
 
 import logging
 import os
+from logging.config import dictConfig
 from typing import List, Type
 
 import dotenv
 
 from .db import db_uri
-from .utils import bool_from_string
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
@@ -143,7 +143,22 @@ def configure_logging(app):
         level_value = logging.INFO
         error = True
 
-    logging.basicConfig(level=level_value)
+    dictConfig({
+        'version': 1,
+        'formatters': {'default': {
+            'format': '[%(asctime)s] %(levelname)s in %(module)s: %(message)s',
+        }},
+        'handlers': {'wsgi': {
+            'class': 'logging.StreamHandler',
+            'stream': 'ext://flask.logging.wsgi_errors_stream',
+            'formatter': 'default'
+        }},
+        'root': {
+            'level': level_value,
+            'handlers': ['wsgi']
+        }
+    })
+
     if error:
         app.logger.error("LOG_LEVEL value %s is invalid. Defaulting to INFO", level_str)
 
