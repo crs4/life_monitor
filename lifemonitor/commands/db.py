@@ -45,8 +45,8 @@ def db_init():
     # create a default admin user if not exists
     admin = User.find_by_username('admin')
     if not admin:
-        admin = User("admin")
-        admin.password = "admin"
+        admin = User('admin')
+        admin.password = current_app.config["LIFEMONITOR_ADMIN_PASSWORD"]
         db.session.add(admin)
         db.session.commit()
 
