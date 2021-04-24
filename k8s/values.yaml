@@ -44,10 +44,13 @@ identity_providers:
     client_secret: 
 
 # System credentials to access testing services
-testing_services:
-  travis:
-    # api_url: https://api.travis-ci.org
-    token:
+testing_services: {}
+  # travis_org:
+  #   api_url: https://travis-ci.org
+  #   token: <YOUR_TRAVIS_TOKEN_>
+  # travis_com:
+  #   api_url: https://travis-ci.com
+  #   token: <YOUR_TRAVIS_TOKEN_>
 
 lifemonitor:
   replicaCount: 1
