@@ -63,11 +63,19 @@ services:
       - "./certs:/certs:ro"
       - "./instance:/lm/instance:ro"
       - "./settings.conf:/lm/settings.conf:ro" # default settings
+      - type: volume
+        source: lifemonitor_static_files
+        target: /lm/lifemonitor/static
+      - type: volume
+        source: lifemonitor_specs
+        target: /lm/specs
     networks:
       - life_monitor
 
 volumes:
   lifemonitor_db:
+  lifemonitor_static_files:
+  lifemonitor_specs:
 
 networks:
   life_monitor:

@@ -8,7 +8,10 @@ fullnameOverride: ""
 
 # The name and port number of the server (e.g.: 'lm.local:8000'),
 # used as base_url on all the links returned by the API
-#externalServerName: https://api.lifemonitor.eu
+externalServerName: &hostname api.lifemonitor.eu
+
+# global storage class
+storageClass: &storageClass "-"
 
 serviceAccount:
   # Specifies whether a service account should be created
@@ -28,7 +31,7 @@ ingress:
       #nginx.ingress.kubernetes.io/rewrite-target: /
       # kubernetes.io/tls-acme: "true"
     hosts:
-      - host: &hostname lm
+      - host: *hostname
         paths:
           - /
     tls:
@@ -36,29 +39,29 @@ ingress:
         hosts:
           - *hostname
 
-# OAuth2 settings to enable LifeMonitor to use 
+# OAuth2 settings to enable LifeMonitor to use
 # external OAuth2 services as Identity Providers
-identity_providers:
-  github:
-    client_id: 
-    client_secret: 
+identity_providers: {}
+  # github:
+  #   client_id:
+  #   client_secret:
 
 # System credentials to access testing services
-testing_services:
-  travis:
-    # api_url: https://api.travis-ci.org
-    token:
+testing_services: {}
+  # travis_org:
+  #   api_url: https://travis-ci.org
+  #   token: <YOUR_TRAVIS_TOKEN_>
+  # travis_com:
+  #   api_url: https://travis-ci.com
+  #   token: <YOUR_TRAVIS_TOKEN_>
 
 lifemonitor:
   replicaCount: 1
 
-  image:
-    repository: crs4/lifemonitor
-    pullPolicy: IfNotPresent
-    # Overrides the image tag whose default is the chart appVersion.
-    tag: ""
-
+  image: &lifemonitorImage crs4/lifemonitor:master
+  imagePullPolicy: &lifemonitorImagePullPolicy Always  
   imagePullSecrets: []
+
   nameOverride: ""
   fullnameOverride: ""
 
@@ -75,11 +78,18 @@ lifemonitor:
     # runAsNonRoot: true
     # runAsUser: 1000
 
+  administrator:
+    password: admin
+
   environment: production
+  log_level: INFO
 
   service:
     type: ClusterIP
     port: 8000
+
+  persistence:
+    storageClass: *storageClass
 
   # Enable/Disable the pod to test connection to the LifeMonitor back-end
   enableTestConnection: false
@@ -272,7 +282,7 @@ postgresql:
     ##
     subPath: ''
 
-    storageClass: "-"
+    storageClass: *storageClass
     accessModes:
       - ReadWriteOnce
     size: 8Gi
@@ -364,7 +374,7 @@ nginx:
   ##
   # extraEnvVarsSecret:
 
-  
+
   ## Custom server block to be added to NGINX configuration
   # serverBlock: |-
   #   # set upstream server
@@ -412,7 +422,22 @@ nginx:
   ## Name of existing PVC with the server static site content
   ## NOTE: This will override staticSiteConfigmap
   ##
-  # staticSitePVC
+  #staticSitePVC:
+
+  # Set init containers
+  initContainers:
+    - name: init-static-files
+      image: *lifemonitorImage
+      imagePullPolicy: *lifemonitorImagePullPolicy
+      command: ["/bin/bash", "-c"]  
+      args:
+      - |
+          mkdir -p /app/lifemonitor
+          cp -a /lm/lifemonitor/static /app/lifemonitor/static
+          cp -a /lm/specs /app/specs
+      volumeMounts:
+      - mountPath: /app
+        name: static-files
 
   ## Number of replicas to deploy
   ##
@@ -556,11 +581,15 @@ nginx:
 
   ## Array to add extra volumes (evaluated as a template)
   ##
-  extraVolumes: []
+  extraVolumes:
+    - name: static-files
+      emptyDir: {}
 
   ## Array to add extra mounts (normally used with extraVolumes, evaluated as a template)
   ##
-  extraVolumeMounts: []
+  extraVolumeMounts:
+    - mountPath: /app
+      name: static-files
 
   ## NGINX Service properties
   ##

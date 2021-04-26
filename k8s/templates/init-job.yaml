@@ -9,18 +9,18 @@ spec:
     spec:
       containers:
       - name: lifemonitor-init
-        image: "{{ .Values.lifemonitor.image.repository }}:{{ .Values.lifemonitor.image.tag | default .Chart.AppVersion }}"
-        imagePullPolicy: {{ .Values.lifemonitor.image.pullPolicy }}
+        image: "{{ .Values.lifemonitor.image }}"
+        imagePullPolicy: {{ .Values.lifemonitor.imagePullPolicy }}
         command: ["/bin/sh","-c"]
         args: ["wait-for-postgres.sh && flask db init"]
         env:
-{{ include "lifemonitor.common-env" . | indent 12 }}
+{{ include "lifemonitor.common-env" . | indent 10 }}
         volumeMounts:
-{{ include "lifemonitor.common-volume-mounts" . | indent 12 }}
+{{ include "lifemonitor.common-volume-mounts" . | indent 10 }}
       restartPolicy: Never
       volumes:
-{{ include "lifemonitor.common-volume" . | indent 12 }}
-      {{- with .Values.lifemonitor.nodeSelector }}
+{{ include "lifemonitor.common-volume" . | indent 8 }}
+       {{- with .Values.lifemonitor.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}

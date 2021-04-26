@@ -1,9 +1,9 @@
 dependencies:
 - name: nginx
   repository: https://charts.bitnami.com/bitnami
-  version: 8.1.2
+  version: 8.8.4
 - name: postgresql
   repository: https://charts.bitnami.com/bitnami
   version: 10.1.1
-digest: sha256:6b20924de053a961a6832ec3f3417f54b9ec895ef135f2a72d3ee4d5ce1ed4b9
-generated: "2020-11-26T09:45:41.577177323Z"
+digest: sha256:386060b432509d7925e2d620559d44d0efbe869184049da1fc12cfd86b0b5550
+generated: "2021-04-25T15:26:03.079993489Z"

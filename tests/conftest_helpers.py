@@ -60,11 +60,11 @@ def load_settings(filename):
     return {}
 
 
-def get_admin_user():
+def get_admin_user(_app_settings):
     admin = User.find_by_username("admin")
     if admin is None:
         admin = User("admin")
-        admin.password = "admin"
+        admin.password = _app_settings['LIFEMONITOR_ADMIN_PASSWORD']
         admin.id = 1
         lm_db.db.session.add(admin)
         lm_db.db.session.commit()
@@ -72,7 +72,7 @@ def get_admin_user():
 
 
 def init_db(_app_settings):
-    admin = get_admin_user()
+    admin = get_admin_user(_app_settings)
     create_client_credentials_registry(_app_settings, admin)
 
 

@@ -17,7 +17,7 @@ appVersion: 0.1.0
 # Chart dependencies
 dependencies:
   - name: nginx
-    version: 8.1.2
+    version: 8.8.4
     repository: https://charts.bitnami.com/bitnami
   - name: postgresql
     version: 10.1.1

@@ -118,8 +118,8 @@ def instance_config_file(request):
 
 
 @pytest.fixture
-def admin_user():
-    return helpers.get_admin_user()
+def admin_user(app_settings):
+    return helpers.get_admin_user(app_settings)
 
 
 def _check_settings(settings_param):

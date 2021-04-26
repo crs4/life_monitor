@@ -36,8 +36,8 @@ spec:
         - name: app
           securityContext:
             {{- toYaml .Values.lifemonitor.securityContext | nindent 12 }}
-          image: "{{ .Values.lifemonitor.image.repository }}:{{ .Values.lifemonitor.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.lifemonitor.image.pullPolicy }}
+          image: {{ .Values.lifemonitor.image }}
+          imagePullPolicy: {{ .Values.lifemonitor.imagePullPolicy }}
           env:
 {{ include "lifemonitor.common-env" . | indent 12 }}
           volumeMounts:

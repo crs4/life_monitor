@@ -19,6 +19,7 @@
 # SOFTWARE.
 
 import ssl
+
 from lifemonitor.app import create_app
 
 # create an app instance

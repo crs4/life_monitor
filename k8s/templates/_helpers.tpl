@@ -81,8 +81,6 @@ Define environment variables shared by some pods.
   value: "/lm/certs/tls.key"
 - name: TLS_CERT
   value: "/lm/certs/tls.crt"
-- name: DEBUG
-  value: "True"
 {{- end -}}
 
 {{/*

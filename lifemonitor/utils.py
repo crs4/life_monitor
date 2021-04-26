@@ -317,9 +317,7 @@ class ClassManager:
         if not self.__concrete_types__:
             self.__concrete_types__ = {}
             module_obj = import_module(self._package)
-            print(module_obj)
             modules_files = glob.glob(join(dirname(module_obj.__file__), "*.py"))
-            print(modules_files)
             modules = ['{}'.format(basename(f)[:-3]) for f in modules_files if isfile(f)]
             for m in modules:
                 if m not in self._skip:
