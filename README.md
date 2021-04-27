@@ -11,22 +11,13 @@
 <br/>
 <br/>
 
-*Workflow testing and monitoring service.*
-
-Life Monitor aims to facilitate the execution, monitoring and sharing of tests
-for workflows over time, ensuring that deviations from correct operation are
-detected and communicated to the workflow authors so that they might be
-solved, thus extending the useful life of the workflow.
-
-Life Monitor is being developed as part of the [EOSC-Life project](https://www.eosc-life.eu/).
-
-
-## Wiki
-
-See the [wiki](https://github.com/crs4/life_monitor/wiki) for a more complete description and additional information.
+Life Monitor is a testing and monitoring service for computational
+workflows. Head over to the [Life Monitor web
+site](https://crs4.github.io/life_monitor) for background details.
 
 
 ## Getting Started
+
 You can easily set up your own ready-to-use LifeMonitor instance using the
 docker-compose deployment we distribute with this repository. A `Makefile`
 provides you with the basic actions necessary to manage the deployment. 
@@ -38,7 +29,6 @@ This default setup will instantiate:
 * an instance of [**Seek/WorkflowHub**](https://workflowhub.eu/) which, among
   other things, you will use as an **identity provider**;
 * an instance of [**Jenkins**](https://www.jenkins.io/).
-
 
 **Assumptions**:
 * you'll be running and accessing the setup on **localhost**;
@@ -70,15 +60,24 @@ You should now have a deployment with the following services up and running:
 * **Seek** @ https://seek:3000
 * **Jenkins** @ http://localhost:8080
 
-To verify that the services are properly configured, go to the LifeMonitor login
-page at https://localhost:8443/login/ and log in
-by clicking "[Login with Seek](https://localhost:8443/oauth2/login/seek)" (you
-can use one of the preloaded users, e.g.: **user1**, *password*: **workflowhub**
- -- see these
-[notes](tests/config/registries/seek/notes.txt)).
-If all goes well, you should be logged into LifeMonitor and see a minimal user
-profile page.
+To verify that the services are properly configured, go to the [LifeMonitor
+login page](https://localhost:8443/login) and log in by clicking "[Sign in
+using Seek](https://localhost:8443/oauth2/login/seek)". You will be redirected
+to the Seek login page, which will ask for a username and a password. You can
+use one of the [preloaded users](tests/config/registries/seek/notes.txt), e.g.:
 
+ * Username: user1
+ * Password: workflowhub
+
+If all goes well, you should be redirected back to LifeMonitor, which will ask
+you to _register_ your identity, i.e., associate the Seek identity with a
+LifeMonitor identity. Type in a user name of your choice and click on
+"Register". You should be redirected to the user profile page. Here you can
+generate an API key that can be used to interact with the [LifeMonitor
+API](https://crs4.github.io/life_monitor/lm_api_specs): in the "API keys"
+section, click on "new" and copy the generated key. Then head over to the [API
+explorer](https://localhost:8443/openapi.html), paste the copied string into
+the API Key field in the authentication section and click on "SET".
 
 ### Using a server name other than `localhost`
 
@@ -98,28 +97,91 @@ the API applications authorized by WorkflowHub**.  Do the following:
 
 ## Exploring the API
 
-The full OpenAPI specification is always in the source code repository under
-[specs/api.yaml](specs/api.yaml)
-and a "beautified" html version is available
-[here](https://crs4.github.io/life_monitor/lm-openapi-rapidoc.html).
+Life Monitor exposes its functionalities through a [RESTful
+API](https://crs4.github.io/life_monitor/lm_api_specs).
 
-The LifeMonitor web service has a built-in Swagger UI (thanks to
-[Connexion](https://connexion.readthedocs.io/en/latest/)). You can access the UI
-at `/ui` (e.g., https://localhost:8443/ui if you
-are using the *production* docker-compose deployment or
-https://localhost:8000/ui if your are using the
-*development* deployment).  
+If you followed the [Getting Started](#getting-started) guide above, you
+should now be able to interact with your local LifeMonitor instance via the
+[API explorer](API explorer).
 
+Select "List registries" and click on "TRY". You should get a JSON response
+listing all workflow registries known to LifeMonitor. In this case, the only
+item should be a representation of your local Seek instance:
 
-Look in the [examples](examples) folder for some examples of Python clients interacting with the
-LifeMonitor API.
+```json
+{
+  "items": [
+    {
+      "name": "seek",
+      "type": "seek",
+      "uri": "https://seek:3000",
+      "uuid": "c07182a6-e2e6-4e0e-b3ed-c593aa900a3f"
+    }
+  ],
+  "meta": {
+    "api_version": "0.2.0-beta2",
+    "base_url": "https://172.18.0.4:8000",
+    "resource": "/registries"
+  }
+}
+```
+
+Copy the value of the "uuid" field, then select "List registry workflows" and
+paste the copied UUID into the `registry_uuid` field. Click on "TRY": you
+should get an empty item list in the response. This is normal, since no
+workflow has been submitted to LifeMonitor yet.
+
+Now go to "Submit registry workflow". Again, use the copied UUID to populate
+the `registry_uuid` field, then click on "EXAMPLE" in the "REQUEST BODY"
+section right below. To fill in the request body, we need the workflow's Seek
+ID and version (while "name" can be a name of your choice). Go to the
+[workflows page](https://seek:3000/workflows) on your local Seek instance and
+click on the "sort-and-change-case" workflow. This will open the workflow's
+page, which lists the Seek ID and version as "SEEK ID". For instance:
+
+```
+https://seek:3000/workflows/21?version=1
+```
+
+Now we can fill in the request body in the Life Monitor API explorer:
+
+```json
+{
+  "identifier": "21",
+  "name": "Sort and change case",
+  "version": "1"
+}
+```
+
+After running the example, you should get a response like the following:
+
+```json
+{
+  "wf_uuid": "478b43f0-8650-0139-d67a-0242ac1b0005",
+  "wf_version": "1"
+}
+```
+
+This can in turn be used to try other API calls. For instance, go to "Get
+workflow test status" and use the above UUID and version values to populate
+the corresponding fields under "PATH PARAMETERS". Click on "TRY" and you
+should get a response containing information on the workflow's testing
+status. Also, if you repeat the above call to "List registry workflows", the
+response should now include the newly submitted workflow.
+
+Look in the [examples](examples) folder for some examples of Python clients
+interacting with the LifeMonitor API.
+
+An alternative rendering of the API is the Swagger UI provided by
+[Connexion](https://connexion.readthedocs.io/en/latest/), which should be
+accessible at https://localhost:8443/ui.
 
 
 ## Deploy **LifeMonitor** with `docker-compose`
 
 Basic management actions are implemented as `Makefile` *rules* and can be listed by `make help`:
 
-```bash
+```
 $> make help
 start                 Start LifeMonitor in a Production environment
 start-dev             Start LifeMonitor in a Development environment
@@ -265,8 +327,8 @@ LifeMonitor supports **API keys** and **OAuth2** for authorizing API access.
 #### API keys
 
 API keys allow to authenticate users when performing API calls and should be
-used only for development and testing. At the moment, API keys can be created
-only via CLI:
+used only for development and testing. API keys can be created from the web UI
+as explained above, or via CLI:
 
 ```
 docker-compose exec lm /bin/bash -c 'flask api-key create <username>'
