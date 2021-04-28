@@ -83,7 +83,6 @@ the API Key field in the authentication section and click on "SET".
 
 LifeMonitor exposes its functionalities through a [RESTful
 API](https://crs4.github.io/life_monitor/lm_api_specs).
-
 If you followed the [Getting Started](#getting-started) guide above, you
 should now be able to interact with your local LifeMonitor instance via the
 [API explorer](https://localhost:8443/openapi.html).
@@ -155,8 +154,25 @@ response should now include the newly submitted workflow.
 
 Until now, you've interacted with the LifeMonitor API as a user / generic
 client. The other main way to use the API is to access it as a _registry
-client_. The [examples](examples) folder contains some examples that show how
-to do this in Python.
+client_. To do this from the API explorer, you need to change the
+authentication method. In the Authentication section, at the top, click on
+"CLEAR ALL API KEYS". Now move to the "OAuth (RegistryClientCredentials)"
+section, enable all scopes under "CLIENT CREDENTIALS FLOW" and fill in the
+fields required to get an OAuth2 token. You can get the client id and secret
+by running:
+
+```
+docker-compose exec lm /bin/bash -c "flask registry show seek"
+```
+
+Select "Request Body" in the drop-down menu, then click on "GET TOKEN". You
+should see an "Access Token Received" message appear under the text fields.
+Now you can try operations reserved to registry clients, which are listed
+under "Registry Client Operations" in the explorer (e.g., "Get the current
+registry client").
+
+The [examples](examples) folder contains several examples that show how to
+interact with the API in Python.
 
 An alternative rendering of the API is the Swagger UI provided by
 [Connexion](https://connexion.readthedocs.io/en/latest/), which should be
