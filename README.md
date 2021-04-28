@@ -60,10 +60,10 @@ You should now have a deployment with the following services up and running:
 * **Jenkins** @ http://localhost:8080
 
 To verify that the services are properly configured, go to the [LifeMonitor
-login page](https://localhost:8443/login) and log in by clicking "[Sign in
-using Seek](https://localhost:8443/oauth2/login/seek)". You will be redirected
-to the WorkflowHub login page, which will ask for a username and a password. You can
-use one of the [preloaded users](tests/config/registries/seek/notes.txt), e.g.:
+login page](https://localhost:8443/login) and log in by clicking on `Sign in
+using Seek`. You will be redirected to the WorkflowHub login page, which will
+ask for a username and a password. You can use one of the [preloaded
+users](tests/config/registries/seek/notes.txt), e.g.:
 
  * Username: `user1`
  * Password: `workflowhub`
@@ -71,12 +71,12 @@ use one of the [preloaded users](tests/config/registries/seek/notes.txt), e.g.:
 If all goes well, you should be redirected back to LifeMonitor, which will ask
 you to _register_ your identity, i.e., associate the WorkflowHub identity with a
 LifeMonitor identity. Type in a user name of your choice and click on
-"Register". You should be redirected to the user profile page. Here you can
+`Register`. You should be redirected to the user profile page. Here you can
 generate an API key that can be used to interact with the [LifeMonitor
 API](https://crs4.github.io/life_monitor/lm_api_specs): in the "API keys"
-section, click on "new" and copy the generated key. Then head over to the [API
+section, click on `new` and copy the generated key. Then head over to the [API
 explorer](https://localhost:8443/openapi.html), paste the copied string into
-the API Key field in the authentication section and click on "SET".
+the API Key field in the authentication section and click on `SET`.
 
 
 ## Exploring the API
@@ -87,7 +87,7 @@ If you followed the [Getting Started](#getting-started) guide above, you
 should now be able to interact with your local LifeMonitor instance via the
 [API explorer](https://localhost:8443/openapi.html).
 
-Select "List registries" and click on "TRY". You should get a JSON response
+Select "List registries" and click on `TRY`. You should get a JSON response
 listing all workflow registries known to LifeMonitor. In this case, the only
 item should be a representation of your local WorkflowHub instance:
 
@@ -110,12 +110,12 @@ item should be a representation of your local WorkflowHub instance:
 ```
 
 Copy the value of the "uuid" field, then select "List registry workflows" and
-paste the copied UUID into the `registry_uuid` field. Click on "TRY": you
+paste the copied UUID into the `registry_uuid` field. Click on `TRY`: you
 should get an empty item list in the response. This is normal, since no
 workflow has been submitted to LifeMonitor yet.
 
 Now go to "Submit registry workflow". Again, use the copied UUID to populate
-the `registry_uuid` field, then click on "EXAMPLE" in the "REQUEST BODY"
+the `registry_uuid` field, then click on `EXAMPLE` in the "REQUEST BODY"
 section right below. To fill in the request body, we need the workflow's WorkflowHub
 ID and version (while "name" can be a name of your choice). Go to the
 [workflows page](https://seek:3000/workflows) on your local WorkflowHub instance and
@@ -147,7 +147,7 @@ After running the example, you should get a response like the following:
 
 This can in turn be used to try other API calls. For instance, go to "Get
 workflow test status" and use the above UUID and version values to populate
-the corresponding fields under "PATH PARAMETERS". Click on "TRY" and you
+the corresponding fields under "PATH PARAMETERS". Click on `TRY` and you
 should get a response containing information on the workflow's testing
 status. Also, if you repeat the above call to "List registry workflows", the
 response should now include the newly submitted workflow.
@@ -156,7 +156,7 @@ Until now, you've interacted with the LifeMonitor API as a user / generic
 client. The other main way to use the API is to access it as a _registry
 client_. To do this from the API explorer, you need to change the
 authentication method. In the Authentication section, at the top, click on
-"CLEAR ALL API KEYS". Now move to the "OAuth (RegistryClientCredentials)"
+`CLEAR ALL API KEYS`. Now move to the "OAuth (RegistryClientCredentials)"
 section, enable all scopes under "CLIENT CREDENTIALS FLOW" and fill in the
 fields required to get an OAuth2 token. You can get the client id and secret
 by running:
@@ -165,7 +165,7 @@ by running:
 docker-compose exec lm /bin/bash -c "flask registry show seek"
 ```
 
-Select "Request Body" in the drop-down menu, then click on "GET TOKEN". You
+Select "Request Body" in the drop-down menu, then click on `GET TOKEN`. You
 should see an "Access Token Received" message appear under the text fields.
 Now you can try operations reserved to registry clients, which are listed
 under "Registry Client Operations" in the explorer (e.g., "Get the current
