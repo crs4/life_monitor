@@ -11,8 +11,8 @@
 <br/>
 <br/>
 
-Life Monitor is a testing and monitoring service for computational
-workflows. Head over to the [Life Monitor web
+LifeMonitor is a testing and monitoring service for computational
+workflows. Head over to the [LifeMonitor web
 site](https://crs4.github.io/life_monitor) for background details.
 
 
@@ -25,7 +25,7 @@ provides you with the basic actions necessary to manage the deployment.
 ### Full setup
 
 This default setup will instantiate:
-* the Life Monitor;
+* the LifeMonitor;
 * an instance of [**Seek/WorkflowHub**](https://workflowhub.eu/) which, among
   other things, you will use as an **identity provider**;
 * an instance of [**Jenkins**](https://www.jenkins.io/).
@@ -97,7 +97,7 @@ the API applications authorized by WorkflowHub**.  Do the following:
 
 ## Exploring the API
 
-Life Monitor exposes its functionalities through a [RESTful
+LifeMonitor exposes its functionalities through a [RESTful
 API](https://crs4.github.io/life_monitor/lm_api_specs).
 
 If you followed the [Getting Started](#getting-started) guide above, you
@@ -143,7 +143,7 @@ page, which lists the Seek ID and version as "SEEK ID". For instance:
 https://seek:3000/workflows/21?version=1
 ```
 
-Now we can fill in the request body in the Life Monitor API explorer:
+Now we can fill in the request body in the LifeMonitor API explorer:
 
 ```json
 {
