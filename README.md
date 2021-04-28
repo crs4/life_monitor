@@ -78,21 +78,6 @@ section, click on "new" and copy the generated key. Then head over to the [API
 explorer](https://localhost:8443/openapi.html), paste the copied string into
 the API Key field in the authentication section and click on "SET".
 
-### Using a server name other than `localhost`
-
-To access the services in the docker-compose from another system, you'll have to
-use a server name other than `localhost` (or an IP address).  You **must edit
-the API applications authorized by WorkflowHub**.  Do the following:
-
-* Log into WorkflowHub as [`admin`](tests/config/registries/seek/notes.txt);
-* Click on the user menu on the top right; select *My profile*;
-* Click on the *Actions* menu on the top right; select *API Applications*;
-* Edit the `LifeMonitor` application by clicking on the *Edit* button on the
-  left side of its row in the table;
-* Add the correct URI to the **Redirect URI** box.  E.g.,
-
-    https://122.33.4.72:8443/oauth2/authorized/seek
-
 
 ## Exploring the API
 
@@ -278,6 +263,22 @@ Flask mode.
 The most important settings are those related to the database connection: edit
 the `POSTGRESQL_*` properties according to the configuration of your
 PostgreSQL database.
+
+#### Using a server name other than `localhost`
+
+To access the services in the docker-compose from another system, you'll have
+to use a server name other than `localhost` (or an IP address). In this case,
+set the EXTERNAL_SERVER_URL variable in `settings.conf` accordingly.
+Additionally, You **must edit the API applications authorized by WorkflowHub**:
+
+* Log into WorkflowHub as [`admin`](tests/config/registries/seek/notes.txt);
+* Click on the user menu on the top right; select *My profile*;
+* Click on the *Actions* menu on the top right; select *API Applications*;
+* Edit the `LifeMonitor` application by clicking on the *Edit* button on the
+  left side of its row in the table;
+* Add the correct URI to the **Redirect URI** box.  E.g.,
+
+    https://122.33.4.72:8443/oauth2/authorized/seek
 
 #### Github login (optional) <a name="github"></a>
 
