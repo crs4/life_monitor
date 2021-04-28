@@ -1,6 +1,5 @@
-[![Build Status](https://travis-ci.org/crs4/life_monitor.svg?branch=master)](https://travis-ci.org/crs4/life_monitor)
-![GitHub release (latest by date)](https://img.shields.io/github/v/release/crs4/life_monitor) 
-![GitHub](https://img.shields.io/github/license/crs4/life_monitor)
+[![main workflow](https://github.com/crs4/life_monitor/actions/workflows/main.yaml/badge.svg)](https://github.com/crs4/life_monitor/actions/workflows/main.yaml)
+[![docs workflow](https://github.com/crs4/life_monitor/actions/workflows/docs.yaml/badge.svg)](https://github.com/crs4/life_monitor/actions/workflows/docs.yaml)
 
 
 <div align="center" style="text-align: center; margin-top: 50px;">
