@@ -3,7 +3,7 @@
 **Life Monitor (LM)** exposes its functionalities through a RESTful API defined with
 [OpenAPI](https://swagger.io/specification).
 
-Full specifications are available here: [apidocs.html](https://api-lifemonitor-dev.rahtiapp.fi/static/apidocs.html)
+Full specifications are available here: [apidocs.html](https://api.dev.lifemonitor.eu/static/apidocs.html)
 
 ## Clients
 
