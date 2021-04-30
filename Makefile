@@ -114,7 +114,7 @@ webserver:
 
 ro_crates:
 	@printf "\n$(bold)Preparing RO-Crate archives...$(reset)\n" ; \
-	docker run --rm --user $(id -u):$(id -g) \
+	docker run --rm --user $$(id -u):$$(id -g) \
 		       -v $$(pwd)/:/data \
 			   --entrypoint /bin/bash crs4/lifemonitor -c \
 			   "cd /data/tests/config/data && ls && python3 make-test-rocrates.py" ; \
