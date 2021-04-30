@@ -66,6 +66,8 @@ class BaseConfig:
     # Enable refresh token generation.
     # Refresh tokens will be issued as part of authorization code flow tokens
     OAUTH2_REFRESH_TOKEN_GENERATOR = True
+    # Refresh the token <N> seconds before its expiration
+    OAUTH2_REFRESH_TOKEN_BEFORE_EXPIRATION = 5 * 60
     # JWT Settings
     JWT_SECRET_KEY_PATH = os.getenv("JWT_SECRET_KEY_PATH", 'certs/jwt-key')
     JWT_EXPIRATION_TIME = os.getenv("JWT_EXPIRATION_TIME", 3600)

@@ -28,6 +28,7 @@ from urllib.parse import urljoin
 
 import requests
 from authlib.integrations.flask_client import FlaskRemoteApp, OAuth
+from authlib.integrations.requests_client import OAuth2Session
 from authlib.oauth2.rfc6749 import OAuth2Token
 from flask import current_app
 from flask_login import current_user
@@ -113,7 +114,7 @@ class OAuthIdentity(models.ExternalServiceAccessAuthorization, ModelMixin):
         self.resources.append(provider.api_resource)
 
     def as_http_header(self):
-        return f"{self.provider.token_type} {self.token['access_token']}"
+        return f"{self.provider.token_type} {self.fetch_token()['access_token']}"
 
     @property
     def username(self):
@@ -126,10 +127,40 @@ class OAuthIdentity(models.ExternalServiceAccessAuthorization, ModelMixin):
     @token.setter
     def token(self, token: dict):
         self._token = token
+
+    def fetch_token(self, auto_refresh=True):
+        # fetch up to date identity data
+        self.refresh()
+        # reference to the token associated with the identity instance
+        token = self.token
+        # the token should be refreshed
+        # if it is expired or close to expire (i.e., n secs before expiration)
+        threashold = current_app.config['OAUTH2_REFRESH_TOKEN_BEFORE_EXPIRATION']
+        to_be_refreshed = token.is_expired() or \
+            token['expires_at'] - token['created_at'] <= threashold
+        if to_be_refreshed:
+            if not auto_refresh:
+                logger.warning("The token should be refreshed but `auto_refresh` is disabled")
+            elif 'refresh_token' not in token:
+                logger.warning("The token should be refreshed but no refresh token is associated with the token")
+            else:
+                logger.debug("Trying to refresh the token...")
+                oauth2session = OAuth2Session(
+                    self.provider.client_id, self.provider.client_secret, token=self.token)
+                new_token = oauth2session.refresh_token(
+                    self.provider.access_token_url, refresh_token=token['refresh_token'])
+                self.token = new_token
+                self.save()
+                logger.debug("User token updated")
+        logger.debug("Using token %r", token)
+        return self.token
+
     @property
     def user_info(self):
         if not self._user_info:
-            self._user_info = self.provider.get_user_info(self.provider_user_id, self.token)
+            logger.debug("[Identity %r], Trying to read profile of user %r from provider %r...", self. id, self.user_id, self.provider.name)
+            self._user_info = self.provider.get_user_info(
+                self.provider_user_id, self.fetch_token())
         return self._user_info
 
     @user_info.setter

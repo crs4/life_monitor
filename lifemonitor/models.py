@@ -29,6 +29,9 @@ from sqlalchemy import types
 
 class ModelMixin(object):
 
+    def refresh(self, **kwargs):
+        db.session.refresh(self, **kwargs)
+
     def save(self):
         db.session.add(self)
         db.session.commit()
