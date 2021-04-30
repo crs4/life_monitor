@@ -12,7 +12,7 @@
 
 LifeMonitor is a testing and monitoring service for computational
 workflows. Head over to the [LifeMonitor web
-site](https://crs4.github.io/life_monitor) for background details.
+site](https://crs4.github.io/life_monitor) for more information and instructions.
 
 
 ## Getting Started
@@ -43,3 +43,13 @@ You should now have the following services up and running:
 
 For additional information, please refer to the [LifeMonitor administration
 guide](https://crs4.github.io/life_monitor/lm_admin_guide).
+
+
+
+## Acknowledgements
+
+Life Monitor is being developed as part of the [EOSC-Life project](https://www.eosc-life.eu/).
+
+<img alt="EOSC-Life Logo" src="https://github.com/crs4/life_monitor/raw/master/docs/logo_EOSC-Life.png" width="100" />
+<img alt="CRS4 Logo" src="https://github.com/crs4/life_monitor/raw/master/docs/logo_crs4-transparent.png" width="100" />
+<img alt="BBMRI-ERIC Logo" src="https://github.com/crs4/life_monitor/raw/master/docs/logo_bbmri-eric.png" width="100" />
