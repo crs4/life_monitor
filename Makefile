@@ -84,8 +84,8 @@ certs:
 	  printf "\n$(done)\n"; \
 	else \
 	  echo "$(yellow)WARNING: Using existing certificates$(reset)" ; \
-	fi \
-	# Generate JWT keys if they do not exist \
+	fi
+	@# Generate JWT keys if they do not exist \
 	if ! [[ -f "certs/jwt-key" && -f "certs/jwt-key.pub" ]]; then \
 	  printf "\n$(bold)Generating JWT keys...$(reset)\n" ; \
 	  openssl genrsa -out certs/jwt-key 4096 ; \
@@ -114,7 +114,7 @@ webserver:
 
 ro_crates:
 	@printf "\n$(bold)Preparing RO-Crate archives...$(reset)\n" ; \
-	docker run --rm --user $(id -u):$(id -g) \
+	docker run --rm --user $$(id -u):$$(id -g) \
 		       -v $$(pwd)/:/data \
 			   --entrypoint /bin/bash crs4/lifemonitor -c \
 			   "cd /data/tests/config/data && ls && python3 make-test-rocrates.py" ; \
@@ -261,7 +261,7 @@ stop-all: ## Stop all the services
 	else \
 		printf "\n$(yellow)WARNING: nothing to remove. 'docker-compose.yml' file not found!$(reset)\n\n" ; \
 	fi
-	
+
 down: ## Teardown all the services
 	@if [[ -f "docker-compose.yml" ]]; then \
 	echo "$(bold)Teardown all services...$(reset)" ; \
@@ -271,7 +271,7 @@ down: ## Teardown all the services
 	else \
 		printf "\n$(yellow)WARNING: nothing to remove. 'docker-compose.yml' file not found!$(reset)\n\n" ; \
 	fi
-	
+
 clean: ## Clean up the working environment (i.e., running services, network, volumes, certs and temp files)
 	@if [[ -f "docker-compose.yml" ]]; then \
 		echo "$(bold)Teardown all services...$(reset)" ; \
