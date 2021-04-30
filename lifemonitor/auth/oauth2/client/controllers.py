@@ -24,7 +24,6 @@ import logging
 
 from authlib.integrations.base_client.errors import OAuthError
 from authlib.integrations.flask_client import FlaskRemoteApp
-from authlib.oauth2.rfc6749 import OAuth2Token
 from flask import (Blueprint, abort, current_app, flash, redirect, request, session, url_for)
 from flask_login import current_user, login_user
 from lifemonitor import exceptions, utils
@@ -199,19 +198,19 @@ class AuthorizatonHandler:
                 else RequestHelper.response() or redirect('/', code=302)
 
     @staticmethod
-    def handle_validation(identity: OAuthIdentity):
+    def validate_identity_token(identity: OAuthIdentity):
         # If the token is expired it should be refreshed.
         # The refresh should be handle by using the 'refresh_token' grant
         # if supported by the OAuth2 server; otherwise a new authorization flow
         # should be started.
-        token = OAuth2Token(identity.token)
-        if not token.is_expired():
-            logger.debug(f"The current token is not expired: {token}")
-            return True
+        token = identity.token
         # if the current token has a refresh token
         # it will be automatically refreshed
         if 'refresh_token' in token:
             logger.debug("The current token has a refresh token")
+            logger.debug("The current token is %s", "expired" if token.is_expired() else "not expired")
+            # try to update the token using the refresh token grant
+            identity.fetch_token(auth=True)
             return True
         # if the current token doesn't have a refresh token
         # automatically redirect the client to start a new authorization flow
@@ -219,5 +218,5 @@ class AuthorizatonHandler:
             logger.debug("Trying to restart the authorization code flow")
             RequestHelper.push_request(params={'redirection': 'true'})
             return redirect(url_for('oauth2provider.login',
-                                    headers=request.headers, name="seek"), code=307)
+                                    headers=request.headers, name=identity.provider.name), code=307)
         return False
