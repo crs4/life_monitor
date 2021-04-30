@@ -4,8 +4,9 @@ This guide explains how to deploy and administer your own instance of
 LifeMonitor.
 
 The [GitHub repository](https://github.com/crs4/life_monitor) contains a
-`Makefile` that serves as an entry point to the basic actions necessary to
-manage the [Docker Compose](https://docs.docker.com/compose/) deployment.
+[Makefile](https://www.gnu.org/software/make/) that serves as an entry point
+to the basic actions necessary to manage the [Docker
+Compose](https://docs.docker.com/compose/) deployment.
 
 
 ## Default setup
@@ -13,15 +14,15 @@ manage the [Docker Compose](https://docs.docker.com/compose/) deployment.
 This setup will instantiate:
 
 * an instance of LifeMonitor;
-* an instance of [**Seek/WorkflowHub**](https://about.workflowhub.eu/) which, among
+* an instance of [Seek/WorkflowHub](https://about.workflowhub.eu/) which, among
   other things, you will use as an **identity provider**;
-* an instance of [**Jenkins**](https://www.jenkins.io/).
+* an instance of [Jenkins](https://www.jenkins.io/).
 
 **Assumptions**:
 
 * you'll be running and accessing the setup on **localhost**;
 * you will use the integrated WorkflowHub instance as the identity provider.
-* **the WorkflowHub instance will be accessible with the host name `seek`**. You
+* **the WorkflowHub instance will be accessible with the host name "`seek`"**. You
   can do this by creating an entry in `/etc/hosts` or using a local DNS server,
   like `bind`.
 
@@ -32,28 +33,28 @@ To start the deployment, go through the following steps:
 2. `make start-aux-services`, to start the preconfigured instances of WorkflowHub and Jenkins;
     these auxiliary services are needed to run the LifeMonitor tests and to check your local deployment as explained below;
 3. register the WorkflowHub instance with LifeMonitor with the following command (see
-   the [WorkflowRegistrySetup](examples/1_WorkflowRegistrySetup.ipynb) example
+   the [WorkflowRegistrySetup](https://github.com/crs4/life_monitor/tree/master/examples/1_WorkflowRegistrySetup.ipynb) example
    for more details):
 
-```bash
+```
 docker-compose exec lm /bin/bash -c "flask registry add seek seek ehukdECYQNmXxgJslBqNaJ2J4lPtoX_GADmLNztE8MI DuKar5qYdteOrB-eTN4F5qYSp-YrgvAJbz1yMyoVGrk https://seek:3000 --redirect-uris https://seek:3000"
 ```
 
 Take note of the output of the command above. It will provide you with the
 client credentials to setup your OAuth2 client to query the LifeMonitor API as a
-workflow registry (see the [WorkflowRegistryAuthorize](examples/2_WorkflowRegistryAuthorize.ipynb) example).
+workflow registry (see the [WorkflowRegistryAuthorize](https://github.com/crs4/life_monitor/tree/master/examples/2_WorkflowRegistryAuthorize.ipynb) example).
 
 You should now have a deployment with the following services up and running:
 
-* **LifeMonitor** @ https://localhost:8443
-* **WorkflowHub** @ https://seek:3000
-* **Jenkins** @ http://localhost:8080
+* **LifeMonitor** @ [https://localhost:8443](https://localhost:8443)
+* **WorkflowHub** @ [https://seek:3000](https://seek:3000)
+* **Jenkins** @ [http://localhost:8080](http://localhost:8080)
 
 To verify that the services are properly configured, go to the [LifeMonitor
 login page](https://localhost:8443/login) and log in by clicking on `Sign in
 using Seek`. You will be redirected to the WorkflowHub login page, which will
 ask for a username and a password. You can use one of the [preloaded
-users](tests/config/registries/seek/notes.txt), e.g.:
+users](https://github.com/crs4/life_monitor/tree/master/tests/config/registries/seek/notes.txt), e.g.:
 
  * Username: `user1`
  * Password: `workflowhub`
@@ -63,16 +64,15 @@ you to _register_ your identity, i.e., associate the WorkflowHub identity with a
 LifeMonitor identity. Type in a user name of your choice and click on
 `Register`. You should be redirected to the user profile page. Here you can
 generate an API key that can be used to interact with the [LifeMonitor
-API](https://crs4.github.io/life_monitor/lm_api_specs): in the "API keys"
+API](lm_api_specs): in the "API keys"
 section, click on `new` and copy the generated key. Then head over to the [API
 explorer](https://localhost:8443/openapi.html), paste the copied string into
 the API Key field in the authentication section and click on `SET`.
 
 ### Exploring the API
 
-LifeMonitor exposes its functionalities through a [RESTful
-API](https://crs4.github.io/life_monitor/lm_api_specs).
-If you followed the [Getting Started](#getting-started) guide above, you
+LifeMonitor exposes its functionalities through a [RESTful API](lm_api_specs).
+If you followed the [default setup](#default-setup) instructions above, you
 should now be able to interact with your local LifeMonitor instance via the
 [API explorer](https://localhost:8443/openapi.html).
 
@@ -160,18 +160,20 @@ Now you can try operations reserved to registry clients, which are listed
 under "Registry Client Operations" in the explorer (e.g., "Get the current
 registry client").
 
-The [examples](examples) folder contains several examples that show how to
-interact with the API in Python.
+The [examples](https://github.com/crs4/life_monitor/tree/master/examples)
+folder contains several examples that show how to interact with the API in
+Python.
 
 An alternative rendering of the API is the Swagger UI provided by
 [Connexion](https://connexion.readthedocs.io/en/latest/), which should be
-accessible at https://localhost:8443/ui.
+accessible at [https://localhost:8443/ui](https://localhost:8443/ui).
 
 
 ## Deploy **LifeMonitor** with `docker-compose`
 
-Basic management actions are implemented as `Makefile` *rules* and can be
-listed by `make help`:
+Basic management actions are implemented as [Makefile
+rules](https://www.gnu.org/software/make/manual/html_node/Rule-Introduction.html#Rule-Introduction)
+and can be listed by running `make help`:
 
 ```
 $> make help
@@ -195,11 +197,11 @@ help                  Show help
 
 ### A note about volumes
 
-The docker-compose uses Docker volumes for data storage.  These will persist
-between start and stop actions.  Use the regular Docker commands to delete
+Docker Compose uses Docker volumes for data storage. These will persist
+between start and stop actions. Use the regular Docker commands to delete
 them. For instance:
 
-```bash
+```
 docker volume rm life_monitor_lifemonitor_db
 ```
 
@@ -275,7 +277,7 @@ to use a server name other than `localhost` (or an IP address). In this case,
 set the EXTERNAL_SERVER_URL variable in `settings.conf` accordingly.
 Additionally, You **must edit the API applications authorized by WorkflowHub**:
 
-* Log into WorkflowHub as [`admin`](tests/config/registries/seek/notes.txt);
+* Log into WorkflowHub as [`admin`](https://github.com/crs4/life_monitor/tree/master/tests/config/registries/seek/notes.txt);
 * Click on the user menu on the top right; select *My profile*;
 * Click on the *Actions* menu on the top right; select *API Applications*;
 * Edit the `LifeMonitor` application by clicking on the *Edit* button on the
@@ -306,8 +308,8 @@ LifeMonitor is a plain Flask app and all its internal dependencies are frozen
 and collected on the `requirements.txt` file. Thus, you can easily install
 LifeMonitor by typing:
 
-```bash
-pip3 install -r requirements.txt
+```
+pip install -r requirements.txt
 ```
 
 The only non-Python dependency is **PostgreSQL** (back-end/client), which is
@@ -321,13 +323,13 @@ supports using identities from WorkflowHub and GitHub.
 
 >For both of these to work
 on a new deployment, the application must be appropriately configured and
-registered with the respective identity provider (see [here](#github) for the Github configuration and [WorkflowRegistrySetup](examples/1_WorkflowRegistrySetup.ipynb) to configure your instance of the WorkflowHub/Seek workflow registry).
+registered with the respective identity provider (see [here](#github) for the Github configuration and [WorkflowRegistrySetup](https://github.com/crs4/life_monitor/tree/master/examples/1_WorkflowRegistrySetup.ipynb) to configure your instance of the WorkflowHub/Seek workflow registry).
 
 For testing and development, LifeMonitor provides a simple web-based
 authentication interface:
 
-  * https://localhost:8443/register: register a new user
-  * https://localhost:8443/login: log in
+  * [https://localhost:8443/register](https://localhost:8443/register): register a new user
+  * [https://localhost:8443/login](https://localhost:8443/login): log in
 
 ### API access <a name="api-access"></a>
 
@@ -361,14 +363,14 @@ for instance.
 #### OAuth2
 The current implementation allows to use the OAuth2 protocol only with workflow
 registries. See
-[WorkflowRegistrySetup](examples/1_WorkflowRegistrySetup.ipynb)
+[WorkflowRegistrySetup](https://github.com/crs4/life_monitor/tree/master/examples/1_WorkflowRegistrySetup.ipynb)
 to set up your registry as an OAuth2 LifeMonitor client.
 
 Workflow registries are allowed to use both the **Authorization Code** and
 **Client Credentials** grant type to exchange authorization tokens. The OAuth2
 token needs to be included in the `Authorization` header as a Bearer
 Token. The
-[WorkflowRegistryAuthorize](examples/2_WorkflowRegistryAuthorize.ipynb)
+[WorkflowRegistryAuthorize](https://github.com/crs4/life_monitor/tree/master/examples/2_WorkflowRegistryAuthorize.ipynb)
 example shows how to get a bearer token using the client id and secret you got
 when registering the WorkflowHub instance with LifeMonitor.
 
@@ -396,13 +398,13 @@ command, run it with the `--help` flag. For instance:
 
 If you already have a WorkflowHub (Seek) instance you can easily register it
 on LifeMonitor by following the procedure described
-[here](examples/1_WorkflowRegistrySetup.ipynb). Make sure the following
+[here](https://github.com/crs4/life_monitor/tree/master/examples/1_WorkflowRegistrySetup.ipynb). Make sure the following
 requirements are met.
 
 ### enabling HTTPS
 
 HTTPS must be enabled on your WorkflowHub instance (See [these
-notes](docs/wfhub-setup-notes.md)) and its certificates should be valid on the
+notes](https://github.com/crs4/life_monitor/blob/master/docs/wfhub-setup-notes.md)) and its certificates should be valid on the
 LifeMonitor instance you have to connect. You could use a certificate issued by
 a known certificate authority (e.g., Let's Encrypt) or use the autogenerated
 LifeMonitor certificate. The latter is automatically generated when you
