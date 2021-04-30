@@ -226,7 +226,7 @@ picked up.
 | WorkflowHub                                | 3000|
 | Jenkins                                    | 8080|
 
-### Docker build <a name="image-build"></a>
+### Docker build
 
 The first step for setting up the environment is to build all required Docker
 images. The main image containing the LifeMonitor back-end is built
@@ -244,7 +244,7 @@ self-signed certificates.
 > folder populated with the `lm.key` and `lm.crt` files or use `make clean` to
 > clean up and remove the existing `certs` directory.
 
-### Auxiliary Services <a name="aux-services"></a>
+### Auxiliary Services
 
 LifeMonitor acts as a bridge between different systems. To simplify the setup of
 a complete environment, we provide preconfigured instances of the two systems
@@ -259,7 +259,7 @@ To use them on your local environment without any further modification, you have
 to populate your `/etc/hosts` (or your local DNS server) in such a way that it
 resolves the hostname `seek` to your local or loopback IP address.
 
-### Settings <a name="settings"></a>
+### Settings
 
 Go through `settings.conf` to customise the defaults of your LifeMonitor
 instance. As with any [Flask](https://flask.palletsprojects.com/) application,
@@ -286,7 +286,7 @@ Additionally, You **must edit the API applications authorized by WorkflowHub**:
 
     https://122.33.4.72:8443/oauth2/authorized/seek
 
-### Github login (optional) <a name="github"></a>
+### Github login (optional)
 
 Login via GitHub can be configured by editing the `GITHUB_CLIENT_ID` and
 `GITHUB_CLIENT_SECRET` properties in `settings.conf`. To get these
@@ -316,14 +316,16 @@ The only non-Python dependency is **PostgreSQL** (back-end/client), which is
 required by the `psycopg2` Python package.
 
 
-## Authenticating <a name="authenticating"></a>
+## Authenticating
 
 LifeMonitor supports OAuth2 for authentication and authorization and currently
 supports using identities from WorkflowHub and GitHub.
 
->For both of these to work
-on a new deployment, the application must be appropriately configured and
-registered with the respective identity provider (see [here](#github) for the Github configuration and [WorkflowRegistrySetup](https://github.com/crs4/life_monitor/tree/master/examples/1_WorkflowRegistrySetup.ipynb) to configure your instance of the WorkflowHub/Seek workflow registry).
+>For these to work on a new deployment, the application must be appropriately
+configured and registered with the respective identity provider. See the
+[section on GitHub login configuration](#github-login-optional) and the
+[WorkflowRegistrySetup](https://github.com/crs4/life_monitor/tree/master/examples/1_WorkflowRegistrySetup.ipynb)
+example.
 
 For testing and development, LifeMonitor provides a simple web-based
 authentication interface:
@@ -331,7 +333,7 @@ authentication interface:
   * [https://localhost:8443/register](https://localhost:8443/register): register a new user
   * [https://localhost:8443/login](https://localhost:8443/login): log in
 
-### API access <a name="api-access"></a>
+### API access
 
 LifeMonitor supports **API keys** and **OAuth2** for API authentication.
 
@@ -381,7 +383,7 @@ curl --insecure -X GET \
 ```
 
 
-## Command line interface <a name="cli"></a>
+## Command line interface
 
 LifeMonitor includes a command line interface (CLI), mainly intended for
 administrative tasks. To display a general help, run:
@@ -394,7 +396,7 @@ command, run it with the `--help` flag. For instance:
     docker-compose exec lm flask registry --help
 
 
-## Setup your own WorkflowHub instance <a name="setup-custom-seek-instance"></a>
+## Setup your own WorkflowHub instance
 
 If you already have a WorkflowHub (Seek) instance you can easily register it
 on LifeMonitor by following the procedure described
@@ -423,6 +425,6 @@ reconfigure the deployment to use the `host` Docker network mode.
 
 ### Additional notes on WorkflowHub configuration
 
-* In order to get correct URLs from the WorkflowHub API, you need to set the base URL. Go to Server admin > Settings and set "Site base URL" to `https://<BASE_URL>:3000` (e.g., `https://seek:3000` is the configuration of this field on the [WorkflowHub](#aux-services) instance in the pre-configured LifeMonitor deployment).
+* In order to get correct URLs from the WorkflowHub API, you need to set the base URL. Go to Server admin > Settings and set "Site base URL" to `https://<BASE_URL>:3000` (e.g., `https://seek:3000` is the configuration of this field on the [WorkflowHub](#auxiliary-services) instance in the pre-configured LifeMonitor deployment).
 
 * To enable workflows, go to Server admin > Enable/disable features and click on "Workflows enabled". You can set "CWL Viewer URL" to `https://view.commonwl.org/`.
