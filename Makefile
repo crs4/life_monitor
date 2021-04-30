@@ -84,8 +84,8 @@ certs:
 	  printf "\n$(done)\n"; \
 	else \
 	  echo "$(yellow)WARNING: Using existing certificates$(reset)" ; \
-	fi \
-	# Generate JWT keys if they do not exist \
+	fi
+	@# Generate JWT keys if they do not exist \
 	if ! [[ -f "certs/jwt-key" && -f "certs/jwt-key.pub" ]]; then \
 	  printf "\n$(bold)Generating JWT keys...$(reset)\n" ; \
 	  openssl genrsa -out certs/jwt-key 4096 ; \
