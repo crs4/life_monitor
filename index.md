@@ -30,7 +30,8 @@ useful life of the workflows.
 ## How to use it
 
 At the moment, the Life Monitor can be used through its [REST
-API](lm_api_specs).
+API](lm_api_specs). Follow the [Administration Guide](lm_admin_guide) to learn
+how to deploy and configure the service.
 
 Integration with the [Workflow Hub](https://workflowhub.eu/) is in the works, as
 well as a web interface and a command line client.
