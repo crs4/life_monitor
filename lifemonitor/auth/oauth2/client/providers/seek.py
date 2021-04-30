@@ -75,8 +75,6 @@ class Seek(OAuth2IdentityProvider):
         return params
 
     def get_user_info(self, provider_user_id, token, normalized=True):
-        from lifemonitor.auth.oauth2.server.models import Token
-        logger.debug(f"{token} -- {Token.check_token_expiration(token['expires_at'])}")
         response = requests.get(urljoin(self.api_base_url,
                                         f'/people/{provider_user_id}?format=json'),
                                 headers={'Authorization': f'Bearer {token["access_token"]}'})
