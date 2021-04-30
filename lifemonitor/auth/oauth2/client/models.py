@@ -198,14 +198,15 @@ class OAuth2Registry(OAuth):
         super().register(client_config.name, overwrite=True, client_cls=OAuth2Client)
 
     @staticmethod
-    def fetch_token(name):
+    def fetch_token(name, user=None):
+        user = user or current_user
         logger.debug("NAME: %s", name)
         logger.debug("CURRENT APP: %r", current_app.config)
         api_key = current_app.config.get("{}_API_KEY".format(name.upper()), None)
         if api_key:
             logger.debug("FOUND an API KEY for the OAuth Service '%s': %s", name, api_key)
             return {"access_token": api_key}
-        identity = OAuthIdentity.find_by_user_id(current_user.id, name)
+        identity = OAuthIdentity.find_by_user_id(user.id, name)
         logger.debug("The token: %r", identity.token)
         return OAuth2Token(identity.token)
 
