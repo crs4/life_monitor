@@ -132,7 +132,7 @@ class AuthorizatonHandler:
                              provider.name, user_info.sub, identity)
                 # update identity with the last token and userinfo
                 identity.user_info = user_info.to_dict()
-                identity.set_token(token)
+                identity.token = token
                 logger.debug("Update identity token: %r -> %r", identity.token, token)
             except OAuthIdentityNotFoundException:
                 logger.debug("Not found OAuth identity <%r,%r>", provider.name, user_info.sub)

@@ -83,7 +83,7 @@ class OAuthIdentity(models.ExternalServiceAccessAuthorization, ModelMixin):
     provider_user_id = db.Column(db.String(256), nullable=False)
     provider_id = db.Column(db.Integer, db.ForeignKey("oauth2_identity_provider.id"), nullable=False)
     created_at = db.Column(DateTime, default=datetime.utcnow, nullable=False)
-    token = db.Column(JSON, nullable=True)
+    _token = db.Column("token", JSON, nullable=True)
     _user_info = None
     provider = db.relationship("OAuth2IdentityProvider", uselist=False, back_populates="identities")
     user = db.relationship(
@@ -120,6 +120,13 @@ class OAuthIdentity(models.ExternalServiceAccessAuthorization, ModelMixin):
         return f"{self.provider.name}_{self.provider_user_id}"
 
     @property
+    def token(self) -> OAuth2Token:
+        return OAuth2Token(self._token)
+
+    @token.setter
+    def token(self, token: dict):
+        self._token = token
+    @property
     def user_info(self):
         if not self._user_info:
             self._user_info = self.provider.get_user_info(self.provider_user_id, self.token)
@@ -128,9 +135,6 @@ class OAuthIdentity(models.ExternalServiceAccessAuthorization, ModelMixin):
     @user_info.setter
     def user_info(self, value):
         self._user_info = value
-
-    def set_token(self, token):
-        self.token = token
 
     def __repr__(self):
         parts = []
@@ -212,7 +216,7 @@ class OAuth2Registry(OAuth):
         else:
             return
         # update old token
-        identity.set_token(token)
+        identity.token = token
         identity.save()
 
 
