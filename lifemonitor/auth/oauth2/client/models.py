@@ -212,12 +212,18 @@ class OAuth2Registry(OAuth):
 
     @staticmethod
     def update_token(name, token, refresh_token=None, access_token=None):
-        if access_token or refresh_token:
-            identity = OAuthIdentity.find_by_user_id(current_user.id, name)
-        else:
-            return
+        if access_token:
+            logger.debug("Fetching token by access_token...")
+            identity = OAuthIdentity.query.filter(
+                OAuthIdentity.token['access_token'] == access_token).one()
+        elif refresh_token:
+            logger.debug("Fetching token by refresh_token...")
+            identity = OAuthIdentity.query.filter(
+                OAuthIdentity.token['refresh_token'] == refresh_token).one()
         # update old token
+        logger.debug("Updating the token to access the user's identity...")
         identity.token = token
+        logger.debug("Save the user's identity...")
         identity.save()
 
 
