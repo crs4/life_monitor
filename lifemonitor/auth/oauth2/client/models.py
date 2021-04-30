@@ -40,6 +40,7 @@ from lifemonitor.exceptions import (EntityNotFoundException,
                                     NotAuthorizedException)
 from lifemonitor.models import JSON, ModelMixin
 from sqlalchemy import DateTime
+from sqlalchemy import inspect
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy.orm.exc import NoResultFound
@@ -163,10 +164,30 @@ class OAuthIdentity(models.ExternalServiceAccessAuthorization, ModelMixin):
         self._token = token
 
     def fetch_token(self, auto_refresh=True):
+        # enable dynamic refresh only if the identity
+        # has been already stored in the database
+        if inspect(self).persistent:
+            # fetch up to date identity data
+            self.refresh()
+            # reference to the token associated with the identity instance
+            token = self.token
             # the token should be refreshed
             # if it is expired or close to expire (i.e., n secs before expiration)
             if token.to_be_refreshed():
-        logger.debug("Using token %r", token)
+                if not auto_refresh:
+                    logger.warning("The token should be refreshed but `auto_refresh` is disabled")
+                elif 'refresh_token' not in token:
+                    logger.warning("The token should be refreshed but no refresh token is associated with the token")
+                else:
+                    logger.debug("Trying to refresh the token...")
+                    oauth2session = OAuth2Session(
+                        self.provider.client_id, self.provider.client_secret, token=self.token)
+                    new_token = oauth2session.refresh_token(
+                        self.provider.access_token_url, refresh_token=token['refresh_token'])
+                    self.token = new_token
+                    self.save()
+                    logger.debug("User token updated")
+                    logger.debug("Using token %r", self.token)
         return self.token
 
     @property
