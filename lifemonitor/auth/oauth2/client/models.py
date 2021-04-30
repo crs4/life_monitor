@@ -21,6 +21,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from datetime import datetime
 from importlib import import_module
 from typing import List
@@ -29,7 +30,7 @@ from urllib.parse import urljoin
 import requests
 from authlib.integrations.flask_client import FlaskRemoteApp, OAuth
 from authlib.integrations.requests_client import OAuth2Session
-from authlib.oauth2.rfc6749 import OAuth2Token
+from authlib.oauth2.rfc6749 import OAuth2Token as OAuth2TokenBase
 from flask import current_app
 from flask_login import current_user
 from lifemonitor.auth import models
@@ -50,6 +51,39 @@ class OAuthIdentityNotFoundException(EntityNotFoundException):
     def __init__(self, entity_id=None) -> None:
         super().__init__(entity_class=self.__class__)
         self.entity_id = entity_id
+
+
+class OAuth2Token(OAuth2TokenBase):
+
+    def __init__(self, params):
+        if params.get('expires_at'):
+            params['expires_at'] = int(params['expires_at'])
+        elif params.get('expires_in') and params.get('created_at'):
+            params['expires_at'] = int(params['created_at']) + \
+                int(params['expires_in'])
+        super().__init__(params)
+
+    def is_expired(self):
+        expires_at = self.get('expires_at')
+        if not expires_at:
+            return None
+        return expires_at < time.time()
+
+    @property
+    def threashold(self):
+        try:
+            return int(current_app.config['OAUTH2_REFRESH_TOKEN_BEFORE_EXPIRATION'])
+        except Exception as e:
+            logger.debug("Unable to get a configured OAUTH2_REFRESH_TOKEN_BEFORE_EXPIRATION property: %r", e)
+            return 0
+
+    def to_be_refreshed(self):
+        # the token should be refreshed
+        # if it is expired or close to expire (i.e., n secs before expiration)
+        expires_at = self.get('expires_at')
+        if not expires_at:
+            return None
+        return (expires_at - self.threashold) < time.time()
 
 
 class OAuthUserProfile:
@@ -129,29 +163,9 @@ class OAuthIdentity(models.ExternalServiceAccessAuthorization, ModelMixin):
         self._token = token
 
     def fetch_token(self, auto_refresh=True):
-        # fetch up to date identity data
-        self.refresh()
-        # reference to the token associated with the identity instance
-        token = self.token
-        # the token should be refreshed
-        # if it is expired or close to expire (i.e., n secs before expiration)
-        threashold = current_app.config['OAUTH2_REFRESH_TOKEN_BEFORE_EXPIRATION']
-        to_be_refreshed = token.is_expired() or \
-            token['expires_at'] - token['created_at'] <= threashold
-        if to_be_refreshed:
-            if not auto_refresh:
-                logger.warning("The token should be refreshed but `auto_refresh` is disabled")
-            elif 'refresh_token' not in token:
-                logger.warning("The token should be refreshed but no refresh token is associated with the token")
-            else:
-                logger.debug("Trying to refresh the token...")
-                oauth2session = OAuth2Session(
-                    self.provider.client_id, self.provider.client_secret, token=self.token)
-                new_token = oauth2session.refresh_token(
-                    self.provider.access_token_url, refresh_token=token['refresh_token'])
-                self.token = new_token
-                self.save()
-                logger.debug("User token updated")
+            # the token should be refreshed
+            # if it is expired or close to expire (i.e., n secs before expiration)
+            if token.to_be_refreshed():
         logger.debug("Using token %r", token)
         return self.token
 
