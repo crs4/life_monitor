@@ -261,7 +261,7 @@ stop-all: ## Stop all the services
 	else \
 		printf "\n$(yellow)WARNING: nothing to remove. 'docker-compose.yml' file not found!$(reset)\n\n" ; \
 	fi
-	
+
 down: ## Teardown all the services
 	@if [[ -f "docker-compose.yml" ]]; then \
 	echo "$(bold)Teardown all services...$(reset)" ; \
@@ -271,7 +271,7 @@ down: ## Teardown all the services
 	else \
 		printf "\n$(yellow)WARNING: nothing to remove. 'docker-compose.yml' file not found!$(reset)\n\n" ; \
 	fi
-	
+
 clean: ## Clean up the working environment (i.e., running services, network, volumes, certs and temp files)
 	@if [[ -f "docker-compose.yml" ]]; then \
 		echo "$(bold)Teardown all services...$(reset)" ; \
