@@ -163,7 +163,7 @@ class OAuthIdentity(models.ExternalServiceAccessAuthorization, ModelMixin):
     def token(self, token: dict):
         self._token = token
 
-    def fetch_token(self, auto_refresh=True):
+    def fetch_token(self):
         # enable dynamic refresh only if the identity
         # has been already stored in the database
         if inspect(self).persistent:
@@ -174,10 +174,8 @@ class OAuthIdentity(models.ExternalServiceAccessAuthorization, ModelMixin):
             # the token should be refreshed
             # if it is expired or close to expire (i.e., n secs before expiration)
             if token.to_be_refreshed():
-                if not auto_refresh:
-                    logger.warning("The token should be refreshed but `auto_refresh` is disabled")
-                elif 'refresh_token' not in token:
-                    logger.warning("The token should be refreshed but no refresh token is associated with the token")
+                if 'refresh_token' not in token:
+                    logger.debug("The token should be refreshed but no refresh token is associated with the token")
                 else:
                     logger.debug("Trying to refresh the token...")
                     oauth2session = OAuth2Session(
