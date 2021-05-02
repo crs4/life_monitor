@@ -19,6 +19,7 @@
 # SOFTWARE.
 
 import logging
+import time
 from unittest.mock import PropertyMock, patch
 
 import pytest
@@ -81,6 +82,7 @@ def test_fetch_token_on_token_expired(check_token, user_identity):
     current_token = user_identity.token
     logger.debug("Current token: %r", current_token)
     check_token.return_value = True
+    time.sleep(1)
     fetched_token = user_identity.fetch_token()
     logger.debug("Fetched token: %r", fetched_token)
     check_token.assert_called_once()
