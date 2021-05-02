@@ -18,12 +18,12 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import pytest
 import logging
-from tests import utils
+
+import pytest
+from lifemonitor.auth import models, services
 from lifemonitor.lang import messages
-from lifemonitor.auth import models
-from lifemonitor.auth import services
+from tests import utils
 
 logger = logging.getLogger()
 
