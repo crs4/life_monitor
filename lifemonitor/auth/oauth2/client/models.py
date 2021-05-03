@@ -71,7 +71,7 @@ class OAuth2Token(OAuth2TokenBase):
         return expires_at < time.time()
 
     @property
-    def threashold(self):
+    def threshold(self):
         try:
             return int(current_app.config['OAUTH2_REFRESH_TOKEN_BEFORE_EXPIRATION'])
         except Exception as e:
@@ -84,7 +84,7 @@ class OAuth2Token(OAuth2TokenBase):
         expires_at = self.get('expires_at')
         if not expires_at:
             return None
-        return (expires_at - self.threashold) < time.time()
+        return (expires_at - self.threshold) < time.time()
 
 
 class OAuthUserProfile:
