@@ -20,10 +20,16 @@
 
 from __future__ import annotations
 
-from lifemonitor.serializers import BaseSchema, ResourceMetadataSchema, ListOfItems, ma
+import logging
+
+from lifemonitor.serializers import (BaseSchema, ListOfItems,
+                                     ResourceMetadataSchema, ma)
 from marshmallow import fields
 
 from . import models
+
+# Config a module level logger
+logger = logging.getLogger(__name__)
 
 
 class ProviderSchema(BaseSchema):
@@ -59,10 +65,22 @@ class UserSchema(ResourceMetadataSchema):
 
     id = ma.auto_field()
     username = ma.auto_field()
-    # Uncomment to include all identities
-    identities = fields.Dict(attribute="current_identity",
-                             keys=fields.String(),
-                             values=fields.Nested(IdentitySchema()))
+    # identities = fields.Dict(attribute="current_identity",
+    #                          keys=fields.String(),
+    #                          values=fields.Nested(IdentitySchema()))
+    identities = fields.Method("get_identities")
+
+    def get_identities(self, user):
+        identities = None
+        if user.current_identity:
+            identities = {}
+            for k, v in user.current_identity.items():
+                try:
+                    identities[k] = IdentitySchema().dump(v)
+                except Exception as e:
+                    logger.error("Unable to retrieve profile"
+                                 "of user % r from provider % r: % r", user.id, k, str(e))
+        return identities
 
 
 class ListOfUsers(ListOfItems):

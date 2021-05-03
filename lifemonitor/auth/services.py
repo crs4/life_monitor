@@ -29,7 +29,6 @@ from lifemonitor.auth.models import Anonymous, ApiKey, User
 from lifemonitor.exceptions import LifeMonitorException
 from lifemonitor.lang import messages
 from werkzeug.local import LocalProxy
-from werkzeug.wrappers import Response
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
@@ -98,7 +97,6 @@ def authorized(func):
         logger.debug(f"The current user: {current_user}")
         logger.debug(f"The current registry: {current_registry}")
         logger.debug(f"Request args: {request.args}")
-        validation = False
         # raise unauthorized if no user nor registry in session
         if not current_registry and current_user.is_anonymous:
             raise NotAuthorizedException(detail=messages.unauthorized_no_user_nor_registry)
@@ -109,19 +107,7 @@ def authorized(func):
                 raise NotAuthorizedException(
                     detail=messages.unauthorized_user_without_registry_identity.format(current_registry.name),
                     authorization_url=url_for('oauth2provider.authorize',
-                                              name="seek", next=request.url))
-            # check if the token issued by the registry is valid
-            identity = current_user.oauth_identity[current_registry.name]
-            from .oauth2.client.controllers import AuthorizatonHandler
-            validation = AuthorizatonHandler.handle_validation(identity)
-            if isinstance(validation, Response):
-                return validation
-            elif validation is False:
-                raise NotAuthorizedException(
-                    detail=messages.unauthorized_user_with_expired_registry_token.format(
-                        current_registry.name, current_registry.name),
-                    authorization_url=url_for('oauth2provider.authorize',
-                                              name="seek", next=request.url))
+                                              name=current_registry.name, next=request.url))
         return func(*args, **kwargs)
     return wrapper
 

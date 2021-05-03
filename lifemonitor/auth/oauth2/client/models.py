@@ -21,6 +21,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from datetime import datetime
 from importlib import import_module
 from typing import List
@@ -28,7 +29,8 @@ from urllib.parse import urljoin
 
 import requests
 from authlib.integrations.flask_client import FlaskRemoteApp, OAuth
-from authlib.oauth2.rfc6749 import OAuth2Token
+from authlib.integrations.requests_client import OAuth2Session
+from authlib.oauth2.rfc6749 import OAuth2Token as OAuth2TokenBase
 from flask import current_app
 from flask_login import current_user
 from lifemonitor.auth import models
@@ -38,6 +40,7 @@ from lifemonitor.exceptions import (EntityNotFoundException,
                                     NotAuthorizedException)
 from lifemonitor.models import JSON, ModelMixin
 from sqlalchemy import DateTime
+from sqlalchemy import inspect
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy.orm.exc import NoResultFound
@@ -49,6 +52,39 @@ class OAuthIdentityNotFoundException(EntityNotFoundException):
     def __init__(self, entity_id=None) -> None:
         super().__init__(entity_class=self.__class__)
         self.entity_id = entity_id
+
+
+class OAuth2Token(OAuth2TokenBase):
+
+    def __init__(self, params):
+        if params.get('expires_at'):
+            params['expires_at'] = int(params['expires_at'])
+        elif params.get('expires_in') and params.get('created_at'):
+            params['expires_at'] = int(params['created_at']) + \
+                int(params['expires_in'])
+        super().__init__(params)
+
+    def is_expired(self):
+        expires_at = self.get('expires_at')
+        if not expires_at:
+            return None
+        return expires_at < time.time()
+
+    @property
+    def threshold(self):
+        try:
+            return int(current_app.config['OAUTH2_REFRESH_TOKEN_BEFORE_EXPIRATION'])
+        except Exception as e:
+            logger.debug("Unable to get a configured OAUTH2_REFRESH_TOKEN_BEFORE_EXPIRATION property: %r", e)
+            return 0
+
+    def to_be_refreshed(self):
+        # the token should be refreshed
+        # if it is expired or close to expire (i.e., n secs before expiration)
+        expires_at = self.get('expires_at')
+        if not expires_at:
+            return None
+        return (expires_at - self.threshold) < time.time()
 
 
 class OAuthUserProfile:
@@ -83,7 +119,7 @@ class OAuthIdentity(models.ExternalServiceAccessAuthorization, ModelMixin):
     provider_user_id = db.Column(db.String(256), nullable=False)
     provider_id = db.Column(db.Integer, db.ForeignKey("oauth2_identity_provider.id"), nullable=False)
     created_at = db.Column(DateTime, default=datetime.utcnow, nullable=False)
-    token = db.Column(JSON, nullable=True)
+    _token = db.Column("token", JSON, nullable=True)
     _user_info = None
     provider = db.relationship("OAuth2IdentityProvider", uselist=False, back_populates="identities")
     user = db.relationship(
@@ -113,24 +149,56 @@ class OAuthIdentity(models.ExternalServiceAccessAuthorization, ModelMixin):
         self.resources.append(provider.api_resource)
 
     def as_http_header(self):
-        return f"{self.provider.token_type} {self.token['access_token']}"
+        return f"{self.provider.token_type} {self.fetch_token()['access_token']}"
 
     @property
     def username(self):
         return f"{self.provider.name}_{self.provider_user_id}"
 
     @property
+    def token(self) -> OAuth2Token:
+        return OAuth2Token(self._token)
+
+    @token.setter
+    def token(self, token: dict):
+        self._token = token
+
+    def fetch_token(self):
+        # enable dynamic refresh only if the identity
+        # has been already stored in the database
+        if inspect(self).persistent:
+            # fetch up to date identity data
+            self.refresh()
+            # reference to the token associated with the identity instance
+            token = self.token
+            # the token should be refreshed
+            # if it is expired or close to expire (i.e., n secs before expiration)
+            if token.to_be_refreshed():
+                if 'refresh_token' not in token:
+                    logger.debug("The token should be refreshed but no refresh token is associated with the token")
+                else:
+                    logger.debug("Trying to refresh the token...")
+                    oauth2session = OAuth2Session(
+                        self.provider.client_id, self.provider.client_secret, token=self.token)
+                    new_token = oauth2session.refresh_token(
+                        self.provider.access_token_url, refresh_token=token['refresh_token'])
+                    self.token = new_token
+                    self.save()
+                    logger.debug("User token updated")
+                    logger.debug("Using token %r", self.token)
+        return self.token
+
+    @property
     def user_info(self):
         if not self._user_info:
-            self._user_info = self.provider.get_user_info(self.provider_user_id, self.token)
+            logger.debug("[Identity %r], Trying to read profile of user %r from provider %r...", self. id, self.user_id, self.provider.name)
+            self._user_info = self.provider.get_user_info(
+                self.provider_user_id, self.fetch_token())
         return self._user_info
 
     @user_info.setter
     def user_info(self, value):
         self._user_info = value
-
-    def set_token(self, token):
-        self.token = token
 
     def __repr__(self):
         parts = []
@@ -194,25 +262,32 @@ class OAuth2Registry(OAuth):
         super().register(client_config.name, overwrite=True, client_cls=OAuth2Client)
 
     @staticmethod
-    def fetch_token(name):
+    def fetch_token(name, user=None):
+        user = user or current_user
         logger.debug("NAME: %s", name)
         logger.debug("CURRENT APP: %r", current_app.config)
         api_key = current_app.config.get("{}_API_KEY".format(name.upper()), None)
         if api_key:
             logger.debug("FOUND an API KEY for the OAuth Service '%s': %s", name, api_key)
             return {"access_token": api_key}
-        identity = OAuthIdentity.find_by_user_id(current_user.id, name)
+        identity = OAuthIdentity.find_by_user_id(user.id, name)
         logger.debug("The token: %r", identity.token)
         return OAuth2Token(identity.token)
 
     @staticmethod
     def update_token(name, token, refresh_token=None, access_token=None):
-        if access_token or refresh_token:
-            identity = OAuthIdentity.find_by_user_id(current_user.id, name)
-        else:
-            return
+        if access_token:
+            logger.debug("Fetching token by access_token...")
+            identity = OAuthIdentity.query.filter(
+                OAuthIdentity.token['access_token'] == access_token).one()
+        elif refresh_token:
+            logger.debug("Fetching token by refresh_token...")
+            identity = OAuthIdentity.query.filter(
+                OAuthIdentity.token['refresh_token'] == refresh_token).one()
         # update old token
-        identity.set_token(token)
+        logger.debug("Updating the token to access the user's identity...")
+        identity.token = token
+        logger.debug("Save the user's identity...")
         identity.save()
 
 

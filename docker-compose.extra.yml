@@ -11,6 +11,7 @@ services:
       - ./certs/lm.crt:/certs/lm.crt:ro
       - ./certs/lm.key:/certs/lm.key:ro
       - ./tests/config/registries/seek/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./tests/config/registries/seek/doorkeeper.rb:/seek/config/initializers/doorkeeper.rb
     networks:
       - life_monitor
 
