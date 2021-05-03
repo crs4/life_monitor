@@ -30,8 +30,8 @@ useful life of the workflows.
 ## How to use it
 
 At the moment, the Life Monitor can be used through its [REST API](lm_api_specs)
-or through the [restish command-line client](restish-cli).  Follow the [Getting
-started](getting_started) user guide to see how to start using it.
+or through a command-line client.  Follow the [Getting started](getting_started)
+user guide to see how to start using it.
 
 If instead you want to deploy your own instance of Life Monitor, follow the
 [Administration Guide](lm_admin_guide) to learn how to deploy and configure the

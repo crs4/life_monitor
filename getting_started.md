@@ -3,7 +3,7 @@
 Follow this guide if you want to use Life Monitor to monitor your workflows.
 
 At the moment, the Life Monitor can be used through its [REST API](lm_api_specs)
-or through the [restish command-line client](restish-cli).
+or through a command-line client.
 Integration with the [Workflow Hub](https://workflowhub.eu/) is in the works, as
 well as a web interface and a command line client.
 
