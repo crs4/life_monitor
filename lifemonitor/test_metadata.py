@@ -234,14 +234,13 @@ def get_roc_suites(crate):
                 })
         definition = suite.definition
         if definition:
-            path = Path(definition.id).relative_to(crate.test_dir.id)
             t = _TO_OLD_TYPES.get(definition.conformsTo.id, "unknown")
             suite_data["definition"] = {
                 "test_engine": {
                     "type": t,
                     "version": definition.engineVersion,
                 },
-                "path": str(path),
+                "path": definition.id,
             }
         else:
             suite_data["definition"] = {}
