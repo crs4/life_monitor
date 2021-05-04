@@ -42,6 +42,10 @@ from . import exceptions as lm_exceptions
 logger = logging.getLogger()
 
 
+def split_by_crlf(s):
+    return [v for v in s.splitlines() if v]
+
+
 def bool_from_string(s) -> bool:
     if s is None or s == "":
         return None
