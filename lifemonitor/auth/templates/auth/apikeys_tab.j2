@@ -1,0 +1,57 @@
+<div class="m-2 p-2">
+    Allow a user to interact with the LifeMonitor API.
+    An API key acts as a static authentication token and can be generated via the LifeMonitor
+    user interface after logging in. This authentication method can be used to quickly
+    try API calls via the API docs interface or tools like <span class="text-monospace">curl</span>.
+</div>
+
+<div class="card-header">
+    <h3 class="card-title"><b>API keys</b></h3>
+</div>
+
+<div class="card-body p-0">
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th style="width: 10px">#</th>
+            <th>Key</th>
+            <th style="width: 10px"></th>
+            <th style="width: 44px">
+            <form method="POST"
+                    action="{{ url_for('auth.create_apikey') }}">
+            <button class="btn btn-link" type="submit" style="padding: 0">
+                <span class="badge bg-success">NEW</span>
+            </button>
+            </form>
+            </th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for k in current_user.api_keys %}
+        <tr class="apikey-container">
+            <td>{{loop.index}}</td>
+            <td id="apikey_{{loop.index}}" class="apikey text-sm-left">{{k.key}}</td>
+            <td>
+                <button class="btn btn-link" type="submit" style="padding: 0"
+                        onclick="copyToClipboard('{{k.key}}', 'API Key copied to clipboard')">
+                    <div class="badge bg-primary">
+                        <span class="m-1">COPY</span><i class="far fa-copy"></i>
+                    </div>
+                </button>
+            </td>
+            <td>
+            <form method="POST"
+                    action="{{ url_for('auth.delete_apikey') }}">
+                <input type="hidden" name="apikey" value="{{k.key}}" />
+                <button class="btn btn-link" type="submit" style="padding: 0">
+                <span class="badge bg-danger">
+                DELETE
+                </span>
+                </button>
+            </form>
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
