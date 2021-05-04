@@ -58,6 +58,9 @@ class Client(db.Model, OAuth2ClientMixin):
 
     __tablename__ = "oauth2_client"
 
+    def is_confidential(self):
+        return self.has_client_secret()
+
     @property
     def redirect_uris(self):
         return self.client_metadata.get('redirect_uris', [])
@@ -148,8 +151,8 @@ class AuthorizationServer(OAuth2AuthorizationServer):
         # register it to grant endpoint
         self.register_grant(RefreshTokenGrant)
 
-    @staticmethod
-    def create_client(user,
+    @classmethod
+    def create_client(cls, user,
                       client_name, client_uri,
                       grant_type, response_type, scope,
                       redirect_uri,
@@ -161,6 +164,24 @@ class AuthorizationServer(OAuth2AuthorizationServer):
             client_id_issued_at=client_id_issued_at,
             user_id=user.id,
         )
+
+        return cls.update_client(
+            user, client,
+            client_name, client_uri,
+            grant_type, response_type, scope,
+            redirect_uri,
+            token_endpoint_auth_method=token_endpoint_auth_method, commit=commit
+        )
+
+    @staticmethod
+    def update_client(user: User, client: Client,
+                      client_name, client_uri,
+                      grant_type, response_type, scope,
+                      redirect_uri,
+                      token_endpoint_auth_method=None, commit=True):
+
+        if client.user_id != user.id:
+            raise ValueError("Invalid user!")
 
         client_metadata = {
             "client_name": client_name,
@@ -194,6 +215,19 @@ class AuthorizationServer(OAuth2AuthorizationServer):
         for t in Token.find_by_user(user):
             if not t.revoked and not t.is_expired():
                 return False
+        return True
+
+    @staticmethod
+    def get_client(user: User, clientId):
+        return next((c for c in user.clients if c.client_id == clientId), None)
+
+    @classmethod
+    def delete_client(cls, user: User, clientId):
+        client = cls.get_client(user, clientId)
+        if not client:
+            return False
+        db.session.delete(client)
+        db.session.commit()
         return True
 
 
