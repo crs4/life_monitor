@@ -1,0 +1,75 @@
+
+
+{# <div class="m-2 p-2">
+    External accounts connected to Life Monitor.
+</div> #}
+
+<div class="card-header">
+    <h3 class="card-title"><b>Connected accounts</b></h3>
+</div>
+
+<div class="card-body p-1">
+    <table class="table table-striped">
+    <thead>
+        <tr>
+        <th style="width: 5px"></th>
+        <th>Provider</th>
+        <th style="width: 100px">User ID</th>
+        <th style="width: 40px"></th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for p in providers %}
+        <tr>
+        <td>{{ macros.render_provider_fa_icon(p, color="black") }}</td>
+        <td>{{p.name.capitalize()}}</td>
+        <td>{% if p.name in current_user.oauth_identity %}
+            {{ current_user.oauth_identity[p.name].provider_user_id }}
+            {% endif %}</td>
+        {% if p.name in current_user.oauth_identity %}
+        <td><span class="badge bg-success">CONNECTED</span></td>
+        {% else %}
+        <td>
+            <span class="badge bg-primary">
+            <a class="" href="/oauth2/login/{{p.name}}">CONNECT</a>
+            </span>
+        </td>
+        {% endif %}
+        </tr>
+    {% endfor %}
+    </tbody>
+    </table>
+</div>
+
+{% if passwordForm %}
+<br/><br/>
+<div class="card-header">
+    <h3 class="card-title"><b>Change Password</b></h3>
+</div>
+
+<div class="card-body">
+    <div class="text-muted pt-2 pb-2">
+    You{% if not current_user.has_password %} do not{% endif %}
+    have a password set for your account. Use the form below to
+    {% if not current_user.has_password %}set{% endif %}
+    {% if current_user.has_password %}update{% endif %}
+    your password.
+    </div>
+    <form method="POST" action="{{ url_for('auth.set_password') }}" >
+    {{ passwordForm.hidden_tag() }}
+    <div class="form-group">
+        <label for="Password" class="col-form-label">Password</label>
+        {{ macros.render_custom_field(passwordForm.password) }}
+    </div>
+    <div class="form-group">
+        <label for="Repeat Password" class="col-form-label">Repeat password</label>
+        {{ macros.render_custom_field(passwordForm.repeat_password) }}
+    </div>
+    <div class="form-group pt-3">
+        <button type="submit" class="btn btn-primary">Update</button>
+    </div>
+    </form>
+</div>
+{% endif %}
+
+
