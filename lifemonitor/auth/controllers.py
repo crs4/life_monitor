@@ -89,8 +89,7 @@ def index():
 
 @blueprint.route("/profile", methods=("GET",))
 def profile(form=None, passwordForm=None, currentView=None):
-
-    currentView = currentView or request.args.get("currentView", 'apiKeysTab')
+    currentView = currentView or request.args.get("currentView", 'accountsTab')
     logger.debug(OpenApiSpecs.get_instance().authorization_code_scopes)
     return render_template("auth/profile.j2",
                            passwordForm=passwordForm or SetPasswordForm(),
