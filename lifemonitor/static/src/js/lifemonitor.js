@@ -51,7 +51,6 @@ function initializeViewApiKeys(numOfCharVisible = 20) {
     }
 }
 
-
 // Update the currentView
 function updateCurrentView(currentView) {
     if (currentView == 'oauth2ClientEditorPane') {
@@ -73,6 +72,26 @@ function updateCurrentView(currentView) {
             location.search = '?currentView=oauth2ClientsTab';
         }
     }
+}
+
+// Initialize Duallistbox of
+function oauth2ClientFormInit() {
+    //Bootstrap Duallistbox
+    $('.duallistbox').bootstrapDualListbox({
+        infoText: "List of scopes",
+        infoTextFiltered: "Filtered scopes",
+        infoTextEmpty: "No scope"
+    });
+}
+
+function changeClientType(el) {
+    let secondarySelector = document.getElementById("clientAuthMethod");
+    let action = !el.checked ? "add" : "remove";
+    secondarySelector.classList[action]('d-none');
+}
+
+function showOAuth2ClientEditorPane() {
+    $('#oAuth2ClientModalPane').modal('show');
 }
 
 //Initialize Select2 Elements

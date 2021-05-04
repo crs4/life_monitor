@@ -82,19 +82,20 @@
   </div>
 {% endif %}
 </div>
-
-
-<script>
-window.addEventListener("load", function(){
-    // Initialize APIKeys
-    initializeViewApiKeys(numberOfVisibleChars=15);
-
-    // Initialize Oauth2ClientEditorPane
-    oauth2ClientFormInit();
-
-    // init current view
-    let currentView = "{{ currentView | safe }}";
-    updateCurrentView(currentView);
-});
-</script>
 {% endblock %}
+
+
+{% block javascripts %} 
+<script>
+  // Initialize APIKeys
+  initializeViewApiKeys(numberOfVisibleChars=15);
+
+  // Initialize Oauth2ClientEditorPane
+  oauth2ClientFormInit();
+
+  // init current view
+  let currentView = "{{ currentView | safe }}";
+  updateCurrentView(currentView);
+
+</script>
+{% endblock javascripts %}

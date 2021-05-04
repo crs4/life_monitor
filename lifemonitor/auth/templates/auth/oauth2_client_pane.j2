@@ -96,24 +96,4 @@ window.addEventListener("load", function(){
     let clTypeSwitch = document.getElementById("oauth2-client-type");
     changeClientType(clTypeSwitch);
 });
-
-// Initialize Duallistbox of
-function oauth2ClientFormInit(){
-    //Bootstrap Duallistbox
-    $('.duallistbox').bootstrapDualListbox({
-        infoText: "List of scopes",
-        infoTextFiltered: "Filtered scopes",
-        infoTextEmpty: "No scope"
-    });
-}
-
-function changeClientType(el){
-    let secondarySelector = document.getElementById("clientAuthMethod");
-    let action = !el.checked ? "add" : "remove";
-    secondarySelector.classList[action]('d-none');
-}
-
-function showOAuth2ClientEditorPane(){
-    $('#oAuth2ClientModalPane').modal('show');
-}
 </script>
