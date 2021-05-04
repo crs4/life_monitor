@@ -59,6 +59,17 @@
   {% endif %}
 {%- endmacro %}
 
+{% macro render_field_errors(field) -%}
+{% if field.errors %}
+    <div class="invalid-feedback d-block">
+      {% if field.errors %}
+        {% for error in field.errors %}
+          <span class="error">{{ error }}</span>
+        {% endfor %}
+      {% endif %}
+    </div>
+  {% endif %}
+{%- endmacro %}
 
 {% macro render_custom_fieldx(field) -%}
   <input
