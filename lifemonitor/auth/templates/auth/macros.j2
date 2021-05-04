@@ -4,7 +4,7 @@
     <img
       src="{{ url_for('auth.static', filename='img/logo/lm/LifeMonitorLogo.png') }}"
       alt="LifeMonitor Logo"
-      class="img-fluid card-img-top"      
+      class="img-fluid card-img-top"
     />
   </a>
 </div>
@@ -13,7 +13,7 @@
 
 {% macro messages() -%}
   {% set messages = get_flashed_messages(with_categories=true) %}
-  {% if messages %}    
+  {% if messages %}
     {% for category, message in messages %}
     <script>
       $(function() {
@@ -29,11 +29,10 @@
             title: '<span style="padding: 0 6px">{{ message }}</span>'
         })
       });
-    </script>      
-    {% endfor %}    
+    </script>
+    {% endfor %}
   {% endif %}
 {%- endmacro %}
-
 
 {% macro messages_as_list() -%}
   {% set messages = get_flashed_messages(with_categories=true) %}
