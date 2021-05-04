@@ -1,0 +1,119 @@
+<!-- Modal -->
+<div class="modal fade" id="oAuth2ClientModalPane" tabindex="-1" role="dialog"
+     aria-labelledby="oAuth2ClientModalPane" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title text-bold" id="oAuth2ClientModalPaneLabel">OAuth2 Generic Client</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"
+                    onclick="updateCurrentView('oauth2ClientsTab')">
+            <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <form action="{{ url_for('auth.save_generic_code_flow_client') }}" method="post">
+            {{ oauth2ClientForm.hidden_tag() }}
+            <div class="modal-body">
+                <div class="form-group">
+                    {{ oauth2ClientForm.name.label }}
+                    <input type="text" class="form-control"
+                           name="{{ oauth2ClientForm.name.name }}"
+                           {% if oauth2ClientForm.name.data %}value="{{ oauth2ClientForm.name.data }}"{% endif %}
+                           placeholder="MyLifeMonitorClient">
+                    {{ macros.render_field_errors(oauth2ClientForm.name) }}
+                </div>
+                <div class="form-group">
+                    {{ oauth2ClientForm.uri.label }}
+                    <input type="text" class="form-control"
+                           name="{{ oauth2ClientForm.uri.name }}"
+                           {% if oauth2ClientForm.uri.data %}value="{{ oauth2ClientForm.uri.data }}"{% endif %}
+                           placeholder="https://localhost:3000">
+                    {{ macros.render_field_errors(oauth2ClientForm.uri) }}
+                </div>
+                <div class="form-group">
+                    {{ oauth2ClientForm.redirect_uris.label }}
+                    <textarea class="form-control"
+                              name="{{ oauth2ClientForm.redirect_uris.name }}"
+                              placeholder="https://localhost:3000/oauth2/callback"
+                              rows="3">{% if oauth2ClientForm.redirect_uris.data %}{{ oauth2ClientForm.redirect_uris.data }}{% endif %}</textarea>
+                    {{ macros.render_field_errors(oauth2ClientForm.redirect_uris) }}
+                </div>
+                <div class="form-group clearfix">
+                    {{ oauth2ClientForm.scopes.label }}
+                     <select class="duallistbox" name="{{ oauth2ClientForm.scopes.name }}" multiple="multiple"
+                        id="oauth2ClientScopeSelector">
+                        {% for key, value in oauth2ClientForm.scopes.choices %}
+                            <option data-toggle="tooltip" data-placement="top" value="{{key}}"
+                                title="{{value}}"
+                                {% if oauth2ClientForm.scopes.data and key in oauth2ClientForm.scopes.data %} selected {% endif %}>
+                                {{key}}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    {{ macros.render_field_errors(oauth2ClientForm.scopes) }}
+                </div>
+                <div class="form-group clearfix">
+                    <legend class="col-form-label font-weight-bold">Client Type:</legend>
+                    <input class="data-bootstrap-switch"
+                        type="checkbox" name="{{ oauth2ClientForm.confidential.name }}" id="oauth2-client-type"
+                        {% if oauth2ClientForm.confidential.data %}checked{% endif %}
+                        onchange="changeClientType(this)"
+                        data-bootstrap-switch
+                        data-onstyle="primary"
+                        data-off-color="danger" data-on-color="success">
+                    {{ oauth2ClientForm.confidential.label(class_="font-weight-normal") }}
+                    {{ macros.render_field_errors(oauth2ClientForm.confidential) }}
+                </div>
+
+                <div class="form-group clearfix" id="clientAuthMethod">
+                    {{ oauth2ClientForm.auth_method.label }}
+                    <select class="form-control select2 .child-selector"
+                            data-placeholder="Select a State"
+                            data-dropdown-css-class="select2"
+                            name="token_endpoint_auth_method"
+                            style="width: 100%;">
+                    {% for key, value in oauth2ClientForm.auth_method.choices %}
+                        <option data-toggle="tooltip" data-placement="top" value="{{key}}"
+                                title="{{value}}" selected>{{key}}</option>
+                    {% endfor %}
+                    </select>
+                    {{ macros.render_field_errors(oauth2ClientForm.auth_method) }}
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary"
+                        data-dismiss="modal" onclick="updateCurrentView('oauth2ClientsTab')">Close</button>
+                <input type="submit" class="btn btn-primary" value="Save"/>
+            </div>
+        </form>
+        </div>
+    </div>
+</div>
+
+
+<script>
+window.addEventListener("load", function(){
+    // Init
+    let clTypeSwitch = document.getElementById("oauth2-client-type");
+    changeClientType(clTypeSwitch);
+});
+
+// Initialize Duallistbox of
+function oauth2ClientFormInit(){
+    //Bootstrap Duallistbox
+    $('.duallistbox').bootstrapDualListbox({
+        infoText: "List of scopes",
+        infoTextFiltered: "Filtered scopes",
+        infoTextEmpty: "No scope"
+    });
+}
+
+function changeClientType(el){
+    let secondarySelector = document.getElementById("clientAuthMethod");
+    let action = !el.checked ? "add" : "remove";
+    secondarySelector.classList[action]('d-none');
+}
+
+function showOAuth2ClientEditorPane(){
+    $('#oAuth2ClientModalPane').modal('show');
+}
+</script>
