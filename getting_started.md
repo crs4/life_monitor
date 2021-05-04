@@ -7,7 +7,7 @@ or through a command-line client.
 Integration with the [Workflow Hub](https://workflowhub.eu/) is in the works, as
 well as a web interface and a command line client.
 
-To interact with the API, the first thing to do is to first authenticate with the Life
+To interact with the API, the first thing to do is to authenticate with the Life
 Monitor.
 
 
