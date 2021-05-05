@@ -13,14 +13,6 @@ Monitor.
 
 ## Create and account and authenticate
 
-:bulb: If you just want to play around or get familiar with the API, use the dev
-instance of Life Monitor (replace <https://api.lifemonitor.eu> with
-<https://api.dev.lifemonitor.eu> throughout these instructions and examples).
-
-:warning: Please note that the dev instance is meant for testing / development and it
-could be wiped out at any time with no warning"
-
-
 Point your browser to the Life Monitor API endpoint <https://api.lifemonitor.eu/>.
 
 :bulb: If you just want to play around or get familiar with the API, use the dev
