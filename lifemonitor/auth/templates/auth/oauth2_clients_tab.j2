@@ -32,9 +32,9 @@
             <div class="font-weight-light text-muted small">
               <div><span class="font-weight-bold">client ID</span>: {{client.client_id}}</div>
               <div><span class="font-weight-bold">confidential</span>: {{client.is_confidential()}}</div>
-              <div><span class="font-weight-bold">scopes</span>: {{", ".join(client.scope)}}</div>
+              <div><span class="font-weight-bold">scopes</span>: {{", ".join(client.scopes)}}</div>
               <div><span class="font-weight-bold">url</span>: {{client.client_uri}}</div>
-              <div><span class="font-weight-bold">callbacks</span>: {{ client.redirect_uris }}</div>
+              <div><span class="font-weight-bold">callbacks</span>: {{", ".join(client.redirect_uris)}}</div>
               {% if client.is_confidential() %}
               <div><span class="font-weight-bold">auth method</span>: {{ client.auth_method }}</div>
               {% endif %}
