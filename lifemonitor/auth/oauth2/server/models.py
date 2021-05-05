@@ -20,6 +20,8 @@
 
 from __future__ import annotations
 
+import copy
+import logging
 import time
 from datetime import datetime
 from typing import List
@@ -38,8 +40,11 @@ from flask import current_app
 from lifemonitor.auth.models import User
 from lifemonitor.db import db
 from lifemonitor.models import ModelMixin
-from lifemonitor.utils import get_base_url
+from lifemonitor.utils import get_base_url, values_as_list, values_as_string
 from werkzeug.security import gen_salt
+
+# Set the module level logger
+logger = logging.getLogger(__name__)
 
 
 class Client(db.Model, OAuth2ClientMixin):
@@ -61,16 +66,33 @@ class Client(db.Model, OAuth2ClientMixin):
     def is_confidential(self):
         return self.has_client_secret()
 
+    def set_client_metadata(self, value):
+        if not isinstance(value, dict):
+            return
+        data = copy.deepcopy(value)
+        data['scope'] = values_as_string(value['scope'], out_separator=" ")
+        for p in ('redirect_uris', 'grant_types', 'response_types', 'contacts'):
+            data[p] = values_as_list(value.get(p, []))
+        return super().set_client_metadata(data)
+
     @property
     def redirect_uris(self):
-        return self.client_metadata.get('redirect_uris', [])
+        return super().redirect_uris
 
     @redirect_uris.setter
     def redirect_uris(self, value):
-        if isinstance(value, str):
-            value = value.split(',')
         metadata = self.client_metadata
         metadata['redirect_uris'] = value
+        self.set_client_metadata(metadata)
+
+    @property
+    def scopes(self):
+        return self.scope.split(" ") if self.scope else []
+
+    @scopes.setter
+    def scopes(self, scopes):
+        metadata = self.client_metadata
+        metadata['scope'] = scopes
         self.set_client_metadata(metadata)
 
     @property
@@ -157,6 +179,7 @@ class AuthorizationServer(OAuth2AuthorizationServer):
                       grant_type, response_type, scope,
                       redirect_uri,
                       token_endpoint_auth_method=None, commit=True):
+        logger.debug("SCOPE: %r", scope)
         client_id = gen_salt(24)
         client_id_issued_at = int(time.time())
         client = Client(
@@ -173,8 +196,8 @@ class AuthorizationServer(OAuth2AuthorizationServer):
             token_endpoint_auth_method=token_endpoint_auth_method, commit=commit
         )
 
-    @staticmethod
-    def update_client(user: User, client: Client,
+    @classmethod
+    def update_client(cls, user: User, client: Client,
                       client_name, client_uri,
                       grant_type, response_type, scope,
                       redirect_uri,
@@ -196,7 +219,7 @@ class AuthorizationServer(OAuth2AuthorizationServer):
 
         if token_endpoint_auth_method == 'none':
             client.client_secret = ''
-        else:
+        elif not client.client_secret:
             client.client_secret = gen_salt(48)
 
         if commit:

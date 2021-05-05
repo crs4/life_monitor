@@ -23,6 +23,7 @@ import glob
 import json
 import logging
 import random
+import re
 import shutil
 import socket
 import string
@@ -44,6 +45,40 @@ logger = logging.getLogger()
 
 def split_by_crlf(s):
     return [v for v in s.splitlines() if v]
+
+
+def values_as_list(values, in_separator='\\s?,\\s?|\\s+'):
+    if not values:
+        return []
+    if isinstance(values, list):
+        return values
+    if isinstance(values, str):
+        try:
+            return values_as_list(json.loads(values))
+        except json.JSONDecodeError:
+            try:
+                return values_as_list(re.split(in_separator, values))
+            except Exception as e:
+                raise ValueError("Invalid format: %r", str(e))
+    else:
+        raise ValueError("Invalid format")
+
+
+def values_as_string(values, in_separator='\\s?,\\s?|\\s+', out_separator=" "):
+    if not values:
+        return ""
+    if isinstance(values, str):
+        try:
+            return out_separator.join(json.loads(values))
+        except json.JSONDecodeError:
+            try:
+                return out_separator.join(re.split(in_separator, values))
+            except Exception as e:
+                raise ValueError("Invalid format: %r", str(e))
+    elif isinstance(values, list):
+        return out_separator.join(values)
+    else:
+        raise ValueError("Invalid format")
 
 
 def bool_from_string(s) -> bool:
