@@ -247,7 +247,7 @@ def save_generic_code_flow_client():
                                               data['name'], data['uri'],
                                               'authorization_code', 'code',
                                               data['scopes'],
-                                              " ".join(split_by_crlf(data["redirect_uris"])),
+                                              split_by_crlf(data["redirect_uris"]),
                                               data['auth_method'])
                 logger.debug("lient created: %r", client)
                 flash("App Created", category="success")
@@ -261,7 +261,7 @@ def save_generic_code_flow_client():
                                      data['name'], data['uri'],
                                      'authorization_code', 'code',
                                      data['scopes'],
-                                     " ".join(split_by_crlf(data["redirect_uris"])),
+                                     split_by_crlf(data["redirect_uris"]),
                                      data['auth_method'])
                 logger.debug("Client updated: %r", client)
                 flash("App Updated", category="success")
