@@ -25,7 +25,7 @@
       </thead>
       <tbody>
         {% for client in current_user.clients %}
-        <tr class="apikey-container">
+        <tr ondblclick="$('tr > td >form[name=edit_{{client.client_id}}] > button').click();">
           <td>{{loop.index}}</td>
           <td id="oauth2app_{{loop.index}}" class="text-sm-left" style="max-width: 50%;">
             <div class="h4">{{client.client_name}}</div>
@@ -58,6 +58,7 @@
           </td>
           <td>
             <form method="POST"
+                  name="edit_{{client.client_id}}"
                   action="{{ url_for('auth.edit_generic_code_flow_client') }}">
               <input type="hidden" name="clientId" value="{{client.client_id}}" />
               <button class="btn btn-link" type="submit" style="padding: 0">
