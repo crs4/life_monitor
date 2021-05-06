@@ -60,10 +60,12 @@
 
 {% macro render_field_errors(field) -%}
 {% if field.errors %}
-    <div class="invalid-feedback d-block">
+    <div class="invalid-feedback d-block pl-1 p-0">
       {% if field.errors %}
         {% for error in field.errors %}
-          <span class="error">{{ error }}</span>
+          <i class="fas fa-exclamation-circle"></i>
+          <span class="error font-weight-bold ml-0">
+          {{ error }}</span>
         {% endfor %}
       {% endif %}
     </div>
