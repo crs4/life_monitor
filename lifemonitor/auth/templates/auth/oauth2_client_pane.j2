@@ -73,7 +73,8 @@
                             style="width: 100%;">
                     {% for key, value in oauth2ClientForm.auth_method.choices %}
                         <option data-toggle="tooltip" data-placement="top" value="{{key}}"
-                                title="{{value}}" selected>{{key}}</option>
+                                title="{{value}}"
+                                {% if key==oauth2ClientForm.auth_method.data %}selected{% endif %}>{{key}}</option>
                     {% endfor %}
                     </select>
                     {{ macros.render_field_errors(oauth2ClientForm.auth_method) }}
