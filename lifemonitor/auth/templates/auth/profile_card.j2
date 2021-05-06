@@ -2,27 +2,38 @@
 <div class="card card-primary card-outline">
     <div class="card-body box-profile">
     <div class="text-center">
+        <a class="nav-item" href="#"
+           onclick="updateCurrentView('accountsTab')">
         <img class="profile-user-img img-fluid img-circle"
             src="{{ current_user.picture or url_for('auth.static', filename='img/avatar/default-user-avatar.jpg') }}"
             alt="User profile picture">
+        </a>
     </div>
 
     <h3 class="profile-username text-center">{{ current_user.username }}</h3>
 
     <p class="text-muted text-center">(id. {{ current_user.id }})</p>
 
-    <ul class="list-group list-group-unbordered mb-3">
-        {# <li class="list-group-item">
-        <b>Accounts</b> <a class="float-right">{{ current_user.oauth_identity|length }}</a>
-        </li> #}
-        <li class="list-group-item">
-        <b>API Keys</b> <a class="float-right">{{ current_user.api_keys|length }}</a>
+    <ul class="nav nav-pills flex-column mb-4">
+        <li class="nav-item">
+            <a class="nav-link font-weight-bold" href="#"
+               onclick="updateCurrentView('apiKeysTab')">
+                API Keys
+                <span class="float-right">{{ current_user.api_keys|length }}</span>
+            </a>
         </li>
-        <li class="list-group-item">
-        <b>OAuth Apps</b> <a class="float-right">{{ current_user.clients|length }}</a>
+        <li class="nav-item">
+            <a class="nav-link font-weight-bold" href="#"
+               onclick="updateCurrentView('oauth2ClientsTab')">
+                OAuth Apps
+                <span class="float-right">{{ current_user.clients|length }}</span>
+            </a>
         </li>
-        <li class="list-group-item">
-        <b>Workflows</b> <a class="float-right">{{ current_user.workflows|length }}</a>
+        <li class="nav-item">
+            <a class="nav-link font-weight-bold" href="#">
+                Workflows
+                <span class="float-right">{{ current_user.workflows|length }}</span>
+            </a>
         </li>
     </ul>
 
