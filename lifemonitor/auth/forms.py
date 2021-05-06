@@ -119,8 +119,8 @@ class Oauth2ClientForm(FlaskForm):
     confidential = BooleanField("Confidential")
     auth_method = SelectField("Client Authentication Method",
                               choices=[
-                                  ("client_secret_basic", "Authorization Header (basic)"),
-                                  ("client_secret_post", "Request Body (post)")])
+                                  ("client_secret_basic", "Authorization Header (client_secret_basic)"),
+                                  ("client_secret_post", "Request Body (client_secret_post)")])
 
     def get_client_data(self):
         logger.debug("Extracting client data from form...")
