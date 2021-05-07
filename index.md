@@ -42,7 +42,7 @@ well as a web interface and a command line client.
 
 A critical component to define and exchange workflow tests with the Life Monitor
 is the [Workflow RO-crate](https://about.workflowhub.eu/Workflow-RO-Crate/) and
-[Workflow RO-crate testing extension](https://github.com/crs4/life_monitor/wiki/Workflow-Testing-RO-Crate).
+[Workflow RO-crate testing extension](workflow_testing_ro_crate).
 
 
 ## Road map
@@ -53,7 +53,7 @@ Life Monitor is still in early development.  Here is our planned development roa
 #### End of 2020
 - [x] Support for receiving workflow POSTs as Workflow RO-crate;
 - [x] Relatively stable interface and implementation for test outcome retrieval;
-- [x] Complete first version of Workflow RO-crate draft test specification;
+- [x] Complete first draft of [Workflow RO-crate testing specification](workflow_testing_ro_crate);
 - Support monitoring tests running on external testing services:
     - [x] TravisCI
     - [x] Jenkins
