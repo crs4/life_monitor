@@ -41,7 +41,7 @@ The **context** used by Workflow Testing RO-Crates is an extension of the [RO-Cr
 
 The most recent version of the context is available from [https://github.com/ResearchObject/ro-terms/blob/master/test](https://github.com/ResearchObject/ro-terms/blob/master/test).
 
-A Workflow Testing RO-Crate MUST be a valid [Workflow RO-Crate](https://about.workflowhub.eu/Workflow-RO-Crate/) (e.g., it has to contain a *Main Workflow*). In addition, it COULD refer to one or more test suites from the root data entity via the `mentions` property:
+A Workflow Testing RO-Crate MUST be a valid [Workflow RO-Crate](https://about.workflowhub.eu/Workflow-RO-Crate/) (e.g., it has to contain a *Main Workflow*). In addition, it COULD refer to one or more [test suites](#test-suite) from the root data entity via the `mentions` property:
 
 ```json
 {
