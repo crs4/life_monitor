@@ -87,11 +87,11 @@
                         </div>
                         <div class="col-sm-9 mt-sm-2">
                             <small class="form-text text-muted mt-sm-4">
-                                A <em>non confidential</em> 
-                                (or <em>public client</em>) is a client that
+                                A <em>non-confidential</em> 
+                                (or <em>public</em>) client
                                 cannot maintain the confidentiality of a client_secret, 
                                 so the secret is not used for these apps. 
-                                Mobile and Javascript apps are considered <em>non confidential</em>.
+                                Mobile and Javascript apps are considered non-confidential.
                             </small>
                             {{ macros.render_field_errors(oauth2ClientForm.confidential) }}
                         </div>                        
@@ -114,11 +114,11 @@
                     <small class="form-text text-muted pl-1">
                         Determines which authentication method your confidential client 
                         can use to be authenticated by the token endpoint.
-                        The client can provide its client credentials 
-                        (i.e., <em>ClientID</em> and <em>Client SECRET</em>)
-                        either encoding them in the request header 
+                        The client can provide its credentials 
+                        (i.e., <em>Client ID</em> and <em>Client SECRET</em>)
+                        either by encoding them in the request header 
                         (<em>Authorization Header - <b>client_secret_basic</b></em>)
-                        or passing them in the request body 
+                        or by passing them in the request body 
                         (<em>Authorization Header - <b>client_secret_post</b></em>).
                     </small>
                     {{ macros.render_field_errors(oauth2ClientForm.auth_method) }}
