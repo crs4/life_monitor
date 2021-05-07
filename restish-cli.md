@@ -34,39 +34,63 @@ $ brew tap danielgtaylor/restish
 $ brew install restish
 ```
 
+## Add Restish as a Life Monitor OAuth2 client
+
+Instructions on how to configure Restish are provided [in its
+documentation](https://rest.sh/#/configuration?id=oauth-20-authorization-code).
+
+To add restish as a Life Monitor client, start by logging into the [Life Monitor
+web interface](https://api.lifemonitor.eu).
+
+Select the **OAuth Apps** list.  Click on the **New** button on the right of the
+list to add a new application.
+
+Assuming you're using Restish from your computer, configure the new client as
+follows:
+
+* Client name: whatever you like
+* Client URI: `http://localhost:8484/`
+* Client Redirect URIs: `http://localhost:8484`
+* Allowed scopes: add them all, or be more selected according to your needs
+* Client Type: `Off` (i.e., not confidential)
+
+Save the configuration.  You should the newly configured application in the
+OAuth App list
+
+<img alt="LM OAuth app" src="images/lm_oauth_app_restish.png" width="600" />
+
+
 ## Configure Restish to work with the Life Monitor API
 
-Make sure you have credentials to access the Life Monitor API (see the [getting
-started page](getting_started) otherwise).  Access the [Life Monitor](https://api.lifemonitor.eu/) page, log in and get an API key.  You can then configure `restish` to use it to access the API:
+Invoke the `restish configure` command with the Life Monitor API URL:
 ```
 $ restish api configure lm https://api.lifemonitor.eu
+```
+
+The Restish wizard will guide you through configuration procedure.  Copy values
+shown between angle brackets `< >` from the OAuth App you created in Life
+Monitor:
+
+```
 ? Select option Edit profile default
-? Select option for profile `default` Add header
-? Header name ApiKey
-? Header value (optional) <YOUR API KEY HERE>
+? Select option for profile `default` Setup auth
+? API auth type oauth-authorization-code
+? Auth parameter client_id <COPY THE "client ID">
+? Auth parameter client_secret (optional) 
+? Auth parameter authorize_url https://api.lifemonitor.eu/oauth2/authorize
+? Auth parameter token_url https://api.lifemonitor.eu/oauth2/token
+? Auth parameter scopes (optional) <COPY THE "scopes">
+? Add additional auth param? No
 ? Select option for profile `default` Finished with profile
 ? Select option Save and exit
 ```
 
-Unfortunately, because of an [issue with restish](
-https://github.com/danielgtaylor/restish/issues/44) it will generate an
-incompatible configuration.  To fix it follow these instructions.
-
-1. Use your favourite editor to open the restish configuration file
-   `$HOME/.restish/apis.json`
-2. Find the Life Monitor configuration remove the following structure from it:
-```
-  "auth": { 
-    "name": "oauth-authorization-code", 
-    "params": { 
-      "authorize_url": "oauth2/authorize", 
-      "client_id": "", 
-      "token_url": "oauth2/token" 
-    }
-```
-
 Now you should be ready to go.  Test things out:  try to query your user
-profile:
+profile and Restish should open your browser and direct you to the Life Monitor
+application authorization page.
+
+Provide your consent to having Restish access the Life Monitor for you, then the
+client your give you a reply:
 ```
 $ restish lm show-current-user-profile
 HTTP/1.1 200 OK
