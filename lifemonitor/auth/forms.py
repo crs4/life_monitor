@@ -150,7 +150,7 @@ class Oauth2ClientForm(FlaskForm):
         form.clientId.data = client.client_id
         form.name.data = client.client_name
         form.uri.data = client.client_uri
-        form.redirect_uris.data = client.redirect_uris
+        form.redirect_uris.data = "\n".join(client.redirect_uris)
         form.scopes.data = client.scope
         form.auth_method.data = client.auth_method
         form.confidential.data = client.is_confidential()

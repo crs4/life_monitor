@@ -33,8 +33,7 @@
                     {{ oauth2ClientForm.redirect_uris.label }}
                     <textarea class="form-control"
                               name="{{ oauth2ClientForm.redirect_uris.name }}"
-                              placeholder="https://localhost:3000/oauth2/callback"
-                              rows="3">{% if oauth2ClientForm.redirect_uris.data %}{{ "\n".join(oauth2ClientForm.redirect_uris.data) }}{% endif %}</textarea>
+                              rows="3">{% if oauth2ClientForm.redirect_uris.data %}{{ oauth2ClientForm.redirect_uris.data }}{% endif %}</textarea>
                     {{ macros.render_field_errors(oauth2ClientForm.redirect_uris) }}
                 </div>
                 <div class="form-group clearfix">
