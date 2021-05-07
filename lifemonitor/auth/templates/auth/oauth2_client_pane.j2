@@ -4,7 +4,7 @@
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
         <div class="modal-header">
-            <h5 class="modal-title text-bold" id="oAuth2ClientModalPaneLabel">OAuth2 Generic Client</h5>
+            <h5 class="modal-title text-bold" id="oAuth2ClientModalPaneLabel">OAuth2 Application Client</h5>
             <button type="button" class="close" data-dismiss="modal" aria-label="Close"
                     onclick="updateCurrentView('oauth2ClientsTab')">
             <span aria-hidden="true">&times;</span>
@@ -17,65 +17,110 @@
                     {{ oauth2ClientForm.name.label }}
                     <input type="text" class="form-control"
                            name="{{ oauth2ClientForm.name.name }}"
+                           data-toggle="tooltip" data-placement="right" title="Client Name"
                            {% if oauth2ClientForm.name.data %}value="{{ oauth2ClientForm.name.data }}"{% endif %}
                            placeholder="MyLifeMonitorClient">
+                    <small class="form-text text-muted pl-1">
+                        The name of your OAuth Application Client (e.g., <em>MyLifeMonitorClient</em>)
+                    </small>
                     {{ macros.render_field_errors(oauth2ClientForm.name) }}
                 </div>
                 <div class="form-group">
                     {{ oauth2ClientForm.uri.label }}
                     <input type="text" class="form-control"
                            name="{{ oauth2ClientForm.uri.name }}"
+                           data-toggle="tooltip" data-placement="right" title="Client URI"
                            {% if oauth2ClientForm.uri.data %}value="{{ oauth2ClientForm.uri.data }}"{% endif %}
-                           placeholder="https://localhost:3000">
+                           placeholder="https://mylifemonitor-client:8443">
+                    <small class="form-text text-muted pl-1">
+                        The full URL of your OAuth Application Client homepage (e.g., <em>https://mylifemonitor-client:8443</em>)
+                    </small>
                     {{ macros.render_field_errors(oauth2ClientForm.uri) }}
                 </div>
                 <div class="form-group">
                     {{ oauth2ClientForm.redirect_uris.label }}
                     <textarea class="form-control"
                               name="{{ oauth2ClientForm.redirect_uris.name }}"
+                              data-toggle="tooltip" data-placement="right" title="Client Redirect URIs"
+                              placeholder="https://mylifemonitor-client:8443/oauth2/callback"
                               rows="3">{% if oauth2ClientForm.redirect_uris.data %}{{ oauth2ClientForm.redirect_uris.data }}{% endif %}</textarea>
+                    <small id="passwordHelpBlock" class="form-text text-muted pl-1">
+                        Determines how LifeMonitor's authorization server sends a response to your client application.
+                        You can provide more than one <em>redirect_uri</em> (one per line).
+                        In order for your application to be authorized, it must provide one 
+                        of the configured redirect URIs. 
+                        If the redirect_uri doesn't exactly match any of the configured URIs, 
+                        your application will get an <em>invalid redirect_uri</em> error.
+                    </small>
                     {{ macros.render_field_errors(oauth2ClientForm.redirect_uris) }}
                 </div>
                 <div class="form-group clearfix">
                     {{ oauth2ClientForm.scopes.label }}
-                     <select class="duallistbox" name="{{ oauth2ClientForm.scopes.name }}" multiple="multiple"
-                        id="oauth2ClientScopeSelector">
+                     <select id="oauth2ClientScopeSelector" class="duallistbox"
+                             data-placeholder="Client OAuth Scopes"
+                             name="{{ oauth2ClientForm.scopes.name }}" multiple="multiple">
                         {% for key, value in oauth2ClientForm.scopes.choices %}
-                            <option data-toggle="tooltip" data-placement="top" value="{{key}}"
-                                title="{{value}}"
-                                {% if oauth2ClientForm.scopes.data and key in oauth2ClientForm.scopes.data %} selected {% endif %}>
-                                {{key}}
-                            </option>
+                            <option value="{{key}}" title="{{value}}" style="width: 100%;"
+                                {% if oauth2ClientForm.scopes.data and key in oauth2ClientForm.scopes.data %} selected {% endif %}>{{key}}</option>
                         {% endfor %}
                     </select>
+                    <small class="form-text text-muted pl-1">
+                        Set of scopes to limit which data your application client can access,
+                        either in read or write mode. 
+                        Scopes enable your application to only request access to the resources that it needs.
+                    </small>
                     {{ macros.render_field_errors(oauth2ClientForm.scopes) }}
                 </div>
                 <div class="form-group clearfix">
-                    <legend class="col-form-label font-weight-bold">Client Type:</legend>
-                    <input class="data-bootstrap-switch"
-                        type="checkbox" name="{{ oauth2ClientForm.confidential.name }}" id="oauth2-client-type"
-                        {% if oauth2ClientForm.confidential.data %}checked{% endif %}
-                        onchange="changeClientType(this)"
-                        data-bootstrap-switch
-                        data-onstyle="primary"
-                        data-off-color="danger" data-on-color="success">
-                    {{ oauth2ClientForm.confidential.label(class_="font-weight-normal") }}
-                    {{ macros.render_field_errors(oauth2ClientForm.confidential) }}
+                    <div class="row p-2">
+                        <div class="col-sm-3">
+                            <legend class="col-form-label font-weight-bold">Client Type:</legend>
+                            <input id="oauth2-client-type"
+                                class="data-bootstrap-switch"
+                                type="checkbox" name="{{ oauth2ClientForm.confidential.name }}"
+                                {% if oauth2ClientForm.confidential.data %}checked{% endif %}
+                                onchange="changeClientType(this)"
+                                data-bootstrap-switch
+                                data-onstyle="primary"
+                                data-off-color="danger" data-on-color="success">
+                            {{ oauth2ClientForm.confidential.label(class_="font-weight-normal ml-sm-2") }}
+                        </div>
+                        <div class="col-sm-9 mt-sm-2">
+                            <small class="form-text text-muted mt-sm-4">
+                                A <em>non confidential</em> 
+                                (or <em>public client</em>) is a client that
+                                cannot maintain the confidentiality of a client_secret, 
+                                so the secret is not used for these apps. 
+                                Mobile and Javascript apps are considered <em>non confidential</em>.
+                            </small>
+                            {{ macros.render_field_errors(oauth2ClientForm.confidential) }}
+                        </div>                        
+                    </div>
                 </div>
 
                 <div class="form-group clearfix" id="clientAuthMethod">
                     {{ oauth2ClientForm.auth_method.label }}
                     <select class="form-control select2 .child-selector"
-                            data-placeholder="Select a State"
+                            data-placeholder="Select an authentication method"
                             data-dropdown-css-class="select2"
                             name="{{ oauth2ClientForm.auth_method.name }}"
                             style="width: 100%;">
                     {% for key, value in oauth2ClientForm.auth_method.choices %}
-                        <option data-toggle="tooltip" data-placement="top" value="{{key}}"
+                        <option value="{{key}}"
                                 title="{{value}}"
-                                {% if key==oauth2ClientForm.auth_method.data %}selected{% endif %}>{{key}}</option>
+                                {% if key==oauth2ClientForm.auth_method.data %}selected{% endif %}>{{value}}</option>
                     {% endfor %}
                     </select>
+                    <small class="form-text text-muted pl-1">
+                        Determines which authentication method your confidential client 
+                        can use to be authenticated by the token endpoint.
+                        The client can provide its client credentials 
+                        (i.e., <em>ClientID</em> and <em>Client SECRET</em>)
+                        either encoding them in the request header 
+                        (<em>Authorization Header - <b>client_secret_basic</b></em>)
+                        or passing them in the request body 
+                        (<em>Authorization Header - <b>client_secret_post</b></em>).
+                    </small>
                     {{ macros.render_field_errors(oauth2ClientForm.auth_method) }}
                 </div>
             </div>
@@ -89,11 +134,16 @@
     </div>
 </div>
 
-
 <script>
 window.addEventListener("load", function(){
     // Init
     let clTypeSwitch = document.getElementById("oauth2-client-type");
     changeClientType(clTypeSwitch);
 });
+
+// Initialize tooltips
+function updateTooltips(){
+    $('#oAuth2ClientModalPane [data-toggle="tooltip"]').tooltip();
+}
 </script>
+
