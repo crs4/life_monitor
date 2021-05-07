@@ -33,6 +33,7 @@
             <td id="apikey_{{loop.index}}" class="apikey text-sm-left">{{k.key}}</td>
             <td>
                 <button class="btn btn-link" type="submit" style="padding: 0"
+                        data-bs-toggle="tooltip" data-bs-placement="left" title="Copy API Key"
                         onclick="copyToClipboard('{{k.key}}', 'API Key copied to clipboard')">
                     <div class="badge bg-primary">
                         <span class="m-1">COPY</span><i class="far fa-copy"></i>

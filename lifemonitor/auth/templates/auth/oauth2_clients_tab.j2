@@ -17,7 +17,8 @@
           <th>App</th>
           <th></th>
           <th style="width: 44px">
-            <button class="btn btn-link" style="padding: 0" onclick="showOAuth2ClientEditorPane()">
+            <button class="btn btn-link" style="padding: 0" 
+                    onclick="showOAuth2ClientEditorPane()">
                 <span class="badge bg-success">NEW</span>
             </button>
           </th>
@@ -42,6 +43,7 @@
           </td>
           <td>
             <button class="btn btn-link" type="submit" style="padding: 0"
+                    data-bs-toggle="tooltip" data-bs-placement="left" title="Copy Client ID"
                     onclick="copyToClipboard('{{client.client_id}}', 'Client ID copied to clipboard')">
               <div class="badge bg-primary">
                 <span class="m-1">ID</span><i class="far fa-copy"></i>
@@ -49,6 +51,7 @@
             </button><br/>
             {% if client.is_confidential() %}
               <button class="btn btn-link" type="submit" style="padding: 0"
+                data-bs-toggle="tooltip" data-bs-placement="left" title="Copy Client SECRET"
                 onclick="copyToClipboard('{{client.client_secret}}', 'Client SECRET copied to clipboard')">
                 <div class="badge bg-success">
                   <span class="m-1">SECRET</span><i class="far fa-copy"></i>
@@ -61,7 +64,8 @@
                   name="edit_{{client.client_id}}"
                   action="{{ url_for('auth.edit_generic_code_flow_client') }}">
               <input type="hidden" name="clientId" value="{{client.client_id}}" />
-              <button class="btn btn-link" type="submit" style="padding: 0">
+              <button class="btn btn-link" type="submit" style="padding: 0"
+                      title="click to edit">
                 <span class="badge bg-warning">
                 EDIT
                 </span>
@@ -70,7 +74,8 @@
             <form method="POST"
                   action="{{ url_for('auth.delete_generic_code_flow_client') }}">
               <input type="hidden" name="clientId" value="{{client.client_id}}" />
-              <button class="btn btn-link" type="submit" style="padding: 0">
+              <button class="btn btn-link" type="submit" style="padding: 0"
+                      title="click to delete">
                 <span class="badge bg-danger">
                 DELETE
                 </span>

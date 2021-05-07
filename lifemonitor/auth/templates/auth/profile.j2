@@ -97,5 +97,8 @@
   let currentView = "{{ currentView | safe }}";
   updateCurrentView(currentView);
 
+  // Initialize tooltips
+  $('[data-bs-toggle="tooltip"]').tooltip();
+
 </script>
 {% endblock javascripts %}
