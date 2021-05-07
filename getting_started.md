@@ -33,22 +33,22 @@ to create an LM-specific account.
 
 <img alt="LM Sign In form" src="images/lm_sign_in_form.png" width="400" />
 
-
-## Create an API key
-
-Once you have authenticated, you can create an API key.  Click on the "New"
-button in the "**API Keys**" section of the page.
-
-<img alt="LM Click to create new API key" src="images/lm_click_new_api_key.png" width="400" />
-
-The new API key appears in the list and is immediately ready to use.
-
 ## Start Life Monitoring
 
 With your new API key you can directly interact with the [REST
 API](lm_api_specs) or use a [command line client](restish-cli).
 
 
+Until [WorkflowHub](https://workflowhub.eu/) integration and the Life Monitor
+web interface are ready, the only way to use the Life Monitor service is through
+its [REST API](lm_api_specs) -- e.g., with your own custom client or with a
+general openAPI [command line client](restish-cli).
+
+You will need to decide how to [authenticate your
+client](authenticate-your-client).  Depending on your
+client of choice, you may want to create an API key or use full OAuth2
+authentication.
+
 ### API examples
 
-Remember that the API specifications contain examples and you can use your API key to try them out.  Head over to <https://api.lifemonitor.eu/static/apidocs.htm>.
+Remember that the API specifications contain examples and you can use your API key to try them out.  Head over to <https://api.lifemonitor.eu/static/apidocs.html>.
