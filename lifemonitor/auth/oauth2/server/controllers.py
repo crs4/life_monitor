@@ -23,8 +23,9 @@ import logging
 from flask import (Blueprint, jsonify, redirect, render_template, request,
                    url_for)
 from flask_login import current_user, login_required
-from lifemonitor.utils import NextRouteRegistry
+from lifemonitor.utils import NextRouteRegistry, OpenApiSpecs, bool_from_string
 
+from .forms import AuthorizeClient
 from .models import Token
 from .services import server
 from .utils import split_by_crlf
@@ -82,11 +83,12 @@ def _process_authorization():
         confirmed = bool_from_string(request.values.get('confirm', ''))
         logger.debug("Confirm authorization [GET]: %r", confirmed)
         if not confirmed:
-        return render_template(
-            'authorize.html',
-            grant=grant,
-            user=current_user,
-        )
+            return render_template(
+                'authorize.html',
+                grant=grant,
+                user=current_user,
+                scope_info=OpenApiSpecs.get_instance().all_scopes
+            )
     elif request.method == 'POST':
         form = AuthorizeClient()
         logger.debug(form.confirm.data)
