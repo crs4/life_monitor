@@ -4,7 +4,7 @@
     <img
       src="{{ url_for('auth.static', filename='img/logo/lm/LifeMonitorLogo.png') }}"
       alt="LifeMonitor Logo"
-      class="img-fluid card-img-top"      
+      class="img-fluid card-img-top"
     />
   </a>
 </div>
@@ -13,7 +13,7 @@
 
 {% macro messages() -%}
   {% set messages = get_flashed_messages(with_categories=true) %}
-  {% if messages %}    
+  {% if messages %}
     {% for category, message in messages %}
     <script>
       $(function() {
@@ -29,11 +29,10 @@
             title: '<span style="padding: 0 6px">{{ message }}</span>'
         })
       });
-    </script>      
-    {% endfor %}    
+    </script>
+    {% endfor %}
   {% endif %}
 {%- endmacro %}
-
 
 {% macro messages_as_list() -%}
   {% set messages = get_flashed_messages(with_categories=true) %}
@@ -59,6 +58,19 @@
   {% endif %}
 {%- endmacro %}
 
+{% macro render_field_errors(field) -%}
+{% if field.errors %}
+    <div class="invalid-feedback d-block pl-1 p-0">
+      {% if field.errors %}
+        {% for error in field.errors %}
+          <i class="fas fa-exclamation-circle"></i>
+          <span class="error font-weight-bold ml-0">
+          {{ error }}</span>
+        {% endfor %}
+      {% endif %}
+    </div>
+  {% endif %}
+{%- endmacro %}
 
 {% macro render_custom_fieldx(field) -%}
   <input
@@ -71,13 +83,13 @@
 {%- endmacro %}
 
 
-{% macro render_custom_field(field, value=None) -%}
-<div class="form-group">
+{% macro render_custom_field(field, value=None, class="") -%}
+<div class="form-group {{class}}">
   <div class="input-group mb-3">
-    <input type="{{ field.name if field.name != 'repeat_password' else 'password' }}" 
+    <input type="{{ field.name if field.name != 'repeat_password' else 'password' }}"
           name="{{ field.name }}"
           {% if value %}value="{{value}}"{% endif %}
-          class="form-control {% if field.errors %} is-invalid {% endif %}" 
+          class="form-control {% if field.errors %} is-invalid {% endif %}"
           placeholder="{{field.name.capitalize().replace('_', ' ')}}"
           aria-invalid="true">
     <div class="input-group-append">
@@ -100,7 +112,7 @@
         {% endfor %}
       {% endif %}
     </div>
-  </div>          
+  </div>
 </div>
 {%- endmacro %}
 
@@ -111,7 +123,7 @@
 <i class="fab fa-github mr-2"></i>
 {% elif provider.type == "seek" %}
 {% if color == "white" %}
-<img style="width: 1.5em;margin: 3px;"src="{{ url_for('auth.static', filename='img/logo/wfhub/workflowhub-128.png') }}" />
+<img style="width: 1.5em;"src="{{ url_for('auth.static', filename='img/logo/wfhub/workflowhub-128.png') }}" />
 {% else %}
 <img style="width: 1em;"src="{{ url_for('auth.static', filename='img/logo/wfhub/workflowhub-128-black.png') }}" />
 {% endif %}

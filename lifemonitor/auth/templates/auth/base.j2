@@ -4,16 +4,16 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}Life Monitor{% endblock %}</title>
-    
-    <link rel="icon"href="{{ url_for('auth.static', filename='favicon.png') }}" type="image/x-icon">
-    
-    {% block stylesheets %}    
+
+    <link rel="icon" href="{{ url_for('auth.static', filename='favicon.ico') }}" type="image/x-icon">
+
+    {% block stylesheets %}
       <!-- Google Font: Source Sans Pro -->
       <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
       <!-- Ionicons -->
       <link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
       <!-- Font Awesome -->
-      <link rel="stylesheet" href="{{ url_for('auth.static', filename='dist/plugins/fontawesome-free/css/all.min.css') }}">      
+      <link rel="stylesheet" href="{{ url_for('auth.static', filename='dist/plugins/fontawesome-free/css/all.min.css') }}">
       <!-- SweetAlert2 -->
       <link rel="stylesheet" href="{{ url_for('auth.static', filename='dist/plugins/sweetalert2-theme-bootstrap-4/bootstrap-4.min.css') }}">
       <!-- Toastr -->
@@ -22,23 +22,34 @@
       <link rel="stylesheet" href="{{ url_for('auth.static', filename='dist/plugins/tempusdominus-bootstrap-4/css/tempusdominus-bootstrap-4.min.css') }}">
       <!-- iCheck -->
       <link rel="stylesheet" href="{{ url_for('auth.static', filename='dist/plugins/icheck-bootstrap/icheck-bootstrap.min.css') }}">
+      <!-- Select2 -->
+      <link rel="stylesheet" href="{{ url_for('auth.static', filename='dist/plugins/select2/css/select2.min.css') }}">
+      <link rel="stylesheet" href="{{ url_for('auth.static', filename='dist/plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css') }}">
+      <!-- Bootstrap-switch -->
+      {# <link rel="stylesheet" href="{{ url_for('auth.static', filename='dist/plugins/bootstrap-switch/css/bootstrap3/bootstrap-switch.min.css') }}"> #}
+      <!-- Bootstrap-switch -->
+      <link rel="stylesheet" href="{{ url_for('auth.static', filename='dist/plugins/bootstrap-switch-button/css/bootstrap-switch-button.min.css') }}">
       <!-- JQVMap -->
       <link rel="stylesheet" href="{{ url_for('auth.static', filename='dist/plugins/jqvmap-novulnerability/jqvmap.min.css') }}">
       <!-- overlayScrollbars -->
       <link rel="stylesheet" href="{{ url_for('auth.static', filename='dist/plugins/overlayscrollbars/css/OverlayScrollbars.min.css') }}">
       <!-- summernote -->
       <link rel="stylesheet" href="{{ url_for('auth.static', filename='dist/plugins/summernote/summernote-bs4.min.css') }}">
-      <!-- Theme style -->      
-      <link rel="stylesheet" href="{{ url_for('auth.static', filename='dist/css/lifemonitor.min.css') }}">      
+      <!-- dropzone -->
+      <link rel="stylesheet" href="{{ url_for('auth.static', filename='dist/plugins/dropzone/min/dropzone.min.css') }}">
+      <!-- dropzone -->
+      <link rel="stylesheet" href="{{ url_for('auth.static', filename='dist/plugins/bootstrap4-duallistbox/bootstrap-duallistbox.min.css') }}">
+      <!-- Theme style -->
+      <link rel="stylesheet" href="{{ url_for('auth.static', filename='dist/css/lifemonitor.min.css') }}">
   {% endblock stylesheets %}
 
 </head>
-<body class="hold-transition {% block body_class %}{% endblock body_class %}" 
-      style="{% block body_style %}{% endblock body_style %}">  
-  {% block body %}{% endblock %}  
+<body class="hold-transition {% block body_class %}{% endblock body_class %}"
+      style="{% block body_style %}{% endblock body_style %}">
+  {% block body %}{% endblock %}
 
   <!-- JS dependencies  -->
-  {% block javascripts %}
+  {% block javascripts_libraries %}
     <!-- jQuery -->
     <script src="{{ url_for('auth.static', filename='dist/plugins/jquery/jquery.min.js') }}"></script>
     <!-- Bootstrap 4 -->
@@ -47,14 +58,27 @@
     <script src="{{ url_for('auth.static', filename='dist/plugins/sweetalert2/sweetalert2.min.js') }}"></script>
     <!-- Toastr -->
     <script src="{{ url_for('auth.static', filename='dist/plugins/toastr/toastr.min.js') }}"></script>
+    <!-- Select2 -->
+    <script src="{{ url_for('auth.static', filename='dist/plugins/select2/js/select2.full.min.js') }}"></script>
+    <!-- Bootstrap Switch -->
+    {# <script src="{{ url_for('auth.static', filename='dist/plugins/bootstrap-switch/js/bootstrap-switch.min.js') }}"></script> #}
+    <!-- Bootstrap Switch Button -->
+    <script src="{{ url_for('auth.static', filename='dist/plugins/bootstrap-switch-button/dist/bootstrap-switch-button.min.js') }}"></script>
+    <!-- Bootstrap4 Duallistbox -->
+    <script src="{{ url_for('auth.static', filename='dist/plugins/bootstrap4-duallistbox/jquery.bootstrap-duallistbox.min.js') }}"></script>
+    <!-- BS-Stepper -->
+    {# <script src="{{ url_for('auth.static', filename='dist/plugins/bs-stepper/js/bs-stepper.min.js') }}"></script> #}
+    <!-- dropzonejs -->
+    <script src="{{ url_for('auth.static', filename='dist/plugins/dropzone/min/dropzone.min.js') }}"></script>
     <!-- LifeMonitor JS -->
-    <script src="{{ url_for('auth.static', filename='dist/js/lifemonitor.min.js') }}"></script>
-  
+    <script src="{{ url_for('auth.static', filename='src/js/lifemonitor.js') }}"></script>
+    
     {# Enable notifications #}
     {{ macros.messages() }}
 
-  {% endblock javascripts %}
+  {% endblock javascripts_libraries %}
 
+  {% block javascripts %} {% endblock javascripts %}
 </body>
 
 

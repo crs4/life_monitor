@@ -23,8 +23,9 @@ import logging
 from flask import (Blueprint, jsonify, redirect, render_template, request,
                    url_for)
 from flask_login import current_user, login_required
-from lifemonitor.utils import NextRouteRegistry
+from lifemonitor.utils import NextRouteRegistry, OpenApiSpecs, bool_from_string
 
+from .forms import AuthorizeClient
 from .models import Token
 from .services import server
 from .utils import split_by_crlf
@@ -73,18 +74,29 @@ def authorize_provider(name):
 
 
 def _process_authorization():
+    confirmed = None
     if request.method == 'GET':
         grant = server.validate_consent_request(end_user=current_user)
         if not server.request_authorization(grant.client, current_user):
             # granted by resource owner
             return server.create_authorization_response(grant_user=current_user)
-        return render_template(
-            'authorize.html',
-            grant=grant,
-            user=current_user,
-        )
-    confirmed = request.form.get('confirm', None) or request.values.get('confirm', None)
+        confirmed = bool_from_string(request.values.get('confirm', ''))
+        logger.debug("Confirm authorization [GET]: %r", confirmed)
+        if not confirmed:
+            return render_template(
+                'authorize.html',
+                grant=grant,
+                user=current_user,
+                scope_info=OpenApiSpecs.get_instance().all_scopes
+            )
+    elif request.method == 'POST':
+        form = AuthorizeClient()
+        logger.debug(form.confirm.data)
+        confirmed = form.confirm.data
+        logger.debug("Confirm authorization [POST]: %r", confirmed)
+    # handle client response
     if confirmed:
+        logger.debug("Authorization confirmed")
         # granted by resource owner
         return server.create_authorization_response(grant_user=current_user)
     # denied by resource owner

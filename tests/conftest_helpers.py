@@ -331,7 +331,7 @@ def create_authorization_code_access_token(_application,
         # base_url = application.config[f"{registry_type}_API_BASE_URL".upper()]
 
         session.auth = None
-        auth_response = session.post(authorization_url, params={
+        auth_response = session.get(authorization_url, params={
             "client_id": client_id,
             "grant_type": "authorization_code",
             "response_type": "code",

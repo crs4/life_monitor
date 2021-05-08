@@ -23,7 +23,6 @@ from __future__ import annotations
 import logging
 from typing import List, Union
 
-
 import lifemonitor.api.models as models
 import lifemonitor.exceptions as lm_exceptions
 from lifemonitor import utils as lm_utils
@@ -34,7 +33,9 @@ from lifemonitor.auth.models import Permission, Resource, User
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm.collections import attribute_mapped_collection
+from sqlalchemy.orm.collections import (MappedCollection,
+                                        attribute_mapped_collection,
+                                        collection)
 from sqlalchemy.orm.exc import NoResultFound
 
 # set module level logger
@@ -131,6 +132,22 @@ class Workflow(Resource):
             .filter(Permission.user_id == owner.id).all()
 
 
+class WorkflowVersionCollection(MappedCollection):
+
+    def __init__(self) -> None:
+        super().__init__(lambda wv: wv.workflow.uuid)
+
+    @collection.internally_instrumented
+    def __setitem__(self, key, value, _sa_initiator=None):
+        current_value = self.get(key, set())
+        current_value.add(value)
+        super(WorkflowVersionCollection, self).__setitem__(key, current_value, _sa_initiator)
+
+    @collection.internally_instrumented
+    def __delitem__(self, key, _sa_initiator=None):
+        super(WorkflowVersionCollection, self).__delitem__(key, _sa_initiator)
+
+
 class WorkflowVersion(ROCrate):
     id = db.Column(db.Integer, db.ForeignKey(ROCrate.id), primary_key=True)
     submitter_id = db.Column(db.Integer, db.ForeignKey(User.id), nullable=True)
@@ -141,20 +158,14 @@ class WorkflowVersion(ROCrate):
                                                   collection_class=attribute_mapped_collection('version')))
     test_suites = db.relationship("TestSuite", back_populates="workflow_version",
                                   cascade="all, delete")
-    submitter = db.relationship("User", uselist=False)
+    submitter = db.relationship("User", uselist=False,
+                                backref=db.backref("workflows", cascade="all, delete-orphan",
+                                                   collection_class=WorkflowVersionCollection))
     roc_link = association_proxy('ro_crate', 'uri')
 
     __mapper_args__ = {
         'polymorphic_identity': 'workflow_version'
     }
-
-    # TODO: Set additional constraint which cannot be expressed
-    # with __table_args__ due to the usage of inheritance
-    # db.UniqueConstraint("workflow.id", "workflow.version")
-    # db.UniqueConstraint("workflow._registry_id", "workflow.external_id", "workflow.version")
-    # __table_args__ = (
-    #     db.UniqueConstraint(workflow_id, ROCrate.version, submitter_id),
-    # )
 
     def __init__(self, workflow: Workflow,
                  uri, version, submitter: User, uuid=None, name=None,
