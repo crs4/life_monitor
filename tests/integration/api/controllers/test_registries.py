@@ -104,10 +104,18 @@ def test_get_registry_by_uuid_not_found(app_client, random_valid_uuid,
 
 @pytest.mark.parametrize("client_auth_method", [
     ClientAuthenticationMethod.API_KEY,
+], indirect=True)
+def test_get_registry_not_authorized_api_key(app_client, client_credentials_registry,
+                                             client_auth_method, user1, user1_auth):
+    response = app_client.get(utils.build_registries_path('current'), headers=user1_auth)
+    utils.assert_status_code(401, response.status_code)
+
+
+@pytest.mark.parametrize("client_auth_method", [
     ClientAuthenticationMethod.AUTHORIZATION_CODE
 ], indirect=True)
-def test_get_registry_not_authorized(app_client, client_credentials_registry,
-                                     client_auth_method, user1, user1_auth):
+def test_get_registry_not_authorized_code_flow(app_client, client_credentials_registry,
+                                               client_auth_method, user1, user1_auth):
     response = app_client.get(utils.build_registries_path('current'), headers=user1_auth)
     data = json.loads(response.data)
     logger.debug("Response %r", data)
