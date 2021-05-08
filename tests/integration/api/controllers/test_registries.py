@@ -109,7 +109,10 @@ def test_get_registry_by_uuid_not_found(app_client, random_valid_uuid,
 def test_get_registry_not_authorized(app_client, client_credentials_registry,
                                      client_auth_method, user1, user1_auth):
     response = app_client.get(utils.build_registries_path('current'), headers=user1_auth)
-    utils.assert_status_code(401, response.status_code)
+    data = json.loads(response.data)
+    logger.debug("Response %r", data)
+    assert "Provided token doesn't have the required scope" in data["detail"], "Unexpected response"
+    utils.assert_status_code(403, response.status_code)
 
 
 @pytest.mark.parametrize("client_auth_method", [
