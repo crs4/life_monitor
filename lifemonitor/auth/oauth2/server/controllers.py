@@ -73,18 +73,28 @@ def authorize_provider(name):
 
 
 def _process_authorization():
+    confirmed = None
     if request.method == 'GET':
         grant = server.validate_consent_request(end_user=current_user)
         if not server.request_authorization(grant.client, current_user):
             # granted by resource owner
             return server.create_authorization_response(grant_user=current_user)
+        confirmed = bool_from_string(request.values.get('confirm', ''))
+        logger.debug("Confirm authorization [GET]: %r", confirmed)
+        if not confirmed:
         return render_template(
             'authorize.html',
             grant=grant,
             user=current_user,
         )
-    confirmed = request.form.get('confirm', None) or request.values.get('confirm', None)
+    elif request.method == 'POST':
+        form = AuthorizeClient()
+        logger.debug(form.confirm.data)
+        confirmed = form.confirm.data
+        logger.debug("Confirm authorization [POST]: %r", confirmed)
+    # handle client response
     if confirmed:
+        logger.debug("Authorization confirmed")
         # granted by resource owner
         return server.create_authorization_response(grant_user=current_user)
     # denied by resource owner
