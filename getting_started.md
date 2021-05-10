@@ -35,10 +35,6 @@ to create an LM-specific account.
 
 ## Start Life Monitoring
 
-With your new API key you can directly interact with the [REST
-API](lm_api_specs) or use a [command line client](restish-cli).
-
-
 Until [WorkflowHub](https://workflowhub.eu/) integration and the Life Monitor
 web interface are ready, the only way to use the Life Monitor service is through
 its [REST API](lm_api_specs) -- e.g., with your own custom client or with a
