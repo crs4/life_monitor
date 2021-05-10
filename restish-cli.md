@@ -46,16 +46,16 @@ Select the **OAuth Apps** list.  Click on the **New** button on the right of the
 list to add a new application.
 
 Assuming you're using Restish from your computer, configure the new client as
-follows:
+follows (make sure you include the trailing slash in the URIs):
 
 * Client name: whatever you like
 * Client URI: `http://localhost:8484/`
-* Client Redirect URIs: `http://localhost:8484`
-* Allowed scopes: add them all, or be more selected according to your needs
+* Client Redirect URIs: `http://localhost:8484/`
+* Allowed scopes: add them all, or be more selective according to your needs
 * Client Type: `Off` (i.e., not confidential)
 
-Save the configuration.  You should the newly configured application in the
-OAuth App list
+Save the configuration.  You should see the newly configured application in the
+OAuth App list.
 
 <img alt="LM OAuth app" src="images/lm_oauth_app_restish.png" width="600" />
 
@@ -86,11 +86,18 @@ Monitor:
 ```
 
 Now you should be ready to go.  Test things out:  try to query your user
-profile and Restish should open your browser and direct you to the Life Monitor
+profile:
+
+```
+$ restish lm show-current-user-profile
+```
+
+Restish should open your browser and direct you to the Life Monitor
 application authorization page.
 
 Provide your consent to having Restish access the Life Monitor for you, then the
-client your give you a reply:
+client should give you a reply:
+
 ```
 $ restish lm show-current-user-profile
 HTTP/1.1 200 OK
@@ -164,6 +171,36 @@ Available Commands:
 ....
 ```
 
-
 To see what the commands do, remember that you can refer to the API specs at <https://api.lifemonitor.eu/static/apidocs.html>.
 
+Example:
+
+```
+$ restish lm workflows-get -q status=false
+HTTP/1.1 200 OK
+Access-Control-Allow-Origin: *
+Cache-Control: private
+Content-Length: 313
+Content-Type: application/json
+Date: Mon, 10 May 2021 10:27:56 GMT
+Server: nginx
+Set-Cookie: session=.eJwlzkEOwyAMBdG7sO7C5GNjcpkIY6N2mzSrqncvUg8wevNJxzzjeqb9fd7xSMfL054G5xgSbJuIh4G9W6YNVVS0eQlVIqYGtpCuA92gAKxPEdQ-4ARbKXG2GaylRRgV8pa55I4pJih1lkVooxYLNG5RsmeHpjVyX3H-byDp-wPeaS8Q.YJkKrA.P2zsIG5OnkaFtghFB4OGWeHEwko; HttpOnly; Path=/
+9544ac48d9c55647d010c525a5be4146=ba378a3cbd4a1f5f26a99edeab93fb3e; path=/; HttpOnly; Secure
+Vary: Cookie
+X-Frame-Options: SAMEORIGIN
+
+{
+  items: [
+    {
+      latest_version: "1"
+      name: "sort-and-change-case-travis"
+      uuid: "bc435030-6e1e-0139-2dea-005056ab5db4"
+    }
+  ]
+  meta: {
+    api_version: "0.2.0-beta2"
+    base_url: "https://api-lifemonitor-test.rahtiapp.fi"
+    resource: "/workflows?status=false"
+  }
+}
+```
