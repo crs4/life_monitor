@@ -48,7 +48,7 @@ list to add a new application.
 Assuming you're using Restish from your computer, configure the new client as
 follows (make sure you include the trailing slash in the URIs):
 
-* Client name: whatever you like
+* Client name: whatever you like, e.g., RestishClient.
 * Client URI: `http://localhost:8484/`
 * Client Redirect URIs: `http://localhost:8484/`
 * Allowed scopes: add them all, or be more selective according to your needs
@@ -69,7 +69,7 @@ $ restish api configure lm https://api.lifemonitor.eu
 
 The Restish wizard will guide you through configuration procedure.  Copy values
 shown between angle brackets `< >` from the OAuth App you created in Life
-Monitor:
+Monitor (hit Return to leave `client_secret` unset):
 
 ```
 ? Select option Edit profile default
@@ -95,11 +95,12 @@ $ restish lm show-current-user-profile
 Restish should open your browser and direct you to the Life Monitor
 application authorization page.
 
-Provide your consent to having Restish access the Life Monitor for you, then the
-client should give you a reply:
+<img alt="LM authorization page" src="images/lm_auth_page.png" width="600" />
+
+Hit "Allow" to authorize Restish to access the Life Monitor for you, then move
+back to the console. You should now see the output of your command:
 
 ```
-$ restish lm show-current-user-profile
 HTTP/1.1 200 OK
 Access-Control-Allow-Origin: *
 Cache-Control: private
