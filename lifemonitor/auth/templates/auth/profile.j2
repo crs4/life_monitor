@@ -5,7 +5,7 @@
   {% if current_user.is_authenticated %}
   height: auto;
   {% endif %}
-  padding: 40px; 
+  padding: 40px;
 {% endblock %}
 
 
@@ -13,125 +13,92 @@
 
 {% if current_user.is_authenticated %}
 
-  {{ macros.render_logo(style="width: 30%;", class="logo text-center") }}
+  {{ macros.render_logo(style="max-width: 300px;", class="img-fluid logo text-center m-5") }}
 
-  <div class="card card-primary card-outline">
-    <div class="card-body box-profile">
-      <div class="text-center">
-        <img class="profile-user-img img-fluid img-circle"
-             src="{{ current_user.picture or url_for('auth.static', filename='img/avatar/default-user-avatar.jpg') }}"
-             alt="User profile picture">
-      </div>
+   <!-- Main content -->
+  <div class="container-fluid">
 
-      <h3 class="profile-username text-center">{{ current_user.username }}</h3>
-
-      <p class="text-muted text-center">(id. {{ current_user.id }})</p>
-
-      
-      <div class="list-group list-group-unbordered mb-3 text-center">
-       You{% if not current_user.has_password %} do not{% endif %} have a password set for your account.
-      {% if not current_user.has_password %}
-        <a href="{{ url_for("auth.set_password") }}">Set a password</a>
-      {% endif %}
-      </div>
-
-      <div class="">
-        <div class="card-header">
-          <h3 class="card-title"><b>Connected accounts</b></h3>
-        </div>
-        
-        <div class="card-body p-0">
-          <table class="table table-striped">
-            <thead>
-              <tr>
-                <th style="width: 5px"></th>
-                <th>Provider</th>                
-                <th>ID</th>
-                <th style="width: 40px"></th>
-              </tr>
-            </thead>
-            <tbody>
-            {% for p in providers %}
-              <tr>
-                <td>{{ macros.render_provider_fa_icon(p, color="black") }}</td>
-                <td>{{p.name.capitalize()}}</td>
-                <td>{% if p.name in current_user.oauth_identity %}
-                  {{ current_user.oauth_identity[p.name].provider_user_id }}
-                  {% endif %}</td>
-                {% if p.name in current_user.oauth_identity %}
-                <td><span class="badge bg-success">CONNECTED</span></td>
-                {% else %}
-                <td>
-                  <span class="badge bg-primary">
-                    <a class="" href="/oauth2/login/{{p.name}}">CONNECT</a>
-                  </span>
-                </td>
-                {% endif %}
-              </tr>
-            {% endfor %}   
-            </tbody>
-          </table>
-        </div>
-      </div>
-      
-    
-      <div class="" style="margin-top: 20px;">
-        <div class="card-header">
-          <h3 class="card-title"><b>API keys</b></h3>
-        </div>
-
-        <div class="card-body p-0">
-          <table class="table table-striped">
-            <thead>
-              <tr>
-                <th style="width: 10px">#</th>
-                <th>Key</th>
-                <th style="width: 40px">
-                <form method="POST"
-                        action="{{ url_for('auth.create_apikey') }}">   
-                  <button class="btn btn-link" type="submit" style="padding: 0">
-                      <span class="badge bg-primary">NEW</span>
-                  </button>
-                </form>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for k in current_user.api_keys %}
-              <tr>
-                <td>{{loop.index}}</td>
-                <td class="text-sm-left">{{k.key}}</td>                
-                <td>
-                  <form method="POST"
-                        action="{{ url_for('auth.delete_apikey') }}">                  
-                    <input type="hidden" name="apikey" value="{{k.key}}" />
-                    <button class="btn btn-link" type="submit" style="padding: 0">
-                      <span class="badge bg-danger">
-                      DELETE
-                      </span>
-                    </button>
-                  </form>
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>      
-    
+    <!-- OAuth2 Client Form -->
+    <div class="clearfix">
+    {% include 'auth/oauth2_client_pane.j2' %}
     </div>
-  </div>
-  
-  <div class="">
-    <a href="{{ url_for("auth.logout") }}" 
-      class="btn btn-primary btn-block"><b>Log out</b></a>
-  </div>
 
-{% else %}  
+    <div class="row">
+      <div class="col-md-3">
+        {% include 'auth/profile_card.j2' %}
+      </div>
+      <!-- /.col -->
+      <div class="col-md-9">
+        <div class="card card-primary card-outline">
+          <div class="card-header p-2">
+            <ul class="nav nav-pills">
+              <li class="nav-item">
+                <a class="nav-link font-weight-bold" tab="accountsTab"
+                    href="#accounts" data-toggle="tab">Account</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link font-weight-bold" tab="apiKeysTab"
+                    href="#apikeys" data-toggle="tab">API Keys</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link font-weight-bold" tab="oauth2ClientsTab"
+                    href="#oauthapps" data-toggle="tab">OAuth Apps</a>
+              </li>
+          </div><!-- /.card-header -->
+          <div class="card-body">
+            <div class="tab-content">
+              <div class="tab-pane" id="accounts">
+                {% include 'auth/account_tab.j2' %}
+              </div>
+              <!-- /.tab-pane -->
+              <div class="tab-pane" id="apikeys">
+                <!-- The timeline -->
+                <div class="" style="margin-top: 20px;">
+                  {% include 'auth/apikeys_tab.j2' %}
+                </div>
+              </div>
+              <!-- /.tab-pane -->
+              <div class="tab-pane" id="oauthapps">
+                <!-- The timeline -->
+                {% include 'auth/oauth2_clients_tab.j2' %}
+              </div>
+              <!-- /.tab-pane -->
+            </div>
+            <!-- /.tab-content -->
+          </div><!-- /.card-body -->
+        </div>
+        <!-- /.card -->
+      </div>
+      <!-- /.col -->
+    </div>
+    <!-- /.row -->
+  </div><!-- /.container-fluid -->
+    <!-- /.content -->
+
+{% else %}
   {{ macros.render_logo(style="width: 50%") }}
   <div style="padding: 50px;">
   <a class="btn btn-primary btn-lg" role="button" href="{{ url_for('auth.login') }}">Log in</a>
   </div>
 {% endif %}
-
+</div>
 {% endblock %}
+
+
+{% block javascripts %} 
+<script>
+  // Initialize APIKeys
+  initializeViewApiKeys(numberOfVisibleChars=15);
+
+  // Initialize Oauth2ClientEditorPane
+  oauth2ClientFormInit();
+
+  // init current view
+  let currentView = "{{ currentView | safe }}";
+  updateCurrentView(currentView);
+
+  // Initialize tooltips
+  $('[data-bs-toggle="tooltip"]').tooltip();
+
+</script>
+{% endblock javascripts %}

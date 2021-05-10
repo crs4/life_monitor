@@ -18,12 +18,19 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+
+from __future__ import annotations
+
 import logging
 
 from flask_wtf import FlaskForm
+from lifemonitor.auth.oauth2.server.models import Client
+from lifemonitor.utils import OpenApiSpecs
 from sqlalchemy.exc import IntegrityError
-from wtforms import HiddenField, PasswordField, StringField
-from wtforms.validators import DataRequired, EqualTo, Optional
+from wtforms import (BooleanField, HiddenField, PasswordField, SelectField,
+                     SelectMultipleField, StringField)
+from wtforms.fields.html5 import URLField
+from wtforms.validators import URL, DataRequired, EqualTo, Optional
 
 from .models import User, db
 
@@ -94,3 +101,57 @@ class SetPasswordForm(FlaskForm):
         ],
     )
     repeat_password = PasswordField("Repeat Password")
+
+
+class Oauth2ClientForm(FlaskForm):
+    clientId = HiddenField("clientId")
+    name = StringField("Client Name", validators=[DataRequired()])
+    uri = URLField('Client URI',
+                   validators=[DataRequired(message="Enter URI Please"),
+                               URL(require_tld=False,
+                                   message="Enter Valid URI Please.")])
+
+    redirect_uris = StringField("Client Redirect URIs (one per line)",
+                                validators=[DataRequired()])
+    scopes = SelectMultipleField("Allowed scopes",
+                                 render_kw={"multiple": "multiple"},
+                                 choices=[(k, v) for k, v in OpenApiSpecs.get_instance().authorization_code_scopes.items()])
+    confidential = BooleanField("Confidential")
+    auth_method = SelectField("Client Authentication Method",
+                              choices=[
+                                  ("client_secret_basic", "Authorization Header (client_secret_basic)"),
+                                  ("client_secret_post", "Request Body (client_secret_post)")])
+
+    def get_client_data(self):
+        logger.debug("Extracting client data from form...")
+        data = {
+            "name": self.name.data,
+            "uri": self.uri.data,
+            "redirect_uris": self.redirect_uris.data,
+            "scopes": self.scopes.data,
+            "confidential": self.confidential.data,
+            "auth_method": self.auth_method.data if self.confidential.data else "none"
+        }
+        logger.debug("Client data: %r", data)
+        return data
+
+    def clear(self):
+        self.clientId.data = None
+        self.name.data = None
+        self.uri.data = None
+        self.redirect_uris.data = None
+        self.scopes.data = None
+        self.auth_method.data = "client_secret_post"
+        self.confidential.data = False
+
+    @staticmethod
+    def from_object(client: Client) -> Oauth2ClientForm:
+        form = Oauth2ClientForm()
+        form.clientId.data = client.client_id
+        form.name.data = client.client_name
+        form.uri.data = client.client_uri
+        form.redirect_uris.data = "\n".join(client.redirect_uris)
+        form.scopes.data = client.scope
+        form.auth_method.data = client.auth_method
+        form.confidential.data = client.is_confidential()
+        return form

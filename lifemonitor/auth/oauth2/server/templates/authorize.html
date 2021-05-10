@@ -1,22 +1,94 @@
-<p>The application <strong>{{grant.client.client_name}}</strong> is requesting:
-<strong>{{ grant.request.scope }}</strong>
-</p>
+{% extends 'auth/base.j2' %}
+{% import 'auth/macros.j2' as macros %}
 
-<p>
-  from You - a.k.a. <strong>{{ user.username }}</strong>
-</p>
+{% block body_class %} login-page {% endblock %}
+{% block body_style %} height: auto; {% endblock %}
 
-<form action="" method="post">
-  <label>
-    <input type="checkbox" name="confirm">
-    <span>Consent?</span>
-  </label>
-  {% if not user %}
-  <p>You haven't logged in. Log in with:</p>
-  <div>
-    <input type="text" name="username">
+{% set client = grant.client %}
+
+{% block body %}
+
+<div class="text-center" style="margin: auto;">
+
+  <div class="card shadow-lg p-3 m-5 bg-white rounded">
+
+    <div class="card-body">
+
+      {{ macros.render_logo(style="max-width: 250px; margin: auto;") }}
+      <h5 class="fw-lighter m-3">authorize</h5>
+      <div class="font-weight-light mt-n4" style="font-size: 3rem">
+        &laquo;{{grant.client.client_name}}&raquo;
+      </div>
+      <div class="font-weight-lighter mt-n1">
+        <a href="{{grant.client.client_uri}}">{{grant.client.client_uri}}</a>
+      </div>
+
+      <div class="text-left px-4 py-2 mt-4">
+        <h4 class="font-weight-light m-3">
+          The <strong>{{client.client_name}}</strong>
+          App would like access your
+          <strong>{{ user.username }}</strong>
+          account to:
+        </h4>
+        <table class="table table-striped">
+          <thead>
+            <th class="p-0"></th>
+            <th style="width: 80%;"></th>
+            <th>scope</th>
+          </thead>
+          <tbody>
+            {% for scope in client.scopes %}
+            <tr>
+              <td class="pr-0">
+                {% if "user.profile" in scope %}<i class="far fa-user-circle"></i>{% endif %}
+                {% if "registry.info" in scope %}<i class="fas fa-sitemap"></i>{% endif %}
+                {% if "read" in scope %}<i class="fas fa-stream mt-1"></i></i>{% endif %}
+                {% if "write" in scope %}<i class="far fa-edit"></i>{% endif %}
+              </td>
+              <td>
+                <span class="ml-0">{{scope_info[scope]}}</span>
+              </td>
+              <td>
+                <span class="font-weight-light">{{scope}}</span>
+              </td>
+            </tr>
+            {% endfor %}
+          </tboby>
+        </table>
+
+        <div class="text-center font-weight-lighter p-4">
+          Authorizing will redirect to<br>
+          <a href="{{grant.client.client_uri}}">{{request.args.get('redirect_uri')}}</a>
+        </div>
+
+        <form name="authorize-client" class="mt-4" action="" method="post">
+          <input type="hidden" name="confirm" value="false" />
+          <div class="text-center">
+            <button type="button"
+                    class="btn btn-secondary px-5"
+                    onclick="authorize(false)">Deny</button>
+            <button type="button"
+                    class="btn btn-primary px-5"
+                    onclick="authorize(true)">Allow</button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
-  {% endif %}
-  <br>
-  <button>Submit</button>
-</form>
+</div>
+
+<script>
+function authorize(authorize){
+  let inputs = $("form[name=authorize-client] > input[name=confirm]");
+  if (inputs && inputs.length>0){
+    let confirm = inputs[0];
+    if(confirm){
+      confirm.value = authorize;
+      $("form[name=authorize-client]")[0].submit();
+    }
+  }
+}
+
+</script>
+
+{% endblock body %}

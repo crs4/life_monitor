@@ -20,6 +20,8 @@
 
 from __future__ import annotations
 
+import copy
+import logging
 import time
 from datetime import datetime
 from typing import List
@@ -38,8 +40,11 @@ from flask import current_app
 from lifemonitor.auth.models import User
 from lifemonitor.db import db
 from lifemonitor.models import ModelMixin
-from lifemonitor.utils import get_base_url
+from lifemonitor.utils import get_base_url, values_as_list, values_as_string
 from werkzeug.security import gen_salt
+
+# Set the module level logger
+logger = logging.getLogger(__name__)
 
 
 class Client(db.Model, OAuth2ClientMixin):
@@ -58,16 +63,36 @@ class Client(db.Model, OAuth2ClientMixin):
 
     __tablename__ = "oauth2_client"
 
+    def is_confidential(self):
+        return self.has_client_secret()
+
+    def set_client_metadata(self, value):
+        if not isinstance(value, dict):
+            return
+        data = copy.deepcopy(value)
+        data['scope'] = values_as_string(value['scope'], out_separator=" ")
+        for p in ('redirect_uris', 'grant_types', 'response_types', 'contacts'):
+            data[p] = values_as_list(value.get(p, []))
+        return super().set_client_metadata(data)
+
     @property
     def redirect_uris(self):
-        return self.client_metadata.get('redirect_uris', [])
+        return super().redirect_uris
 
     @redirect_uris.setter
     def redirect_uris(self, value):
-        if isinstance(value, str):
-            value = value.split(',')
         metadata = self.client_metadata
         metadata['redirect_uris'] = value
+        self.set_client_metadata(metadata)
+
+    @property
+    def scopes(self):
+        return self.scope.split(" ") if self.scope else []
+
+    @scopes.setter
+    def scopes(self, scopes):
+        metadata = self.client_metadata
+        metadata['scope'] = scopes
         self.set_client_metadata(metadata)
 
     @property
@@ -120,6 +145,10 @@ class Token(db.Model, ModelMixin, OAuth2TokenMixin):
         return cls.query.filter(Token.user == user).all()
 
     @classmethod
+    def find_by_client_user(cls, client: Client, user: User) -> List[Token]:
+        return cls.query.filter(Token.client == client, Token.user == user).all()
+
+    @classmethod
     def all(cls) -> List[Token]:
         return cls.query.all()
 
@@ -148,12 +177,13 @@ class AuthorizationServer(OAuth2AuthorizationServer):
         # register it to grant endpoint
         self.register_grant(RefreshTokenGrant)
 
-    @staticmethod
-    def create_client(user,
+    @classmethod
+    def create_client(cls, user,
                       client_name, client_uri,
                       grant_type, response_type, scope,
                       redirect_uri,
                       token_endpoint_auth_method=None, commit=True):
+        logger.debug("SCOPE: %r", scope)
         client_id = gen_salt(24)
         client_id_issued_at = int(time.time())
         client = Client(
@@ -161,6 +191,24 @@ class AuthorizationServer(OAuth2AuthorizationServer):
             client_id_issued_at=client_id_issued_at,
             user_id=user.id,
         )
+
+        return cls.update_client(
+            user, client,
+            client_name, client_uri,
+            grant_type, response_type, scope,
+            redirect_uri,
+            token_endpoint_auth_method=token_endpoint_auth_method, commit=commit
+        )
+
+    @classmethod
+    def update_client(cls, user: User, client: Client,
+                      client_name, client_uri,
+                      grant_type, response_type, scope,
+                      redirect_uri,
+                      token_endpoint_auth_method=None, commit=True):
+
+        if client.user_id != user.id:
+            raise ValueError("Invalid user!")
 
         client_metadata = {
             "client_name": client_name,
@@ -175,7 +223,7 @@ class AuthorizationServer(OAuth2AuthorizationServer):
 
         if token_endpoint_auth_method == 'none':
             client.client_secret = ''
-        else:
+        elif not client.client_secret:
             client.client_secret = gen_salt(48)
 
         if commit:
@@ -191,9 +239,22 @@ class AuthorizationServer(OAuth2AuthorizationServer):
         # has been assigned to the client
         if client.check_grant_type("client_credentials"):
             return False
-        for t in Token.find_by_user(user):
+        for t in Token.find_by_client_user(client, user):
             if not t.revoked and not t.is_expired():
                 return False
+        return True
+
+    @staticmethod
+    def get_client(user: User, clientId):
+        return next((c for c in user.clients if c.client_id == clientId), None)
+
+    @classmethod
+    def delete_client(cls, user: User, clientId):
+        client = cls.get_client(user, clientId)
+        if not client:
+            return False
+        db.session.delete(client)
+        db.session.commit()
         return True
 
 

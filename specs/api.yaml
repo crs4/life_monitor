@@ -1882,7 +1882,6 @@ components:
           tokenUrl: "oauth2/token"
           authorizationUrl: "oauth2/authorize"
           scopes:
-            registry.info: Get information about the current registry client
             user.profile: Get basic information about the current user profile
             user.workflow.read: Get information about user's workflows posted to LifeMonitor, including test suites and instances
             user.workflow.write: Post user's workflows to LifeMonitor, including test suites and instances

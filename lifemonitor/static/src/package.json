@@ -52,6 +52,7 @@
         "bootstrap-colorpicker": "^3.2.0",
         "bootstrap-slider": "^11.0.2",
         "bootstrap-switch": "3.4.0",
+        "bootstrap-switch-button": "1.1.0",
         "bootstrap4-duallistbox": "^4.0.2",
         "icheck-bootstrap": "^3.0.1",
         "jquery": "^3.6.0",
@@ -62,7 +63,10 @@
         "tempusdominus-bootstrap-4": "^5.39.0",
         "tempusdominus-core": "^5.19.0",
         "toastr": "^2.1.4",
-        "uplot": "^1.6.7"
+        "uplot": "^1.6.7",
+        "select2": "^4.1.0-rc.0",
+        "select2-bootstrap4-theme": "^1.0.0",
+        "dropzone": "^5.9.2"
     },
     "devDependencies": {
         "@rollup/plugin-babel": "^5.3.0",

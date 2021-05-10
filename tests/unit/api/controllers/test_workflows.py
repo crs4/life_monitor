@@ -262,7 +262,7 @@ def test_get_workflow_by_id(m, request_context, mock_registry):
     assert auth.current_registry, "Unexpected registry in session"
     data = {"uuid": "12345", "version": "2", "roc_link": "https://somelink"}
     w = models.Workflow(uuid=data["uuid"])
-    wv = w.add_version(data["version"], data["roc_link"], {})
+    wv = w.add_version(data["version"], data["roc_link"], MagicMock())
     wv._metadata_loaded = True
     m.get_registry_workflow_version.return_value = wv
     response = controllers.workflows_get_by_id(data['uuid'], data['version'])
