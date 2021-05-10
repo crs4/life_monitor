@@ -145,6 +145,10 @@ class Token(db.Model, ModelMixin, OAuth2TokenMixin):
         return cls.query.filter(Token.user == user).all()
 
     @classmethod
+    def find_by_client_user(cls, client: Client, user: User) -> List[Token]:
+        return cls.query.filter(Token.client == client, Token.user == user).all()
+
+    @classmethod
     def all(cls) -> List[Token]:
         return cls.query.all()
 
@@ -235,7 +239,7 @@ class AuthorizationServer(OAuth2AuthorizationServer):
         # has been assigned to the client
         if client.check_grant_type("client_credentials"):
             return False
-        for t in Token.find_by_user(user):
+        for t in Token.find_by_client_user(client, user):
             if not t.revoked and not t.is_expired():
                 return False
         return True
