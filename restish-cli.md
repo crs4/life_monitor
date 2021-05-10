@@ -34,41 +34,73 @@ $ brew tap danielgtaylor/restish
 $ brew install restish
 ```
 
+## Add Restish as a Life Monitor OAuth2 client
+
+Instructions on how to configure Restish are provided [in its
+documentation](https://rest.sh/#/configuration?id=oauth-20-authorization-code).
+
+To add restish as a Life Monitor client, start by logging into the [Life Monitor
+web interface](https://api.lifemonitor.eu).
+
+Select the **OAuth Apps** list.  Click on the **New** button on the right of the
+list to add a new application.
+
+Assuming you're using Restish from your computer, configure the new client as
+follows (make sure you include the trailing slash in the URIs):
+
+* Client name: whatever you like, e.g., RestishClient.
+* Client URI: `http://localhost:8484/`
+* Client Redirect URIs: `http://localhost:8484/`
+* Allowed scopes: add them all, or be more selective according to your needs
+* Client Type: `Off` (i.e., not confidential)
+
+Save the configuration.  You should see the newly configured application in the
+OAuth App list.
+
+<img alt="LM OAuth app" src="images/lm_oauth_app_restish.png" width="600" />
+
+
 ## Configure Restish to work with the Life Monitor API
 
-Make sure you have credentials to access the Life Monitor API (see the [getting
-started page](getting_started) otherwise).  Access the [Life Monitor](https://api.lifemonitor.eu/) page, log in and get an API key.  You can then configure `restish` to use it to access the API:
+Invoke the `restish configure` command with the Life Monitor API URL:
 ```
 $ restish api configure lm https://api.lifemonitor.eu
+```
+
+The Restish wizard will guide you through configuration procedure.  Copy values
+shown between angle brackets `< >` from the OAuth App you created in Life
+Monitor (hit Return to leave `client_secret` unset):
+
+```
 ? Select option Edit profile default
-? Select option for profile `default` Add header
-? Header name ApiKey
-? Header value (optional) <YOUR API KEY HERE>
+? Select option for profile `default` Setup auth
+? API auth type oauth-authorization-code
+? Auth parameter client_id <COPY THE "client ID">
+? Auth parameter client_secret (optional) 
+? Auth parameter authorize_url https://api.lifemonitor.eu/oauth2/authorize
+? Auth parameter token_url https://api.lifemonitor.eu/oauth2/token
+? Auth parameter scopes (optional) <COPY THE "scopes">
+? Add additional auth param? No
 ? Select option for profile `default` Finished with profile
 ? Select option Save and exit
 ```
 
-Unfortunately, because of an [issue with restish](
-https://github.com/danielgtaylor/restish/issues/44) it will generate an
-incompatible configuration.  To fix it follow these instructions.
-
-1. Use your favourite editor to open the restish configuration file
-   `$HOME/.restish/apis.json`
-2. Find the Life Monitor configuration remove the following structure from it:
-```
-  "auth": { 
-    "name": "oauth-authorization-code", 
-    "params": { 
-      "authorize_url": "oauth2/authorize", 
-      "client_id": "", 
-      "token_url": "oauth2/token" 
-    }
-```
-
 Now you should be ready to go.  Test things out:  try to query your user
 profile:
+
 ```
 $ restish lm show-current-user-profile
+```
+
+Restish should open your browser and direct you to the Life Monitor
+application authorization page.
+
+<img alt="LM authorization page" src="images/lm_auth_page.png" width="600" />
+
+Hit "Allow" to authorize Restish to access the Life Monitor for you, then move
+back to the console. You should now see the output of your command:
+
+```
 HTTP/1.1 200 OK
 Access-Control-Allow-Origin: *
 Cache-Control: private
@@ -140,6 +172,36 @@ Available Commands:
 ....
 ```
 
-
 To see what the commands do, remember that you can refer to the API specs at <https://api.lifemonitor.eu/static/apidocs.html>.
 
+Example:
+
+```
+$ restish lm workflows-get -q status=false
+HTTP/1.1 200 OK
+Access-Control-Allow-Origin: *
+Cache-Control: private
+Content-Length: 313
+Content-Type: application/json
+Date: Mon, 10 May 2021 10:27:56 GMT
+Server: nginx
+Set-Cookie: session=.eJwlzkEOwyAMBdG7sO7C5GNjcpkIY6N2mzSrqncvUg8wevNJxzzjeqb9fd7xSMfL054G5xgSbJuIh4G9W6YNVVS0eQlVIqYGtpCuA92gAKxPEdQ-4ARbKXG2GaylRRgV8pa55I4pJih1lkVooxYLNG5RsmeHpjVyX3H-byDp-wPeaS8Q.YJkKrA.P2zsIG5OnkaFtghFB4OGWeHEwko; HttpOnly; Path=/
+9544ac48d9c55647d010c525a5be4146=ba378a3cbd4a1f5f26a99edeab93fb3e; path=/; HttpOnly; Secure
+Vary: Cookie
+X-Frame-Options: SAMEORIGIN
+
+{
+  items: [
+    {
+      latest_version: "1"
+      name: "sort-and-change-case-travis"
+      uuid: "bc435030-6e1e-0139-2dea-005056ab5db4"
+    }
+  ]
+  meta: {
+    api_version: "0.2.0-beta2"
+    base_url: "https://api-lifemonitor-test.rahtiapp.fi"
+    resource: "/workflows?status=false"
+  }
+}
+```
