@@ -56,7 +56,7 @@ class LifeMonitor:
                 if svc.get_user(user.id):
                     for w in svc.get_user_workflows(user):
                         if str(w.uuid) == str(uuid):
-                            if not version:
+                            if not version or version.lower() == "latest":
                                 return w.latest_version
                             elif version and version in w.versions:
                                 return w.versions[version]
@@ -67,7 +67,7 @@ class LifeMonitor:
     @classmethod
     def _find_and_check_workflow_version(cls, user: User, uuid, version=None):
         w = None
-        if not version or version == "latest":
+        if not version or version.lower() == "latest":
             _w = models.Workflow.get_user_workflow(user, uuid)
             if _w:
                 w = _w.latest_version
