@@ -22,14 +22,14 @@ The LM API is designed with _two types_ of **clients** in mind:
 
 The authorisation mechanisms available for clients are:
 
-* **API key**, can be used to implement generic clients;
+* **API key**, which can be used to implement generic clients;
 * **OAuth2 Client Credentials**, only available for trusted workflow registries
   (see *RegistryClientCredentials*);
 * **OAuth2 Authorization Code**, available for both generic clients (see
   *AuthorizationCodeFlow*) and registry clients (see *RegistryCodeFlow*).
 
 Clients can query API endpoints according to the authorisation mechanism they
-adopt.  There are in fact resources which are _"contextual"_ to the actor which
+adopt.  There are in fact resources which are "contextual" to the actor which
 the client is acting on behalf of and the type of "impersonated" actor is
 determined by the authorisation grant in use. Examples of contextual resources
 are:

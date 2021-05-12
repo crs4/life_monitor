@@ -21,14 +21,14 @@ This setup will instantiate:
 **Assumptions**:
 
 * you'll be running and accessing the setup on **localhost**;
-* you will use the integrated WorkflowHub instance as the identity provider.
+* you will use the integrated WorkflowHub instance as the identity provider;
 * **the WorkflowHub instance will be accessible with the host name "`seek`"**. You
   can do this by creating an entry in `/etc/hosts` or using a local DNS server,
-  like `bind`.
+  like `bind`
 
 To start the deployment, go through the following steps:
 
-0. `docker network create life_monitor` to create the Docker network;
+0. `docker network create life_monitor`, to create the Docker network;
 1. `make start`, to start the main LifeMonitor services;
 2. `make start-aux-services`, to start the preconfigured instances of WorkflowHub and Jenkins;
     these auxiliary services are needed to run the LifeMonitor tests and to check your local deployment as explained below;
@@ -50,8 +50,8 @@ You should now have a deployment with the following services up and running:
 * **WorkflowHub** @ [https://seek:3000](https://seek:3000)
 * **Jenkins** @ [http://localhost:8080](http://localhost:8080)
 
-To verify that the services are properly configured, go to the [LifeMonitor
-login page](https://localhost:8443/login) and log in by clicking on `Sign in
+To verify that the services are properly configured, point your browser to
+[LifeMonitor](https://localhost:8443), click on `Log in` and then on `Sign in
 using Seek`. You will be redirected to the WorkflowHub login page, which will
 ask for a username and a password. You can use one of the [preloaded
 users](https://github.com/crs4/life_monitor/tree/master/tests/config/registries/seek/notes.txt), e.g.:
@@ -65,7 +65,7 @@ LifeMonitor identity. Type in a user name of your choice and click on
 `Register`. You should be redirected to the user profile page. Here you can
 generate an API key that can be used to interact with the [LifeMonitor
 API](lm_api_specs): in the "API keys"
-section, click on `new` and copy the generated key. Then head over to the [API
+tab, click on `NEW` and copy the generated key. Then head over to the [API
 explorer](https://localhost:8443/openapi.html), paste the copied string into
 the API Key field in the authentication section and click on `SET`.
 
@@ -363,10 +363,12 @@ curl --insecure -X GET \
 for instance.
 
 #### OAuth2
-The current implementation allows to use the OAuth2 protocol only with workflow
-registries. See
+
+The OAuth2 protocol can be used with [_generic_ clients or _registry_
+clients](lm_api_specs). Follow the [authenticating clients
+guide](authenticate-your-client) to set up a generic client and the
 [WorkflowRegistrySetup](https://github.com/crs4/life_monitor/tree/master/examples/1_WorkflowRegistrySetup.ipynb)
-to set up your registry as an OAuth2 LifeMonitor client.
+example to set up a registry client.
 
 Workflow registries are allowed to use both the **Authorization Code** and
 **Client Credentials** grant type to exchange authorization tokens. The OAuth2

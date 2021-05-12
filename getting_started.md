@@ -1,7 +1,5 @@
 # Getting Started
 
-Follow this guide if you want to use LifeMonitor to monitor your workflows.
-
 At the moment, LifeMonitor can be used through its [REST API](lm_api_specs)
 or a [command line client](restish-cli).
 
@@ -25,7 +23,7 @@ could be wiped out at any time with no warning.
 Click on the "**Log in**" button.
 
 You can log in directly with an existing account from one of the supported
-external identity providers, like GitHub or the Workflow Hub (use the
+external identity providers, like GitHub or WorkflowHub (use the
 appropriate buttons for this).
 
 Alternatively you can click on "Sign Up" and follow the registration procedure
@@ -47,4 +45,5 @@ authentication.
 
 ### API examples
 
-Remember that the API specifications contain examples and you can use your API key to try them out.  Head over to <https://api.lifemonitor.eu/static/apidocs.html>.
+The API specifications contain examples you can try out using your API key.
+Head over to <https://api.lifemonitor.eu/static/apidocs.html>.

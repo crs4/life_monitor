@@ -7,7 +7,7 @@ Registry Clients).
 
 Once you have logged in to the [LifeMonitor web
 application](https://api.lifemonitor.eu) you can create an API key for your
-client.  Select the "API Keys" tab, then click on the `new` button.
+client.  Select the **API Keys** tab, then click on the `NEW` button.
 
 <img alt="LM Click to create new API key" src="images/lm_click_new_api_key.png" width="600" />
 
@@ -26,19 +26,18 @@ Code](https://www.oauth.com/oauth2-servers/server-side-apps/authorization-code)
 authentication.  All API calls
 compatible with this authentication scheme are visible in the [API specs](https://api.lifemonitor.eu/static/apidocs.html) with the authentication scheme *OAuth (AuthorizationCodeFlow)*.
 
-To use OAuth2 with LifeMonitor, you have to register your client with
-LifeMonitor.
+To use OAuth2 with LifeMonitor, you have to register your client first.
 
-### Registering your OAuth2 client
 
+### Registering your OAuth2 client with LifeMonitor
 
 Log in to the web application at <https://api.lifemonitor.eu>.
 
-Select the **OAuth Apps** list.
+Select the **OAuth Apps** tab.
 
 <img alt="LM OAuth Apps list" src="images/lm_oauth_apps.png" width="500" />
 
-Click on the **New** button on the right.  The OAuth2 Application Client module
+Click on the `NEW` button on the right.  The OAuth2 Application Client module
 opens.
 
 <img alt="LM OAuth Application Client"
