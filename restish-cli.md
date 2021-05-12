@@ -1,7 +1,7 @@
 
-# Life Monitor CLI
+# LifeMonitor CLI
 
-You can use Life Monitor from the command line with the
+You can use LifeMonitor from the command line with the
 [restish](https://rest.sh/#/guide?id=guide) client for openAPIs.  Follow this
 documentation to walk you through the steps to get you going.
 
@@ -34,12 +34,12 @@ $ brew tap danielgtaylor/restish
 $ brew install restish
 ```
 
-## Add Restish as a Life Monitor OAuth2 client
+## Add Restish as a LifeMonitor OAuth2 client
 
 Instructions on how to configure Restish are provided [in its
 documentation](https://rest.sh/#/configuration?id=oauth-20-authorization-code).
 
-To add restish as a Life Monitor client, start by logging into the [Life Monitor
+To add restish as a LifeMonitor client, start by logging into the [LifeMonitor
 web interface](https://api.lifemonitor.eu).
 
 Select the **OAuth Apps** list.  Click on the **New** button on the right of the
@@ -60,16 +60,16 @@ OAuth App list.
 <img alt="LM OAuth app" src="images/lm_oauth_app_restish.png" width="600" />
 
 
-## Configure Restish to work with the Life Monitor API
+## Configure Restish to work with the LifeMonitor API
 
-Invoke the `restish configure` command with the Life Monitor API URL:
+Invoke the `restish configure` command with the LifeMonitor API URL:
 ```
 $ restish api configure lm https://api.lifemonitor.eu
 ```
 
 The Restish wizard will guide you through configuration procedure.  Copy values
-shown between angle brackets `< >` from the OAuth App you created in Life
-Monitor (hit Return to leave `client_secret` unset):
+shown between angle brackets `< >` from the OAuth App you created in
+LifeMonitor (hit Return to leave `client_secret` unset):
 
 ```
 ? Select option Edit profile default
@@ -92,12 +92,12 @@ profile:
 $ restish lm show-current-user-profile
 ```
 
-Restish should open your browser and direct you to the Life Monitor
+Restish should open your browser and direct you to the LifeMonitor
 application authorization page.
 
 <img alt="LM authorization page" src="images/lm_auth_page.png" width="600" />
 
-Hit "Allow" to authorize Restish to access the Life Monitor for you, then move
+Hit "Allow" to authorize Restish to access LifeMonitor for you, then move
 back to the console. You should now see the output of your command:
 
 ```
@@ -149,12 +149,12 @@ To see all the available calls:
 $ restish lm
 *Workflow sustainability service*
 
-Life Monitor aims to facilitate the sharing, execution and monitoring of
+LifeMonitor aims to facilitate the sharing, execution and monitoring of
 workflow tests over time, ensuring that deviations from the workflow's
 correct operation are detected and communicated to the workflow authors so
 that they might be solved, thus extending the useful life of the workflow.
 
-Life Monitor is being developed as part of the [EOSC-Life project](https://www.eosc-life.eu/).
+LifeMonitor is being developed as part of the [EOSC-Life project](https://www.eosc-life.eu/).
 
 Usage:
   restish lm [flags]

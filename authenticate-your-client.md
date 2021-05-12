@@ -1,11 +1,11 @@
-# Authenticating clients with the Life Monitor API
+# Authenticating clients with the LifeMonitor API
 
 This documentation concerns [Generic Clients](lm_api_specs#clients) (*not*
 Registry Clients).
 
 ## API key
 
-Once you have logged in to the [Life Monitor web
+Once you have logged in to the [LifeMonitor web
 application](https://api.lifemonitor.eu) you can create an API key for your
 client.  Click on the "New" button in the "**API Keys**" section of the page.
 
@@ -21,13 +21,13 @@ that call.
 
 ## OAuth2
 
-Life Monitor supports [OAuth2 Authorization
+LifeMonitor supports [OAuth2 Authorization
 Code](https://www.oauth.com/oauth2-servers/server-side-apps/authorization-code)
 authentication.  All API calls
 compatible with this authentication scheme are visible in the [API specs](https://api.lifemonitor.eu/static/apidocs.html) with the authentication scheme *OAuth (AuthorizationCodeFlow)*.
 
-To use OAuth2 with Life Monitor, you have to register your client with Life
-Monitor.
+To use OAuth2 with LifeMonitor, you have to register your client with
+LifeMonitor.
 
 ### Registering your OAuth2 client
 

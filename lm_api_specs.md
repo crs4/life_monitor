@@ -1,6 +1,6 @@
-# Life Monitor API Specs
+# LifeMonitor API Specs
 
-**Life Monitor (LM)** exposes its functionalities through a RESTful API defined with
+**LifeMonitor (LM)** exposes its functionalities through a RESTful API defined with
 [OpenAPI](https://swagger.io/specification).
 
 Full specifications are available here: [apidocs.html](https://api.dev.lifemonitor.eu/static/apidocs.html)
@@ -15,10 +15,10 @@ The LM API is designed with _two types_ of **clients** in mind:
    workflows and associated workflow tests. For instance, you may register a
    workflow on the [Workflow Hub registry](https://workflowhub.eu/) and it (as a
    Registry Client) may in turn register on your behalf the workflow's tests with
-   the Life Monitor.
+   LifeMonitor.
 
 
-<img alt="Life Monitor client types" src="images/lm_clients.png" width="900" />
+<img alt="LifeMonitor client types" src="images/lm_clients.png" width="900" />
 
 The authorisation mechanisms available for clients are:
 
