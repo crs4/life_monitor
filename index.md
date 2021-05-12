@@ -2,7 +2,7 @@
 
 LifeMonitor is a **testing and monitoring service** for scientific workflows.
 
-Te "collapse" over time of the software and services on which computational
+The "collapse" over time of the software and services on which computational
 workflows depend for correct operation is destructive to their reusability,
 and to the reproducibility of work for which they were used; in this case,
 "collapse" can be a change in API that is not backwards compatible, a regression
