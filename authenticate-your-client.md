@@ -7,9 +7,9 @@ Registry Clients).
 
 Once you have logged in to the [LifeMonitor web
 application](https://api.lifemonitor.eu) you can create an API key for your
-client.  Click on the "New" button in the "**API Keys**" section of the page.
+client.  Select the "API Keys" tab, then click on the `new` button.
 
-<img alt="LM Click to create new API key" src="images/lm_click_new_api_key.png" width="400" />
+<img alt="LM Click to create new API key" src="images/lm_click_new_api_key.png" width="600" />
 
 The new API key appears in the list and is immediately ready to use.  Copy it
 and configure your client to use it.  The API calls compatible with API Key
