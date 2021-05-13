@@ -25,7 +25,7 @@ Specs: https://github.com/crs4/life_monitor/wiki/Test-Metadata-Draft-Spec
 """
 
 import json
-from collections import Mapping
+from collections.abc import Mapping
 from pathlib import Path
 
 import yaml
