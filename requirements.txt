@@ -3,7 +3,7 @@ connexion[swagger-ui]==2.7.0
 email-validator~=1.1.2
 flask-bcrypt==0.7.1
 flask-cors==3.0.10
-flask-marshmallow==0.13.0
+flask-marshmallow~=0.14.0
 flask-restful==0.3.8
 Flask-Security-Too==3.4.5
 flask-shell-ipython==0.4.1
