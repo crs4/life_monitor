@@ -1,4 +1,4 @@
-Authlib==0.14.3
+Authlib~=0.15.3
 connexion[swagger-ui]==2.7.0
 email-validator~=1.1.2
 flask-bcrypt==0.7.1
