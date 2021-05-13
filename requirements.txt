@@ -9,7 +9,7 @@ Flask-Security-Too==3.4.5
 flask-shell-ipython==0.4.1
 Flask-SQLAlchemy==2.5.1
 Flask==2.0.0
-gunicorn==20.0.4
+gunicorn~=20.1.0
 jwt==1.2.0
 loginpass==0.5
 marshmallow-sqlalchemy~=0.25.0
