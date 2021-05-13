@@ -17,7 +17,7 @@ psycopg2~=2.8.6
 pyopenssl==19.1.0
 pytest-mock==3.3.1
 pytest==5.4.3
-python-dotenv~=0.13.0
+python-dotenv~=0.17.1
 python-jenkins==1.7.0
 PyYAML~=5.4.1
 requests==2.25.1
