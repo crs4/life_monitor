@@ -15,8 +15,8 @@ loginpass==0.5
 marshmallow-sqlalchemy~=0.25.0
 psycopg2~=2.8.6
 pyopenssl==19.1.0
-pytest-mock==3.3.1
-pytest==5.4.3
+pytest-mock~=3.6.1
+pytest~=6.2.4
 python-dotenv~=0.17.1
 python-jenkins==1.7.0
 PyYAML~=5.4.1
