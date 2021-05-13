@@ -2,7 +2,11 @@
 <div class="{{class}}" {% if style %}style="{{style}}"{% endif %}>
   <a {% if href %}href={{href}}{% endif %}>
     <img
+      {% if config.get('ENV') == 'production' %}
       src="{{ url_for('auth.static', filename='img/logo/lm/LifeMonitorLogo.png') }}"
+      {% else %}
+      src="{{ url_for('auth.static', filename='img/logo/lm/LifeMonitorLogo-dev.png') }}"
+      {% endif %}
       alt="LifeMonitor Logo"
       class="img-fluid card-img-top"
     />
