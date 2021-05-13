@@ -12,7 +12,7 @@ Flask==2.0.0
 gunicorn==20.0.4
 jwt==1.2.0
 loginpass==0.5
-marshmallow-sqlalchemy==0.23.1
+marshmallow-sqlalchemy~=0.25.0
 psycopg2~=2.8.6
 pyopenssl==19.1.0
 pytest-mock==3.3.1
