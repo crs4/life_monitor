@@ -84,6 +84,8 @@ lifemonitor:
   environment: production
   log_level: INFO
 
+  warning_message:
+
   service:
     type: ClusterIP
     port: 8000

@@ -13,7 +13,9 @@
 
 {% if current_user.is_authenticated %}
 
-  {{ macros.render_logo(style="max-width: 300px;", class="img-fluid logo text-center m-5") }}
+  {{ macros.render_logo(style="max-width: 300px;", class="img-fluid logo text-center mx-5 mt-5") }}
+
+  {{ macros.render_warning(config.get("WARNING_MESSAGE", None), classes="mb-4") }}
 
    <!-- Main content -->
   <div class="container-fluid">
@@ -77,6 +79,12 @@
 
 {% else %}
   {{ macros.render_logo(style="width: 50%") }}
+
+  {{ macros.render_warning(
+      config.get("WARNING_MESSAGE", "None"),
+      classes="mt-5" if config.get('ENV') == 'production' else "")
+  }}
+
   <div style="padding: 50px;">
   <a class="btn btn-primary btn-lg" role="button" href="{{ url_for('auth.login') }}">Log in</a>
   </div>
@@ -85,7 +93,7 @@
 {% endblock %}
 
 
-{% block javascripts %} 
+{% block javascripts %}
 <script>
   // Initialize APIKeys
   initializeViewApiKeys(numberOfVisibleChars=15);
