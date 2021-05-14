@@ -77,9 +77,9 @@ Define environment variables shared by some pods.
   value: "{{ .Values.postgresql.postgresqlPassword }}"
 - name: POSTGRESQL_DATABASE
   value: "{{ .Values.postgresql.postgresqlDatabase }}"
-- name: TLS_KEY
+- name: LIFEMONITOR_TLS_KEY
   value: "/lm/certs/tls.key"
-- name: TLS_CERT
+- name: LIFEMONITOR_TLS_CERT
   value: "/lm/certs/tls.crt"
 {{- end -}}
 

@@ -59,7 +59,7 @@ lifemonitor:
   replicaCount: 1
 
   image: &lifemonitorImage crs4/lifemonitor:master
-  imagePullPolicy: &lifemonitorImagePullPolicy Always  
+  imagePullPolicy: &lifemonitorImagePullPolicy Always
   imagePullSecrets: []
 
   nameOverride: ""
@@ -83,6 +83,8 @@ lifemonitor:
 
   environment: production
   log_level: INFO
+
+  warning_message:
 
   service:
     type: ClusterIP
@@ -429,7 +431,7 @@ nginx:
     - name: init-static-files
       image: *lifemonitorImage
       imagePullPolicy: *lifemonitorImagePullPolicy
-      command: ["/bin/bash", "-c"]  
+      command: ["/bin/bash", "-c"]
       args:
       - |
           mkdir -p /app/lifemonitor

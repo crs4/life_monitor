@@ -2,7 +2,11 @@
 <div class="{{class}}" {% if style %}style="{{style}}"{% endif %}>
   <a {% if href %}href={{href}}{% endif %}>
     <img
+      {% if config.get('ENV') == 'production' %}
       src="{{ url_for('auth.static', filename='img/logo/lm/LifeMonitorLogo.png') }}"
+      {% else %}
+      src="{{ url_for('auth.static', filename='img/logo/lm/LifeMonitorLogo-dev.png') }}"
+      {% endif %}
       alt="LifeMonitor Logo"
       class="img-fluid card-img-top"
     />
@@ -10,6 +14,19 @@
 </div>
 {% endmacro%}
 
+{% macro render_warning(message=None, classes="", styles="") -%}
+{% if message %}
+ <div class="font-weight-lighter mt-3 text-primary {{classes}}"
+      style="font-size: 1.25rem; line-height: 20px; {{styles}}">
+    <div class="row">
+      <div style="width: 34px; height: 100%; margin: auto;">
+        <i class="fas fa-exclamation-circle fa-lg"></i>
+      </div>
+      <div>{{message}}</div>
+    </div>
+</div>
+{% endif %}
+{%- endmacro %}
 
 {% macro messages() -%}
   {% set messages = get_flashed_messages(with_categories=true) %}

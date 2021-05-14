@@ -7,16 +7,16 @@
 {% block body %}
 
 <div class="login-box" style="margin: 50px 0;">
- 
+
   {{ macros.render_logo(class="login-logo", style="width: auto") }}
-  
+
   <div class="card shadow-lg p-3 mb-5 bg-white rounded">
-   
+
     <div class="card-body login-card-body">
       <h5 class="login-box-msg text-bold">Sign in</h5>
 
       <form method="POST">
-      
+
         {{ form.hidden_tag() }}
         {{ macros.render_custom_field(form.username) }}
         {{ macros.render_custom_field(form.password) }}
@@ -28,7 +28,7 @@
               <label for="remember"> Remember Me </label>
             </div>
           </div>
-          <div class="col-5">            
+          <div class="col-5">
             <button type="submit"
                class="btn btn-block btn-primary">
               Sign in
@@ -38,15 +38,15 @@
       </form>
 
       <div class="social-auth-links text-center mb-3">
-        
+
         <p>- OR -</p>
 
         {% for p in providers %}
-          {{ macros.render_provider_signin_button(p) }}          
+          {{ macros.render_provider_signin_button(p) }}
         {% endfor %}
 
       </div>
-      
+
       <p></p>
       <p class="mb-0">
         Don’t have an account?

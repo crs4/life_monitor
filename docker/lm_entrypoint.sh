@@ -5,8 +5,8 @@ set -o errexit
 
 export POSTGRESQL_USERNAME="${POSTGRESQL_USERNAME:-lm}"
 export POSTGRESQL_DATABASE="${POSTGRESQL_DATABASE:-lm}"
-export KEY=${TLS_KEY:-/certs/lm.key}
-export CERT=${TLS_CERT:-/certs/lm.crt}
+export KEY=${LIFEMONITOR_TLS_KEY:-/certs/lm.key}
+export CERT=${LIFEMONITOR_TLS_CERT:-/certs/lm.crt}
 
 printf "Waiting for postgresql...\n" >&2
 wait-for-postgres.sh

@@ -18,6 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import os
 import ssl
 
 from lifemonitor.app import create_app
@@ -28,5 +29,7 @@ application = create_app()
 if __name__ == '__main__':
     """ Start development server"""
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-    context.load_cert_chain('./certs/lm.crt', './certs/lm.key')
+    context.load_cert_chain(
+        os.environ.get("LIFEMONITOR_TLS_CERT", './certs/lm.crt'),
+        os.environ.get("LIFEMONITOR_TLS_KEY", './certs/lm.key'))
     application.run(host="0.0.0.0", port=8000, ssl_context=context)
