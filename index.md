@@ -3,15 +3,13 @@
 LifeMonitor is a **testing and monitoring service** for scientific workflows.
 
 The "collapse" over time of the software and services on which computational
-workflows depend for correct operation is destructive to their reusability,
+workflows depend is destructive to their reusability,
 and to the reproducibility of work for which they were used; in this case,
 "collapse" can be a change in API that is not backwards compatible, a regression
 in a tool whose version was not pinned, a change in URL of an external resource,
-etc.
-
-LifeMonitor aims to facilitate the creation, sharing, periodic execution and
-monitoring of workflow tests, ensuring that software collapse is detected and
-communicated to the authors, in the hope it will be solved thus extending the
+etc. LifeMonitor aims to facilitate the creation, execution and
+monitoring of workflow tests, ensuring that problems are detected early and
+communicated to the authors to be fixed, thus extending the
 useful life of the workflows.
 
 The project's main goals are to:
