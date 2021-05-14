@@ -17,12 +17,14 @@ useful life of the workflows.
 The project's main goals are to:
 
 * Serve as a central aggregation point for workflow test statuses and outputs
-  from various testing bots (e.g., TravisCI, GitHub Actions, your own
-  Jenkins instance, etc.).
+  from various testing bots (e.g., [Travis CI](https://travis-ci.org/),
+  [GitHub Actions](https://docs.github.com/en/actions), your own
+  [Jenkins](https://www.jenkins.io/) instance, etc.).
 * Allow to execute workflow tests on a built-in Jenkins-based service.
-* Facilitate periodic automated execution of tests for Galaxy, Nextflow and CWL
-  workflows.
-* Integrate with [WorkflowHub](https://workflowhub.eu/).
+* Facilitate periodic automated execution of tests for
+  [Galaxy](https://usegalaxy.org/), [Nextflow](https://www.nextflow.io/) and
+  [CWL](https://www.commonwl.org/) workflows.
+* Integrate with [WorkflowHub](https://about.workflowhub.eu/).
 * Provide access through multiple user interfaces: Web GUI, CLI client, REST API.
 
 
