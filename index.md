@@ -69,6 +69,12 @@ LifeMonitor is still in early development.  Here is our planned development road
 
 LifeMonitor is being developed as part of the [EOSC-Life project](https://www.eosc-life.eu/)
 
-<img alt="EOSC-Life Logo" src="https://github.com/crs4/life_monitor/raw/master/docs/logo_EOSC-Life.png" width="130" style="vertical-align: middle" />
-<img alt="CRS4 Logo" src="https://github.com/crs4/life_monitor/raw/master/docs/logo_crs4-transparent.png" width="130" style="vertical-align: middle" />
-<img alt="BBMRI-ERIC Logo" src="https://github.com/crs4/life_monitor/raw/master/docs/logo_bbmri-eric.png" width="130" style="vertical-align: middle; margin-left: 5px" />
+<a title="EOSC-Life" href="https://www.eosc-life.eu">
+  <img alt="EOSC-Life Logo" src="https://github.com/crs4/life_monitor/raw/master/docs/logo_EOSC-Life.png" width="130" style="vertical-align: middle" />
+</a>
+<a title="CRS4" href="https://www.crs4.it/">
+  <img alt="CRS4 Logo" src="https://github.com/crs4/life_monitor/raw/master/docs/logo_crs4-transparent.png" width="130" style="vertical-align: middle" />
+</a>
+<a title="BBMRI-ERIC" href="https://www.bbmri-eric.eu/">
+  <img alt="BBMRI-ERIC Logo" src="https://github.com/crs4/life_monitor/raw/master/docs/logo_bbmri-eric.png" width="130" style="vertical-align: middle; margin-left: 10px" />
+</a>
