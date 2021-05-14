@@ -14,39 +14,30 @@ monitoring of workflow tests, ensuring that software collapse is detected and
 communicated to the authors, in the hope it will be solved thus extending the
 useful life of the workflows.
 
+The project's main goals are to:
 
-## Goals
-
-* Provide a central aggregation point for your workflow test statuses and outputs
+* Serve as a central aggregation point for workflow test statuses and outputs
   from various testing bots (e.g., TravisCI, GitHub Actions, your own
   Jenkins instance, etc.).
-* Integrated Jenkins-based workflow test execution service.
+* Allow to execute workflow tests on a built-in Jenkins-based service.
 * Facilitate periodic automated execution of tests for Galaxy, Nextflow and CWL
   workflows.
-* Web interface, CLI client, REST API
+* Integrate with [WorkflowHub](https://workflowhub.eu/).
+* Provide access through multiple user interfaces: Web GUI, CLI client, REST API.
 
 
-## How to use it
+## Documentation
 
-At the moment, LifeMonitor can be used through its [REST API](lm_api_specs)
-or through a command-line client.  Follow the [Getting started](getting_started)
-user guide to see how to start using it.
-
-If instead you want to deploy your own instance of LifeMonitor, follow the
-[Administration Guide](lm_admin_guide).
-
-Integration with [WorkflowHub](https://workflowhub.eu/) is in the works, as
-well as a web interface and a command line client.
-
-A critical component to define and exchange workflow tests with LifeMonitor
-is the [Workflow RO-crate](https://about.workflowhub.eu/Workflow-RO-Crate/) and
-[Workflow RO-crate testing extension](workflow_testing_ro_crate).
+* [Getting started](getting_started)
+* [REST API](lm_api_specs)
+* [Using the API via CLI](restish-cli)
+* [Administration Guide](lm_admin_guide)
+* [Workflow Testing RO-crate specification](workflow_testing_ro_crate)
 
 
 ## Road map
 
 LifeMonitor is still in early development.  Here is our planned development road map.
-
 
 #### End of 2020
 - [x] Support for receiving workflow POSTs as Workflow RO-crate
