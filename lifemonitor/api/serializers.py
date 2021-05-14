@@ -46,7 +46,7 @@ class WorkflowRegistrySchema(ResourceMetadataSchema):
     uuid = ma.auto_field()
     uri = ma.auto_field()
     type = fields.Method("get_type")
-    name = fields.String(attributes="server_credentials.name")
+    name = fields.String(attribute="server_credentials.name")
 
     def get_type(self, obj):
         return obj.type.replace('_registry', '')
