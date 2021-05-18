@@ -3,50 +3,41 @@
 LifeMonitor is a **testing and monitoring service** for scientific workflows.
 
 The "collapse" over time of the software and services on which computational
-workflows depend for correct operation is destructive to their reusability,
+workflows depend is destructive to their reusability,
 and to the reproducibility of work for which they were used; in this case,
 "collapse" can be a change in API that is not backwards compatible, a regression
 in a tool whose version was not pinned, a change in URL of an external resource,
-etc.
-
-LifeMonitor aims to facilitate the creation, sharing, periodic execution and
-monitoring of workflow tests, ensuring that software collapse is detected and
-communicated to the authors, in the hope it will be solved thus extending the
+etc. LifeMonitor aims to facilitate the creation, execution and
+monitoring of workflow tests, ensuring that problems are detected early and
+communicated to the authors to be fixed, thus extending the
 useful life of the workflows.
 
+The project's main goals are to:
 
-## Goals
+* Serve as a central aggregation point for workflow test statuses and outputs
+  from various testing bots (e.g., [Travis CI](https://travis-ci.org/),
+  [GitHub Actions](https://docs.github.com/en/actions), your own
+  [Jenkins](https://www.jenkins.io/) instance, etc.).
+* Allow to execute workflow tests on a built-in Jenkins-based service.
+* Facilitate periodic automated execution of tests for
+  [Galaxy](https://usegalaxy.org/), [Nextflow](https://www.nextflow.io/) and
+  [CWL](https://www.commonwl.org/) workflows.
+* Integrate with [WorkflowHub](https://about.workflowhub.eu/).
+* Provide access through multiple user interfaces: Web GUI, CLI client, REST API.
 
-* Provide a central aggregation point for your workflow test statuses and outputs
-  from various testing bots (e.g., TravisCI, GitHub Actions, your own
-  Jenkins instance, etc.).
-* Integrated Jenkins-based workflow test execution service.
-* Facilitate periodic automated execution of tests for Galaxy, Nextflow and CWL
-  workflows.
-* Web interface, CLI client, REST API
 
+## Documentation
 
-## How to use it
-
-At the moment, LifeMonitor can be used through its [REST API](lm_api_specs)
-or through a command-line client.  Follow the [Getting started](getting_started)
-user guide to see how to start using it.
-
-If instead you want to deploy your own instance of LifeMonitor, follow the
-[Administration Guide](lm_admin_guide).
-
-Integration with [WorkflowHub](https://workflowhub.eu/) is in the works, as
-well as a web interface and a command line client.
-
-A critical component to define and exchange workflow tests with LifeMonitor
-is the [Workflow RO-crate](https://about.workflowhub.eu/Workflow-RO-Crate/) and
-[Workflow RO-crate testing extension](workflow_testing_ro_crate).
+* [Getting started](getting_started)
+* [REST API](lm_api_specs)
+* [Using the API via CLI](restish-cli)
+* [Administration Guide](lm_admin_guide)
+* [Workflow Testing RO-crate specification](workflow_testing_ro_crate)
 
 
 ## Road map
 
 LifeMonitor is still in early development.  Here is our planned development road map.
-
 
 #### End of 2020
 - [x] Support for receiving workflow POSTs as Workflow RO-crate
@@ -78,6 +69,12 @@ LifeMonitor is still in early development.  Here is our planned development road
 
 LifeMonitor is being developed as part of the [EOSC-Life project](https://www.eosc-life.eu/)
 
-<img alt="EOSC-Life Logo" src="https://github.com/crs4/life_monitor/raw/master/docs/logo_EOSC-Life.png" width="100" />
-<img alt="CRS4 Logo" src="https://github.com/crs4/life_monitor/raw/master/docs/logo_crs4-transparent.png" width="100" />
-<img alt="BBMRI-ERIC Logo" src="https://github.com/crs4/life_monitor/raw/master/docs/logo_bbmri-eric.png" width="100" />
+<a title="EOSC-Life" href="https://www.eosc-life.eu">
+  <img alt="EOSC-Life Logo" src="https://github.com/crs4/life_monitor/raw/master/docs/logo_EOSC-Life.png" width="130" style="vertical-align: middle" />
+</a>
+<a title="CRS4" href="https://www.crs4.it/">
+  <img alt="CRS4 Logo" src="https://github.com/crs4/life_monitor/raw/master/docs/logo_crs4-transparent.png" width="130" style="vertical-align: middle" />
+</a>
+<a title="BBMRI-ERIC" href="https://www.bbmri-eric.eu/">
+  <img alt="BBMRI-ERIC Logo" src="https://github.com/crs4/life_monitor/raw/master/docs/logo_bbmri-eric.png" width="130" style="vertical-align: middle; margin-left: 10px" />
+</a>
