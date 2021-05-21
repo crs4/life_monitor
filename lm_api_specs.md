@@ -44,5 +44,6 @@ _RegistryClientCredentials_ or _RegistryCodeFlow_.
 
 ## Links
 
-- [API documentation and examples](https://crs4.github.io/life_monitor/lm-openapi-rapidoc.html).
-- [YAML API specifications](https://github.com/crs4/life_monitor/tree/master/specs).
+- [Getting started](getting_started)
+- [API documentation and examples](https://crs4.github.io/life_monitor/lm-openapi-rapidoc.html)
+- [YAML API specifications](https://github.com/crs4/life_monitor/tree/master/specs)

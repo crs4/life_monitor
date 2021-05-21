@@ -15,7 +15,7 @@ Point your browser to the LifeMonitor API endpoint <https://api.lifemonitor.eu/>
 instance of LifeMonitor (replace <https://api.lifemonitor.eu> with
 <https://api.dev.lifemonitor.eu> throughout these instructions and examples).
 
-:warning: Please note that the dev instance is meant for testing / development and it
+:warning: Please note that the dev instance is meant for testing / development and
 could be wiped out at any time with no warning.
 
 <img alt="LM login page" src="images/lm_login_page.png" width="600" />

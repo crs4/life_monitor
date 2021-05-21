@@ -50,7 +50,7 @@ LifeMonitor is still in early development.  Here is our planned development road
 #### Spring 2021
   - [x] Workflow Testing RO-crate template creation (integrated in
         [ro-crate-py](https://github.com/ResearchObject/ro-crate-py))
-  - [ ] Alpha release on <https://lifemonitor.eu>
+  - [x] Alpha release on <https://lifemonitor.eu>
 
 #### Mid 2021
   - [ ] WorkflowHub integration?
