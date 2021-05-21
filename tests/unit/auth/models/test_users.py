@@ -55,5 +55,6 @@ def test_identity_unavailable(app_client, user1):
     assert user.current_identity is None, "Identity should be empty"
     serialization = serializers.UserSchema().dump(user)
     logger.debug(serialization)
-    assert serialization['identities'] is None, \
-        "The 'identity' property should be empty on the serialized user"
+    assert "lifemonitor" in serialization['identities']
+    lm_identity = serialization['identities']["lifemonitor"]
+    assert lm_identity["provider"]["name"] == "LifeMonitor"
