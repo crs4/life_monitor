@@ -10,3 +10,19 @@ text move.
 a:hover, a:focus {
     font-weight: normal;
 }
+
+/*
+Override static width settings.
+*/
+.wrapper {
+  width: 100%;
+}
+
+section {
+  width: 70%;
+}
+
+header {
+  width: 30%;
+  max-width: 270px;
+}
