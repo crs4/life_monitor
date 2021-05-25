@@ -20,9 +20,12 @@
 
 import logging
 
+import connexion
+
 from flask import Response, current_app, request
-from lifemonitor import serializers
 from werkzeug.exceptions import HTTPException
+
+from lifemonitor import serializers
 
 logger = logging.getLogger(__name__)
 
@@ -170,14 +173,20 @@ def handle_exception(e: Exception):
         return report_problem(status=e.code,
                               title=e.__class__.__name__,
                               detail=getattr(e, "description", None))
-    else:
-        return report_problem(status=500,
-                              title="Internal Server Error",
-                              detail=getattr(e, "description", None),
-                              extra_info={
-                                  "exception_type": e.__class__.__name__,
-                                  "exception_value": str(e)
-                              })
+    if isinstance(e, connexion.ProblemException):
+        return report_problem(status=e.status,
+                              title=e.title,
+                              detail=e.detail,
+                              type=e.type,
+                              instance=e.instance,
+                              extra_info=e.ext)
+    return report_problem(status=500,
+                          title="Internal Server Error",
+                          detail=getattr(e, "description", None),
+                          extra_info={
+                              "exception_type": e.__class__.__name__,
+                              "exception_value": str(e)
+                          })
 
 
 def report_problem(status, title, detail=None, type=None, instance=None, extra_info=None):
@@ -196,7 +205,7 @@ def report_problem(status, title, detail=None, type=None, instance=None, extra_i
         try:
             problem_response['instance'] = request.url
         except Exception:
-            pass
+            logger.debug("Unable to get request.url while reporting problem '%s'", problem_response)
     if extra_info:
         problem_response['extra_info'] = extra_info
 
