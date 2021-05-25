@@ -22,7 +22,7 @@ import logging
 
 import connexion
 
-from flask import Response, current_app, request
+from flask import Response, request
 from werkzeug.exceptions import HTTPException
 
 from lifemonitor import serializers

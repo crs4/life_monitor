@@ -18,6 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+
 import functools
 import glob
 import json
@@ -111,7 +112,7 @@ def to_camel_case(snake_str) -> str:
 def sizeof_fmt(num, suffix='B'):
     # Thanks to Sridhar Ratnakumar
     # https://stackoverflow.com/questions/1094841/get-human-readable-version-of-file-size
-    for unit in ['','Ki','Mi','Gi','Ti','Pi','Ei','Zi']:
+    for unit in ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi']:
         if abs(num) < 1024.0:
             return "%3.1f%s%s" % (num, unit, suffix)
         num /= 1024.0
@@ -150,7 +151,7 @@ def _download_from_remote(url, output_stream, authorization=None):
                 output_stream.write(chunk)
 
 
-def download_url(url: str, target_path:str=None, authorization:str=None) -> str:
+def download_url(url: str, target_path: str = None, authorization: str = None) -> str:
     if not target_path:
         target_path = tempfile.mktemp()
     try:
