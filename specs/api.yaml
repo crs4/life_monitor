@@ -1350,7 +1350,6 @@ components:
                 Universal unique identifier of the workflow.
               example: 123e4567-e89b-12d3-a456-426614174000
           required:
-            - uuid
             - roc_link
             - version
         - $ref: "#/components/schemas/WorkflowVersionBase"

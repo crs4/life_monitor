@@ -234,6 +234,18 @@ def workflows_post(body, _registry=None, _submitter_id=None):
         except lm_exceptions.EntityNotFoundException:
             return lm_exceptions.report_problem(404, "Not Found",
                                                 detail=messages.no_registry_found.format(registry_ref))
+    if registry:
+        # at least one between 'uuid' or 'identifier' must be provided to
+        # associate this workflow record with its identity in the registry
+        if not body.get('uuid', None) and not body.get('identifier', None):
+            return lm_exceptions.report_problem(400, "Bad Request", extra_info={"missing input": "uuid or identifier"},
+                                                detail=messages.input_data_missing)
+
+    roc_link = body.get('roc_link', None)
+    if not registry and not roc_link:
+        return lm_exceptions.report_problem(400, "Bad Request", extra_info={"missing input": "roc_link"},
+                                            detail=messages.input_data_missing)
+
     submitter = current_user if current_user and not current_user.is_anonymous else None
     if not submitter:
         try:
@@ -251,15 +263,6 @@ def workflows_post(body, _registry=None, _submitter_id=None):
             return lm_exceptions.report_problem(401, "Unauthorized",
                                                 detail=messages.no_user_oauth_identity_on_registry
                                                 .format(submitter_id or current_user.id, registry.name))
-    roc_link = body.get('roc_link', None)
-    if not registry and not roc_link:
-        return lm_exceptions.report_problem(400, "Bad Request", extra_info={"missing input": "roc_link"},
-                                            detail=messages.input_data_missing)
-
-    # at least one between 'uuid' or 'identifier' must be provided
-    if not body.get('uuid', None) and not body.get('identifier', None):
-        return lm_exceptions.report_problem(400, "Bad Request", extra_info={"missing input": "uuid or identifier"},
-                                            detail=messages.input_data_missing)
     try:
         w = lm.register_workflow(
             roc_link=roc_link,
