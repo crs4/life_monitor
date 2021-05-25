@@ -185,8 +185,9 @@ def extract_zip(archive_path, target_path=None):
             zip_ref.extractall(target_path)
         return target_path
     except (zipfile.BadZipFile, zipfile.LargeZipFile) as e:
-        logger.error("Downloaded RO-crate has bad zip format: %s", e)
-        raise lm_exceptions.NotValidROCrateException(original_error=str(e))
+        msg = "Downloaded RO-crate has bad zip format"
+        logger.error(msg + ": %s", e)
+        raise lm_exceptions.NotValidROCrateException(detail=msg, original_error=str(e))
 
 
 def load_test_definition_filename(filename):
