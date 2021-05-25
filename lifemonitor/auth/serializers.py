@@ -27,6 +27,7 @@ from lifemonitor.serializers import (BaseSchema, ListOfItems,
 from marshmallow import fields
 
 from . import models
+from ..utils import get_external_server_url
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
@@ -68,13 +69,30 @@ class UserSchema(ResourceMetadataSchema):
     # identities = fields.Dict(attribute="current_identity",
     #                          keys=fields.String(),
     #                          values=fields.Nested(IdentitySchema()))
-    identities = fields.Method("get_identities")
+    identities = fields.Method("current_identity")
 
-    def get_identities(self, user):
-        identities = None
+    def current_identity(self, user):
+        # TODO:  these should probably defined in a Model somewhere
+        lm_identity_provider = {
+            "name": "LifeMonitor",
+            "type": "oauth2_identity_provider",
+            "uri": get_external_server_url(),
+            "userinfo_endpoint": get_external_server_url() + "/users/current"
+        }
+        lm_user_identity = {
+            "sub": str(user.id),
+            "username": user.username,
+            "picture": user.picture,
+            "provider": lm_identity_provider,
+        }
+
+        identities = {"lifemonitor": lm_user_identity}
+
+        # Add any other identities that the user has
         if user.current_identity:
-            identities = {}
             for k, v in user.current_identity.items():
+                if k == 'lifemonitor':
+                    raise RuntimeError("BUG: user has a second lifemonitor identity")
                 try:
                     identities[k] = IdentitySchema().dump(v)
                 except Exception as e:
