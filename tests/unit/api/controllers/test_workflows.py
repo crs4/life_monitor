@@ -21,12 +21,13 @@
 import logging
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 import lifemonitor.api.controllers as controllers
 import lifemonitor.api.models as models
 import lifemonitor.api.serializers as serializers
 import lifemonitor.auth as auth
 import lifemonitor.exceptions as lm_exceptions
-import pytest
 from lifemonitor.auth.oauth2.client.models import \
     OAuthIdentityNotFoundException
 from lifemonitor.lang import messages

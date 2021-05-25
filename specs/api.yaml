@@ -1404,7 +1404,7 @@ components:
               type: boolean
               readOnly: true
               description: |
-                `true` if the workflow version is the latest, 
+                `true` if the workflow version is the latest,
                 `false` otherwise.
               example: true
             submitter:
