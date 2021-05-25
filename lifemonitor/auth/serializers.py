@@ -72,32 +72,32 @@ class UserSchema(ResourceMetadataSchema):
     identities = fields.Method("current_identity")
 
     def current_identity(self, user):
-        identities = {}
+        # TODO:  these should probably defined in a Model somewhere
+        lm_identity_provider = {
+            "name": "LifeMonitor",
+            "type": "oauth2_identity_provider",
+            "uri": get_external_server_url(),
+            "userinfo_endpoint": get_external_server_url() + "/users/current"
+        }
+        lm_user_identity = {
+            "sub": str(user.id),
+            "username": user.username,
+            "picture": user.picture,
+            "provider": lm_identity_provider,
+        }
+
+        identities = {"lifemonitor": lm_user_identity}
+
+        # Add any other identities that the user has
         if user.current_identity:
             for k, v in user.current_identity.items():
+                if k == 'lifemonitor':
+                    raise RuntimeError("BUG: user has a second lifemonitor identity")
                 try:
                     identities[k] = IdentitySchema().dump(v)
                 except Exception as e:
                     logger.error("Unable to retrieve profile"
                                  "of user % r from provider % r: % r", user.id, k, str(e))
-        else:
-            # current identity is provided only by LifeMonitor, so we provide the
-            # data directly here.
-            # TODO:  these should probably defined in a Model somewhere
-            # We don't return anything for properties for which we don't have a value.
-            identity_provider = {
-                "name": "LifeMonitor",
-                "type": "oauth2_identity_provider",
-                "uri": get_external_server_url(),
-                "userinfo_endpoint": get_external_server_url() + "/users/current"
-            }
-            user_identity = {
-                "sub": str(user.id),
-                "username": user.username,
-                "picture": user.picture,
-                "provider": identity_provider,
-            }
-            identities["lifemonitor"] = user_identity
         return identities
 
 
