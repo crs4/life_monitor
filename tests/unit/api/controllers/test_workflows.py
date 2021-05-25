@@ -125,7 +125,7 @@ def test_post_workflow_by_user_error_missing_input_data(m, request_context, mock
     m.get_workflow_registry_by_generic_reference.assert_called_once_with(data["registry"]), \
         "get_workflow_registry_by_uri should be used"
     logger.debug("Response: %r, %r", response, str(response.data))
-    assert_status_code(response.status_code, 400)
+    assert_status_code(400, response.status_code)
 
 
 @patch("lifemonitor.api.controllers.lm")
@@ -150,7 +150,7 @@ def test_post_workflow_by_user(m, request_context, mock_user):
     response = controllers.workflows_post(body=data)
     m.get_workflow_registry_by_generic_reference.assert_called_once_with(data["registry"]), \
         "get_workflow_registry_by_uri should be used"
-    assert_status_code(response[1], 201)
+    assert_status_code(201, response[1])
     assert response[0]["wf_uuid"] == data['uuid'] and \
         response[0]["wf_version"] == data['version']
 
@@ -163,7 +163,7 @@ def test_post_workflow_by_registry_error_registry_uri(m, request_context, mock_r
     data = {"registry": "123456"}
     response = controllers.workflows_post(body=data)
     logger.debug("Response: %r, %r", response, str(response.data))
-    assert_status_code(response.status_code, 400)
+    assert_status_code(400, response.status_code)
     assert messages.unexpected_registry_uri in response.data.decode(),\
         "Unexpected error message"
 
@@ -177,7 +177,7 @@ def test_post_workflow_by_registry_error_submitter_not_found(m, request_context,
     m.find_registry_user_identity.side_effect = OAuthIdentityNotFoundException()
     response = controllers.workflows_post(body=data)
     logger.debug("Response: %r, %r", response, str(response.data))
-    assert_status_code(response.status_code, 401)
+    assert_status_code(401, response.status_code)
     assert messages.no_user_oauth_identity_on_registry \
         .format(data["submitter_id"], mock_registry.name) in response.data.decode(),\
         "Unexpected error message"
@@ -202,7 +202,7 @@ def test_post_workflow_by_registry(m, request_context, mock_registry):
     m.register_workflow.return_value = w
     response = controllers.workflows_post(body=data)
     logger.debug("Response: %r", response)
-    assert_status_code(response[1], 201)
+    assert_status_code(201, response[1])
     assert response[0]["wf_uuid"] == data['uuid'] and \
         response[0]["wf_version"] == data['version']
 
@@ -224,7 +224,7 @@ def test_post_workflow_by_registry_invalid_rocrate(m, request_context, mock_regi
     m.register_workflow.side_effect = lm_exceptions.NotValidROCrateException()
     response = controllers.workflows_post(body=data)
     logger.debug("Response: %r", response)
-    assert_status_code(response.status_code, 400)
+    assert_status_code(400, response.status_code)
     assert messages.invalid_ro_crate in response.data.decode()
 
 
@@ -245,7 +245,7 @@ def test_post_workflow_by_registry_not_authorized(m, request_context, mock_regis
     m.register_workflow.side_effect = lm_exceptions.NotAuthorizedException()
     response = controllers.workflows_post(body=data)
     logger.debug("Response: %r", response)
-    assert_status_code(response.status_code, 403)
+    assert_status_code(403, response.status_code)
     assert messages.not_authorized_registry_access\
         .format(mock_registry.name) in response.data.decode()
 
@@ -257,14 +257,14 @@ def test_get_workflow_by_id_error_not_found(m, request_context, mock_registry):
     m.get_registry_workflow_version.side_effect = lm_exceptions.EntityNotFoundException(models.WorkflowVersion)
     response = controllers.workflows_get_by_id(wf_uuid="12345", wf_version="1")
     logger.debug("Response: %r", response)
-    assert_status_code(response.status_code, 404)
+    assert_status_code(404, response.status_code)
     assert messages.workflow_not_found\
         .format("12345", "1") in response.data.decode()
     # test when the service return None
     m.get_registry_workflow_version.return_value = None
     response = controllers.workflows_get_by_id(wf_uuid="12345", wf_version="1")
     logger.debug("Response: %r", response)
-    assert_status_code(response.status_code, 404)
+    assert_status_code(404, response.status_code)
     assert messages.workflow_not_found\
         .format("12345", "1") in response.data.decode()
 

@@ -46,7 +46,7 @@ def test_get_suite_error_not_found(m, request_context, mock_user):
     m.get_suite.return_value = None
     response = controllers.suites_get_by_uuid("123456")
     m.get_suite.assert_called_once()
-    assert_status_code(response.status_code, 404), "Unexpected status code"
+    assert_status_code(404, response.status_code), "Unexpected status code"
 
 
 @patch("lifemonitor.api.controllers.lm")

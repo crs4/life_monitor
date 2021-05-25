@@ -218,7 +218,7 @@ def test_get_workflow_latest_version(app_client, client_auth_method, user1, user
     utils.register_workflow(user1, wv2)
 
     response = app_client.get(utils.build_workflow_path(), headers=user1_auth)
-    utils.assert_status_code(response.status_code, 200)
+    utils.assert_status_code(200, response.status_code)
     workflows = json.loads(response.data)
     logger.debug("Workflows: %r", workflows)
 
@@ -226,7 +226,7 @@ def test_get_workflow_latest_version(app_client, client_auth_method, user1, user
     logger.debug("URL: %r", url)
     response = app_client.get(url, headers=user1_auth)
     logger.debug(response)
-    utils.assert_status_code(response.status_code, 200)
+    utils.assert_status_code(200, response.status_code)
     data = json.loads(response.data)
     logger.debug("Response data: %r", data)
     assert data['uuid'] == workflow['uuid'], "Unexpected workflow ID"
@@ -256,7 +256,7 @@ def test_get_workflow_versions(app_client, client_auth_method, user1, user1_auth
     logger.debug("URL: %r", url)
     response = app_client.get(url, headers=user1_auth)
     logger.debug(response)
-    utils.assert_status_code(response.status_code, 200)
+    utils.assert_status_code(200, response.status_code)
     data = json.loads(response.data)
     logger.debug("Response data: %r", data)
 
@@ -279,7 +279,7 @@ def test_get_workflow_status(app_client, client_auth_method, user1, user1_auth, 
     w, workflow = utils.pick_and_register_workflow(user1, valid_workflow)
     response = app_client.get(f"{utils.build_workflow_path(w, subpath='status')}", headers=user1_auth)
     logger.debug(response)
-    utils.assert_status_code(response.status_code, 200)
+    utils.assert_status_code(200, response.status_code)
     data = json.loads(response.data)
     logger.debug("Response data: %r", data)
     assert data['uuid'] == w['uuid'], "Unexpected workflow ID"
@@ -299,7 +299,7 @@ def test_get_workflow_suites(app_client, client_auth_method, user1, user1_auth, 
     w, workflow = utils.pick_and_register_workflow(user1, valid_workflow)
     response = app_client.get(f"{utils.build_workflow_path(w, subpath='suites')}", headers=user1_auth)
     logger.debug(response)
-    utils.assert_status_code(response.status_code, 200)
+    utils.assert_status_code(200, response.status_code)
     data = json.loads(response.data)
     logger.debug("Response data: %r", data)
     assert "items" in data, "Missing items property"
