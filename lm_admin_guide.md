@@ -274,7 +274,7 @@ PostgreSQL database.
 
 To access the services in the docker-compose from another system, you'll have
 to use a server name other than `localhost` (or an IP address). In this case,
-set the EXTERNAL_SERVER_URL variable in `settings.conf` accordingly.
+set the `EXTERNAL_SERVER_URL` variable in `settings.conf` accordingly.
 Additionally, You **must edit the API applications authorized by WorkflowHub**:
 
 * Log into WorkflowHub as [`admin`](https://github.com/crs4/life_monitor/tree/master/tests/config/registries/seek/notes.txt);
@@ -430,3 +430,51 @@ reconfigure the deployment to use the `host` Docker network mode.
 * In order to get correct URLs from the WorkflowHub API, you need to set the base URL. Go to Server admin > Settings and set "Site base URL" to `https://<BASE_URL>:3000` (e.g., `https://seek:3000` is the configuration of this field on the [WorkflowHub](#auxiliary-services) instance in the pre-configured LifeMonitor deployment).
 
 * To enable workflows, go to Server admin > Enable/disable features and click on "Workflows enabled". You can set "CWL Viewer URL" to `https://view.commonwl.org/`.
+
+
+## Starting a local development instance
+
+We can accept code and documentation contributions as Pull Requests.  If you'd
+like to contribute code, please try to make sure you also contribute tests (or
+extend the existing tests) that exercise the new code, verify its correct
+operation and that the changes did not break other parts of the code.
+
+To contribute, you'll need to have a local development instance on which to
+work and test.
+
+Get yourself a local copy of the code.
+```
+git clone git@github.com:crs4/life_monitor.git
+cd life_monitor
+```
+
+Edit `settings.conf`: uncomment the line
+```
+SERVER_NAME=localhost:8000
+```
+
+Start the service in development mode
+```
+make start-dev
+```
+
+You'll be able to access the service at `https://localhost:8000/`.  The service
+will be running in development mode, so changes to the source code will be
+immediately reflected in the running service.
+
+
+### Running tests
+
+Stop the running development instance
+```
+make stop-dev
+```
+
+Now run the tests:
+```
+make run-tests
+```
+You should see the Pytest output on the console.
+
+Once your tests pass, feel free to push your changes to your fork and open a
+Pull Request.
