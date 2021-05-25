@@ -18,5 +18,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+
 def split_by_crlf(s):
     return [v for v in s.splitlines() if v]

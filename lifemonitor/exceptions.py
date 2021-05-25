@@ -22,7 +22,7 @@ import logging
 
 import connexion
 
-from flask import Response, current_app, request
+from flask import Response, request
 from werkzeug.exceptions import HTTPException
 
 from lifemonitor import serializers
@@ -49,6 +49,9 @@ class LifeMonitorException(Exception):
 
     def __repr__(self):
         return f"[{self.status}] {self.title}: {self.detail}"
+
+    def __str__(self):
+        return self.__repr__()
 
     def to_json(self):
         return serializers.ProblemDetailsSchema().dumps(self)
@@ -131,7 +134,7 @@ class WorkflowVersionConflictException(LifeMonitorException):
 class NotValidROCrateException(LifeMonitorException):
 
     def __init__(self, detail="Not valid RO Crate",
-                 type="about:blank", status=501, instance=None, **kwargs):
+                 type="about:blank", status=400, instance=None, **kwargs):
         super().__init__(title="Bad request",
                          detail=detail, status=status, **kwargs)
 
@@ -163,8 +166,7 @@ class TestingServiceException(LifeMonitorException):
 def handle_exception(e: Exception):
     """Return JSON instead of HTML for HTTP errors."""
     # start with the correct headers and status code from the error
-    if current_app and current_app.config['DEBUG']:
-        logger.exception(e)
+    logger.exception(e)
     if isinstance(e, LifeMonitorException):
         return Response(response=e.to_json(),
                         status=e.status,

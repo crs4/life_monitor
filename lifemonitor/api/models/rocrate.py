@@ -22,8 +22,6 @@ from __future__ import annotations
 
 import json
 import logging
-import os
-import shutil
 import tempfile
 from pathlib import Path
 
@@ -100,7 +98,7 @@ class ROCrate(Resource):
 
     def load_metadata(self):
         errors = []
-        # try either with authorization hedaer and without authorization
+        # try either with authorization header and without authorization
         for authorization in self._get_authorizations():
             try:
                 auth_header = authorization.as_http_header() if authorization else None
@@ -109,33 +107,32 @@ class ROCrate(Resource):
                     self.load_metadata_files(self.uri, authorization_header=auth_header)
                 self._metadata_loaded = True
                 return self._metadata
-            except Exception as e:
-                errors.append(e)
-
-        if len([e for e in errors if isinstance(e, lm_exceptions.NotAuthorizedException)]) == len(errors):
-            raise lm_exceptions.NotAuthorizedException()
-        raise lm_exceptions.LifeMonitorException("ROCrate download error", errors=errors)
-
-    @staticmethod
-    def extract_rocrate(roc_link, target_path=None, authorization_header=None):
-        with tempfile.NamedTemporaryFile(dir="/tmp") as archive_path:
-            zip_archive = download_url(roc_link, target_path=archive_path.name, authorization=authorization_header)
-            logger.debug("ZIP Archive: %s", zip_archive)
-            roc_path = target_path or Path(tempfile.mkdtemp(dir="/tmp"))
-            logger.info("Extracting RO Crate @ %s", roc_path)
-            extract_zip(archive_path, target_path=roc_path.as_posix())
-            return roc_path
+            except lm_exceptions.NotAuthorizedException as e:
+                logger.info("Caught authorization error exception while downloading and processing RO-crate: %s", e)
+                errors.append(str(e))
+        raise lm_exceptions.NotAuthorizedException(detail=f"Not authorized to download {self.uri}", original_errors=errors)
 
     @classmethod
     def load_metadata_files(cls, roc_link, authorization_header=None):
-        roc_path = cls.extract_rocrate(roc_link, authorization_header=authorization_header)
-        try:
-            roc_posix_path = roc_path.as_posix()
-            logger.debug(os.listdir(roc_posix_path))
-            crate = ROCrateHelper(roc_posix_path)
-            metadata_path = Path(roc_posix_path) / crate.metadata.id
-            with open(metadata_path, "rt") as f:
-                metadata = json.load(f)
-            return crate, metadata
-        finally:
-            shutil.rmtree(roc_path, ignore_errors=True)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmpdir_path = Path(tmpdir)
+            local_zip = download_url(roc_link,
+                                     target_path=(tmpdir_path / 'rocrate.zip').as_posix(),
+                                     authorization=authorization_header)
+
+            logger.debug("ZIP Archive: %s", local_zip)
+            extracted_roc_path = tmpdir_path / 'extracted-rocrate'
+            logger.info("Extracting RO Crate to %s", extracted_roc_path)
+            extract_zip(local_zip, target_path=extracted_roc_path.as_posix())
+
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug("RO-crate contents: %s", ', '.join(str(s) for s in extracted_roc_path.iterdir()))
+
+            try:
+                crate = ROCrateHelper(extracted_roc_path.as_posix())
+                metadata_path = extracted_roc_path / crate.metadata.id
+                with open(metadata_path, "rt") as f:
+                    metadata = json.load(f)
+                return crate, metadata
+            except Exception as e:
+                raise lm_exceptions.NotValidROCrateException(detail=str(e))

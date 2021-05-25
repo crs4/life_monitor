@@ -18,10 +18,12 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+
 import functools
 import glob
 import json
 import logging
+import os
 import random
 import re
 import shutil
@@ -107,6 +109,16 @@ def to_camel_case(snake_str) -> str:
     return ''.join(x.title() for x in snake_str.split('_'))
 
 
+def sizeof_fmt(num, suffix='B'):
+    # Thanks to Sridhar Ratnakumar
+    # https://stackoverflow.com/questions/1094841/get-human-readable-version-of-file-size
+    for unit in ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi']:
+        if abs(num) < 1024.0:
+            return "%3.1f%s%s" % (num, unit, suffix)
+        num /= 1024.0
+    return "%.1f%s%s" % (num, 'Yi', suffix)
+
+
 def get_base_url():
     server_name = None
     try:
@@ -139,16 +151,29 @@ def _download_from_remote(url, output_stream, authorization=None):
                 output_stream.write(chunk)
 
 
-def download_url(url, target_path=None, authorization=None):
+def download_url(url: str, target_path: str = None, authorization: str = None) -> str:
     if not target_path:
         target_path = tempfile.mktemp()
-    parsed_url = urllib.parse.urlparse(url)
-    if parsed_url.scheme == '' or parsed_url.scheme == 'file':
-        shutil.copyfile(parsed_url.path, target_path)
-    else:
-        with open(target_path, 'wb') as fd:
-            _download_from_remote(url, fd, authorization)
-    return target_path
+    try:
+        parsed_url = urllib.parse.urlparse(url)
+        if parsed_url.scheme == '' or parsed_url.scheme == 'file':
+            logger.debug("Copying %s to local path %s", url, target_path)
+            shutil.copyfile(parsed_url.path, target_path)
+        else:
+            logger.debug("Downloading %s to local path %s", url, target_path)
+            with open(target_path, 'wb') as fd:
+                _download_from_remote(url, fd, authorization)
+            logger.info("Fetched %s of data from %s",
+                        sizeof_fmt(os.path.getsize(target_path)),
+                        url)
+        return target_path
+    except urllib.error.URLError as e:
+        raise \
+            lm_exceptions.LifeMonitorException(
+                "Error downloading ROCrate",
+                details=f"Error downloading RO-crate from {url}",
+                status=400,
+                original_error=str(e))
 
 
 def extract_zip(archive_path, target_path=None):
@@ -160,8 +185,10 @@ def extract_zip(archive_path, target_path=None):
         with zipfile.ZipFile(archive_path, "r") as zip_ref:
             zip_ref.extractall(target_path)
         return target_path
-    except Exception as e:
-        raise lm_exceptions.NotValidROCrateException(e)
+    except (zipfile.BadZipFile, zipfile.LargeZipFile) as e:
+        msg = "Downloaded RO-crate has bad zip format"
+        logger.error(msg + ": %s", e)
+        raise lm_exceptions.NotValidROCrateException(detail=msg, original_error=str(e))
 
 
 def load_test_definition_filename(filename):
