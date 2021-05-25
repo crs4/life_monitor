@@ -291,6 +291,9 @@ def workflows_post(body, _registry=None, _submitter_id=None):
                                             detail=messages.workflow_version_conflict
                                             .format(body.get('uuid', None) or body.get('identifier', None),
                                                     body['version']))
+    except lm_exceptions.LifeMonitorException:
+        # Catch and re-raise to avoid the last catch-all exception handler
+        raise
     except Exception as e:
         logger.exception(e)
         raise lm_exceptions.LifeMonitorException(title="Internal Error", detail=str(e))
