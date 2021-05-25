@@ -172,7 +172,7 @@ def test_post_workflow_by_registry_error_submitter_not_found(m, request_context,
     assert auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry, "Unexpected registry in session"
     # add one fake workflow
-    data = {"submitter_id": 1}
+    data = {"submitter_id": 1, "identifier": 1}
     m.find_registry_user_identity.side_effect = OAuthIdentityNotFoundException()
     response = controllers.workflows_post(body=data)
     logger.debug("Response: %r, %r", response, str(response.data))
