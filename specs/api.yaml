@@ -1350,9 +1350,7 @@ components:
                 Universal unique identifier of the workflow.
               example: 123e4567-e89b-12d3-a456-426614174000
           required:
-            - uuid
             - roc_link
-            - version
         - $ref: "#/components/schemas/WorkflowVersionBase"
 
     RegistryWorkflowVersion:
@@ -1406,7 +1404,7 @@ components:
               type: boolean
               readOnly: true
               description: |
-                `true` if the workflow version is the latest, 
+                `true` if the workflow version is the latest,
                 `false` otherwise.
               example: true
             submitter:

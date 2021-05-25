@@ -133,6 +133,32 @@ def test_generic_workflow_registration(app_client, client_auth_method,
     ClientAuthenticationMethod.API_KEY,
     ClientAuthenticationMethod.AUTHORIZATION_CODE,
 ], indirect=True)
+def test_generic_workflow_registration_wo_uuid(app_client, client_auth_method,
+                                               user1, user1_auth, client_credentials_registry, generic_workflow):
+    logger.debug("User: %r", user1)
+    logger.debug("headers: %r", user1_auth)
+    workflow = generic_workflow
+    logger.debug("Selected workflow: %r", workflow)
+    logger.debug("Using oauth2 user: %r", user1)
+    # prepare body
+    body = {'roc_link': workflow['roc_link'],
+            'version': workflow['version'],
+            'authorization': workflow['authorization']}
+    logger.debug("The BODY: %r", body)
+    response = app_client.post('/users/current/workflows', json=body, headers=user1_auth)
+    logger.debug("The actual response: %r", response.data)
+    utils.assert_status_code(201, response.status_code)
+    data = json.loads(response.data)
+    logger.debug("Response data: %r", data)
+    assert data['wf_version'] == workflow['version'], \
+        "Response should be equal to the workflow UUID"
+    assert data['wf_uuid'], "Workflow UUID was not generated or returned"
+
+
+@pytest.mark.parametrize("client_auth_method", [
+    ClientAuthenticationMethod.API_KEY,
+    ClientAuthenticationMethod.AUTHORIZATION_CODE,
+], indirect=True)
 def test_registry_workflow_registration(app_client, client_auth_method,
                                         user1, user1_auth, client_credentials_registry, valid_workflow):
     logger.debug("User: %r", user1)
