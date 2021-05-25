@@ -86,6 +86,18 @@ def test_post_workflows_no_authorization(m, request_context):
 
 
 @patch("lifemonitor.api.controllers.lm")
+def test_post_workflow_by_user_empty_request_body(request_context, mock_user):
+    assert not auth.current_user.is_anonymous, "Unexpected user in session"
+    assert auth.current_user == mock_user, "Unexpected user in session"
+    assert not auth.current_registry, "Unexpected registry in session"
+    # Post a request with an empty body.  Must result in validation error and a
+    # BadRequest status (400)
+    response = controllers.workflows_post(body={})
+    logger.debug("Response: %r, %r", response, str(response.data))
+    assert response.status_code == 400
+
+
+@patch("lifemonitor.api.controllers.lm")
 def test_post_workflow_by_user_error_invalid_registry_uri(m, request_context, mock_user):
     assert not auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_user == mock_user, "Unexpected user in session"
