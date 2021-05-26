@@ -184,10 +184,12 @@ class TestingService(db.Model, ModelMixin):
         try:
             # return the service obj if the service has already been registered
             instance = cls.find_by_url(url)
-            logger.debug("Found service instance: %r", instance)
+            logger.debug("Service instance %r for URL %r found in DB", instance, url)
             if instance:
                 return instance
             # try to instanciate the service if the it has not been registered yet
+            logger.debug("No service for URL %r.  Registering a service of type %r now",
+                         url, service_type)
             return cls.service_type_registry.get_class(service_type)(url)
         except KeyError:
             raise lm_exceptions.TestingServiceNotSupportedException(f"Not supported testing service type '{service_type}'")

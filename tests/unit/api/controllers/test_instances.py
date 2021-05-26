@@ -163,7 +163,6 @@ def test_get_instance_build_last_logs_by_user(m, request_context, mock_user):
     m.get_user_workflow_version.assert_called_once()
     assert isinstance(response, dict), "Unexpected response type"
     logger.debug("The loaded instance: %r", response)
-    assert len(response["last_logs"]) <= 131072, "Unexpected log length: it should be limited to the last 131072 bytes"
 
 
 @patch("lifemonitor.api.controllers.lm")
