@@ -160,7 +160,7 @@ def registry_user_workflows_get(user_id):
     try:
         identity = lm.find_registry_user_identity(current_registry, external_id=user_id)
         workflows = lm.get_user_registry_workflows(identity.user, current_registry)
-        logger.debug("workflows_get. Got %s workflows (user: %s)", len(workflows), current_user)
+        logger.debug("registry_user_workflows_get. Got %s workflows (user: %s)", len(workflows), current_user)
         workflow_status = request.args.get('status', 'true').lower() == 'true'
         return serializers.ListOfWorkflows(workflow_status=workflow_status).dump(workflows)
     except OAuthIdentityNotFoundException:
@@ -181,7 +181,7 @@ def user_workflows_get():
     if not current_user or current_user.is_anonymous:
         return lm_exceptions.report_problem(401, "Unauthorized", detail=messages.no_user_in_session)
     workflows = lm.get_user_workflows(current_user)
-    logger.debug("workflows_get. Got %s workflows (user: %s)", len(workflows), current_user)
+    logger.debug("user_workflows_get. Got %s workflows (user: %s)", len(workflows), current_user)
     workflow_status = request.args.get('status', 'true').lower() == 'true'
     return serializers.ListOfWorkflows(workflow_status=workflow_status).dump(workflows)
 
