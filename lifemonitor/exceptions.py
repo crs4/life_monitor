@@ -33,16 +33,16 @@ logger = logging.getLogger(__name__)
 class LifeMonitorException(Exception):
 
     def __init__(self, title=None, detail=None,
-            type="about:blank", status: int=500, instance=None, **kwargs):
-        self.title    = str(title)    if title    is not None else None
-        self.detail   = str(detail)   if detail   is not None else None
-        self.type     = str(type)     if type     is not None else None
+                 type="about:blank", status: int = 500, instance=None, **kwargs):
+        self.title = str(title) if title is not None else None
+        self.detail = str(detail) if detail is not None else None
+        self.type = str(type) if type is not None else None
         self.instance = str(instance) if instance is not None else None
         self.status = status
         if len(kwargs) > 0:
             self.extra_info = {
                 str(k): str(v) if v is not None else None
-                for k, v in kwargs.items() }
+                for k, v in kwargs.items()}
         if instance is None:
             try:
                 self.instance = request.url
