@@ -324,11 +324,11 @@ def workflows_delete(wf_uuid, wf_version):
             return lm_exceptions.report_problem(403, "Forbidden",
                                                 detail=messages.no_user_in_session)
         return connexion.NoContent, 204
+    except OAuthIdentityNotFoundException as e:
+        return lm_exceptions.report_problem(401, "Unauthorized", extra_info={"exception": str(e)})
     except lm_exceptions.EntityNotFoundException as e:
         return lm_exceptions.report_problem(404, "Not Found", extra_info={"exception": str(e.detail)},
                                             detail=messages.workflow_not_found.format(wf_uuid, wf_version))
-    except OAuthIdentityNotFoundException as e:
-        return lm_exceptions.report_problem(401, "Unauthorized", extra_info={"exception": str(e)})
     except lm_exceptions.NotAuthorizedException as e:
         return lm_exceptions.report_problem(403, "Forbidden", extra_info={"exception": str(e)})
     except Exception as e:
@@ -491,11 +491,11 @@ def instances_delete_by_id(instance_uuid):
             return response
         lm.deregister_test_instance(response)
         return connexion.NoContent, 204
+    except OAuthIdentityNotFoundException as e:
+        return lm_exceptions.report_problem(401, "Unauthorized", extra_info={"exception": str(e)})
     except lm_exceptions.EntityNotFoundException as e:
         return lm_exceptions.report_problem(404, "Not Found", extra_info={"exception": str(e.detail)},
                                             detail=messages.instance_not_found.format(instance_uuid))
-    except OAuthIdentityNotFoundException as e:
-        return lm_exceptions.report_problem(401, "Unauthorized", extra_info={"exception": str(e)})
     except lm_exceptions.NotAuthorizedException as e:
         return lm_exceptions.report_problem(403, "Forbidden", extra_info={"exception": str(e)})
     except Exception as e:
