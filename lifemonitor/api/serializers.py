@@ -217,10 +217,6 @@ class BuildSummarySchema(ResourceMetadataSchema):
     status = fields.String()
     instance = ma.Nested(TestInstanceSchema(exclude=('meta',)), attribute="test_instance")
     timestamp = fields.String()
-    last_logs = fields.Method("get_last_logs")
-
-    def get_last_logs(self, obj):
-        return obj.get_output(0, 131072)
 
 
 class WorkflowVersionListItem(WorkflowSchema):

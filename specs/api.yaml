@@ -1619,10 +1619,6 @@ components:
           description: |
             A timestamp for the start time of the build
           example: 1616427012.0
-        last_logs:
-          type: string
-          description: "Last lines of the build log, if available"
-          example: "[INFO] Workflow test passed"
       required:
         - build_id
         - suite_uuid
