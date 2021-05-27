@@ -47,6 +47,10 @@ def create_app(env=None, settings=None, init_app=True, **kwargs):
     """
     # set app env
     app_env = env or os.environ.get("FLASK_ENV", "production")
+    if app_env != 'production':
+        # Set the DEBUG_METRICS env var to also enable the
+        # prometheus metrics exporter when running in development mode
+        os.environ['DEBUG_METRICS'] = 'true'
     # load app config
     app_config = config.get_config_by_name(app_env, settings=settings)
     # set the FlaskApp instance path
@@ -113,3 +117,16 @@ def initialize_app(app, app_context):
     register_routes(app)
     # register commands
     commands.register_commands(app)
+
+    # configure prometheus exporter
+    # must be configured after the routes are registered
+    if os.environ.get('FLASK_ENV') == 'production':
+        from prometheus_flask_exporter.multiprocess import GunicornPrometheusMetrics
+        metrics_class = GunicornPrometheusMetrics
+    else:
+        from prometheus_flask_exporter import PrometheusMetrics
+        metrics_class = PrometheusMetrics
+
+    metrics = metrics_class(app, defaults_prefix='lm')
+    metrics.info('app_info', "LifeMonitor service", version='0.0')
+    app.metrics = metrics
