@@ -14,6 +14,7 @@ RUN useradd -d /lm -m lm
 COPY --chown=lm:lm requirements.txt certs/*.crt /lm/
 
 # Install requirements and install certificates
+RUN pip3 install --no-cache-dir --upgrade pip
 RUN pip3 install --no-cache-dir -r /lm/requirements.txt
 
 # Update Environment
@@ -21,6 +22,8 @@ ENV PYTHONPATH=/lm:/usr/local/lib/python3.7/dist-packages:/usr/lib/python3/dist-
     FLASK_RUN_HOST=0.0.0.0 \
     GUNICORN_WORKERS=1 \
     GUNICORN_THREADS=2 \
+    GUNICORN_CONF=/lm/gunicorn.conf.py \
+    PROMETHEUS_METRICS_PORT=9090 \
     REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
 
 # Set the final working directory
@@ -42,7 +45,7 @@ ENTRYPOINT /usr/local/bin/lm_entrypoint.sh
 USER lm
 
 # Copy lifemonitor app
-COPY --chown=lm:lm app.py /lm/
+COPY --chown=lm:lm app.py gunicorn.conf.py /lm/
 COPY --chown=lm:lm specs /lm/specs
 COPY --chown=lm:lm lifemonitor /lm/lifemonitor
 
