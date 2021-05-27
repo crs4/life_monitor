@@ -20,10 +20,12 @@
 
 import logging
 import os
+import time
+
+from flask import Flask, jsonify, redirect, request
+from flask_cors import CORS
 
 import lifemonitor.config as config
-from flask import Flask, jsonify, redirect
-from flask_cors import CORS
 from lifemonitor.routes import register_routes
 
 from . import commands
@@ -75,8 +77,29 @@ def create_app(env=None, settings=None, init_app=True, **kwargs):
     def openapi():
         return redirect('/static/apidocs.html')
 
-    return app
+    @app.before_request
+    def set_request_start_time():
+        request.start_time = time.time()
 
+    @app.after_request
+    def log_response(response):
+        logger = logging.getLogger("response")
+        processing_time = (time.time() * 1000.0 - request.start_time * 1000.0)
+        logger.info(
+            "resp: %s %s %s %s %s %s %s %s %0.3fms",
+            request.remote_addr,
+            request.method,
+            request.path,
+            request.scheme,
+            response.status,
+            response.content_length,
+            request.referrer,
+            request.user_agent,
+            processing_time
+        )
+        return response
+
+    return app
 
 def initialize_app(app, app_context):
     # configure logging
