@@ -101,6 +101,7 @@ def create_app(env=None, settings=None, init_app=True, **kwargs):
 
     return app
 
+
 def initialize_app(app, app_context):
     # configure logging
     config.configure_logging(app)
