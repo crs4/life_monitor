@@ -158,7 +158,7 @@ def configure_logging(app):
         'response': {
             'level': 'INFO',
             'handlers': ['wsgi'],
-            },
+        },
         'root': {
             'level': level_value,
             'handlers': ['wsgi']
