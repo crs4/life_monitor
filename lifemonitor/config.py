@@ -155,11 +155,19 @@ def configure_logging(app):
             'stream': 'ext://flask.logging.wsgi_errors_stream',
             'formatter': 'default'
         }},
+        'response': {
+            'level': 'INFO',
+            'handlers': ['wsgi'],
+            },
         'root': {
             'level': level_value,
             'handlers': ['wsgi']
         }
     })
+    # Remove Flask's default handler
+    # (https://flask.palletsprojects.com/en/2.0.x/logging/#removing-the-default-handler)
+    from flask.logging import default_handler
+    app.logger.removeHandler(default_handler)
 
     if error:
         app.logger.error("LOG_LEVEL value %s is invalid. Defaulting to INFO", level_str)
