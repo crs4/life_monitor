@@ -67,7 +67,8 @@ compose-files: docker-compose.base.yml \
 	docker-compose.prod.yml \
 	docker-compose.dev.yml \
 	docker-compose.extra.yml \
-	docker-compose.test.yml
+	docker-compose.test.yml \
+	docker-compose.prom.yml
 
 certs:
 	@# Generate certificates if they do not exist \
@@ -134,8 +135,9 @@ start: images compose-files ## Start LifeMonitor in a Production environment
 			 docker-compose $${base} \
 	               -f docker-compose.prod.yml \
 				   -f docker-compose.base.yml \
+				   -f docker-compose.prom.yml \
 				   config)" > docker-compose.yml \
-	&& docker-compose -f docker-compose.yml up -d db init lm nginx ;\
+	&& docker-compose -f docker-compose.yml up -d db init lm nginx prometheus;\
 	printf "$(done)\n"
 
 start-dev: images compose-files ## Start LifeMonitor in a Development environment
@@ -249,7 +251,8 @@ stop: compose-files ## Stop all the services in the Production Environment
 	USER_UID=$$(id -u) USER_GID=$$(id -g) \
 	docker-compose -f docker-compose.base.yml \
 				   -f docker-compose.prod.yml \
-				   --log-level ERROR stop init nginx lm db ; \
+				   -f docker-compose.prom.yml \
+				   --log-level ERROR stop init nginx lm db prometheus; \
 	printf "$(done)\n"
 
 stop-all: ## Stop all the services
