@@ -26,6 +26,7 @@ from urllib.parse import urlparse
 
 import dotenv
 import lifemonitor.db as lm_db
+import prometheus_client
 import requests
 from flask import g
 from flask_login import login_user, logout_user
@@ -114,7 +115,7 @@ def app_context(request_settings,
         flask_app.before_request(process_auto_login)
         with flask_app.app_context() as ctx:
             logger.info("Starting application")
-            initialize_app(flask_app, ctx)
+            initialize_app(flask_app, ctx, prom_registry=prometheus_client.CollectorRegistry())
             if init_db:
                 logger.debug("Initializing DB...")
                 lm_db.db.create_all()
