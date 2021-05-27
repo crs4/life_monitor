@@ -106,7 +106,7 @@ def create_app(env=None, settings=None, init_app=True, **kwargs):
     return app
 
 
-def initialize_app(app, app_context):
+def initialize_app(app, app_context, prom_registry=None):
     # configure logging
     config.configure_logging(app)
     # configure app DB
@@ -127,6 +127,6 @@ def initialize_app(app, app_context):
         from prometheus_flask_exporter import PrometheusMetrics
         metrics_class = PrometheusMetrics
 
-    metrics = metrics_class(app, defaults_prefix='lm')
+    metrics = metrics_class(app, defaults_prefix='lm', registry=prom_registry)
     metrics.info('app_info', "LifeMonitor service", version='0.0')
     app.metrics = metrics
