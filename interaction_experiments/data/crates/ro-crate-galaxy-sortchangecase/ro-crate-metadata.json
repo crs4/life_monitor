@@ -31,7 +31,7 @@
         {
             "@id": "./",
             "@type": "Dataset",
-            "name": "sort-and-change-case",
+            "name": "galaxy-workflow-example-with-tests",
             "description": "sort lines and change text to upper case",
             "license": "Apache-2.0",
             "mainEntity": {
@@ -111,9 +111,9 @@
             "@id": "#test1_1",
             "name": "test1_1",
             "@type": "TestInstance",
-            "runsOn": {"@id": "https://w3id.org/ro/terms/test#JenkinsService"},
-            "url": "http://example.org/jenkins",
-            "resource": "job/tests/"
+            "runsOn": {"@id": "https://w3id.org/ro/terms/test#TravisService"},
+            "url": "https://api.travis-ci.org",
+            "resource": "repo/1002447"
         },
         {
             "@id": "test/test1/sort-and-change-case-test.yml",
@@ -125,10 +125,10 @@
             "engineVersion": ">=0.70"
         },
         {
-            "@id": "https://w3id.org/ro/terms/test#JenkinsService",
+            "@id": "https://w3id.org/ro/terms/test#TravisService",
             "@type": "TestService",
-            "name": "Jenkins",
-            "url": {"@id": "https://www.jenkins.io"}
+            "name": "Travis",
+            "url": {"@id": "https://travis-ci.org"}
         },
         {
             "@id": "https://w3id.org/ro/terms/test#PlanemoEngine",
