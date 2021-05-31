@@ -126,7 +126,6 @@ def test_workflow_registry_generic_link(app_client, user1):  # , valid_workflow)
         'version': '1',
         'roc_link': "http://webserver:5000/download?file=ro-crate-galaxy-sortchangecase.crate.zip",
         'name': 'Galaxy workflow from Generic Link',
-        'testing_service_type': 'jenkins',
         'authorization': app_client.application.config['WEB_SERVER_AUTH_TOKEN']
     }
 
@@ -143,10 +142,6 @@ def test_workflow_registry_generic_link(app_client, user1):  # , valid_workflow)
     assert len(workflow.test_suites) == 1, "Expected number of test suites 1"
     suite = workflow.test_suites[0]
     assert len(suite.test_instances) == 1, "Expected number of test instances 1"
-    conf = suite.test_instances[0]
-    service = conf.testing_service
-    testing_service_type = getattr(models, "{}TestingService".format(w['testing_service_type'].capitalize()))
-    assert isinstance(service, testing_service_type), "Unexpected type for service"
 
 
 def test_preserve_registry_workflow_identity(app_client, user1, user2, valid_workflow):
