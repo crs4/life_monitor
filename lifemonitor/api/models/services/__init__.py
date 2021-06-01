@@ -31,7 +31,14 @@ from .travis import TravisTestingService, TravisTestBuild
 logger = logging.getLogger(__name__)
 
 
-__all__ = ["TestingService",
-           "JenkinsTestingService", "JenkinsTestBuild",
-           "TravisTestingService", "TravisTestBuild",
-           "TestingServiceToken", "TestingServiceTokenManager"]
+__all__ = [
+    "GitHubTestBuild",
+    "GitHubTestingService",
+    "JenkinsTestBuild",
+    "JenkinsTestingService",
+    "TestingService",
+    "TestingServiceToken",
+    "TestingServiceTokenManager",
+    "TravisTestBuild",
+    "TravisTestingService",
+]

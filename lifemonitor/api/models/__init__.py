@@ -47,13 +47,31 @@ from .services import TestingService, \
 
 
 __all__ = [
-    "db", "User", "ROCrate",
-    "Status", "AggregateTestStatus", "WorkflowStatus", "SuiteStatus",
-    "WorkflowRegistry", "WorkflowRegistryClient", "WorkflowVersion", "Workflow",
-    "TestSuite", "TestInstance", "ManagedTestInstance",
-    "BuildStatus", "TestBuild", "JenkinsTestBuild", "TravisTestBuild",
-    "TestingService", "JenkinsTestingService", "TravisTestingService",
-    "TestingServiceToken", "TestingServiceTokenManager"
+    "AggregateTestStatus",
+    "BuildStatus",
+    "db",
+    "GitHubTestBuild",
+    "GitHubTestingService",
+    "JenkinsTestBuild",
+    "JenkinsTestingService",
+    "ManagedTestInstance",
+    "ROCrate",
+    "Status",
+    "SuiteStatus",
+    "TestBuild",
+    "TestingService",
+    "TestingServiceToken",
+    "TestingServiceTokenManager",
+    "TestInstance",
+    "TestSuite",
+    "TravisTestBuild",
+    "TravisTestingService",
+    "User",
+    "Workflow",
+    "WorkflowRegistry",
+    "WorkflowRegistryClient",
+    "WorkflowStatus",
+    "WorkflowVersion",
 ]
 
 # set module level logger
