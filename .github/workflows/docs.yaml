@@ -13,8 +13,6 @@ jobs:
     name: Generate OpenAPI docs
     runs-on: ubuntu-latest
     steps:
-      - name: break it
-        run: echo "Breaking the job on purpose"; exit 1
       - uses: actions/checkout@v2
       - name: Generate docs
         run: docker run -u $(id -u):$(id -g)  --rm -v "${PWD}:/local" openapitools/openapi-generator-cli generate -g html -i /local/specs/api.yaml -o /local/html/
