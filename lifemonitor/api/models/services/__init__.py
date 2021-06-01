@@ -23,6 +23,7 @@ from __future__ import annotations
 import logging
 
 from .service import TestingService, TestingServiceToken, TestingServiceTokenManager
+from .github import GitHubTestingService, GitHubTestBuild
 from .jenkins import JenkinsTestingService, JenkinsTestBuild
 from .travis import TravisTestingService, TravisTestBuild
 

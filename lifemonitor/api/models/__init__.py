@@ -40,6 +40,7 @@ from .testsuites import TestSuite, TestInstance, ManagedTestInstance, BuildStatu
 
 # 'testing_services'
 from .services import TestingService, \
+    GitHubTestingService, GitHubTestBuild, \
     JenkinsTestingService, JenkinsTestBuild, \
     TravisTestingService, TravisTestBuild, \
     TestingServiceToken, TestingServiceTokenManager

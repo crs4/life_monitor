@@ -47,7 +47,8 @@ class GitHubTestingService(TestingService):
     # TODO: make these configurable
     _configuration_ = {
         'retry': 2,
-        'timeout': 11
+        'timeout': 11,
+        'per_page': 100
     }
 
     class GitHubStatus:
@@ -65,13 +66,12 @@ class GitHubTestingService(TestingService):
         STALE = 'stale'
         TIMED_OUT = 'timed_out'
 
-    def __init__(self, url: str, token: models.TestingServiceToken = None) -> None:
+    def __init__(self, url: str = None, token: models.TestingServiceToken = None) -> None:
+        if not url:
+            url = github.MainClass.DEFAULT_BASE_URL
         super().__init__(url, token)
         try:
-            if url:
-                self._server = Github(base_url=url, **self._configuration_)
-            else:
-                self._server = Github(**self._configuration_)
+            self._server = Github(base_url=url, **self._configuration_)
         except Exception as e:
             raise lm_exceptions.TestingServiceException(e)
 
@@ -94,7 +94,7 @@ class GitHubTestingService(TestingService):
             logger.info("Caught exception from Github GET /rate_limit: %s.  Connection not working?", e)
             return False
 
-    def _iter_runs(self, test_instance: models.TestInstance, status: str = None) -> Generator[GitHubTestBuild]:
+    def _iter_runs(self, test_instance: models.TestInstance, status: str = None) -> Generator[github.WorkflowRun.WorkflowRun]:
         _, repository, workflow_id = self._parse_workflow_url(test_instance.resource)
 
         status_arg = status if status else github.GithubObject.NotSet
@@ -120,7 +120,8 @@ class GitHubTestingService(TestingService):
         return None
 
     def get_test_builds(self, test_instance: models.TestInstance, limit=10) -> list:
-        return list(it.islice(self._iter_runs(test_instance), limit))
+        return list(GitHubTestBuild(self, test_instance, run)
+                    for run in it.islice(self._iter_runs(test_instance), limit))
 
     def get_test_build(self, test_instance: models.TestInstance, build_number: int) -> GitHubTestBuild:
         logger.debug("Inefficient get_test_build implementation.  Rewrite me!")
@@ -128,13 +129,13 @@ class GitHubTestingService(TestingService):
         # obvious way to istantiate a PyGithub WorkflowRun object given a build
         # number -- but there's has to be a way.  We can easily asseble the URL
         # of the request to directly retrive the data we need here.
+        assert isinstance(build_number, int)
         for run in self._iter_runs(test_instance):
             if run.id == build_number:
                 return GitHubTestBuild(self, test_instance, run)
         raise lm_exceptions.EntityNotFoundException(models.TestBuild, entity_id=build_number)
 
-    @staticmethod
-    def _parse_workflow_url(resource: str) -> Tuple[str, str, str]:
+    def _parse_workflow_url(self, resource: str) -> Tuple[str, str, str]:
         """
         Given a URL to the testing GitHub Worklflow, returns a tuple
         (server, repository, workflow_id)
@@ -143,6 +144,7 @@ class GitHubTestingService(TestingService):
         #   https://api.github.com/repos/crs4/life_monitor/actions/workflows/4094661
         expected_url_msg = " Expected '/repos/{org}/{reponame}/actions/workflows/{workflow_id}'"
         try:
+            logging.debug("Parsing testing instance URL %s", resource)
             result = urlparse(resource)
             server = f"{result.scheme}://{result.netloc}"
             # simply split the path using the / delimiter.  We'll later access the parts by index
@@ -184,42 +186,17 @@ class GitHubTestBuild(models.TestBuild):
         return self._metadata.id
 
     @property
+    def duration(self) -> int:
+        return int((self._metadata.updated_at - self._metadata.created_at).total_seconds())
+
+    def is_running(self) -> bool:
+        return self._metadata.status == GitHubTestingService.GitHubStatus.IN_PROGRESS
+
+    @property
     def metadata(self):
         # Rather than expose the PyGithub object outside this class, we expose
         # the raw metadata from GitHub
         return self._metadata.raw_data
-
-    def is_running(self) -> bool:
-        return self._metadata.status == 'in_progress'
-
-    @property
-    def status(self) -> str:
-        if self._metadata.status == 'in_progress':
-            return models.BuildStatus.RUNNING
-        if self._metadata.status == 'queued':
-            return models.BuildStatus.WAITING
-        if self._metadata.status != 'completed':
-            logger.error("Unexpected run status value '%s'!!", self._metadata.status)
-            # Try to keep going notwithstanding the unexpected status
-        if self._metadata.conclusion == 'success':
-            return models.BuildStatus.PASSED
-        if self._metadata.conclusion == 'cancelled':
-            return models.BuildStatus.ABORTED
-        if self._metadata.conclusion == 'failure':
-            return models.BuildStatus.FAILED
-        return models.BuildStatus.ERROR
-
-    @property
-    def revision(self):
-        return self._metadata.head_sha
-
-    @property
-    def timestamp(self) -> int:
-        return int(self._metadata.updated_at.timestamp())
-
-    @property
-    def duration(self) -> int:
-        return int((self._metadata.updated_at - self._metadata.created_at).total_seconds())
 
     @property
     def result(self) -> models.TestBuild.Result:
@@ -228,6 +205,31 @@ class GitHubTestBuild(models.TestBuild):
                 return models.TestBuild.Result.SUCCESS
             return models.TestBuild.Result.FAILED
         return None
+
+    @property
+    def revision(self):
+        return self._metadata.head_sha
+
+    @property
+    def status(self) -> str:
+        if self._metadata.status == GitHubTestingService.GitHubStatus.IN_PROGRESS:
+            return models.BuildStatus.RUNNING
+        if self._metadata.status == GitHubTestingService.GitHubStatus.QUEUED:
+            return models.BuildStatus.WAITING
+        if self._metadata.status != GitHubTestingService.GitHubStatus.COMPLETED:
+            logger.error("Unexpected run status value '%s'!!", self._metadata.status)
+            # Try to keep going notwithstanding the unexpected status
+        if self._metadata.conclusion == GitHubTestingService.GitHubConclusion.SUCCESS:
+            return models.BuildStatus.PASSED
+        if self._metadata.conclusion == GitHubTestingService.GitHubConclusion.CANCELLED:
+            return models.BuildStatus.ABORTED
+        if self._metadata.conclusion == GitHubTestingService.GitHubConclusion.FAILURE:
+            return models.BuildStatus.FAILED
+        return models.BuildStatus.ERROR
+
+    @property
+    def timestamp(self) -> int:
+        return int(self._metadata.updated_at.timestamp())
 
     @property
     def url(self) -> str:

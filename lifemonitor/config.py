@@ -158,7 +158,12 @@ def configure_logging(app):
         'root': {
             'level': level_value,
             'handlers': ['wsgi']
-        }
+        },
+        # Lower the log level for the github.Requester object -- else it'll flood us with messages
+        'Requester': {
+            'level': logging.ERROR,
+            'handlers': ['wsgi']
+        },
     })
 
     if error:
