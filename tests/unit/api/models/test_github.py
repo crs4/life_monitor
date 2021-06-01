@@ -65,9 +65,9 @@ def test_get_builds(github_service, test_instance):
     builds = github_service.get_test_builds(test_instance)
     assert len(builds) == 10
     assert all(isinstance(b, models.GitHubTestBuild) for b in builds)
-    # verify order by increasing timestamp
+    # verify order by decreasing timestamp
     for i in range(len(builds) - 1):
-        assert builds[i].timestamp < builds[i + 1].timestamp
+        assert builds[i].timestamp > builds[i + 1].timestamp
 
 
 def test_get_builds_limit(github_service, test_instance):
