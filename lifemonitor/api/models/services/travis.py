@@ -121,7 +121,7 @@ class TravisTestingService(TestingService):
         except Exception as e:
             raise TestingServiceException(f"{self}: {e}")
 
-    def get_test_builds(self, test_instance: models.TestInstance, limit=10):
+    def get_test_builds(self, test_instance: models.TestInstance, limit=10) -> list:
         try:
             repo_id = self.get_repo_id(test_instance)
             response = self._get("/repo/{}/builds".format(repo_id), params={'limit': limit})

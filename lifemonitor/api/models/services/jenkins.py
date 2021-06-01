@@ -106,7 +106,7 @@ class JenkinsTestingService(TestingService):
                 raise lm_exceptions.TestingServiceException(f"{self}: {e}")
         return test_instance._raw_metadata
 
-    def get_test_builds(self, test_instance: models.TestInstance, limit=10):
+    def get_test_builds(self, test_instance: models.TestInstance, limit=10) -> list:
         builds = []
         project_metadata = self.get_project_metadata(test_instance, fetch_all_builds=True if limit > 100 else False)
         for build_info in project_metadata['builds']:
