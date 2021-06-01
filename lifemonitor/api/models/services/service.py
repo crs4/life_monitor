@@ -75,7 +75,7 @@ class TestingServiceTokenManager:
         try:
             del self.__token_registry[service_url]
         except KeyError:
-            logger.info("No token for the service '{}'", service_url)
+            logger.info("No token for the service '%s'", service_url)
 
     def get_token(self, service_url) -> TestingServiceToken:
         return self.__token_registry[service_url] if service_url in self.__token_registry else None
