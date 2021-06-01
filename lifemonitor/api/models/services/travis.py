@@ -87,9 +87,6 @@ class TravisTestingService(TestingService):
                 f"Unable to get the Travis job from the resource {test_instance.resource}")
         return repo_slug
 
-    def is_workflow_healthy(self, test_instance: models.TestInstance) -> bool:
-        return self.get_last_test_build(test_instance).is_successful()
-
     def _get_last_test_build(self, test_instance: models.TestInstance, state=None) -> Optional[models.TravisTestBuild]:
         try:
             repo_id = self.get_repo_id(test_instance)

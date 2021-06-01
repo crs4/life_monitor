@@ -72,9 +72,6 @@ class JenkinsTestingService(TestingService):
                 f"Unable to get the Jenkins job from the resource {job_name}")
         return job_name
 
-    def is_workflow_healthy(self, test_instance: models.TestInstance) -> bool:
-        return self.get_last_test_build(test_instance).is_successful()
-
     def get_last_test_build(self, test_instance: models.TestInstance) -> Optional[JenkinsTestBuild]:
         metadata = self.get_project_metadata(test_instance)
         if 'lastBuild' in metadata and metadata['lastBuild']:

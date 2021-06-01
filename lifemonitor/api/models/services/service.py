@@ -121,7 +121,7 @@ class TestingService(db.Model, ModelMixin):
         raise lm_exceptions.NotImplementedException()
 
     def is_workflow_healthy(self, test_instance: models.TestInstance) -> bool:
-        raise lm_exceptions.NotImplementedException()
+        return self.get_last_test_build(test_instance).is_successful()
 
     def get_last_test_build(self, test_instance: models.TestInstance) -> models.TestBuild:
         raise lm_exceptions.NotImplementedException()
