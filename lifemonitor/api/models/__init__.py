@@ -40,7 +40,7 @@ from .testsuites import TestSuite, TestInstance, ManagedTestInstance, BuildStatu
 
 # 'testing_services'
 from .services import TestingService, \
-    GitHubTestingService, GitHubTestBuild, \
+    GithubTestingService, GithubTestBuild, \
     JenkinsTestingService, JenkinsTestBuild, \
     TravisTestingService, TravisTestBuild, \
     TestingServiceToken, TestingServiceTokenManager
@@ -50,8 +50,8 @@ __all__ = [
     "AggregateTestStatus",
     "BuildStatus",
     "db",
-    "GitHubTestBuild",
-    "GitHubTestingService",
+    "GithubTestBuild",
+    "GithubTestingService",
     "JenkinsTestBuild",
     "JenkinsTestingService",
     "ManagedTestInstance",

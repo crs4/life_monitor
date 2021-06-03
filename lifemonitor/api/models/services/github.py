@@ -38,7 +38,7 @@ from .service import TestingService
 logger = logging.getLogger(__name__)
 
 
-class GitHubTestingService(TestingService):
+class GithubTestingService(TestingService):
     _server = None
     __mapper_args__ = {
         'polymorphic_identity': 'github_testing_service'
@@ -51,12 +51,12 @@ class GitHubTestingService(TestingService):
         'per_page': 100
     }
 
-    class GitHubStatus:
+    class GithubStatus:
         COMPLETED = 'completed'
         QUEUED = 'queued'
         IN_PROGRESS = 'in_progress'
 
-    class GitHubConclusion:
+    class GithubConclusion:
         ACTION_REQUIRED = 'action_required'
         CANCELLED = 'cancelled'
         FAILURE = 'failure'
@@ -102,28 +102,28 @@ class GitHubTestingService(TestingService):
         for run in workflow.get_runs(status=status_arg):
             yield run
 
-    def get_last_test_build(self, test_instance: models.TestInstance) -> Optional[GitHubTestBuild]:
-        for run in self._iter_runs(test_instance, status=self.GitHubStatus.COMPLETED):
-            return GitHubTestBuild(self, test_instance, run)
+    def get_last_test_build(self, test_instance: models.TestInstance) -> Optional[GithubTestBuild]:
+        for run in self._iter_runs(test_instance, status=self.GithubStatus.COMPLETED):
+            return GithubTestBuild(self, test_instance, run)
         return None
 
-    def get_last_passed_test_build(self, test_instance: models.TestInstance) -> Optional[GitHubTestBuild]:
-        for run in self._iter_runs(test_instance, status=self.GitHubStatus.COMPLETED):
-            if run.conclusion == self.GitHubConclusion.SUCCESS:
-                return GitHubTestBuild(self, test_instance, run)
+    def get_last_passed_test_build(self, test_instance: models.TestInstance) -> Optional[GithubTestBuild]:
+        for run in self._iter_runs(test_instance, status=self.GithubStatus.COMPLETED):
+            if run.conclusion == self.GithubConclusion.SUCCESS:
+                return GithubTestBuild(self, test_instance, run)
         return None
 
-    def get_last_failed_test_build(self, test_instance: models.TestInstance) -> Optional[GitHubTestBuild]:
-        for run in self._iter_runs(test_instance, status=self.GitHubStatus.COMPLETED):
-            if run.conclusion == self.GitHubConclusion.FAILURE:
-                return GitHubTestBuild(self, test_instance, run)
+    def get_last_failed_test_build(self, test_instance: models.TestInstance) -> Optional[GithubTestBuild]:
+        for run in self._iter_runs(test_instance, status=self.GithubStatus.COMPLETED):
+            if run.conclusion == self.GithubConclusion.FAILURE:
+                return GithubTestBuild(self, test_instance, run)
         return None
 
     def get_test_builds(self, test_instance: models.TestInstance, limit=10) -> list:
-        return list(GitHubTestBuild(self, test_instance, run)
+        return list(GithubTestBuild(self, test_instance, run)
                     for run in it.islice(self._iter_runs(test_instance), limit))
 
-    def get_test_build(self, test_instance: models.TestInstance, build_number: int) -> GitHubTestBuild:
+    def get_test_build(self, test_instance: models.TestInstance, build_number: int) -> GithubTestBuild:
         logger.debug("Inefficient get_test_build implementation.  Rewrite me!")
         # TODO:  We search through the runs of the workflow because there's no
         # obvious way to istantiate a PyGithub WorkflowRun object given a build
@@ -132,7 +132,7 @@ class GitHubTestingService(TestingService):
         assert isinstance(build_number, int)
         for run in self._iter_runs(test_instance):
             if run.id == build_number:
-                return GitHubTestBuild(self, test_instance, run)
+                return GithubTestBuild(self, test_instance, run)
         raise lm_exceptions.EntityNotFoundException(models.TestBuild, entity_id=build_number)
 
     def _parse_workflow_url(self, resource: str) -> Tuple[str, str, str]:
@@ -170,7 +170,7 @@ class GitHubTestingService(TestingService):
                 parse_error=e.args[0])
 
 
-class GitHubTestBuild(models.TestBuild):
+class GithubTestBuild(models.TestBuild):
     def __init__(self,
                  testing_service: models.TestingService,
                  test_instance: models.TestInstance,
@@ -190,18 +190,18 @@ class GitHubTestBuild(models.TestBuild):
         return int((self._metadata.updated_at - self._metadata.created_at).total_seconds())
 
     def is_running(self) -> bool:
-        return self._metadata.status == GitHubTestingService.GitHubStatus.IN_PROGRESS
+        return self._metadata.status == GithubTestingService.GithubStatus.IN_PROGRESS
 
     @property
     def metadata(self):
         # Rather than expose the PyGithub object outside this class, we expose
-        # the raw metadata from GitHub
+        # the raw metadata from Github
         return self._metadata.raw_data
 
     @property
     def result(self) -> models.TestBuild.Result:
-        if self._metadata.status == GitHubTestingService.GitHubStatus.COMPLETED:
-            if self._metadata.conclusion == GitHubTestingService.GitHubConclusion.SUCCESS:
+        if self._metadata.status == GithubTestingService.GithubStatus.COMPLETED:
+            if self._metadata.conclusion == GithubTestingService.GithubConclusion.SUCCESS:
                 return models.TestBuild.Result.SUCCESS
             return models.TestBuild.Result.FAILED
         return None
@@ -212,18 +212,18 @@ class GitHubTestBuild(models.TestBuild):
 
     @property
     def status(self) -> str:
-        if self._metadata.status == GitHubTestingService.GitHubStatus.IN_PROGRESS:
+        if self._metadata.status == GithubTestingService.GithubStatus.IN_PROGRESS:
             return models.BuildStatus.RUNNING
-        if self._metadata.status == GitHubTestingService.GitHubStatus.QUEUED:
+        if self._metadata.status == GithubTestingService.GithubStatus.QUEUED:
             return models.BuildStatus.WAITING
-        if self._metadata.status != GitHubTestingService.GitHubStatus.COMPLETED:
+        if self._metadata.status != GithubTestingService.GithubStatus.COMPLETED:
             logger.error("Unexpected run status value '%s'!!", self._metadata.status)
             # Try to keep going notwithstanding the unexpected status
-        if self._metadata.conclusion == GitHubTestingService.GitHubConclusion.SUCCESS:
+        if self._metadata.conclusion == GithubTestingService.GithubConclusion.SUCCESS:
             return models.BuildStatus.PASSED
-        if self._metadata.conclusion == GitHubTestingService.GitHubConclusion.CANCELLED:
+        if self._metadata.conclusion == GithubTestingService.GithubConclusion.CANCELLED:
             return models.BuildStatus.ABORTED
-        if self._metadata.conclusion == GitHubTestingService.GitHubConclusion.FAILURE:
+        if self._metadata.conclusion == GithubTestingService.GithubConclusion.FAILURE:
             return models.BuildStatus.FAILED
         return models.BuildStatus.ERROR
 

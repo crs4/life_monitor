@@ -23,7 +23,7 @@ from __future__ import annotations
 import logging
 
 from .service import TestingService, TestingServiceToken, TestingServiceTokenManager
-from .github import GitHubTestingService, GitHubTestBuild
+from .github import GithubTestingService, GithubTestBuild
 from .jenkins import JenkinsTestingService, JenkinsTestBuild
 from .travis import TravisTestingService, TravisTestBuild
 
@@ -32,8 +32,8 @@ logger = logging.getLogger(__name__)
 
 
 __all__ = [
-    "GitHubTestBuild",
-    "GitHubTestingService",
+    "GithubTestBuild",
+    "GithubTestingService",
     "JenkinsTestBuild",
     "JenkinsTestingService",
     "TestingService",

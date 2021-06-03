@@ -53,8 +53,8 @@ def github_token() -> Optional[models.TestingServiceToken]:
 
 
 @pytest.fixture
-def github_service(github_token: models.TestingServiceToken = None) -> models.GitHubTestingService:
-    return models.GitHubTestingService(token=github_token)
+def github_service(github_token: models.TestingServiceToken = None) -> models.GithubTestingService:
+    return models.GithubTestingService(token=github_token)
 
 
 def test_connection(github_service):
@@ -64,7 +64,7 @@ def test_connection(github_service):
 def test_get_builds(github_service, test_instance):
     builds = github_service.get_test_builds(test_instance)
     assert len(builds) == 10
-    assert all(isinstance(b, models.GitHubTestBuild) for b in builds)
+    assert all(isinstance(b, models.GithubTestBuild) for b in builds)
     # verify order by decreasing timestamp
     for i in range(len(builds) - 1):
         assert builds[i].timestamp > builds[i + 1].timestamp
@@ -86,7 +86,7 @@ def test_get_one_build(github_service, test_instance):
         assert getattr(build, p), "Unable to find the property {}".format(p)
 
 
-def test_get_last_builds(github_service: models.GitHubTestingService, test_instance):
+def test_get_last_builds(github_service: models.GithubTestingService, test_instance):
     the_builds = github_service.get_test_builds(test_instance, limit=build_query_limit)
     # latest build
     last_build = github_service.get_last_test_build(test_instance)
