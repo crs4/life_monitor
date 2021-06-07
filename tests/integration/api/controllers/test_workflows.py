@@ -20,6 +20,7 @@
 
 import json
 import logging
+import uuid
 
 import pytest
 from lifemonitor.api.models import WorkflowVersion
@@ -310,3 +311,16 @@ def test_get_workflow_suites(app_client, client_auth_method, user1, user1_auth, 
     assert "roc_suite" in suite, "Missing required roc_suite"
     assert "definition" in suite, "Missing required definition"
     assert "instances" in suite, "Missing required instances"
+
+
+@pytest.mark.parametrize("client_auth_method", [ClientAuthenticationMethod.API_KEY])
+def test_workflow_registry_roc_not_found(app_client, client_auth_method, user1_auth):  # , valid_workflow)
+    wf = {
+        'uuid': uuid.uuid4(),
+        'version': '1',
+        'roc_link': "http://webserver:5000/download?file=I-do-not-exist.crate.zip",
+        'name': 'Not a workflow',
+        'authorization': app_client.application.config['WEB_SERVER_AUTH_TOKEN']
+    }
+    response = app_client.post(f'/users/current/workflows', json=wf, headers=user1_auth)
+    utils.assert_status_code(400, response.status_code)
