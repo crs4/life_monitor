@@ -1,7 +1,9 @@
+import logging
 import os
+
 from flask import Flask, request, abort
 from flask import send_file
-import logging
+
 app = Flask(__name__)
 
 logger = logging.getLogger(__name__)
@@ -22,6 +24,8 @@ def downloadFile():
     if auth_token != server_auth_token:
         abort(401, description="Invalid token")
     path = os.path.join(data_path, file)
+    if not os.path.isfile(path):
+        abort(404, description=f"{path} not found on this server")
     return send_file(path, as_attachment=True)
 
 
