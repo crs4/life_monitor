@@ -46,16 +46,16 @@ def test_github_service(app_client, client_auth_method,
     utils.assert_status_code(201, response.status_code)
     registration_data = response.json
 
-    assert registration_data['wf_uuid'] == wf['uuid']
+    assert registration_data['uuid'] == wf['uuid']
     assert registration_data['wf_version'] == wf['version']
 
     # verify that the workflow is registered
-    response = app_client.get(f"/workflows/{registration_data['wf_uuid']}",
+    response = app_client.get(f"/workflows/{registration_data['uuid']}",
                               query_string={'previous_versions': False},
                               headers=user1_auth)
     utils.assert_status_code(200, response.status_code)
 
-    response = app_client.get(f"/workflows/{registration_data['wf_uuid']}/status", headers=user1_auth)
+    response = app_client.get(f"/workflows/{registration_data['uuid']}/status", headers=user1_auth)
     utils.assert_status_code(200, response.status_code)
 
     status_data = response.json
