@@ -39,11 +39,16 @@ logger.debug("RO-CRATES SOURCE PATH: %s", crates_source_path)
 crates_target_path = os.path.join(current_path, "crates")
 logger.debug("RO-CRATES SOURCE PATH: %s", crates_target_path)
 
-# list of RO-Crates
+# List of RO-Crates to be created.
+# New RO-crates are created by copying a path under crates_source_path to a path under crates_target_path.
+# List contains strings and tuples.
+#   * tuple t: a new ro-crate will be created by copying path crates_source_path/t[0] to path crates_target_path/t[1]
+#   * string s: shortcut for a tuple (s, s)
 test_crates = ['ro-crate-cwl-basefreqsum', 'ro-crate-galaxy-sortchangecase']
 test_crates.append(('ro-crate-galaxy-sortchangecase', 'ro-crate-galaxy-sortchangecase-travis'))
 test_crates.append(('ro-crate-galaxy-sortchangecase', 'ro-crate-galaxy-sortchangecase-invalid-service-type'))
 test_crates.append(('ro-crate-galaxy-sortchangecase', 'ro-crate-galaxy-sortchangecase-invalid-service-url'))
+test_crates.append(('ro-crate-galaxy-sortchangecase', 'ro-crate-galaxy-sortchangecase-github-actions'))
 
 # clean up RO-Crates folder
 if os.path.exists(crates_target_path):
@@ -52,7 +57,7 @@ os.makedirs(crates_target_path, exist_ok=True)
 
 # copy base RO-Crates
 for c in test_crates:
-    source_dir, target_dir = c if type(c) is tuple else (c, c)
+    source_dir, target_dir = c if isinstance(c, tuple) else (c, c)
     shutil.copytree(os.path.join(crates_source_path, source_dir), os.path.join(crates_target_path, target_dir))
 
 
@@ -134,10 +139,26 @@ patch_metadata_graph_node('crates/ro-crate-galaxy-sortchangecase-invalid-service
                               'name': 'sort-and-change-case-invalid-service-type'
                           })
 
+# GitHub Actions crate
+patch_metadata_graph_node('crates/ro-crate-galaxy-sortchangecase-github-actions/ro-crate-metadata.json',
+                          node=("@type", "TestInstance"),
+                          properties={
+                              'url': 'https://api.github.com',
+                              'resource': '/repos/crs4/life_monitor/actions/workflows/4094661',
+                              'runsOn': {"@id": "https://w3id.org/ro/terms/test#GithubService"}
+                          })
+patch_metadata_graph_node('crates/ro-crate-galaxy-sortchangecase-github-actions/ro-crate-metadata.json',
+                          node=("@type", "TestService"),
+                          properties={
+                              "@id": "https://w3id.org/ro/terms/test#GithubService",
+                              "name": "Github",
+                              "url": {"@id": "https://github.com"}
+                          })
+
 # create zip archives
 print("Creating RO-Crate archives:")
 for c in test_crates:
-    archive = c[1] if type(c) is tuple else c
+    archive = c[1] if isinstance(c, tuple) else c
     print("- %s... " % archive, end='')
     shutil.make_archive("{}.crate".format(archive), 'zip', os.path.join(crates_target_path, archive))
     print("DONE")

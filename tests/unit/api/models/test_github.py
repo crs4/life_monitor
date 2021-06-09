@@ -34,16 +34,20 @@ build_query_limit = 20
 # about redefining the outer name gets in our way.
 # pylint: disable=redefined-outer-name
 
+@pytest.fixture
+def api_url() -> str:
+    return 'https://api.github.com'
+
 
 @pytest.fixture
-def test_workflow_url():
-    return 'https://api.github.com/repos/crs4/life_monitor/actions/workflows/4094661'
+def test_workflow_resource() -> str:
+    return '/repos/crs4/life_monitor/actions/workflows/4094661'
 
 
 @pytest.fixture
-def test_instance(test_workflow_url):
+def test_instance(test_workflow_resource):
     instance = MagicMock()
-    instance.resource = test_workflow_url
+    instance.resource = test_workflow_resource
     return instance
 
 
@@ -53,8 +57,17 @@ def github_token() -> Optional[models.TestingServiceToken]:
 
 
 @pytest.fixture
-def github_service(github_token: models.TestingServiceToken = None) -> models.GithubTestingService:
-    return models.GithubTestingService(token=github_token)
+def github_service(api_url: str, github_token: models.TestingServiceToken = None) -> models.GithubTestingService:
+    return models.GithubTestingService(url=api_url, token=github_token)
+
+
+def test_connection_no_api_url(github_token):
+    # Test that the GithubTestingService works without specifying a URL for the API.
+    # The API URL isn't implemented as a fixture parameter to `github_service` because
+    # that would result in repeating all the tests with both fixture values, which
+    # makes it more likely that the tests will fail due to GitHub's API request limit rate.
+    github_service = models.GithubTestingService(token=github_token)
+    assert github_service.check_connection()
 
 
 def test_connection(github_service):
