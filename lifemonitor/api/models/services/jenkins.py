@@ -111,7 +111,7 @@ class JenkinsTestingService(TestingService):
 
     def get_test_builds(self, test_instance: models.TestInstance, limit=10):
         builds = []
-        project_metadata = self.get_project_metadata(test_instance, fetch_all_builds=True if limit > 100 else False)
+        project_metadata = self.get_project_metadata(test_instance, fetch_all_builds=(limit > 100))
         for build_info in project_metadata['builds']:
             if len(builds) == limit:
                 break

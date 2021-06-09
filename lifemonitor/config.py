@@ -132,7 +132,7 @@ def get_config_by_name(name, settings=None):
                 setattr(config, k, v)
         return config
     except KeyError:
-        logger.warning(f"Unable to load the configuration {name}: using 'production'")
+        logger.warning("Unable to load the configuration %s: using 'production'", name)
         return ProductionConfig
 
 
