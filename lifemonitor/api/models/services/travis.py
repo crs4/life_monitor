@@ -26,8 +26,9 @@ import re
 import urllib
 from typing import Optional
 
-import lifemonitor.api.models as models
 import requests
+
+import lifemonitor.api.models as models
 from lifemonitor.exceptions import EntityNotFoundException, TestingServiceException
 
 from .service import TestingService
