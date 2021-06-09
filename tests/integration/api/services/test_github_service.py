@@ -42,7 +42,7 @@ def test_github_service(app_client, client_auth_method,
         'authorization': app_client.application.config['WEB_SERVER_AUTH_TOKEN']
     }
 
-    response = app_client.post(f'/users/current/workflows', json=wf, headers=user1_auth)
+    response = app_client.post('/users/current/workflows', json=wf, headers=user1_auth)
     utils.assert_status_code(201, response.status_code)
     registration_data = response.json
 

@@ -322,5 +322,5 @@ def test_workflow_registry_roc_not_found(app_client, client_auth_method, user1_a
         'name': 'Not a workflow',
         'authorization': app_client.application.config['WEB_SERVER_AUTH_TOKEN']
     }
-    response = app_client.post(f'/users/current/workflows', json=wf, headers=user1_auth)
+    response = app_client.post('/users/current/workflows', json=wf, headers=user1_auth)
     utils.assert_status_code(400, response.status_code)
