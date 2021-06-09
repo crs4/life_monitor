@@ -48,7 +48,6 @@ def test_github_service(app_client, client_auth_method,
 
     assert registration_data['wf_uuid'] == wf['uuid']
     assert registration_data['wf_version'] == wf['version']
-    assert registration_data['name'] == wf['name']
 
     # verify that the workflow is registered
     response = app_client.get(f"/workflows/{registration_data['wf_uuid']}",
