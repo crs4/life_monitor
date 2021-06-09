@@ -90,7 +90,7 @@ class JenkinsTestingService(TestingService):
     def get_last_failed_test_build(self, test_instance: models.TestInstance) -> Optional[JenkinsTestBuild]:
         metadata = self.get_project_metadata(test_instance)
         if 'lastFailedBuild' in metadata and metadata['lastFailedBuild']:
-            return self.get_test_build(metadata['lastFailedBuild']['number'])
+            return self.get_test_build(test_instance, metadata['lastFailedBuild']['number'])
         return None
 
     def test_builds(self, test_instance: models.TestInstance) -> list:
