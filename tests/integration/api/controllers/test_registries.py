@@ -158,7 +158,7 @@ def test_workflow_registration_by_roc_link(app_client, client_auth_method,
     utils.assert_status_code(201, response.status_code)
     data = json.loads(response.data)
     logger.debug("Response data: %r", data)
-    assert data['wf_uuid'] == workflow['uuid'] and data['wf_version'] == workflow['version'], \
+    assert data['uuid'] == workflow['uuid'] and data['wf_version'] == workflow['version'], \
         "Response should be equal to the workflow UUID"
 
 
@@ -181,7 +181,7 @@ def test_user_workflow_registration_by_roc_link(app_client, client_auth_method,
     utils.assert_status_code(201, response.status_code)
     data = json.loads(response.data)
     logger.debug("Response data: %r", data)
-    assert data['wf_uuid'] == workflow['uuid'] and data['wf_version'] == workflow['version'], \
+    assert data['uuid'] == workflow['uuid'] and data['wf_version'] == workflow['version'], \
         "Response should be equal to the workflow UUID"
 
 
@@ -204,7 +204,7 @@ def test_workflow_registration_by_identifier(app_client, client_auth_method,
     utils.assert_status_code(201, response.status_code)
     data = json.loads(response.data)
     logger.debug("Response data: %r", data)
-    assert data['wf_uuid'] == workflow['uuid'] and data['wf_version'] == workflow['version'], \
+    assert data['uuid'] == workflow['uuid'] and data['wf_version'] == workflow['version'], \
         "Response should be equal to the workflow UUID"
 
 
@@ -227,7 +227,7 @@ def test_registry_user_workflow_registration_by_identifier(app_client, client_au
     utils.assert_status_code(201, response.status_code)
     data = json.loads(response.data)
     logger.debug("Response data: %r", data)
-    assert data['wf_uuid'] == workflow['uuid'] and data['wf_version'] == workflow['version'], \
+    assert data['uuid'] == workflow['uuid'] and data['wf_version'] == workflow['version'], \
         "Response should be equal to the workflow UUID"
 
 
@@ -253,7 +253,7 @@ def test_workflow_registration_same_workflow_by_different_users(app_client, clie
             utils.assert_status_code(201, response.status_code)
             data = json.loads(response.data)
             logger.debug("Response data: %r", data)
-            assert data['wf_uuid'] == workflow['uuid'] and data['wf_version'] == workflow['version'], \
+            assert data['uuid'] == workflow['uuid'] and data['wf_version'] == workflow['version'], \
                 "Response should be equal to the workflow UUID"
         else:
             utils.assert_status_code(409, response.status_code)

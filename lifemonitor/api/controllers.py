@@ -275,7 +275,7 @@ def workflows_post(body, _registry=None, _submitter_id=None):
             authorization=body.get('authorization', None)
         )
         logger.debug("workflows_post. Created workflow '%s' (ver.%s)", w.uuid, w.version)
-        return {'wf_uuid': str(w.workflow.uuid), 'wf_version': w.version}, 201
+        return {'uuid': str(w.workflow.uuid), 'wf_version': w.version, 'name': w.name}, 201
     except KeyError as e:
         return lm_exceptions.report_problem(400, "Bad Request", extra_info={"exception": str(e)},
                                             detail=messages.input_data_missing)

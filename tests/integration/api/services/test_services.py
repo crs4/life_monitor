@@ -137,7 +137,7 @@ def test_workflow_registry_generic_link(app_client, user1):  # , valid_workflow)
         "Unexpected workflow ID"
     # assert workflow.external_id is not None, "External ID must be computed if not provided"
     # assert workflow.external_id == w["external_id"], "Invalid external ID"
-    assert workflow.submitter == user1["user"], "Inavalid submitter user"
+    assert workflow.submitter == user1["user"], "Invalid submitter user"
     # inspect the suite/test type
     assert len(workflow.test_suites) == 1, "Expected number of test suites 1"
     suite = workflow.test_suites[0]

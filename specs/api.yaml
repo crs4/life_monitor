@@ -221,7 +221,7 @@ paths:
                 - $ref: "#/components/schemas/RegistryWorkflowVersion"
       responses:
         "201":
-          description: Workflow created by this operation
+          $ref: "#/components/responses/WorkflowRegistered"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -278,7 +278,7 @@ paths:
               $ref: "#/components/schemas/RegistryWorkflowVersion"
       responses:
         "201":
-          description: Workflow created by this operation
+          $ref: "#/components/responses/WorkflowRegistered"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -339,7 +339,7 @@ paths:
                 - $ref: "#/components/schemas/RegistryWorkflowVersion"
       responses:
         "201":
-          description: The workflow created by this operation
+          $ref: "#/components/responses/WorkflowRegistered"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -393,7 +393,7 @@ paths:
               $ref: "#/components/schemas/GenericWorkflowVersion"
       responses:
         "201":
-          description: The workflow created by this operation
+          $ref: "#/components/responses/WorkflowRegistered"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -1093,6 +1093,14 @@ components:
           schema:
             $ref: "#/components/schemas/Error"
 
+    WorkflowRegistered:
+      description: A new workflow has been registered.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Workflow"
+
+
   schemas:
     User:
       type: object
@@ -1486,6 +1494,9 @@ components:
               type: array
               items:
                 $ref: "#/components/schemas/BuildSummary"
+          required:
+            - aggregate_test_status
+            - version
 
     WorkflowVersionStatus:
       allOf:
@@ -1502,6 +1513,10 @@ components:
               type: array
               items:
                 $ref: "#/components/schemas/BuildSummary"
+          required:
+            - version
+            - workflow
+            - aggregate_test_status
 
     AggregateTestStatus:
       type: string
