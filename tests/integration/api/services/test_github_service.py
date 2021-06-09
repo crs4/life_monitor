@@ -23,11 +23,11 @@ import uuid
 
 import pytest
 
-import lifemonitor.api.models as models
 from tests import utils
 from tests.conftest_types import ClientAuthenticationMethod
 
 logger = logging.getLogger()
+
 
 @pytest.mark.parametrize("client_auth_method", [
     ClientAuthenticationMethod.API_KEY,

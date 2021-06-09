@@ -34,6 +34,7 @@ build_query_limit = 20
 # about redefining the outer name gets in our way.
 # pylint: disable=redefined-outer-name
 
+
 @pytest.fixture
 def api_url() -> str:
     return 'https://api.github.com'
