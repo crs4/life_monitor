@@ -1670,6 +1670,7 @@ components:
       enum:
         - travis
         - jenkins
+        - github
 
     TestingService:
       type: object
