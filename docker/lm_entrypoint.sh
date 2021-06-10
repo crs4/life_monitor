@@ -8,7 +8,6 @@ export POSTGRESQL_DATABASE="${POSTGRESQL_DATABASE:-lm}"
 export KEY=${LIFEMONITOR_TLS_KEY:-/certs/lm.key}
 export CERT=${LIFEMONITOR_TLS_CERT:-/certs/lm.crt}
 export GUNICORN_CONF="${GUNICORN_CONF:-/lm/gunicorn.conf.py}"
-export PROMETHEUS_MULTIPROC_DIR=$(mktemp -d prometheus_multiproc_dir.XXXXXXXX)
 
 printf "Waiting for postgresql...\n" >&2
 wait-for-postgres.sh
@@ -17,6 +16,7 @@ if [[ "${FLASK_ENV}" == "development" || "${FLASK_ENV}" == "testingSupport" ]]; 
   printf "Staring app in DEV mode (Flask built-in web server with auto reloading)"
   python "${HOME}/app.py"
 else
+  export PROMETHEUS_MULTIPROC_DIR=$(mktemp -d prometheus_multiproc_dir.XXXXXXXX)
   gunicorn --workers "${GUNICORN_WORKERS}"  \
            --threads "${GUNICORN_THREADS}" \
            --config "${GUNICORN_CONF}" \
