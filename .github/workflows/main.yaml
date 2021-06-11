@@ -78,6 +78,8 @@ jobs:
         run: |
           IFS=$'\n'      # Change IFS to new line
           tags=($TAGS)   # split to array
+          tags+=($(python3 -c 'import lifemonitor; print(lifemonitor.__version__)'))
+          tags+=($(python3 -c 'import lifemonitor; print(lifemonitor.__version__)')-build${GITHUB_RUN_NUMBER})
           echo "DOCKER_TAGS=$(printf "'%s' " "${tags[@]}")" >> $GITHUB_ENV
         env:
           TAGS: ${{ steps.docker_meta.outputs.tags }}
@@ -86,6 +88,7 @@ jobs:
         run: |
           IFS=$'\n'      # Change IFS to new line
           labels=($LABELS) # split to array $names
+          labels+=($(python3 -c 'import lifemonitor; print(lifemonitor.__version__)')-build${GITHUB_RUN_NUMBER})
           echo "DOCKER_LABELS=$(printf "'%s' " "${labels[@]}")" >> $GITHUB_ENV
         env:
           LABELS: ${{ steps.docker_meta.outputs.labels }}
