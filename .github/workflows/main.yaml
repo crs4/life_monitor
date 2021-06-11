@@ -64,7 +64,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
         with:
-          python-version: '3.7'
+          python-version: "3.7"
       - name: "Set software version"
         run: |
           git fetch --unshallow
@@ -111,7 +111,11 @@ jobs:
           LABELS: ${{ steps.docker_meta.outputs.labels }}
       # Build Docker image
       - name: Build Docker image
-        run: TAGS=${DOCKER_TAGS} LABELS=${DOCKER_LABELS} SW_VERSION=${SOFTWARE_VERSION} BUILD_NUMBER=${{ github.run_number }} make lifemonitor
+        run: |
+          TAGS=${DOCKER_TAGS} LABELS=${DOCKER_LABELS} \
+          SW_VERSION=${SOFTWARE_VERSION}.build${{ github.run_number }} \
+          BUILD_NUMBER=${{ github.run_number }} \
+          make lifemonitor
       # Setup testing environment
       - name: Set up testing environment
         run: TAGS=${DOCKER_TAGS} LABELS=${DOCKER_LABELS} make start-testing
