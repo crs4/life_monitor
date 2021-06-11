@@ -40,6 +40,7 @@ import flask
 import requests
 import yaml
 
+from ._version import get_versions
 from . import exceptions as lm_exceptions
 
 logger = logging.getLogger()
@@ -117,6 +118,12 @@ def sizeof_fmt(num, suffix='B'):
             return "%3.1f%s%s" % (num, unit, suffix)
         num /= 1024.0
     return "%.1f%s%s" % (num, 'Yi', suffix)
+
+
+def get_version():
+    version = os.environ.get("SW_VERSION", get_versions()['version'].replace('0+unknown', 'dev'))
+    build_number = os.environ.get("BUILD_NUMBER", None)
+    return f"{version}-build{build_number}" if build_number else version
 
 
 def get_base_url():
