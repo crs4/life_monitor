@@ -18,6 +18,12 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from .utils import get_version
+def get_version():
+    import os
+    from ._version import get_versions
+    version = os.environ.get("SW_VERSION", get_versions()['version'].replace('0+unknown', 'dev'))
+    build_number = os.environ.get("BUILD_NUMBER", None)
+    return f"{version}-build{build_number}" if build_number else version
+
+
 __version__ = get_version()
-del get_version
