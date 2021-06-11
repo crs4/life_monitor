@@ -20,10 +20,30 @@
 
 def get_version():
     import os
-    from ._version import get_versions
-    version = os.environ.get("SW_VERSION", get_versions()['version'].replace('0+unknown', 'dev'))
-    build_number = os.environ.get("BUILD_NUMBER", None)
-    return f"{version}-build{build_number}" if build_number else version
+    import re
+    from ._version import get_versions, run_command
+
+    # try to read the version from the environment
+    version = os.environ.get("SW_VERSION", None)
+    if not version:
+        # if SW_VERSION is not defined on the environment,
+        # try to extract the software version from git metadata
+        version = get_versions()['version']
+        # try to read the BUILD_NUMBER from the environment
+        # and append it to the version tag
+        build_number = os.environ.get("BUILD_NUMBER", None)
+        if build_number:
+            version = f"{version}.build{build_number}"
+        # if no tag can be extracted from git metadata,
+        # try to use the git branch name to tag the software version
+        branch, rc = run_command(["git"], ["branch", "--show-current"],
+                                 cwd=os.path.dirname(__file__), hide_stderr=True)
+        if rc == 0:
+            # tag the version using the branch (normalized through removing '/' char)
+            branch = branch.replace('/', '-')
+            version = re.sub(r'(untagged)(\.1)?', branch, version)
+
+    return version
 
 
 __version__ = get_version()
