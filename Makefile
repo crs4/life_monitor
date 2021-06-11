@@ -35,6 +35,14 @@ ifeq ($(DOCKER_BUILDKIT),1)
 endif
 
 # set the build number
+sw_version_arg :=
+ifdef SW_VERSION
+	sw_version_arg := --build-arg SW_VERSION=$(SW_VERSION)
+else
+	sw_version_arg := --build-arg SW_VERSION=$$(python3 -c "import lifemonitor; print(lifemonitor.__version__)";)
+endif
+
+# set the build number
 build_number_arg :=
 ifdef BUILD_NUMBER
 	build_number_arg := --build-arg BUILD_NUMBER=$(BUILD_NUMBER)
@@ -103,9 +111,9 @@ certs:
 	fi
 
 lifemonitor: docker/lifemonitor.Dockerfile certs app.py gunicorn.conf.py
-	@printf "\n$(bold)Building LifeMonitor Docker image...$(reset)\n" ; \
-	$(build_kit) docker $(build_cmd) $(cache_from_opt) $(cache_to_opt) $(build_number_arg) \
-		  --build-arg SW_VERSION=$$(python3 -c "import lifemonitor; print(lifemonitor.__version__)";) \
+	printf "\n$(bold)Building LifeMonitor Docker image...$(reset)\n" ; \
+	$(build_kit) docker $(build_cmd) $(cache_from_opt) $(cache_to_opt) \
+		  ${sw_version_arg} ${build_number_arg} \
 		  ${tags_opt} ${labels_opt} ${platforms_opt} \
 		  -f docker/lifemonitor.Dockerfile -t crs4/lifemonitor . ;\
 	printf "$(done)\n"
