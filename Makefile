@@ -34,6 +34,12 @@ ifeq ($(DOCKER_BUILDKIT),1)
 	endif
 endif
 
+# set the build number
+build_number_arg :=
+ifdef BUILD_NUMBER
+	build_number_arg := --build-arg BUILD_NUMBER=$(BUILD_NUMBER)
+endif
+
 # set cache param
 ifdef CACHE_FROM
 	cache_from_opt = --cache-from=$(CACHE_FROM)
@@ -98,7 +104,7 @@ certs:
 
 lifemonitor: docker/lifemonitor.Dockerfile certs app.py gunicorn.conf.py
 	@printf "\n$(bold)Building LifeMonitor Docker image...$(reset)\n" ; \
-	$(build_kit) docker $(build_cmd) $(cache_from_opt) $(cache_to_opt) \
+	$(build_kit) docker $(build_cmd) $(cache_from_opt) $(cache_to_opt) $(build_number_arg) \
 		  --build-arg SW_VERSION=$$(python3 -c "import lifemonitor; print(lifemonitor.__version__)";) \
 		  ${tags_opt} ${labels_opt} ${platforms_opt} \
 		  -f docker/lifemonitor.Dockerfile -t crs4/lifemonitor . ;\
