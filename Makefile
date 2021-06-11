@@ -22,7 +22,7 @@ build_kit :=
 build_cmd := build
 cache_from_opt :=
 cache_to_opt :=
-builder := 
+builder :=
 ifeq ($(DOCKER_BUILDKIT),1)
 	build_kit = DOCKER_BUILDKIT=1
 	ifdef BUILDX_BUILDER
@@ -43,7 +43,7 @@ endif
 labels_opt :=
 ifdef LABELS
 	labels_opt := $(call get_opts,label,$(LABELS))
-endif 
+endif
 
 # handle extra tags
 tags_opt :=
@@ -99,11 +99,12 @@ certs:
 lifemonitor: docker/lifemonitor.Dockerfile certs app.py gunicorn.conf.py
 	@printf "\n$(bold)Building LifeMonitor Docker image...$(reset)\n" ; \
 	$(build_kit) docker $(build_cmd) $(cache_from_opt) $(cache_to_opt) \
+		  --build-arg SW_VERSION=$$(python3 -c "import lifemonitor; print(lifemonitor.__version__)";) \
 		  ${tags_opt} ${labels_opt} ${platforms_opt} \
 		  -f docker/lifemonitor.Dockerfile -t crs4/lifemonitor . ;\
 	printf "$(done)\n"
 
-webserver: 
+webserver:
 	@printf "\n$(bold)Building LifeMonitor WebServer image...$(reset)\n" ; \
 	$(build_kit) docker $(build_cmd) $(cache_from_opt) $(cache_to_opt) \
 		  ${tags_opt} ${labels_opt} ${platforms_opt} \
