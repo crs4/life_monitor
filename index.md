@@ -1,29 +1,29 @@
 # Welcome to LifeMonitor
 
-LifeMonitor is a **testing and monitoring service** for scientific workflows.
+LifeMonitor is a service to support the **sustainability** and **reusability**
+of published computational workflows.
 
-The "collapse" over time of the software and services on which computational
-workflows depend is destructive to their reusability,
-and to the reproducibility of work for which they were used; in this case,
-"collapse" can be a change in API that is not backwards compatible, a regression
-in a tool whose version was not pinned, a change in URL of an external resource,
-etc. LifeMonitor aims to facilitate the creation, execution and
-monitoring of workflow tests, ensuring that problems are detected early and
-communicated to the authors to be fixed, thus extending the
-useful life of the workflows.
+The collapse [[1](#hinsen2019)] over time of the software and services on
+which computational workflows depend is destructive to their reusability, and
+to the **reproducibility** of work for which they were used; this phenomenon
+can be caused by an API change that is not backwards compatible, a regression
+in a tool whose version was not pinned, a change in URL of an external
+resource, etc. Frequent **testing** is crucial to the preservation of workflow
+health, allowing to expose problems when they arise and providing a
+machine-actionable way to verify changes to the workflow
+structure. LifeMonitor aims to facilitate the maintenance of computational
+workflows, supporting their reusability over time, with a strong focus on
+testing and test monitoring.
 
 The project's main goals are to:
 
 * Serve as a central aggregation point for workflow test statuses and outputs
-  from various testing bots (e.g., [Travis CI](https://travis-ci.org/),
-  [GitHub Actions](https://docs.github.com/en/actions), your own
-  [Jenkins](https://www.jenkins.io/) instance, etc.).
-* Allow to execute workflow tests on a built-in Jenkins-based service.
-* Facilitate periodic automated execution of tests for
-  [Galaxy](https://usegalaxy.org/), [Nextflow](https://www.nextflow.io/) and
-  [CWL](https://www.commonwl.org/) workflows.
+  from various testing services (e.g., [Travis CI](https://travis-ci.org/),
+  [GitHub Actions](https://docs.github.com/en/actions),
+  [Jenkins](https://www.jenkins.io/), etc.).
+* Facilitate the periodic automated execution of workflow tests.
 * Integrate with [WorkflowHub](https://about.workflowhub.eu/).
-* Provide access through multiple user interfaces: Web GUI, CLI client, REST API.
+* Assist in test suite creation and workflow maintenance.
 
 
 ## Documentation
@@ -60,9 +60,10 @@ LifeMonitor is still in early development.  Here is our planned development road
       - [ ] Github Actions
 
 #### Later
-  - [ ] Internal testing service managed by LifeMonitor
   - [ ] Programmable periodic test execution
   - [ ] Support workflow test creation
+  - [ ] Workflow maintenance plugins (e.g., Docker image linting)
+  - [ ] Automatic configuration of GitHub Actions for workflow testing
 
 
 ## Acknowledgments
@@ -78,3 +79,6 @@ LifeMonitor is being developed as part of the [EOSC-Life project](https://www.eo
 <a title="BBMRI-ERIC" href="https://www.bbmri-eric.eu/">
   <img alt="BBMRI-ERIC Logo" src="https://github.com/crs4/life_monitor/raw/master/docs/logo_bbmri-eric.png" width="130" style="vertical-align: middle; margin-left: 10px" />
 </a>
+
+---
+<a name="hinsen2019">[1]</a> K. Hinsen, <em>Dealing with software collapse</em>. Computing in Science & Engineering 21 (3), 104-108 (2019).
