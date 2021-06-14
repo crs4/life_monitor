@@ -111,7 +111,7 @@ certs:
 	fi
 
 lifemonitor: docker/lifemonitor.Dockerfile certs app.py gunicorn.conf.py
-	printf "\n$(bold)Building LifeMonitor Docker image...$(reset)\n" ; \
+	@printf "\n$(bold)Building LifeMonitor Docker image...$(reset)\n" ; \
 	$(build_kit) docker $(build_cmd) $(cache_from_opt) $(cache_to_opt) \
 		  ${sw_version_arg} ${build_number_arg} \
 		  ${tags_opt} ${labels_opt} ${platforms_opt} \
