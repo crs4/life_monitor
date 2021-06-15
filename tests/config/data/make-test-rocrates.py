@@ -144,7 +144,7 @@ patch_metadata_graph_node('crates/ro-crate-galaxy-sortchangecase-github-actions/
                           node=("@type", "TestInstance"),
                           properties={
                               'url': 'https://api.github.com',
-                              'resource': '/repos/crs4/life_monitor/actions/workflows/4094661',
+                              'resource': 'repos/crs4/life_monitor/actions/workflows/docs.yaml',
                               'runsOn': {"@id": "https://w3id.org/ro/terms/test#GithubService"}
                           })
 patch_metadata_graph_node('crates/ro-crate-galaxy-sortchangecase-github-actions/ro-crate-metadata.json',

@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import itertools as it
 import logging
+import re
 from typing import Generator, Optional, Tuple
 from urllib.parse import urlparse
 from urllib.error import URLError
@@ -36,6 +37,9 @@ from .service import TestingService
 
 # set module level logger
 logger = logging.getLogger()
+
+
+RESOURCE_PATTERN = re.compile(r"/?repos/(?P<org>[^/]+)/(?P<repo>[^/]+)/actions/workflows/(?P<wf>[^/]+)")
 
 
 class GithubTestingService(TestingService):
@@ -160,23 +164,14 @@ class GithubTestingService(TestingService):
         """
         # URL identifies a Github Workflow and should have the form:
         #   https://api.github.com/repos/crs4/life_monitor/actions/workflows/4094661
-        expected_url_msg = " Expected '/repos/{org}/{reponame}/actions/workflows/{workflow_id}'"
         try:
-            logger.debug("Parsing testing instance resource URL '%s'", resource)
             result = urlparse(resource)
             server = f"{result.scheme}://{result.netloc}"
-            # simply split the path using the / delimiter.  We'll later access the parts by index
-            parts = result.path.split('/')
-            # Validate our assumptions
-            if len(parts) != 7:
-                raise RuntimeError("Unexpected number of parts in URL to Github Workflow." + expected_url_msg)
-            if parts[1] != 'repos':
-                raise RuntimeError("Missing or misplaced /repos in URL to Github Workflow." + expected_url_msg)
-            if parts[4] != 'actions' or parts[5] != 'workflows':
-                raise RuntimeError("Missing or misplaced /actions/workflows in URL to Github Workflow." + expected_url_msg)
-            # Extract info
-            repository = '/'.join(parts[2:4])
-            workflow_id = parts[6]
+            m = RESOURCE_PATTERN.match(result.path)
+            if not m:
+                raise RuntimeError("Malformed GitHub workflow path. Expected: 'repos/{org}/{reponame}/actions/workflows/{workflow_id}'")
+            repository = f'{m.group("org")}/{m.group("repo")}'
+            workflow_id = m.group("wf")
             logger.debug("parse result -- server: '%s'; repository: '%s'; workflow_id: '%s'", server, repository, workflow_id)
             return server, repository, workflow_id
         except URLError as e:
