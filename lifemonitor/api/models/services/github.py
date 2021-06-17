@@ -42,6 +42,33 @@ logger = logging.getLogger()
 RESOURCE_PATTERN = re.compile(r"/?repos/(?P<owner>[^/]+)/(?P<repo>[^/]+)/actions/workflows/(?P<wf>[^/]+)")
 
 
+def _parse_workflow_url(resource: str) -> Tuple[str, str, str]:
+    """
+    Given a URL to the testing Github Worklflow, returns a tuple
+    (server, repository, workflow_id)
+    """
+    # URL identifies a Github Workflow and should have the form:
+    #   https://api.github.com/repos/crs4/life_monitor/actions/workflows/4094661
+    try:
+        result = urlparse(resource)
+        server = f"{result.scheme}://{result.netloc}"
+        m = RESOURCE_PATTERN.match(result.path)
+        if not m:
+            raise RuntimeError("Malformed GitHub workflow path. Expected: 'repos/{owner}/{reponame}/actions/workflows/{workflow_id}'")
+        repository = f'{m.group("owner")}/{m.group("repo")}'
+        workflow_id = m.group("wf")
+        logger.debug("parse result -- server: '%s'; repository: '%s'; workflow_id: '%s'", server, repository, workflow_id)
+        return server, repository, workflow_id
+    except URLError as e:
+        raise lm_exceptions.SpecificationNotValidException(
+            detail="Invalid link to Github Workflow",
+            original_exception=str(e))
+    except RuntimeError as e:
+        raise lm_exceptions.SpecificationNotValidException(
+            detail="Unexpected format of link to Github Workflow",
+            parse_error=e.args[0])
+
+
 class GithubTestingService(TestingService):
     _gh_obj = None
     __mapper_args__ = {
@@ -115,7 +142,7 @@ class GithubTestingService(TestingService):
             return False
 
     def _iter_runs(self, test_instance: models.TestInstance, status: str = None) -> Generator[github.WorkflowRun.WorkflowRun]:
-        _, repository, workflow_id = self._parse_workflow_url(test_instance.resource)
+        _, repository, workflow_id = _parse_workflow_url(test_instance.resource)
         logger.debug("iterating over runs --  wf id: %s; repository: %s; status: %s", workflow_id, repository, status)
 
         status_arg = status if status else github.GithubObject.NotSet
@@ -156,32 +183,6 @@ class GithubTestingService(TestingService):
             if run.id == build_number:
                 return GithubTestBuild(self, test_instance, run)
         raise lm_exceptions.EntityNotFoundException(models.TestBuild, entity_id=build_number)
-
-    def _parse_workflow_url(self, resource: str) -> Tuple[str, str, str]:
-        """
-        Given a URL to the testing Github Worklflow, returns a tuple
-        (server, repository, workflow_id)
-        """
-        # URL identifies a Github Workflow and should have the form:
-        #   https://api.github.com/repos/crs4/life_monitor/actions/workflows/4094661
-        try:
-            result = urlparse(resource)
-            server = f"{result.scheme}://{result.netloc}"
-            m = RESOURCE_PATTERN.match(result.path)
-            if not m:
-                raise RuntimeError("Malformed GitHub workflow path. Expected: 'repos/{owner}/{reponame}/actions/workflows/{workflow_id}'")
-            repository = f'{m.group("owner")}/{m.group("repo")}'
-            workflow_id = m.group("wf")
-            logger.debug("parse result -- server: '%s'; repository: '%s'; workflow_id: '%s'", server, repository, workflow_id)
-            return server, repository, workflow_id
-        except URLError as e:
-            raise lm_exceptions.SpecificationNotValidException(
-                detail="Invalid link to Github Workflow",
-                original_exception=str(e))
-        except RuntimeError as e:
-            raise lm_exceptions.SpecificationNotValidException(
-                detail="Unexpected format of link to Github Workflow",
-                parse_error=e.args[0])
 
 
 class GithubTestBuild(models.TestBuild):
