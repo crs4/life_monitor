@@ -39,7 +39,7 @@ from .service import TestingService
 logger = logging.getLogger()
 
 
-RESOURCE_PATTERN = re.compile(r"/?repos/(?P<org>[^/]+)/(?P<repo>[^/]+)/actions/workflows/(?P<wf>[^/]+)")
+RESOURCE_PATTERN = re.compile(r"/?repos/(?P<owner>[^/]+)/(?P<repo>[^/]+)/actions/workflows/(?P<wf>[^/]+)")
 
 
 class GithubTestingService(TestingService):
@@ -169,8 +169,8 @@ class GithubTestingService(TestingService):
             server = f"{result.scheme}://{result.netloc}"
             m = RESOURCE_PATTERN.match(result.path)
             if not m:
-                raise RuntimeError("Malformed GitHub workflow path. Expected: 'repos/{org}/{reponame}/actions/workflows/{workflow_id}'")
-            repository = f'{m.group("org")}/{m.group("repo")}'
+                raise RuntimeError("Malformed GitHub workflow path. Expected: 'repos/{owner}/{reponame}/actions/workflows/{workflow_id}'")
+            repository = f'{m.group("owner")}/{m.group("repo")}'
             workflow_id = m.group("wf")
             logger.debug("parse result -- server: '%s'; repository: '%s'; workflow_id: '%s'", server, repository, workflow_id)
             return server, repository, workflow_id
