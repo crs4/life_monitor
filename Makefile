@@ -22,7 +22,7 @@ build_kit :=
 build_cmd := build
 cache_from_opt :=
 cache_to_opt :=
-builder := 
+builder :=
 ifeq ($(DOCKER_BUILDKIT),1)
 	build_kit = DOCKER_BUILDKIT=1
 	ifdef BUILDX_BUILDER
@@ -34,6 +34,20 @@ ifeq ($(DOCKER_BUILDKIT),1)
 	endif
 endif
 
+# set the build number
+sw_version_arg :=
+ifdef SW_VERSION
+	sw_version_arg := --build-arg SW_VERSION=$(SW_VERSION)
+else
+	sw_version_arg := --build-arg SW_VERSION=$$(python3 -c "import lifemonitor; print(lifemonitor.__version__)";)
+endif
+
+# set the build number
+build_number_arg :=
+ifdef BUILD_NUMBER
+	build_number_arg := --build-arg BUILD_NUMBER=$(BUILD_NUMBER)
+endif
+
 # set cache param
 ifdef CACHE_FROM
 	cache_from_opt = --cache-from=$(CACHE_FROM)
@@ -43,7 +57,7 @@ endif
 labels_opt :=
 ifdef LABELS
 	labels_opt := $(call get_opts,label,$(LABELS))
-endif 
+endif
 
 # handle extra tags
 tags_opt :=
@@ -99,11 +113,12 @@ certs:
 lifemonitor: docker/lifemonitor.Dockerfile certs app.py gunicorn.conf.py
 	@printf "\n$(bold)Building LifeMonitor Docker image...$(reset)\n" ; \
 	$(build_kit) docker $(build_cmd) $(cache_from_opt) $(cache_to_opt) \
+		  ${sw_version_arg} ${build_number_arg} \
 		  ${tags_opt} ${labels_opt} ${platforms_opt} \
 		  -f docker/lifemonitor.Dockerfile -t crs4/lifemonitor . ;\
 	printf "$(done)\n"
 
-webserver: 
+webserver:
 	@printf "\n$(bold)Building LifeMonitor WebServer image...$(reset)\n" ; \
 	$(build_kit) docker $(build_cmd) $(cache_from_opt) $(cache_to_opt) \
 		  ${tags_opt} ${labels_opt} ${platforms_opt} \

@@ -62,6 +62,15 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: "3.7"
+      - name: "Set software version"
+        run: |
+          git fetch --unshallow
+          sw_version=$(python3 -c 'import lifemonitor; print(lifemonitor.__version__)')
+          echo "SOFTWARE_VERSION=${sw_version}" >> $GITHUB_ENV
+          echo "SOFTWARE_VERSION_AS_DOCKER_TAG=$( echo ${sw_version} | tr + _ )" >> $GITHUB_ENV
       # Set Docker image
       - name: Set up Docker repository
         run: echo "DOCKERHUB_REPO=$( if [[ -n $USER_REPO ]]; then echo $USER_REPO; else echo $GITHUB_REPOSITORY; fi )" >> $GITHUB_ENV
@@ -70,9 +79,19 @@ jobs:
       # Extract Docker metadata
       - name: Extract Docker metadata
         id: docker_meta
-        uses: crazy-max/ghaction-docker-meta@v1
+        uses: docker/metadata-action@v3
         with:
           images: ${{ env.DOCKERHUB_REPO }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=${{ env.SOFTWARE_VERSION_AS_DOCKER_TAG }}
+            type=raw,value=${{ env.SOFTWARE_VERSION_AS_DOCKER_TAG}}.build${{ github.run_number }}
+            type=sha
+          labels: |
+            org.opencontainers.image.version=${{ env.SOFTWARE_VERSION }}.build${{ github.run_number }}
       # Set up Docker tags
       - name: Set up Docker tags
         run: |
@@ -84,6 +103,7 @@ jobs:
       # Set up Docker labels
       - name: Set up Docker labels
         run: |
+          sw_version=$(python3 -c 'import lifemonitor; print(lifemonitor.__version__)')
           IFS=$'\n'      # Change IFS to new line
           labels=($LABELS) # split to array $names
           echo "DOCKER_LABELS=$(printf "'%s' " "${labels[@]}")" >> $GITHUB_ENV
@@ -91,7 +111,11 @@ jobs:
           LABELS: ${{ steps.docker_meta.outputs.labels }}
       # Build Docker image
       - name: Build Docker image
-        run: TAGS=${DOCKER_TAGS} LABELS=${DOCKER_LABELS} make lifemonitor
+        run: |
+          TAGS=${DOCKER_TAGS} LABELS=${DOCKER_LABELS} \
+          SW_VERSION=${SOFTWARE_VERSION}.build${{ github.run_number }} \
+          BUILD_NUMBER=${{ github.run_number }} \
+          make lifemonitor
       # Setup testing environment
       - name: Set up testing environment
         run: TAGS=${DOCKER_TAGS} LABELS=${DOCKER_LABELS} make start-testing

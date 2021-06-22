@@ -58,12 +58,12 @@ FROM node:14.16.0-alpine3.12 as node
 RUN mkdir -p /static && apk add bash
 WORKDIR /static/src
 COPY lifemonitor/static/src/package.json package.json
-RUN npm install 
+RUN npm install
 # Copy and build static files
-# Use a separated run to take advantage 
+# Use a separated run to take advantage
 # of node_modules cache from the previous layer
 COPY lifemonitor/static/src .
-RUN npm run production 
+RUN npm run production
 
 
 ##################################################################
@@ -72,3 +72,9 @@ RUN npm run production
 FROM base as target
 
 COPY --from=node --chown=lm:lm /static/dist /lm/lifemonitor/static/dist
+
+# Set the build number
+ARG SW_VERSION
+ARG BUILD_NUMBER
+ENV LM_SW_VERSION=${SW_VERSION}
+ENV LM_BUILD_NUMBER=${BUILD_NUMBER}
