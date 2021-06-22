@@ -72,9 +72,6 @@ class JenkinsTestingService(TestingService):
                 f"Unable to get the Jenkins job from the resource {job_name}")
         return job_name
 
-    def is_workflow_healthy(self, test_instance: models.TestInstance) -> bool:
-        return self.get_last_test_build(test_instance).is_successful()
-
     def get_last_test_build(self, test_instance: models.TestInstance) -> Optional[JenkinsTestBuild]:
         metadata = self.get_project_metadata(test_instance)
         if 'lastBuild' in metadata and metadata['lastBuild']:
@@ -109,7 +106,7 @@ class JenkinsTestingService(TestingService):
                 raise lm_exceptions.TestingServiceException(f"{self}: {e}")
         return test_instance._raw_metadata
 
-    def get_test_builds(self, test_instance: models.TestInstance, limit=10):
+    def get_test_builds(self, test_instance: models.TestInstance, limit=10) -> list:
         builds = []
         project_metadata = self.get_project_metadata(test_instance, fetch_all_builds=(limit > 100))
         for build_info in project_metadata['builds']:

@@ -162,7 +162,12 @@ def configure_logging(app):
         'root': {
             'level': level_value,
             'handlers': ['wsgi']
-        }
+        },
+        # Lower the log level for the github.Requester object -- else it'll flood us with messages
+        'Requester': {
+            'level': logging.ERROR,
+            'handlers': ['wsgi']
+        },
     })
     # Remove Flask's default handler
     # (https://flask.palletsprojects.com/en/2.0.x/logging/#removing-the-default-handler)

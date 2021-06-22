@@ -21,15 +21,16 @@
 from __future__ import annotations
 
 import logging
-from typing import List
-
 import uuid as _uuid
+
+from typing import Any, Dict, List
+from sqlalchemy.orm.exc import NoResultFound
+
 import lifemonitor.exceptions as lm_exceptions
 from lifemonitor.api import models
 from lifemonitor.api.models import db
 from lifemonitor.models import UUID, ModelMixin
 from lifemonitor.utils import ClassManager
-from sqlalchemy.orm.exc import NoResultFound
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -75,7 +76,7 @@ class TestingServiceTokenManager:
         try:
             del self.__token_registry[service_url]
         except KeyError:
-            logger.info("No token for the service '{}'", service_url)
+            logger.info("No token for the service '%s'", service_url)
 
     def get_token(self, service_url) -> TestingServiceToken:
         return self.__token_registry[service_url] if service_url in self.__token_registry else None
@@ -121,7 +122,7 @@ class TestingService(db.Model, ModelMixin):
         raise lm_exceptions.NotImplementedException()
 
     def is_workflow_healthy(self, test_instance: models.TestInstance) -> bool:
-        raise lm_exceptions.NotImplementedException()
+        return self.get_last_test_build(test_instance).is_successful()
 
     def get_last_test_build(self, test_instance: models.TestInstance) -> models.TestBuild:
         raise lm_exceptions.NotImplementedException()
@@ -132,13 +133,13 @@ class TestingService(db.Model, ModelMixin):
     def get_last_failed_test_build(self, test_instance: models.TestInstance) -> models.TestBuild:
         raise lm_exceptions.NotImplementedException()
 
-    def get_test_build(self, test_instance: models.TestInstance, build_number) -> models.TestBuild:
+    def get_test_build(self, test_instance: models.TestInstance, build_number: int) -> models.TestBuild:
         raise lm_exceptions.NotImplementedException()
 
-    def get_test_builds(self, test_instance: models.TestInstance, limit=10) -> list:
+    def get_test_builds(self, test_instance: models.TestInstance, limit: int = 10) -> list:
         raise lm_exceptions.NotImplementedException()
 
-    def get_test_builds_as_dict(self, test_instance: models.TestInstance, test_output):
+    def get_test_builds_as_dict(self, test_instance: models.TestInstance, test_output) -> Dict[str, Any]:
         last_test_build = self.last_test_build
         last_passed_test_build = self.last_passed_test_build
         last_failed_test_build = self.last_failed_test_build
@@ -151,7 +152,7 @@ class TestingService(db.Model, ModelMixin):
             "test_builds": [t.to_dict(test_output) for t in self.test_builds]
         }
 
-    def to_dict(self, test_builds=False, test_output=False) -> dict:
+    def to_dict(self, test_builds: bool = False, test_output: bool = False) -> dict:
         data = {
             'uuid': str(self.uuid),
             'testing_service_url': self.url,

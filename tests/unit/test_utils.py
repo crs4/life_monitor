@@ -18,27 +18,17 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from __future__ import annotations
+import os
+import tempfile
 
-import logging
+import pytest
 
-from .service import TestingService, TestingServiceToken, TestingServiceTokenManager
-from .github import GithubTestingService, GithubTestBuild
-from .jenkins import JenkinsTestingService, JenkinsTestBuild
-from .travis import TravisTestingService, TravisTestBuild
-
-# set module level logger
-logger = logging.getLogger(__name__)
+import lifemonitor.exceptions as lm_exceptions
+import lifemonitor.utils as utils
 
 
-__all__ = [
-    "GithubTestBuild",
-    "GithubTestingService",
-    "JenkinsTestBuild",
-    "JenkinsTestingService",
-    "TestingService",
-    "TestingServiceToken",
-    "TestingServiceTokenManager",
-    "TravisTestBuild",
-    "TravisTestingService",
-]
+def test_download_url_404():
+    with tempfile.TemporaryDirectory() as d:
+        with pytest.raises(lm_exceptions.NotValidROCrateException) as excinfo:
+            _ = utils.download_url('http://httpbin.org/status/404', os.path.join(d, 'get_404'))
+        assert excinfo.value.status == 400

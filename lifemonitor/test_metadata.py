@@ -36,10 +36,12 @@ YamlLoader = getattr(yaml, "CLoader", getattr(yaml, "Loader"))
 
 JENKINS = "https://w3id.org/ro/terms/test#JenkinsService"
 TRAVIS = "https://w3id.org/ro/terms/test#TravisService"
+GITHUB = "https://w3id.org/ro/terms/test#GithubService"
 PLANEMO = "https://w3id.org/ro/terms/test#PlanemoEngine"
 _TO_OLD_TYPES = {
     JENKINS: "jenkins",
     TRAVIS: "travis",
+    GITHUB: "github",
     PLANEMO: "planemo",
 }
 

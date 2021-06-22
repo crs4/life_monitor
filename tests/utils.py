@@ -91,7 +91,6 @@ def assert_error_message(message, error):
 
 def pick_workflow(app_user, name=None):
     assert len(app_user["workflows"]) > 0, "No workflow found to register"
-    # pick one user workflow and register it
     if name is None:
         return app_user["workflows"].pop()
     for w in app_user["workflows"]:

@@ -166,14 +166,14 @@ def download_url(url: str, target_path: str = None, authorization: str = None) -
             logger.info("Fetched %s of data from %s",
                         sizeof_fmt(os.path.getsize(target_path)),
                         url)
-        return target_path
-    except urllib.error.URLError as e:
+    except (urllib.error.URLError, requests.exceptions.HTTPError) as e:
+        # requests raised on an exception as we were trying to download.
         raise \
-            lm_exceptions.LifeMonitorException(
-                "Error downloading ROCrate",
+            lm_exceptions.NotValidROCrateException(
                 details=f"Error downloading RO-crate from {url}",
                 status=400,
                 original_error=str(e))
+    return target_path
 
 
 def extract_zip(archive_path, target_path=None):

@@ -96,7 +96,7 @@ class ROCrate(Resource):
         authorizations.append(None)
         return authorizations
 
-    def load_metadata(self):
+    def load_metadata(self) -> dict:
         errors = []
         # try either with authorization header and without authorization
         for authorization in self._get_authorizations():
