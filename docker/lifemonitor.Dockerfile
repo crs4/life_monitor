@@ -76,5 +76,5 @@ COPY --from=node --chown=lm:lm /static/dist /lm/lifemonitor/static/dist
 # Set the build number
 ARG SW_VERSION
 ARG BUILD_NUMBER
-ENV SW_VERSION=${SW_VERSION}
-ENV BUILD_NUMBER=${BUILD_NUMBER}
+ENV LM_SW_VERSION=${SW_VERSION}
+ENV LM_BUILD_NUMBER=${BUILD_NUMBER}

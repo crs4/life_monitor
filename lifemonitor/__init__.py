@@ -24,14 +24,14 @@ def get_version():
     from ._version import get_versions, run_command
 
     # try to read the version from the environment
-    version = os.environ.get("SW_VERSION", None)
+    version = os.environ.get("LM_SW_VERSION", None)
     if not version:
-        # if SW_VERSION is not defined on the environment,
+        # if LM_SW_VERSION is not defined on the environment,
         # try to extract the software version from git metadata
         version = get_versions()['version']
-        # try to read the BUILD_NUMBER from the environment
+        # try to read the LM_BUILD_NUMBER from the environment
         # and append it to the version tag
-        build_number = os.environ.get("BUILD_NUMBER", None)
+        build_number = os.environ.get("LM_BUILD_NUMBER", None)
         if build_number:
             version = f"{version}.build{build_number}"
         # if no tag can be extracted from git metadata,
