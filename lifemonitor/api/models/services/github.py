@@ -39,10 +39,9 @@ from .service import TestingService
 logger = logging.getLogger()
 
 
-RESOURCE_PATTERN = re.compile(r"/?repos/(?P<owner>[^/]+)/(?P<repo>[^/]+)/actions/workflows/(?P<wf>[^/]+)")
-
-
 class GithubTestingService(TestingService):
+    _RESOURCE_PATTERN = re.compile(r"/?repos/(?P<owner>[^/]+)/(?P<repo>[^/]+)/actions/workflows/(?P<wf>[^/]+)")
+
     _gh_obj = None
     __mapper_args__ = {
         'polymorphic_identity': 'github_testing_service'
@@ -115,7 +114,7 @@ class GithubTestingService(TestingService):
             return False
 
     def _iter_runs(self, test_instance: models.TestInstance, status: str = None) -> Generator[github.WorkflowRun.WorkflowRun]:
-        _, repository, workflow_id = self.__class__._parse_workflow_url(test_instance.resource)
+        _, repository, workflow_id = self._parse_workflow_url(test_instance.resource)
         logger.debug("iterating over runs --  wf id: %s; repository: %s; status: %s", workflow_id, repository, status)
 
         status_arg = status if status else github.GithubObject.NotSet
@@ -157,18 +156,30 @@ class GithubTestingService(TestingService):
                 return GithubTestBuild(self, test_instance, run)
         raise lm_exceptions.EntityNotFoundException(models.TestBuild, entity_id=build_number)
 
-    @staticmethod
-    def _parse_workflow_url(resource: str) -> Tuple[str, str, str]:
+    @classmethod
+    def _parse_workflow_url(cls, resource: str) -> Tuple[str, str, str]:
         """
-        Given a URL to the testing Github Worklflow, returns a tuple
-        (server, repository, workflow_id)
+        Utility method to parse github workflow URIs.  Given a URL to the testing
+        Github Workflow, returns a tuple (server, repository, workflow_id).
+
+        The `resource` can be a full url to a Github workflow; e.g.,
+
+             https://api.github.com/repos/crs4/life_monitor/actions/workflows/4094661
+
+        Alternatively, `resource` can forego the server part (e.g., `https://api.github.com`)
+        and even the leading root slash of the path part.  For instance, `resource` can be:
+
+             repos/crs4/life_monitor/actions/workflows/4094661
+
+        In the latter case, the return value for server will be an empty string.
         """
-        # URL identifies a Github Workflow and should have the form:
-        #   https://api.github.com/repos/crs4/life_monitor/actions/workflows/4094661
         try:
             result = urlparse(resource)
-            server = f"{result.scheme}://{result.netloc}"
-            m = RESOURCE_PATTERN.match(result.path)
+            if result.scheme and result.netloc:
+                server = f"{result.scheme}://{result.netloc}"
+            else:
+                server = ""
+            m = cls._RESOURCE_PATTERN.match(result.path)
             if not m:
                 raise RuntimeError("Malformed GitHub workflow path. Expected: 'repos/{owner}/{reponame}/actions/workflows/{workflow_id}'")
             repository = f'{m.group("owner")}/{m.group("repo")}'
