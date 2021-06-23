@@ -55,7 +55,7 @@ COPY --chown=lm:lm lifemonitor /lm/lifemonitor
 ##################################################################
 FROM node:14.16.0-alpine3.12 as node
 
-RUN mkdir -p /static && apk add bash
+RUN mkdir -p /static && apk add --no-cache bash
 WORKDIR /static/src
 COPY lifemonitor/static/src/package.json package.json
 RUN npm install
