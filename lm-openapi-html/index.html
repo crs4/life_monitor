@@ -346,9 +346,17 @@ current (authenticated) user</div>
 
 
 
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#Workflow">Workflow</a>
+      
+    </div>
 
     <!--Todo: process Response Object and its headers, schema, examples -->
 
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>null</code></pre>
 
     <h3 class="field-label">Produces</h3>
     This API call produces the following media types according to the <span class="header">Accept</span> request header;
@@ -359,8 +367,8 @@ current (authenticated) user</div>
 
     <h3 class="field-label">Responses</h3>
     <h4 class="field-label">201</h4>
-    Workflow created by this operation
-        <a href="#"></a>
+    A new workflow has been registered.
+        <a href="#Workflow">Workflow</a>
     <h4 class="field-label">400</h4>
     The request is malformed
         <a href="#Error">Error</a>
@@ -655,9 +663,17 @@ OAuth2 clients can use this endpoint.</p>
 
 
 
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#Workflow">Workflow</a>
+      
+    </div>
 
     <!--Todo: process Response Object and its headers, schema, examples -->
 
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>null</code></pre>
 
     <h3 class="field-label">Produces</h3>
     This API call produces the following media types according to the <span class="header">Accept</span> request header;
@@ -668,8 +684,8 @@ OAuth2 clients can use this endpoint.</p>
 
     <h3 class="field-label">Responses</h3>
     <h4 class="field-label">201</h4>
-    The workflow created by this operation
-        <a href="#"></a>
+    A new workflow has been registered.
+        <a href="#Workflow">Workflow</a>
     <h4 class="field-label">400</h4>
     The request is malformed
         <a href="#Error">Error</a>
@@ -767,9 +783,17 @@ OAuth2 clients can use this endpoint.</p>
 
 
 
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#Workflow">Workflow</a>
+      
+    </div>
 
     <!--Todo: process Response Object and its headers, schema, examples -->
 
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>null</code></pre>
 
     <h3 class="field-label">Produces</h3>
     This API call produces the following media types according to the <span class="header">Accept</span> request header;
@@ -780,8 +804,8 @@ OAuth2 clients can use this endpoint.</p>
 
     <h3 class="field-label">Responses</h3>
     <h4 class="field-label">201</h4>
-    Workflow created by this operation
-        <a href="#"></a>
+    A new workflow has been registered.
+        <a href="#Workflow">Workflow</a>
     <h4 class="field-label">400</h4>
     The request is malformed
         <a href="#Error">Error</a>
@@ -1628,9 +1652,17 @@ through the service's API).</li>
 
 
 
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#Workflow">Workflow</a>
+      
+    </div>
 
     <!--Todo: process Response Object and its headers, schema, examples -->
 
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>null</code></pre>
 
     <h3 class="field-label">Produces</h3>
     This API call produces the following media types according to the <span class="header">Accept</span> request header;
@@ -1641,8 +1673,8 @@ through the service's API).</li>
 
     <h3 class="field-label">Responses</h3>
     <h4 class="field-label">201</h4>
-    The workflow created by this operation
-        <a href="#"></a>
+    A new workflow has been registered.
+        <a href="#Workflow">Workflow</a>
     <h4 class="field-label">400</h4>
     The request is malformed
         <a href="#Error">Error</a>
@@ -2523,8 +2555,8 @@ the RO-Crate containing the workflow if it is not directly
 accessible to the user for download
 (e.g., <code>authorization: &quot;ApiKey 1234567890&quot;</code>).</p>
  </div>
-<div class="param">version (optional)</div><div class="param-desc"><span class="param-type"><a href="#WorkflowVersion">WorkflowVersion</a></span>  </div>
-<div class="param">aggregate_test_status (optional)</div><div class="param-desc"><span class="param-type"><a href="#AggregateTestStatus">AggregateTestStatus</a></span>  </div>
+<div class="param">version </div><div class="param-desc"><span class="param-type"><a href="#WorkflowVersion">WorkflowVersion</a></span>  </div>
+<div class="param">aggregate_test_status </div><div class="param-desc"><span class="param-type"><a href="#AggregateTestStatus">AggregateTestStatus</a></span>  </div>
 <div class="param">latest_builds (optional)</div><div class="param-desc"><span class="param-type"><a href="#BuildSummary">array[BuildSummary]</a></span> Latest builds, one for each test instance </div>
     </div>  <!-- field-items -->
   </div>
@@ -2532,8 +2564,8 @@ accessible to the user for download
     <h3><a name="WorkflowStatus_allOf"><code>WorkflowStatus_allOf</code> - </a> <a class="up" href="#__Models">Up</a></h3>
     <div class='model-description'></div>
     <div class="field-items">
-      <div class="param">version (optional)</div><div class="param-desc"><span class="param-type"><a href="#WorkflowVersion">WorkflowVersion</a></span>  </div>
-<div class="param">aggregate_test_status (optional)</div><div class="param-desc"><span class="param-type"><a href="#AggregateTestStatus">AggregateTestStatus</a></span>  </div>
+      <div class="param">version </div><div class="param-desc"><span class="param-type"><a href="#WorkflowVersion">WorkflowVersion</a></span>  </div>
+<div class="param">aggregate_test_status </div><div class="param-desc"><span class="param-type"><a href="#AggregateTestStatus">AggregateTestStatus</a></span>  </div>
 <div class="param">latest_builds (optional)</div><div class="param-desc"><span class="param-type"><a href="#BuildSummary">array[BuildSummary]</a></span> Latest builds, one for each test instance </div>
     </div>  <!-- field-items -->
   </div>
@@ -2585,9 +2617,9 @@ accessible to the user for download
     <h3><a name="WorkflowVersionStatus"><code>WorkflowVersionStatus</code> - </a> <a class="up" href="#__Models">Up</a></h3>
     <div class='model-description'></div>
     <div class="field-items">
-      <div class="param">version (optional)</div><div class="param-desc"><span class="param-type"><a href="#WorkflowVersion">WorkflowVersion</a></span>  </div>
-<div class="param">workflow (optional)</div><div class="param-desc"><span class="param-type"><a href="#Workflow">Workflow</a></span>  </div>
-<div class="param">aggregate_test_status (optional)</div><div class="param-desc"><span class="param-type"><a href="#AggregateTestStatus">AggregateTestStatus</a></span>  </div>
+      <div class="param">version </div><div class="param-desc"><span class="param-type"><a href="#WorkflowVersion">WorkflowVersion</a></span>  </div>
+<div class="param">workflow </div><div class="param-desc"><span class="param-type"><a href="#Workflow">Workflow</a></span>  </div>
+<div class="param">aggregate_test_status </div><div class="param-desc"><span class="param-type"><a href="#AggregateTestStatus">AggregateTestStatus</a></span>  </div>
 <div class="param">latest_builds (optional)</div><div class="param-desc"><span class="param-type"><a href="#BuildSummary">array[BuildSummary]</a></span> Latest builds, one for each test instance </div>
     </div>  <!-- field-items -->
   </div>
@@ -2595,9 +2627,9 @@ accessible to the user for download
     <h3><a name="WorkflowVersionStatus_allOf"><code>WorkflowVersionStatus_allOf</code> - </a> <a class="up" href="#__Models">Up</a></h3>
     <div class='model-description'></div>
     <div class="field-items">
-      <div class="param">version (optional)</div><div class="param-desc"><span class="param-type"><a href="#WorkflowVersion">WorkflowVersion</a></span>  </div>
-<div class="param">workflow (optional)</div><div class="param-desc"><span class="param-type"><a href="#Workflow">Workflow</a></span>  </div>
-<div class="param">aggregate_test_status (optional)</div><div class="param-desc"><span class="param-type"><a href="#AggregateTestStatus">AggregateTestStatus</a></span>  </div>
+      <div class="param">version </div><div class="param-desc"><span class="param-type"><a href="#WorkflowVersion">WorkflowVersion</a></span>  </div>
+<div class="param">workflow </div><div class="param-desc"><span class="param-type"><a href="#Workflow">Workflow</a></span>  </div>
+<div class="param">aggregate_test_status </div><div class="param-desc"><span class="param-type"><a href="#AggregateTestStatus">AggregateTestStatus</a></span>  </div>
 <div class="param">latest_builds (optional)</div><div class="param-desc"><span class="param-type"><a href="#BuildSummary">array[BuildSummary]</a></span> Latest builds, one for each test instance </div>
     </div>  <!-- field-items -->
   </div>
