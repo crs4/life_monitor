@@ -117,11 +117,19 @@ class GithubTestingService(TestingService):
         _, repository, workflow_id = self._parse_workflow_url(test_instance.resource)
         logger.debug("iterating over runs --  wf id: %s; repository: %s; status: %s", workflow_id, repository, status)
 
-        status_arg = status if status else github.GithubObject.NotSet
         workflow = self._gh_service.get_repo(repository).get_workflow(workflow_id)
         logger.debug("Retrieved workflow %s from github", workflow_id)
-        for run in workflow.get_runs(status=status_arg):
-            yield run
+        for run in workflow.get_runs():
+            # The Workflow.get_runs method in the PyGithub API has a status argument
+            # which in theory we could use to filter the runs that are retrieved to
+            # only the ones with the status that interests us.  This worked in the past,
+            # but as of 2021/06/23 the relevant Github API started returning only the
+            # latest three matching runs when we specify that argument.
+            #
+            # To work around the problem, we call `get_runs` with no arguments, thus
+            # retrieving all the runs regardless of status, and then we filter below.
+            if status is None or run.status == status:
+                yield run
 
     def get_last_test_build(self, test_instance: models.TestInstance) -> Optional[GithubTestBuild]:
         for run in self._iter_runs(test_instance, status=self.GithubStatus.COMPLETED):
