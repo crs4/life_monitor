@@ -89,12 +89,12 @@ def test_workflow_registration_check_default_name(app_client, client_auth_method
     utils.assert_status_code(201, response.status_code)
     data = json.loads(response.data)
     logger.debug("Response data: %r", data)
-    assert data['wf_uuid'] == workflow['uuid'] and data['wf_version'] == workflow['version'], \
+    assert data['uuid'] == workflow['uuid'] and data['wf_version'] == workflow['version'], \
         "Response should be equal to the workflow UUID"
 
-    wf = utils.get_workflow_data(data['wf_uuid'])
+    wf = utils.get_workflow_data(data['uuid'])
     assert wf, "Unable to load workflow data"
-    assert str(wf.uuid) == data['wf_uuid'], "Unexpected workflow uuid"
+    assert str(wf.uuid) == data['uuid'], "Unexpected workflow uuid"
     assert wf.latest_version.version == data['wf_version'], "Unexpected workflow uuid"
     assert wf.name == workflow['name'], "Unexpected workflow name"
 
@@ -117,12 +117,12 @@ def test_workflow_registration_check_custom_name(app_client, client_auth_method,
     utils.assert_status_code(201, response.status_code)
     data = json.loads(response.data)
     logger.debug("Response data: %r", data)
-    assert data['wf_uuid'] == workflow['uuid'] and data['wf_version'] == workflow['version'], \
+    assert data['uuid'] == workflow['uuid'] and data['wf_version'] == workflow['version'], \
         "Response should be equal to the workflow UUID"
 
-    wf = utils.get_workflow_data(data['wf_uuid'])
+    wf = utils.get_workflow_data(data['uuid'])
     assert wf, "Unable to load workflow data"
-    assert str(wf.uuid) == data['wf_uuid'], "Unexpected workflow uuid"
+    assert str(wf.uuid) == data['uuid'], "Unexpected workflow uuid"
     assert wf.latest_version.version == data['wf_version'], "Unexpected workflow uuid"
     assert wf.name == body['name'], "Unexpected workflow name"
 

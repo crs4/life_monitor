@@ -125,7 +125,7 @@ def test_generic_workflow_registration(app_client, client_auth_method,
     utils.assert_status_code(201, response.status_code)
     data = json.loads(response.data)
     logger.debug("Response data: %r", data)
-    assert data['wf_uuid'] == workflow['uuid'] and data['wf_version'] == workflow['version'], \
+    assert data['uuid'] == workflow['uuid'] and data['wf_version'] == workflow['version'], \
         "Response should be equal to the workflow UUID"
 
 
@@ -152,7 +152,7 @@ def test_generic_workflow_registration_wo_uuid(app_client, client_auth_method,
     logger.debug("Response data: %r", data)
     assert data['wf_version'] == workflow['version'], \
         "Response should be equal to the workflow UUID"
-    assert data['wf_uuid'], "Workflow UUID was not generated or returned"
+    assert data['uuid'], "Workflow UUID was not generated or returned"
 
 
 @pytest.mark.parametrize("client_auth_method", [
@@ -174,7 +174,7 @@ def test_registry_workflow_registration(app_client, client_auth_method,
     utils.assert_status_code(201, response.status_code)
     data = json.loads(response.data)
     logger.debug("Response data: %r", data)
-    assert data['wf_uuid'] == workflow['uuid'] and data['wf_version'] == workflow['version'], \
+    assert data['uuid'] == workflow['uuid'] and data['wf_version'] == workflow['version'], \
         "Response should be equal to the workflow UUID"
 
 
@@ -204,7 +204,7 @@ def test_registry_workflow_registration_same_workflow_by_different_users(app_cli
             utils.assert_status_code(201, response.status_code)
             data = json.loads(response.data)
             logger.debug("Response data: %r", data)
-            assert data['wf_uuid'] == workflow['uuid'] and data['wf_version'] == workflow['version'], \
+            assert data['uuid'] == workflow['uuid'] and data['wf_version'] == workflow['version'], \
                 "Response should be equal to the workflow UUID"
         else:
             utils.assert_status_code(409, response.status_code)

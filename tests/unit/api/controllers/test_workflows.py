@@ -151,7 +151,7 @@ def test_post_workflow_by_user(m, request_context, mock_user):
     m.get_workflow_registry_by_generic_reference.assert_called_once_with(data["registry"]), \
         "get_workflow_registry_by_uri should be used"
     assert_status_code(201, response[1])
-    assert response[0]["wf_uuid"] == data['uuid'] and \
+    assert response[0]["uuid"] == data['uuid'] and \
         response[0]["wf_version"] == data['version']
 
 
@@ -203,7 +203,7 @@ def test_post_workflow_by_registry(m, request_context, mock_registry):
     response = controllers.workflows_post(body=data)
     logger.debug("Response: %r", response)
     assert_status_code(201, response[1])
-    assert response[0]["wf_uuid"] == data['uuid'] and \
+    assert response[0]["uuid"] == data['uuid'] and \
         response[0]["wf_version"] == data['version']
 
 
