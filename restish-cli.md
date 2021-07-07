@@ -205,3 +205,6 @@ X-Frame-Options: SAMEORIGIN
   }
 }
 ```
+
+Now that you have configured your client you can [register your
+workflows](restish-cli-register-workflow).
