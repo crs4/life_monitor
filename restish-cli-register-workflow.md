@@ -45,10 +45,9 @@ and is accessible to the public; LifeMonitor will download it from there.
 
 ## Registering the workflow
 
-To register the workflow with LifeMonitor, we will call the [`POST
-/users/current/workflows`](https://api.lifemonitor.eu/static/apidocs.html#post-/users/current/workflows)
-API.  Restish lets us call with the `user-workflows-post` subcommand.  Here it
-is:
+To register the workflow with LifeMonitor, we will send a POST request to the [`/users/current/workflows`](https://api.lifemonitor.eu/static/apidocs.html#post-/users/current/workflows)
+API endpoint.  Restish lets us call it with the `user-workflows-post`
+subcommand:
 
 ```
 $ echo '{"version": "1.0"}' | restish lm user-workflows-post roc_link: "https://github.com/crs4/life_monitor/raw/master/examples/example-wf-crate.zip"
@@ -82,7 +81,7 @@ its documentation](https://rest.sh/#/input).
 ### Response
 
 :bulb: LifeMonitor responded to the call with the UUID, version and name of the
-workflow.  The UUID will be for all operations on this workflow.
+workflow.  The UUID will be used for all operations on this workflow.
 
 ### More registration arguments
 
@@ -161,7 +160,7 @@ Now, for instance, we can query just the workflow name, uuid and testing status 
       }
     ]
 
-
+In the following examples, remember to replace the workflow ID with the one you got upon registering it.
 
 ### Query information about your workflow
 
@@ -189,7 +188,7 @@ Now, for instance, we can query just the workflow name, uuid and testing status 
 
 ### Query your workflow's test status
 
-    $ restish lmr workflows-get-status 46a1812c-8743-4333-bd6c-e7954c559cb1
+    $ restish lm workflows-get-status 46a1812c-8743-4333-bd6c-e7954c559cb1
     {
       aggregate_test_status: "all_passing"
       latest_builds: [
