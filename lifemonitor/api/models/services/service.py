@@ -22,9 +22,7 @@ from __future__ import annotations
 
 import logging
 import uuid as _uuid
-
-from typing import Any, Dict, List
-from sqlalchemy.orm.exc import NoResultFound
+from typing import Any, Dict, List, Union
 
 import lifemonitor.exceptions as lm_exceptions
 from lifemonitor.api import models
@@ -86,6 +84,7 @@ class TestingService(db.Model, ModelMixin):
     uuid = db.Column("uuid", UUID, primary_key=True, default=_uuid.uuid4)
     _type = db.Column("type", db.String, nullable=False)
     url = db.Column(db.Text, nullable=False, unique=True)
+    _token: TestingServiceToken = None
 
     # define the token type
     token_type = "Bearer"
@@ -110,16 +109,25 @@ class TestingService(db.Model, ModelMixin):
         return self.url
 
     @property
-    def token(self):
+    def token(self) -> TestingServiceToken:
         if not self._token:
-            logger.debug("Querying the token registry for the service %r...", self.url)
+            logger.debug("Querying the token registry for the service '%r'...", self.url)
             self._token = models.TestingServiceTokenManager.get_instance().get_token(self.url)
             if not self._token:
-                logger.debug("Querying the token registry for the API service %r...", self.api_base_url)
-                self._token = models.TestingServiceTokenManager.get_instance().get_token(self.api_base_url)
-        logger.debug("Set token for the testing service %r (type: %r): %r", self.url, self._type, self._token is not None)
+                logger.debug("Querying the token registry for the API service '%r'...", self.api_base_url)
+                self.token = models.TestingServiceTokenManager.get_instance().get_token(self.api_base_url)
+                logger.debug("Found token for the testing service %r (type: %r): %r", self.url, self._type, self._token is not None)
         return self._token
 
+    @token.setter
+    def token(self, value: Union[str, TestingServiceToken] = None):
+        old_token = self._token
+        if value is None:
+            self._token = None
+        else:
+            self._token = TestingServiceToken(self.token_type, value) if isinstance(value, str) else value
+        if old_token != self._token:
+            self.initialize()
 
     def initialize(self):
         raise lm_exceptions.NotImplementedException()
