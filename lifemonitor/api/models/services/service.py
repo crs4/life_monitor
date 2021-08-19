@@ -181,6 +181,13 @@ class TestingService(db.Model, ModelMixin):
             raise lm_exceptions.LifeMonitorException(detail=str(e), stack=str(e))
 
     @classmethod
+    def get_service_class(cls, service_type):
+        try:
+            return cls.service_type_registry.get_class(service_type)
+        except KeyError:
+            raise lm_exceptions.TestingServiceNotSupportedException(f"Not supported testing service type '{service_type}'")
+
+    @classmethod
     def get_instance(cls, service_type, url: str) -> TestingService:
         try:
             # return the service obj if the service has already been registered
