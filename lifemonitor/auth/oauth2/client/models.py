@@ -428,5 +428,13 @@ class OAuth2IdentityProvider(db.Model, ModelMixin):
             raise EntityNotFoundException(cls, entity_id=name)
 
     @classmethod
+    def find_by_api_url(cls, api_url: str):
+        try:
+            assert api_url, "api_url cannot be empty"
+            return cls.query.join(models.Resource).filter(models.Resource.uri == api_url.strip('/')).one()
+        except NoResultFound:
+            raise EntityNotFoundException(cls, entity_id=api_url)
+
+    @classmethod
     def all(cls) -> List[OAuth2IdentityProvider]:
         return cls.query.all()
