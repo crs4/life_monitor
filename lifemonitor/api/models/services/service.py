@@ -27,8 +27,11 @@ from typing import Any, Dict, List, Union
 import lifemonitor.exceptions as lm_exceptions
 from lifemonitor.api import models
 from lifemonitor.api.models import db
+from lifemonitor.auth import current_user
+from lifemonitor.auth.oauth2.client.models import OAuth2IdentityProvider
 from lifemonitor.models import UUID, ModelMixin
 from lifemonitor.utils import ClassManager
+from sqlalchemy.orm.exc import NoResultFound
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -76,7 +79,20 @@ class TestingServiceTokenManager:
         except KeyError:
             logger.info("No token for the service '%s'", service_url)
 
-    def get_token(self, service_url) -> TestingServiceToken:
+    def get_token(self, service_url: str) -> TestingServiceToken:
+        if current_user and not current_user.is_anonymous:
+            logger.debug("Searching for a user token to access the service %r...", service_url)
+            service = TestingService.find_by_url(service_url)
+            if service is None:
+                raise lm_exceptions.EntityNotFoundException(TestingService, entity_id=service_url)
+            try:
+                provider = OAuth2IdentityProvider.find_by_api_url(service_url)
+                identity = current_user.oauth_identity.get(provider.name, None)
+                if identity:
+                    return TestingServiceToken(identity.token['token_type'], identity.token['access_token'])
+            except lm_exceptions.EntityNotFoundException as e:
+                logger.debug("Unable to find an identity related to the service %s: %r", service_url, str(e))
+        logger.debug("Querying the token registry for the service %r...", service_url)
         return self.__token_registry[service_url] if service_url in self.__token_registry else None
 
 
