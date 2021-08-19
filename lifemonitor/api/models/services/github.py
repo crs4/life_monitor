@@ -167,7 +167,11 @@ class GithubTestingService(TestingService):
         # obvious way to istantiate a PyGithub WorkflowRun object given a build
         # number -- but there's has to be a way.  We can easily asseble the URL
         # of the request to directly retrive the data we need here.
-        assert isinstance(build_number, int)
+        try:
+            build_number = int(build_number)
+        except ValueError as e:
+            raise lm_exceptions.LifeMonitorException("Invalid 'build_numer'",
+                                                     details="The build parameter must be an integer: {0}".format(str(e)), status=400)
         for run in self._iter_runs(test_instance):
             if run.id == build_number:
                 return GithubTestBuild(self, test_instance, run)
