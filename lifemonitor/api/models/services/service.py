@@ -121,6 +121,10 @@ class TestingService(db.Model, ModelMixin):
         return f'<TestingService {self.url}, ({self.uuid})>'
 
     @property
+    def base_url(self):
+        return self.url
+
+    @property
     def api_base_url(self):
         return self.url
 

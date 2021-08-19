@@ -85,6 +85,14 @@ class GithubTestingService(TestingService):
             raise lm_exceptions.TestingServiceException(e)
 
     @property
+    def base_url(self):
+        return 'https://github.com'
+
+    @property
+    def api_base_url(self):
+        return github.MainClass.DEFAULT_BASE_URL
+
+    @property
     def _gh_service(self) -> Github:
         logger.debug("Github client requested.")
         if not self._gh_obj:
