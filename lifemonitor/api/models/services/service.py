@@ -37,18 +37,18 @@ logger = logging.getLogger(__name__)
 
 
 class TestingServiceToken:
-    def __init__(self, key, secret):
-        self.key = key
-        self.secret = secret
+    def __init__(self, type, value):
+        self.type = type
+        self.value = value
 
     def __composite_values__(self):
-        return self.key, self.secret
+        return self.type, self.value
 
     def __repr__(self):
-        return "<TestingServiceToken (key=%r, secret=****)>" % self.key
+        return "<TestingServiceToken (key=%r, secret=****)>" % self.type
 
     def __eq__(self, other):
-        return isinstance(other, TestingServiceToken) and other.key == self.key and other.secret == self.secret
+        return isinstance(other, TestingServiceToken) and other.type == self.type and other.value == self.value
 
     def __ne__(self, other):
         return not self.__eq__(other)
