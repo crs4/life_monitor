@@ -204,7 +204,7 @@ class Resource(db.Model, ModelMixin):
     def __init__(self, uri, uuid=None,
                  name=None, version=None) -> None:
         assert uri, "URI cannot be empty"
-        self.uri = uri.strp('/')
+        self.uri = uri.strip('/')
         self.name = name
         self.version = version
         self.uuid = uuid
