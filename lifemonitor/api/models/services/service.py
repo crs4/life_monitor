@@ -120,6 +120,10 @@ class TestingService(db.Model, ModelMixin):
         logger.debug("Set token for the testing service %r (type: %r): %r", self.url, self._type, self._token is not None)
         return self._token
 
+
+    def initialize(self):
+        raise lm_exceptions.NotImplementedException()
+
     def check_connection(self) -> bool:
         raise lm_exceptions.NotImplementedException()
 

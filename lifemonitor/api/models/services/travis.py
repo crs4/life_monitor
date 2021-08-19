@@ -51,6 +51,9 @@ class TravisTestingService(TestingService):
     # define the token type
     token_type = 'token'
 
+    def initialize(self):
+        pass
+
     @property
     def api_base_url(self):
         if self.url == 'https://travis-ci.org':
