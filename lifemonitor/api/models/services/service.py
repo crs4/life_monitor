@@ -86,7 +86,9 @@ class TestingService(db.Model, ModelMixin):
     uuid = db.Column("uuid", UUID, primary_key=True, default=_uuid.uuid4)
     _type = db.Column("type", db.String, nullable=False)
     url = db.Column(db.Text, nullable=False, unique=True)
-    _token = None
+
+    # define the token type
+    token_type = "Bearer"
 
     # configure the class manager
     service_type_registry = ClassManager('lifemonitor.api.models.services', class_suffix='TestingService', skip=['__init__', 'service'])

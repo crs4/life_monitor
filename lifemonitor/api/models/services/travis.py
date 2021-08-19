@@ -47,8 +47,9 @@ class TravisTestingService(TestingService):
         'Travis-API-Version': '3'
     }
 
-    __dot_com = 'https://api.travis-ci.com'
-    __dot_org = 'https://api.travis-ci.org'
+
+    # define the token type
+    token_type = 'token'
 
     @property
     def api_base_url(self):
