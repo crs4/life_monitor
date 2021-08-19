@@ -47,7 +47,6 @@ class TravisTestingService(TestingService):
         'Travis-API-Version': '3'
     }
 
-
     # define the token type
     token_type = 'token'
 
