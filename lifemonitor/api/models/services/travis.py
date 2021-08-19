@@ -65,7 +65,7 @@ class TravisTestingService(TestingService):
         headers = self.__headers__.copy()
         token = token if token else self.token
         if token:
-            headers['Authorization'] = 'token {}'.format(token.secret)
+            headers['Authorization'] = f'{token.type} {token.value}'
         return headers
 
     def _build_url(self, path, params=None):
