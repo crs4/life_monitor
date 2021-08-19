@@ -79,7 +79,9 @@ class GithubTestingService(TestingService):
         try:
             logger.debug("Instantiating with: url %s; token: %s\nClient configuration: %s",
                          self.url, None, self._configuration_)
-            self._gh_obj = Github(base_url=self.url, login_or_token=self.token.value, **self._configuration_)
+            self._gh_obj = Github(base_url=self.url,
+                                  login_or_token=self.token.value if self.token else None, 
+                                  **self._configuration_)
             logger.debug("Github client created.")
         except Exception as e:
             raise lm_exceptions.TestingServiceException(e)
