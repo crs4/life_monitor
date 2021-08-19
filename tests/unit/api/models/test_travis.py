@@ -99,7 +99,7 @@ def test_repo_id(travis_service: models.TravisTestingService):
 def test_service_token(travis_service: models.TravisTestingService):
     tk = travis_service.token
     assert tk, "The Travis token should be set"
-    assert token == tk.secret, "Unexpected Travis token"
+    assert token == tk.value, "Unexpected Travis token"
 
 
 @pytest.mark.skipif(not token, reason="Travis token not set")

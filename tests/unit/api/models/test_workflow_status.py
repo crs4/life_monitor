@@ -31,11 +31,12 @@ logger = logging.getLogger(__name__)
 
 @pytest.fixture
 def workflow():
-    # uuid, version, submitter: User, roc_link,
-    #  registry: models.WorkflowRegistry = None,
-    #  roc_metadata = None, external_id = None, name = None
-    return models.WorkflowVersion(MagicMock(), uuid.uuid4(), "1", MagicMock(),
-                                  "https://link", MagicMock())
+    # workflow: Workflow,
+    # uri, version, submitter: User,
+    # uuid=None, name=None,
+    # hosting_service: models.WorkflowRegistry = None
+    return models.WorkflowVersion(MagicMock(), "https://link", "1", MagicMock(),
+                                  uuid.uuid4(), "Mock workflow version", MagicMock())
 
 
 @pytest.fixture
