@@ -121,6 +121,11 @@ class TravisTestingService(TestingService):
         except Exception as e:
             raise TestingServiceException(e)
 
+    def get_instance_external_link(self, test_instance: models.TestInstance) -> str:
+        testing_service = test_instance.testing_service
+        repo_id = testing_service.get_repo_id(test_instance, quote=False)
+        return urllib.parse.urljoin(testing_service.base_url, f'{repo_id}')
+
     def get_last_test_build(self, test_instance: models.TestInstance) -> Optional[models.TravisTestBuild]:
         return self._get_last_test_build(test_instance)
 

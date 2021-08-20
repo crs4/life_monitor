@@ -148,6 +148,10 @@ class GithubTestingService(TestingService):
             if status is None or run.status == status:
                 yield run
 
+    def get_instance_external_link(self, test_instance: models.TestInstance) -> str:
+        _, repo_full_name, workflow_id = self._parse_workflow_url(test_instance.resource)
+        return f'https://github.com/{repo_full_name}/actions/workflows/{workflow_id}'
+
     def get_last_test_build(self, test_instance: models.TestInstance) -> Optional[GithubTestBuild]:
         for run in self._iter_runs(test_instance, status=self.GithubStatus.COMPLETED):
             return GithubTestBuild(self, test_instance, run)

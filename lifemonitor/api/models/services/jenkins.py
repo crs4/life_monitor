@@ -78,6 +78,9 @@ class JenkinsTestingService(TestingService):
                 f"Unable to get the Jenkins job from the resource {job_name}")
         return job_name
 
+    def get_instance_external_link(self, test_instance: models.TestInstance) -> str:
+        return self.get_project_metadata(test_instance)['url']
+
     def get_last_test_build(self, test_instance: models.TestInstance) -> Optional[JenkinsTestBuild]:
         metadata = self.get_project_metadata(test_instance)
         if 'lastBuild' in metadata and metadata['lastBuild']:

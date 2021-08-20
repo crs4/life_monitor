@@ -83,6 +83,10 @@ class TestInstance(db.Model, ModelMixin):
         return self.type != 'unmanaged'
 
     @property
+    def external_link(self):
+        return self.testing_service.get_instance_external_link(self)
+
+    @property
     def last_test_build(self):
         return self.testing_service.get_last_test_build(self)
 
