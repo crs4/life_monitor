@@ -22,12 +22,14 @@ from __future__ import annotations
 
 import logging
 import re
+import urllib
 from typing import Optional
 
-import jenkins
 import lifemonitor.api.models as models
 import lifemonitor.exceptions as lm_exceptions
 from lifemonitor.lang import messages
+
+import jenkins
 
 from .service import TestingService
 
@@ -196,3 +198,7 @@ class JenkinsTestBuild(models.TestBuild):
     @property
     def url(self) -> str:
         return self.metadata['url']
+
+    @property
+    def external_link(self) -> str:
+        return urllib.parse.urljoin(self.url, "console")
