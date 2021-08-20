@@ -503,7 +503,7 @@ paths:
                                 {
                                   links:
                                     {
-                                      external: "https://dev.workflowhub.eu/workflows/142/content_blobs/240/download",
+                                      origin: "https://dev.workflowhub.eu/workflows/142/content_blobs/240/download",
                                       download: "https://api.lifemonitor.eu/ro_crates/10/download",
                                     },
                                 },
@@ -1272,7 +1272,7 @@ components:
         links:
           type: object
           properties:
-            external:
+            origin:
               type: string
               description: |
                 The link to the workflow RO-Crate used to register the workflow on LifeMonitor
@@ -1443,7 +1443,7 @@ components:
                       {
                         links:
                           {
-                            external: "https://dev.workflowhub.eu/workflows/142/content_blobs/240/download",
+                            origin: "https://dev.workflowhub.eu/workflows/142/content_blobs/240/download",
                             download: "https://api.lifemonitor.eu/ro_crates/10/download",
                           },
                       },

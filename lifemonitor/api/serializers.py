@@ -87,7 +87,7 @@ class VersionDetailsSchema(BaseSchema):
     def get_rocrate(self, obj):
         rocrate = {
             'links': {
-                'external': obj.uri,
+                'origin': obj.uri,
                 'download': urljoin(lm_utils.get_external_server_url(), f"ro_crates/{obj.id}/download")
             }
         }
