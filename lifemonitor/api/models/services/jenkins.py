@@ -130,6 +130,9 @@ class JenkinsTestingService(TestingService):
         except jenkins.JenkinsException as e:
             raise lm_exceptions.TestingServiceException(e)
 
+    def get_test_build_external_link(self, test_build: models.TestBuild) -> str:
+        return urllib.parse.urljoin(test_build.url, "console")
+
     def get_test_build_output(self, test_instance: models.TestInstance, build_number, offset_bytes=0, limit_bytes=131072):
         try:
             logger.debug("test_instance '%r', build_number '%r'", test_instance.name, build_number)
@@ -201,4 +204,4 @@ class JenkinsTestBuild(models.TestBuild):
 
     @property
     def external_link(self) -> str:
-        return urllib.parse.urljoin(self.url, "console")
+        return self.testing_service.get_test_build_external_link(self)

@@ -167,6 +167,11 @@ class TravisTestingService(TestingService):
                                               detail=str(response.content))
         return models.TravisTestBuild(self, test_instance, response)
 
+    def get_test_build_external_link(self, test_build: models.TestBuild) -> str:
+        testing_service = test_build.test_instance.testing_service
+        repo_id = testing_service.get_repo_id(test_build.test_instance, quote=False)
+        return urllib.parse.urljoin(testing_service.base_url, f'{repo_id}/builds/{test_build.id}')
+
     def get_test_build_output(self, test_instance: models.TestInstance, build_number, offset_bytes=0, limit_bytes=131072):
         try:
             _metadata = self._get(f"/build/{build_number}/jobs")
@@ -264,6 +269,4 @@ class TravisTestBuild(models.TestBuild):
 
     @property
     def external_link(self) -> str:
-        testing_service = self.test_instance.testing_service
-        repo_id = testing_service.get_repo_id(self.test_instance, quote=False)
-        return urllib.parse.urljoin(testing_service.base_url, f'{repo_id}/builds/{self.id}')
+        return self.testing_service.get_test_build_external_link(self)

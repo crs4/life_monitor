@@ -185,6 +185,10 @@ class GithubTestingService(TestingService):
                 return GithubTestBuild(self, test_instance, run)
         raise lm_exceptions.EntityNotFoundException(models.TestBuild, entity_id=build_number)
 
+    def get_test_build_external_link(self, test_build: models.TestBuild) -> str:
+        repo = test_build.test_instance.testing_service._get_repo(test_build.test_instance)
+        return f'https://github.com/{repo.full_name}/actions/runs/{test_build.id}'
+
     @classmethod
     def _parse_workflow_url(cls, resource: str) -> Tuple[str, str, str]:
         """
@@ -292,5 +296,4 @@ class GithubTestBuild(models.TestBuild):
 
     @property
     def external_link(self) -> str:
-        repo = self.testing_service._get_repo(self.test_instance)
-        return f'https://github.com/{repo.full_name}/actions/runs/{self.id}'
+        return self.testing_service.get_test_build_external_link(self)
