@@ -1100,7 +1100,6 @@ components:
           schema:
             $ref: "#/components/schemas/Workflow"
 
-
   schemas:
     User:
       type: object
@@ -1634,6 +1633,13 @@ components:
           description: |
             A timestamp for the start time of the build
           example: 1616427012.0
+        links:
+          type: object
+          properties:
+            origin:
+              type: string
+              description: Link to the test build on the testing service
+              example: "https://github.com/crs4/life_monitor/actions/runs/968650807"
       required:
         - build_id
         - suite_uuid
@@ -1744,6 +1750,13 @@ components:
               description: |
                 The relative path of the test project on the testing service
               example: github/seek4science/seek
+            links:
+              type: object
+              properties:
+                origin:
+                  type: string
+                  description: Link to the test instance on the testing service
+                  example: "https://github.com/crs4/life_monitor/workflows/docs.yaml"
           required:
             - service
             - resource

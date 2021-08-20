@@ -38,6 +38,26 @@ class BaseSchema(ma.SQLAlchemySchema):
     __envelope__ = {"single": None, "many": None}
     __model__ = None
 
+    @property
+    def api_version(self):
+        return lm_utils.OpenApiSpecs.get_instance().version
+
+    @property
+    def base_url(self):
+        return lm_utils.get_external_server_url()
+
+    @property
+    def self_path(self):
+        try:
+            return request.full_path.strip('?')
+        except RuntimeError:
+            # when there is no active HTTP request
+            return None
+
+    @property
+    def self_link(self):
+        return f"{self.base_url}{self.self_path}"
+
     def get_envelope_key(self, many):
         """Helper to get the envelope key."""
         return self.__envelope__.get("many", None) if many\
@@ -70,24 +90,32 @@ class MetadataSchema(BaseSchema):
     modified = fields.DateTime(attribute='modified')
 
     def get_api_version(self, obj):
-        return lm_utils.OpenApiSpecs.get_instance().version
+        return self.api_version
 
     def get_base_url(self, obj):
-        return lm_utils.get_external_server_url()
+        return self.base_url
 
     def get_self_path(self, obj):
-        try:
-            return request.full_path.strip('?')
-        except RuntimeError:
-            # when there is no active HTTP request
-            return None
+        return self.self_path
 
 
 class ResourceMetadataSchema(BaseSchema):
     meta = fields.Method("get_metadata")
+    links = fields.Method("get_links")
+
+    def __init__(self, *args, self_link: bool = True, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._self_link = self_link
 
     def get_metadata(self, obj):
         return MetadataSchema().dump(obj)
+
+    def get_links(self, obj):
+        if self._self_link:
+            return {
+                "self": self.self_link
+            }
+        return None
 
 
 class ResourceSchema(ResourceMetadataSchema):
@@ -102,7 +130,7 @@ class ListOfItems(ResourceMetadataSchema):
     items = fields.Method("get_items")
 
     def get_items(self, obj):
-        return [self.__item_scheme__(exclude=("meta",), many=False).dump(_) for _ in obj] \
+        return [self.__item_scheme__(self_link=False, exclude=("meta",), many=False).dump(_) for _ in obj] \
             if self.__item_scheme__ else None
 
 
