@@ -91,11 +91,11 @@ class TravisTestingService(TestingService):
         return response.json() if response.status_code == 200 else response
 
     @staticmethod
-    def get_repo_id(test_instance: models.TestInstance):
+    def get_repo_id(test_instance: models.TestInstance, quote=True):
         # extract the job name from the resource path
         logger.debug(f"Getting project metadata - resource: {test_instance.resource}")
         repo = re.sub(r'^(/)?(repo/)?(github/)?(.+)', r'\4', test_instance.resource.strip('/(build(s)?)?'))
-        repo_slug = urllib.parse.quote(repo, safe='')
+        repo_slug = urllib.parse.quote(repo, safe='') if quote else repo
         logger.debug(f"The repo ID: {repo_slug}")
         if not repo_slug or len(repo_slug) == 0:
             raise TestingServiceException(
@@ -261,3 +261,9 @@ class TravisTestBuild(models.TestBuild):
     @property
     def url(self) -> str:
         return "{}{}".format(self.testing_service.url, self.metadata['@href'])
+
+    @property
+    def external_link(self) -> str:
+        testing_service = self.test_instance.testing_service
+        repo_id = testing_service.get_repo_id(self.test_instance, quote=False)
+        return urllib.parse.urljoin(testing_service.base_url, f'{repo_id}/builds/{self.id}')
