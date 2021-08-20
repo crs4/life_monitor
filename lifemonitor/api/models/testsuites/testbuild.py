@@ -102,6 +102,11 @@ class TestBuild(ABC):
     def url(self) -> str:
         pass
 
+    @property
+    @abstractmethod
+    def external_link(self) -> str:
+        pass
+
     def get_output(self, offset_bytes=0, limit_bytes=131072):
         return self.testing_service.get_test_build_output(self.test_instance, self.id, offset_bytes, limit_bytes)
 
