@@ -24,14 +24,14 @@ import itertools as it
 import logging
 import re
 from typing import Generator, Optional, Tuple
-from urllib.parse import urlparse
 from urllib.error import URLError
-
-import github
-from github import Github, GithubException
+from urllib.parse import urlparse
 
 import lifemonitor.api.models as models
 import lifemonitor.exceptions as lm_exceptions
+
+import github
+from github import Github, GithubException
 
 from .service import TestingService
 
@@ -100,6 +100,14 @@ class GithubTestingService(TestingService):
         if not self._gh_obj:
             self.initialize()
         return self._gh_obj
+
+    def _get_repo(self, test_instance: models.TestInstance):
+        _, repo_full_name, _ = self._parse_workflow_url(test_instance.resource)
+        repository = self._gh_obj.get_repo(repo_full_name)
+        logger.debug("Repo ID: %s", repository.id)
+        logger.debug("Repo full name: %s", repository.full_name)
+        logger.debug("Repo URL: %s", f'https://github.com/{repository.full_name}')
+        return repository
 
     @staticmethod
     def _convert_github_exception_to_lm(github_exc: GithubException) -> lm_exceptions.LifeMonitorException:
@@ -281,3 +289,8 @@ class GithubTestBuild(models.TestBuild):
     @property
     def url(self) -> str:
         return self._metadata.url
+
+    @property
+    def external_link(self) -> str:
+        repo = self.testing_service._get_repo(self.test_instance)
+        return f'https://github.com/{repo.full_name}/actions/runs/{self.id}'
