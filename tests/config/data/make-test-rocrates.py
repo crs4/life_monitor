@@ -78,7 +78,20 @@ patch_metadata_graph_node('crates/ro-crate-galaxy-sortchangecase/ro-crate-metada
                           node=("@type", "TestInstance"),
                           properties={
                               'url': 'http://jenkins:8080/',
-                              'resource': 'job/test/'
+                              'resource': 'job/test/',
+                              "runsOn": {
+                                  "@id": "https://w3id.org/ro/terms/test#JenkinsService"
+                              }
+                          })
+
+patch_metadata_graph_node('crates/ro-crate-galaxy-sortchangecase/ro-crate-metadata.json',
+                          node=("@type", "TestService"),
+                          properties={
+                              "@id": "https://w3id.org/ro/terms/test#JenkinsService",
+                              "name": "Jenkins",
+                              "url": {
+                                  "@id": "http://jenkins:8080"
+                              }
                           })
 
 patch_metadata_graph_node('crates/ro-crate-galaxy-sortchangecase-travis/ro-crate-metadata.json',
