@@ -226,6 +226,7 @@ class BuildSummarySchema(ResourceMetadataSchema):
     status = fields.String()
     instance = ma.Nested(TestInstanceSchema(self_link=False, exclude=('meta',)), attribute="test_instance")
     timestamp = fields.String()
+    duration = fields.Integer()
     links = fields.Method('get_links')
 
     def get_links(self, obj):
