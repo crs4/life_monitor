@@ -108,9 +108,9 @@ class ListOfItems(ResourceMetadataSchema):
 
 class ProblemDetailsSchema(BaseSchema):
 
-    type = fields.String(default="about:blank")
-    title = fields.String(default="Internal Error")
+    type = fields.String(dump_default="about:blank")
+    title = fields.String(dump_default="Internal Error")
     detail = fields.String()
-    status = fields.Integer(default=501)
+    status = fields.Integer(dump_default=501)
     instance = fields.String()
     extra_info = fields.Dict()
