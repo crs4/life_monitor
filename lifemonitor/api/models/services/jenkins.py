@@ -44,8 +44,12 @@ class JenkinsTestingService(TestingService):
 
     def __init__(self, url: str, token: models.TestingServiceToken = None) -> None:
         super().__init__(url, token)
+
+    def initialize(self):
         try:
+            logger.debug("Initializing Jenkins server....")
             self._server = jenkins.Jenkins(self.url)
+            logger.debug("Initializing Jenkins server: DONE")
         except Exception as e:
             raise lm_exceptions.TestingServiceException(e)
 
@@ -58,7 +62,7 @@ class JenkinsTestingService(TestingService):
     @property
     def server(self) -> jenkins.Jenkins:
         if not self._server:
-            self._server = jenkins.Jenkins(self.url)
+            self.initialize()
         return self._server
 
     @staticmethod

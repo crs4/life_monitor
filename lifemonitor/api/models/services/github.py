@@ -74,22 +74,31 @@ class GithubTestingService(TestingService):
         if not url:
             url = github.MainClass.DEFAULT_BASE_URL
         super().__init__(url, token)
-        logger.debug("url: %s; token: %s\nClient configuration: %s",
-                     url, token, self._configuration_)
+
+    def initialize(self):
         try:
-            self._gh_obj = Github(base_url=url, **self._configuration_)
+            logger.debug("Instantiating with: url %s; token: %s\nClient configuration: %s",
+                         self.url, None, self._configuration_)
+            self._gh_obj = Github(base_url=self.url,
+                                  login_or_token=self.token.value if self.token else None,
+                                  **self._configuration_)
             logger.debug("Github client created.")
         except Exception as e:
             raise lm_exceptions.TestingServiceException(e)
 
     @property
+    def base_url(self):
+        return 'https://github.com'
+
+    @property
+    def api_base_url(self):
+        return github.MainClass.DEFAULT_BASE_URL
+
+    @property
     def _gh_service(self) -> Github:
         logger.debug("Github client requested.")
         if not self._gh_obj:
-            logger.debug("Instantiating with: url %s; token: %s\nClient configuration: %s",
-                         self.url, None, self._configuration_)
-            self._gh_obj = Github(base_url=self.url, **self._configuration_)
-            logger.debug("Github client created.")
+            self.initialize()
         return self._gh_obj
 
     @staticmethod

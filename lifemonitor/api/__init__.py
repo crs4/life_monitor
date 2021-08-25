@@ -38,8 +38,11 @@ def register_testing_services_credentials(conf):
         if service_match:
             try:
                 url = conf[k]
-                token = conf[f"{service_match.group(1)}_TESTING_SERVICE_TOKEN"]
-                token_mgt.add_token(url, models.TestingServiceToken('token', token))
+                service_name = service_match.group(1)
+                service_type = service_name.lower()
+                token = conf[f"{service_name}_TESTING_SERVICE_TOKEN"]
+                service_class = models.TestingService.get_service_class(service_type)
+                token_mgt.add_token(url, models.TestingServiceToken(service_class.token_type, token))
             except KeyError as e:
                 logger.debug(e)
 

@@ -47,24 +47,38 @@ class TravisTestingService(TestingService):
         'Travis-API-Version': '3'
     }
 
-    __dot_com = 'https://api.travis-ci.com'
-    __dot_org = 'https://api.travis-ci.org'
+    __dot_com = {'site': "https://travis-ci.com", 'api': "https://api.travis-ci.com"}
+    __dot_org = {'site': "https://travis-ci.org", 'api': 'https://api.travis-ci.org'}
+
+    # define the token type
+    token_type = 'token'
+
+    def initialize(self):
+        pass
+
+    @property
+    def base_url(self):
+        if '.org' in self.url:
+            return self.__dot_org['site']
+        elif '.com' in self.url:
+            return self.__dot_com['site']
+        else:
+            raise ValueError("Invalid Service URL")
 
     @property
     def api_base_url(self):
-        if self.url == 'https://travis-ci.org':
-            return self.__dot_org
-        elif self.url == 'https://travis-ci.com':
-            return self.__dot_com
-        if self.url not in [self.__dot_com, self.__dot_org]:
-            raise ValueError("Invalid API url")
-        return self.url
+        if '.org' in self.url:
+            return self.__dot_org['api']
+        elif '.com' in self.url:
+            return self.__dot_com['api']
+        else:
+            raise ValueError("Invalid Service URL")
 
     def _build_headers(self, token: models.TestingServiceToken = None):
         headers = self.__headers__.copy()
         token = token if token else self.token
         if token:
-            headers['Authorization'] = 'token {}'.format(token.secret)
+            headers['Authorization'] = f'{token.type} {token.value}'
         return headers
 
     def _build_url(self, path, params=None):

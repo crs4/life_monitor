@@ -22,33 +22,34 @@ from __future__ import annotations
 
 import logging
 import uuid as _uuid
-
-from typing import Any, Dict, List
-from sqlalchemy.orm.exc import NoResultFound
+from typing import Any, Dict, List, Union
 
 import lifemonitor.exceptions as lm_exceptions
 from lifemonitor.api import models
 from lifemonitor.api.models import db
+from lifemonitor.auth import current_user
+from lifemonitor.auth.oauth2.client.models import OAuth2IdentityProvider
 from lifemonitor.models import UUID, ModelMixin
 from lifemonitor.utils import ClassManager
+from sqlalchemy.orm.exc import NoResultFound
 
 # set module level logger
 logger = logging.getLogger(__name__)
 
 
 class TestingServiceToken:
-    def __init__(self, key, secret):
-        self.key = key
-        self.secret = secret
+    def __init__(self, type, value):
+        self.type = type
+        self.value = value
 
     def __composite_values__(self):
-        return self.key, self.secret
+        return self.type, self.value
 
     def __repr__(self):
-        return "<TestingServiceToken (key=%r, secret=****)>" % self.key
+        return "<TestingServiceToken (key=%r, secret=****)>" % self.type
 
     def __eq__(self, other):
-        return isinstance(other, TestingServiceToken) and other.key == self.key and other.secret == self.secret
+        return isinstance(other, TestingServiceToken) and other.type == self.type and other.value == self.value
 
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -78,7 +79,20 @@ class TestingServiceTokenManager:
         except KeyError:
             logger.info("No token for the service '%s'", service_url)
 
-    def get_token(self, service_url) -> TestingServiceToken:
+    def get_token(self, service_url: str) -> TestingServiceToken:
+        if current_user and not current_user.is_anonymous:
+            logger.debug("Searching for a user token to access the service %r...", service_url)
+            service = TestingService.find_by_url(service_url)
+            if service is None:
+                raise lm_exceptions.EntityNotFoundException(TestingService, entity_id=service_url)
+            try:
+                provider = OAuth2IdentityProvider.find_by_api_url(service_url)
+                identity = current_user.oauth_identity.get(provider.name, None)
+                if identity:
+                    return TestingServiceToken(identity.token['token_type'], identity.token['access_token'])
+            except lm_exceptions.EntityNotFoundException as e:
+                logger.debug("Unable to find an identity related to the service %s: %r", service_url, str(e))
+        logger.debug("Querying the token registry for the service %r...", service_url)
         return self.__token_registry[service_url] if service_url in self.__token_registry else None
 
 
@@ -86,7 +100,10 @@ class TestingService(db.Model, ModelMixin):
     uuid = db.Column("uuid", UUID, primary_key=True, default=_uuid.uuid4)
     _type = db.Column("type", db.String, nullable=False)
     url = db.Column(db.Text, nullable=False, unique=True)
-    _token = None
+    _token: TestingServiceToken = None
+
+    # define the token type
+    token_type = "Bearer"
 
     # configure the class manager
     service_type_registry = ClassManager('lifemonitor.api.models.services', class_suffix='TestingService', skip=['__init__', 'service'])
@@ -104,19 +121,36 @@ class TestingService(db.Model, ModelMixin):
         return f'<TestingService {self.url}, ({self.uuid})>'
 
     @property
+    def base_url(self):
+        return self.url
+
+    @property
     def api_base_url(self):
         return self.url
 
     @property
-    def token(self):
+    def token(self) -> TestingServiceToken:
         if not self._token:
-            logger.debug("Querying the token registry for the service %r...", self.url)
+            logger.debug("Querying the token registry for the service '%r'...", self.url)
             self._token = models.TestingServiceTokenManager.get_instance().get_token(self.url)
             if not self._token:
-                logger.debug("Querying the token registry for the API service %r...", self.api_base_url)
-                self._token = models.TestingServiceTokenManager.get_instance().get_token(self.api_base_url)
-        logger.debug("Set token for the testing service %r (type: %r): %r", self.url, self._type, self._token is not None)
+                logger.debug("Querying the token registry for the API service '%r'...", self.api_base_url)
+                self.token = models.TestingServiceTokenManager.get_instance().get_token(self.api_base_url)
+                logger.debug("Found token for the testing service %r (type: %r): %r", self.url, self._type, self._token is not None)
         return self._token
+
+    @token.setter
+    def token(self, value: Union[str, TestingServiceToken] = None):
+        old_token = self._token
+        if value is None:
+            self._token = None
+        else:
+            self._token = TestingServiceToken(self.token_type, value) if isinstance(value, str) else value
+        if old_token != self._token:
+            self.initialize()
+
+    def initialize(self):
+        raise lm_exceptions.NotImplementedException()
 
     def check_connection(self) -> bool:
         raise lm_exceptions.NotImplementedException()
@@ -179,6 +213,13 @@ class TestingService(db.Model, ModelMixin):
             return None
         except Exception as e:
             raise lm_exceptions.LifeMonitorException(detail=str(e), stack=str(e))
+
+    @classmethod
+    def get_service_class(cls, service_type):
+        try:
+            return cls.service_type_registry.get_class(service_type)
+        except KeyError:
+            raise lm_exceptions.TestingServiceNotSupportedException(f"Not supported testing service type '{service_type}'")
 
     @classmethod
     def get_instance(cls, service_type, url: str) -> TestingService:
