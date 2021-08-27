@@ -182,7 +182,7 @@ class GithubTestingService(TestingService):
         try:
             build_number = int(build_number)
         except ValueError as e:
-            raise lm_exceptions.LifeMonitorException("Invalid 'build_numer'",
+            raise lm_exceptions.LifeMonitorException("Invalid 'build_number'",
                                                      details="The build parameter must be an integer: {0}".format(str(e)), status=400)
         for run in self._iter_runs(test_instance):
             if run.id == build_number:
