@@ -91,11 +91,11 @@ class TravisTestingService(TestingService):
         return response.json() if response.status_code == 200 else response
 
     @staticmethod
-    def get_repo_id(test_instance: models.TestInstance):
+    def get_repo_id(test_instance: models.TestInstance, quote=True):
         # extract the job name from the resource path
         logger.debug(f"Getting project metadata - resource: {test_instance.resource}")
         repo = re.sub(r'^(/)?(repo/)?(github/)?(.+)', r'\4', test_instance.resource.strip('/(build(s)?)?'))
-        repo_slug = urllib.parse.quote(repo, safe='')
+        repo_slug = urllib.parse.quote(repo, safe='') if quote else repo
         logger.debug(f"The repo ID: {repo_slug}")
         if not repo_slug or len(repo_slug) == 0:
             raise TestingServiceException(
@@ -120,6 +120,11 @@ class TravisTestingService(TestingService):
             return models.TravisTestBuild(self, test_instance, response['builds'][0])
         except Exception as e:
             raise TestingServiceException(e)
+
+    def get_instance_external_link(self, test_instance: models.TestInstance) -> str:
+        testing_service = test_instance.testing_service
+        repo_id = testing_service.get_repo_id(test_instance, quote=False)
+        return urllib.parse.urljoin(testing_service.base_url, f'{repo_id}')
 
     def get_last_test_build(self, test_instance: models.TestInstance) -> Optional[models.TravisTestBuild]:
         return self._get_last_test_build(test_instance)
@@ -166,6 +171,11 @@ class TravisTestingService(TestingService):
                 raise TestingServiceException(status=response.status_code,
                                               detail=str(response.content))
         return models.TravisTestBuild(self, test_instance, response)
+
+    def get_test_build_external_link(self, test_build: models.TestBuild) -> str:
+        testing_service = test_build.test_instance.testing_service
+        repo_id = testing_service.get_repo_id(test_build.test_instance, quote=False)
+        return urllib.parse.urljoin(testing_service.base_url, f'{repo_id}/builds/{test_build.id}')
 
     def get_test_build_output(self, test_instance: models.TestInstance, build_number, offset_bytes=0, limit_bytes=131072):
         try:
@@ -261,3 +271,7 @@ class TravisTestBuild(models.TestBuild):
     @property
     def url(self) -> str:
         return "{}{}".format(self.testing_service.url, self.metadata['@href'])
+
+    @property
+    def external_link(self) -> str:
+        return self.testing_service.get_test_build_external_link(self)

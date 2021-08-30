@@ -158,6 +158,9 @@ class TestingService(db.Model, ModelMixin):
     def is_workflow_healthy(self, test_instance: models.TestInstance) -> bool:
         return self.get_last_test_build(test_instance).is_successful()
 
+    def get_instance_external_link(self, test_instance: models.TestInstance) -> str:
+        raise lm_exceptions.NotImplementedException()
+
     def get_last_test_build(self, test_instance: models.TestInstance) -> models.TestBuild:
         raise lm_exceptions.NotImplementedException()
 
@@ -168,6 +171,9 @@ class TestingService(db.Model, ModelMixin):
         raise lm_exceptions.NotImplementedException()
 
     def get_test_build(self, test_instance: models.TestInstance, build_number: int) -> models.TestBuild:
+        raise lm_exceptions.NotImplementedException()
+
+    def get_test_build_external_link(self, test_build: models.TestBuild) -> str:
         raise lm_exceptions.NotImplementedException()
 
     def get_test_builds(self, test_instance: models.TestInstance, limit: int = 10) -> list:

@@ -68,7 +68,7 @@ class WorkflowSchema(ResourceMetadataSchema):
 
 
 class RegistryWorkflowSchema(WorkflowSchema):
-    registry = fields.Nested(WorkflowRegistrySchema(exclude=('meta',)), attribute="")
+    registry = fields.Nested(WorkflowRegistrySchema(exclude=('meta', 'links')), attribute="")
 
 
 class VersionDetailsSchema(BaseSchema):
@@ -87,7 +87,7 @@ class VersionDetailsSchema(BaseSchema):
     def get_rocrate(self, obj):
         rocrate = {
             'links': {
-                'external': obj.uri,
+                'origin': obj.uri,
                 'download': urljoin(lm_utils.get_external_server_url(), f"ro_crates/{obj.id}/download")
             }
         }
@@ -116,7 +116,7 @@ class WorkflowVersionSchema(ResourceSchema):
     uuid = fields.String(attribute="workflow.uuid")
     name = ma.auto_field()
     version = fields.Method("get_version")
-    registry = ma.Nested(WorkflowRegistrySchema(exclude=('meta',)),
+    registry = ma.Nested(WorkflowRegistrySchema(exclude=('meta', 'links')),
                          attribute="workflow_registry")
 
     rocrate_metadata = False
@@ -187,6 +187,15 @@ class TestInstanceSchema(ResourceMetadataSchema):
     resource = ma.auto_field()
     managed = fields.Boolean(attribute="managed")
     service = fields.Method("get_testing_service")
+    links = fields.Method('get_links')
+
+    def get_links(self, obj):
+        links = {
+            'origin': obj.external_link
+        }
+        if self._self_link:
+            links['self'] = self.self_link
+        return links
 
     def get_testing_service(self, obj):
         logger.debug("Test current obj: %r", obj)
@@ -215,8 +224,17 @@ class BuildSummarySchema(ResourceMetadataSchema):
     build_id = fields.String(attribute="id")
     suite_uuid = fields.String(attribute="test_instance.test_suite.uuid")
     status = fields.String()
-    instance = ma.Nested(TestInstanceSchema(exclude=('meta',)), attribute="test_instance")
+    instance = ma.Nested(TestInstanceSchema(self_link=False, exclude=('meta',)), attribute="test_instance")
     timestamp = fields.String()
+    links = fields.Method('get_links')
+
+    def get_links(self, obj):
+        links = {
+            'origin': obj.external_link
+        }
+        if self._self_link:
+            links['self'] = self.self_link
+        return links
 
 
 class WorkflowVersionListItem(WorkflowSchema):
@@ -233,7 +251,7 @@ class WorkflowVersionListItem(WorkflowSchema):
     def get_latest_build(self, workflow):
         latest_builds = workflow.latest_version.status.latest_builds
         if latest_builds and len(latest_builds) > 0:
-            return BuildSummarySchema(exclude=('meta',)).dump(latest_builds[0])
+            return BuildSummarySchema(exclude=('meta', 'links')).dump(latest_builds[0])
         return None
 
 
@@ -245,7 +263,7 @@ class ListOfWorkflows(ListOfItems):
         self.workflow_status = workflow_status
 
     def get_items(self, obj):
-        exclude = ("meta",) if self.workflow_status else ("meta", "status")
+        exclude = ('meta', 'links') if self.workflow_status else ('meta', 'links', "status")
         return [self.__item_scheme__(exclude=exclude, many=False).dump(_) for _ in obj] \
             if self.__item_scheme__ else None
 
@@ -258,7 +276,7 @@ class WorkflowStatusSchema(WorkflowVersionSchema):
         model = models.WorkflowStatus
 
     aggregate_test_status = fields.String(attribute="status.aggregated_status")
-    latest_builds = ma.Nested(BuildSummarySchema(exclude=('meta',)),
+    latest_builds = ma.Nested(BuildSummarySchema(exclude=('meta', 'links')),
                               attribute="status.latest_builds", many=True)
 
 
@@ -272,7 +290,7 @@ class SuiteSchema(ResourceMetadataSchema):
     uuid = ma.auto_field()
     roc_suite = fields.String(attribute="roc_suite")
     definition = fields.Method("get_definition")
-    instances = fields.Nested(TestInstanceSchema(exclude=('meta',)),
+    instances = fields.Nested(TestInstanceSchema(self_link=False, exclude=('meta',)),
                               attribute="test_instances", many=True)
 
     def get_definition(self, obj):
@@ -300,7 +318,7 @@ class SuiteStatusSchema(ResourceMetadataSchema):
 
     suite_uuid = fields.String(attribute="suite.uuid")
     status = fields.String(attribute="aggregated_status")
-    latest_builds = fields.Nested(BuildSummarySchema(exclude=('meta',)), many=True)
+    latest_builds = fields.Nested(BuildSummarySchema(exclude=('meta', 'links')), many=True)
 
 
 class ListOfTestInstancesSchema(ListOfItems):

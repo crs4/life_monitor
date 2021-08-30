@@ -24,14 +24,14 @@ import itertools as it
 import logging
 import re
 from typing import Generator, Optional, Tuple
-from urllib.parse import urlparse
 from urllib.error import URLError
-
-import github
-from github import Github, GithubException
+from urllib.parse import urlparse
 
 import lifemonitor.api.models as models
 import lifemonitor.exceptions as lm_exceptions
+
+import github
+from github import Github, GithubException
 
 from .service import TestingService
 
@@ -101,6 +101,14 @@ class GithubTestingService(TestingService):
             self.initialize()
         return self._gh_obj
 
+    def _get_repo(self, test_instance: models.TestInstance):
+        _, repo_full_name, _ = self._parse_workflow_url(test_instance.resource)
+        repository = self._gh_obj.get_repo(repo_full_name)
+        logger.debug("Repo ID: %s", repository.id)
+        logger.debug("Repo full name: %s", repository.full_name)
+        logger.debug("Repo URL: %s", f'https://github.com/{repository.full_name}')
+        return repository
+
     @staticmethod
     def _convert_github_exception_to_lm(github_exc: GithubException) -> lm_exceptions.LifeMonitorException:
         return lm_exceptions.LifeMonitorException(
@@ -140,6 +148,10 @@ class GithubTestingService(TestingService):
             if status is None or run.status == status:
                 yield run
 
+    def get_instance_external_link(self, test_instance: models.TestInstance) -> str:
+        _, repo_full_name, workflow_id = self._parse_workflow_url(test_instance.resource)
+        return f'https://github.com/{repo_full_name}/actions/workflows/{workflow_id}'
+
     def get_last_test_build(self, test_instance: models.TestInstance) -> Optional[GithubTestBuild]:
         for run in self._iter_runs(test_instance, status=self.GithubStatus.COMPLETED):
             return GithubTestBuild(self, test_instance, run)
@@ -167,11 +179,19 @@ class GithubTestingService(TestingService):
         # obvious way to istantiate a PyGithub WorkflowRun object given a build
         # number -- but there's has to be a way.  We can easily asseble the URL
         # of the request to directly retrive the data we need here.
-        assert isinstance(build_number, int)
+        try:
+            build_number = int(build_number)
+        except ValueError as e:
+            raise lm_exceptions.LifeMonitorException("Invalid 'build_number'",
+                                                     details="The build parameter must be an integer: {0}".format(str(e)), status=400)
         for run in self._iter_runs(test_instance):
             if run.id == build_number:
                 return GithubTestBuild(self, test_instance, run)
         raise lm_exceptions.EntityNotFoundException(models.TestBuild, entity_id=build_number)
+
+    def get_test_build_external_link(self, test_build: models.TestBuild) -> str:
+        repo = test_build.test_instance.testing_service._get_repo(test_build.test_instance)
+        return f'https://github.com/{repo.full_name}/actions/runs/{test_build.id}'
 
     @classmethod
     def _parse_workflow_url(cls, resource: str) -> Tuple[str, str, str]:
@@ -277,3 +297,7 @@ class GithubTestBuild(models.TestBuild):
     @property
     def url(self) -> str:
         return self._metadata.url
+
+    @property
+    def external_link(self) -> str:
+        return self.testing_service.get_test_build_external_link(self)

@@ -22,12 +22,14 @@ from __future__ import annotations
 
 import logging
 import re
+import urllib
 from typing import Optional
 
-import jenkins
 import lifemonitor.api.models as models
 import lifemonitor.exceptions as lm_exceptions
 from lifemonitor.lang import messages
+
+import jenkins
 
 from .service import TestingService
 
@@ -75,6 +77,9 @@ class JenkinsTestingService(TestingService):
             raise lm_exceptions.TestingServiceException(
                 f"Unable to get the Jenkins job from the resource {job_name}")
         return job_name
+
+    def get_instance_external_link(self, test_instance: models.TestInstance) -> str:
+        return self.get_project_metadata(test_instance)['url']
 
     def get_last_test_build(self, test_instance: models.TestInstance) -> Optional[JenkinsTestBuild]:
         metadata = self.get_project_metadata(test_instance)
@@ -127,6 +132,9 @@ class JenkinsTestingService(TestingService):
             raise lm_exceptions.EntityNotFoundException(models.TestBuild, entity_id=build_number, detail=str(e))
         except jenkins.JenkinsException as e:
             raise lm_exceptions.TestingServiceException(e)
+
+    def get_test_build_external_link(self, test_build: models.TestBuild) -> str:
+        return urllib.parse.urljoin(test_build.url, "console")
 
     def get_test_build_output(self, test_instance: models.TestInstance, build_number, offset_bytes=0, limit_bytes=131072):
         try:
@@ -196,3 +204,7 @@ class JenkinsTestBuild(models.TestBuild):
     @property
     def url(self) -> str:
         return self.metadata['url']
+
+    @property
+    def external_link(self) -> str:
+        return self.testing_service.get_test_build_external_link(self)
