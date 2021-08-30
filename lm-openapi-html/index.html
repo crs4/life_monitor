@@ -923,6 +923,9 @@ OAuth2 clients can use this endpoint.</p>
     "resource" : "github/seek4science/seek"
   },
   "build_id" : "167444",
+  "links" : {
+    "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
+  },
   "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
   "timestamp" : "1616427012"
 }</code></pre>
@@ -1113,6 +1116,9 @@ OAuth2 clients can use this endpoint.</p>
       "resource" : "github/seek4science/seek"
     },
     "build_id" : "167444",
+    "links" : {
+      "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
+    },
     "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
     "timestamp" : "1616427012"
   }, {
@@ -1126,6 +1132,9 @@ OAuth2 clients can use this endpoint.</p>
       "resource" : "github/seek4science/seek"
     },
     "build_id" : "167444",
+    "links" : {
+      "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
+    },
     "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
     "timestamp" : "1616427012"
   } ]
@@ -1418,6 +1427,9 @@ OAuth2 clients can use this endpoint.</p>
       "resource" : "github/seek4science/seek"
     },
     "build_id" : "167444",
+    "links" : {
+      "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
+    },
     "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
     "timestamp" : "1616427012"
   }, {
@@ -1431,6 +1443,9 @@ OAuth2 clients can use this endpoint.</p>
       "resource" : "github/seek4science/seek"
     },
     "build_id" : "167444",
+    "links" : {
+      "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
+    },
     "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
     "timestamp" : "1616427012"
   } ],
@@ -2097,6 +2112,7 @@ through the service's API).</li>
     <li><a href="#Build"><code>Build</code> - </a></li>
     <li><a href="#BuildStatus"><code>BuildStatus</code> - </a></li>
     <li><a href="#BuildSummary"><code>BuildSummary</code> - </a></li>
+    <li><a href="#BuildSummary_links"><code>BuildSummary_links</code> - </a></li>
     <li><a href="#Error"><code>Error</code> - </a></li>
     <li><a href="#GenericWorkflowVersion"><code>GenericWorkflowVersion</code> - </a></li>
     <li><a href="#GenericWorkflowVersion_allOf"><code>GenericWorkflowVersion_allOf</code> - </a></li>
@@ -2120,6 +2136,7 @@ through the service's API).</li>
     <li><a href="#TestInstance"><code>TestInstance</code> - </a></li>
     <li><a href="#TestInstanceBase"><code>TestInstanceBase</code> - </a></li>
     <li><a href="#TestInstance_allOf"><code>TestInstance_allOf</code> - </a></li>
+    <li><a href="#TestInstance_allOf_links"><code>TestInstance_allOf_links</code> - </a></li>
     <li><a href="#TestSuite"><code>TestSuite</code> - </a></li>
     <li><a href="#TestSuiteDefinition"><code>TestSuiteDefinition</code> - </a></li>
     <li><a href="#TestSuiteDefinition_test_engine"><code>TestSuiteDefinition_test_engine</code> - </a></li>
@@ -2181,6 +2198,14 @@ as provided by the testing service back-end </div>
 <div class="param">status (optional)</div><div class="param-desc"><span class="param-type"><a href="#BuildStatus">BuildStatus</a></span>  </div>
 <div class="param">instance </div><div class="param-desc"><span class="param-type"><a href="#TestInstance">TestInstance</a></span>  </div>
 <div class="param">timestamp </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A timestamp for the start time of the build </div>
+<div class="param">links (optional)</div><div class="param-desc"><span class="param-type"><a href="#BuildSummary_links">BuildSummary_links</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="BuildSummary_links"><code>BuildSummary_links</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">origin (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Link to the test build on the testing service </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
@@ -2317,7 +2342,7 @@ metadata </div>
     <h3><a name="ROCrateBase_links"><code>ROCrateBase_links</code> - </a> <a class="up" href="#__Models">Up</a></h3>
     <div class='model-description'></div>
     <div class="field-items">
-      <div class="param">external (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> The link to the workflow RO-Crate used to register the workflow on LifeMonitor </div>
+      <div class="param">origin (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> The link to the workflow RO-Crate used to register the workflow on LifeMonitor </div>
 <div class="param">download (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A link to download the workflow RO-Crate used to register the workflow on LifeMonitor </div>
     </div>  <!-- field-items -->
   </div>
@@ -2376,6 +2401,7 @@ accessible to the user for download
 <div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> The name assigned to the test instance </div>
 <div class="param">service </div><div class="param-desc"><span class="param-type"><a href="#TestingService">TestingService</a></span>  </div>
 <div class="param">resource </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> The relative path of the test project on the testing service </div>
+<div class="param">links (optional)</div><div class="param-desc"><span class="param-type"><a href="#TestInstance_allOf_links">TestInstance_allOf_links</a></span>  </div>
 <div class="param">roc_instance (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> RO-Crate identifier of the test instance if the instance comes
 from a Workflow RO-Crate </div>
 <div class="param">managed </div><div class="param-desc"><span class="param-type"><a href="#boolean">Boolean</a></span> <code>true</code> for <strong>managed</strong>;
@@ -2400,6 +2426,14 @@ from a Workflow RO-Crate </div>
 <div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> The name assigned to the test instance </div>
 <div class="param">service </div><div class="param-desc"><span class="param-type"><a href="#TestingService">TestingService</a></span>  </div>
 <div class="param">resource </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> The relative path of the test project on the testing service </div>
+<div class="param">links (optional)</div><div class="param-desc"><span class="param-type"><a href="#TestInstance_allOf_links">TestInstance_allOf_links</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="TestInstance_allOf_links"><code>TestInstance_allOf_links</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">origin (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Link to the test instance on the testing service </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
