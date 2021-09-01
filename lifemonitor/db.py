@@ -86,8 +86,13 @@ def db_initialized(conn_params=None, settings=None, override_db_name=None):
     return db_table_exists('user', conn_params=conn_params, settings=settings, override_db_name=override_db_name)
 
 
+def db_revision(conn_params=None, settings=None, override_db_name=None):
     conn = db_connect(conn_params=conn_params, settings=settings, override_db_name=override_db_name)
     cursor = conn.cursor()
+    cursor.execute("SELECT * FROM alembic_version")
+    row = cursor.fetchone()
+    logger.debug("Row: %r", row)
+    return row[0] if row else None
 
 
 def db_table_exists(table_name: str, conn_params=None, settings=None, override_db_name=None):
