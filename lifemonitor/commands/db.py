@@ -18,8 +18,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+
 import logging
 
+import click
 from flask import current_app
 from flask.blueprints import Blueprint
 from flask.cli import with_appcontext
@@ -32,30 +34,37 @@ logger = logging.getLogger()
 # define the blueprint for DB commands
 blueprint = Blueprint('init', __name__)
 
+# set initial revision number
+initial_revision = '8b2e530dc029'
+
 
 @blueprint.cli.command('db')
+@click.option("-r", "--revision", default="head")
 @with_appcontext
-def init_db():
+def init_db(revision):
     """
     Initialize LifeMonitor App
     """
-    from lifemonitor.db import create_db, db, db_initialized
+    from lifemonitor.db import create_db, db, db_initialized, db_revision
 
     is_initialized = db_initialized()
     logger.info("LifeMonitor app initialized: %r", is_initialized)
     if is_initialized:
-        logger.info("Trying to....")
+        current_revision = db_revision()
+        if not current_revision:
+            # if DB is initialized with no revision
+            # set the initial revision and then apply migrations
+            stamp(revision=initial_revision)
+            logger.info(f"Set initial revision: {initial_revision}")
         # Apply migrations
-        logger.info("Applying migrations...")
-        upgrade()
+        logger.info(f"Applying migrations up to revision '{revision}'...")
+        upgrade(revision=revision)
         logger.info("Migrations applied!")
     else:
         logger.debug("Initializing DB...")
         create_db(settings=current_app.config)
         db.create_all()
         stamp()
-        logger.info("Current DB revision...")
-        current()
         logger.info("DB initialized")
         # create a default admin user if not exists
         admin = User.find_by_username('admin')
@@ -64,3 +73,11 @@ def init_db():
             admin.password = current_app.config["LIFEMONITOR_ADMIN_PASSWORD"]
             db.session.add(admin)
             db.session.commit()
+    logger.info("Current revision: %r", db_revision())
+
+
+@blueprint.cli.command('rev')
+@with_appcontext
+def get_rev():
+    from lifemonitor.db import create_db, db, db_initialized, db_revision
+    print(db_revision())
