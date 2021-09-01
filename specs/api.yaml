@@ -1633,6 +1633,10 @@ components:
           description: |
             A timestamp for the start time of the build
           example: 1616427012.0
+        duration:
+          type: integer
+          description: Build duration in seconds
+          example: 2648
         links:
           type: object
           properties:
@@ -1676,7 +1680,7 @@ components:
           $ref: "#/components/schemas/Timestamp"
         duration:
           type: integer
-          description: Build duration in ms
+          description: Build duration in seconds
           example: 2648
       required:
         - build_id
