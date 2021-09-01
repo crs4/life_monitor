@@ -25,7 +25,7 @@ import click
 from flask import current_app
 from flask.blueprints import Blueprint
 from flask.cli import with_appcontext
-from flask_migrate import stamp, upgrade
+from flask_migrate import current, stamp, upgrade
 from lifemonitor.auth.models import User
 
 # set module level logger
@@ -60,11 +60,13 @@ def init_db(revision):
         logger.info(f"Applying migrations up to revision '{revision}'...")
         upgrade(revision=revision)
         logger.info("Migrations applied!")
+        logger.info("Current revision: %r", db_revision())
     else:
         logger.debug("Initializing DB...")
         create_db(settings=current_app.config)
         db.create_all()
         stamp()
+        current()
         logger.info("DB initialized")
         # create a default admin user if not exists
         admin = User.find_by_username('admin')
@@ -73,4 +75,3 @@ def init_db(revision):
             admin.password = current_app.config["LIFEMONITOR_ADMIN_PASSWORD"]
             db.session.add(admin)
             db.session.commit()
-    logger.info("Current revision: %r", db_revision())
