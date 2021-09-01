@@ -22,9 +22,11 @@ import logging
 import os
 import time
 
-import lifemonitor.config as config
 from flask import Flask, jsonify, redirect, request
 from flask_cors import CORS
+from flask_migrate import Migrate
+
+import lifemonitor.config as config
 from lifemonitor import __version__ as version
 from lifemonitor.routes import register_routes
 
@@ -111,6 +113,8 @@ def initialize_app(app, app_context, prom_registry=None):
     config.configure_logging(app)
     # configure app DB
     db.init_app(app)
+    # initialize Migration engine
+    Migrate(app, db)
     # configure serializer engine (Flask Marshmallow)
     ma.init_app(app)
     # configure app routes
