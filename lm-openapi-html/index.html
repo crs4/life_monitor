@@ -913,6 +913,7 @@ OAuth2 clients can use this endpoint.</p>
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
     <pre class="example"><code>{
+  "duration" : 2648,
   "instance" : {
     "managed" : false,
     "name" : "test_instance_1",
@@ -1106,6 +1107,7 @@ OAuth2 clients can use this endpoint.</p>
     <div class="example-data-content-type">Content-Type: application/json</div>
     <pre class="example"><code>{
   "items" : [ {
+    "duration" : 2648,
     "instance" : {
       "managed" : false,
       "name" : "test_instance_1",
@@ -1122,6 +1124,7 @@ OAuth2 clients can use this endpoint.</p>
     "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
     "timestamp" : "1616427012"
   }, {
+    "duration" : 2648,
     "instance" : {
       "managed" : false,
       "name" : "test_instance_1",
@@ -1417,6 +1420,7 @@ OAuth2 clients can use this endpoint.</p>
     <div class="example-data-content-type">Content-Type: application/json</div>
     <pre class="example"><code>{
   "latest_builds" : [ {
+    "duration" : 2648,
     "instance" : {
       "managed" : false,
       "name" : "test_instance_1",
@@ -1433,6 +1437,7 @@ OAuth2 clients can use this endpoint.</p>
     "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
     "timestamp" : "1616427012"
   }, {
+    "duration" : 2648,
     "instance" : {
       "managed" : false,
       "name" : "test_instance_1",
@@ -2179,7 +2184,7 @@ as provided by the testing service back-end </div>
 <div class="param">status </div><div class="param-desc"><span class="param-type"><a href="#BuildStatus">BuildStatus</a></span>  </div>
 <div class="param">instance </div><div class="param-desc"><span class="param-type"><a href="#TestInstance">TestInstance</a></span>  </div>
 <div class="param">timestamp </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
-<div class="param">duration (optional)</div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span> Build duration in ms </div>
+<div class="param">duration (optional)</div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span> Build duration in seconds </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
@@ -2198,6 +2203,7 @@ as provided by the testing service back-end </div>
 <div class="param">status (optional)</div><div class="param-desc"><span class="param-type"><a href="#BuildStatus">BuildStatus</a></span>  </div>
 <div class="param">instance </div><div class="param-desc"><span class="param-type"><a href="#TestInstance">TestInstance</a></span>  </div>
 <div class="param">timestamp </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A timestamp for the start time of the build </div>
+<div class="param">duration (optional)</div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span> Build duration in seconds </div>
 <div class="param">links (optional)</div><div class="param-desc"><span class="param-type"><a href="#BuildSummary_links">BuildSummary_links</a></span>  </div>
     </div>  <!-- field-items -->
   </div>
