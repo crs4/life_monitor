@@ -20,44 +20,47 @@
 
 import logging
 
-from flask import Blueprint, current_app
+from flask import current_app
+from flask.blueprints import Blueprint
 from flask.cli import with_appcontext
+from flask_migrate import current, stamp, upgrade
 from lifemonitor.auth.models import User
 
 # set module level logger
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 # define the blueprint for DB commands
-blueprint = Blueprint('db', __name__)
+blueprint = Blueprint('init', __name__)
 
 
-@blueprint.cli.command('init')
+@blueprint.cli.command('db')
 @with_appcontext
-def db_init():
+def init_db():
     """
-    Initialize the DB
+    Initialize LifeMonitor App
     """
-    from lifemonitor.db import create_db, db
-    logger.debug("Initializing DB...")
-    create_db(settings=current_app.config)
-    db.create_all()
-    logger.info("DB initialized")
-    # create a default admin user if not exists
-    admin = User.find_by_username('admin')
-    if not admin:
-        admin = User('admin')
-        admin.password = current_app.config["LIFEMONITOR_ADMIN_PASSWORD"]
-        db.session.add(admin)
-        db.session.commit()
+    from lifemonitor.db import create_db, db, db_initialized
 
-
-@blueprint.cli.command('clean')
-@with_appcontext
-def db_clean():
-    """ Clean up DB """
-    from lifemonitor.db import db
-    db.session.rollback()
-    for table in reversed(db.metadata.sorted_tables):
-        db.session.execute(table.delete())
-    db.session.commit()
-    logger.info("DB deleted")
+    is_initialized = db_initialized()
+    logger.info("LifeMonitor app initialized: %r", is_initialized)
+    if is_initialized:
+        logger.info("Trying to....")
+        # Apply migrations
+        logger.info("Applying migrations...")
+        upgrade()
+        logger.info("Migrations applied!")
+    else:
+        logger.debug("Initializing DB...")
+        create_db(settings=current_app.config)
+        db.create_all()
+        stamp()
+        logger.info("Current DB revision...")
+        current()
+        logger.info("DB initialized")
+        # create a default admin user if not exists
+        admin = User.find_by_username('admin')
+        if not admin:
+            admin = User('admin')
+            admin.password = current_app.config["LIFEMONITOR_ADMIN_PASSWORD"]
+            db.session.add(admin)
+            db.session.commit()
