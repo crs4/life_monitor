@@ -83,9 +83,18 @@ def db_connect(conn_params=None, settings=None, override_db_name=None):
 
 
 def db_initialized(conn_params=None, settings=None, override_db_name=None):
+    return db_table_exists('user', conn_params=conn_params, settings=settings, override_db_name=override_db_name)
+
+
     conn = db_connect(conn_params=conn_params, settings=settings, override_db_name=override_db_name)
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM information_schema.tables WHERE table_name = 'alembic_version'")
+
+
+def db_table_exists(table_name: str, conn_params=None, settings=None, override_db_name=None):
+    logger.debug(f"Checking if DB table '{table_name}' exists")
+    conn = db_connect(conn_params=conn_params, settings=settings, override_db_name=override_db_name)
+    cursor = conn.cursor()
+    cursor.execute(f"SELECT * FROM information_schema.tables WHERE table_name = '{table_name}'")
     logger.debug("%r %r", cursor.rowcount, cursor.rowcount > 1)
     return cursor.rowcount == 1
 
