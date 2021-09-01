@@ -82,6 +82,14 @@ def db_connect(conn_params=None, settings=None, override_db_name=None):
     return con
 
 
+def db_initialized(conn_params=None, settings=None, override_db_name=None):
+    conn = db_connect(conn_params=conn_params, settings=settings, override_db_name=override_db_name)
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM information_schema.tables WHERE table_name = 'alembic_version'")
+    logger.debug("%r %r", cursor.rowcount, cursor.rowcount > 1)
+    return cursor.rowcount == 1
+
+
 def create_db(conn_params=None, settings=None, drop=False):
     if conn_params is None:
         conn_params = db_connection_params(settings)
