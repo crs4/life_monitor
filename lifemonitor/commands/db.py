@@ -25,7 +25,7 @@ import click
 from flask import current_app
 from flask.blueprints import Blueprint
 from flask.cli import with_appcontext
-from flask_migrate import current, stamp, upgrade
+from flask_migrate import stamp, upgrade
 from lifemonitor.auth.models import User
 
 # set module level logger
@@ -74,10 +74,3 @@ def init_db(revision):
             db.session.add(admin)
             db.session.commit()
     logger.info("Current revision: %r", db_revision())
-
-
-@blueprint.cli.command('rev')
-@with_appcontext
-def get_rev():
-    from lifemonitor.db import create_db, db, db_initialized, db_revision
-    print(db_revision())
