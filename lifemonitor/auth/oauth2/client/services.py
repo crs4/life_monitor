@@ -46,10 +46,9 @@ def get_providers(skip_registration: bool = False):
     # The current implementation doesn't support dynamic registration of WorkflowRegistries
     # The following a simple workaround to detect and reconfigure the oauth2registry
     # when the number of workflow registries changes
-    if not skip_registration and \
-        (not oauth2_registry.is_initialized() or
-            len(oauth2_registry.get_clients()) != len(providers)):
-        config_oauth2_registry(current_app, providers=providers)
+    if not skip_registration:
+        if not oauth2_registry.is_initialized() or (len(oauth2_registry.get_clients()) != len(providers)):
+            config_oauth2_registry(current_app, providers=providers)
     return providers
 
 
