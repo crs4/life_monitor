@@ -24,7 +24,7 @@ import logging
 
 from flask import current_app, session
 from lifemonitor import exceptions
-from lifemonitor.db import db
+from lifemonitor.db import db, db_initialized
 
 from ...models import User
 from .models import OAuth2IdentityProvider, OAuth2Registry, OAuthIdentity
@@ -32,17 +32,14 @@ from .models import OAuth2IdentityProvider, OAuth2Registry, OAuthIdentity
 # Config a module level logger
 logger = logging.getLogger(__name__)
 
-# Cache list of providers
-current_providers_list = []
-
 # Create an instance of OAuth registry for oauth clients.
 oauth2_registry = OAuth2Registry.get_instance()
 
 
-def get_providers():
+def get_providers(skip_registration: bool = False):
     from .providers.github import GitHub
     from .providers.seek import Seek
-    global current_providers_list
+    #global current_providers_list
     providers = Seek.all()
     if current_app.config.get('GITHUB_CLIENT_ID', None) \
             and current_app.config.get('GITHUB_CLIENT_SECRET', None):
@@ -50,20 +47,21 @@ def get_providers():
     # The current implementation doesn't support dynamic registration of WorkflowRegistries
     # The following a simple workaround to detect and reconfigure the oauth2registry
     # when the number of workflow registries changes
-    if not current_providers_list or len(current_providers_list) != len(providers):
+    if not skip_registration and \
+        (not oauth2_registry.is_initialized() or
+            len(oauth2_registry.get_clients()) != len(providers)):
         config_oauth2_registry(current_app, providers=providers)
-    current_providers_list = providers
     return providers
 
 
 def config_oauth2_registry(app, providers=None):
-    try:
-        oauth2_backends = providers or get_providers()
+    if not db_initialized():
+        logger.warning("DB not initialized. OAuth2 registry config skipped!")
+    else:
+        oauth2_backends = providers or get_providers(skip_registration=True)
         for backend in oauth2_backends:
             oauth2_registry.register_client(backend)
         oauth2_registry.init_app(app)
-    except Exception as e:
-        logger.debug(e)
 
 
 def merge_users(merge_from: User, merge_into: User, provider: str):
