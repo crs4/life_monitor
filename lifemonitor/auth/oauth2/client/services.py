@@ -39,7 +39,6 @@ oauth2_registry = OAuth2Registry.get_instance()
 def get_providers(skip_registration: bool = False):
     from .providers.github import GitHub
     from .providers.seek import Seek
-    #global current_providers_list
     providers = Seek.all()
     if current_app.config.get('GITHUB_CLIENT_ID', None) \
             and current_app.config.get('GITHUB_CLIENT_SECRET', None):
