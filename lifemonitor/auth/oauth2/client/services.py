@@ -39,27 +39,34 @@ oauth2_registry = OAuth2Registry.get_instance()
 def get_providers(skip_registration: bool = False):
     from .providers.github import GitHub
     from .providers.seek import Seek
-    providers = Seek.all()
+    providers = []
+    logger.debug("Preparing list of providers...")
+    # set static providers
     if current_app.config.get('GITHUB_CLIENT_ID', None) \
             and current_app.config.get('GITHUB_CLIENT_SECRET', None):
         providers.append(GitHub)
+    # set workflow registries as oauth providers
+    if db_initialized():
+        logger.debug("Getting dynamic providers...")
+        providers.extend(Seek.all())
+        logger.debug("Getting providers: %r ... DONE", providers)
     # The current implementation doesn't support dynamic registration of WorkflowRegistries
     # The following a simple workaround to detect and reconfigure the oauth2registry
     # when the number of workflow registries changes
     if not skip_registration:
         if not oauth2_registry.is_initialized() or (len(oauth2_registry.get_clients()) != len(providers)):
             config_oauth2_registry(current_app, providers=providers)
+    logger.debug("Preparing list of providers... DONE")
     return providers
 
 
 def config_oauth2_registry(app, providers=None):
-    if not db_initialized():
-        logger.warning("DB not initialized. OAuth2 registry config skipped!")
-    else:
-        oauth2_backends = providers or get_providers(skip_registration=True)
-        for backend in oauth2_backends:
-            oauth2_registry.register_client(backend)
-        oauth2_registry.init_app(app)
+    logger.debug("Configuring OAuth2 Registry....")
+    oauth2_backends = providers or get_providers(skip_registration=True)
+    for backend in oauth2_backends:
+        oauth2_registry.register_client(backend)
+    oauth2_registry.init_app(app)
+    logger.debug("OAuth2 registry configured!")
 
 
 def merge_users(merge_from: User, merge_into: User, provider: str):
