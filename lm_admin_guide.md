@@ -329,12 +329,13 @@ Existing Dockerized deployments can be easily upgraded to a more recent LifeMoni
 1. stop `lm` service with the `docker-compose stop lm` command;
 2. make a backup of LifeMonitor data to your local machine:
 
-```bash
-# 2a) backup to a temp destination
-docker-compose exec db /bin/bash -c "PGPASSWORD=\${POSTGRESQL_PASSWORD} pg_dump -U \${POSTGRESQL_USERNAME} \${POSTGRESQL_DATABASE} > /tmp/lifemonitor_backup.sql"
-# 2b) copy backup to your machine
-docker cp life_monitor_db_1:/tmp/lifemonitor_backup.sql ${HOME}/lifemonitor_backup.sql
-```
+    ```bash
+    # 2a) backup to a temp destination
+    docker-compose exec db /bin/bash -c "PGPASSWORD=\${POSTGRESQL_PASSWORD} pg_dump -U \${POSTGRESQL_USERNAME} \${POSTGRESQL_DATABASE} > /tmp/lifemonitor_backup.sql"
+    
+    # 2b) copy backup to your machine
+    docker cp life_monitor_db_1:/tmp/lifemonitor_backup.sql ${HOME}/lifemonitor_backup.sql
+    ```
 3. teardown all the services with the `make down` comamnd;
 4. update your local copy of LifeMonitor sources (via `git clone` or `git pull`);
 5. restart all the services with the `make start` (or `make start-dev` to start services in `dev` mode) command.
