@@ -198,7 +198,10 @@ help                  Show help
 ### A note about volumes
 
 Docker Compose uses Docker volumes for data storage. These will persist
-between start and stop actions. Use the regular Docker commands to delete
+between start and stop actions. Database schema will be automacally updated 
+to the proper version as part of the system initialisation.
+
+If you prefer to start with a clean database, use the regular Docker commands to delete
 them. For instance:
 
 ```
@@ -207,11 +210,11 @@ docker volume rm life_monitor_lifemonitor_db
 
 ### Environments
 
-| Environment | Services |
-|---------|---------|
-| **production** | LifeMonitor back-end, NGINX proxy, PostgreSQL DBMS |
-| **development** | LifeMonitor back-end in dev mode, PostgreSQL DBMS
-| **testing** | LifeMonitor back-end in testing mode, preconfigured auxiliary services (i.e., WorkflowHub, Jenkins) |
+| Environment     | Services                                                                                            |
+| --------------- | --------------------------------------------------------------------------------------------------- |
+| **production**  | LifeMonitor back-end, NGINX proxy, PostgreSQL DBMS                                                  |
+| **development** | LifeMonitor back-end in dev mode, PostgreSQL DBMS                                                   |
+| **testing**     | LifeMonitor back-end in testing mode, preconfigured auxiliary services (i.e., WorkflowHub, Jenkins) |
 
 The development mode mounts the LifeMonitor directory within the container and
 runs Flask in development mode.  Thus, local changes to the code are immediately
@@ -219,12 +222,12 @@ picked up.
 
 ### Services
 
-| service | port |
-|---------|---------|
-| LifeMonitor (prod), exposed via NGINX proxy| 8443|
-| LifeMonitor (dev)                          | 8000|
-| WorkflowHub                                | 3000|
-| Jenkins                                    | 8080|
+| service                                     | port |
+| ------------------------------------------- | ---- |
+| LifeMonitor (prod), exposed via NGINX proxy | 8443 |
+| LifeMonitor (dev)                           | 8000 |
+| WorkflowHub                                 | 3000 |
+| Jenkins                                     | 8080 |
 
 ### Docker build
 
@@ -286,6 +289,7 @@ Additionally, You **must edit the API applications authorized by WorkflowHub**:
 
     https://122.33.4.72:8443/oauth2/authorized/seek
 
+
 ### Github login (optional)
 
 Login via GitHub can be configured by editing the `GITHUB_CLIENT_ID` and
@@ -314,6 +318,43 @@ pip install -r requirements.txt
 
 The only non-Python dependency is **PostgreSQL** (back-end/client), which is
 required by the `psycopg2` Python package.
+
+
+
+## Upgrades
+
+
+Existing Dockerized deployments can be easily upgraded to a more recent LifeMonitor version by going through the following steps:
+
+1. stop `lm` service with the `docker-compose stop lm` command;
+2. make a backup of LifeMonitor data to your local machine:
+
+```bash
+# 2a) backup to a temp destination
+docker-compose exec db /bin/bash -c "PGPASSWORD=\${POSTGRESQL_PASSWORD} pg_dump -U \${POSTGRESQL_USERNAME} \${POSTGRESQL_DATABASE} > /tmp/lifemonitor_backup.sql"
+# 2b) copy backup to your machine
+docker cp life_monitor_db_1:/tmp/lifemonitor_backup.sql ${HOME}/lifemonitor_backup.sql
+```
+3. teardown all the services with the `make down` comamnd;
+4. update your local copy of LifeMonitor sources (via `git clone` or `git pull`);
+5. restart all the services with the `make start` (or `make start-dev` to start services in `dev` mode) command.
+
+
+As a result, the up-to-date LifeMonitor instance should be started and the existing data migrated to the proper database schema. You can check the actual running database schema by typing:
+
+```bash
+docker-compose exec lm /bin/bash -c "flask db current"
+```
+
+> An output with `(head)` at the end, e.g., `bbe1397dc8a9 (head)`, indicates that your LifeMonitor instance is running with the most recent database schema.
+
+
+To upgrade a LifeMonitor instance deployed without Docker (see section on ["How to install on your local environment"](#how-to-install-on-your-local-environment)), you have to:
+1. stop LifeMonitor Flask app;
+2. make a backup of the database used by LifeMonitor;
+3. update your local copy of LifeMonitor sources (via `git clone` or `git pull`);
+4. apply all the required migrations, by typing `flask db upgrade`;
+5. restart the LifeMonitor Flask app.
 
 
 ## Authenticating
