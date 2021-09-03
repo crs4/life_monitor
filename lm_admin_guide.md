@@ -321,27 +321,37 @@ required by the `psycopg2` Python package.
 
 
 
-## Upgrades
+## How to upgrade
 
-
+### Upgrade a Docker deployment
 Existing Dockerized deployments can be easily upgraded to a more recent LifeMonitor version by going through the following steps:
-
-1. stop `lm` service with the `docker-compose stop lm` command;
-2. make a backup of LifeMonitor data to your local machine:
-
+1. stop `lm` service
     ```bash
-    # 2a) backup to a temp destination
+    docker-compose stop lm
+    ``` 
+2. make a backup of LifeMonitor to a temp path within the `db` container
+    ```bash
     docker-compose exec db /bin/bash -c "PGPASSWORD=\${POSTGRESQL_PASSWORD} pg_dump -U \${POSTGRESQL_USERNAME} \${POSTGRESQL_DATABASE} > /tmp/lifemonitor_backup.sql"
-    
-    # 2b) copy backup to your machine
+    ```
+3. copy backup from the `db` container to a local path
+    ```bash
     docker cp life_monitor_db_1:/tmp/lifemonitor_backup.sql ${HOME}/lifemonitor_backup.sql
     ```
-3. teardown all the services with the `make down` comamnd;
-4. update your local copy of LifeMonitor sources (via `git clone` or `git pull`);
-5. restart all the services with the `make start` (or `make start-dev` to start services in `dev` mode) command.
+4. teardown all the services in `prod` mode
+    ```bash
+    make down
+    ```
+5. update your local copy of LifeMonitor sources (via `git clone` or `git pull`)
+6. restart all the services 
+    ```bash  
+    make start
+    ```
+    or type `make start-dev` to restart all the services in `dev` mode.
 
 
-As a result, the up-to-date LifeMonitor instance should be started and the existing data migrated to the proper database schema. You can check the actual running database schema by typing:
+As a result, the up-to-date LifeMonitor instance will be started and the existing data will be migrated to the proper database schema. 
+
+You can always check the actual running database schema by typing:
 
 ```bash
 docker-compose exec lm /bin/bash -c "flask db current"
@@ -349,12 +359,15 @@ docker-compose exec lm /bin/bash -c "flask db current"
 
 > An output with `(head)` at the end, e.g., `bbe1397dc8a9 (head)`, indicates that your LifeMonitor instance is running with the most recent database schema.
 
-
+### Upgrade a non-Docker deployment
 To upgrade a LifeMonitor instance deployed without Docker (see section on ["How to install on your local environment"](#how-to-install-on-your-local-environment)), you have to:
 1. stop LifeMonitor Flask app;
 2. make a backup of the database used by LifeMonitor;
 3. update your local copy of LifeMonitor sources (via `git clone` or `git pull`);
-4. apply all the required migrations, by typing `flask db upgrade`;
+4. apply all the required migrations, by typing 
+    ```bash
+    flask db upgrade
+    ```
 5. restart the LifeMonitor Flask app.
 
 
