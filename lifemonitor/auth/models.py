@@ -19,11 +19,12 @@
 # SOFTWARE.
 
 from __future__ import annotations
+import abc
 
 import datetime
 import logging
 import uuid as _uuid
-from typing import List
+from typing import List, Union
 
 from authlib.integrations.sqla_oauth2 import OAuth2TokenMixin
 from flask_bcrypt import check_password_hash, generate_password_hash
@@ -238,6 +239,27 @@ resource_authorization_table = db.Table(
     db.Column('authorization_id', db.Integer,
               db.ForeignKey("external_service_access_authorization.id", ondelete="CASCADE"))
 )
+
+
+class HostingService(Resource):
+
+    id = db.Column(db.Integer, db.ForeignKey(Resource.id), primary_key=True)
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'hosting_service'
+    }
+
+    @abc.abstractmethod
+    def get_external_id(self, uuid: str, version: str, user: User) -> str:
+        pass
+
+    @abc.abstractmethod
+    def get_external_link(self, external_id: str, version: str) -> str:
+        pass
+
+    @abc.abstractmethod
+    def get_rocrate_external_link(self, user, w: Union[object, str]) -> str:
+        pass
 
 
 class RoleType:
