@@ -94,7 +94,10 @@ class VersionDetailsSchema(BaseSchema):
         rocrate = {
             'links': {
                 'origin': obj.uri,
-                'download': urljoin(lm_utils.get_external_server_url(), f"ro_crates/{obj.id}/download")
+                'metadata': urljoin(lm_utils.get_external_server_url(),
+                                    f"workflows/{obj.workflow.uuid}/rocrate/{obj.version}/metadata"),
+                'download': urljoin(lm_utils.get_external_server_url(),
+                                    f"workflows/{obj.workflow.uuid}/rocrate/{obj.version}/download")
             }
         }
         rocrate['metadata'] = obj.crate_metadata
