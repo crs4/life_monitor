@@ -610,6 +610,63 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+
+  /workflows/{wf_uuid}/rocrate/{wf_version}/metadata:
+    get:
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "workflows_rocrate_metadata"
+      summary: "Get workflow RO-Crate metadata"
+      description: "Get the RO-Crate JSON metadata for the specified workflow and workflow version"
+      tags: ["Workflows"]
+      security:
+        - apiKey: ["workflow.read"]
+        - RegistryClientCredentials: ["workflow.read"]
+        - RegistryCodeFlow: ["workflow.read"]
+        - AuthorizationCodeFlow: ["workflow.read"]
+      parameters:
+        - $ref: "#/components/parameters/wf_uuid"
+        - $ref: "#/components/parameters/wf_version"
+      responses:
+        "200":
+          description: |
+            RO-Crate JSON metadata for the specified workflow and workflow version.
+            RO-Crate specifcation is available at https://www.researchobject.org/ro-crate/.          
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /workflows/{wf_uuid}/rocrate/{wf_version}/download:
+    get:
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "workflows_rocrate_download"
+      summary: "Get workflow RO-Crate archive"
+      description: "Get the RO-Crate ZIP archive for the specified workflow and workflow version"
+      tags: ["Workflows"]
+      security:
+        - apiKey: ["workflow.read"]
+        - RegistryClientCredentials: ["workflow.read"]
+        - RegistryCodeFlow: ["workflow.read"]
+        - AuthorizationCodeFlow: ["workflow.read"]
+      parameters:
+        - $ref: "#/components/parameters/wf_uuid"
+        - $ref: "#/components/parameters/wf_version"
+      responses:
+        "200":
+          description: RO-Crate ZIP archive for the specified workflow and workflow version
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   /workflows/{wf_uuid}/suites:
     get:
       summary: "List workflow test suites"
@@ -991,6 +1048,14 @@ components:
         default: latest
       description: "Workflow version"
       example: "1.0"
+    download:
+      name: "download"
+      in: query
+      schema:
+        type: boolean
+        default: false
+      description: "Enable download"
+      example: "true"
     previous_versions:
       name: "previous_versions"
       in: query
