@@ -125,7 +125,7 @@ class ROCrate(Resource):
                 local_zip = download_url(self.uri,
                                          target_path=(tmpdir_path / 'rocrate.zip').as_posix(),
                                          authorization=auth_header)
-                logger.debug("ZIP Archive: %s", local_zip)                                         
+                logger.debug("ZIP Archive: %s", local_zip)
                 return (tmpdir_path / 'rocrate.zip').as_posix()
             except lm_exceptions.NotAuthorizedException as e:
                 logger.info("Caught authorization error exception while downloading and processing RO-crate: %s", e)

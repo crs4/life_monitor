@@ -25,8 +25,8 @@ import connexion
 import lifemonitor.exceptions as lm_exceptions
 import werkzeug
 import werkzeug.exceptions as http_exceptions
-from flask import Response, request, send_file
-from lifemonitor.api import models, serializers
+from flask import Response, request
+from lifemonitor.api import serializers
 from lifemonitor.api.services import LifeMonitor
 from lifemonitor.auth import authorized, current_registry, current_user
 from lifemonitor.auth.oauth2.client.models import \
@@ -146,6 +146,7 @@ def workflows_rocrate_metadata(wf_uuid, wf_version):
     if isinstance(response, Response):
         return response
     return response.crate_metadata
+
 
 @authorized
 def workflows_rocrate_download(wf_uuid, wf_version):
