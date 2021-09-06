@@ -79,10 +79,16 @@ class VersionDetailsSchema(BaseSchema):
     is_latest = fields.Boolean(attribute="is_latest")
     ro_crate = fields.Method("get_rocrate")
     submitter = ma.Nested(UserSchema(only=('id', 'username')), attribute="submitter")
+    links = fields.Method('get_links')
 
     class Meta:
         model = models.WorkflowVersion
         additional = ('rocrate_metadata',)
+
+    def get_links(self, obj: models.WorkflowVersion):
+        return {
+            'origin': obj.external_link
+        }
 
     def get_rocrate(self, obj):
         rocrate = {

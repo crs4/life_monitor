@@ -192,6 +192,12 @@ class WorkflowVersion(ROCrate):
                     health["healthy"] = "Unknown"
         return health
 
+    @property
+    def external_link(self) -> str:
+        if self.hosting_service is None:
+            return self.uri
+        return self.hosting_service.get_external_link(self)
+
     @hybrid_property
     def authorizations(self):
         auths = [a for a in self._authorizations]
