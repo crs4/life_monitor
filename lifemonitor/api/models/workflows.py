@@ -206,10 +206,6 @@ class WorkflowVersion(ROCrate):
         return auths
 
     @hybrid_property
-    def workflow_registry(self) -> models.WorkflowRegistry:
-        return self.hosting_service
-
-    @hybrid_property
     def roc_link(self) -> str:
         return self.uri
 
@@ -240,7 +236,7 @@ class WorkflowVersion(ROCrate):
     @property
     def submitter_identity(self):
         # Return the submitter identity wrt the registry
-        identity = OAuthIdentity.find_by_user_id(self.submitter.id, self.workflow_registry.name)
+        identity = OAuthIdentity.find_by_user_id(self.submitter.id, self.hosting_service.name)
         return identity.provider_user_id
 
     def to_dict(self, test_suite=False, test_build=False, test_output=False):

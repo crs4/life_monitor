@@ -87,7 +87,8 @@ class LifeMonitor:
             # if the user is not the submitter
             # and the workflow is associated with a registry
             # then we try to check whether the user is allowed to view the workflow
-            if w.workflow_registry is None or w.workflow not in w.workflow_registry.get_user_workflows(user):
+            if w.hosting_service is None or \
+                    isinstance(w.hosting_service, models.WorkflowRegistry) and w.workflow not in w.hosting_service.get_user_workflows(user):
                 raise lm_exceptions.NotAuthorizedException(f"User {user.username} is not allowed to access workflow")
         return w
 
