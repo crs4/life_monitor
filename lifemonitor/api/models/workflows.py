@@ -169,7 +169,7 @@ class WorkflowVersion(ROCrate):
 
     def __init__(self, workflow: Workflow,
                  uri, version, submitter: User, uuid=None, name=None,
-                 hosting_service: models.WorkflowRegistry = None) -> None:
+                 hosting_service: HostingService = None) -> None:
         super().__init__(uri, uuid=uuid, name=name,
                          version=version, hosting_service=hosting_service)
         self.submitter = submitter

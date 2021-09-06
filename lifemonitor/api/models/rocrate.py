@@ -27,12 +27,14 @@ from pathlib import Path
 
 import lifemonitor.exceptions as lm_exceptions
 from lifemonitor.api.models import db
-from lifemonitor.auth.models import Resource
+from lifemonitor.auth.models import Resource, HostingService
 from lifemonitor.models import JSON
 from lifemonitor.test_metadata import get_roc_suites
 from lifemonitor.utils import download_url, extract_zip
-from rocrate.rocrate import ROCrate as ROCrateHelper
 from sqlalchemy.ext.hybrid import hybrid_property
+
+from rocrate.rocrate import ROCrate as ROCrateHelper
+
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -42,9 +44,9 @@ class ROCrate(Resource):
 
     id = db.Column(db.Integer, db.ForeignKey(Resource.id), primary_key=True)
     hosting_service_id = db.Column(db.Integer, db.ForeignKey("resource.id"), nullable=True)
-    hosting_service = db.relationship("Resource", uselist=False,
-                                      backref=db.backref("ro_crates", cascade="all, delete-orphan"),
-                                      foreign_keys=[hosting_service_id])
+    hosting_service: HostingService = db.relationship("HostingService", uselist=False,
+                                                      backref=db.backref("ro_crates", cascade="all, delete-orphan"),
+                                                      foreign_keys=[hosting_service_id])
     _metadata = db.Column("metadata", JSON, nullable=True)
     _local_path = None
     _metadata_loaded = False
