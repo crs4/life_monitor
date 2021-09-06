@@ -114,6 +114,24 @@ class ROCrate(Resource):
                 errors.append(str(e))
         raise lm_exceptions.NotAuthorizedException(detail=f"Not authorized to download {self.uri}", original_errors=errors)
 
+    def download(self, target_path: str) -> str:
+        errors = []
+        # try either with authorization header and without authorization
+        for authorization in self._get_authorizations():
+            try:
+                auth_header = authorization.as_http_header() if authorization else None
+                logger.debug(auth_header)
+                tmpdir_path = Path(target_path)
+                local_zip = download_url(self.uri,
+                                         target_path=(tmpdir_path / 'rocrate.zip').as_posix(),
+                                         authorization=auth_header)
+                logger.debug("ZIP Archive: %s", local_zip)                                         
+                return (tmpdir_path / 'rocrate.zip').as_posix()
+            except lm_exceptions.NotAuthorizedException as e:
+                logger.info("Caught authorization error exception while downloading and processing RO-crate: %s", e)
+                errors.append(str(e))
+        raise lm_exceptions.NotAuthorizedException(detail=f"Not authorized to download {self.uri}", original_errors=errors)
+
     @classmethod
     def load_metadata_files(cls, roc_link, authorization_header=None):
         with tempfile.TemporaryDirectory() as tmpdir:
