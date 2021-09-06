@@ -27,7 +27,6 @@ import lifemonitor.api.models as models
 import lifemonitor.exceptions as lm_exceptions
 from lifemonitor import utils as lm_utils
 from lifemonitor.api.models import db
-from lifemonitor.api.models.registries.registry import WorkflowRegistry
 from lifemonitor.api.models.rocrate import ROCrate
 from lifemonitor.auth.models import Permission, Resource, User, HostingService
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
