@@ -29,7 +29,7 @@ from lifemonitor import utils as lm_utils
 from lifemonitor.api.models import db
 from lifemonitor.api.models.registries.registry import WorkflowRegistry
 from lifemonitor.api.models.rocrate import ROCrate
-from lifemonitor.auth.models import Permission, Resource, User
+from lifemonitor.auth.models import Permission, Resource, User, HostingService
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -291,13 +291,12 @@ class WorkflowVersion(ROCrate):
             .filter(Permission.resource_id == cls.id, Permission.user_id == owner.id).all()
 
     @classmethod
-    def get_hosted_workflow_version(cls, hosting_service: Resource, uuid, version) -> List[WorkflowVersion]:
-        # TODO: replace WorkflowRegistry with a more general Entity
+    def get_hosted_workflow_version(cls, hosting_service: HostingService, uuid, version) -> List[WorkflowVersion]:
         try:
             return cls.query\
-                .join(WorkflowRegistry, cls.hosting_service)\
+                .join(HostingService, cls.hosting_service)\
                 .join(Workflow, Workflow.id == cls.workflow_id)\
-                .filter(WorkflowRegistry.uuid == lm_utils.uuid_param(hosting_service.uuid))\
+                .filter(HostingService.uuid == lm_utils.uuid_param(hosting_service.uuid))\
                 .filter(Workflow.uuid == lm_utils.uuid_param(uuid))\
                 .filter(cls.version == version)\
                 .order_by(WorkflowVersion.version.desc()).one()
@@ -308,9 +307,8 @@ class WorkflowVersion(ROCrate):
             raise lm_exceptions.LifeMonitorException(detail=str(e), stack=str(e))
 
     @classmethod
-    def get_hosted_workflow_versions(cls, hosting_service: Resource) -> List[WorkflowVersion]:
-        # TODO: replace WorkflowRegistry with a more general Entity
+    def get_hosted_workflow_versions(cls, hosting_service: HostingService) -> List[WorkflowVersion]:
         return cls.query\
-            .join(WorkflowRegistry, cls.hosting_service)\
-            .filter(WorkflowRegistry.uuid == lm_utils.uuid_param(hosting_service.uuid))\
+            .join(HostingService, cls.hosting_service)\
+            .filter(HostingService.uuid == lm_utils.uuid_param(hosting_service.uuid))\
             .order_by(WorkflowVersion.version.desc()).all()
