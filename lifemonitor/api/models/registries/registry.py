@@ -111,9 +111,9 @@ class WorkflowRegistryClient(ABC):
         return cls.client_types.get_class(client_type)
 
 
-class WorkflowRegistry(auth_models.Resource):
+class WorkflowRegistry(auth_models.HostingService):
 
-    id = db.Column(db.Integer, db.ForeignKey(auth_models.Resource.id), primary_key=True)
+    id = db.Column(db.Integer, db.ForeignKey(auth_models.HostingService.id), primary_key=True)
     registry_type = db.Column(db.String, nullable=False)
     _client_id = db.Column(db.Integer, db.ForeignKey('oauth2_client.id', ondelete='CASCADE'))
     _server_id = db.Column(db.Integer, db.ForeignKey('oauth2_identity_provider.id', ondelete='CASCADE'))
