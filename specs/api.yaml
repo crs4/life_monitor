@@ -1503,14 +1503,16 @@ components:
                   {
                     uuid: "21ac72ec-b9a5-49e0-b5a6-1322b8b54552",
                     version: "0.1",
-                    ro_crate:
-                      {
-                        links:
-                          {
-                            origin: "https://dev.workflowhub.eu/workflows/142/content_blobs/240/download",
-                            download: "https://api.lifemonitor.eu/ro_crates/10/download",
-                          },
-                      },
+                    links: {
+                      origin: "http://webserver:5000/download?file=ro-crate-galaxy-sortchangecase.crate.zip"
+                    },
+                    ro_crate: {
+                      links: {
+                        "download": "https://lm:8000/workflows/123e4567-e89b-12d3-a456-426614174000/rocrate/1.0/download",
+                        "metadata": "https://lm:8000/workflows/123e4567-e89b-12d3-a456-426614174000/rocrate/1.0/metadata",
+                        "origin": "http://webserver:5000/download?file=ro-crate-galaxy-sortchangecase.crate.zip"
+                      }
+                    },
                     submitter: { id: 501, username: "lm" },
                   },
                 ]
