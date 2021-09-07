@@ -45,7 +45,7 @@ def register_testing_services_credentials(conf):
                 token_mgt.add_token(url, models.TestingServiceToken(service_class.token_type, token))
                 logger.info(f"System token configured for the service '{url}' (type: {service_type})")
             except (KeyError, IndexError) as e:
-                logger.error(f"Error during token initialisation of testing service '{url}'")
+                logger.error(f"Error during token initialisation of testing service '{url}': {str(e)}")
 
 
 def register_api(app, specs_dir):
