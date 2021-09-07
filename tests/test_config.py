@@ -21,11 +21,14 @@
 import logging
 import os
 
+import lifemonitor.api.models as api_models
 import lifemonitor.config as lm_cfg
+import lifemonitor.exceptions as lm_exceptions
+import prometheus_client
 import pytest
 from lifemonitor.app import create_app
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 # settings example
 testing_settings = {"PROPERTY": "123456"}
@@ -90,3 +93,40 @@ def test_config_instance(instance_config_file):
     # check if settings from config instance are set
     # and the "PROPERTY" from settings has been overwritten
     check_config_properties(testing_settings, flask_app)
+
+
+@pytest.fixture(params=("travis", "travis_org", "TRAVIS_ORG", "TRAVIS_COM"))
+def testing_service_label(request):
+    return request.param
+
+
+@pytest.fixture
+def testing_service_config(testing_service_label):
+    service_label = testing_service_label.upper()
+    return {
+        "FLASK_ENV": "testing",
+        f"{service_label}_TESTING_SERVICE_URL": "https://api.travis-ci.org",
+        f"{service_label}_TESTING_SERVICE_TOKEN": "123456789"
+    }
+
+
+def test_valid_config_service_token(testing_service_label, testing_service_config):
+    service_label = testing_service_label.upper()
+    flask_app = create_app(env="testing", settings=testing_service_config, init_app=True)
+    prometheus_client.REGISTRY = prometheus_client.CollectorRegistry(auto_describe=True)
+    logger.debug(flask_app.config)
+    mgt = api_models.TestingServiceTokenManager.get_instance()
+    with flask_app.app_context():
+        logger.info(flask_app.config)
+        token = mgt.get_token(testing_service_config[f'{service_label}_TESTING_SERVICE_URL'])
+        assert token.value == \
+            testing_service_config[f'{service_label}_TESTING_SERVICE_TOKEN'], "Unexpected token"
+
+
+def test_config_service_token_unsupported_service_type():
+    settings = {
+        "TRAVI_ORG_TESTING_SERVICE_URL": "https://api.travis-ci.org",
+        "TRAVI_ORG_TESTING_SERVICE_TOKEN": "123456789"
+    }
+    with pytest.raises(lm_exceptions.TestingServiceNotSupportedException):
+        create_app(env="testing", settings=settings, init_app=True)
