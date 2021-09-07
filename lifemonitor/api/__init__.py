@@ -39,12 +39,13 @@ def register_testing_services_credentials(conf):
             try:
                 url = conf[k]
                 service_name = service_match.group(1)
-                service_type = service_name.lower()
+                service_type = service_name.split()[0].lower()
                 token = conf[f"{service_name}_TESTING_SERVICE_TOKEN"]
                 service_class = models.TestingService.get_service_class(service_type)
                 token_mgt.add_token(url, models.TestingServiceToken(service_class.token_type, token))
-            except KeyError as e:
-                logger.debug(e)
+                logger.info(f"System token configured for the service '{url}' (type: {service_type})")
+            except (KeyError, IndexError) as e:
+                logger.error(f"Error during token initialisation of testing service '{url}'")
 
 
 def register_api(app, specs_dir):
