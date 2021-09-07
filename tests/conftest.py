@@ -71,6 +71,8 @@ def initialize(app_settings, request_context):
     helpers.disable_auto_login()
     auth.logout_user()
     auth.logout_registry()
+    os.environ.pop("FLASK_APP_INSTANCE_PATH", None)
+    os.environ.pop("FLASK_APP_CONFIG_FILE", None)
 
 
 def _get_app_settings(include_env=True):
