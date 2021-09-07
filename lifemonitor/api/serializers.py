@@ -126,7 +126,7 @@ class WorkflowVersionSchema(ResourceSchema):
     name = ma.auto_field()
     version = fields.Method("get_version")
     registry = ma.Nested(WorkflowRegistrySchema(exclude=('meta', 'links')),
-                         attribute="workflow_registry")
+                         attribute="hosting_service")
 
     rocrate_metadata = False
 
