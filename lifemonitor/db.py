@@ -23,6 +23,7 @@ import os
 
 import psycopg2 as psy
 import psycopg2.sql as sql
+import psycopg2.errors as errors
 from flask import current_app
 from flask_sqlalchemy import SQLAlchemy
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
@@ -93,9 +94,8 @@ def db_exists(db_name=None, settings=None):
             cursor.execute(f"SELECT 1 FROM pg_database WHERE datname='{dbname}'")
             if cursor.fetchone():
                 return True
-        except Exception as e:
-            logger.debug(e)
-    return False
+        except errors.OperationalError:
+            return False
 
 
 def db_initialized(db_name=None, settings=None):
@@ -105,22 +105,26 @@ def db_initialized(db_name=None, settings=None):
 
 def db_revision(db_name=None, settings=None):
     logger.debug("Getting DB revision...")
-    conn = db_connect(settings=settings, override_db_name=db_name)
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM alembic_version")
-    row = cursor.fetchone()
-    logger.debug("Row: %r", row)
-    return row[0] if row else None
+    try:
+        conn = db_connect(settings=settings, override_db_name=db_name)
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM alembic_version")
+        row = cursor.fetchone()
+        return row[0] if row else None
+    except errors.OperationalError:
+        return None
 
 
 def db_table_exists(table_name: str, db_name=None, settings=None) -> bool:
     logger.debug(f"Checking if DB table '{table_name}' exists")
-    conn = db_connect(settings=settings, override_db_name=db_name)
-    cursor = conn.cursor()
-    cursor.execute(f"SELECT * FROM information_schema.tables WHERE table_name = '{table_name}'")
-    row = cursor.fetchone()
-    logger.debug("Row: %r", row)
-    return row[0] if row else None
+    try:
+        conn = db_connect(settings=settings, override_db_name=db_name)
+        cursor = conn.cursor()
+        cursor.execute(f"SELECT * FROM information_schema.tables WHERE table_name = '{table_name}'")
+        row = cursor.fetchone()
+        return True if row else False
+    except errors.OperationalError:
+        return False
 
 
 def create_db(settings=None, drop=False):
