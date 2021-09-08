@@ -21,11 +21,14 @@
 import logging
 import os
 
+import lifemonitor.api.models as api_models
 import lifemonitor.config as lm_cfg
+import lifemonitor.exceptions as lm_exceptions
+import prometheus_client
 import pytest
 from lifemonitor.app import create_app
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 # settings example
 testing_settings = {"PROPERTY": "123456"}
@@ -90,3 +93,38 @@ def test_config_instance(instance_config_file):
     # check if settings from config instance are set
     # and the "PROPERTY" from settings has been overwritten
     check_config_properties(testing_settings, flask_app)
+
+
+@pytest.fixture(params=("travis", "travis_org", "TRAVIS_ORG", "TRAVIS_COM"))
+def testing_service_label(request):
+    return request.param
+
+
+@pytest.fixture
+def testing_service_config(testing_service_label):
+    service_label = testing_service_label.upper()
+    app_settings_param = {
+        f"{service_label}_TESTING_SERVICE_URL": "https://api.mytestingservice.org",
+        f"{service_label}_TESTING_SERVICE_TOKEN": "123456789"
+    }
+    return app_settings_param
+
+
+def test_valid_config_service_token(testing_service_label, testing_service_config):
+    service_label = testing_service_label.upper()
+    flask_app = create_app(env="testing", settings=testing_service_config, init_app=True)
+    prometheus_client.REGISTRY = prometheus_client.CollectorRegistry(auto_describe=True)
+    mgt = api_models.TestingServiceTokenManager.get_instance()
+    logger.info(flask_app.config)
+    token = mgt.get_token(testing_service_config[f'{service_label}_TESTING_SERVICE_URL'])
+    assert token.value == \
+        testing_service_config[f'{service_label}_TESTING_SERVICE_TOKEN'], "Unexpected token"
+
+
+def test_config_service_token_unsupported_service_type():
+    app_settings_param = {
+        "TRAVI_ORG_TESTING_SERVICE_URL": "https://api.mytestingservice.org",
+        "TRAVI_ORG_TESTING_SERVICE_TOKEN": "123456789"
+    }
+    with pytest.raises(lm_exceptions.TestingServiceNotSupportedException):
+        create_app(env="testing", settings=app_settings_param, init_app=True)
