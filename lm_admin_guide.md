@@ -198,7 +198,7 @@ help                  Show help
 ### A note about volumes
 
 Docker Compose uses Docker volumes for data storage. These will persist
-between start and stop actions. Database schema will be automacally updated 
+between start and stop actions. Database schema will be automatically updated 
 to the proper version as part of the system initialisation.
 
 If you prefer to start with a clean database, use the regular Docker commands to delete
