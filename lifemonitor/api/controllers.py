@@ -160,6 +160,9 @@ def workflows_rocrate_download(wf_uuid, wf_version):
         with open(local_zip, "rb") as f:
             return werkzeug.Response(f.read(), headers={
                 'Content-Type': 'application/zip',
+                'Accept': 'application/json',
+                'Access-Control-Allow-Credentials': 'true',
+                'Access-Control-Allow-Origin': '*',
                 'Content-Disposition': f'attachment; filename=rocrate_{response.workflow.uuid}_v{response.version}.zip'
             }, direct_passthrough=False)
 
