@@ -357,18 +357,54 @@ You can always check the actual running database schema by typing:
 docker-compose exec lm /bin/bash -c "flask db current"
 ```
 
-> An output with `(head)` at the end, e.g., `bbe1397dc8a9 (head)`, indicates that your LifeMonitor instance is running with the most recent database schema.
 
-### Upgrade a non-Docker deployment
-To upgrade a LifeMonitor instance deployed without Docker (see section on ["How to install on your local environment"](#how-to-install-on-your-local-environment)), you have to:
-1. stop LifeMonitor Flask app;
-2. make a backup of the database used by LifeMonitor;
-3. update your local copy of LifeMonitor sources (via `git clone` or `git pull`);
-4. apply all the required migrations, by typing 
-    ```bash
-    flask db upgrade
-    ```
-5. restart the LifeMonitor Flask app.
+## How to backup and restore
+
+The current implementation of LifeMonitor relies on **PostgreSQL** database management system. Thus, you can use the common `pg_dump` and `psql` tools provided with Postgres to respectively backup and restore the LifeMonitor database (see [PostgreSQL docs](https://www.postgresql.org/docs/11/backup.html) for more details).
+
+### Backup
+
+To make a backup to file (e.g., `lifemonitor.sql`) type:
+```bash
+pg_dump -U <POSTGRESQL_USERNAME> <POSTGRESQL_DATABASE> > lifemonitor_backup.sql
+```
+
+If you are using the PostgreSQL instance of the [`docker-compose` LifeMonitor deployment](#deploy-Lifemonitor-with-docker-compose), go through the following stpes:
+
+1. make a backup to temp path within the running `db` container:
+
+   ```bash
+docker-compose exec db /bin/bash -c "PGPASSWORD=\${POSTGRESQL_PASSWORD} pg_dump -U \${POSTGRESQL_USERNAME} \${POSTGRESQL_DATABASE} > /tmp/lifemonitor_backup.sql"
+   ```
+
+2. copy the backup from the running `db` container to a target path:
+
+   ```bash
+    docker cp life_monitor_db_1:/tmp/lifemonitor_backup.sql lifemonitor.sql
+   ```
+
+
+### Restore
+
+To restore LifeMonitor database from a backup file (e.g., `lifemonitor.sql`) type:
+
+```bash
+psql -U postgres < lifemonitor_backup.sql
+```
+
+Instead, if you are using the PostgreSQL instance of the `docker-compose`-based LifeMonitor deployment, go through the following steps:
+
+1. copy the local backup file to the running `db` container:
+
+	```bash
+	docker cp lifemonitor.sql /tmp/
+	```
+
+2. finally restore the database by typing:
+
+   ```bash
+	PGPASSWORD=\${POSTGRESQL_PASSWORD} psql -U postgres < /tmp/lifemonitor.sql
+   ```
 
 
 ## Authenticating
