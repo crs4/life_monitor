@@ -323,39 +323,50 @@ required by the `psycopg2` Python package.
 
 ## How to upgrade
 
-### Upgrade a Docker deployment
-Existing Dockerized deployments can be easily upgraded to a more recent LifeMonitor version by going through the following steps:
-1. stop `lm` service
+> **WARNING.** It is strongly recommended to make a full backup of the LifeMonitor database (see sections ["How to backup and restore"](#how-to-backup-and-restore)) before upgrading.
+
+##### Native installation
+
+To upgrade a LifeMonitor instance deployed without Docker (see section on ["How to install on your local environment"](#how-to-install-on-your-local-environment)), you have to:
+
+1. stop LifeMonitor Flask app;
+2. update your local copy of LifeMonitor sources (via `git clone` or `git pull`);
+3. upgrade the database schema by typing:
+
     ```bash
-    docker-compose stop lm
-    ``` 
-2. make a backup of LifeMonitor to a temp path within the `db` container
-    ```bash
-    docker-compose exec db /bin/bash -c "PGPASSWORD=\${POSTGRESQL_PASSWORD} pg_dump -U \${POSTGRESQL_USERNAME} \${POSTGRESQL_DATABASE} > /tmp/lifemonitor_backup.sql"
+    flask db upgrade
     ```
-3. copy backup from the `db` container to a local path
-    ```bash
-    docker cp life_monitor_db_1:/tmp/lifemonitor_backup.sql ${HOME}/lifemonitor_backup.sql
-    ```
-4. teardown all the services in `prod` mode
+
+4. restart the LifeMonitor Flask app.
+
+##### Deployment based on `docker-compose`
+
+Existing deployments based on `docker-compose` can be easily upgraded to a more recent LifeMonitor version by going through the following steps:
+
+1. teardown all the services in `prod` mode
+
     ```bash
     make down
     ```
-5. update your local copy of LifeMonitor sources (via `git clone` or `git pull`)
-6. restart all the services 
+2. update your local copy of LifeMonitor sources (via `git clone` or `git pull`)
+3. restart all the services
     ```bash  
     make start
     ```
     or type `make start-dev` to restart all the services in `dev` mode.
 
+> **NOTE.** As part of the initialisation process performed by the `init` container, the database is automatically upgraded when the docker-compose app restarts. So, you don't need to perform the upgrade manually.
 
-As a result, the up-to-date LifeMonitor instance will be started and the existing data will be migrated to the proper database schema. 
+##### Check current schema version
 
 You can always check the actual running database schema by typing:
 
 ```bash
 docker-compose exec lm /bin/bash -c "flask db current"
 ```
+
+> An output with `(head)` at the end - e.g., `bbe1397dc8a9 (head)` - indicates that your LifeMonitor instance is running with the most recent database schema.
+
 
 
 ## How to backup and restore
