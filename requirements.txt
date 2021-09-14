@@ -8,6 +8,7 @@ flask-restful==0.3.8
 flask-login~=0.5.0
 flask-shell-ipython==0.4.1
 Flask-SQLAlchemy==2.5.1
+Flask-Migrate==3.1.0
 flask-wtf~=0.15.1
 Flask==2.0.0
 gunicorn~=20.1.0

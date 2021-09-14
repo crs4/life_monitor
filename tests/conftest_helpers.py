@@ -107,10 +107,8 @@ def app_context(request_settings,
                 init_db=True, clean_db=True, drop_db=False):
     try:
         os.environ.pop("FLASK_APP_CONFIG_FILE", None)
-        conn_param = lm_db.db_connection_params(request_settings)
         if init_db:
-            lm_db.create_db(conn_params=conn_param)
-            logger.debug("DB created (conn params=%r)", conn_param)
+            lm_db.create_db(settings=request_settings)
         flask_app = create_app(env="testing", settings=request_settings, init_app=False)
         flask_app.before_request(process_auto_login)
         with flask_app.app_context() as ctx:
@@ -130,8 +128,7 @@ def app_context(request_settings,
             if drop_db:
                 lm_db.db.close_all_sessions()
                 lm_db.db.engine.pool.dispose()
-                lm_db.drop_db(conn_param)
-                logger.debug("DB deleted (connection params=%r)", conn_param)
+                lm_db.drop_db(settings=request_settings)
     except Exception as e:
         logger.exception(e)
         raise RuntimeError(e)

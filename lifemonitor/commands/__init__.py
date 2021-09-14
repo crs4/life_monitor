@@ -23,11 +23,13 @@ import logging
 from importlib import import_module
 from os.path import basename, dirname, isfile, join
 
+from flask.app import Flask
+
 # set module level logger
 logger = logging.getLogger(__name__)
 
 
-def register_commands(app):
+def register_commands(app: Flask):
     modules_files = glob.glob(join(dirname(__file__), "*.py"))
     modules = ['{}.{}'.format(__name__, basename(f)[:-3])
                for f in modules_files if isfile(f) and not f.endswith('__init__.py')]
@@ -38,7 +40,7 @@ def register_commands(app):
             # Try to load the command module 'm'
             mod = import_module(m)
             try:
-                logger.debug("Lookup blueprint on commands.%s", m)
+                logger.debug("Looking for commands in %s.blueprint", m)
                 # Lookup 'blueprint' object
                 blueprint = getattr(mod, "blueprint")
                 # Register the blueprint object
@@ -47,6 +49,16 @@ def register_commands(app):
             except AttributeError:
                 logger.error("Unable to find the 'blueprint' attribute in module %s", m)
                 we_had_errors = True
+            try:
+                logger.debug("Looking for commands in '%s' module", m)
+                # Lookup 'commands' object
+                commands = getattr(mod, "commands")
+                for c in commands:
+                    app.cli.add_command(c)
+            except AttributeError:
+                logger.error("Unable to find the 'commands' attribute in module %s", m)
+                we_had_errors = True
+
         except ModuleNotFoundError:
             logger.error("ModuleNotFoundError: Unable to load module %s", m)
             we_had_errors = True

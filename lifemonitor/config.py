@@ -121,7 +121,7 @@ def get_config_by_name(name, settings=None):
         if settings is None:
             settings = load_settings(config)
         if settings and "SQLALCHEMY_DATABASE_URI" not in settings:
-            settings["SQLALCHEMY_DATABASE_URI"] = db_uri(settings)
+            settings["SQLALCHEMY_DATABASE_URI"] = db_uri(settings=settings)
         # always set the FLASK_APP_CONFIG_FILE variable to the environment
         if settings and "FLASK_APP_CONFIG_FILE" in settings:
             os.environ["FLASK_APP_CONFIG_FILE"] = settings["FLASK_APP_CONFIG_FILE"]
