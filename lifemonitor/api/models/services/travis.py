@@ -95,12 +95,16 @@ class TravisTestingService(TestingService):
         # extract the job name from the resource path
         logger.debug(f"Getting project metadata - resource: {test_instance.resource}")
         repo = re.sub(r'^(/)?(repo/)?(github/)?(.+)', r'\4', test_instance.resource.strip('/(build(s)?)?'))
-        repo_slug = urllib.parse.quote(repo, safe='') if quote else repo
-        logger.debug(f"The repo ID: {repo_slug}")
-        if not repo_slug or len(repo_slug) == 0:
+        repo_id = urllib.parse.quote(repo, safe='') if quote else repo
+        logger.debug(f"The repo ID: {repo_id}")
+        if not repo_id or len(repo_id) == 0:
             raise TestingServiceException(
                 f"Unable to get the Travis job from the resource {test_instance.resource}")
-        return repo_slug
+        return repo_id
+
+    def get_repo_slug(self, test_instance: models.TestInstance):
+        metadata = self.get_project_metadata(test_instance)
+        return metadata['slug']
 
     def _get_last_test_build(self, test_instance: models.TestInstance, state=None) -> Optional[models.TravisTestBuild]:
         try:
@@ -123,8 +127,8 @@ class TravisTestingService(TestingService):
 
     def get_instance_external_link(self, test_instance: models.TestInstance) -> str:
         testing_service = test_instance.testing_service
-        repo_id = testing_service.get_repo_id(test_instance, quote=False)
-        return urllib.parse.urljoin(testing_service.base_url, f'{repo_id}')
+        repo_slug = testing_service.get_repo_slug(test_instance)
+        return urllib.parse.urljoin(testing_service.base_url, f'{repo_slug}/builds')
 
     def get_last_test_build(self, test_instance: models.TestInstance) -> Optional[models.TravisTestBuild]:
         return self._get_last_test_build(test_instance)
@@ -174,8 +178,8 @@ class TravisTestingService(TestingService):
 
     def get_test_build_external_link(self, test_build: models.TestBuild) -> str:
         testing_service = test_build.test_instance.testing_service
-        repo_id = testing_service.get_repo_id(test_build.test_instance, quote=False)
-        return urllib.parse.urljoin(testing_service.base_url, f'{repo_id}/builds/{test_build.id}')
+        repo_slug = testing_service.get_repo_slug(test_build.test_instance)
+        return urllib.parse.urljoin(testing_service.base_url, f'{repo_slug}/builds/{test_build.id}')
 
     def get_test_build_output(self, test_instance: models.TestInstance, build_number, offset_bytes=0, limit_bytes=131072):
         try:
