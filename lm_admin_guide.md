@@ -325,7 +325,7 @@ required by the `psycopg2` Python package.
 
 > **WARNING.** It is strongly recommended to make a full backup of the LifeMonitor database (see sections ["How to backup and restore"](#how-to-backup-and-restore)) before upgrading.
 
-##### Native installation
+### Native installation
 
 To upgrade a LifeMonitor instance deployed without Docker (see section on ["How to install on your local environment"](#how-to-install-on-your-local-environment)), you have to:
 
@@ -339,7 +339,7 @@ To upgrade a LifeMonitor instance deployed without Docker (see section on ["How 
 
 4. restart the LifeMonitor Flask app.
 
-##### Deployment based on `docker-compose`
+### Deployment based on `docker-compose`
 
 Existing deployments based on `docker-compose` can be easily upgraded to a more recent LifeMonitor version by going through the following steps:
 
@@ -357,7 +357,7 @@ Existing deployments based on `docker-compose` can be easily upgraded to a more 
 
 > **NOTE.** As part of the initialisation process performed by the `init` container, the database is automatically upgraded when the docker-compose app restarts. So, you don't need to perform the upgrade manually.
 
-##### Check current schema version
+### Check current schema version
 
 You can always check the actual running database schema by typing:
 
@@ -380,7 +380,7 @@ To make a backup to file (e.g., `lifemonitor.sql`) type:
 pg_dump -U <POSTGRESQL_USERNAME> <POSTGRESQL_DATABASE> > lifemonitor_backup.sql
 ```
 
-If you are using the PostgreSQL instance of the [`docker-compose` LifeMonitor deployment](#deploy-Lifemonitor-with-docker-compose), go through the following stpes:
+If you are using the PostgreSQL instance of the [`docker-compose` LifeMonitor deployment](#deploy-lifemonitor-with-docker-compose), go through the following steps:
 
 1. make a backup to temp path within the running `db` container:
 
@@ -408,10 +408,11 @@ Instead, if you are using the PostgreSQL instance of the `docker-compose`-based 
 1. copy the local backup file to the running `db` container:
 
 	```bash
-	docker cp lifemonitor.sql /tmp/
+	docker cp lifemonitor.sql life_monitor_db_1:/tmp/
 	```
 
-2. finally restore the database by typing:
+2. finally restore the database by running the following command in the `db`
+   container:
 
    ```bash
 	PGPASSWORD=\${POSTGRESQL_PASSWORD} psql -U postgres < /tmp/lifemonitor.sql
