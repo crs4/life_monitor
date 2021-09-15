@@ -127,8 +127,8 @@ class TravisTestingService(TestingService):
 
     def get_instance_external_link(self, test_instance: models.TestInstance) -> str:
         testing_service = test_instance.testing_service
-        repo_id = testing_service.get_repo_id(test_instance, quote=False)
-        return urllib.parse.urljoin(testing_service.base_url, f'{repo_id}')
+        repo_slug = testing_service.get_repo_slug(test_instance)
+        return urllib.parse.urljoin(testing_service.base_url, f'{repo_slug}/builds')
 
     def get_last_test_build(self, test_instance: models.TestInstance) -> Optional[models.TravisTestBuild]:
         return self._get_last_test_build(test_instance)
@@ -178,8 +178,8 @@ class TravisTestingService(TestingService):
 
     def get_test_build_external_link(self, test_build: models.TestBuild) -> str:
         testing_service = test_build.test_instance.testing_service
-        repo_id = testing_service.get_repo_id(test_build.test_instance, quote=False)
-        return urllib.parse.urljoin(testing_service.base_url, f'{repo_id}/builds/{test_build.id}')
+        repo_slug = testing_service.get_repo_slug(test_build.test_instance)
+        return urllib.parse.urljoin(testing_service.base_url, f'{repo_slug}/builds/{test_build.id}')
 
     def get_test_build_output(self, test_instance: models.TestInstance, build_number, offset_bytes=0, limit_bytes=131072):
         try:
