@@ -95,12 +95,16 @@ class TravisTestingService(TestingService):
         # extract the job name from the resource path
         logger.debug(f"Getting project metadata - resource: {test_instance.resource}")
         repo = re.sub(r'^(/)?(repo/)?(github/)?(.+)', r'\4', test_instance.resource.strip('/(build(s)?)?'))
-        repo_slug = urllib.parse.quote(repo, safe='') if quote else repo
-        logger.debug(f"The repo ID: {repo_slug}")
-        if not repo_slug or len(repo_slug) == 0:
+        repo_id = urllib.parse.quote(repo, safe='') if quote else repo
+        logger.debug(f"The repo ID: {repo_id}")
+        if not repo_id or len(repo_id) == 0:
             raise TestingServiceException(
                 f"Unable to get the Travis job from the resource {test_instance.resource}")
-        return repo_slug
+        return repo_id
+
+    def get_repo_slug(self, test_instance: models.TestInstance):
+        metadata = self.get_project_metadata(test_instance)
+        return metadata['slug']
 
     def _get_last_test_build(self, test_instance: models.TestInstance, state=None) -> Optional[models.TravisTestBuild]:
         try:
