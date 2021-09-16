@@ -198,7 +198,10 @@ help                  Show help
 ### A note about volumes
 
 Docker Compose uses Docker volumes for data storage. These will persist
-between start and stop actions. Use the regular Docker commands to delete
+between start and stop actions. Database schema will be automatically updated 
+to the proper version as part of the system initialisation.
+
+If you prefer to start with a clean database, use the regular Docker commands to delete
 them. For instance:
 
 ```
@@ -207,11 +210,11 @@ docker volume rm life_monitor_lifemonitor_db
 
 ### Environments
 
-| Environment | Services |
-|---------|---------|
-| **production** | LifeMonitor back-end, NGINX proxy, PostgreSQL DBMS |
-| **development** | LifeMonitor back-end in dev mode, PostgreSQL DBMS
-| **testing** | LifeMonitor back-end in testing mode, preconfigured auxiliary services (i.e., WorkflowHub, Jenkins) |
+| Environment     | Services                                                                                            |
+| --------------- | --------------------------------------------------------------------------------------------------- |
+| **production**  | LifeMonitor back-end, NGINX proxy, PostgreSQL DBMS                                                  |
+| **development** | LifeMonitor back-end in dev mode, PostgreSQL DBMS                                                   |
+| **testing**     | LifeMonitor back-end in testing mode, preconfigured auxiliary services (i.e., WorkflowHub, Jenkins) |
 
 The development mode mounts the LifeMonitor directory within the container and
 runs Flask in development mode.  Thus, local changes to the code are immediately
@@ -219,12 +222,12 @@ picked up.
 
 ### Services
 
-| service | port |
-|---------|---------|
-| LifeMonitor (prod), exposed via NGINX proxy| 8443|
-| LifeMonitor (dev)                          | 8000|
-| WorkflowHub                                | 3000|
-| Jenkins                                    | 8080|
+| service                                     | port |
+| ------------------------------------------- | ---- |
+| LifeMonitor (prod), exposed via NGINX proxy | 8443 |
+| LifeMonitor (dev)                           | 8000 |
+| WorkflowHub                                 | 3000 |
+| Jenkins                                     | 8080 |
 
 ### Docker build
 
@@ -286,6 +289,7 @@ Additionally, You **must edit the API applications authorized by WorkflowHub**:
 
     https://122.33.4.72:8443/oauth2/authorized/seek
 
+
 ### Github login (optional)
 
 Login via GitHub can be configured by editing the `GITHUB_CLIENT_ID` and
@@ -314,6 +318,105 @@ pip install -r requirements.txt
 
 The only non-Python dependency is **PostgreSQL** (back-end/client), which is
 required by the `psycopg2` Python package.
+
+
+
+## How to upgrade
+
+> **WARNING.** It is strongly recommended to make a full backup of the LifeMonitor database (see sections ["How to backup and restore"](#how-to-backup-and-restore)) before upgrading.
+
+### Native installation
+
+To upgrade a LifeMonitor instance deployed without Docker (see section on ["How to install on your local environment"](#how-to-install-on-your-local-environment)), you have to:
+
+1. stop LifeMonitor Flask app;
+2. update your local copy of LifeMonitor sources (via `git clone` or `git pull`);
+3. upgrade the database schema by typing:
+
+    ```bash
+    flask db upgrade
+    ```
+
+4. restart the LifeMonitor Flask app.
+
+### Deployment based on `docker-compose`
+
+Existing deployments based on `docker-compose` can be easily upgraded to a more recent LifeMonitor version by going through the following steps:
+
+1. teardown all the services in `prod` mode
+
+    ```bash
+    make down
+    ```
+2. update your local copy of LifeMonitor sources (via `git clone` or `git pull`)
+3. restart all the services
+    ```bash  
+    make start
+    ```
+    or type `make start-dev` to restart all the services in `dev` mode.
+
+> **NOTE.** As part of the initialisation process performed by the `init` container, the database is automatically upgraded when the docker-compose app restarts. So, you don't need to perform the upgrade manually.
+
+### Check current schema version
+
+You can always check the actual running database schema by typing:
+
+```bash
+docker-compose exec lm /bin/bash -c "flask db current"
+```
+
+> An output with `(head)` at the end - e.g., `bbe1397dc8a9 (head)` - indicates that your LifeMonitor instance is running with the most recent database schema.
+
+
+
+## How to backup and restore
+
+The current implementation of LifeMonitor relies on **PostgreSQL** database management system. Thus, you can use the common `pg_dump` and `psql` tools provided with Postgres to respectively backup and restore the LifeMonitor database (see [PostgreSQL docs](https://www.postgresql.org/docs/11/backup.html) for more details).
+
+### Backup
+
+To make a backup to file (e.g., `lifemonitor.sql`) type:
+```bash
+pg_dump -U <POSTGRESQL_USERNAME> <POSTGRESQL_DATABASE> > lifemonitor_backup.sql
+```
+
+If you are using the PostgreSQL instance of the [`docker-compose` LifeMonitor deployment](#deploy-lifemonitor-with-docker-compose), go through the following steps:
+
+1. make a backup to temp path within the running `db` container:
+
+   ```bash
+docker-compose exec db /bin/bash -c "PGPASSWORD=\${POSTGRESQL_PASSWORD} pg_dump -U \${POSTGRESQL_USERNAME} \${POSTGRESQL_DATABASE} > /tmp/lifemonitor_backup.sql"
+   ```
+
+2. copy the backup from the running `db` container to a target path:
+
+   ```bash
+    docker cp life_monitor_db_1:/tmp/lifemonitor_backup.sql lifemonitor.sql
+   ```
+
+
+### Restore
+
+To restore LifeMonitor database from a backup file (e.g., `lifemonitor.sql`) type:
+
+```bash
+psql -U postgres < lifemonitor_backup.sql
+```
+
+Instead, if you are using the PostgreSQL instance of the `docker-compose`-based LifeMonitor deployment, go through the following steps:
+
+1. copy the local backup file to the running `db` container:
+
+	```bash
+	docker cp lifemonitor.sql life_monitor_db_1:/tmp/
+	```
+
+2. finally restore the database by running the following command in the `db`
+   container:
+
+   ```bash
+	PGPASSWORD=\${POSTGRESQL_PASSWORD} psql -U postgres < /tmp/lifemonitor.sql
+   ```
 
 
 ## Authenticating
