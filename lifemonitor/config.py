@@ -71,6 +71,9 @@ class BaseConfig:
     # JWT Settings
     JWT_SECRET_KEY_PATH = os.getenv("JWT_SECRET_KEY_PATH", 'certs/jwt-key')
     JWT_EXPIRATION_TIME = os.getenv("JWT_EXPIRATION_TIME", 3600)
+    # Default Cache Settings
+    CACHE_TYPE = "flask_caching.backends.simplecache.SimpleCache"  # Flask-Caching related configs
+    CACHE_DEFAULT_TIMEOUT = 60
 
 
 class DevelopmentConfig(BaseConfig):
