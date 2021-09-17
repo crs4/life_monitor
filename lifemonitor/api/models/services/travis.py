@@ -26,10 +26,11 @@ import re
 import urllib
 from typing import Optional
 
-import requests
-
 import lifemonitor.api.models as models
-from lifemonitor.exceptions import EntityNotFoundException, TestingServiceException
+import requests
+from lifemonitor.cache import cache
+from lifemonitor.exceptions import (EntityNotFoundException,
+                                    TestingServiceException)
 
 from .service import TestingService
 
@@ -85,6 +86,7 @@ class TravisTestingService(TestingService):
         query = "?" + urllib.parse.urlencode(params) if params else ""
         return urllib.parse.urljoin(self.api_base_url, path + query)
 
+    @cache.memoize(10)
     def _get(self, path, token: models.TestingServiceToken = None, params=None) -> object:
         logger.debug("Getting resource: %r", self._build_url(path, params))
         response = requests.get(self._build_url(path, params), headers=self._build_headers(token))
@@ -102,6 +104,7 @@ class TravisTestingService(TestingService):
                 f"Unable to get the Travis job from the resource {test_instance.resource}")
         return repo_id
 
+    @cache.memoize()
     def get_repo_slug(self, test_instance: models.TestInstance):
         metadata = self.get_project_metadata(test_instance)
         return metadata['slug']
@@ -125,26 +128,32 @@ class TravisTestingService(TestingService):
         except Exception as e:
             raise TestingServiceException(e)
 
+    @cache.memoize()
     def get_instance_external_link(self, test_instance: models.TestInstance) -> str:
         testing_service = test_instance.testing_service
         repo_slug = testing_service.get_repo_slug(test_instance)
         return urllib.parse.urljoin(testing_service.base_url, f'{repo_slug}/builds')
 
+    @cache.memoize()
     def get_last_test_build(self, test_instance: models.TestInstance) -> Optional[models.TravisTestBuild]:
         return self._get_last_test_build(test_instance)
 
+    @cache.memoize()
     def get_last_passed_test_build(self, test_instance: models.TestInstance) -> Optional[models.TravisTestBuild]:
         return self._get_last_test_build(test_instance, state='passed')
 
+    @cache.memoize()
     def get_last_failed_test_build(self, test_instance: models.TestInstance) -> Optional[models.TravisTestBuild]:
         return self._get_last_test_build(test_instance, state='failed')
 
+    @cache.memoize()
     def get_project_metadata(self, test_instance: models.TestInstance):
         try:
             return self._get("/repo/{}".format(self.get_repo_id(test_instance)))
         except Exception as e:
             raise TestingServiceException(f"{self}: {e}")
 
+    @cache.memoize()
     def get_test_builds(self, test_instance: models.TestInstance, limit=10) -> list:
         try:
             repo_id = self.get_repo_id(test_instance)
@@ -163,7 +172,7 @@ class TravisTestingService(TestingService):
         except Exception as e:
             raise TestingServiceException(details=f"{e}")
 
-    def get_test_build(self, test_instance: models.TestInstance, build_number: int) -> models.TravisTestBuild:
+    def _get_test_build(self, test_instance: models.TestInstance, build_number: int) -> models.TravisTestBuild:
         try:
             response = self._get("/build/{}".format(build_number))
         except Exception as e:
@@ -176,6 +185,19 @@ class TravisTestingService(TestingService):
                                               detail=str(response.content))
         return models.TravisTestBuild(self, test_instance, response)
 
+    def _disable_build_cache(func, obj: TravisTestingService,
+                             test_instance: models.TestInstance, build_number: int,
+                             *args, **kwargs):
+        logger.debug("Params: %r - %r", kwargs)
+        build = obj._get_test_build(test_instance, build_number)
+        return build.is_running()
+        # return True
+
+    @cache.memoize(timeout=3600, unless=_disable_build_cache)
+    def get_test_build(self, test_instance: models.TestInstance, build_number: int) -> models.TravisTestBuild:
+        return self._get_test_build(test_instance, build_number)
+
+    @cache.memoize()
     def get_test_build_external_link(self, test_build: models.TestBuild) -> str:
         testing_service = test_build.test_instance.testing_service
         repo_slug = testing_service.get_repo_slug(test_build.test_instance)
