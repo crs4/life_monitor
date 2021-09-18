@@ -21,6 +21,7 @@
 from __future__ import annotations
 
 import logging
+import functools
 from flask_caching import Cache
 
 # Set module logger
@@ -28,3 +29,36 @@ logger = logging.getLogger(__name__)
 
 # Instantiate cache manager
 cache = Cache()
+
+
+def _make_name(fname) -> str:
+    from lifemonitor.auth import current_user, current_registry
+    result = fname
+    if current_user and not current_user.is_anonymous:
+        result += "-{}-{}".format(current_user.username, current_user.id)
+    if current_registry:
+        result += "-{}".format(current_registry.uuid)
+    logger.debug("Calculated function name: %r", result)
+
+    return result
+
+
+def clear_cache(func, *args, **kwargs):
+    cache.delete_memoized(func, *args, **kwargs)
+
+
+def cached(timeout=None, unless=False):
+    def decorator(function):
+
+        @cache.memoize(timeout=timeout, unless=unless, make_name=_make_name)
+        @functools.wraps(function)
+        def wrapper(*args, **kwargs):
+            logger.debug("Cache arguments: %r", args)
+            logger.debug("Caghe kwargs: %r", kwargs)
+            # wrap concrete function
+            return function(*args, **kwargs)
+
+        return wrapper
+    return decorator
+
+
