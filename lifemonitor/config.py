@@ -72,7 +72,7 @@ class BaseConfig:
     JWT_SECRET_KEY_PATH = os.getenv("JWT_SECRET_KEY_PATH", 'certs/jwt-key')
     JWT_EXPIRATION_TIME = os.getenv("JWT_EXPIRATION_TIME", 3600)
     # Default Cache Settings
-    CACHE_TYPE = "flask_caching.backends.simplecache.SimpleCache"  # Flask-Caching related configs
+    CACHE_TYPE = "flask_caching.backends.simplecache.SimpleCache"
     CACHE_DEFAULT_TIMEOUT = 60
 
 
@@ -99,6 +99,7 @@ class TestingConfig(BaseConfig):
     TESTING = True
     LOG_LEVEL = "DEBUG"
     # SQLALCHEMY_DATABASE_URI = "sqlite:///{0}/app-test.db".format(basedir)
+    CACHE_TYPE = "flask_caching.backends.nullcache.NullCache"
 
 
 class TestingSupportConfig(TestingConfig):
