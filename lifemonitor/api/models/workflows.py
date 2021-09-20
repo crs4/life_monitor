@@ -27,9 +27,8 @@ import lifemonitor.api.models as models
 import lifemonitor.exceptions as lm_exceptions
 from lifemonitor import utils as lm_utils
 from lifemonitor.api.models import db
-from lifemonitor.api.models.registries.registry import WorkflowRegistry
 from lifemonitor.api.models.rocrate import ROCrate
-from lifemonitor.auth.models import Permission, Resource, User
+from lifemonitor.auth.models import Permission, Resource, User, HostingService
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -169,7 +168,7 @@ class WorkflowVersion(ROCrate):
 
     def __init__(self, workflow: Workflow,
                  uri, version, submitter: User, uuid=None, name=None,
-                 hosting_service: models.WorkflowRegistry = None) -> None:
+                 hosting_service: HostingService = None) -> None:
         super().__init__(uri, uuid=uuid, name=name,
                          version=version, hosting_service=hosting_service)
         self.submitter = submitter
@@ -192,6 +191,12 @@ class WorkflowVersion(ROCrate):
                     health["healthy"] = "Unknown"
         return health
 
+    @property
+    def external_link(self) -> str:
+        if self.hosting_service is None:
+            return self.uri
+        return self.hosting_service.get_external_link(self)
+
     @hybrid_property
     def authorizations(self):
         auths = [a for a in self._authorizations]
@@ -199,10 +204,6 @@ class WorkflowVersion(ROCrate):
             for auth in self.submitter.get_authorization(self.hosting_service):
                 auths.append(auth)
         return auths
-
-    @hybrid_property
-    def workflow_registry(self) -> models.WorkflowRegistry:
-        return self.hosting_service
 
     @hybrid_property
     def roc_link(self) -> str:
@@ -235,7 +236,7 @@ class WorkflowVersion(ROCrate):
     @property
     def submitter_identity(self):
         # Return the submitter identity wrt the registry
-        identity = OAuthIdentity.find_by_user_id(self.submitter.id, self.workflow_registry.name)
+        identity = OAuthIdentity.find_by_user_id(self.submitter.id, self.hosting_service.name)
         return identity.provider_user_id
 
     def to_dict(self, test_suite=False, test_build=False, test_output=False):
@@ -291,13 +292,12 @@ class WorkflowVersion(ROCrate):
             .filter(Permission.resource_id == cls.id, Permission.user_id == owner.id).all()
 
     @classmethod
-    def get_hosted_workflow_version(cls, hosting_service: Resource, uuid, version) -> List[WorkflowVersion]:
-        # TODO: replace WorkflowRegistry with a more general Entity
+    def get_hosted_workflow_version(cls, hosting_service: HostingService, uuid, version) -> List[WorkflowVersion]:
         try:
             return cls.query\
-                .join(WorkflowRegistry, cls.hosting_service)\
+                .join(HostingService, cls.hosting_service)\
                 .join(Workflow, Workflow.id == cls.workflow_id)\
-                .filter(WorkflowRegistry.uuid == lm_utils.uuid_param(hosting_service.uuid))\
+                .filter(HostingService.uuid == lm_utils.uuid_param(hosting_service.uuid))\
                 .filter(Workflow.uuid == lm_utils.uuid_param(uuid))\
                 .filter(cls.version == version)\
                 .order_by(WorkflowVersion.version.desc()).one()
@@ -308,9 +308,8 @@ class WorkflowVersion(ROCrate):
             raise lm_exceptions.LifeMonitorException(detail=str(e), stack=str(e))
 
     @classmethod
-    def get_hosted_workflow_versions(cls, hosting_service: Resource) -> List[WorkflowVersion]:
-        # TODO: replace WorkflowRegistry with a more general Entity
+    def get_hosted_workflow_versions(cls, hosting_service: HostingService) -> List[WorkflowVersion]:
         return cls.query\
-            .join(WorkflowRegistry, cls.hosting_service)\
-            .filter(WorkflowRegistry.uuid == lm_utils.uuid_param(hosting_service.uuid))\
+            .join(HostingService, cls.hosting_service)\
+            .filter(HostingService.uuid == lm_utils.uuid_param(hosting_service.uuid))\
             .order_by(WorkflowVersion.version.desc()).all()

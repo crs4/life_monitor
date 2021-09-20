@@ -79,16 +79,25 @@ class VersionDetailsSchema(BaseSchema):
     is_latest = fields.Boolean(attribute="is_latest")
     ro_crate = fields.Method("get_rocrate")
     submitter = ma.Nested(UserSchema(only=('id', 'username')), attribute="submitter")
+    links = fields.Method('get_links')
 
     class Meta:
         model = models.WorkflowVersion
         additional = ('rocrate_metadata',)
 
+    def get_links(self, obj: models.WorkflowVersion):
+        return {
+            'origin': obj.external_link
+        }
+
     def get_rocrate(self, obj):
         rocrate = {
             'links': {
                 'origin': obj.uri,
-                'download': urljoin(lm_utils.get_external_server_url(), f"ro_crates/{obj.id}/download")
+                'metadata': urljoin(lm_utils.get_external_server_url(),
+                                    f"workflows/{obj.workflow.uuid}/rocrate/{obj.version}/metadata"),
+                'download': urljoin(lm_utils.get_external_server_url(),
+                                    f"workflows/{obj.workflow.uuid}/rocrate/{obj.version}/download")
             }
         }
         rocrate['metadata'] = obj.crate_metadata
@@ -117,7 +126,7 @@ class WorkflowVersionSchema(ResourceSchema):
     name = ma.auto_field()
     version = fields.Method("get_version")
     registry = ma.Nested(WorkflowRegistrySchema(exclude=('meta', 'links')),
-                         attribute="workflow_registry")
+                         attribute="hosting_service")
 
     rocrate_metadata = False
 

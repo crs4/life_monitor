@@ -27,12 +27,14 @@ from pathlib import Path
 
 import lifemonitor.exceptions as lm_exceptions
 from lifemonitor.api.models import db
-from lifemonitor.auth.models import Resource
+from lifemonitor.auth.models import Resource, HostingService
 from lifemonitor.models import JSON
 from lifemonitor.test_metadata import get_roc_suites
 from lifemonitor.utils import download_url, extract_zip
-from rocrate.rocrate import ROCrate as ROCrateHelper
 from sqlalchemy.ext.hybrid import hybrid_property
+
+from rocrate.rocrate import ROCrate as ROCrateHelper
+
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -42,9 +44,9 @@ class ROCrate(Resource):
 
     id = db.Column(db.Integer, db.ForeignKey(Resource.id), primary_key=True)
     hosting_service_id = db.Column(db.Integer, db.ForeignKey("resource.id"), nullable=True)
-    hosting_service = db.relationship("Resource", uselist=False,
-                                      backref=db.backref("ro_crates", cascade="all, delete-orphan"),
-                                      foreign_keys=[hosting_service_id])
+    hosting_service: HostingService = db.relationship("HostingService", uselist=False,
+                                                      backref=db.backref("ro_crates", cascade="all, delete-orphan"),
+                                                      foreign_keys=[hosting_service_id])
     _metadata = db.Column("metadata", JSON, nullable=True)
     _local_path = None
     _metadata_loaded = False
@@ -107,6 +109,24 @@ class ROCrate(Resource):
                     self.load_metadata_files(self.uri, authorization_header=auth_header)
                 self._metadata_loaded = True
                 return self._metadata
+            except lm_exceptions.NotAuthorizedException as e:
+                logger.info("Caught authorization error exception while downloading and processing RO-crate: %s", e)
+                errors.append(str(e))
+        raise lm_exceptions.NotAuthorizedException(detail=f"Not authorized to download {self.uri}", original_errors=errors)
+
+    def download(self, target_path: str) -> str:
+        errors = []
+        # try either with authorization header and without authorization
+        for authorization in self._get_authorizations():
+            try:
+                auth_header = authorization.as_http_header() if authorization else None
+                logger.debug(auth_header)
+                tmpdir_path = Path(target_path)
+                local_zip = download_url(self.uri,
+                                         target_path=(tmpdir_path / 'rocrate.zip').as_posix(),
+                                         authorization=auth_header)
+                logger.debug("ZIP Archive: %s", local_zip)
+                return (tmpdir_path / 'rocrate.zip').as_posix()
             except lm_exceptions.NotAuthorizedException as e:
                 logger.info("Caught authorization error exception while downloading and processing RO-crate: %s", e)
                 errors.append(str(e))

@@ -19,9 +19,11 @@
 # SOFTWARE.
 
 import logging
+import tempfile
 
 import connexion
 import lifemonitor.exceptions as lm_exceptions
+import werkzeug
 import werkzeug.exceptions as http_exceptions
 from flask import Response, request
 from lifemonitor.api import serializers
@@ -136,6 +138,33 @@ def workflows_get_status(wf_uuid):
     response = _get_workflow_or_problem(wf_uuid, wf_version)
     return response if isinstance(response, Response) \
         else serializers.WorkflowStatusSchema().dump(response)
+
+
+@authorized
+def workflows_rocrate_metadata(wf_uuid, wf_version):
+    response = _get_workflow_or_problem(wf_uuid, wf_version)
+    if isinstance(response, Response):
+        return response
+    return response.crate_metadata
+
+
+@authorized
+def workflows_rocrate_download(wf_uuid, wf_version):
+    response = _get_workflow_or_problem(wf_uuid, wf_version)
+    if isinstance(response, Response):
+        return response
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        local_zip = response.download(tmpdir)
+        logger.debug("ZIP Archive: %s", local_zip)
+        with open(local_zip, "rb") as f:
+            return werkzeug.Response(f.read(), headers={
+                'Content-Type': 'application/zip',
+                'Accept': 'application/json',
+                'Access-Control-Allow-Credentials': 'true',
+                'Access-Control-Allow-Origin': '*',
+                'Content-Disposition': f'attachment; filename=rocrate_{response.workflow.uuid}_v{response.version}.zip'
+            }, direct_passthrough=False)
 
 
 @authorized

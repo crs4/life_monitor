@@ -247,6 +247,11 @@ class OAuth2Registry(OAuth):
             raise RuntimeError("OAuth2Registry instance already exists!")
         super().__init__(app=app, cache=cache,
                          fetch_token=self.fetch_token, update_token=self.update_token)
+        self._initialized = False
+
+    def init_app(self, app, cache=None, fetch_token=None, update_token=None):
+        super().init_app(app, cache=cache, fetch_token=fetch_token, update_token=update_token)
+        self._initialized = True
 
     def get_client(self, name):
         try:
@@ -254,12 +259,18 @@ class OAuth2Registry(OAuth):
         except ValueError:
             raise LifeMonitorException(f"Unable to load the '{name}' OAuth2 client")
 
+    def get_clients(self):
+        return self._clients.values()
+
     def register_client(self, client_config):
         class OAuth2Client(FlaskRemoteApp):
             NAME = client_config.name
             OAUTH_APP_CONFIG = client_config.oauth_config
 
         super().register(client_config.name, overwrite=True, client_cls=OAuth2Client)
+
+    def is_initialized(self) -> bool:
+        return self._initialized
 
     @staticmethod
     def fetch_token(name, user=None):
