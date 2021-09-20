@@ -87,13 +87,11 @@ def get_registry_user(user_id):
 
 
 @blueprint.route("/", methods=("GET",))
-@cached()
 def index():
     return redirect(url_for('auth.profile'))
 
 
 @blueprint.route("/profile", methods=("GET",))
-@cached()
 def profile(form=None, passwordForm=None, currentView=None):
     currentView = currentView or request.args.get("currentView", 'accountsTab')
     logger.debug(OpenApiSpecs.get_instance().authorization_code_scopes)
