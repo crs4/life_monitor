@@ -251,6 +251,8 @@ that they might be solved, thus extending the useful life of the workflow.</p>
   <li><a href="#workflowsGetStatus"><code><span class="http-method">get</span> /workflows/{wf_uuid}/status</code></a></li>
   <li><a href="#workflowsGetSuites"><code><span class="http-method">get</span> /workflows/{wf_uuid}/suites</code></a></li>
   <li><a href="#workflowsGetVersionsById"><code><span class="http-method">get</span> /workflows/{wf_uuid}/versions</code></a></li>
+  <li><a href="#workflowsRocrateDownload"><code><span class="http-method">get</span> /workflows/{wf_uuid}/rocrate/{wf_version}/download</code></a></li>
+  <li><a href="#workflowsRocrateMetadata"><code><span class="http-method">get</span> /workflows/{wf_uuid}/rocrate/{wf_version}/metadata</code></a></li>
   </ul>
 
   <h1><a name="Registries">Registries</a></h1>
@@ -2093,6 +2095,107 @@ through the service's API).</li>
     <h4 class="field-label">200</h4>
     A WorkflowVersion object
         <a href="#Object">Object</a>
+    <h4 class="field-label">400</h4>
+    The request is malformed
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">403</h4>
+    Forbidden
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Resource not found
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="workflowsRocrateDownload"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /workflows/{wf_uuid}/rocrate/{wf_version}/download</code></pre></div>
+    <div class="method-summary">Get workflow RO-Crate archive (<span class="nickname">workflowsRocrateDownload</span>)</div>
+    <div class="method-notes">Get the RO-Crate ZIP archive for the specified workflow and workflow version</div>
+
+    <h3 class="field-label">Path parameters</h3>
+    <div class="field-items">
+      <div class="param">wf_uuid (required)</div>
+
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Universal unique identifier of the workflow default: null </div><div class="param">wf_version (required)</div>
+
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Workflow version default: null </div>
+    </div>  <!-- field-items -->
+
+
+
+
+
+
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    RO-Crate ZIP archive for the specified workflow and workflow version
+        <a href="#"></a>
+    <h4 class="field-label">400</h4>
+    The request is malformed
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">403</h4>
+    Forbidden
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Resource not found
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="workflowsRocrateMetadata"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /workflows/{wf_uuid}/rocrate/{wf_version}/metadata</code></pre></div>
+    <div class="method-summary">Get workflow RO-Crate metadata (<span class="nickname">workflowsRocrateMetadata</span>)</div>
+    <div class="method-notes">Get the RO-Crate JSON metadata for the specified workflow and workflow version</div>
+
+    <h3 class="field-label">Path parameters</h3>
+    <div class="field-items">
+      <div class="param">wf_uuid (required)</div>
+
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Universal unique identifier of the workflow default: null </div><div class="param">wf_version (required)</div>
+
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Workflow version default: null </div>
+    </div>  <!-- field-items -->
+
+
+
+
+
+
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    RO-Crate JSON metadata for the specified workflow and workflow version.
+RO-Crate specifcation is available at https://www.researchobject.org/ro-crate/.
+        <a href="#"></a>
     <h4 class="field-label">400</h4>
     The request is malformed
         <a href="#Error">Error</a>
