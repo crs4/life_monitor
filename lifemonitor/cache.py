@@ -43,14 +43,36 @@ def _make_name(fname) -> str:
     return result
 
 
-def clear_cache(func, *args, **kwargs):
-    cache.delete_memoized(func, *args, **kwargs)
+def clear_cache(func=None, *args, **kwargs):
+    if func:
+        cache.delete_memoized(func, *args, **kwargs)
+    else:
+        cache.clear()
 
 
 def cached(timeout=None, unless=False):
     def decorator(function):
 
         @cache.memoize(timeout=timeout, unless=unless, make_name=_make_name)
+        @functools.wraps(function)
+        def wrapper(*args, **kwargs):
+            logger.debug("Cache arguments: %r", args)
+            logger.debug("Caghe kwargs: %r", kwargs)
+            # wrap concrete function
+            return function(*args, **kwargs)
+
+        return wrapper
+    return decorator
+
+
+def cached_method(timeout=None, unless=False):
+    def decorator(function):
+
+        def unless_wrapper(func, obj, *args, **kwargs):
+            f = getattr(obj, unless)
+            return f(obj, func, *args, **kwargs)
+
+        @cache.memoize(timeout=timeout, unless=unless_wrapper, make_name=_make_name)
         @functools.wraps(function)
         def wrapper(*args, **kwargs):
             logger.debug("Cache arguments: %r", args)
