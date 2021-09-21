@@ -13,5 +13,5 @@ services:
     volumes:
       - "./certs:/nginx/certs:ro"
       - "./docker/nginx.conf:/opt/bitnami/nginx/conf/server_blocks/lm.conf:ro"
-      - "lifemonitor_static_files:/app/lifemonitor/static:ro"
-      - "lifemonitor_specs:/app/specs:ro"
+      - "data_static_files:/app/lifemonitor/static:ro"
+      - "data_specs:/app/specs:ro"

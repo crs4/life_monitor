@@ -20,7 +20,7 @@ services:
     networks:
       - life_monitor
     volumes:
-      - "lifemonitor_db:/bitnami/postgresql"
+      - "data_db:/bitnami/postgresql"
 
   lm:
     # Remember that this service is using its default configuration
@@ -64,18 +64,18 @@ services:
       - "./instance:/lm/instance:ro"
       - "./settings.conf:/lm/settings.conf:ro" # default settings
       - type: volume
-        source: lifemonitor_static_files
+        source: data_static_files
         target: /lm/lifemonitor/static
       - type: volume
-        source: lifemonitor_specs
+        source: data_specs
         target: /lm/specs
     networks:
       - life_monitor
 
 volumes:
-  lifemonitor_db:
-  lifemonitor_static_files:
-  lifemonitor_specs:
+  data_db:
+  data_static_files:
+  data_specs:
 
 networks:
   life_monitor:
