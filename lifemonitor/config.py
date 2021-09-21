@@ -83,12 +83,14 @@ class DevelopmentConfig(BaseConfig):
     DEBUG = True
     LOG_LEVEL = "DEBUG"
     TESTING = False
+    CACHE_TYPE = "flask_caching.backends.rediscache.RedisCache"
 
 
 class ProductionConfig(BaseConfig):
     CONFIG_NAME = "production"
     SECRET_KEY = os.getenv("PROD_SECRET_KEY", BaseConfig.SECRET_KEY)
     TESTING = False
+    CACHE_TYPE = "flask_caching.backends.rediscache.RedisCache"
 
 
 class TestingConfig(BaseConfig):
@@ -149,34 +151,35 @@ def configure_logging(app):
         level_value = logging.INFO
         error = True
 
-    dictConfig({
-        'version': 1,
-        'formatters': {'default': {
-            'format': '[%(asctime)s] %(levelname)s in %(module)s: %(message)s',
-        }},
-        'handlers': {'wsgi': {
-            'class': 'logging.StreamHandler',
-            'stream': 'ext://flask.logging.wsgi_errors_stream',
-            'formatter': 'default'
-        }},
-        'response': {
-            'level': 'INFO',
-            'handlers': ['wsgi'],
-        },
-        'root': {
-            'level': level_value,
-            'handlers': ['wsgi']
-        },
-        # Lower the log level for the github.Requester object -- else it'll flood us with messages
-        'Requester': {
-            'level': logging.ERROR,
-            'handlers': ['wsgi']
-        },
-    })
+    # dictConfig({
+    #     'version': 1,
+    #     'formatters': {'default': {
+    #         'format': '[%(asctime)s] %(levelname)s in %(module)s: %(message)s',
+    #     }},
+    #     'handlers': {'wsgi': {
+    #         'class': 'logging.StreamHandler',
+    #         'stream': 'ext://flask.logging.wsgi_errors_stream',
+    #         'formatter': 'default'
+    #     }},
+    #     'response': {
+    #         'level': 'INFO',
+    #         'handlers': ['wsgi'],
+    #     },
+    #     'root': {
+    #         'level': level_value,
+    #         'handlers': ['wsgi']
+    #     },
+    #     # Lower the log level for the github.Requester object -- else it'll flood us with messages
+    #     'Requester': {
+    #         'level': logging.ERROR,
+    #         'handlers': ['wsgi']
+    #     },
+    # })
     # Remove Flask's default handler
     # (https://flask.palletsprojects.com/en/2.0.x/logging/#removing-the-default-handler)
-    from flask.logging import default_handler
-    app.logger.removeHandler(default_handler)
+    # from flask.logging import default_handler
+    # app.logger.removeHandler(default_handler)
+    logging.basicConfig(level=level_value)
 
     if error:
         app.logger.error("LOG_LEVEL value %s is invalid. Defaulting to INFO", level_str)
