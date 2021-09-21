@@ -28,7 +28,7 @@ from typing import Optional
 
 import lifemonitor.api.models as models
 import requests
-from lifemonitor.cache import cache
+from lifemonitor.cache import Timeout, cache
 from lifemonitor.exceptions import (EntityNotFoundException,
                                     TestingServiceException)
 
@@ -193,7 +193,7 @@ class TravisTestingService(TestingService):
         return build.is_running()
         # return True
 
-    @cache.memoize(timeout=3600, unless=_disable_build_cache)
+    @cache.memoize(timeout=Timeout.BUILDS, unless=_disable_build_cache)
     def get_test_build(self, test_instance: models.TestInstance, build_number: int) -> models.TravisTestBuild:
         return self._get_test_build(test_instance, build_number)
 

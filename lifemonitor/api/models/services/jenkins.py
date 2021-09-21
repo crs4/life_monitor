@@ -27,7 +27,7 @@ from typing import Optional
 
 import lifemonitor.api.models as models
 import lifemonitor.exceptions as lm_exceptions
-from lifemonitor.cache import cache
+from lifemonitor.cache import Timeout, cache
 from lifemonitor.lang import messages
 
 import jenkins
@@ -142,7 +142,7 @@ class JenkinsTestingService(TestingService):
         build = JenkinsTestBuild(obj, test_instance, obj._get_build_info(test_instance, build_number))
         return build.is_running()
 
-    @cache.memoize(timeout=3600, unless=_disable_build_cache)
+    @cache.memoize(timeout=Timeout.BUILDS, unless=_disable_build_cache)
     def get_test_build(self, test_instance: models.TestInstance, build_number: int) -> JenkinsTestBuild:
         try:
             build_metadata = self._get_build_info(test_instance, build_number)

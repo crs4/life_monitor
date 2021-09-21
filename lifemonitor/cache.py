@@ -27,6 +27,15 @@ import os
 from flask.app import Flask
 from flask_caching import Cache
 
+# Set default timeouts
+
+
+class Timeout:
+    DEFAULT = os.environ.get('CACHE_DEFAULT_TIMEOUT', 300)
+    SESSION = os.environ.get('CACHE_SESSION_TIMEOUT', 3600)
+    BUILDS = os.environ.get('CACHE_SESSION_TIMEOUT', 84600)
+
+
 # Set module logger
 logger = logging.getLogger(__name__)
 
@@ -76,7 +85,7 @@ def clear_cache(func=None, *args, **kwargs):
         cache.clear()
 
 
-def cached(timeout=None, unless=False):
+def cached(timeout=Timeout.DEFAULT, unless=False):
     def decorator(function):
 
         @cache.memoize(timeout=timeout, unless=unless, make_name=_make_name)
