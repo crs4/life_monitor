@@ -20,7 +20,6 @@
 
 import logging
 import os
-from logging.config import dictConfig
 from typing import List, Type
 
 import dotenv
