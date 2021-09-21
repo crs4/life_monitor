@@ -8,6 +8,12 @@ services:
     ports:
       - "8443:8443"
     restart: "always"
+    healthcheck:
+      test: >
+        /bin/sh -c "http_code=$$(curl --insecure https://lm:8443/health -s -w %{http_code}); if [ $${http_code} -eq 502 ]; then exit 1; fi;"
+      interval: "2s"
+      retries: 3
+      timeout: "1s"
     networks:
       - life_monitor
     volumes:
