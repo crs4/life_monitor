@@ -72,10 +72,23 @@ services:
     networks:
       - life_monitor
 
+  redis:
+    image: bitnami/redis:6.2
+    ports:
+      - "6379"
+    env_file: *env_file
+    environment:
+      - "ALLOW_EMPTY_PASSWORD=no"
+    networks:
+      - life_monitor
+    volumes:
+      - "data_redis:/bitnami/redis/data"
+
 volumes:
   data_db:
   data_static_files:
   data_specs:
+  data_redis:
 
 networks:
   life_monitor:
