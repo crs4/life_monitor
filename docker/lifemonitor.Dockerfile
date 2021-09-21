@@ -48,6 +48,7 @@ USER lm
 COPY --chown=lm:lm app.py gunicorn.conf.py /lm/
 COPY --chown=lm:lm specs /lm/specs
 COPY --chown=lm:lm lifemonitor /lm/lifemonitor
+COPY --chown=lm:lm migrations /lm/migrations
 
 
 ##################################################################
