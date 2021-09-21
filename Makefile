@@ -305,6 +305,7 @@ clean: ## Clean up the working environment (i.e., running services, network, vol
 	fi
 	@printf "\n$(bold)Removing certs...$(reset) " ; \
 	rm -rf certs
+	rm -rf utils/certs/data
 	@printf "$(done)\n"
 	@printf "\n$(bold)Removing temp files...$(reset) " ; \
 	rm -rf docker-compose.yml
