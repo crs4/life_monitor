@@ -152,7 +152,7 @@ start: images compose-files ## Start LifeMonitor in a Production environment
 				   -f docker-compose.base.yml \
 				   -f docker-compose.prom.yml \
 				   config)" > docker-compose.yml \
-	&& docker-compose -f docker-compose.yml up -d db init lm nginx prometheus;\
+	&& docker-compose -f docker-compose.yml up -d redis db init lm nginx prometheus;\
 	printf "$(done)\n"
 
 start-dev: images compose-files ## Start LifeMonitor in a Development environment
@@ -163,7 +163,7 @@ start-dev: images compose-files ## Start LifeMonitor in a Development environmen
 	               -f docker-compose.base.yml \
 				   -f docker-compose.dev.yml \
 				   config)" > docker-compose.yml \
-	&& docker-compose -f docker-compose.yml up -d db init lm ;\
+	&& docker-compose -f docker-compose.yml up -d redis db init lm ;\
 	printf "$(done)\n"
 
 start-testing: compose-files aux_images ro_crates images ## Start LifeMonitor in a Testing environment
@@ -258,7 +258,7 @@ stop-dev: compose-files ## Stop all services in the Develop Environment
 	USER_UID=$$(id -u) USER_GID=$$(id -g) \
 	docker-compose -f docker-compose.base.yml \
 				   -f docker-compose.dev.yml \
-				   stop init lm db ; \
+				   stop init lm db redis; \
 	printf "$(done)\n"
 
 stop: compose-files ## Stop all the services in the Production Environment
@@ -267,7 +267,7 @@ stop: compose-files ## Stop all the services in the Production Environment
 	docker-compose -f docker-compose.base.yml \
 				   -f docker-compose.prod.yml \
 				   -f docker-compose.prom.yml \
-				   --log-level ERROR stop init nginx lm db prometheus; \
+				   --log-level ERROR stop init nginx lm db prometheus redis; \
 	printf "$(done)\n"
 
 stop-all: ## Stop all the services
@@ -301,6 +301,7 @@ clean: ## Clean up the working environment (i.e., running services, network, vol
 	fi
 	@printf "\n$(bold)Removing certs...$(reset) " ; \
 	rm -rf certs
+	rm -rf utils/certs/data
 	@printf "$(done)\n"
 	@printf "\n$(bold)Removing temp files...$(reset) " ; \
 	rm -rf docker-compose.yml
