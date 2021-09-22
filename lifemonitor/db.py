@@ -111,7 +111,7 @@ def db_revision(db_name=None, settings=None):
         cursor.execute("SELECT * FROM alembic_version")
         row = cursor.fetchone()
         return row[0] if row else None
-    except errors.OperationalError:
+    except errors.UndefinedTable:
         return None
 
 
