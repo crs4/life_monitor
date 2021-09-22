@@ -77,8 +77,8 @@ class GithubTestingService(TestingService):
 
     def initialize(self):
         try:
-            logger.debug("Instantiating with: url %s; token: %s\nClient configuration: %s",
-                         self.url, None, self._configuration_)
+            logger.debug("Instantiating with: url %s; token: %r\nClient configuration: %s",
+                         self.url, self.token is not None, self._configuration_)
             self._gh_obj = Github(base_url=self.url,
                                   login_or_token=self.token.value if self.token else None,
                                   **self._configuration_)

@@ -122,12 +122,20 @@ jobs:
         env:
           TRAVIS_TESTING_SERVICE_URL: ${{ secrets.TRAVIS_TESTING_SERVICE_URL }}
           TRAVIS_TESTING_SERVICE_TOKEN: ${{ secrets.TRAVIS_TESTING_SERVICE_TOKEN }}
+          TRAVIS_TESTING_SERVICE_TYPE: travis
+          GH_TESTING_SERVICE_URL: ${{ secrets.GH_TESTING_SERVICE_URL }}
+          GH_TESTING_SERVICE_TOKEN: ${{ secrets.GH_TESTING_SERVICE_TOKEN }}
+          GH_TESTING_SERVICE_TYPE: github
       # Run tests
       - name: Run tests
         run: TAGS=${DOCKER_TAGS} LABELS=${DOCKER_LABELS} make run-tests
         env:
           TRAVIS_TESTING_SERVICE_URL: ${{ secrets.TRAVIS_TESTING_SERVICE_URL }}
           TRAVIS_TESTING_SERVICE_TOKEN: ${{ secrets.TRAVIS_TESTING_SERVICE_TOKEN }}
+          TRAVIS_TESTING_SERVICE_TYPE: travis
+          GH_TESTING_SERVICE_URL: ${{ secrets.GH_TESTING_SERVICE_URL }}
+          GH_TESTING_SERVICE_TOKEN: ${{ secrets.GH_TESTING_SERVICE_TOKEN }}
+          GH_TESTING_SERVICE_TYPE: github
       # Teardown testing environment
       - name: Teardown testing environment
         run: make down

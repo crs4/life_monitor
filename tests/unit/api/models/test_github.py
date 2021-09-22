@@ -22,9 +22,9 @@ import logging
 from typing import Optional
 from unittest.mock import MagicMock
 
-import pytest
-
 import lifemonitor.api.models as models
+import pytest
+from tests.conftest_helpers import get_github_token
 
 logger = logging.getLogger(__name__)
 
@@ -54,11 +54,12 @@ def test_instance(test_workflow_resource):
 
 @pytest.fixture
 def github_token() -> Optional[models.TestingServiceToken]:
-    return None
+    token = get_github_token()
+    return models.TestingServiceToken('Bearer', token) if token else None
 
 
 @pytest.fixture
-def github_service(api_url: str, github_token: models.TestingServiceToken = None) -> models.GithubTestingService:
+def github_service(api_url: str, github_token: models.TestingServiceToken) -> models.GithubTestingService:
     return models.GithubTestingService(url=api_url, token=github_token)
 
 
@@ -109,10 +110,10 @@ def test_get_last_builds(github_service: models.GithubTestingService, test_insta
     latest_passed_build = github_service.get_last_passed_test_build(test_instance)
     # Get first passed build from the list, or None if there are None
     build = next((b for b in the_builds if b.is_successful()), None)
-    assert build == latest_passed_build or \
+    assert build == latest_passed_build or (build is None) or \
         (build is not None and latest_passed_build is not None and build.id == latest_passed_build.id)
     # latest failed build
     latest_failed_build = github_service.get_last_failed_test_build(test_instance)
     build = next((b for b in the_builds if not b.is_successful()), None)
-    assert build == latest_failed_build or \
+    assert build == latest_failed_build or build is None or \
         (build is not None and latest_failed_build is not None and build.id == latest_failed_build.id)

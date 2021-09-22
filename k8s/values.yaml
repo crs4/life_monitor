@@ -51,9 +51,11 @@ testing_services: {}
   # travis_org:
   #   api_url: https://travis-ci.org
   #   token: <YOUR_TRAVIS_TOKEN_>
+  #   type: travis
   # travis_com:
   #   api_url: https://travis-ci.com
   #   token: <YOUR_TRAVIS_TOKEN_>
+  #   type: travis
 
 lifemonitor:
   replicaCount: 1
