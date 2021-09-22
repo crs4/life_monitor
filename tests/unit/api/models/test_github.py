@@ -22,9 +22,9 @@ import logging
 from typing import Optional
 from unittest.mock import MagicMock
 
-import pytest
-
 import lifemonitor.api.models as models
+import pytest
+from tests.conftest_helpers import get_github_token
 
 logger = logging.getLogger(__name__)
 
@@ -54,11 +54,11 @@ def test_instance(test_workflow_resource):
 
 @pytest.fixture
 def github_token() -> Optional[models.TestingServiceToken]:
-    return None
+    return models.TestingServiceToken('Bearer', get_github_token())
 
 
 @pytest.fixture
-def github_service(api_url: str, github_token: models.TestingServiceToken = None) -> models.GithubTestingService:
+def github_service(api_url: str, github_token: models.TestingServiceToken) -> models.GithubTestingService:
     return models.GithubTestingService(url=api_url, token=github_token)
 
 

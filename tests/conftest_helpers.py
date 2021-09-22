@@ -138,6 +138,10 @@ def get_travis_token():
     return os.environ.get('TRAVIS_TESTING_SERVICE_TOKEN', False)
 
 
+def get_github_token():
+    return os.environ.get('GITHUB_TESTING_SERVICE_TOKEN', False)
+
+
 def get_valid_workflows():
     wfs = ['sort-and-change-case']
     if get_travis_token():
