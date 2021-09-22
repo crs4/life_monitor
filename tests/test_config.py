@@ -105,7 +105,8 @@ def testing_service_config(testing_service_label):
     service_label = testing_service_label.upper()
     app_settings_param = {
         f"{service_label}_TESTING_SERVICE_URL": "https://api.mytestingservice.org",
-        f"{service_label}_TESTING_SERVICE_TOKEN": "123456789"
+        f"{service_label}_TESTING_SERVICE_TOKEN": "123456789",
+        f"{service_label}_TESTING_SERVICE_TYPE": "travis"
     }
     return app_settings_param
 
@@ -123,8 +124,9 @@ def test_valid_config_service_token(testing_service_label, testing_service_confi
 
 def test_config_service_token_unsupported_service_type():
     app_settings_param = {
-        "TRAVI_ORG_TESTING_SERVICE_URL": "https://api.mytestingservice.org",
-        "TRAVI_ORG_TESTING_SERVICE_TOKEN": "123456789"
+        "TRAVI_ORG_TESTING_SERVICE_URL": "https://error.mytestingservice.org",
+        "TRAVI_ORG_TESTING_SERVICE_TOKEN": "123456789",
+        "TRAVI_ORG_TESTING_SERVICE_TYPE": "travi",
     }
     with pytest.raises(lm_exceptions.TestingServiceNotSupportedException):
         create_app(env="testing", settings=app_settings_param, init_app=True)
