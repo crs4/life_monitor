@@ -54,7 +54,8 @@ def test_instance(test_workflow_resource):
 
 @pytest.fixture
 def github_token() -> Optional[models.TestingServiceToken]:
-    return models.TestingServiceToken('Bearer', get_github_token())
+    token = get_github_token()
+    return models.TestingServiceToken('Bearer', token) if token else None
 
 
 @pytest.fixture
