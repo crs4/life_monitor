@@ -109,10 +109,10 @@ def test_get_last_builds(github_service: models.GithubTestingService, test_insta
     latest_passed_build = github_service.get_last_passed_test_build(test_instance)
     # Get first passed build from the list, or None if there are None
     build = next((b for b in the_builds if b.is_successful()), None)
-    assert build == latest_passed_build or \
+    assert build == latest_passed_build or (build is None) or \
         (build is not None and latest_passed_build is not None and build.id == latest_passed_build.id)
     # latest failed build
     latest_failed_build = github_service.get_last_failed_test_build(test_instance)
     build = next((b for b in the_builds if not b.is_successful()), None)
-    assert build == latest_failed_build or \
+    assert build == latest_failed_build or build is None or \
         (build is not None and latest_failed_build is not None and build.id == latest_failed_build.id)
