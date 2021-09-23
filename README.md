@@ -49,7 +49,7 @@ guide](https://crs4.github.io/life_monitor/lm_admin_guide).
 <div align="center" style="text-align: center;">
   <div><b style="font-size: larger">Acknowledgements</b></div>
   <div>
-    Life Monitor is being developed as part of the [EOSC-Life project](https://www.eosc-life.eu/).
+    Life Monitor is being developed as part of the <a href="https://www.eosc-life.eu/">EOSC-Life project</a>.
   </div>
   <img alt="EOSC-Life, CRS4, BBMRI-ERIC Logos"
        src="https://github.com/crs4/life_monitor/raw/master/docs/footer-logo.svg"
