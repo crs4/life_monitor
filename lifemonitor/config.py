@@ -156,7 +156,7 @@ def configure_logging(app):
             'formatter': 'default'
         }},
         'response': {
-            'level': 'INFO',
+            'level': logging.INFO,
             'handlers': ['wsgi'],
         },
         'root': {
@@ -168,11 +168,20 @@ def configure_logging(app):
             'level': logging.ERROR,
             'handlers': ['wsgi']
         },
+        'disable_existing_loggers': False,
     })
     # Remove Flask's default handler
     # (https://flask.palletsprojects.com/en/2.0.x/logging/#removing-the-default-handler)
     from flask.logging import default_handler
     app.logger.removeHandler(default_handler)
+    # Raise the level of the default flask request logger (actually, it's the one defined by werkzeug)
+    try:
+        from werkzeug._internal import _log as werkzeug_log
+        werkzeug_log("info", "Raising werkzeug logging level to ERROR")
+        from werkzeug._internal import _logger as werkzeug_logger
+        werkzeug_logger.setLevel(logging.ERROR)
+    except ImportError:
+        app.logger.warning("Unable to access werkzeug logger to raise it logging level")
 
     if error:
         app.logger.error("LOG_LEVEL value %s is invalid. Defaulting to INFO", level_str)
