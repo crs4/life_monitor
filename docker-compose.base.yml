@@ -72,6 +72,28 @@ services:
     networks:
       - life_monitor
 
+  worker:
+    image: crs4/lifemonitor
+    entrypoint: /usr/local/bin/dramatiq
+    command: lifemonitor.tasks.worker:broker  lifemonitor.tasks.tasks
+    restart: "always"
+    depends_on:
+      - "db"
+      - "init"
+      - "redis"
+    env_file: *env_file
+    environment:
+      - "FLASK_ENV=production"
+      - "POSTGRESQL_HOST=db"
+      - "POSTGRESQL_PORT=5432"
+    volumes:
+      - "./certs:/certs:ro"
+      - "./instance:/lm/instance:ro"
+      - "./settings.conf:/lm/settings.conf:ro" # default settings
+    networks:
+      - life_monitor
+
+
   redis:
     image: bitnami/redis:6.2
     ports:

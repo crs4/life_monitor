@@ -29,6 +29,7 @@ from flask_migrate import Migrate
 import lifemonitor.config as config
 from lifemonitor import __version__ as version
 from lifemonitor.routes import register_routes
+from lifemonitor.tasks.task_queue import setup_task_queue
 
 from . import commands
 from .db import db
@@ -69,6 +70,8 @@ def create_app(env=None, settings=None, init_app=True, **kwargs):
     # variables defined here will override those in the default configuration
     if os.environ.get("FLASK_APP_CONFIG_FILE", None):
         app.config.from_envvar("FLASK_APP_CONFIG_FILE")
+
+    setup_task_queue(app)
     # initialize the application
     if init_app:
         with app.app_context() as ctx:
@@ -82,6 +85,16 @@ def create_app(env=None, settings=None, init_app=True, **kwargs):
     @app.route("/openapi.html")
     def openapi():
         return redirect('/static/apidocs.html')
+
+    @app.route("/add")
+    def add():
+        from .tasks.tasks import add
+        import random
+        x = random.randint(1, 9)
+        y = random.randint(1, 9)
+        logger.info("Running task to sum %s and %s", x, y)
+        add.send(x, y)
+        return jsonify({'msg': f"Computing the sum of {x} and {y}"})
 
     @app.before_request
     def set_request_start_time():
