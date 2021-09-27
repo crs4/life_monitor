@@ -33,6 +33,7 @@ import tempfile
 import urllib
 import uuid
 import zipfile
+import requests
 from importlib import import_module
 from os.path import basename, dirname, isfile, join
 
@@ -166,12 +167,12 @@ def download_url(url: str, target_path: str = None, authorization: str = None) -
             logger.info("Fetched %s of data from %s",
                         sizeof_fmt(os.path.getsize(target_path)),
                         url)
-    except (urllib.error.URLError, requests.exceptions.HTTPError) as e:
+    except (urllib.error.URLError, IOError) as e:
         # requests raised on an exception as we were trying to download.
         raise \
-            lm_exceptions.NotValidROCrateException(
+            lm_exceptions.DownloadROCrateException(
                 details=f"Error downloading RO-crate from {url}",
-                status=400,
+                status=500,
                 original_error=str(e))
     return target_path
 

@@ -133,6 +133,14 @@ class WorkflowVersionConflictException(LifeMonitorException):
             detail=detail, status=409, **kwargs)
 
 
+class DownloadROCrateException(LifeMonitorException):
+
+    def __init__(self, detail="Unable to get RO-Crate for workflow",
+                 type="about:blank", status=500, instance=None, **kwargs):
+        super().__init__(title="Internal Server Error",
+                         detail=detail, status=status, **kwargs)
+
+
 class NotValidROCrateException(LifeMonitorException):
 
     def __init__(self, detail="Not valid RO Crate",
