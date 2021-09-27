@@ -308,6 +308,9 @@ def workflows_post(body, _registry=None, _submitter_id=None):
     except KeyError as e:
         return lm_exceptions.report_problem(400, "Bad Request", extra_info={"exception": str(e)},
                                             detail=messages.input_data_missing)
+    except lm_exceptions.DownloadROCrateException as e:
+        return lm_exceptions.report_problem(400, "Bad Request", extra_info={"exception": str(e)},
+                                            detail=messages.invalid_ro_crate)
     except lm_exceptions.NotValidROCrateException as e:
         return lm_exceptions.report_problem(400, "Bad Request", extra_info={"exception": str(e)},
                                             detail=messages.invalid_ro_crate)
