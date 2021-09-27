@@ -65,7 +65,7 @@ class ROCrate(Resource):
 
     @hybrid_property
     def crate_metadata(self):
-        if not self._metadata_loaded:
+        if not self._metadata_loaded and not self._metadata:
             self.load_metadata()
         return self._metadata
 
