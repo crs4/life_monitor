@@ -33,7 +33,6 @@ import tempfile
 import urllib
 import uuid
 import zipfile
-import requests
 from importlib import import_module
 from os.path import basename, dirname, isfile, join
 
