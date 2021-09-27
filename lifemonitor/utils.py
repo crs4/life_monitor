@@ -151,6 +151,13 @@ def _download_from_remote(url, output_stream, authorization=None):
                 output_stream.write(chunk)
 
 
+def check_resource_exists(url):
+    r = requests.head(url, verify=False)
+    result = r.status_code != 404
+    logger.debug("Checking if resource %s exists: %r", url, result)
+    return result
+
+
 def download_url(url: str, target_path: str = None, authorization: str = None) -> str:
     if not target_path:
         target_path = tempfile.mktemp()
@@ -166,11 +173,26 @@ def download_url(url: str, target_path: str = None, authorization: str = None) -
             logger.info("Fetched %s of data from %s",
                         sizeof_fmt(os.path.getsize(target_path)),
                         url)
-    except (urllib.error.URLError, IOError) as e:
-        # requests raised on an exception as we were trying to download.
+    except urllib.error.URLError as e:
+        logger.exception(e)
         raise \
-            lm_exceptions.DownloadROCrateException(
-                details=f"Error downloading RO-crate from {url}",
+            lm_exceptions.DownloadException(
+                details=f"Error downloading from {url}",
+                status=400,
+                original_error=str(e))
+    except requests.exceptions.HTTPError as e:
+        logger.exception(e)
+        raise \
+            lm_exceptions.DownloadException(
+                details=f"Error downloading from {url}",
+                status=e.response.status_code,
+                original_error=str(e))
+    except IOError as e:
+        # requests raised on an exception as we were trying to download.
+        logger.exception(e)
+        raise \
+            lm_exceptions.DownloadException(
+                details=f"Error downloading from {url}",
                 status=500,
                 original_error=str(e))
     return target_path
