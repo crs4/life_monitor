@@ -40,7 +40,7 @@ from .serializers import ma
 logger = logging.getLogger(__name__)
 
 
-def create_app(env=None, settings=None, init_app=True, **kwargs):
+def create_app(env=None, settings=None, init_app=True, worker=False, **kwargs):
     """
     App factory method
     :param env:
@@ -56,6 +56,7 @@ def create_app(env=None, settings=None, init_app=True, **kwargs):
         os.environ['DEBUG_METRICS'] = 'true'
     # load app config
     app_config = config.get_config_by_name(app_env, settings=settings)
+    setattr(app_config, 'WORKER', bool(worker))
     # set the FlaskApp instance path
     flask_app_instance_path = getattr(app_config, "FLASK_APP_INSTANCE_PATH", None)
     # create Flask app instance

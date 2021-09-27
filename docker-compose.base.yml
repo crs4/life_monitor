@@ -86,7 +86,6 @@ services:
       - "FLASK_ENV=production"
       - "POSTGRESQL_HOST=db"
       - "POSTGRESQL_PORT=5432"
-      - "WORKER=True"
     volumes:
       - "./certs:/certs:ro"
       - "./instance:/lm/instance:ro"

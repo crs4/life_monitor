@@ -129,10 +129,6 @@ def get_config_by_name(name, settings=None):
         # always set the FLASK_APP_CONFIG_FILE variable to the environment
         if settings and "FLASK_APP_CONFIG_FILE" in settings:
             os.environ["FLASK_APP_CONFIG_FILE"] = settings["FLASK_APP_CONFIG_FILE"]
-        logger.info("Checking os.environ['WORKER'] -> is '%s'", os.environ.get('WORKER'))
-        if 'WORKER' in os.environ:
-            logger.info("in config: os.environ:['WORKER'] is '%s'", os.environ['WORKER'])
-            config.WORKER = bool_from_string(os.environ['WORKER'])
         # append properties from settings.conf
         # to the default configuration
         if settings:
