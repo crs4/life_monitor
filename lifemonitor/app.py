@@ -29,7 +29,7 @@ from flask_migrate import Migrate
 import lifemonitor.config as config
 from lifemonitor import __version__ as version
 from lifemonitor.routes import register_routes
-from lifemonitor.tasks.task_queue import setup_task_queue
+from lifemonitor.tasks.task_queue import init_task_queue
 
 from . import commands
 from .db import db
@@ -71,7 +71,6 @@ def create_app(env=None, settings=None, init_app=True, **kwargs):
     if os.environ.get("FLASK_APP_CONFIG_FILE", None):
         app.config.from_envvar("FLASK_APP_CONFIG_FILE")
 
-    setup_task_queue(app)
     # initialize the application
     if init_app:
         with app.app_context() as ctx:
@@ -134,6 +133,8 @@ def initialize_app(app, app_context, prom_registry=None):
     register_routes(app)
     # register commands
     commands.register_commands(app)
+
+    init_task_queue(app)
 
     # configure prometheus exporter
     # must be configured after the routes are registered

@@ -26,6 +26,7 @@ from typing import List, Type
 import dotenv
 
 from .db import db_uri
+from .utils import bool_from_string
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
@@ -71,6 +72,9 @@ class BaseConfig:
     # JWT Settings
     JWT_SECRET_KEY_PATH = os.getenv("JWT_SECRET_KEY_PATH", 'certs/jwt-key')
     JWT_EXPIRATION_TIME = os.getenv("JWT_EXPIRATION_TIME", 3600)
+    # Disable the Flask APScheduler REST API, by default
+    SCHEDULER_API_ENABLED = False
+    WORKER = False
 
 
 class DevelopmentConfig(BaseConfig):
@@ -125,6 +129,10 @@ def get_config_by_name(name, settings=None):
         # always set the FLASK_APP_CONFIG_FILE variable to the environment
         if settings and "FLASK_APP_CONFIG_FILE" in settings:
             os.environ["FLASK_APP_CONFIG_FILE"] = settings["FLASK_APP_CONFIG_FILE"]
+        logger.info("Checking os.environ['WORKER'] -> is '%s'", os.environ.get('WORKER'))
+        if 'WORKER' in os.environ:
+            logger.info("in config: os.environ:['WORKER'] is '%s'", os.environ['WORKER'])
+            config.WORKER = bool_from_string(os.environ['WORKER'])
         # append properties from settings.conf
         # to the default configuration
         if settings:
