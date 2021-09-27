@@ -1160,6 +1160,13 @@ components:
           schema:
             $ref: "#/components/schemas/Error"
 
+    InternalServerError:
+      description: Internal Server Error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
     WorkflowRegistered:
       description: A new workflow has been registered.
       content:
