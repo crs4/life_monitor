@@ -133,7 +133,7 @@ class WorkflowVersionConflictException(LifeMonitorException):
             detail=detail, status=409, **kwargs)
 
 
-class DownloadROCrateException(LifeMonitorException):
+class DownloadException(LifeMonitorException):
 
     def __init__(self, detail="Unable to get RO-Crate for workflow",
                  type="about:blank", status=500, instance=None, **kwargs):
