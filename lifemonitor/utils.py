@@ -177,14 +177,14 @@ def download_url(url: str, target_path: str = None, authorization: str = None) -
         logger.exception(e)
         raise \
             lm_exceptions.DownloadException(
-                details=f"Error downloading from {url}",
+                detail=f"Error downloading from {url}",
                 status=400,
                 original_error=str(e))
     except requests.exceptions.HTTPError as e:
         logger.exception(e)
         raise \
             lm_exceptions.DownloadException(
-                details=f"Error downloading from {url}",
+                detail=f"Error downloading from {url}",
                 status=e.response.status_code,
                 original_error=str(e))
     except IOError as e:
@@ -192,7 +192,7 @@ def download_url(url: str, target_path: str = None, authorization: str = None) -
         logger.exception(e)
         raise \
             lm_exceptions.DownloadException(
-                details=f"Error downloading from {url}",
+                detail=f"Error downloading from {url}",
                 status=500,
                 original_error=str(e))
     return target_path
