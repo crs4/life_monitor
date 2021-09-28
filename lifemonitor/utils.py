@@ -153,7 +153,7 @@ def _download_from_remote(url, output_stream, authorization=None):
 
 def check_resource_exists(url):
     r = requests.head(url, verify=False)
-    result = r.status_code != 404
+    result = r.status_code == 200
     logger.debug("Checking if resource %s exists: %r", url, result)
     return result
 
