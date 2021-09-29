@@ -29,6 +29,6 @@ import lifemonitor.utils as utils
 
 def test_download_url_404():
     with tempfile.TemporaryDirectory() as d:
-        with pytest.raises(lm_exceptions.NotValidROCrateException) as excinfo:
+        with pytest.raises(lm_exceptions.DownloadException) as excinfo:
             _ = utils.download_url('http://httpbin.org/status/404', os.path.join(d, 'get_404'))
-        assert excinfo.value.status == 400
+        assert excinfo.value.status == 404

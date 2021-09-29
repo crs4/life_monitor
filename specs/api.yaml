@@ -610,7 +610,6 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
-
   /workflows/{wf_uuid}/rocrate/{wf_version}/metadata:
     get:
       x-openapi-router-controller: lifemonitor.api.controllers
@@ -630,7 +629,7 @@ paths:
         "200":
           description: |
             RO-Crate JSON metadata for the specified workflow and workflow version.
-            RO-Crate specifcation is available at https://www.researchobject.org/ro-crate/.          
+            RO-Crate specifcation is available at https://www.researchobject.org/ro-crate/.
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -666,6 +665,8 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
 
   /workflows/{wf_uuid}/suites:
     get:
@@ -1158,6 +1159,13 @@ components:
           schema:
             $ref: "#/components/schemas/Error"
 
+    InternalServerError:
+      description: Internal Server Error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
     WorkflowRegistered:
       description: A new workflow has been registered.
       content:
@@ -1503,16 +1511,19 @@ components:
                   {
                     uuid: "21ac72ec-b9a5-49e0-b5a6-1322b8b54552",
                     version: "0.1",
-                    links: {
-                      origin: "http://webserver:5000/download?file=ro-crate-galaxy-sortchangecase.crate.zip"
-                    },
-                    ro_crate: {
-                      links: {
-                        "download": "https://lm:8000/workflows/123e4567-e89b-12d3-a456-426614174000/rocrate/1.0/download",
-                        "metadata": "https://lm:8000/workflows/123e4567-e89b-12d3-a456-426614174000/rocrate/1.0/metadata",
-                        "origin": "http://webserver:5000/download?file=ro-crate-galaxy-sortchangecase.crate.zip"
-                      }
-                    },
+                    links:
+                      {
+                        origin: "http://webserver:5000/download?file=ro-crate-galaxy-sortchangecase.crate.zip",
+                      },
+                    ro_crate:
+                      {
+                        links:
+                          {
+                            "download": "https://lm:8000/workflows/123e4567-e89b-12d3-a456-426614174000/rocrate/1.0/download",
+                            "metadata": "https://lm:8000/workflows/123e4567-e89b-12d3-a456-426614174000/rocrate/1.0/metadata",
+                            "origin": "http://webserver:5000/download?file=ro-crate-galaxy-sortchangecase.crate.zip",
+                          },
+                      },
                     submitter: { id: 501, username: "lm" },
                   },
                 ]

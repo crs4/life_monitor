@@ -133,6 +133,14 @@ class WorkflowVersionConflictException(LifeMonitorException):
             detail=detail, status=409, **kwargs)
 
 
+class DownloadException(LifeMonitorException):
+
+    def __init__(self, detail=None,
+                 type="about:blank", status=500, instance=None, **kwargs):
+        super().__init__(title="Download error",
+                         detail=detail, status=status, **kwargs)
+
+
 class NotValidROCrateException(LifeMonitorException):
 
     def __init__(self, detail="Not valid RO Crate",

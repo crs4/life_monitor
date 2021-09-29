@@ -27,14 +27,13 @@ from pathlib import Path
 
 import lifemonitor.exceptions as lm_exceptions
 from lifemonitor.api.models import db
-from lifemonitor.auth.models import Resource, HostingService
+from lifemonitor.auth.models import HostingService, Resource
 from lifemonitor.models import JSON
 from lifemonitor.test_metadata import get_roc_suites
-from lifemonitor.utils import download_url, extract_zip
+from lifemonitor.utils import check_resource_exists, download_url, extract_zip
 from sqlalchemy.ext.hybrid import hybrid_property
 
 from rocrate.rocrate import ROCrate as ROCrateHelper
-
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -65,7 +64,7 @@ class ROCrate(Resource):
 
     @hybrid_property
     def crate_metadata(self):
-        if not self._metadata_loaded:
+        if not self._metadata_loaded and not self._metadata:
             self.load_metadata()
         return self._metadata
 
@@ -115,6 +114,10 @@ class ROCrate(Resource):
         raise lm_exceptions.NotAuthorizedException(detail=f"Not authorized to download {self.uri}", original_errors=errors)
 
     def download(self, target_path: str) -> str:
+        # report if the workflow is not longer available on the origin server
+        if self._metadata and not check_resource_exists(self.uri):
+            raise lm_exceptions.DownloadException(detail=f"Not found: {self.uri}", status=410)
+
         errors = []
         # try either with authorization header and without authorization
         for authorization in self._get_authorizations():
