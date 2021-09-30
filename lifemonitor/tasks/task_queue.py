@@ -36,15 +36,14 @@ class AppContextMiddleware(dramatiq.Middleware):
 
 
 def init_task_queue(app):
-    # redis_uri = app.config.get("DRAMATIQ_BROKER_URL", "redis://localhost:6379/0")
-    # logger.info("Setting up task queue.  Pointing to broker %s",
-    #            re.sub(r'[^@]*@', '', redis_uri))  # before logging erase user:pass, if present
 
-    logger.info("Setting up task queue -> hardcoded values!.")
-    # redis_broker = RedisBroker(url=redis_uri)
-    # result_backend = RedisBackend(url=redis_uri)
-    redis_broker = RedisBroker(host="redis", password="foobar")
-    result_backend = RedisBackend(host="redis", password="foobar")
+    redis_connection_params = dict(host=app.config.get("REDIS_HOST", "redis"),
+                                   password=app.config.get("REDIS_PASSWORD", "foobar"),
+                                   port=int(app.config.get("REDIS_PORT_NUMBER", 6379)))
+    logger.info("Setting up task queue.  Pointing to broker %s:%s",
+                redis_connection_params['host'], redis_connection_params['port'])
+    redis_broker = RedisBroker(**redis_connection_params)
+    result_backend = RedisBackend(**redis_connection_params)
     redis_broker.add_middleware(Results(backend=result_backend))
     dramatiq.set_broker(redis_broker)
     redis_broker.add_middleware(AppContextMiddleware(app))
