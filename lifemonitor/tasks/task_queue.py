@@ -5,7 +5,7 @@ from threading import local as thread_local
 
 import dramatiq
 from dramatiq.brokers.redis import RedisBroker
-from dramatiq.results.backends import RedisBackend
+from dramatiq.results.backends.redis import RedisBackend
 from dramatiq.results import Results
 from flask_apscheduler import APScheduler
 
