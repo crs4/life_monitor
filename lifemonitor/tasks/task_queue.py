@@ -1,7 +1,6 @@
 
 import atexit
 import logging
-import re
 from threading import local as thread_local
 
 import dramatiq
@@ -11,6 +10,7 @@ from dramatiq.results import Results
 from flask_apscheduler import APScheduler
 
 logger = logging.getLogger(__name__)
+
 
 class AppContextMiddleware(dramatiq.Middleware):
     state = thread_local()
@@ -54,7 +54,7 @@ def init_task_queue(app):
         logger.info("Starting periodic task scheduler")
         app.scheduler = APScheduler()
         app.scheduler.init_app(app)
-        from . import tasks  # imported for its side effects - it defines the tasks
+        from . import tasks  # noqa: F401 imported for its side effects - it defines the tasks
         app.scheduler.start()
         # Shut down the scheduler when exiting the app
         atexit.register(app.scheduler.shutdown)
