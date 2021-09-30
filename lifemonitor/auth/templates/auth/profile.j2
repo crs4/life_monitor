@@ -22,6 +22,15 @@
 
     <!-- OAuth2 Client Form -->
     <div class="clearfix">
+    {% if back_param %}
+    <a href="{{ back_param['url'] }}" title="{{ back_param['title'] }}">
+      <i class="fas fa-caret-left mx-1"></i>
+      {% if back_param['text'] %}{{ back_param['text']}}
+      {%else%}
+      back {% if back_param['name'] %}to {{back_param['name']}}{% endif %}
+      {%endif%}
+    </a>
+    {% endif %}
     {% include 'auth/oauth2_client_pane.j2' %}
     </div>
 
