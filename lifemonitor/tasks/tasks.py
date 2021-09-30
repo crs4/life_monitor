@@ -34,6 +34,8 @@ def schedule(trigger):
 
 
 logger.info("Importing task definitions")
+
+
 @schedule(CronTrigger(second=0))
 @dramatiq.actor
 def hearbeat():
