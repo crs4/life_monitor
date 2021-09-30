@@ -24,7 +24,7 @@ import flask
 from flask import flash, redirect, render_template, request, url_for
 from flask_login import login_required, login_user, logout_user
 from lifemonitor.utils import (NextRouteRegistry, next_route_aware,
-                               split_by_crlf)
+                               split_by_crlf, decodeBase64)
 
 from .. import exceptions
 from ..utils import OpenApiSpecs
@@ -88,14 +88,22 @@ def index():
 
 
 @blueprint.route("/profile", methods=("GET",))
-def profile(form=None, passwordForm=None, currentView=None):
+def profile(form=None, passwordForm=None, currentView=None, back=None):
     currentView = currentView or request.args.get("currentView", 'accountsTab')
     logger.debug(OpenApiSpecs.get_instance().authorization_code_scopes)
+    back_param = request.args.get('back', None)
+    try:
+        if back_param:
+            back_param = decodeBase64(back_param, as_object=True)
+            logger.debug("detected back param: %r", back_param)
+    except Exception as e:
+        logger.error("Unable to decode back param: %s", str(e))
     return render_template("auth/profile.j2",
                            passwordForm=passwordForm or SetPasswordForm(),
                            oauth2ClientForm=form or Oauth2ClientForm(),
                            providers=get_providers(), currentView=currentView,
-                           oauth2_generic_client_scopes=OpenApiSpecs.get_instance().authorization_code_scopes)
+                           oauth2_generic_client_scopes=OpenApiSpecs.get_instance().authorization_code_scopes,
+                           back_param=back_param)
 
 
 @blueprint.route("/register", methods=("GET", "POST"))
