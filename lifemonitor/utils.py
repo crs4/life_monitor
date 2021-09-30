@@ -19,6 +19,7 @@
 # SOFTWARE.
 
 
+import base64
 import functools
 import glob
 import json
@@ -117,6 +118,17 @@ def sizeof_fmt(num, suffix='B'):
             return "%3.1f%s%s" % (num, unit, suffix)
         num /= 1024.0
     return "%.1f%s%s" % (num, 'Yi', suffix)
+
+
+def decodeBase64(str, as_object=False, encoding='utf-8'):
+    result = base64.b64decode(str)
+    if not result:
+        return None
+    if encoding:
+        result = result.decode(encoding)
+        if as_object:
+            result = json.loads(result)
+    return result
 
 
 def get_base_url():
