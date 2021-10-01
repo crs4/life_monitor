@@ -82,7 +82,8 @@ compose-files: docker-compose.base.yml \
 	docker-compose.dev.yml \
 	docker-compose.extra.yml \
 	docker-compose.test.yml \
-	docker-compose.prom.yml
+	docker-compose.prom.yml \
+	settings.conf
 
 certs:
 	@# Generate certificates if they do not exist \
