@@ -30,10 +30,15 @@ ENV PYTHONPATH=/lm:/usr/local/lib/python3.7/dist-packages:/usr/lib/python3/dist-
 WORKDIR /lm
 
 # Copy utility scripts
-COPY --chown=root:root docker/wait-for-postgres.sh docker/lm_entrypoint.sh /usr/local/bin/
+COPY --chown=root:root \
+    docker/wait-for-postgres.sh docker/lm_entrypoint.sh docker/worker_entrypoint.sh \
+    /usr/local/bin/
 
 # Update permissions and install optional certificates
-RUN chmod 755 /usr/local/bin/wait-for-postgres.sh /usr/local/bin/lm_entrypoint.sh \
+RUN chmod 755 \
+      /usr/local/bin/wait-for-postgres.sh \
+      /usr/local/bin/lm_entrypoint.sh \
+      /usr/local/bin/worker_entrypoint.sh \
     && certs=$(ls *.crt 2> /dev/null) \
     && mv *.crt /usr/local/share/ca-certificates/ \
     && update-ca-certificates || true
