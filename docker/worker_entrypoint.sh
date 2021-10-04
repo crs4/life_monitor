@@ -18,7 +18,7 @@ if [[ "${FLASK_ENV}" == "development" ]]; then
 fi
 
 # Create a directory for the worker's prometheus client.
-# We follow the instructions in the dramatiq documentationç
+# We follow the instructions in the dramatiq documentation
 #    https://dramatiq.io/advanced.html#gotchas-with-prometheus
 export PROMETHEUS_MULTIPROC_DIR=$(mktemp -d /tmp/lm_dramatiq_prometheus_multiproc_dir.XXXXXXXX)
 rm -rf "${PROMETHEUS_MULTIPROC_DIR}/*"

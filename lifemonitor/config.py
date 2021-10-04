@@ -184,7 +184,7 @@ def configure_logging(app):
         from werkzeug._internal import _logger as werkzeug_logger
         werkzeug_logger.setLevel(logging.ERROR)
     except ImportError:
-        app.logger.warning("Unable to access werkzeug logger to raise it logging level")
+        app.logger.warning("Unable to access werkzeug logger to raise its logging level")
 
     if error:
         app.logger.error("LOG_LEVEL value %s is invalid. Defaulting to INFO", level_str)
