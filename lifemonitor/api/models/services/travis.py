@@ -86,7 +86,7 @@ class TravisTestingService(TestingService):
         query = "?" + urllib.parse.urlencode(params) if params else ""
         return urllib.parse.urljoin(self.api_base_url, path + query)
 
-    @cache.memoize(10)
+    @cache.memoize()
     def _get(self, path, token: models.TestingServiceToken = None, params=None) -> object:
         logger.debug("Getting resource: %r", self._build_url(path, params))
         response = requests.get(self._build_url(path, params), headers=self._build_headers(token))
