@@ -21,7 +21,7 @@
 import logging
 
 import flask
-from flask import flash, redirect, render_template, request, url_for
+from flask import flash, redirect, render_template, request, session, url_for
 from flask_login import login_required, login_user, logout_user
 from lifemonitor.utils import (NextRouteRegistry, next_route_aware,
                                split_by_crlf)
@@ -88,14 +88,24 @@ def index():
 
 
 @blueprint.route("/profile", methods=("GET",))
-def profile(form=None, passwordForm=None, currentView=None):
+def profile(form=None, passwordForm=None, currentView=None, back=None):
     currentView = currentView or request.args.get("currentView", 'accountsTab')
     logger.debug(OpenApiSpecs.get_instance().authorization_code_scopes)
+    back_param = request.args.get('back', None)
+    logger.debug("detected back param: %r", back_param)
+    if not current_user.is_authenticated:
+        session['lm_back_param'] = back_param
+        logger.debug("Pushing back param to session")
+    else:
+        logger.debug("Getting back param from session")
+        back_param = back_param or session.get('lm_back_param', False)
+        logger.debug("detected back param: %s", back_param)
     return render_template("auth/profile.j2",
                            passwordForm=passwordForm or SetPasswordForm(),
                            oauth2ClientForm=form or Oauth2ClientForm(),
                            providers=get_providers(), currentView=currentView,
-                           oauth2_generic_client_scopes=OpenApiSpecs.get_instance().authorization_code_scopes)
+                           oauth2_generic_client_scopes=OpenApiSpecs.get_instance().authorization_code_scopes,
+                           back_param=back_param)
 
 
 @blueprint.route("/register", methods=("GET", "POST"))
