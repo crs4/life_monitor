@@ -91,10 +91,9 @@ def index():
 def profile(form=None, passwordForm=None, currentView=None, back=None):
     currentView = currentView or request.args.get("currentView", 'accountsTab')
     logger.debug(OpenApiSpecs.get_instance().authorization_code_scopes)
-    back_param = request.args.get('back', None)
+    back_param = request.args.get('back', False)
     try:
         if back_param:
-            back_param = decodeBase64(back_param, as_object=True)
             logger.debug("detected back param: %r", back_param)
     except Exception as e:
         logger.error("Unable to decode back param: %s", str(e))
