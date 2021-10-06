@@ -86,16 +86,6 @@ def create_app(env=None, settings=None, init_app=True, worker=False, **kwargs):
     def openapi():
         return redirect('/static/apidocs.html')
 
-    @app.route("/add")
-    def add():
-        from .tasks.tasks import add
-        import random
-        x = random.randint(1, 9)
-        y = random.randint(1, 9)
-        logger.info("Running task to sum %s and %s", x, y)
-        add.send(x, y)
-        return jsonify({'msg': f"Computing the sum of {x} and {y}"})
-
     @app.before_request
     def set_request_start_time():
         request.start_time = time.time()

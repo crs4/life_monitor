@@ -5,7 +5,6 @@ import dramatiq
 import flask
 from apscheduler.triggers.cron import CronTrigger
 
-
 # set module level logger
 logger = logging.getLogger(__name__)
 
