@@ -25,7 +25,7 @@ def upgrade():
         if w.hosting_service and w.hosting_service.type == 'seek_registry':
             w.uri = w.hosting_service.get_external_link(w.workflow.external_id, w.version)
             w.save()
-            logger.info(f"URI of seek workflow {w.workflow.uuir} upgraded to: {w.uri}")
+            logger.info(f"URI of seek workflow {w.workflow.uuid} upgraded to: {w.uri}")
 
 
 def downgrade():
