@@ -26,6 +26,7 @@ from typing import Union
 from lifemonitor.api import models
 from lifemonitor.auth.models import User
 from lifemonitor.exceptions import EntityNotFoundException
+
 from .registry import WorkflowRegistry, WorkflowRegistryClient
 
 # set module level logger
@@ -62,11 +63,11 @@ class SeekWorkflowRegistryClient(WorkflowRegistryClient):
             raise RuntimeError(f"ERROR: unable to get workflow (status code: {r.status_code})")
         return r.json()['data']
 
-    def get_external_link(self, wf: models.WorkflowVersion) -> str:
-        return f"{self.registry.uri}/workflows/{wf.workflow.external_id}?version={wf.version}"
+    def get_external_link(self, external_id: str, version: str) -> str:
+        return f"{self.registry.uri}/workflows/{external_id}?version={version}"
 
-    def get_rocrate_external_link(self, user, w: Union[models.WorkflowVersion, str]) -> str:
-        return f'{self.registry.uri}/workflows/{w.workflow.external_id}/ro_crate?version={w.version}'
+    def get_rocrate_external_link(self, user, external_id: str, version: str) -> str:
+        return f'{self.registry.uri}/workflows/{external_id}/ro_crate?version={version}'
 
     def filter_by_user(self, workflows: list, user: User):
         result = []
