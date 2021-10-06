@@ -91,11 +91,11 @@ class WorkflowRegistryClient(ABC):
         return ",".join([str(identifier), str(version)])
 
     @abstractmethod
-    def get_external_link(self, wf: models.WorkflowVersion) -> str:
+    def get_external_link(self, external_id: str, version: str) -> str:
         pass
 
     @abstractmethod
-    def get_rocrate_external_link(self, user, w: Union[models.WorkflowVersion, str]) -> str:
+    def get_rocrate_external_link(self, user, external_id: str, version: str) -> str:
         pass
 
     @abstractmethod
@@ -185,10 +185,10 @@ class WorkflowRegistry(auth_models.HostingService):
         return self.client.get_external_id(uuid, version, user)
 
     def get_external_link(self, w: models.WorkflowVersion) -> str:
-        return self.client.get_external_link(w)
+        return self.client.get_external_link(w.workflow.external_id, w.version)
 
-    def get_rocrate_external_link(self, user, w: Union[models.WorkflowVersion, str]) -> str:
-        return self.client.get_rocrate_external_link(user, w)
+    def get_rocrate_external_link(self, user, external_id: str, version: str) -> str:
+        return self.client.get_rocrate_external_link(user, external_id, version)
 
     def download_url(self, url, user, target_path=None):
         return self.client.download_url(url, user, target_path=target_path)
