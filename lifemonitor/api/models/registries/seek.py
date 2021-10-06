@@ -66,8 +66,7 @@ class SeekWorkflowRegistryClient(WorkflowRegistryClient):
         return f"{self.registry.uri}/workflows/{wf.workflow.external_id}?version={wf.version}"
 
     def get_rocrate_external_link(self, user, w: Union[models.WorkflowVersion, str]) -> str:
-        workflow = self.get_workflow_metadata(user, w)
-        return f'{workflow["attributes"]["content_blobs"][0]["link"]}/download'
+        return f'{self.registry.uri}/workflows/{w.workflow.external_id}/ro_crate?version={w.version}'
 
     def filter_by_user(self, workflows: list, user: User):
         result = []
