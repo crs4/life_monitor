@@ -184,8 +184,8 @@ class WorkflowRegistry(auth_models.HostingService):
     def get_external_id(self, uuid, version, user: auth_models.User) -> str:
         return self.client.get_external_id(uuid, version, user)
 
-    def get_external_link(self, w: models.WorkflowVersion) -> str:
-        return self.client.get_external_link(w.workflow.external_id, w.version)
+    def get_external_link(self, external_id: str, version: str) -> str:
+        return self.client.get_external_link(external_id, version)
 
     def get_rocrate_external_link(self, user, external_id: str, version: str) -> str:
         return self.client.get_rocrate_external_link(user, external_id, version)
