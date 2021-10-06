@@ -66,7 +66,7 @@ class SeekWorkflowRegistryClient(WorkflowRegistryClient):
     def get_external_link(self, external_id: str, version: str) -> str:
         return f"{self.registry.uri}/workflows/{external_id}?version={version}"
 
-    def get_rocrate_external_link(self, user, external_id: str, version: str) -> str:
+    def get_rocrate_external_link(self, external_id: str, version: str) -> str:
         return f'{self.registry.uri}/workflows/{external_id}/ro_crate?version={version}'
 
     def filter_by_user(self, workflows: list, user: User):

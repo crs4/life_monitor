@@ -258,7 +258,7 @@ class HostingService(Resource):
         pass
 
     @abc.abstractmethod
-    def get_rocrate_external_link(self, user, external_id: str, version: str) -> str:
+    def get_rocrate_external_link(self, external_id: str, version: str) -> str:
         pass
 
 
