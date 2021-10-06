@@ -13,6 +13,7 @@ function log() {
   printf "%s [worker_entrypoint] %s\n" "$(date +"%F %T")" "${*}" >&2
 }
 
+FLASK_ENV="${FLASK_ENV:-production}"
 if [[ "${FLASK_ENV}" == "development" ]]; then
   DEBUG="${DEBUG:-1}"
 fi
