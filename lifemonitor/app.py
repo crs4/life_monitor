@@ -56,7 +56,6 @@ def create_app(env=None, settings=None, init_app=True, worker=False, **kwargs):
         os.environ['DEBUG_METRICS'] = 'true'
     # load app config
     app_config = config.get_config_by_name(app_env, settings=settings)
-    setattr(app_config, 'WORKER', bool(worker))
     # set the FlaskApp instance path
     flask_app_instance_path = getattr(app_config, "FLASK_APP_INSTANCE_PATH", None)
     # create Flask app instance
@@ -71,6 +70,8 @@ def create_app(env=None, settings=None, init_app=True, worker=False, **kwargs):
     # variables defined here will override those in the default configuration
     if os.environ.get("FLASK_APP_CONFIG_FILE", None):
         app.config.from_envvar("FLASK_APP_CONFIG_FILE")
+    # set worker flag
+    app.config['WORKER'] = worker
 
     # initialize the application
     if init_app:
