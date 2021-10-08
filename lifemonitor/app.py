@@ -31,6 +31,7 @@ from lifemonitor import __version__ as version
 from lifemonitor.routes import register_routes
 
 from . import commands
+from .cache import init_cache
 from .db import db
 from .exceptions import handle_exception
 from .serializers import ma
@@ -115,6 +116,8 @@ def initialize_app(app, app_context, prom_registry=None):
     db.init_app(app)
     # initialize Migration engine
     Migrate(app, db)
+    # initialize cache
+    init_cache(app)
     # configure serializer engine (Flask Marshmallow)
     ma.init_app(app)
     # configure app routes

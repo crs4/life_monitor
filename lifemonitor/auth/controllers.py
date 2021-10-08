@@ -23,6 +23,7 @@ import logging
 import flask
 from flask import flash, redirect, render_template, request, session, url_for
 from flask_login import login_required, login_user, logout_user
+from lifemonitor.cache import cached
 from lifemonitor.utils import (NextRouteRegistry, next_route_aware,
                                split_by_crlf)
 
@@ -49,6 +50,7 @@ login_manager.login_view = "auth.login"
 
 
 @authorized
+@cached(timeout=3600)
 def show_current_user_profile():
     try:
         if current_user and not current_user.is_anonymous:
@@ -59,6 +61,7 @@ def show_current_user_profile():
 
 
 @authorized
+@cached()
 def get_registry_users():
     try:
         if current_registry and current_user.is_anonymous:
@@ -73,6 +76,7 @@ def get_registry_users():
 
 
 @authorized
+@cached()
 def get_registry_user(user_id):
     try:
         if current_registry:
@@ -88,7 +92,7 @@ def index():
 
 
 @blueprint.route("/profile", methods=("GET",))
-def profile(form=None, passwordForm=None, currentView=None, back=None):
+def profile(form=None, passwordForm=None, currentView=None):
     currentView = currentView or request.args.get("currentView", 'accountsTab')
     logger.debug(OpenApiSpecs.get_instance().authorization_code_scopes)
     back_param = request.args.get('back', None)
