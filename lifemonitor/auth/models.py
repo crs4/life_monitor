@@ -19,12 +19,12 @@
 # SOFTWARE.
 
 from __future__ import annotations
-import abc
 
+import abc
 import datetime
 import logging
 import uuid as _uuid
-from typing import List, Union
+from typing import List
 
 from authlib.integrations.sqla_oauth2 import OAuth2TokenMixin
 from flask_bcrypt import check_password_hash, generate_password_hash
@@ -258,7 +258,7 @@ class HostingService(Resource):
         pass
 
     @abc.abstractmethod
-    def get_rocrate_external_link(self, user, w: Union[object, str]) -> str:
+    def get_rocrate_external_link(self, external_id: str, version: str) -> str:
         pass
 
 
