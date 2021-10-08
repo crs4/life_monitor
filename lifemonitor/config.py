@@ -120,7 +120,7 @@ _config_by_name = {cfg.CONFIG_NAME: cfg for cfg in _EXPORT_CONFIGS}
 def get_config_by_name(name, settings=None):
     try:
         config = type(f"AppConfigInstance{name}".title(), (_config_by_name[name],), {})
-        # load "settings.conf" to the environment
+        # load settings from file
         if settings is None:
             settings = load_settings(config)
         if settings and "SQLALCHEMY_DATABASE_URI" not in settings:

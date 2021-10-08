@@ -125,7 +125,7 @@ def initialize_app(app, app_context, prom_registry=None):
     register_routes(app)
     # register commands
     commands.register_commands(app)
-
+    # init scheduler/worker for async tasks
     init_task_queue(app)
 
     # configure prometheus exporter
