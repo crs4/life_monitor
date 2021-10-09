@@ -27,18 +27,16 @@ If release name contains chart name it will be used as a full name.
 Create chart name and version as used by the chart label.
 */}}
 {{- define "chart.chart" -}}
-{{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
+{{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" -}}
 {{- end }}
 
 {{/*
 Common labels
 */}}
 {{- define "chart.labels" -}}
+app.kubernetes.io/name: {{ include "chart.name" . }}
 helm.sh/chart: {{ include "chart.chart" . }}
-{{ include "chart.selectorLabels" . }}
-{{- if .Chart.AppVersion }}
-app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
-{{- end }}
+app.kubernetes.io/instance: {{ .Release.Name }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
 
@@ -65,6 +63,8 @@ Create the name of the service account to use
 Define environment variables shared by some pods.
 */}}
 {{- define "lifemonitor.common-env" -}}
+- name: HOME
+  value: "/lm"
 - name: FLASK_ENV
   value: "{{ .Values.lifemonitor.environment }}"
 - name: POSTGRESQL_HOST
