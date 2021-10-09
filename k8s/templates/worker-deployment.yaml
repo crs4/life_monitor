@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "chart.fullname" . }}-worker
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.lifemonitor.autoscaling.enabled }}
+  replicas: {{ .Values.lifemonitor.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "chart.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.lifemonitor.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "chart.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.lifemonitor.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "chart.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.lifemonitor.podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: init
+          image: "crs4/k8s-wait-for:latest"
+          imagePullPolicy: IfNotPresent
+          args: ["job", "{{ include "chart.fullname" . }}-init"]
+      containers:
+        - name: app
+          securityContext:
+            {{- toYaml .Values.lifemonitor.securityContext | nindent 12 }}
+          image: {{ .Values.lifemonitor.image }}
+          imagePullPolicy: {{ .Values.lifemonitor.imagePullPolicy }}
+          command: ["/bin/sh","-c"]
+          args: ["/usr/local/bin/worker_entrypoint.sh"]
+          env:
+{{ include "lifemonitor.common-env" . | indent 12 }}
+          volumeMounts:
+{{ include "lifemonitor.common-volume-mounts" . | indent 12 }}
+          livenessProbe:
+            httpGet:
+              scheme: HTTPS
+              path: /health
+              port: 8000
+          readinessProbe:
+            httpGet:
+              scheme: HTTPS
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 3
+          resources:
+            {{- toYaml .Values.lifemonitor.resources | nindent 12 }}
+      volumes:
+{{ include "lifemonitor.common-volume" . | indent 12 }}        
+      {{- with .Values.lifemonitor.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.lifemonitor.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.lifemonitor.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
