@@ -125,6 +125,7 @@ class WorkflowVersionSchema(ResourceSchema):
     uuid = fields.String(attribute="workflow.uuid")
     name = ma.auto_field()
     version = fields.Method("get_version")
+    public = fields.Boolean(attribute="workflow.public")
     registry = ma.Nested(WorkflowRegistrySchema(exclude=('meta', 'links')),
                          attribute="hosting_service")
 
