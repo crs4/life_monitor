@@ -29,6 +29,7 @@ from flask_migrate import Migrate
 import lifemonitor.config as config
 from lifemonitor import __version__ as version
 from lifemonitor.routes import register_routes
+from lifemonitor.tasks.task_queue import init_task_queue
 
 from . import commands
 from .cache import init_cache
@@ -40,7 +41,7 @@ from .serializers import ma
 logger = logging.getLogger(__name__)
 
 
-def create_app(env=None, settings=None, init_app=True, **kwargs):
+def create_app(env=None, settings=None, init_app=True, worker=False, **kwargs):
     """
     App factory method
     :param env:
@@ -70,6 +71,9 @@ def create_app(env=None, settings=None, init_app=True, **kwargs):
     # variables defined here will override those in the default configuration
     if os.environ.get("FLASK_APP_CONFIG_FILE", None):
         app.config.from_envvar("FLASK_APP_CONFIG_FILE")
+    # set worker flag
+    app.config['WORKER'] = worker
+
     # initialize the application
     if init_app:
         with app.app_context() as ctx:
@@ -124,6 +128,8 @@ def initialize_app(app, app_context, prom_registry=None):
     register_routes(app)
     # register commands
     commands.register_commands(app)
+    # init scheduler/worker for async tasks
+    init_task_queue(app)
 
     # configure prometheus exporter
     # must be configured after the routes are registered

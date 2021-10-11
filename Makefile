@@ -82,7 +82,8 @@ compose-files: docker-compose.base.yml \
 	docker-compose.dev.yml \
 	docker-compose.extra.yml \
 	docker-compose.test.yml \
-	docker-compose.prom.yml
+	docker-compose.prom.yml \
+	settings.conf
 
 certs:
 	@# Generate certificates if they do not exist \
@@ -152,7 +153,7 @@ start: images compose-files ## Start LifeMonitor in a Production environment
 				   -f docker-compose.base.yml \
 				   -f docker-compose.prom.yml \
 				   config)" > docker-compose.yml \
-	&& docker-compose -f docker-compose.yml up -d redis db init lm nginx prometheus;\
+	&& docker-compose -f docker-compose.yml up -d redis db init lm worker nginx prometheus;\
 	printf "$(done)\n"
 
 start-dev: images compose-files ## Start LifeMonitor in a Development environment
@@ -163,7 +164,7 @@ start-dev: images compose-files ## Start LifeMonitor in a Development environmen
 	               -f docker-compose.base.yml \
 				   -f docker-compose.dev.yml \
 				   config)" > docker-compose.yml \
-	&& docker-compose -f docker-compose.yml up -d redis db init lm ;\
+	&& docker-compose -f docker-compose.yml up -d redis db init lm worker ;\
 	printf "$(done)\n"
 
 start-testing: compose-files aux_images ro_crates images ## Start LifeMonitor in a Testing environment
@@ -176,7 +177,7 @@ start-testing: compose-files aux_images ro_crates images ## Start LifeMonitor in
 				   -f docker-compose.dev.yml \
 				   -f docker-compose.test.yml \
 				   config)" > docker-compose.yml \
-	&& docker-compose -f docker-compose.yml up -d db lmtests seek jenkins webserver ;\
+	&& docker-compose -f docker-compose.yml up -d db lmtests seek jenkins webserver worker ;\
 	docker-compose -f ./docker-compose.yml \
 		exec -T lmtests /bin/bash -c "tests/wait-for-it.sh seek:3000 -t 600"; \
 	printf "$(done)\n"
@@ -250,7 +251,7 @@ stop-testing: compose-files ## Stop all the services in the Testing Environment
 				   -f docker-compose.base.yml \
 				   -f docker-compose.dev.yml \
 				   -f docker-compose.test.yml \
-				   --log-level ERROR stop db lmtests seek jenkins webserver ; \
+				   --log-level ERROR stop db lmtests seek jenkins webserver worker ; \
 	printf "$(done)\n"
 
 stop-dev: compose-files ## Stop all services in the Develop Environment
@@ -258,7 +259,7 @@ stop-dev: compose-files ## Stop all services in the Develop Environment
 	USER_UID=$$(id -u) USER_GID=$$(id -g) \
 	docker-compose -f docker-compose.base.yml \
 				   -f docker-compose.dev.yml \
-				   stop init lm db redis; \
+				   stop init lm db redis worker; \
 	printf "$(done)\n"
 
 stop: compose-files ## Stop all the services in the Production Environment
@@ -267,7 +268,7 @@ stop: compose-files ## Stop all the services in the Production Environment
 	docker-compose -f docker-compose.base.yml \
 				   -f docker-compose.prod.yml \
 				   -f docker-compose.prom.yml \
-				   --log-level ERROR stop init nginx lm db prometheus redis; \
+				   --log-level ERROR stop init nginx lm db prometheus redis worker; \
 	printf "$(done)\n"
 
 stop-all: ## Stop all the services
