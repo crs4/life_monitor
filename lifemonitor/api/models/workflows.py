@@ -43,6 +43,7 @@ logger = logging.getLogger(__name__)
 
 class Workflow(Resource):
     id = db.Column(db.Integer, db.ForeignKey(Resource.id), primary_key=True)
+    public = db.Column(db.Boolean, nullable=True, default=False)
 
     external_ns = "external-id:"
 
