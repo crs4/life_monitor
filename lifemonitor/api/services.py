@@ -117,7 +117,7 @@ class LifeMonitor:
             if not workflow_registry:
                 raise ValueError("Missing ROC link")
             else:
-                roc_link = workflow_registry.get_rocrate_external_link(workflow_submitter, w.external_id)
+                roc_link = workflow_registry.get_rocrate_external_link(w.external_id, workflow_version)
 
         wv = w.add_version(workflow_version, roc_link, workflow_submitter,
                            name=name, hosting_service=workflow_registry)

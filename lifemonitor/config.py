@@ -74,6 +74,9 @@ class BaseConfig:
     # Disable the Flask APScheduler REST API, by default
     SCHEDULER_API_ENABLED = False
     WORKER = False
+    # Default Cache Settings
+    CACHE_TYPE = "flask_caching.backends.simplecache.SimpleCache"
+    CACHE_DEFAULT_TIMEOUT = 60
 
 
 class DevelopmentConfig(BaseConfig):
@@ -83,12 +86,14 @@ class DevelopmentConfig(BaseConfig):
     DEBUG = True
     LOG_LEVEL = "DEBUG"
     TESTING = False
+    CACHE_TYPE = "flask_caching.backends.rediscache.RedisCache"
 
 
 class ProductionConfig(BaseConfig):
     CONFIG_NAME = "production"
     SECRET_KEY = os.getenv("PROD_SECRET_KEY", BaseConfig.SECRET_KEY)
     TESTING = False
+    CACHE_TYPE = "flask_caching.backends.rediscache.RedisCache"
 
 
 class TestingConfig(BaseConfig):
@@ -99,6 +104,7 @@ class TestingConfig(BaseConfig):
     TESTING = True
     LOG_LEVEL = "DEBUG"
     # SQLALCHEMY_DATABASE_URI = "sqlite:///{0}/app-test.db".format(basedir)
+    CACHE_TYPE = "flask_caching.backends.nullcache.NullCache"
 
 
 class TestingSupportConfig(TestingConfig):

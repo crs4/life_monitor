@@ -50,6 +50,9 @@ class TestBuild(ABC):
         self._metadata = metadata
         self._output = None
 
+    def __repr__(self) -> str:
+        return f"TestBuild '{self.id}' @ instance '{self.test_instance.uuid}'"
+
     def is_successful(self):
         return self.result == TestBuild.Result.SUCCESS
 

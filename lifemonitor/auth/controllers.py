@@ -21,8 +21,9 @@
 import logging
 
 import flask
-from flask import flash, redirect, render_template, request, url_for
+from flask import flash, redirect, render_template, request, session, url_for
 from flask_login import login_required, login_user, logout_user
+from lifemonitor.cache import cached
 from lifemonitor.utils import (NextRouteRegistry, next_route_aware,
                                split_by_crlf)
 
@@ -49,6 +50,7 @@ login_manager.login_view = "auth.login"
 
 
 @authorized
+@cached(timeout=3600)
 def show_current_user_profile():
     try:
         if current_user and not current_user.is_anonymous:
@@ -59,6 +61,7 @@ def show_current_user_profile():
 
 
 @authorized
+@cached()
 def get_registry_users():
     try:
         if current_registry and current_user.is_anonymous:
@@ -73,6 +76,7 @@ def get_registry_users():
 
 
 @authorized
+@cached()
 def get_registry_user(user_id):
     try:
         if current_registry:
@@ -91,11 +95,21 @@ def index():
 def profile(form=None, passwordForm=None, currentView=None):
     currentView = currentView or request.args.get("currentView", 'accountsTab')
     logger.debug(OpenApiSpecs.get_instance().authorization_code_scopes)
+    back_param = request.args.get('back', None)
+    logger.debug("detected back param: %r", back_param)
+    if not current_user.is_authenticated:
+        session['lm_back_param'] = back_param
+        logger.debug("Pushing back param to session")
+    else:
+        logger.debug("Getting back param from session")
+        back_param = back_param or session.get('lm_back_param', False)
+        logger.debug("detected back param: %s", back_param)
     return render_template("auth/profile.j2",
                            passwordForm=passwordForm or SetPasswordForm(),
                            oauth2ClientForm=form or Oauth2ClientForm(),
                            providers=get_providers(), currentView=currentView,
-                           oauth2_generic_client_scopes=OpenApiSpecs.get_instance().authorization_code_scopes)
+                           oauth2_generic_client_scopes=OpenApiSpecs.get_instance().authorization_code_scopes,
+                           back_param=back_param)
 
 
 @blueprint.route("/register", methods=("GET", "POST"))

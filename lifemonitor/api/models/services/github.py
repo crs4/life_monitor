@@ -29,6 +29,7 @@ from urllib.parse import urlparse
 
 import lifemonitor.api.models as models
 import lifemonitor.exceptions as lm_exceptions
+from lifemonitor.cache import Timeout, cache
 
 import github
 from github import Github, GithubException
@@ -101,6 +102,7 @@ class GithubTestingService(TestingService):
             self.initialize()
         return self._gh_obj
 
+    @cache.memoize(timeout=Timeout.BUILDS)
     def _get_repo(self, test_instance: models.TestInstance):
         _, repo_full_name, _ = self._parse_workflow_url(test_instance.resource)
         repository = self._gh_obj.get_repo(repo_full_name)

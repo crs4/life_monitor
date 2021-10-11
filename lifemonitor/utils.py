@@ -19,6 +19,7 @@
 # SOFTWARE.
 
 
+import base64
 import functools
 import glob
 import json
@@ -35,6 +36,7 @@ import uuid
 import zipfile
 from importlib import import_module
 from os.path import basename, dirname, isfile, join
+from typing import List
 
 import flask
 import requests
@@ -119,6 +121,17 @@ def sizeof_fmt(num, suffix='B'):
     return "%.1f%s%s" % (num, 'Yi', suffix)
 
 
+def decodeBase64(str, as_object=False, encoding='utf-8'):
+    result = base64.b64decode(str)
+    if not result:
+        return None
+    if encoding:
+        result = result.decode(encoding)
+        if as_object:
+            result = json.loads(result)
+    return result
+
+
 def get_base_url():
     server_name = None
     try:
@@ -151,11 +164,31 @@ def _download_from_remote(url, output_stream, authorization=None):
                 output_stream.write(chunk)
 
 
-def check_resource_exists(url):
-    r = requests.head(url, verify=False)
-    result = r.status_code == 200
-    logger.debug("Checking if resource %s exists: %r", url, result)
-    return result
+def check_resource_exists(url, authorizations: List = None):
+    errors = []
+    authorizations = authorizations or [None]
+    with requests.Session() as session:
+        for authorization in authorizations:
+            try:
+                logger.debug("Checking head URL: %s", url)
+                auth_header = authorization.as_http_header() if authorization else None
+                if auth_header:
+                    session.headers['Authorization'] = auth_header
+                else:
+                    session.headers.pop('Authorization', None)
+                response = session.head(url)
+                logger.debug("Check URL (with auth=%r): %r", auth_header is not None, response)
+                if response.status_code == 200 or response.status_code == 302:
+                    return True
+            except lm_exceptions.NotAuthorizedException as e:
+                logger.info("Caught authorization error exception while downloading and processing RO-crate: %s", e)
+                errors.append(str(e))
+            except Exception as e:
+                # errors.append(str(e))
+                logger.debug(e)
+    if len(errors) > 0:
+        raise lm_exceptions.NotAuthorizedException(detail=f"Not authorized to download {url}", original_errors=errors)
+    return False
 
 
 def download_url(url: str, target_path: str = None, authorization: str = None) -> str:

@@ -115,7 +115,7 @@ class ROCrate(Resource):
 
     def download(self, target_path: str) -> str:
         # report if the workflow is not longer available on the origin server
-        if self._metadata and not check_resource_exists(self.uri):
+        if self._metadata and not check_resource_exists(self.uri, self._get_authorizations()):
             raise lm_exceptions.DownloadException(detail=f"Not found: {self.uri}", status=410)
 
         errors = []

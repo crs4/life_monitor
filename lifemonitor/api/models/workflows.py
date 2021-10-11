@@ -195,7 +195,7 @@ class WorkflowVersion(ROCrate):
     def external_link(self) -> str:
         if self.hosting_service is None:
             return self.uri
-        return self.hosting_service.get_external_link(self)
+        return self.hosting_service.get_external_link(self.workflow.external_id, self.version)
 
     @hybrid_property
     def authorizations(self):
