@@ -51,7 +51,7 @@ def init_cache(app: Flask):
     logger.debug("Cache type detected: %s", cache_type)
     if cache_type == 'flask_caching.backends.rediscache.RedisCache':
         logger.debug("Configuring cache...")
-        app.config.setdefault('CACHE_REDIS_HOST', os.environ.get('CACHE_REDIS_HOST', 'redis'))
+        app.config.setdefault('CACHE_REDIS_HOST', os.environ.get('REDIS_HOST', 'redis'))
         app.config.setdefault('CACHE_REDIS_PORT', os.environ.get('REDIS_PORT_NUMBER', 6379))
         app.config.setdefault('CACHE_REDIS_PASSWORD', os.environ.get('REDIS_PASSWORD', ''))
         app.config.setdefault('CACHE_REDIS_DB', int(os.environ.get('CACHE_REDIS_DB', 0)))
