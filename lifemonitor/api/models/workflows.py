@@ -116,6 +116,18 @@ class Workflow(Resource):
         return health
 
     @classmethod
+    def get_public_workflow(cls, uuid) -> Workflow:
+        try:
+            return cls.query\
+                .filter(cls.public == True) \
+                .filter(cls.uuid == lm_utils.uuid_param(uuid)).one()
+        except NoResultFound as e:
+            logger.debug(e)
+            return None
+        except Exception as e:
+            raise lm_exceptions.LifeMonitorException(detail=str(e), stack=str(e))
+
+    @classmethod
     def get_user_workflow(cls, owner: User, uuid) -> Workflow:
         try:
             return cls.query\
@@ -132,6 +144,11 @@ class Workflow(Resource):
     def get_user_workflows(cls, owner: User) -> List[Workflow]:
         return cls.query.join(Permission)\
             .filter(Permission.user_id == owner.id).all()
+
+    @classmethod
+    def get_public_workflows(cls) -> List[Workflow]:
+        return cls.query\
+            .filter(cls.public == True).all()
 
 
 class WorkflowVersionCollection(MappedCollection):
@@ -272,6 +289,20 @@ class WorkflowVersion(ROCrate):
     @classmethod
     def get_submitter_versions(cls, submitter: User) -> List[WorkflowVersion]:
         return cls.query.filter(WorkflowVersion.submitter_id == submitter.id).all()
+
+    @classmethod
+    def get_public_workflow_version(cls, uuid, version) -> WorkflowVersion:
+        try:
+            return cls.query\
+                .join(Workflow, Workflow.id == cls.workflow_id)\
+                .filter(Workflow.uuid == lm_utils.uuid_param(uuid))\
+                .filter(Workflow.public == True)\
+                .filter(cls.version == version).one()
+        except NoResultFound as e:
+            logger.exception(e)
+            return None
+        except Exception as e:
+            raise lm_exceptions.LifeMonitorException(detail=str(e), stack=str(e))
 
     @classmethod
     def get_user_workflow_version(cls, owner: User, uuid, version) -> WorkflowVersion:
