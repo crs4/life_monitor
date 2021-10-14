@@ -24,7 +24,6 @@ import tempfile
 import connexion
 import lifemonitor.exceptions as lm_exceptions
 import werkzeug
-import werkzeug.exceptions as http_exceptions
 from flask import Response, request
 from lifemonitor.api import serializers
 from lifemonitor.api.services import LifeMonitor
