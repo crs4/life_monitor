@@ -91,7 +91,7 @@ def workflows_get():
 def _get_workflow_or_problem(wf_uuid, wf_version):
     try:
         wf = None
-        if current_user and not current_user.is_anonymous:
+        if current_user:
             wf = lm.get_user_workflow_version(current_user, wf_uuid, wf_version)
         elif current_registry:
             wf = lm.get_registry_workflow_version(current_registry, wf_uuid, wf_version)
