@@ -28,7 +28,7 @@ import lifemonitor.exceptions as lm_exceptions
 from lifemonitor import utils as lm_utils
 from lifemonitor.api.models import db
 from lifemonitor.api.models.rocrate import ROCrate
-from lifemonitor.auth.models import Permission, Resource, User, HostingService
+from lifemonitor.auth.models import HostingService, Permission, Resource, User
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -36,6 +36,7 @@ from sqlalchemy.orm.collections import (MappedCollection,
                                         attribute_mapped_collection,
                                         collection)
 from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.sql.expression import true
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -119,8 +120,8 @@ class Workflow(Resource):
     def get_public_workflow(cls, uuid) -> Workflow:
         try:
             return cls.query\
-                .filter(cls.public == True) \
-                .filter(cls.uuid == lm_utils.uuid_param(uuid)).one()
+                .filter(cls.public == true()) \
+               .filter(cls.uuid == lm_utils.uuid_param(uuid)).one()  # noqa: E712
         except NoResultFound as e:
             logger.debug(e)
             return None
@@ -148,7 +149,7 @@ class Workflow(Resource):
     @classmethod
     def get_public_workflows(cls) -> List[Workflow]:
         return cls.query\
-            .filter(cls.public == True).all()
+            .filter(cls.public == true()).all()  # noqa: E712
 
 
 class WorkflowVersionCollection(MappedCollection):
@@ -296,8 +297,8 @@ class WorkflowVersion(ROCrate):
             return cls.query\
                 .join(Workflow, Workflow.id == cls.workflow_id)\
                 .filter(Workflow.uuid == lm_utils.uuid_param(uuid))\
-                .filter(Workflow.public == True)\
-                .filter(cls.version == version).one()
+                .filter(Workflow.public == true())\
+                .filter(cls.version == version).one()  # noqa: E712
         except NoResultFound as e:
             logger.exception(e)
             return None
