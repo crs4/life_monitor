@@ -75,6 +75,7 @@ class VersionDetailsSchema(BaseSchema):
     __envelope__ = {"single": None, "many": "items"}
 
     uuid = fields.String(attribute="uuid")
+    name = fields.String(attribute="name")
     version = fields.String(attribute="version")
     is_latest = fields.Boolean(attribute="is_latest")
     ro_crate = fields.Method("get_rocrate")
@@ -123,7 +124,7 @@ class WorkflowVersionSchema(ResourceSchema):
         ordered = True
 
     uuid = fields.String(attribute="workflow.uuid")
-    name = ma.auto_field()
+    name = ma.auto_field(attribute="workflow.name")
     version = fields.Method("get_version")
     public = fields.Boolean(attribute="workflow.public")
     registry = ma.Nested(WorkflowRegistrySchema(exclude=('meta', 'links')),

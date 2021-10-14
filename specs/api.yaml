@@ -468,6 +468,48 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+    put:
+      summary: Update a workflow
+      description: "Update basic information of the specified workflow"
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "workflows_put"
+      tags: ["Workflows"]
+      security:
+        - apiKey: ["workflow.read"]
+        - AuthorizationCodeFlow: ["workflow.read"]
+        - RegistryClientCredentials: ["workflow.read"]
+        - RegistryCodeFlow: ["workflow.read"]
+      parameters:
+        - $ref: "#/components/parameters/wf_uuid"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: |
+                    A name for the workflow. If not provided, the RO-Crate dataset name is used as default.
+                  example: "COVID-19 Workflow"
+                public:
+                  type: boolean
+                  description: <code>true</code> if the workflow is <b>public</b>; false otherwise (default `false`).
+                  default: false
+                  example: false
+      responses:
+        "204":
+          description: "Workflow updated"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   /workflows/{wf_uuid}/versions:
     get:
       x-openapi-router-controller: lifemonitor.api.controllers
@@ -526,35 +568,47 @@ paths:
           $ref: "#/components/responses/NotFound"
 
   /workflows/{wf_uuid}/versions/{wf_version}:
-    # put:
-    #   x-openapi-router-controller: lifemonitor.api.controllers
-    #   operationId: "workflows_put"
-    #   summary: "Modify an existing workflow"
-    #   security:
-    #     - apiKey: ["read", "write"]
-    #     - oauth2: ["read", "write"]
-    #   parameters:
-    #     - $ref: "#/components/parameters/wf_uuid"
-    #     - $ref: "#/components/parameters/wf_version"
-    #   requestBody:
-    #     required: true
-    #     content:
-    #       application/json:
-    #         schema:
-    #           $ref: "#/components/schemas/WorkflowVersion"
-    #   responses:
-    #     "204":
-    #       description: "Workflow updated"
-    #     "400":
-    #       $ref: "#/components/responses/BadRequest"
-    #     "401":
-    #       $ref: "#/components/responses/Unauthorized"
-    #     "403":
-    #       $ref: "#/components/responses/Forbidden"
-    #     "404":
-    #       $ref: "#/components/responses/NotFound"
-    #     "501":
-    #       description: "Not implemented"
+    put:
+      summary: Update a workflow version
+      description: "Update basic information of the specified workflow"
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "workflows_version_put"
+      tags: ["Workflows"]
+      security:
+        - apiKey: ["workflow.read"]
+        - AuthorizationCodeFlow: ["workflow.read"]
+        - RegistryClientCredentials: ["workflow.read"]
+        - RegistryCodeFlow: ["workflow.read"]
+      parameters:
+        - $ref: "#/components/parameters/wf_uuid"
+        - $ref: "#/components/parameters/wf_version"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: |
+                    A name for the workflow version. If not provided, the RO-Crate dataset name is used as default.
+                  example: "COVID-19 Workflow"
+                version:
+                  type: string
+                  description: "Workflow version"
+                  example: "1.0"
+      responses:
+        "204":
+          description: "Workflow version updated"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
     delete:
       x-openapi-router-controller: lifemonitor.api.controllers

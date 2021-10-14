@@ -346,17 +346,39 @@ def workflows_post(body, _registry=None, _submitter_id=None):
 
 
 @authorized
-def workflows_put(wf_uuid, wf_version, body):
-    # TODO: to be implemented
-    logger.debug("PUT called for workflow (%s,%s)", wf_uuid, wf_version)
-    # try:
-    #     wf = model.WorkflowVersion.query.get(wf_id)
-    # except sqlalchemy.exc.DataError:
-    #     return "Invalid ID", 400
-    # wf.name = body['name']
-    # db.session.commit()
-    # return connexion.NoContent, 200
-    raise http_exceptions.NotImplemented()
+def workflows_put(wf_uuid, body):
+    logger.debug("PUT called for workflow (%s)", wf_uuid)
+    wv = _get_workflow_or_problem(wf_uuid, None)
+    if isinstance(wv, Response):
+        return wv
+    wv.workflow.name = body.get('name', wv.workflow.name)
+    wv.workflow.public = body.get('public', wv.workflow.public)
+    wv.workflow.save()
+    clear_cache(workflows_get)
+    clear_cache(workflows_get_by_id)
+    clear_cache(workflows_get_latest_version_by_id)
+    clear_cache(workflows_get_versions_by_id)
+    clear_cache(workflows_get_status)
+    clear_cache(registry_workflows_get)
+    return connexion.NoContent, 204
+
+
+@authorized
+def workflows_version_put(wf_uuid, wf_version, body):
+    logger.debug("PUT called for workflow version (%s)", wf_uuid)
+    wv = _get_workflow_or_problem(wf_uuid, wf_version)
+    if isinstance(wv, Response):
+        return wv
+    wv.name = body.get('name', wv.name)
+    wv.version = body.get('version', wv.version)
+    wv.save()
+    clear_cache(workflows_get)
+    clear_cache(workflows_get_by_id)
+    clear_cache(workflows_get_latest_version_by_id)
+    clear_cache(workflows_get_versions_by_id)
+    clear_cache(workflows_get_status)
+    clear_cache(registry_workflows_get)
+    return connexion.NoContent, 204
 
 
 @authorized
