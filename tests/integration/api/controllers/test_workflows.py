@@ -193,21 +193,6 @@ def test_delete_workflows(app_client, client_auth_method, user1, user1_auth):
     ClientAuthenticationMethod.CLIENT_CREDENTIALS,
     ClientAuthenticationMethod.REGISTRY_CODE_FLOW
 ], indirect=True)
-# @pytest.mark.parametrize("user1", [True], indirect=True)
-def test_get_workflow_not_authorized(app_client, client_auth_method, user1, user1_auth):
-    workflow = utils.pick_workflow(user1)
-    response = app_client.get(utils.build_workflow_path(workflow))
-    logger.debug(response.data)
-    utils.assert_status_code(401, response.status_code)
-
-
-@pytest.mark.parametrize("client_auth_method", [
-    #    ClientAuthenticationMethod.BASIC,
-    ClientAuthenticationMethod.API_KEY,
-    ClientAuthenticationMethod.AUTHORIZATION_CODE,
-    ClientAuthenticationMethod.CLIENT_CREDENTIALS,
-    ClientAuthenticationMethod.REGISTRY_CODE_FLOW
-], indirect=True)
 def test_get_workflow_latest_version(app_client, client_auth_method, user1, user1_auth, valid_workflow):
     workflow = utils.pick_workflow(user1, valid_workflow)
     wv1 = workflow.copy()

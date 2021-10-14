@@ -32,14 +32,6 @@ logger = logging.getLogger(__name__)
 
 
 @patch("lifemonitor.api.controllers.lm")
-def test_get_suites_no_authorization(m, request_context):
-    assert auth.current_user.is_anonymous, "Unexpected user in session"
-    assert auth.current_registry is not None, "Unexpected registry in session"
-    with pytest.raises(auth.NotAuthorizedException):
-        controllers.suites_get_by_uuid()
-
-
-@patch("lifemonitor.api.controllers.lm")
 def test_get_suite_error_not_found(m, request_context, mock_user):
     assert not auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry is not None, "Unexpected registry in session"

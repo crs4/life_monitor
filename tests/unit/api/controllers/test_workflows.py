@@ -37,14 +37,6 @@ logger = logging.getLogger(__name__)
 
 
 @patch("lifemonitor.api.controllers.lm")
-def test_get_workflows_no_authorization(m, request_context):
-    assert auth.current_user.is_anonymous, "Unexpected user in session"
-    assert auth.current_registry is not None, "Unexpected registry in session"
-    with pytest.raises(auth.NotAuthorizedException):
-        controllers.workflows_get()
-
-
-@patch("lifemonitor.api.controllers.lm")
 def test_get_workflows_with_user(m, request_context, mock_user, fake_uri):
     # add one user to the current session
     assert not auth.current_user.is_anonymous, "Unexpected user in session"
