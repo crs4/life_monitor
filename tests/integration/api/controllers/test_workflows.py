@@ -128,6 +128,18 @@ def test_workflow_registration_check_custom_name(app_client, client_auth_method,
 
 
 @pytest.mark.parametrize("client_auth_method", [
+    ClientAuthenticationMethod.NOAUTH,
+], indirect=True)
+@pytest.mark.parametrize("user1", [True], indirect=True)
+def test_get_workflows_public(app_client, client_auth_method, user1):
+    # get workflows registered by user1
+    response = app_client.get(utils.build_workflow_path())
+    assert response.status_code == 200, "Error getting public workflows"
+    workflows = json.loads(response.data)['items']
+    assert len(workflows) == 1, "Unexpected number of public workflows"
+
+
+@pytest.mark.parametrize("client_auth_method", [
     #    ClientAuthenticationMethod.BASIC,
     ClientAuthenticationMethod.API_KEY,
     ClientAuthenticationMethod.AUTHORIZATION_CODE,
@@ -188,6 +200,7 @@ def test_delete_workflows(app_client, client_auth_method, user1, user1_auth):
 
 @pytest.mark.parametrize("client_auth_method", [
     #    ClientAuthenticationMethod.BASIC,
+    ClientAuthenticationMethod.NOAUTH,
     ClientAuthenticationMethod.API_KEY,
     ClientAuthenticationMethod.AUTHORIZATION_CODE,
     ClientAuthenticationMethod.CLIENT_CREDENTIALS,
@@ -195,22 +208,25 @@ def test_delete_workflows(app_client, client_auth_method, user1, user1_auth):
 ], indirect=True)
 def test_get_workflow_latest_version(app_client, client_auth_method, user1, user1_auth, valid_workflow):
     workflow = utils.pick_workflow(user1, valid_workflow)
+    if client_auth_method == ClientAuthenticationMethod.NOAUTH:
+        workflow['public'] = True
     wv1 = workflow.copy()
     wv2 = workflow.copy()
 
     wv1['version'] = "1"
     wv2['version'] = "2"
+
     utils.register_workflow(user1, wv1)
     utils.register_workflow(user1, wv2)
 
     response = app_client.get(utils.build_workflow_path(), headers=user1_auth)
     utils.assert_status_code(200, response.status_code)
     workflows = json.loads(response.data)
-    logger.debug("Workflows: %r", workflows)
+    logger.info("Workflows: %r", workflows)
 
     url = f"{utils.build_workflow_path()}/{workflow['uuid']}?previous_versions=true"
-    logger.debug("URL: %r", url)
-    response = app_client.get(url, headers=user1_auth)
+    logger.info("URL: %r", url)
+    response = app_client.get(url)  # , headers=user1_auth)
     logger.debug(response)
     utils.assert_status_code(200, response.status_code)
     data = json.loads(response.data)
@@ -223,6 +239,7 @@ def test_get_workflow_latest_version(app_client, client_auth_method, user1, user
 
 @pytest.mark.parametrize("client_auth_method", [
     #    ClientAuthenticationMethod.BASIC,
+    ClientAuthenticationMethod.NOAUTH,
     ClientAuthenticationMethod.API_KEY,
     ClientAuthenticationMethod.AUTHORIZATION_CODE,
     ClientAuthenticationMethod.CLIENT_CREDENTIALS,
@@ -230,6 +247,9 @@ def test_get_workflow_latest_version(app_client, client_auth_method, user1, user
 ], indirect=True)
 def test_get_workflow_versions(app_client, client_auth_method, user1, user1_auth, valid_workflow):
     workflow = utils.pick_workflow(user1, valid_workflow)
+    if client_auth_method == ClientAuthenticationMethod.NOAUTH:
+        workflow['public'] = True
+
     wv1 = workflow.copy()
     wv2 = workflow.copy()
 
@@ -256,13 +276,14 @@ def test_get_workflow_versions(app_client, client_auth_method, user1, user1_auth
 
 @pytest.mark.parametrize("client_auth_method", [
     #    ClientAuthenticationMethod.BASIC,
+    ClientAuthenticationMethod.NOAUTH,
     ClientAuthenticationMethod.API_KEY,
     ClientAuthenticationMethod.AUTHORIZATION_CODE,
     ClientAuthenticationMethod.CLIENT_CREDENTIALS,
     ClientAuthenticationMethod.REGISTRY_CODE_FLOW
 ], indirect=True)
 def test_get_workflow_status(app_client, client_auth_method, user1, user1_auth, valid_workflow):
-    w, workflow = utils.pick_and_register_workflow(user1, valid_workflow)
+    w, workflow = utils.pick_and_register_workflow(user1, valid_workflow, public=client_auth_method == ClientAuthenticationMethod.NOAUTH)
     response = app_client.get(f"{utils.build_workflow_path(w, subpath='status')}", headers=user1_auth)
     logger.debug(response)
     utils.assert_status_code(200, response.status_code)
@@ -276,13 +297,15 @@ def test_get_workflow_status(app_client, client_auth_method, user1, user1_auth, 
 
 @pytest.mark.parametrize("client_auth_method", [
     #    ClientAuthenticationMethod.BASIC,
+    ClientAuthenticationMethod.NOAUTH,
     ClientAuthenticationMethod.API_KEY,
     ClientAuthenticationMethod.AUTHORIZATION_CODE,
     ClientAuthenticationMethod.CLIENT_CREDENTIALS,
     ClientAuthenticationMethod.REGISTRY_CODE_FLOW
 ], indirect=True)
 def test_get_workflow_suites(app_client, client_auth_method, user1, user1_auth, valid_workflow):
-    w, workflow = utils.pick_and_register_workflow(user1, valid_workflow)
+    w, workflow = utils.pick_and_register_workflow(
+        user1, valid_workflow, public=client_auth_method == ClientAuthenticationMethod.NOAUTH)
     response = app_client.get(f"{utils.build_workflow_path(w, subpath='suites')}", headers=user1_auth)
     logger.debug(response)
     utils.assert_status_code(200, response.status_code)

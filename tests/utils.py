@@ -125,10 +125,11 @@ def register_workflows(app_user):
             lm_db.db.session.rollback()
 
 
-def pick_and_register_workflow(app_user, name=None, public=False):
+def pick_and_register_workflow(app_user, name=None, public=None):
     # pick one user workflow and register it
     wdata = pick_workflow(app_user, name)
-    wdata['public'] = public
+    if public is not None:
+        wdata['public'] = public
     return register_workflow(app_user, wdata)
 
 
