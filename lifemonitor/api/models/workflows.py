@@ -51,9 +51,11 @@ class Workflow(Resource):
         'polymorphic_identity': 'workflow'
     }
 
-    def __init__(self, uri=None, uuid=None, identifier=None, version=None, name=None) -> None:
+    def __init__(self, uri=None, uuid=None, identifier=None,
+                 version=None, name=None, public=False) -> None:
         super().__init__(uri=uri or f"{self.external_ns}",
                          uuid=uuid, version=version, name=name)
+        self.public = public
         if identifier is not None:
             self.external_id = identifier
 
