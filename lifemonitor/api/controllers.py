@@ -74,19 +74,18 @@ def workflow_registries_get_current():
     return lm_exceptions.report_problem(401, "Unauthorized")
 
 
-@authorized
 @cached(timeout=Timeout.SESSION)
 def workflows_get():
-    workflows = []
+    workflows = lm.get_public_workflows()
     if current_user and not current_user.is_anonymous:
         workflows.extend(lm.get_user_workflows(current_user))
     elif current_registry:
         workflows.extend(lm.get_registry_workflows(current_registry))
-    else:
-        return lm_exceptions.report_problem(401, "Unauthorized", detail=messages.no_user_in_session)
     logger.debug("workflows_get. Got %s workflows (user: %s)", len(workflows), current_user)
     workflow_status = request.args.get('status', 'true').lower() == 'true'
-    return serializers.ListOfWorkflows(workflow_status=workflow_status).dump(workflows)
+    return serializers.ListOfWorkflows(workflow_status=workflow_status).dump(
+        list(dict.fromkeys(workflows))
+    )
 
 
 def _get_workflow_or_problem(wf_uuid, wf_version):
@@ -111,7 +110,6 @@ def _get_workflow_or_problem(wf_uuid, wf_version):
                                             detail=messages.unauthorized_workflow_access.format(wf_uuid))
 
 
-@authorized
 @cached()
 def workflows_get_by_id(wf_uuid, wf_version):
     response = _get_workflow_or_problem(wf_uuid, wf_version)
@@ -119,7 +117,6 @@ def workflows_get_by_id(wf_uuid, wf_version):
         else serializers.WorkflowVersionSchema().dump(response)
 
 
-@authorized
 @cached()
 def workflows_get_latest_version_by_id(wf_uuid):
     response = _get_workflow_or_problem(wf_uuid, None)
@@ -132,7 +129,6 @@ def workflows_get_latest_version_by_id(wf_uuid):
             exclude=exclude, rocrate_metadata=rocrate_metadata).dump(response)
 
 
-@authorized
 @cached()
 def workflows_get_versions_by_id(wf_uuid):
     response = _get_workflow_or_problem(wf_uuid, None)
@@ -140,7 +136,6 @@ def workflows_get_versions_by_id(wf_uuid):
         else serializers.ListOfWorkflowVersions().dump(response.workflow)
 
 
-@authorized
 @cached()
 def workflows_get_status(wf_uuid):
     wf_version = request.args.get('version', 'latest').lower()
@@ -149,7 +144,6 @@ def workflows_get_status(wf_uuid):
         else serializers.WorkflowStatusSchema().dump(response)
 
 
-@authorized
 @cached()
 def workflows_rocrate_metadata(wf_uuid, wf_version):
     response = _get_workflow_or_problem(wf_uuid, wf_version)
@@ -158,7 +152,6 @@ def workflows_rocrate_metadata(wf_uuid, wf_version):
     return response.crate_metadata
 
 
-@authorized
 @cached()
 def workflows_rocrate_download(wf_uuid, wf_version):
     response = _get_workflow_or_problem(wf_uuid, wf_version)
@@ -389,7 +382,6 @@ def workflows_delete(wf_uuid, wf_version):
         raise lm_exceptions.LifeMonitorException(title="Internal Error", detail=str(e))
 
 
-@authorized
 @cached()
 def workflows_get_suites(wf_uuid, wf_version=None):
     wf_version = wf_version or request.args.get('version', 'latest').lower()
@@ -426,7 +418,6 @@ def _get_suite_or_problem(suite_uuid):
         return lm_exceptions.report_problem(404, "Not Found", detail=messages.suite_not_found.format(suite_uuid))
 
 
-@authorized
 @cached()
 def suites_get_by_uuid(suite_uuid):
     response = _get_suite_or_problem(suite_uuid)
@@ -434,7 +425,6 @@ def suites_get_by_uuid(suite_uuid):
         else serializers.SuiteSchema().dump(response)
 
 
-@authorized
 @cached()
 def suites_get_status(suite_uuid):
     response = _get_suite_or_problem(suite_uuid)
@@ -442,7 +432,6 @@ def suites_get_status(suite_uuid):
         else serializers.SuiteStatusSchema().dump(response.status)
 
 
-@authorized
 @cached()
 def suites_get_instances(suite_uuid):
     response = _get_suite_or_problem(suite_uuid)
@@ -450,6 +439,7 @@ def suites_get_instances(suite_uuid):
         else serializers.ListOfTestInstancesSchema().dump(response.test_instances)
 
 
+@authorized
 def suites_post(wf_uuid, wf_version, body):
     # A the moment, this controller is not linked to the API specs
     if current_user and not current_user.is_anonymous:
@@ -466,6 +456,7 @@ def suites_post(wf_uuid, wf_version, body):
     return {'wf_uuid': str(suite.uuid)}, 201
 
 
+@authorized
 def suites_delete(suite_uuid):
     try:
         response = _get_suite_or_problem(suite_uuid)
@@ -480,6 +471,7 @@ def suites_delete(suite_uuid):
                                             detail=messages.unable_to_delete_suite.format(suite_uuid))
 
 
+@authorized
 def suites_post_instance(suite_uuid):
     try:
         response = _get_suite_or_problem(suite_uuid)
@@ -534,7 +526,6 @@ def _get_instances_or_problem(instance_uuid):
                                             detail=messages.instance_not_found.format(instance_uuid))
 
 
-@authorized
 @cached()
 def instances_get_by_id(instance_uuid):
     response = _get_instances_or_problem(instance_uuid)
@@ -562,7 +553,6 @@ def instances_delete_by_id(instance_uuid):
         raise lm_exceptions.LifeMonitorException(title="Internal Error", detail=str(e))
 
 
-@authorized
 @cached()
 def instances_get_builds(instance_uuid, limit):
     response = _get_instances_or_problem(instance_uuid)
@@ -571,7 +561,6 @@ def instances_get_builds(instance_uuid, limit):
         else serializers.ListOfTestBuildsSchema().dump(response.get_test_builds(limit=limit))
 
 
-@authorized
 @cached()
 def instances_builds_get_by_id(instance_uuid, build_id):
     response = _get_instances_or_problem(instance_uuid)
