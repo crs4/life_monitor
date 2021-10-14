@@ -110,7 +110,8 @@ def register_workflow(app_user, w):
                                     workflow_uuid=w['uuid'],
                                     workflow_registry=registry,
                                     name=w['name'],
-                                    authorization=w.get("authorization", None))
+                                    authorization=w.get("authorization", None),
+                                    public=w.get('public', False))
     return w, workflow
 
 
@@ -124,9 +125,11 @@ def register_workflows(app_user):
             lm_db.db.session.rollback()
 
 
-def pick_and_register_workflow(app_user, name=None):
+def pick_and_register_workflow(app_user, name=None, public=False):
     # pick one user workflow and register it
-    return register_workflow(app_user, pick_workflow(app_user, name))
+    wdata = pick_workflow(app_user, name)
+    wdata['public'] = public
+    return register_workflow(app_user, wdata)
 
 
 def not_shared_workflows(user1, user2, skip=None):
