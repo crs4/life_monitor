@@ -67,14 +67,22 @@ class LifeMonitor:
     @classmethod
     def _find_and_check_workflow_version(cls, user: User, uuid, version=None):
         w = None
-        if not version or version.lower() == "latest":
-            _w = models.Workflow.get_user_workflow(user, uuid)
-            if _w:
-                w = _w.latest_version
+        if not user or user.is_anonymous:
+            if not version or version.lower() == "latest":
+                _w = models.Workflow.get_public_workflow(uuid)
+                if _w:
+                    w = _w.latest_version
+            else:
+                w = models.WorkflowVersion.get_public_workflow_version(uuid, version)
         else:
-            w = models.WorkflowVersion.get_user_workflow_version(user, uuid, version)
-        if not w:
-            w = cls._find_and_check_shared_workflow_version(user, uuid, version=version)
+            if not version or version.lower() == "latest":
+                _w = models.Workflow.get_user_workflow(user, uuid)
+                if _w:
+                    w = _w.latest_version
+            else:
+                w = models.WorkflowVersion.get_user_workflow_version(user, uuid, version)
+            if not w:
+                w = cls._find_and_check_shared_workflow_version(user, uuid, version=version)
 
         if w is None:
             raise lm_exceptions.EntityNotFoundException(models.WorkflowVersion, f"{uuid}_{version}")
@@ -83,7 +91,7 @@ class LifeMonitor:
         #   1. if the user belongs to the owners group
         #   2. or the user belongs to the viewers group
         # if user not in w.owners and user not in w.viewers:
-        if not user.has_permission(w):
+        if user and not user.is_anonymous and not user.has_permission(w):
             # if the user is not the submitter
             # and the workflow is associated with a registry
             # then we try to check whether the user is allowed to view the workflow
