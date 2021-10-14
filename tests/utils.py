@@ -50,14 +50,17 @@ def build_registries_path(registry_uuid=None):
     return _REGISTRIES_ENDPOINT
 
 
-def build_workflow_path(workflow=None, version_as_subpath=False, subpath=None):
+def build_workflow_path(workflow=None, version_as_subpath=False,
+                        subpath=None, include_version=True):
     if workflow:
         w = f"{_WORKFLOWS_ENDPOINT}/{workflow['uuid']}"
-        if version_as_subpath:
-            w = f"{w}/versions/{workflow['version']}"
-        if subpath:
-            w = f"{w}/{subpath}"
-        return f"{w}?version={workflow['version']}" if not version_as_subpath else w
+        if include_version:
+            if version_as_subpath:
+                w = f"{w}/versions/{workflow['version']}"
+            if subpath:
+                w = f"{w}/{subpath}"
+            w = f"{w}?version={workflow['version']}" if not version_as_subpath else w
+        return w
     return _WORKFLOWS_ENDPOINT
 
 
