@@ -28,7 +28,6 @@ import lifemonitor.api.models as models
 import lifemonitor.auth as auth
 import lifemonitor.exceptions as lm_exceptions
 import lifemonitor.lang.messages as messages
-import pytest
 from flask import Response
 from tests.utils import assert_status_code
 

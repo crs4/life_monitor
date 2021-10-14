@@ -24,7 +24,6 @@ from unittest.mock import MagicMock, patch
 import lifemonitor.api.controllers as controllers
 import lifemonitor.auth as auth
 import lifemonitor.exceptions as lm_exceptions
-import pytest
 from lifemonitor.lang import messages
 from tests.utils import assert_status_code
 
