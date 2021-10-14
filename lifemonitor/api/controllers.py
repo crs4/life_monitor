@@ -320,7 +320,8 @@ def workflows_post(body, _registry=None, _submitter_id=None):
             workflow_identifier=body.get('identifier', None),
             workflow_registry=registry,
             name=body.get('name', None),
-            authorization=body.get('authorization', None)
+            authorization=body.get('authorization', None),
+            public=body.get('public', False)
         )
         logger.debug("workflows_post. Created workflow '%s' (ver.%s)", w.uuid, w.version)
         clear_cache(workflows_get)

@@ -96,7 +96,7 @@ class LifeMonitor:
     def register_workflow(cls, roc_link, workflow_submitter: User, workflow_version,
                           workflow_uuid=None, workflow_identifier=None,
                           workflow_registry: Optional[models.WorkflowRegistry] = None,
-                          authorization=None, name=None):
+                          authorization=None, name=None, public=False):
 
         # find or create a user workflow
         if workflow_registry:
@@ -130,6 +130,9 @@ class LifeMonitor:
         if name is None:
             w.name = wv.dataset_name
             wv.name = wv.dataset_name
+
+        # set workflow visibility
+        w.public = public
 
         # parse roc_metadata and register suites and instances
         try:
