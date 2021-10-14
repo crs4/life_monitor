@@ -43,12 +43,15 @@ def test_get_workflows_with_user(m, request_context, mock_user, fake_uri):
     assert auth.current_user == mock_user, "Unexpected user in session"
     logger.debug("Current registry: %r", auth.current_registry)
     assert not auth.current_registry, "Unexpected registry in session"
+    # make empty the list of public workflows
+    m.get_public_workflows.return_value = []
     # add one fake workflow
     data = {"uuid": "123456", "version": "1.0", "uri": fake_uri}
     w = models.Workflow(uuid=data['uuid'])
     w.add_version(data["version"], data['uri'], MagicMock())
     m.get_user_workflows.return_value = [w]
     response = controllers.workflows_get()
+    m.get_public_workflows.assert_called_once()
     m.get_user_workflows.assert_called_once()
     assert isinstance(response, dict), "Unexpected result type"
     logger.debug("Response: %r", response)
@@ -59,6 +62,8 @@ def test_get_workflows_with_user(m, request_context, mock_user, fake_uri):
 def test_get_workflows_with_registry(m, request_context, mock_registry, fake_uri):
     assert auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry, "Unexpected registry in session"
+    # make empty the list of public workflows
+    m.get_public_workflows.return_value = []
     # add one fake workflow
     data = {"uuid": "123456", "version": "1.0", "uri": fake_uri}
     w = models.Workflow(uuid=data['uuid'])
