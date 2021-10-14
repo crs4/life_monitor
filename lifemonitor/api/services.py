@@ -345,6 +345,10 @@ class LifeMonitor:
         return w.latest_version if version is None or version == "latest" else w.versions[version]
 
     @staticmethod
+    def get_public_workflows() -> List[models.Workflow]:
+        return models.Workflow.get_public_workflows()
+
+    @staticmethod
     def get_user_workflows(user: User) -> List[models.Workflow]:
         workflows = [w for w in models.Workflow.get_user_workflows(user)]
         for svc in models.WorkflowRegistry.all():
@@ -366,6 +370,10 @@ class LifeMonitor:
             except lm_exceptions.NotAuthorizedException as e:
                 logger.debug(e)
         return workflows
+
+    @classmethod
+    def get_public_workflow(cls, uuid, version=None) -> models.Workflow:
+        return cls._find_and_check_workflow_version(None, uuid, version).workflow
 
     @classmethod
     def get_user_workflow(cls, user: models.User, uuid, version=None) -> models.Workflow:
