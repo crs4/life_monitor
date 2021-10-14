@@ -119,9 +119,9 @@ class Workflow(Resource):
     @classmethod
     def get_public_workflow(cls, uuid) -> Workflow:
         try:
-            return cls.query\
+            return cls.query \
                 .filter(cls.public == true()) \
-               .filter(cls.uuid == lm_utils.uuid_param(uuid)).one()  # noqa: E712
+                .filter(cls.uuid == lm_utils.uuid_param(uuid)).one()  # noqa: E712
         except NoResultFound as e:
             logger.debug(e)
             return None
