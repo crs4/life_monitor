@@ -412,7 +412,7 @@ paths:
       summary: "List workflows"
       tags: ["Workflows"]
       description: |
-        List all registered workflows for the current (authenticated) user or registry client.
+        List all workflows either public or registered by the current (authenticated) user or registry client.
       security:
         - apiKey: ["workflow.read"]
         - RegistryClientCredentials: ["workflow.read"]
