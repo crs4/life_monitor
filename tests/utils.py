@@ -50,16 +50,22 @@ def build_registries_path(registry_uuid=None):
     return _REGISTRIES_ENDPOINT
 
 
+def _get_attr(obj, name, default=None):
+    if isinstance(obj, dict):
+        return obj.get(name, default)
+    return getattr(obj, name, default)
+
+
 def build_workflow_path(workflow=None, version_as_subpath=False,
                         subpath=None, include_version=True):
     if workflow:
-        w = f"{_WORKFLOWS_ENDPOINT}/{workflow['uuid']}"
+        w = f"{_WORKFLOWS_ENDPOINT}/{_get_attr(workflow, 'uuid')}"
+        if include_version and version_as_subpath:
+            w = f"{w}/versions/{_get_attr(workflow, 'version')}"
+        if subpath:
+            w = f"{w}/{subpath}"
         if include_version:
-            if version_as_subpath:
-                w = f"{w}/versions/{workflow['version']}"
-            if subpath:
-                w = f"{w}/{subpath}"
-            w = f"{w}?version={workflow['version']}" if not version_as_subpath else w
+            w = f"{w}?version={_get_attr(workflow, 'version')}" if not version_as_subpath else w
         return w
     return _WORKFLOWS_ENDPOINT
 
