@@ -26,7 +26,8 @@ from typing import List, Optional, Union
 import lifemonitor.exceptions as lm_exceptions
 from lifemonitor.api import models
 from lifemonitor.auth.models import (ExternalServiceAuthorizationHeader,
-                                     Permission, RoleType, User)
+                                     Permission, Resource, RoleType,
+                                     Subscription, User)
 from lifemonitor.auth.oauth2.client import providers
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 from lifemonitor.auth.oauth2.server import server
@@ -220,6 +221,22 @@ class LifeMonitor:
             return suite
         except KeyError as e:
             raise lm_exceptions.SpecificationNotValidException(f"Missing property: {e}")
+
+    @staticmethod
+    def subscribe_user_resource(user: User, resource: Resource) -> Subscription:
+        assert user and not user.is_anonymous, "Invalid user"
+        assert resource, "Invalid resource"
+        subscription = user.subscribe(resource)
+        user.save()
+        return subscription
+
+    @staticmethod
+    def unsubscribe_user_resource(user: User, resource: Resource) -> Subscription:
+        assert user and not user.is_anonymous, "Invalid user"
+        assert resource, "Invalid resource"
+        subscription = user.unsubscribe(resource)
+        user.save()
+        return subscription
 
     @classmethod
     def register_test_suite(cls, workflow_uuid, workflow_version,
