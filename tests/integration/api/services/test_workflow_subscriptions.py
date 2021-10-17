@@ -27,17 +27,20 @@ from tests import utils
 logger = logging.getLogger()
 
 
-def test_user_workflow_subscribe(app_client, lm: LifeMonitor, user1: dict, valid_workflow: str):
+def test_user_workflow_subscription(app_client, lm: LifeMonitor, user1: dict, valid_workflow: str):
     _, workflow = utils.pick_and_register_workflow(user1, valid_workflow)
     user: User = user1['user']
+    # check number of subscriptions
+    assert len(user.subscriptions) == 0, "Unexpected number of subscriptions"
+    # subscribe to the workflow
     s: Subscription = lm.subscribe_user_resource(user, workflow)
     assert s, "Subscription should not be empty"
     assert s.resource.uuid == workflow.uuid, "Unexpected resource UUID"
     assert s.resource == workflow, "Unexpected resource instance"
-
-
-def test_user_workflow_unsubscribe(app_client, lm: LifeMonitor, user1: dict, valid_workflow: str):
-    _, workflow = utils.pick_and_register_workflow(user1, valid_workflow)
-    user: User = user1['user']
+    # check number of subscriptions
+    assert len(user.subscriptions) == 1, "Unexpected number of subscriptions"
+    # unsubscribe to workflow
     s: Subscription = lm.unsubscribe_user_resource(user, workflow)
     assert s, "Subscription should not be empty"
+    # check number of subscriptions
+    assert len(user.subscriptions) == 0, "Unexpected number of subscriptions"
