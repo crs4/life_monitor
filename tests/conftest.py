@@ -149,6 +149,11 @@ def app_context(app_settings):
     yield from helpers.app_context(app_settings, init_db=True, clean_db=False, drop_db=False)
 
 
+@pytest.fixture
+def lm() -> LifeMonitor:
+    return LifeMonitor.get_instance()
+
+
 @pytest.fixture()
 def user1(app_context, provider_type, client_credentials_registry, request):
     register_workflows = False
