@@ -22,7 +22,6 @@ import json
 import logging
 
 import pytest
-from flask import g
 from lifemonitor.api.services import LifeMonitor
 from lifemonitor.auth.models import User
 from tests import utils
@@ -116,7 +115,7 @@ def test_user_subscriptions(app_client, client_auth_method, user1, user1_auth, v
 
     # try to delete the subscription via API
     r = app_client.get(
-        f'/users/current/subscriptions', headers=user1_auth
+        '/users/current/subscriptions', headers=user1_auth
     )
     assert r.status_code == 200, "Error when trying to get user subscriptions"
     data = json.loads(r.data.decode())
