@@ -61,6 +61,8 @@ class User(db.Model, UserMixin):
     authorizations = db.relationship("ExternalServiceAccessAuthorization",
                                      cascade="all, delete-orphan")
 
+    subscriptions = db.relationship("Subscription", cascade="all, delete-orphan")
+
     def __init__(self, username=None) -> None:
         super().__init__()
         self.username = username
@@ -112,6 +114,21 @@ class User(db.Model, UserMixin):
 
     def verify_password(self, password):
         return check_password_hash(self.password_hash, password)
+
+    def get_subscription(self, resource: Resource) -> Subscription:
+        return next((s for s in self.subscriptions if s.resource == resource), None)
+
+    def subscribe(self, resource: Resource) -> Subscription:
+        s = self.get_subscription(resource)
+        if not s:
+            s = Subscription(resource, self)
+        return s
+
+    def unsubscribe(self, resource: Resource):
+        s = self.get_subscription(resource)
+        if s:
+            self.subscriptions.remove(s)
+        return s
 
     def save(self):
         db.session.add(self)
@@ -239,6 +256,25 @@ resource_authorization_table = db.Table(
     db.Column('authorization_id', db.Integer,
               db.ForeignKey("external_service_access_authorization.id", ondelete="CASCADE"))
 )
+
+
+class Subscription(db.Model, ModelMixin):
+    id = db.Column(db.Integer, primary_key=True)
+    created = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    modified = db.Column(db.DateTime, default=datetime.datetime.utcnow,
+                         onupdate=datetime.datetime.utcnow)
+
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    user: User = db.relationship("User", uselist=False, back_populates="subscriptions", foreign_keys=[user_id])
+
+    resource_id = db.Column(db.Integer, db.ForeignKey("resource.id"), nullable=False)
+    resource: Resource = db.relationship("Resource", uselist=False,
+                                         backref=db.backref("subscriptions", cascade="all, delete-orphan"),
+                                         foreign_keys=[resource_id])
+
+    def __init__(self, resource: Resource, user: User) -> None:
+        self.resource = resource
+        self.user = user
 
 
 class HostingService(Resource):
