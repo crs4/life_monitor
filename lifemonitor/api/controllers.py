@@ -87,7 +87,7 @@ def workflows_get():
     )
 
 
-def _get_workflow_or_problem(wf_uuid, wf_version):
+def _get_workflow_or_problem(wf_uuid, wf_version=None):
     try:
         wf = None
         if current_user and not current_registry:
@@ -229,6 +229,28 @@ def user_workflows_post(body):
         return lm_exceptions.report_problem(401, "Unauthorized", detail=messages.no_user_in_session)
     clear_cache(user_workflows_get)
     return workflows_post(body)
+
+
+@authorized
+def user_workflow_subscribe(wf_uuid):
+    response = _get_workflow_or_problem(wf_uuid)
+    if isinstance(response, Response):
+        return response
+    subscription = lm.subscribe_user_resource(current_user, response)
+    logger.debug("Created new subscription: %r", subscription)
+    clear_cache(user_workflows_get)
+    return connexion.NoContent, 204
+
+
+@authorized
+def user_workflow_unsubscribe(wf_uuid):
+    response = _get_workflow_or_problem(wf_uuid)
+    if isinstance(response, Response):
+        return response
+    subscription = lm.unsubscribe_user_resource(current_user, response)
+    logger.debug("Delete subscription: %r", subscription)
+    clear_cache(user_workflows_get)
+    return connexion.NoContent, 204
 
 
 @authorized
