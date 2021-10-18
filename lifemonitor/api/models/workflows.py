@@ -28,7 +28,8 @@ import lifemonitor.exceptions as lm_exceptions
 from lifemonitor import utils as lm_utils
 from lifemonitor.api.models import db
 from lifemonitor.api.models.rocrate import ROCrate
-from lifemonitor.auth.models import HostingService, Permission, Resource, User
+from lifemonitor.auth.models import (HostingService, Permission, Resource,
+                                     Subscription, User)
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -142,9 +143,13 @@ class Workflow(Resource):
             raise lm_exceptions.LifeMonitorException(detail=str(e), stack=str(e))
 
     @classmethod
-    def get_user_workflows(cls, owner: User) -> List[Workflow]:
-        return cls.query.join(Permission)\
+    def get_user_workflows(cls, owner: User, include_subscriptions=False) -> List[Workflow]:
+        result: List[Workflow] = cls.query.join(Permission)\
             .filter(Permission.user_id == owner.id).all()
+        if include_subscriptions:
+            result.extend(cls.query.join(Subscription)
+                          .filter(Subscription.user_id == owner.id).all())
+        return list({x.name: x for x in result}.values())
 
     @classmethod
     def get_public_workflows(cls) -> List[Workflow]:

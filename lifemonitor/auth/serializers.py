@@ -103,3 +103,28 @@ class UserSchema(ResourceMetadataSchema):
 
 class ListOfUsers(ListOfItems):
     __item_scheme__ = UserSchema
+
+
+class SubscriptionSchema(ResourceMetadataSchema):
+    __envelope__ = {"single": None, "many": "items"}
+    __model__ = models.Subscription
+
+    class Meta:
+        model = models.Subscription
+
+    user = ma.Nested(UserSchema(only=('id', 'username')),
+                     attribute="user", many=False)
+    created = fields.String(attribute='created')
+    modified = fields.String(attribute='modified')
+
+    resource = fields.Method("get_resource")
+
+    def get_resource(self, obj: models.Subscription):
+        return {
+            'uuid': obj.resource.uuid,
+            'type': obj.resource.type
+        }
+
+
+class ListOfSubscriptions(ListOfItems):
+    __item_scheme__ = SubscriptionSchema

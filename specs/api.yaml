@@ -358,13 +358,14 @@ paths:
       operationId: "user_workflows_get"
       summary: "List workflows for the current user"
       description: |
-        List all workflows submitted by the current user
+        List all workflows submitted or subscribed by the current user
       security:
         - apiKey: ["user.workflow.read"]
         - RegistryCodeFlow: ["user.workflow.read"]
         - AuthorizationCodeFlow: ["user.workflow.read"]
       parameters:
         - $ref: "#/components/parameters/wf_status"
+        - $ref: "#/components/parameters/wf_subscriptions"
       responses:
         "200":
           description: A list of Workflows
@@ -404,6 +405,28 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+
+  /users/current/subscriptions:
+    get:
+      tags: ["Users"]
+      x-openapi-router-controller: lifemonitor.auth.controllers
+      operationId: "user_subscriptions_get"
+      summary: "List all subscriptions for the current user"
+      description: |
+        List all subscriptions for the current user
+      security:
+        - apiKey: ["user.workflow.read"]
+        - RegistryCodeFlow: ["user.workflow.read"]
+        - AuthorizationCodeFlow: ["user.workflow.read"]
+      responses:
+        "200":
+          description: A list of subscriptions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListOfSubscriptions"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
 
   /workflows:
     get:
@@ -501,6 +524,56 @@ paths:
       responses:
         "204":
           description: "Workflow updated"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /workflows/{wf_uuid}/subscribe:
+    post:
+      summary: Subscribe to the workflow
+      description: "Allow the current (authenticated) user to subscribe to the specified workflow"
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "user_workflow_subscribe"
+      tags: ["Workflows"]
+      security:
+        - apiKey: ["workflow.write"]
+        - AuthorizationCodeFlow: ["workflow.write"]
+        - RegistryCodeFlow: ["workflow.write"]
+      parameters:
+        - $ref: "#/components/parameters/wf_uuid"
+      responses:
+        "204":
+          description: "Subscription registered"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /workflows/{wf_uuid}/unsubscribe:
+    post:
+      summary: Unsubscribe to the workflow
+      description: "Allow the current (authenticated) user to unsubscribe to the specified workflow"
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "user_workflow_unsubscribe"
+      tags: ["Workflows"]
+      security:
+        - apiKey: ["workflow.write"]
+        - AuthorizationCodeFlow: ["workflow.write"]
+        - RegistryCodeFlow: ["workflow.write"]
+      parameters:
+        - $ref: "#/components/parameters/wf_uuid"
+      responses:
+        "204":
+          description: "Subscription deleted"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -1107,6 +1180,14 @@ components:
       description: |
         `true` to include a summary of the workflow status
       example: "false"
+    wf_subscriptions:
+      name: "subscriptions"
+      in: query
+      schema:
+        type: boolean
+      description: |
+        `true` to include subscribed workflows
+      example: "false"
     version:
       name: "version"
       in: query
@@ -1315,6 +1396,52 @@ components:
       required:
         - sub
         - provider
+
+    Subscription:
+      type: object
+      description: A user subscription for a given resource (e.g., workflow).
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        resource:
+          type: object
+          description: "Resource"
+          properties:
+            uuid:
+              type: string
+              nullable: false
+              description: "Resource UUID"
+              example: 550e8400-e29b-41d4-a716-446655440000
+            type:
+              type: string
+              nullable: false
+              description: "Type of the resource"
+              example: workflow
+        created:
+          type: string
+          description: |
+            A timestamp for the creation time of the subscription
+          example: 1616427012.0
+        modified:
+          type: string
+          description: |
+            A timestamp for the modification time of the subscription
+          example: 1616427512.0
+      required:
+        - user
+        - resource
+        - created
+        - modified
+
+    ListOfSubscriptions:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Subscription"
+      required:
+        - items
 
     IdentityProviderType:
       type: string
