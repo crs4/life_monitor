@@ -213,11 +213,11 @@ def registry_user_workflows_post(user_id, body):
 
 
 @authorized
-@cached()
+# @cached()
 def user_workflows_get():
     if not current_user or current_user.is_anonymous:
         return lm_exceptions.report_problem(401, "Unauthorized", detail=messages.no_user_in_session)
-    include_subscriptions = request.args.get('subscriptions', False)
+    include_subscriptions = request.args.get('subscriptions', 'false').lower() == 'true'
     workflows = lm.get_user_workflows(current_user, include_subscriptions=include_subscriptions)
     logger.debug("user_workflows_get. Got %s workflows (user: %s)", len(workflows), current_user)
     workflow_status = request.args.get('status', 'true').lower() == 'true'
