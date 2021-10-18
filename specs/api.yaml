@@ -358,13 +358,14 @@ paths:
       operationId: "user_workflows_get"
       summary: "List workflows for the current user"
       description: |
-        List all workflows submitted by the current user
+        List all workflows submitted or subscribed by the current user
       security:
         - apiKey: ["user.workflow.read"]
         - RegistryCodeFlow: ["user.workflow.read"]
         - AuthorizationCodeFlow: ["user.workflow.read"]
       parameters:
         - $ref: "#/components/parameters/wf_status"
+        - $ref: "#/components/parameters/wf_subscriptions"
       responses:
         "200":
           description: A list of Workflows
@@ -1178,6 +1179,14 @@ components:
         type: boolean
       description: |
         `true` to include a summary of the workflow status
+      example: "false"
+    wf_subscriptions:
+      name: "subscriptions"
+      in: query
+      schema:
+        type: boolean
+      description: |
+        `true` to include subscribed workflows
       example: "false"
     version:
       name: "version"
