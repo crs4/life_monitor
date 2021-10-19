@@ -753,6 +753,7 @@ paths:
         - RegistryClientCredentials: ["workflow.read"]
         - RegistryCodeFlow: ["workflow.read"]
         - AuthorizationCodeFlow: ["workflow.read"]
+        - {}
       parameters:
         - $ref: "#/components/parameters/wf_uuid"
         - $ref: "#/components/parameters/wf_version"
@@ -782,6 +783,7 @@ paths:
         - RegistryClientCredentials: ["workflow.read"]
         - RegistryCodeFlow: ["workflow.read"]
         - AuthorizationCodeFlow: ["workflow.read"]
+        - {}
       parameters:
         - $ref: "#/components/parameters/wf_uuid"
         - $ref: "#/components/parameters/wf_version"
