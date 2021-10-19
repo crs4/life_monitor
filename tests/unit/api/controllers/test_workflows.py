@@ -251,6 +251,7 @@ def test_post_workflow_by_registry_not_authorized(m, request_context, mock_regis
 def test_get_workflow_by_id_error_not_found(m, request_context, mock_registry):
     assert auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry, "Unexpected registry in session"
+    m.get_public_workflow_version.return_value = None
     m.get_registry_workflow_version.side_effect = lm_exceptions.EntityNotFoundException(models.WorkflowVersion)
     response = controllers.workflows_get_by_id(wf_uuid="12345", wf_version="1")
     logger.debug("Response: %r", response)
@@ -274,6 +275,7 @@ def test_get_workflow_by_id(m, request_context, mock_registry):
     w = models.Workflow(uuid=data["uuid"])
     wv = w.add_version(data["version"], data["roc_link"], MagicMock())
     wv._metadata_loaded = True
+    m.get_public_workflow_version.return_value = None
     m.get_registry_workflow_version.return_value = wv
     response = controllers.workflows_get_by_id(data['uuid'], data['version'])
     m.get_registry_workflow_version.assert_called_once_with(mock_registry, data['uuid'], data['version'])

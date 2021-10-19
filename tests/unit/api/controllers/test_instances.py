@@ -59,6 +59,7 @@ def test_get_instance_by_user_error_forbidden(m, request_context, mock_user):
     m.get_test_instance.return_value = instance
     m.get_user_workflows.return_value = []
     m.get_suite.return_value = instance.suite
+    m.get_public_workflow_version.return_value = None
     m.get_user_workflow_version = Mock(side_effect=lm_exceptions.NotAuthorizedException)
     # m.get_registry_workflow_version = workflow
     response = controllers.instances_get_by_id(instance['uuid'])
@@ -83,6 +84,7 @@ def test_get_instance_by_user(m, request_context, mock_user):
     m.get_test_instance.return_value = instance
     m.get_user_workflows.return_value = []
     m.get_suite.return_value = instance.suite
+    m.get_public_workflow_version.return_value = None
     m.get_user_workflow_version = workflow
     response = controllers.instances_get_by_id(instance['uuid'])
     m.get_test_instance.assert_called_once()
@@ -124,6 +126,7 @@ def test_get_instance_build_by_user(m, request_context, mock_user):
     m.get_test_instance.return_value = instance
     m.get_user_workflows.return_value = []
     m.get_suite.return_value = instance.suite
+    m.get_public_workflow_version.return_value = None
     m.get_user_workflow_version = workflow
     response = controllers.instances_builds_get_by_id(instance['uuid'], build.id)
     m.get_test_instance.assert_called_once()
@@ -148,6 +151,7 @@ def test_get_instance_build_last_logs_by_user(m, request_context, mock_user):
     instance.suite.uuid = '1111'
     instance.get_test_build.return_value = build
     instance.test_suite.workflow = workflow
+    m.get_public_workflow_version.return_value = None
     response = controllers.instances_builds_get_by_id(instance['uuid'], build.id)
     m.get_test_instance.assert_called_once()
     m.get_suite.assert_called_once()
@@ -234,6 +238,7 @@ def test_get_instance_build_logs_by_user(m, request_context, mock_user):
     instance.get_test_build.return_value = build
     instance.test_suite.workflow = workflow
     m.get_test_instance.return_value = instance
+    m.get_public_workflow_version.return_value = None
     m.get_user_workflows.return_value = []
     m.get_suite.return_value = instance.suite
     m.get_user_workflow_version = workflow
@@ -268,6 +273,7 @@ def test_get_instance_by_registry_error_forbidden(m, request_context, mock_regis
     m.get_test_instance.return_value = instance
     m.get_user_workflows.return_value = []
     m.get_suite.return_value = instance.suite
+    m.get_public_workflow_version.return_value = None
     m.get_registry_workflow_version = Mock(side_effect=lm_exceptions.NotAuthorizedException)
     response = controllers.instances_get_by_id(instance['uuid'])
     m.get_test_instance.assert_called_once()

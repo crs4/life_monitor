@@ -53,6 +53,7 @@ def test_get_suite_by_user_without_auth_access_to_workflow(m, request_context, m
     suite.uuid = '1111'
     suite.workflow = workflow
     m.get_suite.return_value = suite
+    m.get_public_workflow_version.return_value = None
     m.get_user_workflow_version.side_effect = lm_exceptions.NotAuthorizedException
     response = controllers.suites_get_by_uuid(suite.uuid)
     m.get_suite.assert_called_once()
@@ -78,6 +79,7 @@ def test_get_suite_by_registry_without_auth_access_to_workflow(m, request_contex
     suite.workflow = workflow
     m.get_suite.return_value = suite
     # the worklow exists but it is not linked to the registry
+    m.get_public_workflow_version.return_value = None
     m.get_registry_workflow_version.side_effect = lm_exceptions.NotAuthorizedException
     response = controllers.suites_get_by_uuid(suite.uuid)
     logger.debug("Response: %r", response.data.decode())
@@ -166,6 +168,7 @@ def test_get_suite_status_by_registry(m, request_context, mock_registry):
     suite.uuid = '111111'
     suite.workflow = workflow
     m.get_suite.return_value = suite
+    m.get_public_workflow_version.return_value = None
     m.get_registry_workflow_version.return_value = suite
     response = controllers.suites_get_status(suite.suite)
     m.get_suite.assert_called_once()
