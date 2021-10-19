@@ -535,11 +535,11 @@ paths:
 
   /workflows/{wf_uuid}/subscribe:
     post:
-      summary: Subscribe to the workflow
-      description: "Allow the current (authenticated) user to subscribe to the specified workflow"
+      summary: Subscribe user to a workflow
+      description: "Subscribe the current (authenticated) user to the specified workflow"
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "user_workflow_subscribe"
-      tags: ["Workflows"]
+      tags: ["Users"]
       security:
         - apiKey: ["workflow.write"]
         - AuthorizationCodeFlow: ["workflow.write"]
@@ -560,11 +560,11 @@ paths:
 
   /workflows/{wf_uuid}/unsubscribe:
     post:
-      summary: Unsubscribe to the workflow
-      description: "Allow the current (authenticated) user to unsubscribe to the specified workflow"
+      summary: Unsubscribe user from a workflow
+      description: "Unsubscribe the current (authenticated) user from the specified workflow"
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "user_workflow_unsubscribe"
-      tags: ["Workflows"]
+      tags: ["Users"]
       security:
         - apiKey: ["workflow.write"]
         - AuthorizationCodeFlow: ["workflow.write"]
