@@ -90,13 +90,18 @@ def workflows_get():
 def _get_workflow_or_problem(wf_uuid, wf_version=None):
     try:
         wf = None
-        if current_user and not current_registry:
-            wf = lm.get_user_workflow_version(current_user, wf_uuid, wf_version)
-        elif current_registry:
-            wf = lm.get_registry_workflow_version(current_registry, wf_uuid, wf_version)
-        else:
-            return lm_exceptions.report_problem(403, "Forbidden",
-                                                detail=messages.no_user_in_session)
+        try:
+            wf = lm.get_public_workflow_version(wf_uuid, wf_version)
+        except lm_exceptions.EntityNotFoundException as e:
+            logger.debug(e)
+        if not wf:
+            if current_user and not current_registry:
+                wf = lm.get_user_workflow_version(current_user, wf_uuid, wf_version)
+            elif current_registry:
+                wf = lm.get_registry_workflow_version(current_registry, wf_uuid, wf_version)
+            else:
+                return lm_exceptions.report_problem(403, "Forbidden",
+                                                    detail=messages.no_user_in_session)
         if wf is None:
             return lm_exceptions.report_problem(404, "Not Found",
                                                 detail=messages.workflow_not_found.format(wf_uuid, wf_version))
