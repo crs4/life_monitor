@@ -33,10 +33,10 @@ def test_workflow_subscription(user1: dict, valid_workflow: str):
     user: User = user1['user']
     s: Subscription = user.subscribe(workflow)
     logger.debug("Subscription: %r", s)
-    assert s, "Subscription should bot be empty"
+    assert s, "Subscription should not be empty"
     assert len(user.subscriptions) == 1, "Unexpected number of subscriptions"
 
     s: Subscription = user.unsubscribe(workflow)
     logger.debug("Subscription: %r", s)
-    assert s, "Subscription should bot be empty"
+    assert s, "Subscription should not be empty"
     assert len(user.subscriptions) == 0, "Unexpected number of subscriptions"
