@@ -245,7 +245,7 @@ def user_workflow_subscribe(wf_uuid):
     subscription = lm.subscribe_user_resource(current_user, response)
     logger.debug("Created new subscription: %r", subscription)
     clear_cache(user_workflows_get)
-    return connexion.NoContent, 204
+    clear_cache(workflows_get_latest_version_by_id)
 
 
 @authorized
@@ -256,6 +256,7 @@ def user_workflow_unsubscribe(wf_uuid):
     subscription = lm.unsubscribe_user_resource(current_user, response)
     logger.debug("Delete subscription: %r", subscription)
     clear_cache(user_workflows_get)
+    clear_cache(workflows_get_latest_version_by_id)
     return connexion.NoContent, 204
 
 
