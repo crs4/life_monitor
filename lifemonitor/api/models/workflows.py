@@ -149,7 +149,7 @@ class Workflow(Resource):
         if include_subscriptions:
             result.extend(cls.query
                           .join(Subscription).filter(Subscription.user_id == owner.id and Subscription.resource_id == cls.id)
-                          .filter(cls.public == True)
+                          .filter(cls.public == true())
                           .all())
         return list({x.name: x for x in result}.values())
 

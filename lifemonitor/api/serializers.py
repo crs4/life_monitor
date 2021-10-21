@@ -293,7 +293,7 @@ class WorkflowVersionListItem(WorkflowSchema):
     def get_subscriptions(self, w: models.Workflow):
         result = []
         if self.subscriptionsOf:
-            for user in self.subscriptionsOf:                
+            for user in self.subscriptionsOf:
                 s = user.get_subscription(w)
                 if s:
                     result.append(SubscriptionSchema(exclude=('meta', 'links'), self_link=False).dump(s))

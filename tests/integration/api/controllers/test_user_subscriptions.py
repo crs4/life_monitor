@@ -136,8 +136,6 @@ def test_user_subscriptions(app_client, client_auth_method, user1, user1_auth, v
 @pytest.mark.parametrize("user1", [True], indirect=True)
 def test_subscribed_workflow_by_user(app_client, client_auth_method,
                                      user1, user1_auth, user2, user2_auth):
-    user2_obj: User = user2['user']
-
     # get subscriptions of the user2
     r = app_client.get(
         '/users/current/subscriptions', headers=user2_auth)
