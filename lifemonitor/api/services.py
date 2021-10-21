@@ -235,6 +235,10 @@ class LifeMonitor:
         assert user and not user.is_anonymous, "Invalid user"
         assert resource, "Invalid resource"
         subscription = user.unsubscribe(resource)
+        if isinstance(resource, models.Workflow):
+            w: models.Workflow = resource
+            for v in w.get_user_versions(user):
+                user.unsubscribe(v)
         user.save()
         return subscription
 
