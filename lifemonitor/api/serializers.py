@@ -21,10 +21,12 @@
 from __future__ import annotations
 
 import logging
+from typing import List
 from urllib.parse import urljoin
 
 from lifemonitor import utils as lm_utils
-from lifemonitor.auth.serializers import UserSchema
+from lifemonitor.auth import models as auth_models
+from lifemonitor.auth.serializers import UserSchema, SubscriptionSchema
 from lifemonitor.serializers import (BaseSchema, ListOfItems,
                                      ResourceMetadataSchema, ResourceSchema,
                                      ma)
@@ -129,16 +131,31 @@ class WorkflowVersionSchema(ResourceSchema):
     public = fields.Boolean(attribute="workflow.public")
     registry = ma.Nested(WorkflowRegistrySchema(exclude=('meta', 'links')),
                          attribute="hosting_service")
+    subscriptions = fields.Method("get_subscriptions")
 
     rocrate_metadata = False
+    subscriptionsOf: List[auth_models.User] = None
 
-    def __init__(self, *args, rocrate_metadata=False, **kwargs):
+    def __init__(self, *args, rocrate_metadata=False, subscriptionsOf=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.rocrate_metadata = rocrate_metadata
+        self.subscriptionsOf = subscriptionsOf
 
     def get_version(self, obj):
         exclude = ('rocrate_metadata',) if not self.rocrate_metadata else ()
         return VersionDetailsSchema(exclude=exclude).dump(obj)
+
+    def get_subscriptions(self, wv: models.WorkflowVersion):
+        result = []
+        if self.subscriptionsOf:
+            for user in self.subscriptionsOf:
+                s = user.get_subscription(wv)
+                if s:
+                    result.append(SubscriptionSchema(exclude=('meta', 'links'), self_link=False).dump(s))
+                s = user.get_subscription(wv.workflow)
+                if s:
+                    result.append(SubscriptionSchema(exclude=('meta', 'links'), self_link=False).dump(s))
+        return result
 
     @post_dump
     def remove_skip_values(self, data, **kwargs):
@@ -251,8 +268,15 @@ class BuildSummarySchema(ResourceMetadataSchema):
 
 class WorkflowVersionListItem(WorkflowSchema):
 
+    subscriptionsOf: List[auth_models.User] = None
+
     latest_version = fields.String(attribute="latest_version.version")
     status = fields.Method("get_status")
+    subscriptions = fields.Method("get_subscriptions")
+
+    def __init__(self, *args, self_link: bool = True, subscriptionsOf: List[auth_models.User] = None, **kwargs):
+        super().__init__(*args, self_link=self_link, **kwargs)
+        self.subscriptionsOf = subscriptionsOf
 
     def get_status(self, workflow):
         return {
@@ -266,17 +290,34 @@ class WorkflowVersionListItem(WorkflowSchema):
             return BuildSummarySchema(exclude=('meta', 'links')).dump(latest_builds[0])
         return None
 
+    def get_subscriptions(self, w: models.Workflow):
+        result = []
+        if self.subscriptionsOf:
+            for user in self.subscriptionsOf:                
+                s = user.get_subscription(w)
+                if s:
+                    result.append(SubscriptionSchema(exclude=('meta', 'links'), self_link=False).dump(s))
+        return result
+
 
 class ListOfWorkflows(ListOfItems):
     __item_scheme__ = WorkflowVersionListItem
 
-    def __init__(self, *args, workflow_status: bool = False, **kwargs):
+    subscriptionsOf: List[auth_models.User] = None
+
+    def __init__(self, *args, workflow_status: bool = False, subscriptionsOf: List[auth_models.User] = None, **kwargs):
         super().__init__(*args, **kwargs)
         self.workflow_status = workflow_status
+        self.subscriptionsOf = subscriptionsOf
 
     def get_items(self, obj):
-        exclude = ('meta', 'links') if self.workflow_status else ('meta', 'links', "status")
-        return [self.__item_scheme__(exclude=exclude, many=False).dump(_) for _ in obj] \
+        exclude = ['meta', 'links']
+        if not self.workflow_status:
+            exclude.append('status')
+        if not self.subscriptionsOf or len(self.subscriptionsOf) == 0:
+            exclude.append('subscriptions')
+        return [self.__item_scheme__(exclude=tuple(exclude), many=False,
+                                     subscriptionsOf=self.subscriptionsOf).dump(_) for _ in obj] \
             if self.__item_scheme__ else None
 
 

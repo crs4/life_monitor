@@ -119,7 +119,9 @@ def _get_workflow_or_problem(wf_uuid, wf_version=None):
 def workflows_get_by_id(wf_uuid, wf_version):
     response = _get_workflow_or_problem(wf_uuid, wf_version)
     return response if isinstance(response, Response) \
-        else serializers.WorkflowVersionSchema().dump(response)
+        else serializers.WorkflowVersionSchema(subscriptionsOf=[current_user]
+                                               if not current_user.is_anonymous
+                                               else None).dump(response)
 
 
 @cached()
@@ -131,7 +133,8 @@ def workflows_get_latest_version_by_id(wf_uuid):
     rocrate_metadata = request.args.get('ro_crate', 'false').lower() == 'true'
     return response if isinstance(response, Response) \
         else serializers.LatestWorkflowVersionSchema(
-            exclude=exclude, rocrate_metadata=rocrate_metadata).dump(response)
+            exclude=exclude, rocrate_metadata=rocrate_metadata,
+            subscriptionsOf=[current_user] if not current_user.is_anonymous else None).dump(response)
 
 
 @cached()
@@ -227,7 +230,9 @@ def user_workflows_get():
     workflows = lm.get_user_workflows(current_user, include_subscriptions=include_subscriptions)
     logger.debug("user_workflows_get. Got %s workflows (user: %s)", len(workflows), current_user)
     workflow_status = request.args.get('status', 'true').lower() == 'true'
-    return serializers.ListOfWorkflows(workflow_status=workflow_status).dump(workflows)
+    return serializers.ListOfWorkflows(workflow_status=workflow_status,
+                                       subscriptionsOf=[current_user]
+                                       if include_subscriptions else None).dump(workflows)
 
 
 @authorized
