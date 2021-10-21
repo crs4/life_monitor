@@ -28,6 +28,7 @@ from flask import Response, request
 from lifemonitor.api import serializers
 from lifemonitor.api.services import LifeMonitor
 from lifemonitor.auth import authorized, current_registry, current_user
+from lifemonitor.auth import serializers as auth_serializers
 from lifemonitor.auth.oauth2.client.models import \
     OAuthIdentityNotFoundException
 from lifemonitor.cache import Timeout, cached, clear_cache
@@ -246,6 +247,7 @@ def user_workflow_subscribe(wf_uuid):
     logger.debug("Created new subscription: %r", subscription)
     clear_cache(user_workflows_get)
     clear_cache(workflows_get_latest_version_by_id)
+    return auth_serializers.SubscriptionSchema(exclude=('meta', 'links')).dump(subscription), 201
 
 
 @authorized
