@@ -69,7 +69,9 @@ def test_user_subscribe_workflow(app_client, client_auth_method, user1, user1_au
     r = app_client.post(
         utils.build_workflow_path(workflow, include_version=False, subpath='subscribe'), headers=user1_auth
     )
-    assert r.status_code == 204, f"Error when subscribing to the workflow {workflow}"
+    assert r.status_code == 201, f"Error when subscribing to the workflow {workflow}"
+    data = json.loads(r.data.decode())
+    logger.debug(data)
 
 
 @pytest.mark.parametrize("client_auth_method", [
@@ -119,10 +121,10 @@ def test_user_subscriptions(app_client, client_auth_method, user1, user1_auth, v
     )
     assert r.status_code == 200, "Error when trying to get user subscriptions"
     data = json.loads(r.data.decode())
-    logger.info(data)
+    logger.debug(data)
     assert "items" in data, "Invalid data format"
     assert len(data['items']) == 1, "Unexpected number of subscriptions"
-    logger.info("The actual subscription: %r", data['items'][0])
+    logger.debug("The actual subscription: %r", data['items'][0])
 
 
 @pytest.mark.parametrize("client_auth_method", [
@@ -133,7 +135,7 @@ def test_user_subscriptions(app_client, client_auth_method, user1, user1_auth, v
 ], indirect=True)
 @pytest.mark.parametrize("user1", [True], indirect=True)
 def test_subscribed_workflow_by_user(app_client, client_auth_method,
-                                     user1, user1_auth, user2, user2_auth, lm: LifeMonitor):
+                                     user1, user1_auth, user2, user2_auth):
     user2_obj: User = user2['user']
 
     # get subscriptions of the user2
@@ -141,12 +143,16 @@ def test_subscribed_workflow_by_user(app_client, client_auth_method,
         '/users/current/subscriptions', headers=user2_auth)
     assert r.status_code == 200, "Error when trying to get user subscriptions"
     data = json.loads(r.data.decode())
-    logger.info(data)
+    logger.debug(data)
     assert len(data['items']) == 0, "Unexpected number of subscriptions for user2"
 
-    # user2 subscribes to the workflow 'sort-and-change-case-travis'
+    # user1 makes workflow 'sort-and-change-case-travis' public
     valid_workflow = 'sort-and-change-case-travis'
     wdata = utils.pick_workflow(user1, valid_workflow)
+    r = app_client.put(
+        f"/workflows/{wdata['uuid']}", json={'public': True}, headers=user1_auth
+    )
+    assert r.status_code == 204, f"Error when trying to make workflow '{valid_workflow}' public"
 
     # get workflows of user2
     r = app_client.get(
@@ -160,24 +166,28 @@ def test_subscribed_workflow_by_user(app_client, client_auth_method,
     assert len(user2_workflows) == 2, "Unexpected number of workflows for user2"
 
     # user2 subscribes to 'sort-and-change-case-travis' workflow
-    workflow = lm.get_workflow(wdata['uuid'])
-    assert workflow, "Invalid workflow"
-    lm.subscribe_user_resource(user2_obj, workflow)
-    assert len(user2_obj.subscriptions) == 1, "Invalid number of subscriptions"
+    # workflow = lm.get_workflow(wdata['uuid'])
+    # assert workflow, "Invalid workflow"
+    r = app_client.post(
+        f"/workflows/{wdata['uuid']}/subscribe", headers=user2_auth)
+    assert r.status_code == 201, f"Error when trying to subscribe to workflow '{valid_workflow}'"
+    data = json.loads(r.data.decode())
+    logger.debug(data)
+    assert data['resource']['uuid'] == wdata['uuid'], "Invalid resource ID of subscription"
+    assert data['user']['id'] == user2['user'].id, "Invalid user ID of subscription"
 
     # check again subscriptions of the user2
     r = app_client.get(
         '/users/current/subscriptions', headers=user2_auth)
     assert r.status_code == 200, "Error when trying to get user subscriptions"
     data = json.loads(r.data.decode())
-    logger.info(data)
+    logger.debug(data)
     assert len(data['items']) == 1, "Unexpected number of subscriptions for user2"
 
     # get workflows of user1
     r = app_client.get(
         '/users/current/workflows', headers=user1_auth
     )
-    assert r.status_code == 200, "Error when trying to get user subscriptions"
     assert r.status_code == 200, "Error when trying to get user subscriptions"
     user1_workflows = json.loads(r.data.decode())
     assert 'items' in user1_workflows, "Invalid response format"
