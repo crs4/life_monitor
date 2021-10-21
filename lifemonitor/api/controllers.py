@@ -242,7 +242,7 @@ def user_workflow_subscribe(wf_uuid):
     response = _get_workflow_or_problem(wf_uuid)
     if isinstance(response, Response):
         return response
-    subscription = lm.subscribe_user_resource(current_user, response)
+    subscription = lm.subscribe_user_resource(current_user, response.workflow)
     logger.debug("Created new subscription: %r", subscription)
     clear_cache(user_workflows_get)
     clear_cache(workflows_get_latest_version_by_id)
@@ -253,7 +253,7 @@ def user_workflow_unsubscribe(wf_uuid):
     response = _get_workflow_or_problem(wf_uuid)
     if isinstance(response, Response):
         return response
-    subscription = lm.unsubscribe_user_resource(current_user, response)
+    subscription = lm.unsubscribe_user_resource(current_user, response.workflow)
     logger.debug("Delete subscription: %r", subscription)
     clear_cache(user_workflows_get)
     clear_cache(workflows_get_latest_version_by_id)
