@@ -42,7 +42,17 @@ $green:         #28a745 !default;
 $teal:          #20c997 !default;
 $cyan:          #17a2b8 !default;
 $eosc-green:    #1f8787 !default;
+$eosc-green-dark: #094b4b !default;
 $eosc-yellow:   #f9b233 !default;
+$eosc-brown:    #906f6f !default;
+$test-passed:   #1f8787 !default;
+$test-error:    #ffc107 !default;
+$test-failed:   #dc3545 !default;
+$test-waiting:  #fd7e14 !default;
+$test-running:  #17a2b8 !default;
+$test-aborted:  #6c757d !default;
+$test-suite:    #906f6f !default;
+$test-instance: #f7b142 !default;
 
 $colors: () !default;
 $colors: map-merge((
