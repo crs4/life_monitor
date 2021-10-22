@@ -28,7 +28,8 @@ import lifemonitor.exceptions as lm_exceptions
 from lifemonitor import utils as lm_utils
 from lifemonitor.api.models import db
 from lifemonitor.api.models.rocrate import ROCrate
-from lifemonitor.auth.models import Permission, Resource, User, HostingService
+from lifemonitor.auth.models import (HostingService, Permission, Resource,
+                                     Subscription, User)
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -36,6 +37,7 @@ from sqlalchemy.orm.collections import (MappedCollection,
                                         attribute_mapped_collection,
                                         collection)
 from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.sql.expression import true
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -43,6 +45,7 @@ logger = logging.getLogger(__name__)
 
 class Workflow(Resource):
     id = db.Column(db.Integer, db.ForeignKey(Resource.id), primary_key=True)
+    public = db.Column(db.Boolean, nullable=True, default=False)
 
     external_ns = "external-id:"
 
@@ -50,9 +53,11 @@ class Workflow(Resource):
         'polymorphic_identity': 'workflow'
     }
 
-    def __init__(self, uri=None, uuid=None, identifier=None, version=None, name=None) -> None:
+    def __init__(self, uri=None, uuid=None, identifier=None,
+                 version=None, name=None, public=False) -> None:
         super().__init__(uri=uri or f"{self.external_ns}",
                          uuid=uuid, version=version, name=name)
+        self.public = public
         if identifier is not None:
             self.external_id = identifier
 
@@ -113,6 +118,18 @@ class Workflow(Resource):
         return health
 
     @classmethod
+    def get_public_workflow(cls, uuid) -> Workflow:
+        try:
+            return cls.query \
+                .filter(cls.public == true()) \
+                .filter(cls.uuid == lm_utils.uuid_param(uuid)).one()  # noqa: E712
+        except NoResultFound as e:
+            logger.debug(e)
+            return None
+        except Exception as e:
+            raise lm_exceptions.LifeMonitorException(detail=str(e), stack=str(e))
+
+    @classmethod
     def get_user_workflow(cls, owner: User, uuid) -> Workflow:
         try:
             return cls.query\
@@ -126,9 +143,20 @@ class Workflow(Resource):
             raise lm_exceptions.LifeMonitorException(detail=str(e), stack=str(e))
 
     @classmethod
-    def get_user_workflows(cls, owner: User) -> List[Workflow]:
-        return cls.query.join(Permission)\
+    def get_user_workflows(cls, owner: User, include_subscriptions=False) -> List[Workflow]:
+        result: List[Workflow] = cls.query.join(Permission)\
             .filter(Permission.user_id == owner.id).all()
+        if include_subscriptions:
+            result.extend(cls.query
+                          .join(Subscription).filter(Subscription.user_id == owner.id and Subscription.resource_id == cls.id)
+                          .filter(cls.public == true())
+                          .all())
+        return list({x.name: x for x in result}.values())
+
+    @classmethod
+    def get_public_workflows(cls) -> List[Workflow]:
+        return cls.query\
+            .filter(cls.public == true()).all()  # noqa: E712
 
 
 class WorkflowVersionCollection(MappedCollection):
@@ -269,6 +297,20 @@ class WorkflowVersion(ROCrate):
     @classmethod
     def get_submitter_versions(cls, submitter: User) -> List[WorkflowVersion]:
         return cls.query.filter(WorkflowVersion.submitter_id == submitter.id).all()
+
+    @classmethod
+    def get_public_workflow_version(cls, uuid, version) -> WorkflowVersion:
+        try:
+            return cls.query\
+                .join(Workflow, Workflow.id == cls.workflow_id)\
+                .filter(Workflow.uuid == lm_utils.uuid_param(uuid))\
+                .filter(Workflow.public == true())\
+                .filter(cls.version == version).one()  # noqa: E712
+        except NoResultFound as e:
+            logger.exception(e)
+            return None
+        except Exception as e:
+            raise lm_exceptions.LifeMonitorException(detail=str(e), stack=str(e))
 
     @classmethod
     def get_user_workflow_version(cls, owner: User, uuid, version) -> WorkflowVersion:

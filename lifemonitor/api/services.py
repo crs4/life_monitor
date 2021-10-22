@@ -26,7 +26,8 @@ from typing import List, Optional, Union
 import lifemonitor.exceptions as lm_exceptions
 from lifemonitor.api import models
 from lifemonitor.auth.models import (ExternalServiceAuthorizationHeader,
-                                     Permission, RoleType, User)
+                                     Permission, Resource, RoleType,
+                                     Subscription, User)
 from lifemonitor.auth.oauth2.client import providers
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 from lifemonitor.auth.oauth2.server import server
@@ -67,14 +68,22 @@ class LifeMonitor:
     @classmethod
     def _find_and_check_workflow_version(cls, user: User, uuid, version=None):
         w = None
-        if not version or version.lower() == "latest":
-            _w = models.Workflow.get_user_workflow(user, uuid)
-            if _w:
-                w = _w.latest_version
+        if not user or user.is_anonymous:
+            if not version or version.lower() == "latest":
+                _w = models.Workflow.get_public_workflow(uuid)
+                if _w:
+                    w = _w.latest_version
+            else:
+                w = models.WorkflowVersion.get_public_workflow_version(uuid, version)
         else:
-            w = models.WorkflowVersion.get_user_workflow_version(user, uuid, version)
-        if not w:
-            w = cls._find_and_check_shared_workflow_version(user, uuid, version=version)
+            if not version or version.lower() == "latest":
+                _w = models.Workflow.get_user_workflow(user, uuid)
+                if _w:
+                    w = _w.latest_version
+            else:
+                w = models.WorkflowVersion.get_user_workflow_version(user, uuid, version)
+            if not w:
+                w = cls._find_and_check_shared_workflow_version(user, uuid, version=version)
 
         if w is None:
             raise lm_exceptions.EntityNotFoundException(models.WorkflowVersion, f"{uuid}_{version}")
@@ -83,7 +92,7 @@ class LifeMonitor:
         #   1. if the user belongs to the owners group
         #   2. or the user belongs to the viewers group
         # if user not in w.owners and user not in w.viewers:
-        if not user.has_permission(w):
+        if user and not user.is_anonymous and not user.has_permission(w):
             # if the user is not the submitter
             # and the workflow is associated with a registry
             # then we try to check whether the user is allowed to view the workflow
@@ -96,7 +105,7 @@ class LifeMonitor:
     def register_workflow(cls, roc_link, workflow_submitter: User, workflow_version,
                           workflow_uuid=None, workflow_identifier=None,
                           workflow_registry: Optional[models.WorkflowRegistry] = None,
-                          authorization=None, name=None):
+                          authorization=None, name=None, public=False):
 
         # find or create a user workflow
         if workflow_registry:
@@ -130,6 +139,9 @@ class LifeMonitor:
         if name is None:
             w.name = wv.dataset_name
             wv.name = wv.dataset_name
+
+        # set workflow visibility
+        w.public = public
 
         # parse roc_metadata and register suites and instances
         try:
@@ -209,6 +221,26 @@ class LifeMonitor:
             return suite
         except KeyError as e:
             raise lm_exceptions.SpecificationNotValidException(f"Missing property: {e}")
+
+    @staticmethod
+    def subscribe_user_resource(user: User, resource: Resource) -> Subscription:
+        assert user and not user.is_anonymous, "Invalid user"
+        assert resource, "Invalid resource"
+        subscription = user.subscribe(resource)
+        user.save()
+        return subscription
+
+    @staticmethod
+    def unsubscribe_user_resource(user: User, resource: Resource) -> Subscription:
+        assert user and not user.is_anonymous, "Invalid user"
+        assert resource, "Invalid resource"
+        subscription = user.unsubscribe(resource)
+        if isinstance(resource, models.Workflow):
+            w: models.Workflow = resource
+            for v in w.get_user_versions(user):
+                user.unsubscribe(v)
+        user.save()
+        return subscription
 
     @classmethod
     def register_test_suite(cls, workflow_uuid, workflow_version,
@@ -334,8 +366,12 @@ class LifeMonitor:
         return w.latest_version if version is None or version == "latest" else w.versions[version]
 
     @staticmethod
-    def get_user_workflows(user: User) -> List[models.Workflow]:
-        workflows = [w for w in models.Workflow.get_user_workflows(user)]
+    def get_public_workflows() -> List[models.Workflow]:
+        return models.Workflow.get_public_workflows()
+
+    @staticmethod
+    def get_user_workflows(user: User, include_subscriptions: bool = False) -> List[models.Workflow]:
+        workflows = [w for w in models.Workflow.get_user_workflows(user, include_subscriptions=include_subscriptions)]
         for svc in models.WorkflowRegistry.all():
             if svc.get_user(user.id):
                 try:
@@ -355,6 +391,14 @@ class LifeMonitor:
             except lm_exceptions.NotAuthorizedException as e:
                 logger.debug(e)
         return workflows
+
+    @classmethod
+    def get_public_workflow(cls, uuid, version=None) -> models.Workflow:
+        return cls._find_and_check_workflow_version(None, uuid, version).workflow
+
+    @classmethod
+    def get_public_workflow_version(cls, uuid, version=None) -> models.Workflow:
+        return cls._find_and_check_workflow_version(None, uuid, version)
 
     @classmethod
     def get_user_workflow(cls, user: models.User, uuid, version=None) -> models.Workflow:

@@ -24,19 +24,10 @@ from unittest.mock import MagicMock, patch
 import lifemonitor.api.controllers as controllers
 import lifemonitor.auth as auth
 import lifemonitor.exceptions as lm_exceptions
-import pytest
 from lifemonitor.lang import messages
 from tests.utils import assert_status_code
 
 logger = logging.getLogger(__name__)
-
-
-@patch("lifemonitor.api.controllers.lm")
-def test_get_suites_no_authorization(m, request_context):
-    assert auth.current_user.is_anonymous, "Unexpected user in session"
-    assert auth.current_registry is not None, "Unexpected registry in session"
-    with pytest.raises(auth.NotAuthorizedException):
-        controllers.suites_get_by_uuid()
 
 
 @patch("lifemonitor.api.controllers.lm")
@@ -62,6 +53,7 @@ def test_get_suite_by_user_without_auth_access_to_workflow(m, request_context, m
     suite.uuid = '1111'
     suite.workflow = workflow
     m.get_suite.return_value = suite
+    m.get_public_workflow_version.return_value = None
     m.get_user_workflow_version.side_effect = lm_exceptions.NotAuthorizedException
     response = controllers.suites_get_by_uuid(suite.uuid)
     m.get_suite.assert_called_once()
@@ -87,6 +79,7 @@ def test_get_suite_by_registry_without_auth_access_to_workflow(m, request_contex
     suite.workflow = workflow
     m.get_suite.return_value = suite
     # the worklow exists but it is not linked to the registry
+    m.get_public_workflow_version.return_value = None
     m.get_registry_workflow_version.side_effect = lm_exceptions.NotAuthorizedException
     response = controllers.suites_get_by_uuid(suite.uuid)
     logger.debug("Response: %r", response.data.decode())
@@ -175,6 +168,7 @@ def test_get_suite_status_by_registry(m, request_context, mock_registry):
     suite.uuid = '111111'
     suite.workflow = workflow
     m.get_suite.return_value = suite
+    m.get_public_workflow_version.return_value = None
     m.get_registry_workflow_version.return_value = suite
     response = controllers.suites_get_status(suite.suite)
     m.get_suite.assert_called_once()

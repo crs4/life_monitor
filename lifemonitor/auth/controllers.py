@@ -61,6 +61,11 @@ def show_current_user_profile():
 
 
 @authorized
+def user_subscriptions_get():
+    return serializers.ListOfSubscriptions().dump(current_user.subscriptions)
+
+
+@authorized
 @cached()
 def get_registry_users():
     try:
