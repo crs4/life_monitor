@@ -149,6 +149,18 @@
 {% endif %}
 {%- endmacro %}
 
+
+{% macro render_provider_logo(provider) -%}
+{% if provider.name == "github" %}
+<img style="width: 8em;" src="{{ url_for('auth.static', filename='img/logo/providers/github.png') }}" />
+{% elif provider.type == "seek" %}
+<img style="width: 7em; margin-top: -10px;" src="{{ url_for('auth.static', filename='img/logo/providers/workflowhub.svg') }}" />
+{% elif provider.type == "google" %}
+<img style="width: 8em; margin-top: -10px;" src="{{ url_for('auth.static', filename='img/logo/providers/google.png') }}" />
+{% endif %}
+{%- endmacro %}
+
+
 {% macro render_provider_btn_class(provider) -%}
 {% if provider.name == "github" %}
 btn-dark
