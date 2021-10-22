@@ -33,13 +33,21 @@
         </div>
       </form>
 
+      {% if not identity %}
+        <div class="social-auth-links text-center mb-3">        
       <div class="social-auth-links text-center mb-3">        
-        <p class="text-bold">- OR -</p>
-        {% for p in providers %}
+        <div class="social-auth-links text-center mb-3">        
+          <p class="text-bold">- OR -</p>
+          {% for p in providers %}
+            {{ macros.render_provider_signup_button(p) }}          
           {{ macros.render_provider_signup_button(p) }}          
-        {% endfor %}
+            {{ macros.render_provider_signup_button(p) }}          
+          {% endfor %}
+        </div>      
       </div>
-      
+        </div>      
+      {% endif %}
+
       <p></p>
       <p class="mb-0">
         Do you have an account?
