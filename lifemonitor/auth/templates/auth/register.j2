@@ -9,10 +9,23 @@
  
   {{ macros.render_logo(class="login-logo", style="width: auto") }}
   
-  <div class="card shadow-lg p-3 mb-5 bg-white rounded">
-   
+  <div class="card card-primary card-outline shadow-lg p-1 mb-5 bg-white rounded">      
+
     <div class="card-body login-card-body">
-      <h5 class="login-box-msg text-bold">Sign Up</h5>
+      {% if not identity %}
+      <h5 class="login-box-msg text-bold m-0">Sign Up</h5>
+      {% else %}
+      <div class="text-center">
+        <div class="small text-muted m-2">Signing up with</div>
+        {{ macros.render_provider_logo(identity.provider) }}
+        <h5 class="login-box-msg text-bold mt-4" style="font-weight: lighter; font-size: 1.6em;">
+          Hi, {{ identity.user_info.name or identity.user_info.preferred_username }}!
+        </h5>
+      </div>            
+      <div class="mt-4 small text-muted" style="font-weight: lighter;">
+        Choose a username for your LifeMonitor account:
+      </div>
+      {% endif %}
 
       <form method="POST" action="{{action}}" >
         {% if identity %}
@@ -25,31 +38,33 @@
         {% endif %}
         {{ form.hidden_tag() }}
 
-        <div class="text-center mb-3">            
+        <div class="text-center mb-3 row">            
+          <div class="col-6">
+            <a href="{{ url_for("auth.login") }}" class="btn btn-block btn-secondary">
+            Back
+            </a>          
+          </div>
+          <div class="col-6">
           <button type="submit"
               class="btn btn-block btn-primary">
             Register
-          </button>          
+          </button>         
+          </div>
         </div>
+
       </form>
 
       {% if not identity %}
         <div class="social-auth-links text-center mb-3">        
-      <div class="social-auth-links text-center mb-3">        
-        <div class="social-auth-links text-center mb-3">        
           <p class="text-bold">- OR -</p>
           {% for p in providers %}
             {{ macros.render_provider_signup_button(p) }}          
-          {{ macros.render_provider_signup_button(p) }}          
-            {{ macros.render_provider_signup_button(p) }}          
           {% endfor %}
-        </div>      
-      </div>
         </div>      
       {% endif %}
 
       <p></p>
-      <p class="mb-0">
+      <p class="mb-0 text-center">
         Do you have an account?
         <a href="{{ url_for("auth.login") }}" class="text-center">Sign In</a>
       </p>
