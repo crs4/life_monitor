@@ -75,15 +75,14 @@ def workflow_registries_get_current():
 
 
 @cached(timeout=Timeout.SESSION)
-def workflows_get():
+def workflows_get(status=False):
     workflows = lm.get_public_workflows()
     if current_user and not current_user.is_anonymous:
         workflows.extend(lm.get_user_workflows(current_user))
     elif current_registry:
         workflows.extend(lm.get_registry_workflows(current_registry))
     logger.debug("workflows_get. Got %s workflows (user: %s)", len(workflows), current_user)
-    workflow_status = request.args.get('status', 'true').lower() == 'true'
-    return serializers.ListOfWorkflows(workflow_status=workflow_status).dump(
+    return serializers.ListOfWorkflows(workflow_status=status).dump(
         list(dict.fromkeys(workflows))
     )
 
@@ -125,15 +124,13 @@ def workflows_get_by_id(wf_uuid, wf_version):
 
 
 @cached()
-def workflows_get_latest_version_by_id(wf_uuid):
+def workflows_get_latest_version_by_id(wf_uuid, previous_versions=False, ro_crate=False):
     response = _get_workflow_or_problem(wf_uuid, None)
-    exclude = ['previous_versions'] \
-        if request.args.get('previous_versions', 'false').lower() == 'false' else []
+    exclude = ['previous_versions'] if not previous_versions else []
     logger.debug("Previous versions: %r", exclude)
-    rocrate_metadata = request.args.get('ro_crate', 'false').lower() == 'true'
     return response if isinstance(response, Response) \
         else serializers.LatestWorkflowVersionSchema(
-            exclude=exclude, rocrate_metadata=rocrate_metadata,
+            exclude=exclude, rocrate_metadata=ro_crate,
             subscriptionsOf=[current_user] if not current_user.is_anonymous else None).dump(response)
 
 
@@ -181,11 +178,10 @@ def workflows_rocrate_download(wf_uuid, wf_version):
 
 @authorized
 @cached()
-def registry_workflows_get():
+def registry_workflows_get(status=False):
     workflows = lm.get_registry_workflows(current_registry)
     logger.debug("workflows_get. Got %s workflows (registry: %s)", len(workflows), current_registry)
-    workflow_status = request.args.get('status', 'true').lower() == 'true'
-    return serializers.ListOfWorkflows(workflow_status=workflow_status).dump(workflows)
+    return serializers.ListOfWorkflows(workflow_status=status).dump(workflows)
 
 
 @authorized
@@ -198,15 +194,14 @@ def registry_workflows_post(body):
 
 @authorized
 @cached()
-def registry_user_workflows_get(user_id):
+def registry_user_workflows_get(user_id, status=False):
     if not current_registry:
         return lm_exceptions.report_problem(401, "Unauthorized", detail=messages.no_registry_found)
     try:
         identity = lm.find_registry_user_identity(current_registry, external_id=user_id)
         workflows = lm.get_user_registry_workflows(identity.user, current_registry)
         logger.debug("registry_user_workflows_get. Got %s workflows (user: %s)", len(workflows), current_user)
-        workflow_status = request.args.get('status', 'true').lower() == 'true'
-        return serializers.ListOfWorkflows(workflow_status=workflow_status).dump(workflows)
+        return serializers.ListOfWorkflows(workflow_status=status).dump(workflows)
     except OAuthIdentityNotFoundException:
         return lm_exceptions.report_problem(401, "Unauthorized",
                                             detail=messages.no_user_oauth_identity_on_registry
@@ -223,7 +218,7 @@ def registry_user_workflows_post(user_id, body):
 
 @authorized
 @cached()
-def user_workflows_get(status, subscriptions):
+def user_workflows_get(status=False, subscriptions=False):
     if not current_user or current_user.is_anonymous:
         return lm_exceptions.report_problem(401, "Unauthorized", detail=messages.no_user_in_session)
     workflows = lm.get_user_workflows(current_user, include_subscriptions=subscriptions)
@@ -267,7 +262,7 @@ def user_workflow_unsubscribe(wf_uuid):
 
 @authorized
 @cached()
-def user_registry_workflows_get(registry_uuid):
+def user_registry_workflows_get(registry_uuid, status=False):
     if not current_user or current_user.is_anonymous:
         return lm_exceptions.report_problem(401, "Unauthorized", detail=messages.no_user_in_session)
     logger.debug("Registry UUID: %r", registry_uuid)
@@ -275,8 +270,7 @@ def user_registry_workflows_get(registry_uuid):
         registry = lm.get_workflow_registry_by_uuid(registry_uuid)
         workflows = lm.get_user_registry_workflows(current_user, registry)
         logger.debug("workflows_get. Got %s workflows (user: %s)", len(workflows), current_user)
-        workflow_status = request.args.get('status', 'true').lower() == 'true'
-        return serializers.ListOfWorkflows(workflow_status=workflow_status).dump(workflows)
+        return serializers.ListOfWorkflows(workflow_status=status).dump(workflows)
     except lm_exceptions.EntityNotFoundException:
         return lm_exceptions.report_problem(404, "Not Found",
                                             detail=messages.no_registry_found.format(registry_uuid))
@@ -438,9 +432,8 @@ def workflows_delete(wf_uuid, wf_version):
 
 
 @cached()
-def workflows_get_suites(wf_uuid, wf_version=None):
-    wf_version = wf_version or request.args.get('version', 'latest').lower()
-    response = _get_workflow_or_problem(wf_uuid, wf_version)
+def workflows_get_suites(wf_uuid, version='latest'):
+    response = _get_workflow_or_problem(wf_uuid, version)
     return response if isinstance(response, Response) \
         else serializers.ListOfSuites().dump(response.test_suites)
 
