@@ -50,7 +50,7 @@ def test_get_workflows_with_user(m, request_context, mock_user, fake_uri):
     w = models.Workflow(uuid=data['uuid'])
     w.add_version(data["version"], data['uri'], MagicMock())
     m.get_user_workflows.return_value = [w]
-    response = controllers.workflows_get()
+    response = controllers.workflows_get(status=True)
     m.get_public_workflows.assert_called_once()
     m.get_user_workflows.assert_called_once()
     assert isinstance(response, dict), "Unexpected result type"
@@ -69,7 +69,7 @@ def test_get_workflows_with_registry(m, request_context, mock_registry, fake_uri
     w = models.Workflow(uuid=data['uuid'])
     w.add_version(data["version"], data['uri'], MagicMock())
     m.get_registry_workflows.return_value = [w]
-    response = controllers.workflows_get()
+    response = controllers.workflows_get(status=True)
     m.get_registry_workflows.assert_called_once()
     assert isinstance(response, dict), "Unexpected result type"
     assert response == serializers.ListOfWorkflows(workflow_status=True).dump([w])
