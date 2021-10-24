@@ -1108,6 +1108,7 @@ paths:
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "instances_builds_get_logs"
       tags: ["Test Instances"]
+      deprecated: true
       security:
         - apiKey: ["workflow.read"]
         - RegistryClientCredentials: ["workflow.read"]
