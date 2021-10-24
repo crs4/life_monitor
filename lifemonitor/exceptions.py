@@ -167,9 +167,16 @@ class TestingServiceNotSupportedException(LifeMonitorException):
 
 class TestingServiceException(LifeMonitorException):
 
-    def __init__(self, detail="",
+    def __init__(self, title="Testing service error", detail="",
                  type="about:blank", status=500, instance=None, **kwargs):
-        super().__init__(title="Testing service error",
+        super().__init__(title=title,
+                         detail=detail, status=status, **kwargs)
+
+
+class RateLimitExceededException(TestingServiceException):
+    def __init__(self, detail=None,
+                 type="about:blank", status=403, instance=None, **kwargs):
+        super().__init__(title="RateLimitExceededException",
                          detail=detail, status=status, **kwargs)
 
 
