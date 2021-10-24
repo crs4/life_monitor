@@ -34,11 +34,13 @@ def register_commands(app: Flask):
     modules = ['{}.{}'.format(__name__, basename(f)[:-3])
                for f in modules_files if isfile(f) and not f.endswith('__init__.py')]
     # Load modules and register their blueprints
-    we_had_errors = False
+    errors = []
     for m in modules:
         try:
             # Try to load the command module 'm'
             mod = import_module(m)
+            blueprint = None
+            commands = None
             try:
                 logger.debug("Looking for commands in %s.blueprint", m)
                 # Lookup 'blueprint' object
@@ -47,8 +49,7 @@ def register_commands(app: Flask):
                 app.register_blueprint(blueprint)
                 logger.debug("Registered %s commands.", m)
             except AttributeError:
-                logger.error("Unable to find the 'blueprint' attribute in module %s", m)
-                we_had_errors = True
+                logger.debug("Unable to find the 'blueprint' attribute in module %s", m)
             try:
                 logger.debug("Looking for commands in '%s' module", m)
                 # Lookup 'commands' object
@@ -56,12 +57,15 @@ def register_commands(app: Flask):
                 for c in commands:
                     app.cli.add_command(c)
             except AttributeError:
-                logger.error("Unable to find the 'commands' attribute in module %s", m)
-                we_had_errors = True
-
+                logger.debug("Unable to find the 'commands' attribute in module %s", m)
+            if not blueprint and not commands:
+                errors.append(m)
         except ModuleNotFoundError:
             logger.error("ModuleNotFoundError: Unable to load module %s", m)
-            we_had_errors = True
-    if we_had_errors:
+            errors.append(m)
+    if len(errors) > 0:
         logger.error("** There were some errors loading application modules.**")
-        logger.error("Some commands may not be available.")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.error("** Unable to configure commands from %s", ", ".join(errors))
+        else:
+            logger.error("** Some commands may not be available.")

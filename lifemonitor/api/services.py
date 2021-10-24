@@ -145,8 +145,9 @@ class LifeMonitor:
 
         # parse roc_metadata and register suites and instances
         try:
-            for _, raw_suite in wv.roc_suites.items():
-                cls._init_test_suite_from_json(wv, workflow_submitter, raw_suite)
+            if wv.roc_suites:
+                for _, raw_suite in wv.roc_suites.items():
+                    cls._init_test_suite_from_json(wv, workflow_submitter, raw_suite)
         except KeyError as e:
             raise lm_exceptions.SpecificationNotValidException(f"Missing property: {e}")
         w.save()
