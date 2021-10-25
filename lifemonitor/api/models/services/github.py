@@ -33,6 +33,8 @@ from lifemonitor.cache import Timeout, cache
 
 import github
 from github import Github, GithubException
+from github import \
+    RateLimitExceededException as GithubRateLimitExceededException
 
 from .service import TestingService
 
@@ -155,41 +157,56 @@ class GithubTestingService(TestingService):
         return f'https://github.com/{repo_full_name}/actions/workflows/{workflow_id}'
 
     def get_last_test_build(self, test_instance: models.TestInstance) -> Optional[GithubTestBuild]:
-        for run in self._iter_runs(test_instance, status=self.GithubStatus.COMPLETED):
-            return GithubTestBuild(self, test_instance, run)
-        return None
+        try:
+            for run in self._iter_runs(test_instance, status=self.GithubStatus.COMPLETED):
+                return GithubTestBuild(self, test_instance, run)
+            return None
+        except GithubRateLimitExceededException as e:
+            raise lm_exceptions.RateLimitExceededException(detail=str(e), instance=test_instance)
 
     def get_last_passed_test_build(self, test_instance: models.TestInstance) -> Optional[GithubTestBuild]:
-        for run in self._iter_runs(test_instance, status=self.GithubStatus.COMPLETED):
-            if run.conclusion == self.GithubConclusion.SUCCESS:
-                return GithubTestBuild(self, test_instance, run)
-        return None
+        try:
+            for run in self._iter_runs(test_instance, status=self.GithubStatus.COMPLETED):
+                if run.conclusion == self.GithubConclusion.SUCCESS:
+                    return GithubTestBuild(self, test_instance, run)
+            return None
+        except GithubRateLimitExceededException as e:
+            raise lm_exceptions.RateLimitExceededException(detail=str(e), instance=test_instance)
 
     def get_last_failed_test_build(self, test_instance: models.TestInstance) -> Optional[GithubTestBuild]:
-        for run in self._iter_runs(test_instance, status=self.GithubStatus.COMPLETED):
-            if run.conclusion == self.GithubConclusion.FAILURE:
-                return GithubTestBuild(self, test_instance, run)
-        return None
+        try:
+            for run in self._iter_runs(test_instance, status=self.GithubStatus.COMPLETED):
+                if run.conclusion == self.GithubConclusion.FAILURE:
+                    return GithubTestBuild(self, test_instance, run)
+            return None
+        except GithubRateLimitExceededException as e:
+            raise lm_exceptions.RateLimitExceededException(detail=str(e), instance=test_instance)
 
     def get_test_builds(self, test_instance: models.TestInstance, limit=10) -> list:
-        return list(GithubTestBuild(self, test_instance, run)
-                    for run in it.islice(self._iter_runs(test_instance), limit))
+        try:
+            return list(GithubTestBuild(self, test_instance, run)
+                        for run in it.islice(self._iter_runs(test_instance), limit))
+        except GithubRateLimitExceededException as e:
+            raise lm_exceptions.RateLimitExceededException(detail=str(e), instance=test_instance)
 
     def get_test_build(self, test_instance: models.TestInstance, build_number: int) -> GithubTestBuild:
-        logger.debug("Inefficient get_test_build implementation.  Rewrite me!")
-        # TODO:  We search through the runs of the workflow because there's no
-        # obvious way to istantiate a PyGithub WorkflowRun object given a build
-        # number -- but there's has to be a way.  We can easily asseble the URL
-        # of the request to directly retrive the data we need here.
         try:
-            build_number = int(build_number)
-        except ValueError as e:
-            raise lm_exceptions.LifeMonitorException("Invalid 'build_number'",
-                                                     details="The build parameter must be an integer: {0}".format(str(e)), status=400)
-        for run in self._iter_runs(test_instance):
-            if run.id == build_number:
-                return GithubTestBuild(self, test_instance, run)
-        raise lm_exceptions.EntityNotFoundException(models.TestBuild, entity_id=build_number)
+            logger.debug("Inefficient get_test_build implementation.  Rewrite me!")
+            # TODO:  We search through the runs of the workflow because there's no
+            # obvious way to istantiate a PyGithub WorkflowRun object given a build
+            # number -- but there's has to be a way.  We can easily asseble the URL
+            # of the request to directly retrive the data we need here.
+            try:
+                build_number = int(build_number)
+            except ValueError as e:
+                raise lm_exceptions.LifeMonitorException("Invalid 'build_number'",
+                                                         details="The build parameter must be an integer: {0}".format(str(e)), status=400)
+            for run in self._iter_runs(test_instance):
+                if run.id == build_number:
+                    return GithubTestBuild(self, test_instance, run)
+            raise lm_exceptions.EntityNotFoundException(models.TestBuild, entity_id=build_number)
+        except GithubRateLimitExceededException as e:
+            raise lm_exceptions.RateLimitExceededException(detail=str(e), instance=test_instance)
 
     def get_test_build_external_link(self, test_build: models.TestBuild) -> str:
         repo = test_build.test_instance.testing_service._get_repo(test_build.test_instance)

@@ -25,6 +25,7 @@ from typing import List
 from urllib.parse import urljoin
 
 from lifemonitor import utils as lm_utils
+from lifemonitor import exceptions as lm_exceptions
 from lifemonitor.auth import models as auth_models
 from lifemonitor.auth.serializers import UserSchema, SubscriptionSchema
 from lifemonitor.serializers import (BaseSchema, ListOfItems,
@@ -269,7 +270,7 @@ class BuildSummarySchema(ResourceMetadataSchema):
 class WorkflowVersionListItem(WorkflowSchema):
 
     subscriptionsOf: List[auth_models.User] = None
-
+    public = fields.Boolean(attribute="public")
     latest_version = fields.String(attribute="latest_version.version")
     status = fields.Method("get_status")
     subscriptions = fields.Method("get_subscriptions")
@@ -279,10 +280,18 @@ class WorkflowVersionListItem(WorkflowSchema):
         self.subscriptionsOf = subscriptionsOf
 
     def get_status(self, workflow):
-        return {
-            "aggregate_test_status": workflow.latest_version.status.aggregated_status,
-            "latest_build": self.get_latest_build(workflow)
-        }
+        try:
+            return {
+                "aggregate_test_status": workflow.latest_version.status.aggregated_status,
+                "latest_build": self.get_latest_build(workflow)
+            }
+        except lm_exceptions.RateLimitExceededException as e:
+            logger.debug(e)
+            return {
+                "aggregate_test_status": "not_available",
+                "latest_build": [],
+                "reason": str(e)
+            }
 
     def get_latest_build(self, workflow):
         latest_builds = workflow.latest_version.status.latest_builds
