@@ -79,10 +79,13 @@ def _make_name(fname) -> str:
 
 
 def clear_cache(func=None, *args, **kwargs):
-    if func:
-        cache.delete_memoized(func, *args, **kwargs)
-    else:
-        cache.clear()
+    try:
+        if func:
+            cache.delete_memoized(func, *args, **kwargs)
+        else:
+            cache.clear()
+    except Exception as e:
+        logger.error("Error deleting cache: %r", e)
 
 
 def cached(timeout=Timeout.DEFAULT, unless=False):

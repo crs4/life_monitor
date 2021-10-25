@@ -50,14 +50,23 @@ def build_registries_path(registry_uuid=None):
     return _REGISTRIES_ENDPOINT
 
 
-def build_workflow_path(workflow=None, version_as_subpath=False, subpath=None):
+def _get_attr(obj, name, default=None):
+    if isinstance(obj, dict):
+        return obj.get(name, default)
+    return getattr(obj, name, default)
+
+
+def build_workflow_path(workflow=None, version_as_subpath=False,
+                        subpath=None, include_version=True):
     if workflow:
-        w = f"{_WORKFLOWS_ENDPOINT}/{workflow['uuid']}"
-        if version_as_subpath:
-            w = f"{w}/versions/{workflow['version']}"
+        w = f"{_WORKFLOWS_ENDPOINT}/{_get_attr(workflow, 'uuid')}"
+        if include_version and version_as_subpath:
+            w = f"{w}/versions/{_get_attr(workflow, 'version')}"
         if subpath:
             w = f"{w}/{subpath}"
-        return f"{w}?version={workflow['version']}" if not version_as_subpath else w
+        if include_version:
+            w = f"{w}?version={_get_attr(workflow, 'version')}" if not version_as_subpath else w
+        return w
     return _WORKFLOWS_ENDPOINT
 
 
@@ -110,7 +119,8 @@ def register_workflow(app_user, w):
                                     workflow_uuid=w['uuid'],
                                     workflow_registry=registry,
                                     name=w['name'],
-                                    authorization=w.get("authorization", None))
+                                    authorization=w.get("authorization", None),
+                                    public=w.get('public', False))
     return w, workflow
 
 
@@ -124,9 +134,12 @@ def register_workflows(app_user):
             lm_db.db.session.rollback()
 
 
-def pick_and_register_workflow(app_user, name=None):
+def pick_and_register_workflow(app_user, name=None, public=None):
     # pick one user workflow and register it
-    return register_workflow(app_user, pick_workflow(app_user, name))
+    wdata = pick_workflow(app_user, name)
+    if public is not None:
+        wdata['public'] = public
+    return register_workflow(app_user, wdata)
 
 
 def not_shared_workflows(user1, user2, skip=None):
