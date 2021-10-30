@@ -248,7 +248,19 @@ def generic_workflow(app_client):
         'uuid': str(uuid.uuid4()),
         'version': '1',
         'roc_link': "http://webserver:5000/download?file=ro-crate-galaxy-sortchangecase.crate.zip",
-        'name': 'Galaxy workflow from Generic Link',
+        'name': 'sort-and-change-case',
+        'testing_service_type': 'jenkins',
+        'authorization': app_client.application.config['WEB_SERVER_AUTH_TOKEN']
+    }
+
+
+@pytest.fixture
+def workflow_no_name(app_client):
+    return {
+        'uuid': str(uuid.uuid4()),
+        'version': '1',
+        'roc_link': "http://webserver:5000/download?file=ro-crate-galaxy-sortchangecase-no-name.crate.zip",
+        'name': 'Galaxy workflow from Generic Link (no name)',
         'testing_service_type': 'jenkins',
         'authorization': app_client.application.config['WEB_SERVER_AUTH_TOKEN']
     }
