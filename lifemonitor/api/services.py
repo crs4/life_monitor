@@ -136,7 +136,12 @@ class LifeMonitor:
         if authorization:
             auth = ExternalServiceAuthorizationHeader(workflow_submitter, header=authorization)
             auth.resources.append(wv)
+
         if name is None:
+            if wv.workflow_name is None:
+                raise lm_exceptions.LifeMonitorException(title="Missing attribute 'name'",
+                                                         detail="Attribute 'name' is not defined and it cannot be retrieved ' \
+                                                         'from the workflow RO-Crate (name of 'mainEntity' and '/' dataset not set)",
                                                          status=400)
             w.name = wv.workflow_name
             wv.name = wv.workflow_name
