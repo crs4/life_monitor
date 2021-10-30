@@ -137,8 +137,9 @@ class LifeMonitor:
             auth = ExternalServiceAuthorizationHeader(workflow_submitter, header=authorization)
             auth.resources.append(wv)
         if name is None:
-            w.name = wv.dataset_name
-            wv.name = wv.dataset_name
+                                                         status=400)
+            w.name = wv.workflow_name
+            wv.name = wv.workflow_name
 
         # set workflow visibility
         w.public = public

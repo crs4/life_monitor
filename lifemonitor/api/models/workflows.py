@@ -238,6 +238,10 @@ class WorkflowVersion(ROCrate):
         return self.uri
 
     @property
+    def workflow_name(self) -> str:
+        return self.name or self.main_entity_name or self.dataset_name
+
+    @property
     def is_latest(self) -> bool:
         return self.workflow.latest_version.version == self.version
 
