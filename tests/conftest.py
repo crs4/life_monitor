@@ -287,7 +287,7 @@ def rate_limit_exceeded_workflow(app_client, service_registry: ClassManager, use
     workflow = workflow_version.workflow
     workflow.public = True
     workflow.save()
-    assert workflow.public == True, "Workflow should be public"
+    assert workflow.public is True, "Workflow should be public"
     return workflow
 
 

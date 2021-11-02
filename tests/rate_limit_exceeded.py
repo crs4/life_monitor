@@ -31,9 +31,6 @@ class RateLimitExceededTestingService(models.TestingService):
         'polymorphic_identity': 'unknown'
     }
 
-    def initialize(self):
-        pass
-
     @property
     def token(self) -> models.TestingServiceToken:
         return None
