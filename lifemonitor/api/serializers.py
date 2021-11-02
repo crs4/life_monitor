@@ -219,9 +219,11 @@ class TestInstanceSchema(ResourceMetadataSchema):
     links = fields.Method('get_links')
 
     def get_links(self, obj):
-        links = {
-            'origin': obj.external_link
-        }
+        links = {}
+        try:
+            links['origin'] = obj.external_link
+        except lm_exceptions.RateLimitExceededException:
+            links['origin'] = None
         if self._self_link:
             links['self'] = self.self_link
         return links

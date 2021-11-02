@@ -2066,6 +2066,7 @@ components:
                   type: string
                   description: Link to the test instance on the testing service
                   example: "https://github.com/crs4/life_monitor/workflows/docs.yaml"
+                  nullable: true
           required:
             - service
             - resource
