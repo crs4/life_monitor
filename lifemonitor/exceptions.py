@@ -176,7 +176,7 @@ class TestingServiceException(LifeMonitorException):
 class RateLimitExceededException(TestingServiceException):
     def __init__(self, detail=None,
                  type="about:blank", status=403, instance=None, **kwargs):
-        super().__init__(title="RateLimitExceededException",
+        super().__init__(title="Rate Limit Exceeded",
                          detail=detail, status=status, **kwargs)
 
 
