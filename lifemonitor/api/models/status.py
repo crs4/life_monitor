@@ -23,6 +23,7 @@ from __future__ import annotations
 import logging
 
 import lifemonitor.exceptions as lm_exceptions
+from lifemonitor.lang import messages
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -78,13 +79,13 @@ class Status:
 
         if len(suites) == 0:
             availability_issues.append({
-                "issue": "No test suite configured for this workflow"
+                "issue": messages.no_test_suite
             })
 
         for suite in suites:
             if len(suite.test_instances) == 0:
                 availability_issues.append({
-                    "issue": f"No test instances configured for suite {suite}"
+                    "issue": messages.no_test_instance_for_suite.format(suite)
                 })
             for test_instance in suite.test_instances:
                 try:
@@ -93,7 +94,7 @@ class Status:
                         availability_issues.append({
                             "service": test_instance.testing_service.url,
                             "test_instance": test_instance,
-                            "issue": "No build found"
+                            "issue": messages.no_build_found_for_instance.format(test_instance)
                         })
                     else:
                         latest_builds.append(latest_build)
