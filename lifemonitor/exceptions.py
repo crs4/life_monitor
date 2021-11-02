@@ -50,7 +50,8 @@ class LifeMonitorException(Exception):
                 pass
 
     def __repr__(self):
-        return f"[{self.status}] {self.title}: {self.detail}"
+        detail = f": {self.detail}" if self.detail else ""
+        return f"[{self.status}] {self.title}{detail}"
 
     def __str__(self):
         return self.__repr__()
