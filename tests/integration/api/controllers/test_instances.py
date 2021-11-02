@@ -19,12 +19,12 @@
 # SOFTWARE.
 
 import json
-import pytest
 import logging
 
+import pytest
+from lifemonitor.api import models
 from tests import utils
 from tests.conftest_types import ClientAuthenticationMethod
-
 
 logger = logging.getLogger()
 
@@ -185,6 +185,22 @@ def test_get_instance_builds(app_client, client_auth_method, user1, user1_auth, 
     utils.assert_properties_exist(["build_id", "instance"], item)
 
 
+def test_get_instance_builds_rate_limit_exceeded(app_client, client_auth_method, user1, user1_auth, rate_limit_exceeded_workflow: models.Workflow):
+    workflow = rate_limit_exceeded_workflow.latest_version
+    assert len(workflow.test_suites) > 0, "Unexpected number of test suites"
+    suite = workflow.test_suites[0]
+    logger.debug("The test suite: %r", suite)
+    assert len(suite.test_instances) > 0, "Unexpected number of test instances"
+    instance = suite.test_instances[0]
+    logger.debug("The test instance: %r", instance)
+    response = app_client.get(f"{utils.build_instances_path(instance.uuid)}/latest-builds?limit=2", headers=user1_auth)
+    logger.debug(response)
+    utils.assert_status_code(403, response.status_code)
+    data = json.loads(response.data)
+    logger.debug("Response data: %r", data)
+    assert data['title'] == 'Rate Limit Exceeded', "Unexpected error title"
+
+
 @pytest.mark.parametrize("client_auth_method", [
     #    ClientAuthenticationMethod.BASIC,
     ClientAuthenticationMethod.API_KEY,
@@ -245,6 +261,31 @@ def test_get_instance_build(app_client, client_auth_method, user1, user1_auth, v
     logger.debug("Response data: %r", data)
     # redundant check: the validation is performed by the connexion framework
     utils.assert_properties_exist(["build_id", "instance"], data)
+
+
+@pytest.mark.parametrize("client_auth_method", [
+    #    ClientAuthenticationMethod.BASIC,
+    ClientAuthenticationMethod.NOAUTH,
+    ClientAuthenticationMethod.API_KEY,
+    ClientAuthenticationMethod.AUTHORIZATION_CODE,
+    ClientAuthenticationMethod.CLIENT_CREDENTIALS,
+    ClientAuthenticationMethod.REGISTRY_CODE_FLOW
+], indirect=True)
+def test_get_instance_build_rate_limit_exceeded(app_client, client_auth_method, user1, user1_auth, rate_limit_exceeded_workflow: models.Workflow):
+    workflow = rate_limit_exceeded_workflow.latest_version
+    assert len(workflow.test_suites) > 0, "Unexpected number of test suites"
+    suite = workflow.test_suites[0]
+    logger.debug("The test suite: %r", suite)
+    assert len(suite.test_instances) > 0, "Unexpected number of test instances"
+    instance = suite.test_instances[0]
+    logger.debug("The test instance: %r", instance)
+
+    response = app_client.get(f"{utils.build_instances_path(instance.uuid)}/builds/0", headers=user1_auth)
+    logger.debug(response)
+    utils.assert_status_code(response.status_code, 403)
+    data = json.loads(response.data)
+    logger.debug("Response data: %r", data)
+    assert data['title'] == 'Rate Limit Exceeded', "Unexpected error title"
 
 
 @pytest.mark.parametrize("client_auth_method", [

@@ -35,6 +35,7 @@ from lifemonitor.api.models import (TestingService, TestingServiceTokenManager,
 from lifemonitor.api.services import LifeMonitor
 from lifemonitor.utils import ClassManager
 
+from tests.utils import register_workflow
 
 from . import conftest_helpers as helpers
 from .conftest_types import ClientAuthenticationMethod, RegistryType
@@ -156,6 +157,16 @@ def app_context(app_settings):
 @pytest.fixture
 def lm() -> LifeMonitor:
     return LifeMonitor.get_instance()
+
+
+@pytest.fixture
+def service_registry() -> ClassManager:
+    return TestingService.service_type_registry
+
+
+@pytest.fixture
+def token_manager() -> TestingServiceTokenManager:
+    return TestingServiceTokenManager.get_instance()
 
 
 @pytest.fixture()
