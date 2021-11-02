@@ -30,11 +30,15 @@ from unittest.mock import MagicMock
 import lifemonitor.db as lm_db
 import pytest
 from lifemonitor import auth
-from lifemonitor.api.models import TestSuite, User
+from lifemonitor.api.models import (TestingService, TestingServiceTokenManager,
+                                    TestSuite, User)
 from lifemonitor.api.services import LifeMonitor
+from lifemonitor.utils import ClassManager
+
 
 from . import conftest_helpers as helpers
 from .conftest_types import ClientAuthenticationMethod, RegistryType
+from .rate_limit_exceeded import RateLimitExceededTestingService
 
 # set the module level logger
 logger = logging.getLogger(__name__)
@@ -252,6 +256,28 @@ def generic_workflow(app_client):
         'testing_service_type': 'jenkins',
         'authorization': app_client.application.config['WEB_SERVER_AUTH_TOKEN']
     }
+
+
+@pytest.fixture
+def rate_limit_exceeded_workflow(app_client, service_registry: ClassManager, user1):
+    service_registry.add_class("unknown", RateLimitExceededTestingService)
+    wfdata = {
+        'uuid': str(uuid.uuid4()),
+        'version': '1',
+        'roc_link': "http://webserver:5000/download?file=ro-crate-galaxy-sortchangecase-rate-limit-exceeded.crate.zip",
+        'name': 'Galaxy workflow (rate limit exceeded)',
+        'testing_service_type': 'unknown',
+        'authorization': app_client.application.config['WEB_SERVER_AUTH_TOKEN']
+    }
+    wfdata, workflow_version = register_workflow(user1, wfdata)
+    logger.info(wfdata)
+    logger.info(workflow_version)
+    assert workflow_version, "Workflows not found"
+    workflow = workflow_version.workflow
+    workflow.public = True
+    workflow.save()
+    assert workflow.public == True, "Workflow should be public"
+    return workflow
 
 
 @pytest.fixture
