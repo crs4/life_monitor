@@ -475,17 +475,9 @@ def suites_get_by_uuid(suite_uuid):
 
 @cached()
 def suites_get_status(suite_uuid):
-    try:
-        response = _get_suite_or_problem(suite_uuid)
-        return response if isinstance(response, Response) \
-            else serializers.SuiteStatusSchema().dump(response.status)
-    except lm_exceptions.RateLimitExceededException as e:
-        logger.debug(e)
-        return {
-            "status": "not_available",
-            "latest_build": [],
-            "reason": str(e)
-        }
+    response = _get_suite_or_problem(suite_uuid)
+    return response if isinstance(response, Response) \
+        else serializers.SuiteStatusSchema().dump(response.status)
 
 
 @cached()
