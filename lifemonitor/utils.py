@@ -456,6 +456,9 @@ class ClassManager:
     def add_class(self, type_name, type_class):
         self.__concrete_types__[type_name] = (type_class,)
 
+    def remove_class(self, type_name):
+        return self.__concrete_types__.pop(type_name, None)
+
     def get_class(self, concrete_type):
         return self._load_concrete_types()[concrete_type][0]
 

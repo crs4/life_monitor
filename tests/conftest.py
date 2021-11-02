@@ -69,8 +69,24 @@ def headers():
     return helpers.get_headers()
 
 
+@pytest.fixture
+def lm() -> LifeMonitor:
+    return LifeMonitor.get_instance()
+
+
+@pytest.fixture
+def service_registry() -> ClassManager:
+    return TestingService.service_type_registry
+
+
+@pytest.fixture
+def token_manager() -> TestingServiceTokenManager:
+    return TestingServiceTokenManager.get_instance()
+
+
 @pytest.fixture(autouse=True)
-def initialize(app_settings, request_context):
+def initialize(app_settings, request_context, service_registry: ClassManager):
+    service_registry.remove_class("unknown")
     helpers.clean_db()
     helpers.init_db(app_settings)
     helpers.disable_auto_login()
@@ -152,21 +168,6 @@ def client_auth_method(request):
 @pytest.fixture(scope="session")
 def app_context(app_settings):
     yield from helpers.app_context(app_settings, init_db=True, clean_db=False, drop_db=False)
-
-
-@pytest.fixture
-def lm() -> LifeMonitor:
-    return LifeMonitor.get_instance()
-
-
-@pytest.fixture
-def service_registry() -> ClassManager:
-    return TestingService.service_type_registry
-
-
-@pytest.fixture
-def token_manager() -> TestingServiceTokenManager:
-    return TestingServiceTokenManager.get_instance()
 
 
 @pytest.fixture()
