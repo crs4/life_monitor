@@ -367,18 +367,6 @@ class ListOfWorkflows(ListOfItems):
             if self.__item_scheme__ else None
 
 
-class WorkflowStatusSchema(WorkflowVersionSchema):
-    __envelope__ = {"single": None, "many": "items"}
-    __model__ = models.WorkflowStatus
-
-    class Meta:
-        model = models.WorkflowStatus
-
-    aggregate_test_status = fields.String(attribute="status.aggregated_status")
-    latest_builds = ma.Nested(BuildSummarySchema(exclude=('meta', 'links')),
-                              attribute="status.latest_builds", many=True)
-
-
 class SuiteSchema(ResourceMetadataSchema):
     __envelope__ = {"single": None, "many": "items"}
     __model__ = models.TestSuite
