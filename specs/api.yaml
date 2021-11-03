@@ -969,7 +969,7 @@ paths:
               #     valueB: "#/components/schemas/ManagedTestInstanceCreationData"
       responses:
         "201":
-          description: Instance created by this operation
+          $ref: "#/components/responses/TestInstanceRegistered"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -1269,6 +1269,20 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/Workflow"
+
+    TestInstanceRegistered:
+      description: A new test instance has been registered.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              uuid:
+                type: string
+                description: |
+                  Universal unique identifier of the test instance
+                readOnly: true
+                example: ba5bbdc3-d9fb-4381-a1d8-96a8ac5594d7
 
   schemas:
     User:
