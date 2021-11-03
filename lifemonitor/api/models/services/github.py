@@ -212,6 +212,9 @@ class GithubTestingService(TestingService):
         repo = test_build.test_instance.testing_service._get_repo(test_build.test_instance)
         return f'https://github.com/{repo.full_name}/actions/runs/{test_build.id}'
 
+    def get_test_build_output(self, test_instance: models.TestInstance, build_number, offset_bytes=0, limit_bytes=131072):
+        raise lm_exceptions.NotImplementedException(detail="not supported for GitHub test builds")
+
     @classmethod
     def _parse_workflow_url(cls, resource: str) -> Tuple[str, str, str]:
         """
