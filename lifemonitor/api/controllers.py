@@ -475,17 +475,9 @@ def suites_get_by_uuid(suite_uuid):
 
 @cached()
 def suites_get_status(suite_uuid):
-    try:
-        response = _get_suite_or_problem(suite_uuid)
-        return response if isinstance(response, Response) \
-            else serializers.SuiteStatusSchema().dump(response.status)
-    except lm_exceptions.RateLimitExceededException as e:
-        logger.debug(e)
-        return {
-            "status": "not_available",
-            "latest_build": [],
-            "reason": str(e)
-        }
+    response = _get_suite_or_problem(suite_uuid)
+    return response if isinstance(response, Response) \
+        else serializers.SuiteStatusSchema().dump(response.status)
 
 
 @cached()
@@ -635,6 +627,8 @@ def instances_builds_get_by_id(instance_uuid, build_id):
         return lm_exceptions\
             .report_problem(404, "Not Found",
                             detail=messages.instance_build_not_found.format(build_id, instance_uuid))
+    except lm_exceptions.RateLimitExceededException as e:
+        return lm_exceptions.report_problem(403, e.title, detail=e.detail)
     except Exception as e:
         return lm_exceptions.report_problem(500, "Internal Error", extra_info={"exception": str(e)})
 
@@ -660,6 +654,8 @@ def instances_builds_get_logs(instance_uuid, build_id, offset_bytes=0, limit_byt
         return lm_exceptions\
             .report_problem(404, "Not Found",
                             detail=messages.instance_build_not_found.format(build_id, instance_uuid))
+    except lm_exceptions.RateLimitExceededException as e:
+        return lm_exceptions.report_problem(403, e.title, detail=e.detail)
     except ValueError as e:
         return lm_exceptions.report_problem(400, "Bad Request", detail=str(e))
     except Exception as e:

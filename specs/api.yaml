@@ -1786,6 +1786,10 @@ components:
               type: array
               items:
                 $ref: "#/components/schemas/BuildSummary"
+            reason:
+              description: "Reason why the status is unavailable"
+              type: string
+              nullable: true
           required:
             - aggregate_test_status
             - version
@@ -1805,6 +1809,10 @@ components:
               type: array
               items:
                 $ref: "#/components/schemas/BuildSummary"
+            reason:
+              description: "Reason why the status is unavailable"
+              type: string
+              nullable: true
           required:
             - version
             - workflow
@@ -1890,6 +1898,10 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/BuildSummary"
+        reason:
+          description: Reason why the status is unavailable
+          type: string
+          nullable: true
       required:
         - suite_uuid
         - status
@@ -2054,6 +2066,7 @@ components:
                   type: string
                   description: Link to the test instance on the testing service
                   example: "https://github.com/crs4/life_monitor/workflows/docs.yaml"
+                  nullable: true
           required:
             - service
             - resource

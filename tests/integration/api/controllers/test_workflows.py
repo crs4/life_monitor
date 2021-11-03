@@ -23,7 +23,7 @@ import logging
 import uuid
 
 import pytest
-from lifemonitor.api.models import WorkflowVersion
+from lifemonitor.api.models import WorkflowVersion, Workflow
 from lifemonitor.auth import current_user
 from lifemonitor.auth.models import ApiKey
 from lifemonitor.auth.oauth2.server.models import Token
@@ -137,6 +137,30 @@ def test_get_workflows_public(app_client, client_auth_method, user1):
     assert response.status_code == 200, "Error getting public workflows"
     workflows = json.loads(response.data)['items']
     assert len(workflows) == 1, "Unexpected number of public workflows"
+
+
+@pytest.mark.parametrize("client_auth_method", [
+    ClientAuthenticationMethod.NOAUTH,
+], indirect=True)
+@pytest.mark.parametrize("user1", [True], indirect=True)
+def test_get_workflows_public_with_rate_limit_exceeded_workflow(app_client, client_auth_method, user1, rate_limit_exceeded_workflow: Workflow):
+    # get workflows registered by user1
+    response = app_client.get(f"{utils.build_workflow_path()}?status=true")
+    assert response.status_code == 200, "Error getting public workflows"
+    workflows = json.loads(response.data)['items']
+    assert len(workflows) == 2, "Unexpected number of public workflows"
+    logger.debug("Got workflows: %r", workflows)
+    for w in workflows:
+        logger.debug("Checking workflow %r", w)
+        assert 'status' in w, f"Unable to find the status for the workflow {w['uuid']}"
+        assert 'aggregate_test_status' in w['status'], f"Unable to find the aggregate_test_status for the workflow {w['uuid']}"
+        if w['uuid'] == str(rate_limit_exceeded_workflow.uuid):
+            logger.debug("Checking workflow with rate limit exceeded %r", w['uuid'])
+            assert w['status']["aggregate_test_status"] == 'not_available', "Unexpected status for workflow with rate limit exceeded"
+            assert "reason" in w['status'], f"Unable to find the 'reason' property for the workflow {w['uuid']}"
+            assert "Rate Limit Exceeded" in w['status']['reason'], f"Invalid 'reason' value for the workflow {w['uuid']}"
+        else:
+            assert "reason" not in w['status'], f"The 'reason' property should not be set for the workflow {w['uuid']}"
 
 
 @pytest.mark.parametrize("client_auth_method", [

@@ -24,10 +24,10 @@ import logging
 from typing import List
 from urllib.parse import urljoin
 
-from lifemonitor import utils as lm_utils
 from lifemonitor import exceptions as lm_exceptions
+from lifemonitor import utils as lm_utils
 from lifemonitor.auth import models as auth_models
-from lifemonitor.auth.serializers import UserSchema, SubscriptionSchema
+from lifemonitor.auth.serializers import SubscriptionSchema, UserSchema
 from lifemonitor.serializers import (BaseSchema, ListOfItems,
                                      ResourceMetadataSchema, ResourceSchema,
                                      ma)
@@ -219,9 +219,11 @@ class TestInstanceSchema(ResourceMetadataSchema):
     links = fields.Method('get_links')
 
     def get_links(self, obj):
-        links = {
-            'origin': obj.external_link
-        }
+        links = {}
+        try:
+            links['origin'] = obj.external_link
+        except lm_exceptions.RateLimitExceededException:
+            links['origin'] = None
         if self._self_link:
             links['self'] = self.self_link
         return links
@@ -267,6 +269,37 @@ class BuildSummarySchema(ResourceMetadataSchema):
         return links
 
 
+def format_availability_issues(status: models.WorkflowStatus):
+    issues = status.availability_issues
+    logger.info(issues)
+    if 'not_available' == status.aggregated_status and len(issues) > 0:
+        return ', '.join([f"{i['issue']}: Unable to get resource '{i['resource']}' from service '{i['service']}'" if 'service' in i else i['issue'] for i in issues])
+    return None
+
+
+class WorkflowStatusSchema(WorkflowVersionSchema):
+    __envelope__ = {"single": None, "many": "items"}
+    __model__ = models.WorkflowStatus
+
+    class Meta:
+        model = models.WorkflowStatus
+
+    aggregate_test_status = fields.String(attribute="status.aggregated_status")
+    latest_builds = ma.Nested(BuildSummarySchema(exclude=('meta', 'links')),
+                              attribute="status.latest_builds", many=True)
+    reason = fields.Method("get_reason")
+
+    def get_reason(self, workflow_version):
+        return format_availability_issues(workflow_version.status)
+
+    @post_dump
+    def remove_skip_values(self, data, **kwargs):
+        return {
+            key: value for key, value in data.items()
+            if value is not None
+        }
+
+
 class WorkflowVersionListItem(WorkflowSchema):
 
     subscriptionsOf: List[auth_models.User] = None
@@ -281,10 +314,14 @@ class WorkflowVersionListItem(WorkflowSchema):
 
     def get_status(self, workflow):
         try:
-            return {
+            result = {
                 "aggregate_test_status": workflow.latest_version.status.aggregated_status,
                 "latest_build": self.get_latest_build(workflow)
             }
+            reason = format_availability_issues(workflow.latest_version.status)
+            if reason:
+                result['reason'] = reason
+            return result
         except lm_exceptions.RateLimitExceededException as e:
             logger.debug(e)
             return {
@@ -330,18 +367,6 @@ class ListOfWorkflows(ListOfItems):
             if self.__item_scheme__ else None
 
 
-class WorkflowStatusSchema(WorkflowVersionSchema):
-    __envelope__ = {"single": None, "many": "items"}
-    __model__ = models.WorkflowStatus
-
-    class Meta:
-        model = models.WorkflowStatus
-
-    aggregate_test_status = fields.String(attribute="status.aggregated_status")
-    latest_builds = ma.Nested(BuildSummarySchema(exclude=('meta', 'links')),
-                              attribute="status.latest_builds", many=True)
-
-
 class SuiteSchema(ResourceMetadataSchema):
     __envelope__ = {"single": None, "many": "items"}
     __model__ = models.TestSuite
@@ -381,6 +406,17 @@ class SuiteStatusSchema(ResourceMetadataSchema):
     suite_uuid = fields.String(attribute="suite.uuid")
     status = fields.String(attribute="aggregated_status")
     latest_builds = fields.Nested(BuildSummarySchema(exclude=('meta', 'links')), many=True)
+    reason = fields.Method("get_reason")
+
+    def get_reason(self, status):
+        return format_availability_issues(status)
+
+    @post_dump
+    def remove_skip_values(self, data, **kwargs):
+        return {
+            key: value for key, value in data.items()
+            if value is not None
+        }
 
 
 class ListOfTestInstancesSchema(ListOfItems):

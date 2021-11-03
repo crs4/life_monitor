@@ -21,6 +21,7 @@
 import logging
 from unittest.mock import MagicMock, patch
 
+import lifemonitor.api.models as models
 import lifemonitor.api.controllers as controllers
 import lifemonitor.auth as auth
 import lifemonitor.exceptions as lm_exceptions
@@ -155,6 +156,29 @@ def test_get_suite_status_by_user(m, request_context, mock_user):
 
 
 @patch("lifemonitor.api.controllers.lm")
+def test_get_suite_status_by_user_rate_limit_exceeded(lm, mock_user, rate_limit_exceeded_workflow: models.Workflow):
+    # add one user to the current session
+    assert not auth.current_user.is_anonymous, "Unexpected user in session"
+    assert auth.current_user == mock_user, "Unexpected user in session"
+    logger.debug("Current registry: %r", auth.current_registry)
+    assert not auth.current_registry, "Unexpected registry in session"
+    # set workflow
+    workflow = rate_limit_exceeded_workflow
+    lm.get_public_workflows.return_value = []
+    lm.get_user_workflows.return_value = [rate_limit_exceeded_workflow]
+    # set suite
+    suite: models.TestSuite = workflow.latest_version.test_suites[0]
+    lm.get_suite.return_value = suite
+    # get and check suite status
+    response = controllers.suites_get_status(suite.uuid)
+    lm.get_suite.assert_called_once()
+    logger.info(response)
+    for p in ["latest_builds", "suite_uuid", "status"]:
+        assert p in response, f"Property {p} not found on response"
+    assert response['status'] == 'not_available'
+
+
+@patch("lifemonitor.api.controllers.lm")
 def test_get_suite_status_by_registry(m, request_context, mock_registry):
     # add one user to the current session
     assert auth.current_user.is_anonymous, "Unexpected user in session"
@@ -169,7 +193,7 @@ def test_get_suite_status_by_registry(m, request_context, mock_registry):
     suite.workflow = workflow
     m.get_suite.return_value = suite
     m.get_public_workflow_version.return_value = None
-    m.get_registry_workflow_version.return_value = suite
+    m.get_registry_workflow_version.return_value = workflow
     response = controllers.suites_get_status(suite.suite)
     m.get_suite.assert_called_once()
     m.get_registry_workflow_version.assert_called_once()
@@ -177,6 +201,28 @@ def test_get_suite_status_by_registry(m, request_context, mock_registry):
     logger.debug("The response: %r", response)
     for p in ["latest_builds", "suite_uuid", "status"]:
         assert p in response, f"Property {p} not found on response"
+
+
+@patch("lifemonitor.api.controllers.lm")
+def test_get_suite_status_by_registry_rate_limit_exceeded(lm, request_context, mock_registry, rate_limit_exceeded_workflow: models.Workflow):
+    # add one user to the current session
+    assert auth.current_user.is_anonymous, "Unexpected user in session"
+    logger.debug("Current registry: %r", auth.current_registry)
+    assert auth.current_registry, "Unexpected registry in session"
+    # set workflow
+    workflow = rate_limit_exceeded_workflow
+    lm.get_public_workflows.return_value = []
+    # set suite
+    suite: models.TestSuite = workflow.latest_version.test_suites[0]
+    lm.get_suite.return_value = suite
+    lm.get_registry_workflow_version = workflow.latest_version
+    # get and check suite status
+    response = controllers.suites_get_status(suite.uuid)
+    lm.get_suite.assert_called_once()
+    logger.info(response)
+    for p in ["latest_builds", "suite_uuid", "status"]:
+        assert p in response, f"Property {p} not found on response"
+    assert response['status'] == 'not_available'
 
 
 @patch("lifemonitor.api.controllers.lm")
