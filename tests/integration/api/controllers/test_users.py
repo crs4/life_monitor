@@ -159,6 +159,64 @@ def test_generic_workflow_registration_wo_uuid(app_client, client_auth_method,
     ClientAuthenticationMethod.API_KEY,
     ClientAuthenticationMethod.AUTHORIZATION_CODE,
 ], indirect=True)
+def test_generic_workflow_registration_no_name_exception(app_client, client_auth_method,
+                                                         user1, user1_auth, client_credentials_registry, workflow_no_name):
+    logger.debug("User: %r", user1)
+    logger.debug("headers: %r", user1_auth)
+    workflow = workflow_no_name
+    logger.debug("Selected workflow: %r", workflow)
+    logger.debug("Using oauth2 user: %r", user1)
+    # prepare body
+    body = {'roc_link': workflow['roc_link'],
+            'version': workflow['version'],
+            'authorization': workflow['authorization']}
+    logger.debug("The BODY: %r", body)
+    response = app_client.post('/users/current/workflows', json=body, headers=user1_auth)
+    logger.debug("The actual response: %r", response.data)
+
+    utils.assert_status_code(400, response.status_code)
+    data = json.loads(response.data)
+    logger.debug("Response data: %r", data)
+    assert data['title'] == 'Missing attribute \'name\'', "Unexpected error"
+
+
+@pytest.mark.parametrize("client_auth_method", [
+    ClientAuthenticationMethod.API_KEY,
+    ClientAuthenticationMethod.AUTHORIZATION_CODE,
+], indirect=True)
+def test_generic_workflow_registration_no_name(app_client, client_auth_method,
+                                               user1, user1_auth, client_credentials_registry, generic_workflow):
+    logger.debug("User: %r", user1)
+    logger.debug("headers: %r", user1_auth)
+    workflow = generic_workflow
+    logger.debug("Selected workflow: %r", workflow)
+    logger.debug("Using oauth2 user: %r", user1)
+    # prepare body
+    body = {'roc_link': workflow['roc_link'],
+            'version': workflow['version'],
+            'authorization': workflow['authorization']}
+    logger.debug("The BODY: %r", body)
+    response = app_client.post('/users/current/workflows', json=body, headers=user1_auth)
+    logger.debug("The actual response: %r", response.data)
+    utils.assert_status_code(201, response.status_code)
+    data = json.loads(response.data)
+    logger.debug("Response data: %r", data)
+    assert data['wf_version'] == workflow['version'], \
+        "Response should be equal to the workflow UUID"
+    assert data['uuid'], "Workflow UUID was not generated or returned"
+
+    response = app_client.get(f'/workflows/{data["uuid"]}', headers=user1_auth)
+    logger.debug("The actual response: %r", response.data)
+    utils.assert_status_code(200, response.status_code)
+    data = json.loads(response.data)
+    logger.debug("Response data: %r", data)
+    assert data['name'] == workflow['name'], "Unexpected workflow name"
+
+
+@pytest.mark.parametrize("client_auth_method", [
+    ClientAuthenticationMethod.API_KEY,
+    ClientAuthenticationMethod.AUTHORIZATION_CODE,
+], indirect=True)
 def test_registry_workflow_registration(app_client, client_auth_method,
                                         user1, user1_auth, client_credentials_registry, valid_workflow):
     logger.debug("User: %r", user1)
