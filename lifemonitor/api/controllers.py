@@ -539,7 +539,7 @@ def suites_post_instance(suite_uuid):
                                                   data['service']['url'],
                                                   data['resource'])
         clear_cache(suites_get_instances, suite_uuid)
-        return {'test_instance_uuid': str(test_instance.uuid)}, 201
+        return {'uuid': str(test_instance.uuid)}, 201
     except KeyError as e:
         return lm_exceptions.report_problem(400, "Bad Request", extra_info={"exception": str(e)},
                                             detail=messages.input_data_missing)
