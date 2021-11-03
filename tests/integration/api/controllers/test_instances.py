@@ -286,31 +286,3 @@ def test_get_instance_build_rate_limit_exceeded(app_client, client_auth_method, 
     data = json.loads(response.data)
     logger.debug("Response data: %r", data)
     assert data['title'] == 'Rate Limit Exceeded', "Unexpected error title"
-
-
-@pytest.mark.parametrize("client_auth_method", [
-    #    ClientAuthenticationMethod.BASIC,
-    ClientAuthenticationMethod.API_KEY,
-    ClientAuthenticationMethod.AUTHORIZATION_CODE,
-    ClientAuthenticationMethod.CLIENT_CREDENTIALS,
-    ClientAuthenticationMethod.REGISTRY_CODE_FLOW
-], indirect=True)
-def test_get_instance_build_logs(app_client, client_auth_method, user1, user1_auth, valid_workflow):
-    w, workflow = utils.pick_and_register_workflow(user1, valid_workflow)
-    assert len(workflow.test_suites) > 0, "Unexpected number of test suites"
-    suite = workflow.test_suites[0]
-    logger.debug("The test suite: %r", suite)
-    assert len(suite.test_instances) > 0, "Unexpected number of test instances"
-    instance = suite.test_instances[0]
-    logger.debug("The test instance: %r", instance)
-    assert len(instance.get_test_builds()) > 0, "Unexpected number of test builds"
-    build = instance.get_test_builds()[0]
-
-    response = app_client.get(f"{utils.build_instances_path(instance.uuid)}/builds/{build.id}/logs",
-                              headers=user1_auth)
-    logger.debug(response.data)
-    utils.assert_status_code(response.status_code, 200)
-    data = json.loads(response.data)
-    logger.debug("Response data: %r", data)
-    # redundant check: the validation is performed by the connexion framework
-    assert isinstance(data, str), "Unexpected result type"
