@@ -51,7 +51,7 @@ def test_add_unmanaged_instance(app_client, client_auth_method, user1, user1_aut
     logger.debug(response)
     utils.assert_status_code(201, response.status_code)
     response_data = json.loads(response.data)
-    assert "test_instance_uuid" in response_data, "Unexpcted response: missing 'test_instance_uuid'"
+    assert "uuid" in response_data, "Unexpcted response: missing 'uuid'"
     # check number of instances after
     assert len(suite.test_instances) == num_of_instances + 1, "Unexpected number of instances"
 
