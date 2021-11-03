@@ -1101,47 +1101,6 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
-  /instances/{instance_uuid}/builds/{build_id}/logs:
-    get:
-      summary: "Get test instance build logs"
-      description: "Get the build logs for the specified test instance and build"
-      x-openapi-router-controller: lifemonitor.api.controllers
-      operationId: "instances_builds_get_logs"
-      tags: ["Test Instances"]
-      deprecated: true
-      security:
-        - apiKey: ["workflow.read"]
-        - RegistryClientCredentials: ["workflow.read"]
-        - RegistryCodeFlow: ["workflow.read"]
-        - AuthorizationCodeFlow: ["workflow.read"]
-        - {}
-      parameters:
-        - $ref: "#/components/parameters/instance_uuid"
-        - $ref: "#/components/parameters/build_id"
-        - $ref: "#/components/parameters/offset_bytes"
-        - $ref: "#/components/parameters/limit_bytes"
-      responses:
-        "200":
-          description: "Log data"
-          content:
-            application/json:
-              schema:
-                type: string
-                description: |
-                  Log messages from the test build
-                example: |
-                  [15/April/2021:13:55:36 -0700] "GET /workflow.cwl HTTP/1.0" 200 2326
-                  [15/April/2021:13:55:36 -0700] "GET /workflow.cwl HTTP/1.0" 200 2326
-                  [15/April/2021:13:55:36 -0700] "GET /workflow.cwl HTTP/1.0" 200 2326
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-
 components:
   parameters:
     registry_uuid:
@@ -1260,22 +1219,6 @@ components:
         minimum: 1
         default: 10
       description: "Maximum number of items to retrieve"
-    limit_bytes:
-      name: "limit_bytes"
-      description: "Maximum number of log bytes to retrieve"
-      in: query
-      schema:
-        type: integer
-        minimum: 1
-        default: 131072 # 128 kB
-    offset_bytes:
-      name: "offset_bytes"
-      description: "Number of bytes to skip while fetching the log"
-      in: query
-      schema:
-        type: integer
-        minimum: 0
-        default: 0
 
   responses:
     NotFound:
