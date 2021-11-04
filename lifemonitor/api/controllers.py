@@ -48,16 +48,14 @@ def _row_to_dict(row):
     return d
 
 
-# @authorized
-@cached()
+@cached(timeout=Timeout.REQUEST)
 def workflow_registries_get():
     registries = lm.get_workflow_registries()
     logger.debug("registries_get. Got %s registries", len(registries))
     return serializers.ListOfWorkflowRegistriesSchema().dump(registries)
 
 
-# @authorized
-@cached()
+@cached(timeout=Timeout.REQUEST)
 def workflow_registries_get_by_uuid(registry_uuid):
     registry = lm.get_workflow_registry_by_uuid(registry_uuid)
     logger.debug("registries_get. Got %s registry", registry)
@@ -65,7 +63,7 @@ def workflow_registries_get_by_uuid(registry_uuid):
 
 
 @authorized
-@cached()
+@cached(timeout=Timeout.REQUEST)
 def workflow_registries_get_current():
     if current_registry:
         registry = current_registry
@@ -74,7 +72,7 @@ def workflow_registries_get_current():
     return lm_exceptions.report_problem(401, "Unauthorized")
 
 
-@cached(timeout=Timeout.SESSION)
+@cached(timeout=Timeout.REQUEST)
 def workflows_get(status=False):
     workflows = lm.get_public_workflows()
     if current_user and not current_user.is_anonymous:
@@ -114,7 +112,7 @@ def _get_workflow_or_problem(wf_uuid, wf_version=None):
                                             detail=messages.unauthorized_workflow_access.format(wf_uuid))
 
 
-@cached()
+@cached(timeout=Timeout.REQUEST)
 def workflows_get_by_id(wf_uuid, wf_version):
     response = _get_workflow_or_problem(wf_uuid, wf_version)
     return response if isinstance(response, Response) \
@@ -123,7 +121,7 @@ def workflows_get_by_id(wf_uuid, wf_version):
                                                else None).dump(response)
 
 
-@cached()
+@cached(timeout=Timeout.REQUEST)
 def workflows_get_latest_version_by_id(wf_uuid, previous_versions=False, ro_crate=False):
     response = _get_workflow_or_problem(wf_uuid, None)
     exclude = ['previous_versions'] if not previous_versions else []
@@ -134,14 +132,14 @@ def workflows_get_latest_version_by_id(wf_uuid, previous_versions=False, ro_crat
             subscriptionsOf=[current_user] if not current_user.is_anonymous else None).dump(response)
 
 
-@cached()
+@cached(timeout=Timeout.REQUEST)
 def workflows_get_versions_by_id(wf_uuid):
     response = _get_workflow_or_problem(wf_uuid, None)
     return response if isinstance(response, Response) \
         else serializers.ListOfWorkflowVersions().dump(response.workflow)
 
 
-@cached()
+@cached(timeout=Timeout.REQUEST)
 def workflows_get_status(wf_uuid):
     wf_version = request.args.get('version', 'latest').lower()
     response = _get_workflow_or_problem(wf_uuid, wf_version)
@@ -149,7 +147,7 @@ def workflows_get_status(wf_uuid):
         else serializers.WorkflowStatusSchema().dump(response)
 
 
-@cached()
+@cached(timeout=Timeout.REQUEST)
 def workflows_rocrate_metadata(wf_uuid, wf_version):
     response = _get_workflow_or_problem(wf_uuid, wf_version)
     if isinstance(response, Response):
@@ -157,7 +155,7 @@ def workflows_rocrate_metadata(wf_uuid, wf_version):
     return response.crate_metadata
 
 
-@cached()
+@cached(timeout=Timeout.REQUEST)
 def workflows_rocrate_download(wf_uuid, wf_version):
     response = _get_workflow_or_problem(wf_uuid, wf_version)
     if isinstance(response, Response):
@@ -177,7 +175,7 @@ def workflows_rocrate_download(wf_uuid, wf_version):
 
 
 @authorized
-@cached()
+@cached(timeout=Timeout.REQUEST)
 def registry_workflows_get(status=False):
     workflows = lm.get_registry_workflows(current_registry)
     logger.debug("workflows_get. Got %s workflows (registry: %s)", len(workflows), current_registry)
@@ -193,7 +191,7 @@ def registry_workflows_post(body):
 
 
 @authorized
-@cached()
+@cached(timeout=Timeout.REQUEST)
 def registry_user_workflows_get(user_id, status=False):
     if not current_registry:
         return lm_exceptions.report_problem(401, "Unauthorized", detail=messages.no_registry_found)
@@ -217,7 +215,7 @@ def registry_user_workflows_post(user_id, body):
 
 
 @authorized
-@cached()
+@cached(timeout=Timeout.REQUEST)
 def user_workflows_get(status=False, subscriptions=False):
     if not current_user or current_user.is_anonymous:
         return lm_exceptions.report_problem(401, "Unauthorized", detail=messages.no_user_in_session)
@@ -261,7 +259,7 @@ def user_workflow_unsubscribe(wf_uuid):
 
 
 @authorized
-@cached()
+@cached(timeout=Timeout.REQUEST)
 def user_registry_workflows_get(registry_uuid, status=False):
     if not current_user or current_user.is_anonymous:
         return lm_exceptions.report_problem(401, "Unauthorized", detail=messages.no_user_in_session)
@@ -431,7 +429,7 @@ def workflows_delete(wf_uuid, wf_version):
         raise lm_exceptions.LifeMonitorException(title="Internal Error", detail=str(e))
 
 
-@cached()
+@cached(timeout=Timeout.REQUEST)
 def workflows_get_suites(wf_uuid, version='latest'):
     response = _get_workflow_or_problem(wf_uuid, version)
     return response if isinstance(response, Response) \
@@ -466,21 +464,21 @@ def _get_suite_or_problem(suite_uuid):
         return lm_exceptions.report_problem(404, "Not Found", detail=messages.suite_not_found.format(suite_uuid))
 
 
-@cached()
+@cached(timeout=Timeout.REQUEST)
 def suites_get_by_uuid(suite_uuid):
     response = _get_suite_or_problem(suite_uuid)
     return response if isinstance(response, Response) \
         else serializers.SuiteSchema().dump(response)
 
 
-@cached()
+@cached(timeout=Timeout.REQUEST)
 def suites_get_status(suite_uuid):
     response = _get_suite_or_problem(suite_uuid)
     return response if isinstance(response, Response) \
         else serializers.SuiteStatusSchema().dump(response.status)
 
 
-@cached()
+@cached(timeout=Timeout.REQUEST)
 def suites_get_instances(suite_uuid):
     response = _get_suite_or_problem(suite_uuid)
     return response if isinstance(response, Response) \
@@ -574,7 +572,7 @@ def _get_instances_or_problem(instance_uuid):
                                             detail=messages.instance_not_found.format(instance_uuid))
 
 
-@cached()
+@cached(timeout=Timeout.REQUEST)
 def instances_get_by_id(instance_uuid):
     response = _get_instances_or_problem(instance_uuid)
     return response if isinstance(response, Response) \
@@ -601,7 +599,7 @@ def instances_delete_by_id(instance_uuid):
         raise lm_exceptions.LifeMonitorException(title="Internal Error", detail=str(e))
 
 
-@cached()
+@cached(timeout=Timeout.REQUEST)
 def instances_get_builds(instance_uuid, limit):
     response = _get_instances_or_problem(instance_uuid)
     logger.info("Number of builds to load: %r", limit)
@@ -609,7 +607,7 @@ def instances_get_builds(instance_uuid, limit):
         else serializers.ListOfTestBuildsSchema().dump(response.get_test_builds(limit=limit))
 
 
-@cached()
+@cached(timeout=Timeout.REQUEST)
 def instances_builds_get_by_id(instance_uuid, build_id):
     response = _get_instances_or_problem(instance_uuid)
     if isinstance(response, Response):
