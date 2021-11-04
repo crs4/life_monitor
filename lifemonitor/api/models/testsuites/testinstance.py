@@ -26,6 +26,7 @@ from typing import List
 
 import lifemonitor.api.models as models
 from lifemonitor.api.models import db
+from lifemonitor.cache import Timeout, cache
 from lifemonitor.models import JSON, UUID, ModelMixin
 
 from .testsuite import TestSuite
@@ -84,17 +85,26 @@ class TestInstance(db.Model, ModelMixin):
 
     @property
     def external_link(self):
+        logger.debug("Getting external link...")
         return self.testing_service.get_instance_external_link(self)
 
     @property
+    @cache.memoize(timeout=Timeout.REQUEST)
     def last_test_build(self):
-        return self.testing_service.get_last_test_build(self)
+        # return self.testing_service.get_last_test_build(self)
+        builds = self.get_test_builds()
+        return builds[0] if builds and len(builds) > 0 else None
 
+    @cache.memoize(timeout=Timeout.REQUEST)
     def get_test_builds(self, limit=10):
+        logger.debug("Getting test builds...")
         return self.testing_service.get_test_builds(self, limit=limit)
 
+    @cache.memoize(timeout=Timeout.REQUEST)
     def get_test_build(self, build_number):
-        return self.testing_service.get_test_build(self, build_number)
+        logger.debug("Getting test build...")
+        # return self.testing_service.get_test_build(self, build_number)
+        return next((b for b in self.get_test_builds() if b.number == build_number), None)
 
     def to_dict(self, test_build=False, test_output=False):
         data = {
@@ -106,6 +116,15 @@ class TestInstance(db.Model, ModelMixin):
         if test_build:
             data.update(self.testing_service.get_test_builds_as_dict(test_output=test_output))
         return data
+
+    def refresh(self):
+        try:
+            import lifemonitor
+            cache.delete_memoized(lifemonitor.api.models.testsuites.testinstance.TestInstance.get_test_build)
+            cache.delete_memoized(lifemonitor.api.models.testsuites.testinstance.TestInstance.get_test_builds)
+        except Exception as e:
+            logger.debug(e)
+        self.get_test_builds()
 
     @classmethod
     def all(cls) -> List[TestInstance]:
