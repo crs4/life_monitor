@@ -245,6 +245,17 @@ In the following examples, remember to replace the workflow ID with the one you 
       ]
     ...
 
+
+## Deleting
+
+To delete the workflow you registered in the above example, run:
+
+    $ restish lm workflows-delete 46a1812c-8743-4333-bd6c-e7954c559cb1 '1.0'
+
+Again, make sure you replace the uuid and version in the above command with
+the actual ones you got upon registering the workflow.
+
+
 ## Going further
 
 You can access all the API resources provided by LifeMonitor in this way.
