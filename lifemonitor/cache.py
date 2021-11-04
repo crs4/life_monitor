@@ -90,7 +90,7 @@ def clear_cache(func=None, *args, **kwargs):
         logger.error("Error deleting cache: %r", e)
 
 
-def cached(timeout=Timeout.DEFAULT, unless=False):
+def cached(timeout=Timeout.REQUEST, unless=False):
     def decorator(function):
 
         @cache.memoize(timeout=timeout, unless=unless, make_name=_make_name)
