@@ -32,9 +32,9 @@ from flask_caching import Cache
 
 class Timeout:
     NONE = 0
-    DEFAULT = os.environ.get('CACHE_DEFAULT_TIMEOUT', 300)
-    REQUEST = os.environ.get('CACHE_REQUEST_TIMEOUT', 60)
-    SESSION = os.environ.get('CACHE_SESSION_TIMEOUT', 3600)
+    DEFAULT = os.environ.get('CACHE_DEFAULT_TIMEOUT', 60)
+    REQUEST = os.environ.get('CACHE_REQUEST_TIMEOUT', 300)
+    SESSION = os.environ.get('CACHE_SESSION_TIMEOUT', 600)
     BUILDS = os.environ.get('CACHE_SESSION_TIMEOUT', 84600)
 
 
