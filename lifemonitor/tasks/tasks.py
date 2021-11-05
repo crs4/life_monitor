@@ -41,16 +41,16 @@ def heartbeat():
     logger.info("Heartbeat!")
 
 
-@schedule(CronTrigger(minute="*/5"))
-@dramatiq.actor
-def check_last_build():
-    logger.info("Checking last build....")
-    from lifemonitor.api.models import Workflow
+# @schedule(CronTrigger(minute="*/5"))
+# @dramatiq.actor
+# def check_last_build():
+#     logger.info("Checking last build....")
+#     from lifemonitor.api.models import Workflow
 
-    for w in Workflow.all():
-        for s in w.latest_version.test_suites:
-            logger.info("Updating workflow: %r", w)
-            for i in s.test_instances:
-                i.refresh()
+#     for w in Workflow.all():
+#         for s in w.latest_version.test_suites:
+#             #logger.info("Updating workflow: %r", w)
+#             for i in s.test_instances:
+#                 i.refresh()
 
-    logger.info("Checking last build: DONE!")
+#     logger.info("Checking last build: DONE!")
