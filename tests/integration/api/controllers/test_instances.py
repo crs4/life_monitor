@@ -256,7 +256,7 @@ def test_get_instance_build(app_client, client_auth_method, user1, user1_auth, v
     response = app_client.get(f"{utils.build_instances_path(instance.uuid)}/builds/{build.id}",
                               headers=user1_auth)
     logger.debug(response)
-    utils.assert_status_code(response.status_code, 200)
+    utils.assert_status_code(200, response.status_code)
     data = json.loads(response.data)
     logger.debug("Response data: %r", data)
     # redundant check: the validation is performed by the connexion framework
@@ -282,7 +282,7 @@ def test_get_instance_build_rate_limit_exceeded(app_client, client_auth_method, 
 
     response = app_client.get(f"{utils.build_instances_path(instance.uuid)}/builds/0", headers=user1_auth)
     logger.debug(response)
-    utils.assert_status_code(response.status_code, 403)
+    utils.assert_status_code(403, response.status_code)
     data = json.loads(response.data)
     logger.debug("Response data: %r", data)
     assert data['title'] == 'Rate Limit Exceeded', "Unexpected error title"
