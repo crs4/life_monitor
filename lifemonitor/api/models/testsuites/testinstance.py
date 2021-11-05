@@ -91,7 +91,6 @@ class TestInstance(db.Model, ModelMixin):
     @property
     @cache.memoize(timeout=Timeout.REQUEST)
     def last_test_build(self):
-        # return self.testing_service.get_last_test_build(self)
         builds = self.get_test_builds()
         return builds[0] if builds and len(builds) > 0 else None
 
@@ -103,8 +102,7 @@ class TestInstance(db.Model, ModelMixin):
     @cache.memoize(timeout=Timeout.REQUEST)
     def get_test_build(self, build_number):
         logger.debug("Getting test build...")
-        # return self.testing_service.get_test_build(self, build_number)
-        return next((b for b in self.get_test_builds() if b.number == build_number), None)
+        return self.testing_service.get_test_build(self, build_number)
 
     def to_dict(self, test_build=False, test_output=False):
         data = {
