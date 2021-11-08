@@ -23,10 +23,11 @@ from __future__ import annotations
 import functools
 import logging
 import os
-import redis_lock
 
+import redis_lock
 from flask.app import Flask
 from flask_caching import Cache
+from flask_caching.backends.nullcache import NullCache
 
 
 class Timeout:
@@ -156,16 +157,21 @@ class CacheHelper(object):
 
     def set(self, key: str, value, timeout: int = Timeout.NONE):
         val = None
-        if key is not None and self.cache_enabled:
-            lock = self.lock(key)
-            if lock.acquire(blocking=True):
-                try:
-                    val = cache.get(key)
-                    if not val:
-                        cache.set(key, value, timeout=timeout)
-                finally:
-                    lock.release()
+        if not isinstance(cache, NullCache):
+            if key is not None and self.cache_enabled:
+                lock = self.lock(key)
+                if lock.acquire(blocking=True):
+                    try:
+                        val = cache.get(key)
+                        if not val:
+                            cache.set(key, value, timeout=timeout)
+                    finally:
+                        lock.release()
         return val
 
     def get(self, key: str):
-        return cache.get(key) if self.cache_enabled and not self.ignore_cache_values else None
+        return cache.get(key) \
+            if not isinstance(cache, NullCache) \
+            and self.cache_enabled \
+            and not self.ignore_cache_values \
+            else None
