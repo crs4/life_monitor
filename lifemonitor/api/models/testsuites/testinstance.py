@@ -74,6 +74,9 @@ class TestInstance(db.Model, ModelMixin):
     def __repr__(self):
         return '<TestInstance {} on TestSuite {}>'.format(self.uuid, self.test_suite.uuid)
 
+    def __eq__(self, o: object) -> bool:
+        return isinstance(o, TestInstance) and o.uuid == self.uuid
+
     @property
     def _cache_key_prefix(self):
         return str(self)

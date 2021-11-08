@@ -53,6 +53,10 @@ class TestBuild(ABC):
     def __repr__(self) -> str:
         return f"TestBuild '{self.id}' @ instance '{self.test_instance.uuid}'"
 
+    def __eq__(self, other):
+        return isinstance(other, TestBuild) \
+            and self.id == other.id and self.test_instance == other.test_instance
+
     def is_successful(self):
         return self.result == TestBuild.Result.SUCCESS
 
