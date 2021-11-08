@@ -78,7 +78,7 @@ def test_get_public_workflows_rate_limit_exceeded(lm, rate_limit_exceeded_workfl
 
 
 @patch("lifemonitor.api.controllers.lm")
-def test_get_workflows_with_user_rate_limit_exceeded(lm, mock_user, rate_limit_exceeded_workflow):
+def test_get_workflows_with_user_rate_limit_exceeded(lm, mock_user, no_cache, rate_limit_exceeded_workflow):
     # add one user to the current session
     assert not auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_user == mock_user, "Unexpected user in session"
