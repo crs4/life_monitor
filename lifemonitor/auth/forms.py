@@ -28,8 +28,7 @@ from lifemonitor.auth.oauth2.server.models import Client
 from lifemonitor.utils import OpenApiSpecs
 from sqlalchemy.exc import IntegrityError
 from wtforms import (BooleanField, HiddenField, PasswordField, SelectField,
-                     SelectMultipleField, StringField)
-from wtforms.fields.html5 import URLField
+                     SelectMultipleField, StringField, URLField)
 from wtforms.validators import URL, DataRequired, EqualTo, Optional
 
 from .models import User, db
