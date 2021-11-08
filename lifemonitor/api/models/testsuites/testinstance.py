@@ -164,15 +164,6 @@ class TestInstance(db.Model, ModelMixin):
             data.update(self.testing_service.get_test_builds_as_dict(test_output=test_output))
         return data
 
-    def refresh(self):
-        try:
-            import lifemonitor
-            cache.delete_memoized(lifemonitor.api.models.testsuites.testinstance.TestInstance.get_test_build)
-            cache.delete_memoized(lifemonitor.api.models.testsuites.testinstance.TestInstance.get_test_builds)
-        except Exception as e:
-            logger.debug(e)
-        self.get_test_builds()
-
     @classmethod
     def all(cls) -> List[TestInstance]:
         return cls.query.all()
