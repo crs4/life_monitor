@@ -23,14 +23,14 @@ from __future__ import annotations
 import functools
 import logging
 import os
+import redis_lock
 
 from flask.app import Flask
 from flask_caching import Cache
 
-# Set default timeouts
-
 
 class Timeout:
+    # Set default timeouts
     NONE = 0
     DEFAULT = os.environ.get('CACHE_DEFAULT_TIMEOUT', 60)
     REQUEST = os.environ.get('CACHE_REQUEST_TIMEOUT', 300)
@@ -122,3 +122,50 @@ def cached_method(timeout=None, unless=False):
 
         return wrapper
     return decorator
+
+
+class CacheMixin(object):
+
+    _helper: CacheHelper = None
+
+    @property
+    def cache(self) -> CacheHelper:
+        if self._helper is None:
+            self._helper = CacheHelper()
+        return self._helper
+
+
+class CacheHelper(object):
+
+    # Enable/Disable cache
+    cache_enabled = True
+    # Ignore cache values even if cache is enabled
+    ignore_cache_values = False
+
+    @staticmethod
+    def size():
+        return len(cache.get_dict())
+
+    @staticmethod
+    def to_dict():
+        return cache.get_dict()
+
+    @staticmethod
+    def lock(key: str):
+        return redis_lock.Lock(cache.cache._read_clients, key)
+
+    def set(self, key: str, value, timeout: int = Timeout.NONE):
+        val = None
+        if key is not None and self.cache_enabled:
+            lock = self.lock(key)
+            if lock.acquire(blocking=True):
+                try:
+                    val = cache.get(key)
+                    if not val:
+                        cache.set(key, value, timeout=timeout)
+                finally:
+                    lock.release()
+        return val
+
+    def get(self, key: str):
+        return cache.get(key) if self.cache_enabled and not self.ignore_cache_values else None
