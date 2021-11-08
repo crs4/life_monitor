@@ -104,7 +104,8 @@ class TestingConfig(BaseConfig):
     TESTING = True
     LOG_LEVEL = "DEBUG"
     # SQLALCHEMY_DATABASE_URI = "sqlite:///{0}/app-test.db".format(basedir)
-    CACHE_TYPE = "flask_caching.backends.nullcache.NullCache"
+    # CACHE_TYPE = "flask_caching.backends.nullcache.NullCache"
+    CACHE_TYPE = "flask_caching.backends.rediscache.RedisCache"
 
 
 class TestingSupportConfig(TestingConfig):
