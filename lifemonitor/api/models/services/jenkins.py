@@ -27,7 +27,7 @@ from typing import Optional
 
 import lifemonitor.api.models as models
 import lifemonitor.exceptions as lm_exceptions
-from lifemonitor.cache import Timeout, cache
+
 from lifemonitor.lang import messages
 
 import jenkins
@@ -69,7 +69,6 @@ class JenkinsTestingService(TestingService):
         return self._server
 
     @staticmethod
-    @cache.memoize(timeout=Timeout.NONE)
     def get_job_name(resource):
         # extract the job name from the resource path
         logger.debug(f"Getting project metadata - resource: {resource}")
@@ -80,32 +79,27 @@ class JenkinsTestingService(TestingService):
                 f"Unable to get the Jenkins job from the resource {job_name}")
         return job_name
 
-    @cache.memoize(timeout=Timeout.NONE)
     def get_instance_external_link(self, test_instance: models.TestInstance) -> str:
         return self.get_project_metadata(test_instance)['url']
 
-    @cache.memoize(timeout=Timeout.REQUEST)
     def get_last_test_build(self, test_instance: models.TestInstance) -> Optional[JenkinsTestBuild]:
         metadata = self.get_project_metadata(test_instance)
         if 'lastBuild' in metadata and metadata['lastBuild']:
             return self.get_test_build(test_instance, metadata['lastBuild']['number'])
         return None
 
-    @cache.memoize(timeout=Timeout.REQUEST)
     def get_last_passed_test_build(self, test_instance: models.TestInstance) -> Optional[JenkinsTestBuild]:
         metadata = self.get_project_metadata(test_instance)
         if 'lastSuccessfulBuild' in metadata and metadata['lastSuccessfulBuild']:
             return self.get_test_build(test_instance, metadata['lastSuccessfulBuild']['number'])
         return None
 
-    @cache.memoize(timeout=Timeout.REQUEST)
     def get_last_failed_test_build(self, test_instance: models.TestInstance) -> Optional[JenkinsTestBuild]:
         metadata = self.get_project_metadata(test_instance)
         if 'lastFailedBuild' in metadata and metadata['lastFailedBuild']:
             return self.get_test_build(test_instance, metadata['lastFailedBuild']['number'])
         return None
 
-    @cache.memoize(timeout=Timeout.REQUEST)
     def test_builds(self, test_instance: models.TestInstance) -> list:
         builds = []
         metadata = self.get_project_metadata(test_instance)
@@ -113,7 +107,6 @@ class JenkinsTestingService(TestingService):
             builds.append(self.get_test_build(test_instance, build_info['number']))
         return builds
 
-    @cache.memoize(timeout=Timeout.REQUEST)
     def get_project_metadata(self, test_instance: models.TestInstance, fetch_all_builds=False):
         if not hasattr(test_instance, "_raw_metadata") or test_instance._raw_metadata is None:
             try:
@@ -123,7 +116,6 @@ class JenkinsTestingService(TestingService):
                 raise lm_exceptions.TestingServiceException(f"{self}: {e}")
         return test_instance._raw_metadata
 
-    @cache.memoize(timeout=Timeout.REQUEST)
     def get_test_builds(self, test_instance: models.TestInstance, limit=10) -> list:
         builds = []
         project_metadata = self.get_project_metadata(test_instance, fetch_all_builds=(limit > 100))
@@ -133,11 +125,9 @@ class JenkinsTestingService(TestingService):
             builds.append(self.get_test_build(test_instance, build_info['number']))
         return builds
 
-    @cache.memoize(timeout=Timeout.REQUEST)
     def _get_build_info(self, test_instance: models.TestInstance, build_number: int):
         return self.server.get_build_info(self.get_job_name(test_instance.resource), int(build_number))
 
-    @cache.memoize(timeout=Timeout.REQUEST)
     def get_test_build(self, test_instance: models.TestInstance, build_number: int) -> JenkinsTestBuild:
         try:
             build_metadata = self._get_build_info(test_instance, build_number)
@@ -147,7 +137,6 @@ class JenkinsTestingService(TestingService):
         except jenkins.JenkinsException as e:
             raise lm_exceptions.TestingServiceException(e)
 
-    @cache.memoize(timeout=Timeout.NONE)
     def get_test_build_external_link(self, test_build: models.TestBuild) -> str:
         return urllib.parse.urljoin(test_build.url, "console")
 

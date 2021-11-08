@@ -29,7 +29,7 @@ from urllib.parse import urlparse
 
 import lifemonitor.api.models as models
 import lifemonitor.exceptions as lm_exceptions
-from lifemonitor.cache import Timeout, cache
+
 
 import github
 from github import Github, GithubException
@@ -104,17 +104,23 @@ class GithubTestingService(TestingService):
             self.initialize()
         return self._gh_obj
 
-    @cache.memoize(timeout=Timeout.NONE)
     def _get_workflow_info(self, resource):
         return self._parse_workflow_url(resource)
 
-    @cache.memoize(timeout=Timeout.NONE)
     def _get_repo(self, test_instance: models.TestInstance):
-        _, repo_full_name, _ = self._get_workflow_info(test_instance.resource)
-        repository = self._gh_service.get_repo(repo_full_name)
-        logger.debug("Repo ID: %s", repository.id)
-        logger.debug("Repo full name: %s", repository.full_name)
-        logger.debug("Repo URL: %s", f'https://github.com/{repository.full_name}')
+        logger.debug("Getting github repository...")
+        key = f"github_repo_{test_instance.uuid}"
+        repository = self.cache.get(key)
+        if repository is None:
+            logger.debug("Getting github repository from remote service...")
+            _, repo_full_name, _ = self._get_workflow_info(test_instance.resource)
+            repository = self._gh_service.get_repo(repo_full_name)
+            logger.debug("Repo ID: %s", repository.id)
+            logger.debug("Repo full name: %s", repository.full_name)
+            logger.debug("Repo URL: %s", f'https://github.com/{repository.full_name}')
+            self.cache.set(key, repository)
+        else:
+            logger.debug("Reusing github repository from cache...")
         return repository
 
     @staticmethod
@@ -138,9 +144,15 @@ class GithubTestingService(TestingService):
             logger.info("Caught exception from Github GET /rate_limit: %s.  Connection not working?", e)
             return False
 
-    @cache.memoize(timeout=Timeout.SESSION)
     def _get_gh_workflow(self, repository, workflow_id):
-        return self._gh_service.get_repo(repository).get_workflow(workflow_id)
+        logger.debug("Getting github workflow...")
+        key = f"github_workflow_{repository}_{workflow_id}"
+        workflow = self.cache.get(key)
+        if workflow is None:
+            logger.debug("Getting github workflow from remote service...")
+            workflow = self._gh_service.get_repo(repository).get_workflow(workflow_id)
+            self.cache.set(key, workflow)
+        return workflow
 
     def _iter_runs(self, test_instance: models.TestInstance, status: str = None) -> Generator[github.WorkflowRun.WorkflowRun]:
         _, repository, workflow_id = self._get_workflow_info(test_instance.resource)
@@ -162,7 +174,6 @@ class GithubTestingService(TestingService):
             if status is None or run.status == status:
                 yield run
 
-    @cache.memoize(timeout=Timeout.REQUEST)
     def get_last_test_build(self, test_instance: models.TestInstance) -> Optional[GithubTestBuild]:
         try:
             logger.debug("Getting latest build...")
@@ -173,7 +184,6 @@ class GithubTestingService(TestingService):
         except GithubRateLimitExceededException as e:
             raise lm_exceptions.RateLimitExceededException(detail=str(e), instance=test_instance)
 
-    @cache.memoize(timeout=Timeout.REQUEST)
     def get_last_passed_test_build(self, test_instance: models.TestInstance) -> Optional[GithubTestBuild]:
         try:
             logger.debug("Getting last passed build...")
@@ -184,7 +194,6 @@ class GithubTestingService(TestingService):
         except GithubRateLimitExceededException as e:
             raise lm_exceptions.RateLimitExceededException(detail=str(e), instance=test_instance)
 
-    @cache.memoize(timeout=Timeout.REQUEST)
     def get_last_failed_test_build(self, test_instance: models.TestInstance) -> Optional[GithubTestBuild]:
         try:
             logger.debug("Getting last failed build...")
@@ -195,7 +204,6 @@ class GithubTestingService(TestingService):
         except GithubRateLimitExceededException as e:
             raise lm_exceptions.RateLimitExceededException(detail=str(e), instance=test_instance)
 
-    @cache.memoize(timeout=Timeout.REQUEST)
     def get_test_builds(self, test_instance: models.TestInstance, limit=10) -> list:
         try:
             logger.debug("Getting test builds...")
@@ -204,7 +212,6 @@ class GithubTestingService(TestingService):
         except GithubRateLimitExceededException as e:
             raise lm_exceptions.RateLimitExceededException(detail=str(e), instance=test_instance)
 
-    @cache.memoize(timeout=Timeout.REQUEST)
     def get_test_build(self, test_instance: models.TestInstance, build_number: int) -> GithubTestBuild:
         try:
             logger.debug("Inefficient get_test_build implementation.  Rewrite me!")
@@ -224,12 +231,10 @@ class GithubTestingService(TestingService):
         except GithubRateLimitExceededException as e:
             raise lm_exceptions.RateLimitExceededException(detail=str(e), instance=test_instance)
 
-    @cache.memoize(timeout=Timeout.NONE)
     def get_instance_external_link(self, test_instance: models.TestInstance) -> str:
         _, repo_full_name, workflow_id = self._get_workflow_info(test_instance.resource)
         return f'https://github.com/{repo_full_name}/actions/workflows/{workflow_id}'
 
-    @cache.memoize(timeout=Timeout.NONE)
     def get_test_build_external_link(self, test_build: models.TestBuild) -> str:
         repo = self._get_repo(test_build.test_instance)
         return f'https://github.com/{repo.full_name}/actions/runs/{test_build.id}'
@@ -238,7 +243,6 @@ class GithubTestingService(TestingService):
         raise lm_exceptions.NotImplementedException(detail="not supported for GitHub test builds")
 
     @classmethod
-    @cache.memoize(timeout=Timeout.NONE)
     def _parse_workflow_url(cls, resource: str) -> Tuple[str, str, str]:
         """
         Utility method to parse github workflow URIs.  Given a URL to the testing
