@@ -27,13 +27,13 @@ import string
 import uuid
 from unittest.mock import MagicMock
 
-from lifemonitor.cache import init_cache
 import lifemonitor.db as lm_db
 import pytest
 from lifemonitor import auth
 from lifemonitor.api.models import (TestingService, TestingServiceTokenManager,
                                     TestSuite, User)
 from lifemonitor.api.services import LifeMonitor
+from lifemonitor.cache import cache, init_cache
 from lifemonitor.utils import ClassManager
 
 from tests.utils import register_workflow
@@ -89,6 +89,14 @@ def token_manager() -> TestingServiceTokenManager:
 def no_cache(app_context):
     app_context.app.config['CACHE_TYPE'] = "flask_caching.backends.nullcache.NullCache"
     init_cache(app_context.app)
+    return cache
+
+
+@pytest.fixture
+def redis_cache(app_context):
+    app_context.app.config['CACHE_TYPE'] = "flask_caching.backends.rediscache.RedisCache"
+    init_cache(app_context.app)
+    return cache
 
 
 @pytest.fixture(autouse=True)
