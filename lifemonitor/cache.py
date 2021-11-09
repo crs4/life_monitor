@@ -157,7 +157,7 @@ class CacheHelper(object):
 
     def set(self, key: str, value, timeout: int = Timeout.NONE):
         val = None
-        if not isinstance(cache, NullCache):
+        if not isinstance(cache.cache, NullCache):
             if key is not None and self.cache_enabled:
                 lock = self.lock(key)
                 if lock.acquire(blocking=True):
@@ -171,7 +171,7 @@ class CacheHelper(object):
 
     def get(self, key: str):
         return cache.get(key) \
-            if not isinstance(cache, NullCache) \
+            if not isinstance(cache.cache, NullCache) \
             and self.cache_enabled \
             and not self.ignore_cache_values \
             else None
