@@ -28,7 +28,7 @@ from lifemonitor.cache import CacheHelper
 logger = logging.getLogger(__name__)
 
 
-def test_cache_last_build(app_client, user1):
+def test_cache_last_build(app_client, redis_cache, user1):
     valid_workflow = 'sort-and-change-case'
     assert CacheHelper.size() == 0, "Cache should be empty"
     _, workflow = utils.pick_and_register_workflow(user1, valid_workflow)
@@ -55,7 +55,7 @@ def test_cache_last_build(app_client, user1):
     assert build == cached_build, "Build should be equal to the cached build"
 
 
-def test_cache_test_builds(app_client, user1):
+def test_cache_test_builds(app_client, redis_cache, user1):
     valid_workflow = 'sort-and-change-case'
     assert CacheHelper.size() == 0, "Cache should be empty"
     _, workflow = utils.pick_and_register_workflow(user1, valid_workflow)

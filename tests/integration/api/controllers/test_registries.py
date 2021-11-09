@@ -45,7 +45,7 @@ def test_get_registries(app_client, client_auth_method, user1, user1_auth):
     assert len(data['items']) == 1, "Invalid number of registries"
 
 
-def test_get_registries_no_authorization(app_client, fake_registry):
+def test_get_registries_no_authorization(app_client, no_cache, fake_registry):
     response = app_client.get(utils.build_registries_path())
     utils.assert_status_code(200, response.status_code)
     assert response.data, "Empty response"
