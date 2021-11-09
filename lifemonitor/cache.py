@@ -29,6 +29,9 @@ from flask.app import Flask
 from flask_caching import Cache
 from flask_caching.backends.nullcache import NullCache
 
+# Set prefix
+CACHE_PREFIX = "flask_cache"
+
 
 class Timeout:
     # Set default timeouts
@@ -69,62 +72,6 @@ def init_cache(app: Flask):
     logger.debug(f"Cache initialised (type: {cache_type})")
 
 
-def _make_name(fname) -> str:
-    from lifemonitor.auth import current_registry, current_user
-    result = fname
-    if current_user and not current_user.is_anonymous:
-        result += "-{}-{}".format(current_user.username, current_user.id)
-    if current_registry:
-        result += "-{}".format(current_registry.uuid)
-    logger.debug("Calculated function name: %r", result)
-
-    return result
-
-
-def clear_cache(func=None, *args, **kwargs):
-    try:
-        if func:
-            cache.delete_memoized(func, *args, **kwargs)
-        else:
-            cache.clear()
-    except Exception as e:
-        logger.error("Error deleting cache: %r", e)
-
-
-def cached(timeout=Timeout.REQUEST, unless=False):
-    def decorator(function):
-
-        @cache.memoize(timeout=timeout, unless=unless, make_name=_make_name)
-        @functools.wraps(function)
-        def wrapper(*args, **kwargs):
-            logger.debug("Cache arguments: %r", args)
-            logger.debug("Caghe kwargs: %r", kwargs)
-            # wrap concrete function
-            return function(*args, **kwargs)
-
-        return wrapper
-    return decorator
-
-
-def cached_method(timeout=None, unless=False):
-    def decorator(function):
-
-        def unless_wrapper(func, obj, *args, **kwargs):
-            f = getattr(obj, unless)
-            return f(obj, func, *args, **kwargs)
-
-        @cache.memoize(timeout=timeout, unless=unless_wrapper, make_name=_make_name)
-        @functools.wraps(function)
-        def wrapper(*args, **kwargs):
-            logger.debug("Cache arguments: %r", args)
-            logger.debug("Caghe kwargs: %r", kwargs)
-            # wrap concrete function
-            return function(*args, **kwargs)
-
-        return wrapper
-    return decorator
-
-
 class CacheMixin(object):
 
     _helper: CacheHelper = None
@@ -142,6 +89,13 @@ class CacheHelper(object):
     cache_enabled = True
     # Ignore cache values even if cache is enabled
     ignore_cache_values = False
+
+    @staticmethod
+    def redis_client():
+        try:
+            return cache.cache._read_clients
+        except Exception:
+            return None
 
     @staticmethod
     def size():
@@ -175,3 +129,72 @@ class CacheHelper(object):
             and self.cache_enabled \
             and not self.ignore_cache_values \
             else None
+
+    @classmethod
+    def delete_keys(cls, pattern: str):
+        redis = cls.redis_client()
+        logger.debug(f"Deleting keys by pattern: {pattern}")
+        for key in redis.scan_iter(f"{CACHE_PREFIX}{pattern}"):
+            logger.debug("Delete key: %r", key)
+            redis.delete(key)
+
+
+# global cache helper instance
+helper: CacheHelper = CacheHelper()
+
+
+def _make_key(func=None, *args, **kwargs) -> str:
+    from lifemonitor.auth import current_registry, current_user
+    logger.debug("Cache arguments: %r", args)
+    logger.debug("Caghe kwargs: %r", kwargs)
+    result = ""
+    if current_user and not current_user.is_anonymous:
+        result += "{}-{}_".format(current_user.username, current_user.id)
+    if current_registry:
+        result += "{}_".format(current_registry.uuid)
+    if func:
+        result += func if isinstance(func, str) else func.__name__ if callable(func) else str(func)
+    if args:
+        result += "_" + "-".join([str(_) for _ in args])
+    if kwargs:
+        result += "_" + "-".join([f"{str(k)}={str(v)}" for k, v in kwargs.items()])
+    logger.debug("Calculated key: %r", result)
+    return result
+
+
+def clear_cache(func=None, *args, **kwargs):
+    try:
+        if func:
+            key = _make_key(func)
+            helper.delete_keys(f"{key}*")
+            if args or kwargs:
+                key = _make_key(func, *args, **kwargs)
+                helper.delete_keys(f"{key}*")
+        else:
+            key = _make_key()
+            helper.delete_keys(f"{key}*")
+    except Exception as e:
+        logger.error("Error deleting cache: %r", e)
+
+
+def cached(timeout=Timeout.REQUEST, unless=False):
+    def decorator(function):
+
+        @functools.wraps(function)
+        def wrapper(*args, **kwargs):
+            logger.debug("Function: %r", str(function.__name__))
+            logger.debug("Cache arguments: %r", args)
+            logger.debug("Caghe kwargs: %r", kwargs)
+            key = _make_key(function.__name__, *args, **kwargs)
+            logger.debug("Calculated key: %r", key)
+            result = helper.get(key)
+            if result is None:
+                logger.debug(f"Getting value from the actual function for key {key}...")
+                result = function(*args, **kwargs)
+                helper.set(key, result, timeout=timeout)
+            else:
+                logger.debug(f"Reusing value from cache key '{key}'...")
+            return result
+
+        return wrapper
+    return decorator
