@@ -346,7 +346,3 @@ class GithubTestBuild(models.TestBuild):
     @property
     def url(self) -> str:
         return self._metadata.url
-
-    @property
-    def external_link(self) -> str:
-        return self.testing_service.get_test_build_external_link(self)

@@ -25,6 +25,7 @@ from abc import ABC, abstractmethod
 from enum import Enum
 
 import lifemonitor.api.models as models
+from lifemonitor.cache import CacheMixin
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -39,7 +40,7 @@ class BuildStatus:
     ABORTED = "aborted"
 
 
-class TestBuild(ABC):
+class TestBuild(ABC, CacheMixin):
     class Result(Enum):
         SUCCESS = 0
         FAILED = 1
@@ -110,9 +111,18 @@ class TestBuild(ABC):
         pass
 
     @property
-    @abstractmethod
     def external_link(self) -> str:
-        pass
+        logger.debug("Getting external link...")
+        key = f"{str(self)}_external_link"
+        link = self.cache.get(key)
+        if link is None:
+            logger.debug("Getting external link from testing service...")
+            link = self.testing_service.get_test_build_external_link(self)
+            if link is not None:
+                self.cache.set(key, link)
+        else:
+            logger.debug("Reusing external link from cache...")
+        return link
 
     def get_output(self, offset_bytes=0, limit_bytes=131072):
         return self.testing_service.get_test_build_output(self.test_instance, self.id, offset_bytes, limit_bytes)
