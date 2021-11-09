@@ -84,10 +84,12 @@ def service_registry() -> ClassManager:
 def token_manager() -> TestingServiceTokenManager:
     return TestingServiceTokenManager.get_instance()
 
+
 @pytest.fixture
 def no_cache(app_context):
     app_context.app.config['CACHE_TYPE'] = "flask_caching.backends.nullcache.NullCache"
     init_cache(app_context.app)
+
 
 @pytest.fixture(autouse=True)
 def initialize(app_settings, request_context, service_registry: ClassManager):
