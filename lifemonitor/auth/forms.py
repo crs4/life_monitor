@@ -28,10 +28,16 @@ from lifemonitor.auth.oauth2.server.models import Client
 from lifemonitor.utils import OpenApiSpecs
 from sqlalchemy.exc import IntegrityError
 from wtforms import (BooleanField, HiddenField, PasswordField, SelectField,
-                     SelectMultipleField, StringField, URLField)
+                     SelectMultipleField, StringField)
 from wtforms.validators import URL, DataRequired, EqualTo, Optional
 
 from .models import User, db
+
+try:
+    from wtforms import URLField
+except ImportError:
+    from wtforms.fields.html5 import URLField
+
 
 # Set the module level logger
 logger = logging.getLogger(__name__)
