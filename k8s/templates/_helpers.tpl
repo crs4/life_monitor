@@ -77,6 +77,8 @@ Define environment variables shared by some pods.
   value: "{{ .Values.postgresql.postgresqlPassword }}"
 - name: POSTGRESQL_DATABASE
   value: "{{ .Values.postgresql.postgresqlDatabase }}"
+- name: REDIS_HOST
+  value: "{{ .Release.Name }}-redis-master"
 - name: LIFEMONITOR_TLS_KEY
   value: "/lm/certs/tls.key"
 - name: LIFEMONITOR_TLS_CERT
