@@ -136,7 +136,7 @@ class CacheHelper(object):
 helper: CacheHelper = CacheHelper(cache)
 
 
-def _make_key(func=None, *args, **kwargs) -> str:
+def _make_key(func=None, client_scope=True, *args, **kwargs) -> str:
     from lifemonitor.auth import current_registry, current_user
     fname = "" if func is None \
         else func if isinstance(func, str) \
@@ -145,12 +145,13 @@ def _make_key(func=None, *args, **kwargs) -> str:
     logger.debug("make_key args: %r", args)
     logger.debug("make_key kwargs: %r", kwargs)
     result = ""
-    if current_user and not current_user.is_anonymous:
-        result += "{}-{}_".format(current_user.username, current_user.id)
-    if current_registry:
-        result += "{}_".format(current_registry.uuid)
-    if not current_registry and current_user.is_anonymous:
-        result += "anonymous_"
+    if client_scope:
+        if current_user and not current_user.is_anonymous:
+            result += "{}-{}_".format(current_user.username, current_user.id)
+        if current_registry:
+            result += "{}_".format(current_registry.uuid)
+        if not current_registry and current_user.is_anonymous:
+            result += "anonymous_"
     if func:
         result += fname
     if args:
@@ -161,27 +162,27 @@ def _make_key(func=None, *args, **kwargs) -> str:
     return result
 
 
-def clear_cache(func=None, *args, **kwargs):
+def clear_cache(func=None, client_scope=True, *args, **kwargs):
     try:
         if func:
-            key = _make_key(func)
+            key = _make_key(func, client_scope)
             helper.delete_keys(f"{key}*")
             if args or kwargs:
-                key = _make_key(func, *args, **kwargs)
+                key = _make_key(func, client_scope, *args, **kwargs)
                 helper.delete_keys(f"{key}*")
         else:
-            key = _make_key()
+            key = _make_key(client_scope)
             helper.delete_keys(f"{key}*")
     except Exception as e:
         logger.error("Error deleting cache: %r", e)
 
 
-def cached(timeout=Timeout.REQUEST, unless=False):
+def cached(timeout=Timeout.REQUEST, client_scope=True):
     def decorator(function):
 
         @functools.wraps(function)
         def wrapper(*args, **kwargs):
-            key = _make_key(function, *args, **kwargs)
+            key = _make_key(function, client_scope, *args, **kwargs)
             result = helper.get(key)
             if result is None:
                 logger.debug(f"Getting value from the actual function for key {key}...")
