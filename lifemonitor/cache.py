@@ -24,6 +24,7 @@ import functools
 import logging
 import os
 
+import redis
 import redis_lock
 from flask.app import Flask
 from flask_caching import Cache
@@ -73,17 +74,6 @@ def init_cache(app: Flask):
     logger.debug(f"Cache initialised (type: {cache_type})")
 
 
-class CacheMixin(object):
-
-    _helper: CacheHelper = None
-
-    @property
-    def cache(self) -> CacheHelper:
-        if self._helper is None:
-            self._helper = CacheHelper()
-        return self._helper
-
-
 class CacheHelper(object):
 
     # Enable/Disable cache
@@ -91,57 +81,57 @@ class CacheHelper(object):
     # Ignore cache values even if cache is enabled
     ignore_cache_values = False
 
-    @staticmethod
-    def redis_client():
-        try:
-            return cache.cache._read_clients
-        except Exception:
-            return None
+    def __init__(self, cache) -> None:
+        self._cache = cache
 
-    @staticmethod
-    def size():
-        return len(cache.get_dict())
+    @property
+    def cache(self) -> RedisCache:
+        return self._cache.cache
 
-    @staticmethod
-    def to_dict():
-        return cache.get_dict()
+    @property
+    def backend(self) -> redis.Redis:
+        return self.cache._read_clients
 
-    @staticmethod
-    def lock(key: str):
-        return redis_lock.Lock(cache.cache._read_clients, key)
+    def size(self):
+        return len(self.cache.get_dict())
+
+    def to_dict(self):
+        return self.cache.get_dict()
+
+    def lock(self, key: str):
+        return redis_lock.Lock(self.backend, key)
 
     def set(self, key: str, value, timeout: int = Timeout.NONE):
         val = None
-        if not isinstance(cache.cache, NullCache):
+        if isinstance(self.cache, RedisCache):
             if key is not None and self.cache_enabled:
                 lock = self.lock(key)
                 if lock.acquire(blocking=True):
                     try:
-                        val = cache.get(key)
+                        val = self.cache.get(key)
                         if not val:
-                            cache.set(key, value, timeout=timeout)
+                            self.cache.set(key, value, timeout=timeout)
                     finally:
                         lock.release()
         return val
 
     def get(self, key: str):
-        return cache.get(key) \
-            if not isinstance(cache.cache, NullCache) \
+        return self.cache.get(key) \
+            if isinstance(self.cache, RedisCache) \
             and self.cache_enabled \
             and not self.ignore_cache_values \
             else None
 
-    @classmethod
-    def delete_keys(cls, pattern: str):
-        redis = cls.redis_client()
+    def delete_keys(self, pattern: str):
         logger.debug(f"Deleting keys by pattern: {pattern}")
-        for key in redis.scan_iter(f"{CACHE_PREFIX}{pattern}"):
-            logger.debug("Delete key: %r", key)
-            redis.delete(key)
+        if isinstance(self.cache, RedisCache):
+            for key in self.backend.scan_iter(f"{CACHE_PREFIX}{pattern}"):
+                logger.debug("Delete key: %r", key)
+                redis.delete(key)
 
 
 # global cache helper instance
-helper: CacheHelper = CacheHelper()
+helper: CacheHelper = CacheHelper(cache)
 
 
 def _make_key(func=None, *args, **kwargs) -> str:
@@ -199,3 +189,14 @@ def cached(timeout=Timeout.REQUEST, unless=False):
 
         return wrapper
     return decorator
+
+
+class CacheMixin(object):
+
+    _helper: CacheHelper = helper
+
+    @property
+    def cache(self) -> CacheHelper:
+        if self._helper is None:
+            self._helper = CacheHelper(cache)
+        return self._helper
