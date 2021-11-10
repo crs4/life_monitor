@@ -136,20 +136,24 @@ helper: CacheHelper = CacheHelper(cache)
 
 def _make_key(func=None, *args, **kwargs) -> str:
     from lifemonitor.auth import current_registry, current_user
-    logger.debug("Cache arguments: %r", args)
-    logger.debug("Caghe kwargs: %r", kwargs)
+    fname = "" if func is None \
+        else func if isinstance(func, str) \
+        else f"{func.__module__}.{func.__name__}" if callable(func) else str(func)
+    logger.debug("make_key func: %r", fname)
+    logger.debug("make_key args: %r", args)
+    logger.debug("make_key kwargs: %r", kwargs)
     result = ""
     if current_user and not current_user.is_anonymous:
         result += "{}-{}_".format(current_user.username, current_user.id)
     if current_registry:
         result += "{}_".format(current_registry.uuid)
     if func:
-        result += func if isinstance(func, str) else func.__name__ if callable(func) else str(func)
+        result += fname
     if args:
         result += "_" + "-".join([str(_) for _ in args])
     if kwargs:
         result += "_" + "-".join([f"{str(k)}={str(v)}" for k, v in kwargs.items()])
-    logger.debug("Calculated key: %r", result)
+    logger.debug("make_key calculated key: %r", result)
     return result
 
 
@@ -173,11 +177,7 @@ def cached(timeout=Timeout.REQUEST, unless=False):
 
         @functools.wraps(function)
         def wrapper(*args, **kwargs):
-            logger.debug("Function: %r", str(function.__name__))
-            logger.debug("Cache arguments: %r", args)
-            logger.debug("Caghe kwargs: %r", kwargs)
-            key = _make_key(function.__name__, *args, **kwargs)
-            logger.debug("Calculated key: %r", key)
+            key = _make_key(function, *args, **kwargs)
             result = helper.get(key)
             if result is None:
                 logger.debug(f"Getting value from the actual function for key {key}...")
