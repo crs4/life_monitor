@@ -27,10 +27,10 @@ import os
 import redis_lock
 from flask.app import Flask
 from flask_caching import Cache
-from flask_caching.backends.nullcache import NullCache
+from flask_caching.backends.rediscache import RedisCache
 
 # Set prefix
-CACHE_PREFIX = "flask_cache"
+CACHE_PREFIX = "lifemonitor-api-cache:"
 
 
 class Timeout:
@@ -61,6 +61,7 @@ def init_cache(app: Flask):
         app.config.setdefault('CACHE_REDIS_PORT', os.environ.get('REDIS_PORT_NUMBER', 6379))
         app.config.setdefault('CACHE_REDIS_PASSWORD', os.environ.get('REDIS_PASSWORD', ''))
         app.config.setdefault('CACHE_REDIS_DB', int(os.environ.get('CACHE_REDIS_DB', 0)))
+        app.config.setdefault("CACHE_KEY_PREFIX", CACHE_PREFIX)
         app.config.setdefault('CACHE_REDIS_URL', "redis://:{0}@{1}:{2}/{3}".format(
             app.config.get('CACHE_REDIS_PASSWORD'),
             app.config.get('CACHE_REDIS_HOST'),
