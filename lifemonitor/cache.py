@@ -71,7 +71,7 @@ class Timeout:
             try:
                 key = _get_timeout_key(t)
                 setattr(cls, key, _get_timeout(key, config=config))
-            except:
+            except Exception:
                 logger.debug("Error when updating timeout %r", t)
 
 
