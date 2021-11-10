@@ -26,6 +26,7 @@ from typing import List
 
 import lifemonitor.api.models as models
 from lifemonitor.api.models import db
+from lifemonitor.cache import Timeout
 from lifemonitor.models import JSON, UUID, ModelMixin
 
 from .testsuite import TestSuite
@@ -148,7 +149,7 @@ class TestInstance(db.Model, ModelMixin):
             build = self.testing_service.get_test_build(self, build_number)
             if build is not None:
                 if build.status not in [models.BuildStatus.RUNNING, models.BuildStatus.WAITING]:
-                    self.cache.set(key, build)
+                    self.cache.set(key, build, timeout=Timeout.DEFAULT)
         else:
             logger.debug(f"Reusing test build {build} from cache...")
         return build
