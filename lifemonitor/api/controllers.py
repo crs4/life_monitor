@@ -186,7 +186,7 @@ def registry_workflows_get(status=False):
 def registry_workflows_post(body):
     if not current_registry:
         return lm_exceptions.report_problem(401, "Unauthorized", detail=messages.no_registry_found)
-    clear_cache(registry_workflows_get)
+    clear_cache()
     return workflows_post(body)
 
 
@@ -210,7 +210,7 @@ def registry_user_workflows_get(user_id, status=False):
 def registry_user_workflows_post(user_id, body):
     if not current_registry:
         return lm_exceptions.report_problem(401, "Unauthorized", detail=messages.no_registry_found)
-    clear_cache(registry_user_workflows_get, user_id)
+    clear_cache()
     return workflows_post(body, _submitter_id=user_id)
 
 
@@ -230,7 +230,7 @@ def user_workflows_get(status=False, subscriptions=False):
 def user_workflows_post(body):
     if not current_user or current_user.is_anonymous:
         return lm_exceptions.report_problem(401, "Unauthorized", detail=messages.no_user_in_session)
-    clear_cache(user_workflows_get)
+    clear_cache()
     return workflows_post(body)
 
 
@@ -241,8 +241,7 @@ def user_workflow_subscribe(wf_uuid):
         return response
     subscription = lm.subscribe_user_resource(current_user, response.workflow)
     logger.debug("Created new subscription: %r", subscription)
-    clear_cache(user_workflows_get)
-    clear_cache(workflows_get_latest_version_by_id)
+    clear_cache()
     return auth_serializers.SubscriptionSchema(exclude=('meta', 'links')).dump(subscription), 201
 
 
@@ -253,8 +252,7 @@ def user_workflow_unsubscribe(wf_uuid):
         return response
     subscription = lm.unsubscribe_user_resource(current_user, response.workflow)
     logger.debug("Delete subscription: %r", subscription)
-    clear_cache(user_workflows_get)
-    clear_cache(workflows_get_latest_version_by_id)
+    clear_cache()
     return connexion.NoContent, 204
 
 
@@ -280,7 +278,7 @@ def user_registry_workflows_post(registry_uuid, body):
         return lm_exceptions.report_problem(401, "Unauthorized", detail=messages.no_user_in_session)
     try:
         registry = lm.get_workflow_registry_by_uuid(registry_uuid)
-        clear_cache(user_registry_workflows_get, registry_uuid)
+        clear_cache()
         return workflows_post(body, _registry=registry)
     except lm_exceptions.EntityNotFoundException:
         return lm_exceptions.report_problem(404, "Not Found",
@@ -342,7 +340,7 @@ def workflows_post(body, _registry=None, _submitter_id=None):
             public=body.get('public', False)
         )
         logger.debug("workflows_post. Created workflow '%s' (ver.%s)", w.uuid, w.version)
-        clear_cache(workflows_get)
+        clear_cache()
         return {'uuid': str(w.workflow.uuid), 'wf_version': w.version, 'name': w.name}, 201
     except KeyError as e:
         return lm_exceptions.report_problem(400, "Bad Request", extra_info={"exception": str(e)},
@@ -379,12 +377,7 @@ def workflows_put(wf_uuid, body):
     wv.workflow.name = body.get('name', wv.workflow.name)
     wv.workflow.public = body.get('public', wv.workflow.public)
     wv.workflow.save()
-    clear_cache(workflows_get)
-    clear_cache(workflows_get_by_id)
-    clear_cache(workflows_get_latest_version_by_id)
-    clear_cache(workflows_get_versions_by_id)
-    clear_cache(workflows_get_status)
-    clear_cache(registry_workflows_get)
+    clear_cache()
     return connexion.NoContent, 204
 
 
@@ -397,12 +390,7 @@ def workflows_version_put(wf_uuid, wf_version, body):
     wv.name = body.get('name', wv.name)
     wv.version = body.get('version', wv.version)
     wv.save()
-    clear_cache(workflows_get)
-    clear_cache(workflows_get_by_id)
-    clear_cache(workflows_get_latest_version_by_id)
-    clear_cache(workflows_get_versions_by_id)
-    clear_cache(workflows_get_status)
-    clear_cache(registry_workflows_get)
+    clear_cache()
     return connexion.NoContent, 204
 
 
@@ -416,7 +404,7 @@ def workflows_delete(wf_uuid, wf_version):
         else:
             return lm_exceptions.report_problem(403, "Forbidden",
                                                 detail=messages.no_user_in_session)
-        clear_cache(workflows_get)
+        clear_cache()
         return connexion.NoContent, 204
     except OAuthIdentityNotFoundException as e:
         return lm_exceptions.report_problem(401, "Unauthorized", extra_info={"exception": str(e)})
@@ -536,7 +524,7 @@ def suites_post_instance(suite_uuid):
                                                   data['service']['type'],
                                                   data['service']['url'],
                                                   data['resource'])
-        clear_cache(suites_get_instances, suite_uuid)
+        clear_cache()
         return {'uuid': str(test_instance.uuid)}, 201
     except KeyError as e:
         return lm_exceptions.report_problem(400, "Bad Request", extra_info={"exception": str(e)},
@@ -586,7 +574,7 @@ def instances_delete_by_id(instance_uuid):
         if isinstance(response, Response):
             return response
         lm.deregister_test_instance(response)
-        clear_cache(suites_get_instances, instance_uuid)
+        clear_cache()
         return connexion.NoContent, 204
     except OAuthIdentityNotFoundException as e:
         return lm_exceptions.report_problem(401, "Unauthorized", extra_info={"exception": str(e)})

@@ -125,9 +125,11 @@ class CacheHelper(object):
     def delete_keys(self, pattern: str):
         logger.debug(f"Deleting keys by pattern: {pattern}")
         if isinstance(self.cache, RedisCache):
+            logger.debug("Redis backend detected!")
+            logger.debug(f"Pattern: {CACHE_PREFIX}{pattern}")
             for key in self.backend.scan_iter(f"{CACHE_PREFIX}{pattern}"):
                 logger.debug("Delete key: %r", key)
-                redis.delete(key)
+                self.backend.delete(key)
 
 
 # global cache helper instance
@@ -147,6 +149,8 @@ def _make_key(func=None, *args, **kwargs) -> str:
         result += "{}-{}_".format(current_user.username, current_user.id)
     if current_registry:
         result += "{}_".format(current_registry.uuid)
+    if not current_registry and current_user.is_anonymous:
+        result += "anonymous_"
     if func:
         result += fname
     if args:
