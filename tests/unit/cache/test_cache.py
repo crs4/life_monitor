@@ -23,14 +23,14 @@ from unittest.mock import MagicMock
 
 import lifemonitor.api.models as models
 from tests import utils
-from lifemonitor.cache import CacheHelper
+from lifemonitor.cache import helper
 
 logger = logging.getLogger(__name__)
 
 
 def test_cache_last_build(app_client, redis_cache, user1):
     valid_workflow = 'sort-and-change-case'
-    assert CacheHelper.size() == 0, "Cache should be empty"
+    assert helper.size() == 0, "Cache should be empty"
     _, workflow = utils.pick_and_register_workflow(user1, valid_workflow)
     assert workflow, "Workflow should be set"
     assert len(workflow.test_suites) > 0, "The workflow should have at least one suite"
@@ -57,7 +57,7 @@ def test_cache_last_build(app_client, redis_cache, user1):
 
 def test_cache_test_builds(app_client, redis_cache, user1):
     valid_workflow = 'sort-and-change-case'
-    assert CacheHelper.size() == 0, "Cache should be empty"
+    assert helper.size() == 0, "Cache should be empty"
     _, workflow = utils.pick_and_register_workflow(user1, valid_workflow)
     assert workflow, "Workflow should be set"
     assert len(workflow.test_suites) > 0, "The workflow should have at least one suite"
