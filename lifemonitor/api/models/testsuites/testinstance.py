@@ -149,7 +149,7 @@ class TestInstance(db.Model, ModelMixin):
             build = self.testing_service.get_test_build(self, build_number)
             if build is not None:
                 if build.status not in [models.BuildStatus.RUNNING, models.BuildStatus.WAITING]:
-                    self.cache.set(key, build, timeout=Timeout.DEFAULT)
+                    self.cache.set(key, build, timeout=Timeout.BUILD)
         else:
             logger.debug(f"Reusing test build {build} from cache...")
         return build
