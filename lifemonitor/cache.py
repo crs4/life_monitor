@@ -34,20 +34,45 @@ from flask_caching.backends.rediscache import RedisCache
 CACHE_PREFIX = "lifemonitor-api-cache:"
 
 
-class Timeout:
-    # Set default timeouts
-    NONE = 0
-    DEFAULT = os.environ.get('CACHE_DEFAULT_TIMEOUT', 60)
-    REQUEST = os.environ.get('CACHE_REQUEST_TIMEOUT', 300)
-    SESSION = os.environ.get('CACHE_SESSION_TIMEOUT', 600)
-    BUILDS = os.environ.get('CACHE_SESSION_TIMEOUT', 84600)
-
-
 # Set module logger
 logger = logging.getLogger(__name__)
 
 # Instantiate cache manager
 cache = Cache()
+
+
+def _get_timeout(name: str, default: int = 0, config=None) -> int:
+    result = None
+    if config is not None:
+        try:
+            result = config.get(name)
+        except Exception as e:
+            logger.debug(e)
+    result = result or os.environ.get(name, default)
+    logger.debug("Getting timeout %r: %r", name, result)
+    return result
+
+
+def _get_timeout_key(n: str) -> str:
+    return f"CACHE_{n}_TIMEOUT"
+
+
+class Timeout:
+    # Set default timeouts
+    NONE = 0
+    DEFAULT = _get_timeout(_get_timeout_key('DEFAULT'), default=300)
+    REQUEST = _get_timeout(_get_timeout_key('REQUEST'), default=30)
+    SESSION = _get_timeout(_get_timeout_key('SESSION'), default=3600)
+    BUILD = _get_timeout(_get_timeout_key('BUILD'), default=300)
+
+    @classmethod
+    def update(cls, config):
+        for t in ('DEFAULT', 'REQUEST', 'SESSION', 'BUILD'):
+            try:
+                key = _get_timeout_key(t)
+                setattr(cls, key, _get_timeout(key, config=config))
+            except:
+                logger.debug("Error when updating timeout %r", t)
 
 
 def init_cache(app: Flask):
@@ -71,6 +96,7 @@ def init_cache(app: Flask):
         ))
         logger.debug("RedisCache connection url: %s", app.config.get('CACHE_REDIS_URL'))
     cache.init_app(app)
+    Timeout.update(app.config)
     logger.debug(f"Cache initialised (type: {cache_type})")
 
 
