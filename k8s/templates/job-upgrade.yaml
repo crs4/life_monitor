@@ -1,0 +1,41 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "chart.fullname" . }}-upgrade
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+  annotations:
+    # This is what defines this resource as a hook. Without this line, the
+    # job is considered part of the release.
+    "helm.sh/hook": post-upgrade
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": hook-succeeded
+spec:
+  template:    
+    spec:
+      containers:
+      - name: lifemonitor-upgrade
+        image: "{{ .Values.lifemonitor.image }}"
+        imagePullPolicy: {{ .Values.lifemonitor.imagePullPolicy }}
+        command: ["/bin/sh","-c"]
+        args: ["wait-for-postgres.sh && flask init db"]
+        env:
+{{ include "lifemonitor.common-env" . | indent 10 }}
+        volumeMounts:
+{{ include "lifemonitor.common-volume-mounts" . | indent 10 }}
+      restartPolicy: Never
+      volumes:
+{{ include "lifemonitor.common-volume" . | indent 8 }}
+       {{- with .Values.lifemonitor.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.lifemonitor.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.lifemonitor.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+  backoffLimit: 4
