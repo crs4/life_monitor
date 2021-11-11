@@ -13,6 +13,7 @@ spec:
         imagePullPolicy: {{ .Values.lifemonitor.imagePullPolicy }}
         command: ["/bin/sh","-c"]
         args: ["wait-for-postgres.sh && flask init db"]
+#        args: ["wait-for-postgres.sh && sleep infinity"]
         env:
 {{ include "lifemonitor.common-env" . | indent 10 }}
         volumeMounts:
