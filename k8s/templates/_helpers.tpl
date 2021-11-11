@@ -80,7 +80,7 @@ Define environment variables shared by some pods.
 - name: REDIS_HOST
   value: "{{ .Release.Name }}-redis-master"
 - name: WORKER_PROCESSES
-  value: "{{ .Values.lifemonitor.worker_processes }}"
+  value: "{{ .Values.worker.processes }}"
 - name: LIFEMONITOR_TLS_KEY
   value: "/lm/certs/tls.key"
 - name: LIFEMONITOR_TLS_CERT
