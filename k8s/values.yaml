@@ -59,6 +59,14 @@ testing_services:
   #   token: <YOUR_TRAVIS_TOKEN_>
   #   type: travis
 
+cache:
+  db: 0
+  timeout:
+    default: 30
+    request: 15
+    session: 3600
+    build: 84600
+
 lifemonitor:
   replicaCount: 1
 
