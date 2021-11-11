@@ -33,7 +33,7 @@ spec:
           imagePullPolicy: IfNotPresent
           args: ["job", "{{ include "chart.fullname" . }}-init"]
       containers:
-        - name: app
+        - name: worker
           securityContext:
             {{- toYaml .Values.lifemonitor.securityContext | nindent 12 }}
           image: {{ .Values.lifemonitor.image }}
