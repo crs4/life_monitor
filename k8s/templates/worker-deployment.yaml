@@ -42,9 +42,9 @@ spec:
           command: ["/bin/sh","-c"]
           args: ["/usr/local/bin/worker_entrypoint.sh"]
           env:
-{{ include "lifemonitor.common-env" . | indent 12 }}
+          {{- include "lifemonitor.common-env" . | nindent 12 }}
           volumeMounts:
-{{ include "lifemonitor.common-volume-mounts" . | indent 12 }}
+          {{- include "lifemonitor.common-volume-mounts" . | nindent 12 }}
           # livenessProbe:
           #   httpGet:
           #     scheme: HTTPS
@@ -60,7 +60,7 @@ spec:
           resources:
             {{- toYaml .Values.worker.resources | nindent 12 }}
       volumes:
-{{ include "lifemonitor.common-volume" . | indent 12 }}        
+      {{- include "lifemonitor.common-volume" . | nindent 8 }}
       {{- with .Values.worker.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

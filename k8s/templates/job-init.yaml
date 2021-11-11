@@ -14,12 +14,12 @@ spec:
         command: ["/bin/sh","-c"]
         args: ["wait-for-postgres.sh && flask init db"]
         env:
-{{ include "lifemonitor.common-env" . | indent 10 }}
+        {{- include "lifemonitor.common-env" . | nindent 10 }}
         volumeMounts:
-{{ include "lifemonitor.common-volume-mounts" . | indent 10 }}
-      restartPolicy: Never
+        {{- include "lifemonitor.common-volume-mounts" . | nindent 10 }}
+      restartPolicy: OnFailure
       volumes:
-{{ include "lifemonitor.common-volume" . | indent 8 }}
+        {{- include "lifemonitor.common-volume" . | nindent 8 }}
        {{- with .Values.lifemonitor.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -30,6 +30,6 @@ spec:
       {{- end }}
       {{- with .Values.lifemonitor.tolerations }}
       tolerations:
-        {{- toYaml . | nindent 8 }}
+        {{- toYaml . | nindent 8 }}        
       {{- end }}
   backoffLimit: 4
