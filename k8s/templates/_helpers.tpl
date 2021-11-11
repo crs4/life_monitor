@@ -49,6 +49,19 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
+
+Define lifemonitor image
+*/}}
+{{- define "chart.lifemonitor.image" -}}
+{{- if .Values.lifemonitor.image }}
+{{- printf "%s" .Values.lifemonitor.image }}
+{{- else }}
+{{- printf "crs4/lifemonitor:%s" .Chart.AppVersion }}
+{{- end }}
+{{- end }}
+
+
+{{/*
 Create the name of the service account to use
 */}}
 {{- define "chart.serviceAccountName" -}}

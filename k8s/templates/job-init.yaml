@@ -9,11 +9,10 @@ spec:
     spec:
       containers:
       - name: lifemonitor-init
-        image: "{{ .Values.lifemonitor.image }}"
+        image: {{ include "chart.lifemonitor.image" . }}
         imagePullPolicy: {{ .Values.lifemonitor.imagePullPolicy }}
         command: ["/bin/sh","-c"]
         args: ["wait-for-postgres.sh && flask init db"]
-#        args: ["wait-for-postgres.sh && sleep infinity"]
         env:
 {{ include "lifemonitor.common-env" . | indent 10 }}
         volumeMounts:
