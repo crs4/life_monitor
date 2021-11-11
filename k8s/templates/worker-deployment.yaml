@@ -13,8 +13,9 @@ spec:
       {{- include "chart.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.worker.podAnnotations }}
       annotations:
+        checksum/settings: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+      {{- with .Values.worker.podAnnotations }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
