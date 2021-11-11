@@ -70,7 +70,7 @@ cache:
 lifemonitor:
   replicaCount: 1
 
-  image: &lifemonitorImage crs4/lifemonitor:master
+  image: &lifemonitorImage crs4/lifemonitor:0.4.0
   imagePullPolicy: &lifemonitorImagePullPolicy Always
   imagePullSecrets: []
 
