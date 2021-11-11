@@ -4,6 +4,7 @@ metadata:
   name: {{ include "chart.fullname" . }}-backend
   labels:
     {{- include "chart.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
 spec:
   {{- if not .Values.lifemonitor.autoscaling.enabled }}
   replicas: {{ .Values.lifemonitor.replicaCount }}
@@ -11,6 +12,7 @@ spec:
   selector:
     matchLabels:
       {{- include "chart.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: backend
   template:
     metadata:
       {{- with .Values.lifemonitor.podAnnotations }}
@@ -19,6 +21,7 @@ spec:
       {{- end }}
       labels:
         {{- include "chart.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: backend
     spec:
       {{- with .Values.lifemonitor.imagePullSecrets }}
       imagePullSecrets:
