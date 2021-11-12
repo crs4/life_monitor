@@ -38,7 +38,7 @@ def test_cache_last_build(app_client, redis_cache, user1):
     assert len(suite.test_instances) > 0, "The suite should have at least one test instance"
     instance: models.TestInstance = suite.test_instances[0]
 
-    last_build_key = make_cache_key(instance.get_last_test_build)
+    last_build_key = make_cache_key(instance.get_last_test_build, client_scope=False, args=(instance,))
     assert instance.cache.get(last_build_key) is None, "Cache should be empty"
     build = instance.last_test_build
     assert build, "Last build should not be empty"
@@ -65,7 +65,7 @@ def test_cache_test_builds(app_client, redis_cache, user1):
     instance: models.TestInstance = suite.test_instances[0]
 
     limit = 10
-    cache_key = make_cache_key(instance.get_test_builds, limit=limit)
+    cache_key = make_cache_key(instance.get_test_builds, client_scope=False, args=(instance,), kwargs={"limit": limit})
     assert instance.cache.get(cache_key) is None, "Cache should be empty"
     builds = instance.get_test_builds(limit=limit)
     assert builds and len(builds) > 0, "Invalid number of builds"
@@ -81,5 +81,5 @@ def test_cache_test_builds(app_client, redis_cache, user1):
     assert len(builds) == len(cached_builds), "Unexpected number of cached builds"
 
     limit = 20
-    cache_key = instance._get_cache_key_test_builds(limit=limit)
+    cache_key = make_cache_key(instance.get_test_builds, client_scope=False, args=(instance,), kwargs={"limit": limit})
     assert instance.cache.get(cache_key) is None, "Cache should be empty"
