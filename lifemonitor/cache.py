@@ -161,34 +161,34 @@ helper: CacheHelper = CacheHelper(cache)
 def make_cache_key(func=None, client_scope=True, *args, **kwargs) -> str:
     from flask import request
     from lifemonitor.auth import current_registry, current_user
-    hash_enabled = True
+    hash_enabled = not logger.isEnabledFor(logging.DEBUG)
     fname = "" if func is None \
         else func if isinstance(func, str) \
         else f"{func.__module__}.{func.__name__}" if callable(func) else str(func)
     logger.debug("make_key func: %r", fname)
     logger.debug("make_key args: %r", args)
     logger.debug("make_key kwargs: %r", kwargs)
+    logger.debug("make_key hash enabled: %r", hash_enabled)
     result = ""
     if client_scope:
-        client_id = ""
-        if request:
-            client_id += f"{request.remote_addr}"
+        client_id = ""        
         if current_user and not current_user.is_anonymous:
             client_id += "{}-{}_".format(current_user.username, current_user.id)
         if current_registry:
             client_id += "{}_".format(current_registry.uuid)
         if not current_registry and current_user.is_anonymous:
-            client_id += "anonymous_"
-        result += f"{hash(client_id) if hash_enabled else client_id}@"
+            client_id += "anonymous"
+        if request:
+            client_id += f"@{request.remote_addr}"
+        result += f"{hash(client_id) if hash_enabled else client_id}::"
     if func:
         result += fname
-    hash_enabled = False
     if args:
         args_str = "-".join([str(_) for _ in args])
-        result += f"_{hash(args_str) if hash_enabled else args_str}"
+        result += f"#{hash(args_str) if hash_enabled else args_str}"
     if kwargs:
         kwargs_str = "-".join([f"{k}={str(v)}" for k, v in kwargs.items()])
-        result += f"_{hash(kwargs_str) if hash_enabled else kwargs_str}"
+        result += f"#{hash(kwargs_str) if hash_enabled else kwargs_str}"
     logger.debug("make_key calculated key: %r", result)
     return result
 
