@@ -22,8 +22,8 @@ import logging
 from unittest.mock import MagicMock
 
 import lifemonitor.api.models as models
+from lifemonitor.cache import helper, make_cache_key
 from tests import utils
-from lifemonitor.cache import helper
 
 logger = logging.getLogger(__name__)
 
@@ -38,12 +38,11 @@ def test_cache_last_build(app_client, redis_cache, user1):
     assert len(suite.test_instances) > 0, "The suite should have at least one test instance"
     instance: models.TestInstance = suite.test_instances[0]
 
-    assert instance._cache_key_prefix == str(instance), "Invalid cache key prefix"
-
-    assert instance.cache.get(instance._get_cache_key_last_build()) is None, "Cache should be empty"
+    last_build_key = make_cache_key(instance.get_last_test_build)
+    assert instance.cache.get(last_build_key) is None, "Cache should be empty"
     build = instance.last_test_build
     assert build, "Last build should not be empty"
-    cached_build = instance.cache.get(instance._get_cache_key_last_build())
+    cached_build = instance.cache.get(last_build_key)
     assert cached_build is not None, "Cache should not be empty"
     assert build == cached_build, "Build should be equal to the cached build"
 
@@ -66,7 +65,7 @@ def test_cache_test_builds(app_client, redis_cache, user1):
     instance: models.TestInstance = suite.test_instances[0]
 
     limit = 10
-    cache_key = instance._get_cache_key_test_builds(limit=limit)
+    cache_key = make_cache_key(instance.get_test_builds, limit=limit)
     assert instance.cache.get(cache_key) is None, "Cache should be empty"
     builds = instance.get_test_builds(limit=limit)
     assert builds and len(builds) > 0, "Invalid number of builds"
