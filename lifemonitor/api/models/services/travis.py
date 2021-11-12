@@ -136,7 +136,7 @@ class TravisTestingService(TestingService):
 
     @cached(timeout=Timeout.NONE, client_scope=False)
     def get_project_metadata(self, test_instance: models.TestInstance):
-        try:            
+        try:
             logger.debug("Getting Travis project metadata...")
             return self._get("/repo/{}".format(self.get_repo_id(test_instance)))
             # key = f"project_metadata_{test_instance.uuid}"
