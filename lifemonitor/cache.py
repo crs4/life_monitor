@@ -200,10 +200,10 @@ def clear_cache(func=None, client_scope=True, *args, **kwargs):
             key = make_cache_key(func, client_scope)
             helper.delete_keys(f"{key}*")
             if args or kwargs:
-                key = make_cache_key(func, client_scope, args=args, kwargs=kwargs)
+                key = make_cache_key(func, client_scope=client_scope, args=args, kwargs=kwargs)
                 helper.delete_keys(f"{key}*")
         else:
-            key = make_cache_key(client_scope)
+            key = make_cache_key(client_scope=client_scope)
             helper.delete_keys(f"{key}*")
     except Exception as e:
         logger.error("Error deleting cache: %r", e)
