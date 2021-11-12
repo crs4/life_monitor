@@ -139,16 +139,6 @@ class TravisTestingService(TestingService):
         try:
             logger.debug("Getting Travis project metadata...")
             return self._get("/repo/{}".format(self.get_repo_id(test_instance)))
-            # key = f"project_metadata_{test_instance.uuid}"
-            # metadata = self.cache.get(key)
-            # if metadata is None:
-            #     logger.debug("Getting project metadata from remote service...")
-            #     metadata = self._get("/repo/{}".format(self.get_repo_id(test_instance)))
-            #     if metadata is not None:
-            #         self.cache.set(key, metadata)
-            # else:
-            #     logger.debug("Reusing travis project metadata from cache...")
-            # return metadata
         except Exception as e:
             raise TestingServiceException(f"{self}: {e}")
 

@@ -26,6 +26,7 @@ import os
 
 import redis
 import redis_lock
+from flask import request
 from flask.app import Flask
 from flask_caching import Cache
 from flask_caching.backends.rediscache import RedisCache
@@ -159,8 +160,8 @@ helper: CacheHelper = CacheHelper(cache)
 
 
 def make_cache_key(func=None, client_scope=True, *args, **kwargs) -> str:
-    from flask import request
     from lifemonitor.auth import current_registry, current_user
+
     hash_enabled = not logger.isEnabledFor(logging.DEBUG)
     fname = "" if func is None \
         else func if isinstance(func, str) \
@@ -171,7 +172,7 @@ def make_cache_key(func=None, client_scope=True, *args, **kwargs) -> str:
     logger.debug("make_key hash enabled: %r", hash_enabled)
     result = ""
     if client_scope:
-        client_id = ""        
+        client_id = ""
         if current_user and not current_user.is_anonymous:
             client_id += "{}-{}_".format(current_user.username, current_user.id)
         if current_registry:
