@@ -226,19 +226,20 @@ def cached(timeout=Timeout.REQUEST, client_scope=True, unless=None):
                     logger.debug(f"Value {key} not set in cache...")
                     if hc.backend:
                         lock = hc.lock(key)
-                        try:
-                            if lock.acquire(blocking=True):
-                                val = hc.get(key)
-                                if not val:
-                                    logger.debug("Cache empty: getting value from the actual function...")
-                                    result = function(*args, **kwargs)
-                                    logger.debug("Checking unless function: %r", unless)
-                                    if unless is None or unless is True or callable(unless) and not unless(result):
-                                        hc.set(key, result, timeout=timeout)
-                                    else:
-                                        logger.debug("Don't set value in cache due to unless=%r", "None" if unless is None else "True")
-                        finally:
-                            lock.release()
+                        if lock:
+                            try:
+                                if lock.acquire(blocking=True):
+                                    val = hc.get(key)
+                                    if not val:
+                                        logger.debug("Cache empty: getting value from the actual function...")
+                                        result = function(*args, **kwargs)
+                                        logger.debug("Checking unless function: %r", unless)
+                                        if unless is None or unless is True or callable(unless) and not unless(result):
+                                            hc.set(key, result, timeout=timeout)
+                                        else:
+                                            logger.debug("Don't set value in cache due to unless=%r", "None" if unless is None else "True")
+                            finally:
+                                lock.release()
                     else:
                         logger.warning("Using unsupported cache backend: cache will not be used")
                         result = function(*args, **kwargs)
