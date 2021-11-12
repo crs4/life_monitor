@@ -94,7 +94,7 @@ class TestInstance(db.Model, ModelMixin):
     def external_link(self):
         return self.get_external_link()
 
-    @cached(timeout=Timeout.NONE, client_scope=False)
+    @cached(timeout=Timeout.BUILD, client_scope=False)
     def get_external_link(self):
         return self.testing_service.get_instance_external_link(self)
 

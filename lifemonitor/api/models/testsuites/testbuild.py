@@ -114,7 +114,7 @@ class TestBuild(ABC, CacheMixin):
     def external_link(self) -> str:
         return self.get_external_link()
 
-    @cached(timeout=Timeout.NONE, client_scope=False)
+    @cached(timeout=Timeout.BUILD, client_scope=False)
     def get_external_link(self):
         return self.testing_service.get_test_build_external_link(self)
 
