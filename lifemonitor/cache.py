@@ -177,7 +177,7 @@ def make_cache_key(func=None, client_scope=True, args=None, kwargs=None) -> str:
             client_id += "{}-{}_".format(current_user.username, current_user.id)
         if current_registry:
             client_id += "{}_".format(current_registry.uuid)
-        if not current_registry and current_user.is_anonymous:
+        if not current_registry and (not current_user or current_user.is_anonymous):
             client_id += "anonymous"
         if request:
             client_id += f"@{request.remote_addr}"
