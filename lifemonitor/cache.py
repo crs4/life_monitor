@@ -116,7 +116,10 @@ class CacheHelper(object):
 
     @property
     def backend(self) -> redis.Redis:
-        return self.cache._read_clients
+        if isinstance(self.cache, RedisCache):
+            return self.cache._read_clients
+        logger.warning("No cache backend found")
+        return None
 
     def size(self):
         return len(self.cache.get_dict())
@@ -126,7 +129,7 @@ class CacheHelper(object):
 
     def lock(self, key: str):
         logger.debug("Getting lock for key %r...", key)
-        return redis_lock.Lock(self.backend, key)
+        return redis_lock.Lock(self.backend, key) if self.backend else False
 
     def set(self, key: str, value, timeout: int = Timeout.NONE):
         if key is not None and self.cache_enabled and isinstance(self.cache, RedisCache):
@@ -215,25 +218,29 @@ def cached(timeout=Timeout.REQUEST, client_scope=True, unless=None):
             obj: CacheMixin = args[0] if len(args) > 0 and isinstance(args[0], CacheMixin) else None
             logger.debug("Wrapping a method of a CacheMixin instance: %r", obj is not None)
             hc = helper if obj is None else obj.cache
-            key = make_cache_key(function, client_scope, *args, **kwargs)
-            result = hc.get(key)
             if hc.cache_enabled:
+                key = make_cache_key(function, client_scope, *args, **kwargs)
+                result = hc.get(key)
                 if result is None:
                     logger.debug(f"Value {key} not set in cache...")
-                    lock = hc.lock(key)
-                    try:
-                        if lock.acquire(blocking=True):
-                            val = hc.get(key)
-                            if not val:
-                                logger.debug("Cache empty: getting value from the actual function...")
-                                result = function(*args, **kwargs)
-                                logger.debug("Checking unless function: %r", unless)
-                                if unless is None or unless is True or callable(unless) and not unless(result):
-                                    hc.set(key, result, timeout=timeout)
-                                else:
-                                    logger.debug("Don't set value in cache due to unless=True")
-                    finally:
-                        lock.release()
+                    if hc.backend:
+                        lock = hc.lock(key)
+                        try:
+                            if lock.acquire(blocking=True):
+                                val = hc.get(key)
+                                if not val:
+                                    logger.debug("Cache empty: getting value from the actual function...")
+                                    result = function(*args, **kwargs)
+                                    logger.debug("Checking unless function: %r", unless)
+                                    if unless is None or unless is True or callable(unless) and not unless(result):
+                                        hc.set(key, result, timeout=timeout)
+                                    else:
+                                        logger.debug("Don't set value in cache due to unless=%r", "None" if unless is None else "True")
+                        finally:
+                            lock.release()
+                    else:
+                        logger.warning("Using unsupported cache backend: cache will not be used")
+                        result = function(*args, **kwargs)
                 else:
                     logger.debug(f"Reusing value from cache key '{key}'...")
             else:
