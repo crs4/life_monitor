@@ -29,6 +29,7 @@ from typing import Optional
 import lifemonitor.api.models as models
 import requests
 from lifemonitor.api.models.services.service import TestingService
+from lifemonitor.cache import Timeout, cached
 from lifemonitor.exceptions import (EntityNotFoundException,
                                     TestingServiceException)
 
@@ -133,19 +134,21 @@ class TravisTestingService(TestingService):
     def get_last_failed_test_build(self, test_instance: models.TestInstance) -> Optional[models.TravisTestBuild]:
         return self._get_last_test_build(test_instance, state='failed')
 
+    @cached(timeout=Timeout.NONE, client_scope=False)
     def get_project_metadata(self, test_instance: models.TestInstance):
-        try:
+        try:            
             logger.debug("Getting Travis project metadata...")
-            key = f"project_metadata_{test_instance.uuid}"
-            metadata = self.cache.get(key)
-            if metadata is None:
-                logger.debug("Getting project metadata from remote service...")
-                metadata = self._get("/repo/{}".format(self.get_repo_id(test_instance)))
-                if metadata is not None:
-                    self.cache.set(key, metadata)
-            else:
-                logger.debug("Reusing travis project metadata from cache...")
-            return metadata
+            return self._get("/repo/{}".format(self.get_repo_id(test_instance)))
+            # key = f"project_metadata_{test_instance.uuid}"
+            # metadata = self.cache.get(key)
+            # if metadata is None:
+            #     logger.debug("Getting project metadata from remote service...")
+            #     metadata = self._get("/repo/{}".format(self.get_repo_id(test_instance)))
+            #     if metadata is not None:
+            #         self.cache.set(key, metadata)
+            # else:
+            #     logger.debug("Reusing travis project metadata from cache...")
+            # return metadata
         except Exception as e:
             raise TestingServiceException(f"{self}: {e}")
 

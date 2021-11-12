@@ -125,23 +125,16 @@ class CacheHelper(object):
         return self.cache.get_dict()
 
     def lock(self, key: str):
+        logger.debug("Getting lock for key %r...", key)
         return redis_lock.Lock(self.backend, key)
 
     def set(self, key: str, value, timeout: int = Timeout.NONE):
-        val = None
-        if isinstance(self.cache, RedisCache):
-            if key is not None and self.cache_enabled:
-                lock = self.lock(key)
-                if lock.acquire(blocking=True):
-                    try:
-                        val = self.cache.get(key)
-                        if not val:
-                            self.cache.set(key, value, timeout=timeout)
-                    finally:
-                        lock.release()
-        return val
+        if key is not None and self.cache_enabled and isinstance(self.cache, RedisCache):
+            logger.debug("Setting cache value for key %r.... ", key)
+            self.cache.set(key, value, timeout=timeout)
 
     def get(self, key: str):
+        logger.debug("Getting value from cache...")
         return self.cache.get(key) \
             if isinstance(self.cache, RedisCache) \
             and self.cache_enabled \
@@ -162,8 +155,10 @@ class CacheHelper(object):
 helper: CacheHelper = CacheHelper(cache)
 
 
-def _make_key(func=None, client_scope=True, *args, **kwargs) -> str:
+def make_cache_key(func=None, client_scope=True, *args, **kwargs) -> str:
+    from flask import request
     from lifemonitor.auth import current_registry, current_user
+    hash_enabled = True
     fname = "" if func is None \
         else func if isinstance(func, str) \
         else f"{func.__module__}.{func.__name__}" if callable(func) else str(func)
@@ -172,18 +167,25 @@ def _make_key(func=None, client_scope=True, *args, **kwargs) -> str:
     logger.debug("make_key kwargs: %r", kwargs)
     result = ""
     if client_scope:
+        client_id = ""
+        if request:
+            client_id += f"{request.remote_addr}"
         if current_user and not current_user.is_anonymous:
-            result += "{}-{}_".format(current_user.username, current_user.id)
+            client_id += "{}-{}_".format(current_user.username, current_user.id)
         if current_registry:
-            result += "{}_".format(current_registry.uuid)
+            client_id += "{}_".format(current_registry.uuid)
         if not current_registry and current_user.is_anonymous:
-            result += "anonymous_"
+            client_id += "anonymous_"
+        result += f"{hash(client_id) if hash_enabled else client_id}@"
     if func:
         result += fname
+    hash_enabled = False
     if args:
-        result += "_" + "-".join([str(_) for _ in args])
+        args_str = "-".join([str(_) for _ in args])
+        result += f"_{hash(args_str) if hash_enabled else args_str}"
     if kwargs:
-        result += "_" + "-".join([f"{str(k)}={str(v)}" for k, v in kwargs.items()])
+        kwargs_str = "-".join([f"{k}={str(v)}" for k, v in kwargs.items()])
+        result += f"_{hash(kwargs_str) if hash_enabled else kwargs_str}"
     logger.debug("make_key calculated key: %r", result)
     return result
 
@@ -191,31 +193,52 @@ def _make_key(func=None, client_scope=True, *args, **kwargs) -> str:
 def clear_cache(func=None, client_scope=True, *args, **kwargs):
     try:
         if func:
-            key = _make_key(func, client_scope)
+            key = make_cache_key(func, client_scope)
             helper.delete_keys(f"{key}*")
             if args or kwargs:
-                key = _make_key(func, client_scope, *args, **kwargs)
+                key = make_cache_key(func, client_scope, *args, **kwargs)
                 helper.delete_keys(f"{key}*")
         else:
-            key = _make_key(client_scope)
+            key = make_cache_key(client_scope)
             helper.delete_keys(f"{key}*")
     except Exception as e:
         logger.error("Error deleting cache: %r", e)
 
 
-def cached(timeout=Timeout.REQUEST, client_scope=True):
+def cached(timeout=Timeout.REQUEST, client_scope=True, unless=None):
     def decorator(function):
 
         @functools.wraps(function)
         def wrapper(*args, **kwargs):
-            key = _make_key(function, client_scope, *args, **kwargs)
-            result = helper.get(key)
-            if result is None:
-                logger.debug(f"Getting value from the actual function for key {key}...")
-                result = function(*args, **kwargs)
-                helper.set(key, result, timeout=timeout)
+            logger.debug("Args: %r", args)
+            logger.debug("KwArgs: %r", kwargs)
+            obj: CacheMixin = args[0] if len(args) > 0 and isinstance(args[0], CacheMixin) else None
+            logger.debug("Wrapping a method of a CacheMixin instance: %r", obj is not None)
+            hc = helper if obj is None else obj.cache
+            key = make_cache_key(function, client_scope, *args, **kwargs)
+            result = hc.get(key)
+            if hc.cache_enabled:
+                if result is None:
+                    logger.debug(f"Value {key} not set in cache...")
+                    lock = hc.lock(key)
+                    try:
+                        if lock.acquire(blocking=True):
+                            val = hc.get(key)
+                            if not val:
+                                logger.debug("Cache empty: getting value from the actual function...")
+                                result = function(*args, **kwargs)
+                                logger.debug("Checking unless function: %r", unless)
+                                if unless is None or unless is True or callable(unless) and not unless(result):
+                                    hc.set(key, result, timeout=timeout)
+                                else:
+                                    logger.debug("Don't set value in cache due to unless=True")
+                    finally:
+                        lock.release()
+                else:
+                    logger.debug(f"Reusing value from cache key '{key}'...")
             else:
-                logger.debug(f"Reusing value from cache key '{key}'...")
+                logger.debug("Cache disabled: getting value from the actual function...")
+                result = function(*args, **kwargs)
             return result
 
         return wrapper

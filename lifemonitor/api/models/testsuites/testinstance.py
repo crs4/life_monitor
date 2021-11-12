@@ -26,7 +26,7 @@ from typing import List
 
 import lifemonitor.api.models as models
 from lifemonitor.api.models import db
-from lifemonitor.cache import Timeout
+from lifemonitor.cache import Timeout, cached
 from lifemonitor.models import JSON, UUID, ModelMixin
 
 from .testsuite import TestSuite
@@ -82,18 +82,6 @@ class TestInstance(db.Model, ModelMixin):
     def _cache_key_prefix(self):
         return str(self)
 
-    def _get_cache_key_external_link(self):
-        return f"{self._cache_key_prefix}_external_link"
-
-    def _get_cache_key_last_build(self):
-        return f"{self._cache_key_prefix}_last_build"
-
-    def _get_cache_key_test_builds(self, limit=10):
-        return f"{self._cache_key_prefix}_test_builds_limit{limit}"
-
-    def _get_cache_key_test_build(self, build_number):
-        return f"{self._cache_key_prefix}_test_build_{build_number}"
-
     @property
     def is_roc_instance(self):
         return self.roc_instance is not None
@@ -104,55 +92,29 @@ class TestInstance(db.Model, ModelMixin):
 
     @property
     def external_link(self):
-        logger.debug("Getting external link...")
-        key = self._get_cache_key_external_link()
-        link = self.cache.get(key)
-        if link is None:
-            logger.debug("Getting external link from testing service...")
-            link = self.testing_service.get_instance_external_link(self)
-            if link is not None:
-                self.cache.set(key, link)
-        else:
-            logger.debug("Reusing external link from cache...")
-        return link
+        return self.get_external_link()
+
+    @cached(timeout=Timeout.NONE, client_scope=False)
+    def get_external_link(self):
+        return self.testing_service.get_instance_external_link(self)
 
     @property
     def last_test_build(self):
-        key = self._get_cache_key_last_build()
-        build = self.cache.get(key)
-        if build is None:
-            builds = self.get_test_builds()
-            build = builds[0] if builds and len(builds) > 0 else None
-            if build is not None:
-                self.cache.set(key, build)
-        return build
+        return self.get_last_test_build()
 
+    @cached(timeout=Timeout.NONE, client_scope=False)
+    def get_last_test_build(self):
+        builds = self.get_test_builds()
+        return builds[0] if builds and len(builds) > 0 else None
+
+    @cached(timeout=Timeout.NONE, client_scope=False)
     def get_test_builds(self, limit=10):
-        logger.debug("Getting test builds...")
-        key = self._get_cache_key_test_builds(limit)
-        builds = self.cache.get(key)
-        if builds is None:
-            logger.debug("Getting test builds from testing service...")
-            builds = self.testing_service.get_test_builds(self, limit=limit)
-            if builds is not None:
-                self.cache.set(key, builds)
-        else:
-            logger.debug("Reusing test builds from cache...")
-        return builds
+        return self.testing_service.get_test_builds(self, limit=limit)
 
+    @cached(timeout=Timeout.BUILD, client_scope=False,
+            unless=lambda b: b.status in [models.BuildStatus.RUNNING, models.BuildStatus.WAITING])
     def get_test_build(self, build_number):
-        logger.debug("Getting test build...")
-        key = self._get_cache_key_test_build(build_number)
-        build = self.cache.get(key)
-        if build is None:
-            logger.debug("Getting test build from testing service...")
-            build = self.testing_service.get_test_build(self, build_number)
-            if build is not None:
-                if build.status not in [models.BuildStatus.RUNNING, models.BuildStatus.WAITING]:
-                    self.cache.set(key, build, timeout=Timeout.BUILD)
-        else:
-            logger.debug(f"Reusing test build {build} from cache...")
-        return build
+        return self.testing_service.get_test_build(self, build_number)
 
     def to_dict(self, test_build=False, test_output=False):
         data = {

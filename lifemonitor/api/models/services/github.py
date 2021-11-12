@@ -29,7 +29,7 @@ from urllib.parse import urlparse
 
 import lifemonitor.api.models as models
 import lifemonitor.exceptions as lm_exceptions
-
+from lifemonitor.cache import Timeout, cached
 
 import github
 from github import Github, GithubException
@@ -107,20 +107,28 @@ class GithubTestingService(TestingService):
     def _get_workflow_info(self, resource):
         return self._parse_workflow_url(resource)
 
+    @cached(timeout=Timeout.NONE, client_scope=False)
     def _get_repo(self, test_instance: models.TestInstance):
-        logger.debug("Getting github repository...")
-        key = f"github_repo_{test_instance.uuid}"
-        repository = self.cache.get(key)
-        if repository is None:
-            logger.debug("Getting github repository from remote service...")
-            _, repo_full_name, _ = self._get_workflow_info(test_instance.resource)
-            repository = self._gh_service.get_repo(repo_full_name)
-            logger.debug("Repo ID: %s", repository.id)
-            logger.debug("Repo full name: %s", repository.full_name)
-            logger.debug("Repo URL: %s", f'https://github.com/{repository.full_name}')
-            self.cache.set(key, repository)
-        else:
-            logger.debug("Reusing github repository from cache...")
+        # logger.debug("Getting github repository...")
+        # key = f"github_repo_{test_instance.uuid}"
+        # repository = self.cache.get(key)
+        # if repository is None:
+        #     logger.debug("Getting github repository from remote service...")
+        #     _, repo_full_name, _ = self._get_workflow_info(test_instance.resource)
+        #     repository = self._gh_service.get_repo(repo_full_name)
+        #     logger.debug("Repo ID: %s", repository.id)
+        #     logger.debug("Repo full name: %s", repository.full_name)
+        #     logger.debug("Repo URL: %s", f'https://github.com/{repository.full_name}')
+        #     self.cache.set(key, repository)
+        # else:
+        #     logger.debug("Reusing github repository from cache...")
+        # return repository
+        logger.debug("Getting github repository from remote service...")
+        _, repo_full_name, _ = self._get_workflow_info(test_instance.resource)
+        repository = self._gh_service.get_repo(repo_full_name)
+        logger.debug("Repo ID: %s", repository.id)
+        logger.debug("Repo full name: %s", repository.full_name)
+        logger.debug("Repo URL: %s", f'https://github.com/{repository.full_name}')
         return repository
 
     @staticmethod
@@ -144,15 +152,17 @@ class GithubTestingService(TestingService):
             logger.info("Caught exception from Github GET /rate_limit: %s.  Connection not working?", e)
             return False
 
+    @cached(timeout=Timeout.NONE, client_scope=False)
     def _get_gh_workflow(self, repository, workflow_id):
         logger.debug("Getting github workflow...")
-        key = f"github_workflow_{repository}_{workflow_id}"
-        workflow = self.cache.get(key)
-        if workflow is None:
-            logger.debug("Getting github workflow from remote service...")
-            workflow = self._gh_service.get_repo(repository).get_workflow(workflow_id)
-            self.cache.set(key, workflow)
-        return workflow
+        return self._gh_service.get_repo(repository).get_workflow(workflow_id)
+        # key = f"github_workflow_{repository}_{workflow_id}"
+        # workflow = self.cache.get(key)
+        # if workflow is None:
+        #     logger.debug("Getting github workflow from remote service...")
+        #     workflow = self._gh_service.get_repo(repository).get_workflow(workflow_id)
+        #     self.cache.set(key, workflow)
+        # return workflow
 
     def _iter_runs(self, test_instance: models.TestInstance, status: str = None) -> Generator[github.WorkflowRun.WorkflowRun]:
         _, repository, workflow_id = self._get_workflow_info(test_instance.resource)
