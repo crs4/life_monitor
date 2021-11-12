@@ -159,7 +159,7 @@ class CacheHelper(object):
 helper: CacheHelper = CacheHelper(cache)
 
 
-def make_cache_key(func=None, client_scope=True, *args, **kwargs) -> str:
+def make_cache_key(func=None, client_scope=True, args=None, kwargs=None) -> str:
     from lifemonitor.auth import current_registry, current_user
 
     hash_enabled = not logger.isEnabledFor(logging.DEBUG)
@@ -200,7 +200,7 @@ def clear_cache(func=None, client_scope=True, *args, **kwargs):
             key = make_cache_key(func, client_scope)
             helper.delete_keys(f"{key}*")
             if args or kwargs:
-                key = make_cache_key(func, client_scope, *args, **kwargs)
+                key = make_cache_key(func, client_scope, args=args, kwargs=kwargs)
                 helper.delete_keys(f"{key}*")
         else:
             key = make_cache_key(client_scope)
@@ -220,7 +220,7 @@ def cached(timeout=Timeout.REQUEST, client_scope=True, unless=None):
             logger.debug("Wrapping a method of a CacheMixin instance: %r", obj is not None)
             hc = helper if obj is None else obj.cache
             if hc.cache_enabled:
-                key = make_cache_key(function, client_scope, *args, **kwargs)
+                key = make_cache_key(function, client_scope, args=args, kwargs=kwargs)
                 result = hc.get(key)
                 if result is None:
                     logger.debug(f"Value {key} not set in cache...")
