@@ -144,6 +144,7 @@ class CacheHelper(object):
             if isinstance(self.cache, RedisCache) \
             and self.cache_enabled \
             and not self.ignore_cache_values \
+            and not cache.ignore_cache_values \
             else None
 
     def delete_keys(self, pattern: str):
