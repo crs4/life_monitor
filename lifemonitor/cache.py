@@ -51,7 +51,7 @@ def _get_timeout(name: str, default: int = 0, config=None) -> int:
             logger.debug(e)
     result = result or os.environ.get(name, default)
     logger.debug("Getting timeout %r: %r", name, result)
-    return result
+    return int(result)
 
 
 def _get_timeout_key(n: str) -> str:
