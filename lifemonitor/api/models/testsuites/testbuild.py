@@ -131,3 +131,15 @@ class TestBuild(ABC, CacheMixin):
         if test_output:
             data['output'] = self.output
         return data
+
+    def __getstate__(self):
+        return {
+            "testing_service": self.testing_service.uuid,
+            "test_instance": self.test_instance.uuid,
+            "metadata": self._metadata
+        }
+
+    def __setstate__(self, state):
+        self.testing_service = models.TestingService.find_by_uuid(state['testing_service'])
+        self.test_instance = models.TestInstance.find_by_uuid(state['test_instance'])
+        self._metadata = state['metadata']
