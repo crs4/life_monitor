@@ -23,7 +23,7 @@ import logging
 import flask
 from flask import flash, redirect, render_template, request, session, url_for
 from flask_login import login_required, login_user, logout_user
-from lifemonitor.cache import cached, Timeout
+from lifemonitor.cache import cached, Timeout, clear_cache
 from lifemonitor.utils import (NextRouteRegistry, next_route_aware,
                                split_by_crlf)
 
