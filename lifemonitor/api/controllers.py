@@ -155,7 +155,7 @@ def workflows_rocrate_metadata(wf_uuid, wf_version):
     return response.crate_metadata
 
 
-@cached(timeout=Timeout.REQUEST)
+@cached(timeout=Timeout.WORKFLOW, client_scope=False)
 def workflows_rocrate_download(wf_uuid, wf_version):
     response = _get_workflow_or_problem(wf_uuid, wf_version)
     if isinstance(response, Response):
