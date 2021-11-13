@@ -28,7 +28,7 @@ import redis
 import redis_lock
 from flask import request
 from flask.app import Flask
-from flask_caching import Cache
+from flask_caching import Cache as FlaskCache
 from flask_caching.backends.rediscache import RedisCache
 
 # Set prefix
@@ -37,9 +37,6 @@ CACHE_PREFIX = "lifemonitor-api-cache:"
 
 # Set module logger
 logger = logging.getLogger(__name__)
-
-# Instantiate cache manager
-cache = Cache()
 
 
 def _get_timeout(name: str, default: int = 0, config=None) -> int:
@@ -77,40 +74,27 @@ class Timeout:
                 logger.debug("Error when updating timeout %r", t)
 
 
-def init_cache(app: Flask):
-    cache_type = app.config.get(
-        'CACHE_TYPE',
-        'flask_caching.backends.simplecache.SimpleCache'
-    )
-    logger.debug("Cache type detected: %s", cache_type)
-    if cache_type == 'flask_caching.backends.rediscache.RedisCache':
-        logger.debug("Configuring cache...")
-        app.config.setdefault('CACHE_REDIS_HOST', os.environ.get('REDIS_HOST', 'redis'))
-        app.config.setdefault('CACHE_REDIS_PORT', os.environ.get('REDIS_PORT_NUMBER', 6379))
-        app.config.setdefault('CACHE_REDIS_PASSWORD', os.environ.get('REDIS_PASSWORD', ''))
-        app.config.setdefault('CACHE_REDIS_DB', int(os.environ.get('CACHE_REDIS_DB', 0)))
-        app.config.setdefault("CACHE_KEY_PREFIX", CACHE_PREFIX)
-        app.config.setdefault('CACHE_REDIS_URL', "redis://:{0}@{1}:{2}/{3}".format(
-            app.config.get('CACHE_REDIS_PASSWORD'),
-            app.config.get('CACHE_REDIS_HOST'),
-            app.config.get('CACHE_REDIS_PORT'),
-            app.config.get('CACHE_REDIS_DB')
-        ))
-        logger.debug("RedisCache connection url: %s", app.config.get('CACHE_REDIS_URL'))
-    cache.init_app(app)
-    Timeout.update(app.config)
-    logger.debug(f"Cache initialised (type: {cache_type})")
-
-
-class CacheHelper(object):
+class Cache(object):
 
     # Enable/Disable cache
     cache_enabled = True
     # Ignore cache values even if cache is enabled
     ignore_cache_values = False
+    # Reference to the Flask cache manager
+    __cache__ = None
 
-    def __init__(self, cache) -> None:
-        self._cache = cache
+    @classmethod
+    def __get_flask_cache(cls):
+        if cls.__cache__ is None:
+            cls.__cache__ = FlaskCache()
+        return cls.__cache__
+
+    @classmethod
+    def init_app(cls, app: Flask):
+        cls.__get_flask_cache().init_app(app)
+
+    def __init__(self, cache: FlaskCache = None) -> None:
+        self._cache = cache or self.__get_flask_cache()
 
     @property
     def cache(self) -> RedisCache:
@@ -157,8 +141,33 @@ class CacheHelper(object):
                 self.backend.delete(key)
 
 
-# global cache helper instance
-helper: CacheHelper = CacheHelper(cache)
+# global cache instance
+cache: Cache = Cache()
+
+
+def init_cache(app: Flask):
+    cache_type = app.config.get(
+        'CACHE_TYPE',
+        'flask_caching.backends.simplecache.SimpleCache'
+    )
+    logger.debug("Cache type detected: %s", cache_type)
+    if cache_type == 'flask_caching.backends.rediscache.RedisCache':
+        logger.debug("Configuring cache...")
+        app.config.setdefault('CACHE_REDIS_HOST', os.environ.get('REDIS_HOST', '127.0.0.1'))
+        app.config.setdefault('CACHE_REDIS_PORT', os.environ.get('REDIS_PORT_NUMBER', 6379))
+        app.config.setdefault('CACHE_REDIS_PASSWORD', os.environ.get('REDIS_PASSWORD', 'foobar'))
+        app.config.setdefault('CACHE_REDIS_DB', int(os.environ.get('CACHE_REDIS_DB', 0)))
+        app.config.setdefault("CACHE_KEY_PREFIX", CACHE_PREFIX)
+        app.config.setdefault('CACHE_REDIS_URL', "redis://:{0}@{1}:{2}/{3}".format(
+            app.config.get('CACHE_REDIS_PASSWORD'),
+            app.config.get('CACHE_REDIS_HOST'),
+            app.config.get('CACHE_REDIS_PORT'),
+            app.config.get('CACHE_REDIS_DB')
+        ))
+        logger.debug("RedisCache connection url: %s", app.config.get('CACHE_REDIS_URL'))
+    cache.init_app(app)
+    Timeout.update(app.config)
+    logger.debug(f"Cache initialised (type: {cache_type})")
 
 
 def make_cache_key(func=None, client_scope=True, args=None, kwargs=None) -> str:
@@ -200,13 +209,13 @@ def clear_cache(func=None, client_scope=True, *args, **kwargs):
     try:
         if func:
             key = make_cache_key(func, client_scope)
-            helper.delete_keys(f"{key}*")
+            cache.delete_keys(f"{key}*")
             if args or kwargs:
                 key = make_cache_key(func, client_scope=client_scope, args=args, kwargs=kwargs)
-                helper.delete_keys(f"{key}*")
+                cache.delete_keys(f"{key}*")
         else:
             key = make_cache_key(client_scope=client_scope)
-            helper.delete_keys(f"{key}*")
+            cache.delete_keys(f"{key}*")
     except Exception as e:
         logger.error("Error deleting cache: %r", e)
 
@@ -220,7 +229,7 @@ def cached(timeout=Timeout.REQUEST, client_scope=True, unless=None):
             logger.debug("KwArgs: %r", kwargs)
             obj: CacheMixin = args[0] if len(args) > 0 and isinstance(args[0], CacheMixin) else None
             logger.debug("Wrapping a method of a CacheMixin instance: %r", obj is not None)
-            hc = helper if obj is None else obj.cache
+            hc = cache if obj is None else obj.cache
             if hc.cache_enabled:
                 key = make_cache_key(function, client_scope, args=args, kwargs=kwargs)
                 result = hc.get(key)
@@ -231,8 +240,8 @@ def cached(timeout=Timeout.REQUEST, client_scope=True, unless=None):
                         if lock:
                             try:
                                 if lock.acquire(blocking=True):
-                                    val = hc.get(key)
-                                    if not val:
+                                    result = hc.get(key)
+                                    if not result:
                                         logger.debug("Cache empty: getting value from the actual function...")
                                         result = function(*args, **kwargs)
                                         logger.debug("Checking unless function: %r", unless)
@@ -258,10 +267,10 @@ def cached(timeout=Timeout.REQUEST, client_scope=True, unless=None):
 
 class CacheMixin(object):
 
-    _helper: CacheHelper = helper
+    _helper: Cache = None
 
     @property
-    def cache(self) -> CacheHelper:
+    def cache(self) -> Cache:
         if self._helper is None:
-            self._helper = CacheHelper(cache)
+            self._helper = Cache()
         return self._helper
