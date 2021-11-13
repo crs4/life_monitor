@@ -41,21 +41,24 @@ def heartbeat():
     logger.info("Heartbeat!")
 
 
-@schedule(CronTrigger(minute="*/5"))
+@schedule(IntervalTrigger(seconds=Timeout.BUILD * 3 / 4))
 @dramatiq.actor
 def check_last_build():
-    logger.info("Checking last build....")
     from lifemonitor.api.models import Workflow
+    from lifemonitor.cache import cache
 
+    logger.info("Starting 'check_last build' task...")
     for w in Workflow.all():
-        for s in w.latest_version.test_suites:
-            logger.info("Updating workflow: %r", w)
-            for i in s.test_instances:
-                try:
-                    i.ignore_cache_values = True
-                    logger.debug("Updating latest builds: %r", i.get_test_builds())
-                finally:
-                    i.ignore_cache_values = False
+        try:
+            cache.ignore_cache_values = True
+            for s in w.latest_version.test_suites:
+                logger.info("Updating workflow: %r", w)
+                for i in s.test_instances:
+                    builds = i.get_test_builds()
+                    logger.debug("Updating latest builds: %r", builds)
+                    for b in builds:
+                        logger.debug("Updating build: %r", i.get_test_build(b.id))
                 logger.debug("Updating latest build: %r", i.last_test_build)
-
+        finally:
+            cache.ignore_cache_values = False
     logger.info("Checking last build: DONE!")
