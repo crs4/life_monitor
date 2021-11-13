@@ -4,6 +4,8 @@ import logging
 import dramatiq
 import flask
 from apscheduler.triggers.cron import CronTrigger
+from apscheduler.triggers.interval import IntervalTrigger
+from lifemonitor.cache import Timeout
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -39,6 +41,39 @@ logger.info("Importing task definitions")
 @dramatiq.actor
 def heartbeat():
     logger.info("Heartbeat!")
+
+
+@schedule(IntervalTrigger(seconds=Timeout.WORKFLOW * 3 / 4))
+@dramatiq.actor
+def check_workflows():
+    from flask import current_app
+    from lifemonitor.api.controllers import workflows_rocrate_download
+    from lifemonitor.api.models import Workflow
+    from lifemonitor.auth.services import login_user, logout_user
+    from lifemonitor.cache import cache
+
+    logger.info("Starting 'check_workflows' task....")
+    for w in Workflow.all():
+        try:
+            cache.ignore_cache_values = True
+            for v in w.versions.values():
+                logger.info("Updating external link: %r", v.external_link)
+                u = v.submitter
+                with current_app.test_request_context():
+                    try:
+                        if u is not None:
+                            login_user(u)
+                        logger.info("Updating RO-Crate...")
+                        workflows_rocrate_download(w.uuid, v.version)
+                        logger.info("Updating RO-Crate... DONE")
+                    finally:
+                        try:
+                            logout_user()
+                        except Exception as e:
+                            logger.debug(e)
+        finally:
+            cache.ignore_cache_values = False
+    logger.info("Starting 'check_workflows' task.... DONE!")
 
 
 @schedule(IntervalTrigger(seconds=Timeout.BUILD * 3 / 4))
