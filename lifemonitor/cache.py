@@ -239,7 +239,7 @@ def cached(timeout=Timeout.REQUEST, client_scope=True, unless=None):
                         lock = hc.lock(key)
                         if lock:
                             try:
-                                if lock.acquire(blocking=True):
+                                if lock.acquire(blocking=True, timeout=Timeout.REQUEST):
                                     result = hc.get(key)
                                     if not result:
                                         logger.debug("Cache empty: getting value from the actual function...")
