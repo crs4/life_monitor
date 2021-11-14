@@ -33,7 +33,7 @@ from lifemonitor import auth
 from lifemonitor.api.models import (TestingService, TestingServiceTokenManager,
                                     TestSuite, User)
 from lifemonitor.api.services import LifeMonitor
-from lifemonitor.cache import cache, init_cache
+from lifemonitor.cache import cache, init_cache, clear_cache
 from lifemonitor.utils import ClassManager
 
 from tests.utils import register_workflow
@@ -103,6 +103,7 @@ def redis_cache(app_context):
 def initialize(app_settings, request_context, service_registry: ClassManager):
     service_registry.remove_class("unknown")
     helpers.clean_db()
+    clear_cache(client_scope=False)
     helpers.init_db(app_settings)
     helpers.disable_auto_login()
     auth.logout_user()
