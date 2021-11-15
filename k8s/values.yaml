@@ -65,6 +65,7 @@ cache:
     default: 30
     request: 15
     session: 3600
+    workflow: 1800
     build: 84600
 
 lifemonitor:
