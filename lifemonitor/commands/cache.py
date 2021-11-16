@@ -34,7 +34,7 @@ blueprint = Blueprint('cache', __name__)
 @with_appcontext
 def clear():
     """
-    Initialize LifeMonitor App
+    Delete API cache
     """
     from lifemonitor.cache import clear_cache
     try:
