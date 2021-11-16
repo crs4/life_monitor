@@ -66,11 +66,19 @@ def check_workflows():
                         logger.info("Updating RO-Crate...")
                         workflows_rocrate_download(w.uuid, v.version)
                         logger.info("Updating RO-Crate... DONE")
+                    except Exception as e:
+                        logger.error(f"Error when updating the workflow {w}: {str(e)}")
+                        if logger.isEnabledFor(logging.DEBUG):
+                            logger.exception(e)
                     finally:
                         try:
                             logout_user()
                         except Exception as e:
                             logger.debug(e)
+        except Exception as e:
+            logger.error("Error when executing task 'check_workflows': %s", str(e))
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.exception(e)
         finally:
             cache.ignore_cache_values = False
     logger.info("Starting 'check_workflows' task.... DONE!")
@@ -94,6 +102,10 @@ def check_last_build():
                     for b in builds:
                         logger.debug("Updating build: %r", i.get_test_build(b.id))
                 logger.debug("Updating latest build: %r", i.last_test_build)
+        except Exception as e:
+            logger.error("Error when executing task 'check_last_build': %s", str(e))
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.exception(e)
         finally:
             cache.ignore_cache_values = False
     logger.info("Checking last build: DONE!")
