@@ -239,7 +239,7 @@ def cached(timeout=Timeout.REQUEST, client_scope=True, unless=None):
                         lock = hc.lock(key)
                         if lock:
                             try:
-                                if lock.acquire(blocking=True, timeout=Timeout.REQUEST):
+                                if lock.acquire(blocking=True, timeout=timeout * 3 / 4):
                                     result = hc.get(key)
                                     if not result:
                                         logger.debug("Cache empty: getting value from the actual function...")
@@ -250,7 +250,10 @@ def cached(timeout=Timeout.REQUEST, client_scope=True, unless=None):
                                         else:
                                             logger.debug("Don't set value in cache due to unless=%r", "None" if unless is None else "True")
                             finally:
-                                lock.release()
+                                try:
+                                    lock.release()
+                                except redis_lock.NotAcquired as e:
+                                    logger.debug(e)
                     else:
                         logger.warning("Using unsupported cache backend: cache will not be used")
                         result = function(*args, **kwargs)
