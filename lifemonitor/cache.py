@@ -131,12 +131,12 @@ class Cache(object):
             and not cache.ignore_cache_values \
             else None
 
-    def delete_keys(self, pattern: str):
+    def delete_keys(self, pattern: str, prefix: str = CACHE_PREFIX):
         logger.debug(f"Deleting keys by pattern: {pattern}")
         if isinstance(self.cache, RedisCache):
             logger.debug("Redis backend detected!")
-            logger.debug(f"Pattern: {CACHE_PREFIX}{pattern}")
-            for key in self.backend.scan_iter(f"{CACHE_PREFIX}{pattern}"):
+            logger.debug(f"Pattern: {prefix}{pattern}")
+            for key in self.backend.scan_iter(f"{prefix}{pattern}"):
                 logger.debug("Delete key: %r", key)
                 self.backend.delete(key)
 
@@ -205,17 +205,17 @@ def make_cache_key(func=None, client_scope=True, args=None, kwargs=None) -> str:
     return result
 
 
-def clear_cache(func=None, client_scope=True, *args, **kwargs):
+def clear_cache(func=None, client_scope=True, prefix=CACHE_PREFIX, *args, **kwargs):
     try:
         if func:
             key = make_cache_key(func, client_scope)
             cache.delete_keys(f"{key}*")
             if args or kwargs:
                 key = make_cache_key(func, client_scope=client_scope, args=args, kwargs=kwargs)
-                cache.delete_keys(f"{key}*")
+                cache.delete_keys(f"{key}*", prefix=prefix)
         else:
             key = make_cache_key(client_scope=client_scope)
-            cache.delete_keys(f"{key}*")
+            cache.delete_keys(f"{key}*", prefix=prefix)
     except Exception as e:
         logger.error("Error deleting cache: %r", e)
 
