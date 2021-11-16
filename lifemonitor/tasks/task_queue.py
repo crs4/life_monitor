@@ -10,6 +10,8 @@ from dramatiq.results import Results
 from dramatiq.results.backends.redis import RedisBackend
 from flask_apscheduler import APScheduler
 
+REDIS_NAMESPACE = 'dramatiq'
+
 logger = logging.getLogger(__name__)
 
 
@@ -53,8 +55,8 @@ def init_task_queue(app):
                                        port=int(app.config.get("REDIS_PORT_NUMBER", 6379)))
         logger.info("Setting up task queue.  Pointing to broker %s:%s",
                     redis_connection_params['host'], redis_connection_params['port'])
-        redis_broker = RedisBroker(**redis_connection_params)
-        result_backend = RedisBackend(**redis_connection_params)
+        redis_broker = RedisBroker(namespace=f"{REDIS_NAMESPACE}", **redis_connection_params)
+        result_backend = RedisBackend(namespace=f"{REDIS_NAMESPACE}-results", **redis_connection_params)
         redis_broker.add_middleware(Results(backend=result_backend))
         dramatiq.set_broker(redis_broker)
         redis_broker.add_middleware(AppContextMiddleware(app))
