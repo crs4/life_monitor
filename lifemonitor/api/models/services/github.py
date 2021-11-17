@@ -23,7 +23,7 @@ from __future__ import annotations
 import itertools as it
 import logging
 import re
-from typing import Generator, Optional, Tuple
+from typing import Generator, List, Optional, Tuple
 from urllib.error import URLError
 from urllib.parse import urlparse
 
@@ -32,7 +32,7 @@ import lifemonitor.exceptions as lm_exceptions
 from lifemonitor.cache import Timeout, cached
 
 import github
-from github import Github, GithubException
+from github import Github, GithubException, Workflow
 from github import \
     RateLimitExceededException as GithubRateLimitExceededException
 
@@ -143,6 +143,10 @@ class GithubTestingService(TestingService):
         logger.debug("Getting github workflow...")
         return self._gh_service.get_repo(repository).get_workflow(workflow_id)
 
+    @cached(timeout=Timeout.NONE, client_scope=False)
+    def _get_gh_workflow_runs(self, workflow: Workflow.Workflow) -> List:
+        return list(workflow.get_runs())
+
     def _iter_runs(self, test_instance: models.TestInstance, status: str = None) -> Generator[github.WorkflowRun.WorkflowRun]:
         _, repository, workflow_id = self._get_workflow_info(test_instance.resource)
         logger.debug("iterating over runs --  wf id: %s; repository: %s; status: %s", workflow_id, repository, status)
@@ -150,7 +154,7 @@ class GithubTestingService(TestingService):
         workflow = self._get_gh_workflow(repository, workflow_id)
         logger.debug("Retrieved workflow %s from github", workflow_id)
 
-        for run in workflow.get_runs():
+        for run in self._get_gh_workflow_runs(workflow):
             logger.debug("Loading Github run ID %r", run.id)
             # The Workflow.get_runs method in the PyGithub API has a status argument
             # which in theory we could use to filter the runs that are retrieved to
