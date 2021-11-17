@@ -23,6 +23,7 @@ from __future__ import annotations
 import functools
 import logging
 import os
+from contextlib import contextmanager
 
 import redis
 import redis_lock
@@ -74,17 +75,60 @@ class Timeout:
                 logger.debug("Error when updating timeout %r", t)
 
 
+class IllegalStateException(RuntimeError):
+    pass
+
+
+class CacheTransaction(object):
+    def __init__(self, cache: Cache):
+        self.__cache__ = cache
+        self.__locks__ = {}
+        self.__closed__ = False
+
+    def get_lock(blocking: bool = True, timeout: int = Timeout.REQUEST):
+        pass
+
+    def has_lock(self, lock: str) -> bool:
+        return lock in self.__locks__
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        print("Exception has been handled")
+        self.close()
+        return True
+
+    def close(self):
+        if self.__closed__:
+            logger.debug("Transaction already closed")
+        else:
+            logger.debug("Closing transaction")
+            try:
+                for k in list(self.__locks__.keys()):
+                    logger.debug("Releasing lock %r", k)
+                    l = self.__locks__.pop(k)
+                    try:
+                        l.release()
+                    except redis_lock.NotAcquired as e:
+                        logger.debug(e)
+                logger.debug("All lock released")
+                logger.debug("Transaction closed")
+            finally:
+                self.__closed__ = True
+
+
 class Cache(object):
 
     # Enable/Disable cache
     cache_enabled = True
     # Ignore cache values even if cache is enabled
-    ignore_cache_values = False
+    _ignore_cache_values = False
     # Reference to the Flask cache manager
     __cache__ = None
 
     @classmethod
-    def __get_flask_cache(cls):
+    def __get_flask_cache(cls) -> FlaskCache:
         if cls.__cache__ is None:
             cls.__cache__ = FlaskCache()
         return cls.__cache__
@@ -92,43 +136,125 @@ class Cache(object):
     @classmethod
     def init_app(cls, app: Flask):
         cls.__get_flask_cache().init_app(app)
+        cls.reset_locks()
 
-    def __init__(self, cache: FlaskCache = None) -> None:
+    def __init__(self, cache: FlaskCache = None, parent: Cache = None) -> None:
         self._cache = cache or self.__get_flask_cache()
+        self._current_transaction = None
+        self._parent = parent
+
+    @property
+    def parent(self) -> Cache:
+        return self._parent
+
+    @property
+    def ignore_cache_values(self):
+        return self._ignore_cache_values is True and \
+            (self.parent and self.parent.ignore_cache_values is True)
+
+    @ignore_cache_values.setter
+    def ignore_cache_values(self, value: bool):
+        self._ignore_cache_values = True if value is True else False
 
     @property
     def cache(self) -> RedisCache:
-        return self._cache.cache
+        return self.get_redis_cache(self._cache)
+
+    @contextmanager
+    def transaction(self, name) -> CacheTransaction:
+        if self._current_transaction is not None:
+            raise IllegalStateException("Transaction already started")
+        t = CacheTransaction(self)
+        if self.parent is not None:
+            self.parent._current_transaction = t
+        else:
+            self._current_transaction = t
+        try:
+            yield t
+        except Exception as e:
+            logger.exception(e)
+        finally:
+            logger.debug("Finally closing transaction")
+            try:
+                t.close()
+            except Exception as fe:
+                logger.debug(fe)
+            if self.parent is not None:
+                self.parent._current_transaction = None
+            else:
+                self._current_transaction = None
 
     @property
     def backend(self) -> redis.Redis:
-        if isinstance(self.cache, RedisCache):
-            return self.cache._read_clients
-        logger.warning("No cache backend found")
-        return None
+        return self.get_backend(self.cache)
 
-    def size(self):
-        return len(self.cache.get_dict())
+    def get_current_transaction(self):
+        if self._current_transaction is None and self.parent is not None:
+            return self.parent.get_current_transaction()
+        return self._current_transaction
 
-    def to_dict(self):
-        return self.cache.get_dict()
+    def keys(self, pattern: str = None):
+        query = f"{CACHE_PREFIX}"
+        if pattern is not None:
+            query = f"{query}{pattern}"
+        else:
+            query = f"{query}*"
+        return self.backend.keys(query)
 
-    def lock(self, key: str):
+    def size(self, pattern=None):
+        return len(self.keys(pattern=pattern))
+
+    def to_dict(self, pattern=None):
+        return {k: self.backend.get(k) for k in self.keys(pattern=pattern)}
+
+    @contextmanager
+    def lock(self, key: str, blocking: bool = True,
+             timeout: int = Timeout.REQUEST,
+             expire=60, auto_renewal=True):
         logger.debug("Getting lock for key %r...", key)
-        return redis_lock.Lock(self.backend, key) if self.backend else False
+        lock = redis_lock.Lock(self.backend, key, expire=expire, auto_renewal=auto_renewal)
+        try:
+            yield lock.acquire(blocking=blocking)
+        finally:
+            try:
+                logger.debug("Auto release of lock for key=%s", key)
+                transaction = self.get_current_transaction()
+                if transaction is None:
+                    logger.debug("No transaction in progress...")
+                    lock.release()
+                else:
+                    logger.debug("Transaction %r in progress...", transaction)
+                    transaction.__locks__[key] = lock
+                    logger.debug("Added lock to transaction: %r", transaction.has_lock(key))
+            except redis_lock.NotAcquired as e:
+                logger.debug(e)
 
     def set(self, key: str, value, timeout: int = Timeout.NONE):
-        if key is not None and self.cache_enabled and isinstance(self.cache, RedisCache):
-            logger.debug("Setting cache value for key %r.... ", key)
+        if key is not None and self.cache_enabled:
+            logger.debug("Setting cache value for key %r.... (timeout: %r)", key, timeout)
             self.cache.set(key, value, timeout=timeout)
+
+    def has(self, key: str) -> bool:
+        return self.get(key) is not None
+
+    def _get_status(self) -> dict:
+        return {
+            "self": self,
+            "enabled": self.cache_enabled,
+            "ignore_values": self.ignore_cache_values,
+            "current_transaction": self.get_current_transaction(),
+            "transaction locks": self.get_current_transaction().__locks__ if self.get_current_transaction() else None
+        }
 
     def get(self, key: str):
         logger.debug("Getting value from cache...")
+        logger.debug("Cache status: %r", self._get_status())
         return self.cache.get(key) \
             if isinstance(self.cache, RedisCache) \
             and self.cache_enabled \
             and not self.ignore_cache_values \
-            and not cache.ignore_cache_values \
+            and (self.get_current_transaction() is None
+                 or self.get_current_transaction().has_lock(key)) \
             else None
 
     def delete_keys(self, pattern: str, prefix: str = CACHE_PREFIX):
@@ -139,6 +265,25 @@ class Cache(object):
             for key in self.backend.scan_iter(f"{prefix}{pattern}"):
                 logger.debug("Delete key: %r", key)
                 self.backend.delete(key)
+
+    def clear(self):
+        for key in self.backend.scan_iter(f"{CACHE_PREFIX}*"):
+            self.backend.delete(key)
+        self.reset_locks()
+
+    @classmethod
+    def reset_locks(cls):
+        redis_lock.reset_all(cls.get_backend())
+
+    @classmethod
+    def get_redis_cache(cls, cache: FlaskCache = None) -> RedisCache:
+        rc = cache or cls.__get_flask_cache()
+        return rc.cache if isinstance(rc, FlaskCache) else None
+
+    @classmethod
+    def get_backend(cls, cache: RedisCache = None) -> redis.Redis:
+        rc = cache or cls.get_redis_cache()
+        return rc._read_clients if isinstance(rc, RedisCache) else None
 
 
 # global cache instance
@@ -236,24 +381,16 @@ def cached(timeout=Timeout.REQUEST, client_scope=True, unless=None):
                 if result is None:
                     logger.debug(f"Value {key} not set in cache...")
                     if hc.backend:
-                        lock = hc.lock(key)
-                        if lock:
-                            try:
-                                if lock.acquire(blocking=True, timeout=timeout * 3 / 4):
-                                    result = hc.get(key)
-                                    if not result:
-                                        logger.debug("Cache empty: getting value from the actual function...")
-                                        result = function(*args, **kwargs)
-                                        logger.debug("Checking unless function: %r", unless)
-                                        if unless is None or unless is True or callable(unless) and not unless(result):
-                                            hc.set(key, result, timeout=timeout)
-                                        else:
-                                            logger.debug("Don't set value in cache due to unless=%r", "None" if unless is None else "True")
-                            finally:
-                                try:
-                                    lock.release()
-                                except redis_lock.NotAcquired as e:
-                                    logger.debug(e)
+                        with hc.lock(key, blocking=True):
+                            result = hc.get(key)
+                            if not result:
+                                logger.debug("Cache empty: getting value from the actual function...")
+                                result = function(*args, **kwargs)
+                                logger.debug("Checking unless function: %r", unless)
+                                if unless is None or unless is True or callable(unless) and not unless(result):
+                                    hc.set(key, result, timeout=timeout)
+                                else:
+                                    logger.debug("Don't set value in cache due to unless=%r", "None" if unless is None else "True")
                     else:
                         logger.warning("Using unsupported cache backend: cache will not be used")
                         result = function(*args, **kwargs)
@@ -270,10 +407,10 @@ def cached(timeout=Timeout.REQUEST, client_scope=True, unless=None):
 
 class CacheMixin(object):
 
-    _helper: Cache = None
+    _cache: Cache = None
 
     @property
     def cache(self) -> Cache:
-        if self._helper is None:
-            self._helper = Cache()
-        return self._helper
+        if self._cache is None:
+            self._cache = Cache(parent=cache)
+        return self._cache
