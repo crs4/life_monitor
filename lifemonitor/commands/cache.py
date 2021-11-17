@@ -36,9 +36,9 @@ def clear():
     """
     Delete API cache
     """
-    from lifemonitor.cache import clear_cache
+    from lifemonitor.cache import cache
     try:
-        clear_cache(client_scope=False)
+        cache.clear()
     except Exception as e:
         print("Error when deleting cache: %s" % (str(e)))
         if logger.isEnabledFor(logging.DEBUG):
