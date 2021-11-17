@@ -55,32 +55,30 @@ def check_workflows():
     logger.info("Starting 'check_workflows' task....")
     for w in Workflow.all():
         try:
-            cache.ignore_cache_values = True
             for v in w.versions.values():
-                logger.info("Updating external link: %r", v.external_link)
-                u = v.submitter
-                with current_app.test_request_context():
-                    try:
-                        if u is not None:
-                            login_user(u)
-                        logger.info("Updating RO-Crate...")
-                        workflows_rocrate_download(w.uuid, v.version)
-                        logger.info("Updating RO-Crate... DONE")
-                    except Exception as e:
-                        logger.error(f"Error when updating the workflow {w}: {str(e)}")
-                        if logger.isEnabledFor(logging.DEBUG):
-                            logger.exception(e)
-                    finally:
+                with v.cache.transaction(str(v)):
+                    logger.info("Updating external link: %r", v.external_link)
+                    u = v.submitter
+                    with current_app.test_request_context():
                         try:
-                            logout_user()
+                            if u is not None:
+                                login_user(u)
+                            logger.info("Updating RO-Crate...")
+                            workflows_rocrate_download(w.uuid, v.version)
+                            logger.info("Updating RO-Crate... DONE")
                         except Exception as e:
-                            logger.debug(e)
+                            logger.error(f"Error when updating the workflow {w}: {str(e)}")
+                            if logger.isEnabledFor(logging.DEBUG):
+                                logger.exception(e)
+                        finally:
+                            try:
+                                logout_user()
+                            except Exception as e:
+                                logger.debug(e)
         except Exception as e:
             logger.error("Error when executing task 'check_workflows': %s", str(e))
             if logger.isEnabledFor(logging.DEBUG):
                 logger.exception(e)
-        finally:
-            cache.ignore_cache_values = False
     logger.info("Starting 'check_workflows' task.... DONE!")
 
 
@@ -93,19 +91,17 @@ def check_last_build():
     logger.info("Starting 'check_last build' task...")
     for w in Workflow.all():
         try:
-            cache.ignore_cache_values = True
             for s in w.latest_version.test_suites:
                 logger.info("Updating workflow: %r", w)
                 for i in s.test_instances:
-                    builds = i.get_test_builds()
-                    logger.debug("Updating latest builds: %r", builds)
-                    for b in builds:
-                        logger.debug("Updating build: %r", i.get_test_build(b.id))
-                logger.debug("Updating latest build: %r", i.last_test_build)
+                    with i.cache.transaction(str(i)):
+                        builds = i.get_test_builds()
+                        logger.debug("Updating latest builds: %r", builds)
+                        for b in builds:
+                            logger.debug("Updating build: %r", i.get_test_build(b.id))
+                        logger.debug("Updating latest build: %r", i.last_test_build)
         except Exception as e:
             logger.error("Error when executing task 'check_last_build': %s", str(e))
             if logger.isEnabledFor(logging.DEBUG):
                 logger.exception(e)
-        finally:
-            cache.ignore_cache_values = False
     logger.info("Checking last build: DONE!")
