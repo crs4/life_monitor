@@ -50,7 +50,6 @@ def check_workflows():
     from lifemonitor.api.controllers import workflows_rocrate_download
     from lifemonitor.api.models import Workflow
     from lifemonitor.auth.services import login_user, logout_user
-    from lifemonitor.cache import cache
 
     logger.info("Starting 'check_workflows' task....")
     for w in Workflow.all():
@@ -86,7 +85,6 @@ def check_workflows():
 @dramatiq.actor
 def check_last_build():
     from lifemonitor.api.models import Workflow
-    from lifemonitor.cache import cache
 
     logger.info("Starting 'check_last build' task...")
     for w in Workflow.all():

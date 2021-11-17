@@ -109,9 +109,9 @@ class CacheTransaction(object):
             try:
                 for k in list(self.__locks__.keys()):
                     logger.debug("Releasing lock %r", k)
-                    l = self.__locks__.pop(k)
+                    lk = self.__locks__.pop(k)
                     try:
-                        l.release()
+                        lk.release()
                     except redis_lock.NotAcquired as e:
                         logger.debug(e)
                 logger.debug("All lock released")
@@ -255,8 +255,7 @@ class Cache(object):
             if isinstance(self.cache, RedisCache) \
             and self.cache_enabled \
             and not self.ignore_cache_values \
-            and (self.get_current_transaction() is None
-                 or self.get_current_transaction().has_lock(key)) \
+            and (self.get_current_transaction() is None or self.get_current_transaction().has_lock(key)) \
             else None
 
     def delete_keys(self, pattern: str, prefix: str = CACHE_PREFIX):
