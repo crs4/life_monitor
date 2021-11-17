@@ -66,7 +66,8 @@ def init_task_queue(app):
             logger.info("Starting job scheduler")
             app.scheduler = APScheduler()
             app.scheduler.init_app(app)
-            from . import tasks  # noqa: F401 imported for its side effects - it defines the tasks
+            if app.config.get('ENV') not in ['testingSupport', 'testing']:
+                from . import tasks  # noqa: F401 imported for its side effects - it defines the tasks
             app.scheduler.start()
             # Shut down the scheduler when exiting the app
             atexit.register(app.scheduler.shutdown)
