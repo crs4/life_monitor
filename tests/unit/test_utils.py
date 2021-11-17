@@ -20,11 +20,11 @@
 
 import os
 import tempfile
-
-import pytest
+from unittest.mock import MagicMock, Mock
 
 import lifemonitor.exceptions as lm_exceptions
 import lifemonitor.utils as utils
+import pytest
 
 
 def test_download_url_404():
@@ -32,3 +32,8 @@ def test_download_url_404():
         with pytest.raises(lm_exceptions.DownloadException) as excinfo:
             _ = utils.download_url('http://httpbin.org/status/404', os.path.join(d, 'get_404'))
         assert excinfo.value.status == 404
+
+
+class PickableMock(MagicMock):
+    def __reduce__(self):
+        return (Mock, ())

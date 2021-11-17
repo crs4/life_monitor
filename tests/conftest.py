@@ -96,6 +96,7 @@ def no_cache(app_context):
 def redis_cache(app_context):
     app_context.app.config['CACHE_TYPE'] = "flask_caching.backends.rediscache.RedisCache"
     init_cache(app_context.app)
+    cache.clear()
     return cache
 
 
