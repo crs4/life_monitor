@@ -29,6 +29,7 @@ import redis
 import redis_lock
 from flask import request
 from flask.app import Flask
+from flask.globals import current_app
 from flask_caching import Cache as FlaskCache
 from flask_caching.backends.rediscache import RedisCache
 
@@ -42,12 +43,13 @@ logger = logging.getLogger(__name__)
 
 def _get_timeout(name: str, default: int = 0, config=None) -> int:
     result = None
-    if config is not None:
-        try:
+    try:
+        config = current_app.config if config is None else config
+        if config is not None:
             result = config.get(name)
-        except Exception as e:
-            logger.debug(e)
-    result = result or os.environ.get(name, default)
+    except Exception as e:
+        logger.debug(e)
+    result = result if result is not None else os.environ.get(name, default)
     logger.debug("Getting timeout %r: %r", name, result)
     return int(result)
 
@@ -66,11 +68,11 @@ class Timeout:
     BUILD = _get_timeout(_get_timeout_key('BUILD'), default=300)
 
     @classmethod
-    def update(cls, config):
+    def update(cls, config=None):
         for t in ('DEFAULT', 'REQUEST', 'SESSION', 'BUILD', 'WORKFLOW'):
             try:
                 key = _get_timeout_key(t)
-                setattr(cls, key, _get_timeout(key, config=config))
+                setattr(cls, t, _get_timeout(key, config=config))
             except Exception:
                 logger.debug("Error when updating timeout %r", t)
 
