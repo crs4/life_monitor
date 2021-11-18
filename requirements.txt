@@ -13,7 +13,6 @@ flask-wtf~=0.15.1
 Flask-APScheduler==1.12.2
 Flask-SQLAlchemy==2.5.1
 Flask-Migrate==3.1.0
-Flask-Caching==1.10.1
 Flask>=1.1.4,<2.0.0
 gunicorn~=20.1.0
 jwt==1.2.0
