@@ -25,6 +25,7 @@ import random
 import re
 import string
 import uuid
+from collections.abc import Iterable
 from unittest.mock import MagicMock
 
 import lifemonitor.db as lm_db
@@ -142,7 +143,10 @@ def _get_app_settings(include_env=True, extra=None):
 def app_settings(request):
     if hasattr(request, 'param'):
         logger.debug("App settings param: %r", request.param)
-        return _get_app_settings(*request.param)
+        if isinstance(request.param, Iterable):
+            return _get_app_settings(*request.param)
+        else:
+            return _get_app_settings(request.param)
     return _get_app_settings()
 
 
