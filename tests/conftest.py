@@ -33,7 +33,7 @@ from lifemonitor import auth
 from lifemonitor.api.models import (TestingService, TestingServiceTokenManager,
                                     TestSuite, User)
 from lifemonitor.api.services import LifeMonitor
-from lifemonitor.cache import cache, init_cache, clear_cache
+from lifemonitor.cache import cache, clear_cache
 from lifemonitor.utils import ClassManager
 
 from tests.utils import register_workflow
