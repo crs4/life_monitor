@@ -34,6 +34,6 @@ def test_download_url_404():
         assert excinfo.value.status == 404
 
 
-class PickableMock(MagicMock):
+class SerializableMock(MagicMock):
     def __reduce__(self):
         return (Mock, ())

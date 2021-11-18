@@ -23,11 +23,64 @@ from time import sleep
 from unittest.mock import MagicMock
 
 import lifemonitor.api.models as models
-from lifemonitor.cache import cache, make_cache_key
+import pytest
+from lifemonitor.cache import (IllegalStateException, cache, init_cache,
+                               make_cache_key)
 from tests import utils
-from tests.unit.test_utils import PickableMock
+from tests.unit.test_utils import SerializableMock
 
 logger = logging.getLogger(__name__)
+
+
+@pytest.mark.parametrize("app_settings", [(False, {"CACHE_TYPE":  "Flask_caching.backends.simplecache.SimpleCache"})], indirect=True)
+def test_cache_config(app_settings, app_context):
+
+    logger.debug("App settings: %r", app_settings)
+
+    app = app_context.app
+    logger.debug("App: %r", app)
+
+    config = app.config
+    logger.debug("Config: %r", config)
+
+    #config.setdefault("CACHE_TYPE", "Flask_caching.backends.simplecache.SimpleCache")
+    assert config.get("CACHE_TYPE") == "Flask_caching.backends.simplecache.SimpleCache", "Unexpected cache type on app config"
+    init_cache(app)
+    assert cache.cache_enabled is False, "Cache should be disabled"
+    with pytest.raises(IllegalStateException):
+        cache.backend
+
+
+def test_cache_transaction_setup():
+
+    cache.clear()
+    key = "test"
+    value = "test"
+    assert cache.size() == 0, "Cache should be empty"
+    with cache.transaction("test") as t:
+        assert t.size() == 0, "Unexpected transaction size: it should be empty"
+        t.set(key, value)
+        assert t.size() == 1, "Unexpected transaction size: it should be equal to 1"
+        assert t.has(key), f"key '{key}' should be set in the current transaction"
+        assert cache.size() == 0, "Cache should be empty"
+
+    assert cache.size() == 1, "Cache should contain one element"
+    assert cache.has(key), f"key '{key}' should be in cache"
+    assert cache.get_current_transaction() is None, "Unexpected transaction"
+
+
+def test_cache_timeout():
+    cache.clear()
+    assert cache.size() == 0, "Cache should be empty"
+    key = "test5"
+    value = 1024
+    timeout = 5
+    cache.set(key, value, timeout=timeout)
+    assert cache.size() == 1, "Cache should not be empty"
+    assert cache.has(key) is True, f"Key {key} should be in cache"
+    sleep(5)
+    assert cache.size() == 0, "Cache should be empty"
+    assert cache.has(key) is False, f"Key {key} should not be in cache after {timeout} secs"
 
 
 def test_cache_last_build(app_client, redis_cache, user1):
@@ -102,8 +155,9 @@ def test_cache_last_build_update(app_client, redis_cache, user1):
             logger.info("Updating workflow: %r", w)
             for i in s.test_instances:
                 builds_data = i.testing_service.get_test_builds(i)
-                i.testing_service.get_test_builds = PickableMock()
+                i.testing_service.get_test_builds = SerializableMock()
                 i.testing_service.get_test_builds.return_value = builds_data
+                transaction_keys = None
                 with i.cache.transaction(str(i)) as t:
                     assert i.cache.get_current_transaction() == t, "Unexpected transaction"
 
@@ -115,6 +169,7 @@ def test_cache_last_build_update(app_client, redis_cache, user1):
                     builds = i.get_test_builds()
                     logger.debug("Getting latest builds (first call): %r\n", builds)
                     i.testing_service.get_test_builds.assert_called_once(), "i.testing_service.get_test_builds should be called once"
+                    logger.debug(f"Checking if key {cache_key} is in cache...")
                     assert cache.has(cache_key), "The key should be in cache"
                     cache_size = cache.size()
                     logger.debug("Current cache size: %r", cache_size)
@@ -124,6 +179,7 @@ def test_cache_last_build_update(app_client, redis_cache, user1):
                     builds = i.get_test_builds()
                     logger.debug("Getting latest builds (second call): %r\n", builds)
                     i.testing_service.get_test_builds.assert_called_once(), "i.testing_service.get_test_builds should be called once"
+                    logger.debug(f"Checking if key {cache_key} is in cache...")
                     assert cache.has(cache_key), "The key should be in cache"
                     assert cache.size() == cache_size, "Unexpected cache size"
                     assert i.cache.get_current_transaction() == t, "Unexpected transaction"
@@ -132,34 +188,44 @@ def test_cache_last_build_update(app_client, redis_cache, user1):
                     builds = i.get_test_builds()
                     logger.debug("Getting latest builds (third call): %r\n", builds)
                     i.testing_service.get_test_builds.assert_called_once(), "i.testing_service.get_test_builds should be called once"
+                    logger.debug(f"Checking if key {cache_key} is in cache...")
                     assert cache.has(cache_key), "The key should be in cache"
                     assert cache.size() == cache_size, "Unexpected cache size"
                     assert i.cache.get_current_transaction() == t, "Unexpected transaction"
 
+                    logger.debug("\n\Preparing data to test builds...")
                     b_data = []
                     for b in builds:
                         b_data.append(i.testing_service.get_test_build(i, b.id))
+                    logger.debug("\n\Preparing data to test builds... DONE")
 
-                    i.testing_service.get_test_build = PickableMock()
+                    logger.debug("\n\nChecking test builds...")
+                    i.testing_service.get_test_build = SerializableMock()
                     for count in range(0, len(b_data)):
                         b = b_data[count]
                         i.testing_service.get_test_build.return_value = b
 
                         cache_key = make_cache_key(i.get_test_build, client_scope=False, args=[i, b.id])
 
-                        logger.debug("\n\nChecking build (first call): %r", i.get_test_build(b.id))
+                        logger.debug("\n\nChecking build (first call): buildID=%r", b.id)
+                        logger.debug("Build data: %r", i.get_test_build(b.id))
                         i.testing_service.get_test_build.call_count == count + 1, "i.testing_service.get_test_build should be called once"
+                        logger.debug(f"Checking if key {cache_key} is in cache...")
                         assert cache.has(cache_key), f"The key {cache_key} should be in cache"
                         cache_size = cache.size()
                         logger.debug("Current cache size: %r", cache_size)
 
-                        logger.debug("\n\nChecking build (second call): %r", i.get_test_build(b.id))
+                        logger.debug("\n\nChecking build (second call): buildID=%r", b.id)
+                        logger.debug("Build data: %r", i.get_test_build(b.id))
                         i.testing_service.get_test_build.call_count == count + 1, "i.testing_service.get_test_build should be called once"
+                        logger.debug(f"Checking if key {cache_key} is in cache...")
                         assert cache.has(cache_key), f"The key {cache_key} should be in cache"
                         assert cache.size() == cache_size, "Unexpected cache size"
 
-                        logger.debug("\n\nChecking build (third call): %r", i.get_test_build(b.id))
+                        logger.debug("\n\nChecking build (third call): buildID=%r", b.id)
+                        logger.debug("Build data: %r", i.get_test_build(b.id))
                         i.testing_service.get_test_build.call_count == count + 1, "i.testing_service.get_test_build should be called once"
+                        logger.debug(f"Checking if key {cache_key} is in cache...")
                         assert cache.has(cache_key), f"The key {cache_key} should be in cache"
                         assert cache.size() == cache_size, "Unexpected cache size"
 
@@ -167,7 +233,17 @@ def test_cache_last_build_update(app_client, redis_cache, user1):
                     i.testing_service.get_test_builds.assert_called_once(), "i.testing_service.get_test_builds should be called once"
                     logger.debug("\n\nGetting latest build... DONE\n\n")
 
+                    transaction_keys = t.keys()
+                    logger.debug("Transaction keys (# %r): %r", len(transaction_keys), transaction_keys)
+                    assert len(transaction_keys) == t.size(), "Unexpected transaction size"
+
+                # check the cache after the transaction is completed
+                cache_size = cache.size()
+                assert len(transaction_keys) == cache_size, "Unpexpected cache size: it should be equal to the transaction size"
+
+                # check latest build
                 logger.debug("\n\nGetting latest build: %r", i.last_test_build)
+                assert cache.size() == cache_size, "Unexpected cache size"
 
     except Exception as e:
         logger.error("Error when executing task 'check_last_build': %s", str(e))
