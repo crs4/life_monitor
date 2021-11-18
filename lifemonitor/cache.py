@@ -168,11 +168,11 @@ class Cache(object):
 
     @classmethod
     def init_backend(cls, config):
-        if cls.__cache__ is None:
-            if config.get("CACHE_TYPE", None) == "flask_caching.backends.rediscache.RedisCache":
-                cls.__cache__ = redis.Redis.from_url(config.get("CACHE_REDIS_URL"))
-            else:
-                cls.cache_enabled = False
+        if config.get("CACHE_TYPE", None) == "flask_caching.backends.rediscache.RedisCache":
+            cls.__cache__ = redis.Redis.from_url(config.get("CACHE_REDIS_URL"))
+        else:
+            cls.__cache__ = None
+            cls.cache_enabled = False
         return cls.__cache__
 
     @classmethod
