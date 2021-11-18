@@ -168,9 +168,14 @@ class Cache(object):
 
     @classmethod
     def init_backend(cls, config):
+        logger.debug("Initialising cache back-end...")
+        logger.debug("Cache type detected: %r", config.get("CACHE_TYPE", None))
         if config.get("CACHE_TYPE", None) == "flask_caching.backends.rediscache.RedisCache":
+            logger.debug("Configuring Redis back-end...")
             cls.__cache__ = redis.Redis.from_url(config.get("CACHE_REDIS_URL"))
+            cls.cache_enabled = True
         else:
+            logger.debug("No cache")
             cls.__cache__ = None
             cls.cache_enabled = False
         return cls.__cache__
