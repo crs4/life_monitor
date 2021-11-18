@@ -46,8 +46,7 @@ def test_cache_config(app_settings, app_context):
         cache.backend
 
 
-def test_cache_transaction_setup():
-
+def test_cache_transaction_setup(app_context, redis_cache):
     cache.clear()
     key = "test"
     value = "test"
@@ -64,7 +63,7 @@ def test_cache_transaction_setup():
     assert cache.get_current_transaction() is None, "Unexpected transaction"
 
 
-def test_cache_timeout():
+def test_cache_timeout(app_context, redis_cache):
     cache.clear()
     assert cache.size() == 0, "Cache should be empty"
     key = "test5"
@@ -78,7 +77,7 @@ def test_cache_timeout():
     assert cache.has(key) is False, f"Key {key} should not be in cache after {timeout} secs"
 
 
-def test_cache_last_build(app_client, redis_cache, user1):
+def test_cache_last_build(app_context, redis_cache, user1):
     valid_workflow = 'sort-and-change-case'
     cache.clear()
     assert cache.size() == 0, "Cache should be empty"
@@ -105,7 +104,7 @@ def test_cache_last_build(app_client, redis_cache, user1):
     assert build == cached_build, "Build should be equal to the cached build"
 
 
-def test_cache_test_builds(app_client, redis_cache, user1):
+def test_cache_test_builds(app_context, redis_cache, user1):
     valid_workflow = 'sort-and-change-case'
     cache.clear()
     assert cache.size() == 0, "Cache should be empty"
@@ -137,7 +136,7 @@ def test_cache_test_builds(app_client, redis_cache, user1):
     assert instance.cache.get(cache_key) is None, "Cache should be empty"
 
 
-def test_cache_last_build_update(app_client, redis_cache, user1):
+def test_cache_last_build_update(app_context, redis_cache, user1):
     valid_workflow = 'sort-and-change-case'
     logger.debug("Cache content: %r", cache.keys)
     cache.clear()
@@ -251,7 +250,7 @@ def test_cache_last_build_update(app_client, redis_cache, user1):
     assert len(cache.backend.keys("lock*")) == 0, "No lock should be set"
 
 
-def test_cache_task_last_build(app_client, redis_cache, user1):
+def test_cache_task_last_build(app_context, redis_cache, user1):
     valid_workflow = 'sort-and-change-case'
     logger.debug("Cache content: %r", cache.keys)
     cache.clear()
