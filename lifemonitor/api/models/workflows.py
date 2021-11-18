@@ -316,7 +316,7 @@ class WorkflowVersion(ROCrate):
                 .filter(Workflow.public == true())\
                 .filter(cls.version == version).one()  # noqa: E712
         except NoResultFound as e:
-            logger.exception(e)
+            logger.debug(e)
             return None
         except Exception as e:
             raise lm_exceptions.LifeMonitorException(detail=str(e), stack=str(e))
@@ -331,7 +331,7 @@ class WorkflowVersion(ROCrate):
                 .filter(Permission.user_id == owner.id)\
                 .filter(cls.version == version).one()
         except NoResultFound as e:
-            logger.exception(e)
+            logger.debug(e)
             return None
         except Exception as e:
             raise lm_exceptions.LifeMonitorException(detail=str(e), stack=str(e))
