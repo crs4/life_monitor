@@ -32,18 +32,13 @@ from tests.unit.test_utils import SerializableMock
 logger = logging.getLogger(__name__)
 
 
-@pytest.mark.parametrize("app_settings", [(False, {"CACHE_TYPE":  "Flask_caching.backends.simplecache.SimpleCache"})], indirect=True)
+@pytest.mark.parametrize("app_settings", [(False, {"CACHE_TYPE": "Flask_caching.backends.simplecache.SimpleCache"})], indirect=True)
 def test_cache_config(app_settings, app_context):
-
     logger.debug("App settings: %r", app_settings)
-
     app = app_context.app
     logger.debug("App: %r", app)
-
     config = app.config
     logger.debug("Config: %r", config)
-
-    #config.setdefault("CACHE_TYPE", "Flask_caching.backends.simplecache.SimpleCache")
     assert config.get("CACHE_TYPE") == "Flask_caching.backends.simplecache.SimpleCache", "Unexpected cache type on app config"
     init_cache(app)
     assert cache.cache_enabled is False, "Cache should be disabled"
@@ -193,11 +188,11 @@ def test_cache_last_build_update(app_client, redis_cache, user1):
                     assert cache.size() == cache_size, "Unexpected cache size"
                     assert i.cache.get_current_transaction() == t, "Unexpected transaction"
 
-                    logger.debug("\n\Preparing data to test builds...")
+                    logger.debug("\n\nPreparing data to test builds...")
                     b_data = []
                     for b in builds:
                         b_data.append(i.testing_service.get_test_build(i, b.id))
-                    logger.debug("\n\Preparing data to test builds... DONE")
+                    logger.debug("\n\nPreparing data to test builds... DONE")
 
                     logger.debug("\n\nChecking test builds...")
                     i.testing_service.get_test_build = SerializableMock()
