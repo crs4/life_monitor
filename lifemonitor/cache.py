@@ -85,39 +85,77 @@ class CacheTransaction(object):
     def __init__(self, cache: Cache):
         self.__cache__ = cache
         self.__locks__ = {}
+        self.__data__ = {}
         self.__closed__ = False
 
-    def get_lock(blocking: bool = True, timeout: int = Timeout.REQUEST):
-        pass
+    def make_key(self, key: str, prefix: str = CACHE_PREFIX) -> str:
+        return self.__cache__._make_key(key, prefix=prefix)
 
-    def has_lock(self, lock: str) -> bool:
-        return lock in self.__locks__
+    def set(self, key: str, value, timeout: int = Timeout.REQUEST, prefix: str = CACHE_PREFIX):
+        self.__data__[self.make_key(key, prefix=prefix)] = (value, timeout)
+
+    def get(self, key: str, prefix: str = CACHE_PREFIX):
+        data = self.__data__.get(self.make_key(key, prefix=prefix), None)
+        return data[0] if data is not None else None
+
+    def keys(self):
+        return list(self.__data__.keys())
+
+    def has(self, key: str) -> bool:
+        if key is None:
+            return False
+        return self.make_key(key) in self.keys()
+
+    def has_lock(self, key: str) -> bool:
+        return key in self.__locks__
+
+    def size(self) -> int:
+        return len(self.__data__.keys())
 
     def __enter__(self):
+        self.start()
         return self
 
     def __exit__(self, type, value, traceback):
-        print("Exception has been handled")
         self.close()
-        return True
+
+    def start(self):
+        logger.debug("Starting transaction...")
+        self.__data__.clear()
+        self.__locks__.clear()
+        self.__closed__ = False
 
     def close(self):
         if self.__closed__:
             logger.debug("Transaction already closed")
         else:
-            logger.debug("Closing transaction")
+            logger.debug("Stopping transaction...")
             try:
+                logger.debug("Finalizing transaction...")
+                pipeline = self.__cache__.backend.pipeline()
+                for k, data in self.__data__.items():
+                    logger.debug(f"Setting key {k} on transaction pipeline (timeout: {data[1]}")
+                    pipeline.set(k, pickle.dumps(data[0]), ex=data[1] if data[1] > 0 else None)
+                pipeline.execute()
+                logger.debug("Transaction finalized!")
                 for k in list(self.__locks__.keys()):
-                    logger.debug("Releasing lock %r", k)
                     lk = self.__locks__.pop(k)
                     try:
-                        lk.release()
+                        if lk:
+                            logger.debug("Releasing lock %r", k)
+                            lk.release()
+                        else:
+                            logger.debug("No lock for key %r", k)
                     except redis_lock.NotAcquired as e:
                         logger.debug(e)
                 logger.debug("All lock released")
                 logger.debug("Transaction closed")
+            except Exception as e:
+                logger.exception(e)
             finally:
                 self.__closed__ = True
+                self.__cache__._set_current_transaction(None)
+        logger.debug("Transaction finished")
 
 
 class Cache(object):
@@ -231,9 +269,15 @@ class Cache(object):
             except redis_lock.NotAcquired as e:
                 logger.debug(e)
 
-    def set(self, key: str, value, timeout: int = Timeout.NONE):
+    def set(self, key: str, value, timeout: int = Timeout.NONE, prefix: str = CACHE_PREFIX):
         if key is not None and self.cache_enabled:
-            logger.debug("Setting cache value for key %r.... (timeout: %r)", key, timeout)
+            transaction = self.get_current_transaction()
+            if transaction is not None:
+                logger.debug("Setting transactional cache value for key %r.... (timeout: %r)", key, timeout)
+                transaction.set(key, value, timeout=timeout)
+            else:
+                key = self._make_key(key, prefix=prefix)
+                logger.debug("Setting cache value for key %r.... (timeout: %r)", key, timeout)
             self.cache.set(key, value, timeout=timeout)
 
     def has(self, key: str) -> bool:
@@ -248,15 +292,20 @@ class Cache(object):
             "transaction locks": self.get_current_transaction().__locks__ if self.get_current_transaction() else None
         }
 
-    def get(self, key: str):
+    def get(self, key: str, prefix: str = CACHE_PREFIX):
         logger.debug("Getting value from cache...")
         logger.debug("Cache status: %r", self._get_status())
-        return self.cache.get(key) \
-            if isinstance(self.cache, RedisCache) \
-            and self.cache_enabled \
-            and not self.ignore_cache_values \
-            and (self.get_current_transaction() is None or self.get_current_transaction().has_lock(key)) \
-            else None
+        if not self.cache_enabled or self.ignore_cache_values:
+            return None
+        # get value from transaction
+        transaction = self.get_current_transaction()
+        logger.debug("Transaction is: %r", transaction)
+        if transaction is not None:
+            logger.debug("Getting transactional cache value for key %r....", key)
+            return transaction.get(key)
+        # get value from cache
+        data = self.backend.get(self._make_key(key, prefix=prefix))
+        logger.debug("Current cache data: %r", data is not None)
 
     def delete_keys(self, pattern: str, prefix: str = CACHE_PREFIX):
         logger.debug(f"Deleting keys by pattern: {pattern}")
