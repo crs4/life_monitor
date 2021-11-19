@@ -38,13 +38,13 @@ logger.info("Importing task definitions")
 
 
 @schedule(CronTrigger(second=0))
-@dramatiq.actor
+@dramatiq.actor(max_retries=3)
 def heartbeat():
     logger.info("Heartbeat!")
 
 
 @schedule(IntervalTrigger(seconds=Timeout.WORKFLOW * 3 / 4))
-@dramatiq.actor
+@dramatiq.actor(max_retries=3)
 def check_workflows():
     from flask import current_app
     from lifemonitor.api.controllers import workflows_rocrate_download
@@ -82,7 +82,7 @@ def check_workflows():
 
 
 @schedule(IntervalTrigger(seconds=Timeout.BUILD * 3 / 4))
-@dramatiq.actor
+@dramatiq.actor(max_retries=3)
 def check_last_build():
     from lifemonitor.api.models import Workflow
 
