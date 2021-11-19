@@ -20,6 +20,7 @@
 
 from __future__ import annotations
 
+import threading
 import functools
 import logging
 import os
@@ -81,11 +82,19 @@ class IllegalStateException(RuntimeError):
 
 
 class CacheTransaction(object):
-    def __init__(self, cache: Cache):
+    def __init__(self, cache: Cache, name=None):
+        self.__name = name or id(self)
         self.__cache__ = cache
         self.__locks__ = {}
         self.__data__ = {}
         self.__closed__ = False
+
+    def __repr__(self) -> str:
+        return f"CacheTransaction#{self.name}"
+
+    @property
+    def name(self):
+        return self.__name
 
     def make_key(self, key: str, prefix: str = CACHE_PREFIX) -> str:
         return self.__cache__._make_key(key, prefix=prefix)
@@ -119,16 +128,16 @@ class CacheTransaction(object):
         self.close()
 
     def start(self):
-        logger.debug("Starting transaction...")
+        logger.debug(f"Starting {self} ...")
         self.__data__.clear()
         self.__locks__.clear()
         self.__closed__ = False
 
     def close(self):
         if self.__closed__:
-            logger.debug("Transaction already closed")
+            logger.debug(f"{self} already closed")
         else:
-            logger.debug("Stopping transaction...")
+            logger.debug(f"Stopping {self}...")
             try:
                 logger.debug("Finalizing transaction...")
                 pipeline = self.__cache__.backend.pipeline()
@@ -147,14 +156,14 @@ class CacheTransaction(object):
                             logger.debug("No lock for key %r", k)
                     except redis_lock.NotAcquired as e:
                         logger.debug(e)
-                logger.debug("All lock released")
-                logger.debug("Transaction closed")
+                logger.debug(f"All lock of {self} released")
+                logger.debug(f"{self} closed")
             except Exception as e:
                 logger.exception(e)
             finally:
                 self.__closed__ = True
                 self.__cache__._set_current_transaction(None)
-        logger.debug("Transaction finished")
+        logger.debug(f"{self} finished")
 
 
 class Cache(object):
@@ -193,7 +202,7 @@ class Cache(object):
             cls.reset_locks()
 
     def __init__(self, parent: Cache = None) -> None:
-        self._current_transaction = None
+        self._local = threading.local()
         self._parent = parent
 
     @staticmethod
@@ -214,24 +223,22 @@ class Cache(object):
         self._ignore_cache_values = True if value is True else False
 
     def _set_current_transaction(self, t: CacheTransaction):
-        # TODO: replace with a thread local attribute
         if self.parent is not None:
             self.parent._set_current_transaction(t)
         else:
-            self._current_transaction = t
+            self._local.transaction = t
 
     def get_current_transaction(self) -> CacheTransaction:
-        # TODO: replace with a thread local attribute
         if self.parent is not None:
             return self.parent.get_current_transaction()
-        return self._current_transaction
+        try:
+            return self._local.transaction
+        except AttributeError:
+            return None
 
     @contextmanager
     def transaction(self, name) -> CacheTransaction:
-        # TODO: replace with a thread local attribute
-        if self._current_transaction is not None:
-            raise IllegalStateException("Transaction already started")
-        t = CacheTransaction(self)
+        t = CacheTransaction(self, name=name)
         self._set_current_transaction(t)
         try:
             yield t
@@ -256,9 +263,6 @@ class Cache(object):
         else:
             query = f"{query}*"
         logger.debug("Keys pattern: %r", query)
-        transaction = self.get_current_transaction()
-        if transaction is not None:
-            pass
         return self.backend.keys(query)
 
     def size(self, pattern=None):
