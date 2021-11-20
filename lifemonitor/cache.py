@@ -20,11 +20,12 @@
 
 from __future__ import annotations
 
-import threading
 import functools
 import logging
 import os
 import pickle
+import threading
+import time
 from contextlib import contextmanager
 
 import redis
@@ -82,15 +83,34 @@ class IllegalStateException(RuntimeError):
 
 
 class CacheTransaction(object):
+
+    _current_transaction = threading.local()
+
+    @classmethod
+    def get_current_transaction(cls) -> CacheTransaction:
+        try:
+            return cls._current_transaction.value
+        except AttributeError:
+            return None
+
+    @classmethod
+    def set_current_transaction(cls, t: CacheTransaction):
+        cls._current_transaction.value = t
+
     def __init__(self, cache: Cache, name=None):
-        self.__name = name or id(self)
+        self.__name = name or f"T-{id(self)}"
         self.__cache__ = cache
         self.__locks__ = {}
         self.__data__ = {}
+        self.__started__ = False
         self.__closed__ = False
 
     def __repr__(self) -> str:
         return f"CacheTransaction#{self.name}"
+
+    @property
+    def cache(self):
+        return self.__cache__
 
     @property
     def name(self):
@@ -114,6 +134,26 @@ class CacheTransaction(object):
             return False
         return self.make_key(key) in self.keys()
 
+    @contextmanager
+    def lock(self, key: str,
+             timeout: int = Timeout.REQUEST,
+             expire=15, retry=1, auto_renewal=True):
+        logger.debug("Getting lock for key %r...", key)
+        if key in self.__locks__:
+            yield self.__locks__[key]
+        else:
+            lock = redis_lock.Lock(self.cache.backend, key, expire=expire, auto_renewal=auto_renewal, id=self.name)
+            while not lock.acquire(blocking=False, timeout=timeout if timeout > 0 else None):
+                logger.debug("Waiting for lock key '%r'... (retry in %r secs)", lock, retry)
+                time.sleep(retry)
+            logger.debug("Lock for key '%r' acquired: %r", key, lock.locked)
+            self.__locks__[key] = lock
+            logger.debug("Lock for key '%r' added to transaction %r: %r", key, self.name, self.has_lock(key))
+            try:
+                yield lock
+            finally:
+                logger.debug("Releasing transactional lock context for key '%s'", key)
+
     def has_lock(self, key: str) -> bool:
         return key in self.__locks__
 
@@ -126,11 +166,16 @@ class CacheTransaction(object):
 
     def __exit__(self, type, value, traceback):
         self.close()
+        return True
+
+    def is_started(self) -> bool:
+        return self.__started__
 
     def start(self):
         logger.debug(f"Starting {self} ...")
         self.__data__.clear()
         self.__locks__.clear()
+        self.__started__ = True
         self.__closed__ = False
 
     def close(self):
@@ -148,14 +193,18 @@ class CacheTransaction(object):
                 logger.debug("Transaction finalized!")
                 for k in list(self.__locks__.keys()):
                     lk = self.__locks__.pop(k)
-                    try:
-                        if lk:
-                            logger.debug("Releasing lock %r", k)
-                            lk.release()
+                    if lk:
+                        if lk.locked:
+                            logger.debug("Releasing lock for key '%r'...", k)
+                            try:
+                                lk.release()
+                                logger.debug("Lock for key '%r' released: %r", k, lk.locked)
+                            except redis_lock.NotAcquired as e:
+                                logger.warning(e)
                         else:
-                            logger.debug("No lock for key %r", k)
-                    except redis_lock.NotAcquired as e:
-                        logger.debug(e)
+                            logger.warning("Lock for key '%s' not acquired or expired")
+                    else:
+                        logger.warning("No lock for key %r", k)
                 logger.debug(f"All lock of {self} released")
                 logger.debug(f"{self} closed")
             except Exception as e:
@@ -164,6 +213,9 @@ class CacheTransaction(object):
                 self.__closed__ = True
                 self.__cache__._set_current_transaction(None)
         logger.debug(f"{self} finished")
+
+
+_current_transaction = threading.local()
 
 
 class Cache(object):
@@ -202,7 +254,7 @@ class Cache(object):
             cls.reset_locks()
 
     def __init__(self, parent: Cache = None) -> None:
-        self._local = threading.local()
+        self._local = _current_transaction
         self._parent = parent
 
     @staticmethod
@@ -223,34 +275,36 @@ class Cache(object):
         self._ignore_cache_values = True if value is True else False
 
     def _set_current_transaction(self, t: CacheTransaction):
-        if self.parent is not None:
-            self.parent._set_current_transaction(t)
-        else:
-            self._local.transaction = t
+        CacheTransaction.set_current_transaction(t)
 
     def get_current_transaction(self) -> CacheTransaction:
-        if self.parent is not None:
-            return self.parent.get_current_transaction()
-        try:
-            return self._local.transaction
-        except AttributeError:
-            return None
+        return CacheTransaction.get_current_transaction()
 
     @contextmanager
-    def transaction(self, name) -> CacheTransaction:
-        t = CacheTransaction(self, name=name)
-        self._set_current_transaction(t)
+    def transaction(self, name=None) -> CacheTransaction:
+        new_transaction = False
+        t = self.get_current_transaction()
+        if t is None:
+            logger.debug("Creating a new transaction...")
+            t = CacheTransaction(self, name=name)
+            self._set_current_transaction(t)
+            new_transaction = True
+        else:
+            logger.debug("Reusing transaction in the current thread: %r", t)
         try:
             yield t
         except Exception as e:
             logger.exception(e)
         finally:
             logger.debug("Finally closing transaction")
-            try:
-                t.close()
-            except Exception as fe:
-                logger.debug(fe)
-            self._set_current_transaction(None)
+            if not new_transaction:
+                logger.debug("Transaction not initialized in this context: it should continue")
+            else:
+                try:
+                    t.close()
+                except Exception as fe:
+                    logger.debug(fe)
+                self._set_current_transaction(None)
 
     @property
     def backend(self) -> redis.Redis:
@@ -272,37 +326,34 @@ class Cache(object):
         return {k: self.backend.get(k) for k in self.keys(pattern=pattern)}
 
     @contextmanager
-    def lock(self, key: str, blocking: bool = True,
+    def lock(self, key: str,
              timeout: int = Timeout.REQUEST,
-             expire=60, auto_renewal=True):
+             expire=15, retry=1, auto_renewal=True):
         logger.debug("Getting lock for key %r...", key)
         lock = redis_lock.Lock(self.backend, key, expire=expire, auto_renewal=auto_renewal)
         try:
-            yield lock.acquire(blocking=blocking, timeout=timeout if timeout > 0 else None)
+            while not lock.acquire(blocking=False, timeout=timeout if timeout > 0 else None):
+                logger.debug("Waiting to acquire the lock for '%r'... (retry in %r secs)", lock, retry)
+                time.sleep(retry)
+            logger.debug(f"Lock for key '{key}' acquired: {lock.locked}")
+            yield lock
         finally:
             try:
-                logger.debug("Auto release of lock for key=%s", key)
-                transaction = self.get_current_transaction()
-                if transaction is None:
-                    logger.debug("No transaction in progress...")
-                    lock.release()
+                logger.debug("Exiting from transactional lock context for key '%s'", key)
+                if not lock.locked:
+                    logger.warning("Lock for key '%s' not acquired", key)
                 else:
-                    logger.debug("Transaction %r in progress...", transaction)
-                    transaction.__locks__[key] = lock
-                    logger.debug("Added lock to transaction: %r", transaction.has_lock(key))
+                    logger.debug("Auto release of lock for key '%s'", key)
+                    lock.release()
+                    logger.debug("Lock for key='%s' released: %r", key, lock.locked)
             except redis_lock.NotAcquired as e:
                 logger.debug(e)
 
     def set(self, key: str, value, timeout: int = Timeout.NONE, prefix: str = CACHE_PREFIX):
         if key is not None and self.cache_enabled:
-            transaction = self.get_current_transaction()
-            if transaction is not None:
-                logger.debug("Setting transactional cache value for key %r.... (timeout: %r)", key, timeout)
-                transaction.set(key, value, timeout=timeout)
-            else:
-                key = self._make_key(key, prefix=prefix)
-                logger.debug("Setting cache value for key %r.... (timeout: %r)", key, timeout)
-                self.backend.set(key, pickle.dumps(value), ex=timeout if timeout > 0 else None)
+            key = self._make_key(key, prefix=prefix)
+            logger.debug("Setting cache value for key %r.... (timeout: %r)", key, timeout)
+            self.backend.set(key, pickle.dumps(value), ex=timeout if timeout > 0 else None)
 
     def has(self, key: str, prefix: str = CACHE_PREFIX) -> bool:
         return self.get(key, prefix=prefix) is not None
@@ -321,13 +372,6 @@ class Cache(object):
         logger.debug("Cache status: %r", self._get_status())
         if not self.cache_enabled or self.ignore_cache_values:
             return None
-        # get value from transaction
-        transaction = self.get_current_transaction()
-        logger.debug("Transaction is: %r", transaction)
-        if transaction is not None:
-            logger.debug("Getting transactional cache value for key %r....", key)
-            return transaction.get(key)
-        # get value from cache
         data = self.backend.get(self._make_key(key, prefix=prefix))
         logger.debug("Current cache data: %r", data is not None)
         return pickle.loads(data) if data is not None else data
@@ -440,27 +484,30 @@ def cached(timeout=Timeout.REQUEST, client_scope=True, unless=None):
             obj: CacheMixin = args[0] if len(args) > 0 and isinstance(args[0], CacheMixin) else None
             logger.debug("Wrapping a method of a CacheMixin instance: %r", obj is not None)
             hc = cache if obj is None else obj.cache
-            if hc.cache_enabled:
+            if hc and hc.cache_enabled:
                 key = make_cache_key(function, client_scope, args=args, kwargs=kwargs)
-                result = hc.get(key)
-                if result is None:
-                    logger.debug(f"Value {key} not set in cache...")
-                    if hc.backend:
-                        with hc.lock(key, blocking=True, timeout=Timeout.NONE):
-                            result = hc.get(key)
+                if hc.get_current_transaction() is None:
+                    value = hc.get(key)
+                    if value is not None:
+                        return value
+
+                with hc.transaction() as transaction:
+                    result = transaction.get(key)
+                    if result is None:
+                        logger.debug(f"Value {key} not set in cache...")
+                        # if hc.backend:
+                        with transaction.lock(key, timeout=Timeout.NONE):
+                            result = transaction.get(key)
                             if not result:
                                 logger.debug("Cache empty: getting value from the actual function...")
                                 result = function(*args, **kwargs)
                                 logger.debug("Checking unless function: %r", unless)
-                                if unless is None or unless is True or callable(unless) and not unless(result):
-                                    hc.set(key, result, timeout=timeout)
+                                if unless is None or unless is False or callable(unless) and not unless(result):
+                                    transaction.set(key, result, timeout=timeout)
                                 else:
                                     logger.debug("Don't set value in cache due to unless=%r", "None" if unless is None else "True")
                     else:
-                        logger.warning("Using unsupported cache backend: cache will not be used")
-                        result = function(*args, **kwargs)
-                else:
-                    logger.debug(f"Reusing value from cache key '{key}'...")
+                        logger.debug(f"Reusing value from cache key '{key}'...")
             else:
                 logger.debug("Cache disabled: getting value from the actual function...")
                 result = function(*args, **kwargs)
