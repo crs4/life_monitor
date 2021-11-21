@@ -293,8 +293,6 @@ class Cache(object):
             logger.debug("Reusing transaction in the current thread: %r", t)
         try:
             yield t
-        except Exception as e:
-            logger.exception(e)
         finally:
             logger.debug("Finally closing transaction")
             if not new_transaction:
@@ -512,6 +510,7 @@ def cached(timeout=Timeout.REQUEST, client_scope=True, unless=None, transactiona
             obj: CacheMixin = args[0] if len(args) > 0 and isinstance(args[0], CacheMixin) else None
             logger.debug("Wrapping a method of a CacheMixin instance: %r", obj is not None)
             hc = cache if obj is None else obj.cache
+            result = None
             if hc and hc.cache_enabled:
                 key = make_cache_key(function, client_scope, args=args, kwargs=kwargs)
                 transaction = hc.get_current_transaction()
