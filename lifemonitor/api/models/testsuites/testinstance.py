@@ -105,16 +105,16 @@ class TestInstance(db.Model, ModelMixin):
     def last_test_build(self):
         return self.get_last_test_build()
 
-    @cached(timeout=Timeout.NONE, client_scope=False)
+    @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True)
     def get_last_test_build(self):
         builds = self.get_test_builds()
         return builds[0] if builds and len(builds) > 0 else None
 
-    @cached(timeout=Timeout.NONE, client_scope=False)
+    @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True)
     def get_test_builds(self, limit=10):
         return self.testing_service.get_test_builds(self, limit=limit)
 
-    @cached(timeout=Timeout.BUILD, client_scope=False,
+    @cached(timeout=Timeout.BUILD, client_scope=False, transactional_update=True,
             unless=lambda b: b.status in [models.BuildStatus.RUNNING, models.BuildStatus.WAITING])
     def get_test_build(self, build_number):
         return self.testing_service.get_test_build(self, build_number)

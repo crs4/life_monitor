@@ -134,7 +134,7 @@ class TravisTestingService(TestingService):
     def get_last_failed_test_build(self, test_instance: models.TestInstance) -> Optional[models.TravisTestBuild]:
         return self._get_last_test_build(test_instance, state='failed')
 
-    @cached(timeout=Timeout.NONE, client_scope=False)
+    @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True)
     def get_project_metadata(self, test_instance: models.TestInstance):
         try:
             logger.debug("Getting Travis project metadata...")

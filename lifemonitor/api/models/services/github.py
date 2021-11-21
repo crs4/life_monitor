@@ -107,7 +107,7 @@ class GithubTestingService(TestingService):
     def _get_workflow_info(self, resource):
         return self._parse_workflow_url(resource)
 
-    @cached(timeout=Timeout.NONE, client_scope=False)
+    @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True)
     def _get_repo(self, test_instance: models.TestInstance):
         logger.debug("Getting github repository from remote service...")
         _, repo_full_name, _ = self._get_workflow_info(test_instance.resource)
@@ -138,12 +138,12 @@ class GithubTestingService(TestingService):
             logger.info("Caught exception from Github GET /rate_limit: %s.  Connection not working?", e)
             return False
 
-    @cached(timeout=Timeout.NONE, client_scope=False)
+    @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True)
     def _get_gh_workflow(self, repository, workflow_id):
         logger.debug("Getting github workflow...")
         return self._gh_service.get_repo(repository).get_workflow(workflow_id)
 
-    @cached(timeout=Timeout.NONE, client_scope=False)
+    @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True)
     def _get_gh_workflow_runs(self, workflow: Workflow.Workflow) -> List:
         return list(workflow.get_runs())
 

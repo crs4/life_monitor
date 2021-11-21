@@ -474,7 +474,35 @@ def clear_cache(func=None, client_scope=True, prefix=CACHE_PREFIX, *args, **kwar
         logger.error("Error deleting cache: %r", e)
 
 
-def cached(timeout=Timeout.REQUEST, client_scope=True, unless=None):
+def _process_cache_data(cache, transaction, key, unless, timeout,
+                        read_from_cache, write_to_cache, function, args, kwargs):
+    # check parameters
+    assert read_from_cache or transaction, "Unable to read from transaction: transaction is None"
+    assert write_to_cache or transaction, "Unable to write to transaction: transaction is None"
+    # set reader/writer
+    reader = cache if read_from_cache else transaction
+    writer = cache if write_to_cache else transaction
+    # get/set data
+    result = reader.get(key)
+    if result is None:
+        logger.debug(f"Value {key} not set in cache...")
+        with cache.lock(key, timeout=Timeout.NONE):
+            result = reader.get(key)
+            if not result:
+                logger.debug("Cache empty: getting value from the actual function...")
+                result = function(*args, **kwargs)
+                logger.debug("Checking unless function: %r", unless)
+                if unless is None or unless is False or callable(unless) and not unless(result):
+                    writer.set(key, result, timeout=timeout)
+                else:
+                    logger.debug("Don't set value in cache due to unless=%r",
+                                 "None" if unless is None else "True")
+    else:
+        logger.debug(f"Reusing value from cache key '{key}'...")
+    return result
+
+
+def cached(timeout=Timeout.REQUEST, client_scope=True, unless=None, transactional_update=False):
     def decorator(function):
 
         @functools.wraps(function)
@@ -486,28 +514,17 @@ def cached(timeout=Timeout.REQUEST, client_scope=True, unless=None):
             hc = cache if obj is None else obj.cache
             if hc and hc.cache_enabled:
                 key = make_cache_key(function, client_scope, args=args, kwargs=kwargs)
-                if hc.get_current_transaction() is None:
-                    value = hc.get(key)
-                    if value is not None:
-                        return value
-
-                with hc.transaction() as transaction:
-                    result = transaction.get(key)
-                    if result is None:
-                        logger.debug(f"Value {key} not set in cache...")
-                        # if hc.backend:
-                        with transaction.lock(key, timeout=Timeout.NONE):
-                            result = transaction.get(key)
-                            if not result:
-                                logger.debug("Cache empty: getting value from the actual function...")
-                                result = function(*args, **kwargs)
-                                logger.debug("Checking unless function: %r", unless)
-                                if unless is None or unless is False or callable(unless) and not unless(result):
-                                    transaction.set(key, result, timeout=timeout)
-                                else:
-                                    logger.debug("Don't set value in cache due to unless=%r", "None" if unless is None else "True")
-                    else:
-                        logger.debug(f"Reusing value from cache key '{key}'...")
+                transaction = hc.get_current_transaction()
+                if transaction or transactional_update:
+                    read_from_cache = transaction is None
+                    with hc.transaction() as transaction:
+                        result = _process_cache_data(cache, transaction,
+                                                     key, unless, timeout,
+                                                     read_from_cache, False,
+                                                     function, args, kwargs)
+                else:
+                    result = _process_cache_data(cache, transaction, key, unless, timeout,
+                                                 True, True, function, args, kwargs)
             else:
                 logger.debug("Cache disabled: getting value from the actual function...")
                 result = function(*args, **kwargs)
