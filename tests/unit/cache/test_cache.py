@@ -155,143 +155,171 @@ def test_cache_last_build_update(app_context, redis_cache, user1):
 
 def cache_last_build_update(app, w, user1, check_cache_size=True, index=0,
                             multithreaded=False, results=None):
-    transactions = []
+    try:
+        transactions = []
+        logger.debug("Params of thread %r", index)
+        logger.debug("%r %r %r %r", check_cache_size, index, multithreaded, results)
+        assert len(cache.backend.keys("lock*")) == 0, "No lock should be set"
+        with app.app_context():
+            transaction_keys = None
+            with cache.transaction(f"T{index}") as t:
+                logger.debug("Current transaction: %r", t)
+                logger.debug("Current workflow: %r", w)
+                transactions.append(t)
 
-    assert len(cache.backend.keys("lock*")) == 0, "No lock should be set"
-    with app.app_context():
-        with cache.transaction(f"T{index}") as t:
-            transactions.append(t)
-            assert cache.get_current_transaction() == t, "Unexpected transaction"
-            for s in w.test_suites:
-                logger.info("[t#%r] Updating workflow (): %r", index, w)
-                for i in s.test_instances:
-                    get_test_builds_method = i.testing_service.get_test_builds
-                    builds_data = i.testing_service.get_test_builds(i)
-                    i.testing_service.get_test_builds = SerializableMock()
-                    i.testing_service.get_test_builds.return_value = builds_data
-                    transaction_keys = None
-                    cache_key = make_cache_key(i.get_test_builds, client_scope=False, args=[i])
-                    logger.debug("The cache key: %r", cache_key)
-                    assert not cache.has(cache_key), "The key should not be in cache"
+                assert cache.get_current_transaction() == t, "Unexpected transaction"
+                for s in w.test_suites:
+                    logger.info("[t#%r] Updating workflow (): %r", index, w)
+                    for i in s.test_instances:
+                        get_test_builds_method = i.testing_service.get_test_builds
+                        builds_data = i.testing_service.get_test_builds(i)
+                        i.testing_service.get_test_builds = SerializableMock()
+                        i.testing_service.get_test_builds.return_value = builds_data
 
-                    logger.debug("\n\nGetting latest builds (first call)...")
-                    builds = i.get_test_builds()
-                    logger.debug("Getting latest builds (first call): %r\n", builds)
-                    if not multithreaded:
-                        i.testing_service.get_test_builds.assert_called_once(), "i.testing_service.get_test_builds should be called once"
-                        logger.debug(f"Checking if key {cache_key} is in cache...")
-                        assert not cache.has(cache_key), "The key should not be in cache"
-                    assert t.has(cache_key), "The key should be in the current transaction"
-                    cache_size = cache.size()
-                    logger.debug("Current cache size: %r", cache_size)
-                    assert i.cache.get_current_transaction() == t, "Unexpected transaction"
+                        assert cache.get_current_transaction() == t, "Unexpected transaction"
+                        assert i.cache.get_current_transaction() == t, "Unexpected transaction"
 
-                    logger.debug("\n\nGetting latest builds (second call)...")
-                    builds = i.get_test_builds()
-                    logger.debug("Getting latest builds (second call): %r\n", builds)
-                    if not multithreaded:
-                        i.testing_service.get_test_builds.assert_called_once(), "i.testing_service.get_test_builds should be called once"
-                        logger.debug(f"Checking if key {cache_key} is in cache...")
-                        assert not cache.has(cache_key), "The key should not be in cache"
-                    assert t.has(cache_key), "The key should be in the current transaction"
-                    if check_cache_size:
-                        assert cache.size() == cache_size, "Unexpected cache size"
-                    assert i.cache.get_current_transaction() == t, "Unexpected transaction"
+                        cache_key = make_cache_key(i.get_test_builds, client_scope=False, args=[i])
+                        logger.debug("The cache key: %r", cache_key)
 
-                    logger.debug("\n\nGetting latest builds (third call)...")
-                    builds = i.get_test_builds()
-                    logger.debug("Getting latest builds (third call): %r\n", builds)
-                    if not multithreaded:
-                        i.testing_service.get_test_builds.assert_called_once(), "i.testing_service.get_test_builds should be called once"
-                        logger.debug(f"Checking if key {cache_key} is in cache...")
-                        assert not cache.has(cache_key), "The key should not be in cache"
-                    assert t.has(cache_key), "The key should be in the current transaction"
-                    if check_cache_size:
-                        assert cache.size() == cache_size, "Unexpected cache size"
-                    assert i.cache.get_current_transaction() == t, "Unexpected transaction"
-
-                    logger.debug("\n\nPreparing data to test builds...")
-                    b_data = []
-                    for b in builds:
-                        b_data.append(i.testing_service.get_test_build(i, b.id))
-                    logger.debug("\n\nPreparing data to test builds... DONE")
-
-                    assert len(b_data) == 4, "Unexpected number of builds"
-
-                    logger.debug("\n\nChecking test builds...")
-                    get_test_build_method = i.testing_service.get_test_build
-                    i.testing_service.get_test_build = SerializableMock()
-                    for count in range(0, len(b_data)):
-                        b = b_data[count]
-                        i.testing_service.get_test_build.return_value = b
-
-                        cache_key = make_cache_key(i.get_test_build, client_scope=False, args=[i, b.id])
-
-                        logger.debug("\n\nChecking build (first call): buildID=%r", b.id)
-                        logger.debug("Build data: %r", i.get_test_build(b.id))
-                        i.testing_service.get_test_build.call_count == count + 1, "i.testing_service.get_test_build should be called once"
-                        if not multithreaded:
-                            logger.debug(f"Checking if key {cache_key} is in cache...")
-                            assert not cache.has(cache_key), "The key should not be in cache"
+                        #############################################################################
+                        # latest builds (first call)
+                        #############################################################################
+                        logger.debug("\n\nGetting latest builds (first call)...")
+                        builds = i.get_test_builds()
+                        logger.debug("Getting latest builds (first call): %r\n", builds)
                         assert t.has(cache_key), "The key should be in the current transaction"
                         cache_size = cache.size()
                         logger.debug("Current cache size: %r", cache_size)
-
-                        logger.debug("\n\nChecking build (second call): buildID=%r", b.id)
-                        logger.debug("Build data: %r", i.get_test_build(b.id))
-                        i.testing_service.get_test_build.call_count == count + 1, "i.testing_service.get_test_build should be called once"
+                        assert i.cache.get_current_transaction() == t, "Unexpected transaction"
+                        # check cache
                         if not multithreaded:
+                            i.testing_service.get_test_builds.assert_called_once(), "i.testing_service.get_test_builds should be called once"
                             logger.debug(f"Checking if key {cache_key} is in cache...")
                             assert not cache.has(cache_key), "The key should not be in cache"
+
+                        #############################################################################
+                        # latest builds (second call)
+                        #############################################################################
+                        logger.debug("\n\nGetting latest builds (second call)...")
+                        builds = i.get_test_builds()
+                        logger.debug("Getting latest builds (second call): %r\n", builds)
+                        assert i.cache.get_current_transaction() == t, "Unexpected transaction"
                         assert t.has(cache_key), "The key should be in the current transaction"
+                        if not multithreaded:
+                            i.testing_service.get_test_builds.assert_called_once(), "i.testing_service.get_test_builds should be called once"
+                            logger.debug(f"Checking if key {cache_key} is in cache...")
+                            assert not cache.has(cache_key), "The key should not be in cache"
                         if check_cache_size:
                             assert cache.size() == cache_size, "Unexpected cache size"
 
-                        logger.debug("\n\nChecking build (third call): buildID=%r", b.id)
-                        logger.debug("Build data: %r", i.get_test_build(b.id))
-                        i.testing_service.get_test_build.call_count == count + 1, "i.testing_service.get_test_build should be called once"
+                        #############################################################################
+                        # latest builds (third call)
+                        #############################################################################
+                        logger.debug("\n\nGetting latest builds (third call)...")
+                        builds = i.get_test_builds()
+                        logger.debug("Getting latest builds (third call): %r\n", builds)
+                        assert i.cache.get_current_transaction() == t, "Unexpected transaction"
+                        assert t.has(cache_key), "The key should be in the current transaction"
                         if not multithreaded:
+                            i.testing_service.get_test_builds.assert_called_once(), "i.testing_service.get_test_builds should be called once"
                             logger.debug(f"Checking if key {cache_key} is in cache...")
                             assert not cache.has(cache_key), "The key should not be in cache"
-                        assert t.has(cache_key), "The key should be in the current transaction"
                         if check_cache_size:
                             assert cache.size() == cache_size, "Unexpected cache size"
 
-                    # check last test build
-                    logger.debug("\n\nGetting latest build: %r", i.last_test_build)
-                    if not multithreaded:
-                        i.testing_service.get_test_builds.assert_called_once(), "i.testing_service.get_test_builds should be called once"
-                    logger.debug("\n\nGetting latest build... DONE\n\n")
+                        #############################################################################
+                        # Check builds
+                        #############################################################################
+                        logger.debug("\n\nPreparing data to test builds...")
+                        b_data = []
+                        for b in builds:
+                            b_data.append(i.testing_service.get_test_build(i, b.id))
+                        logger.debug("\n\nPreparing data to test builds... DONE")
 
-                    # restore original method
-                    i.testing_service.get_test_build = get_test_build_method
-                    i.testing_service.get_test_builds = get_test_builds_method
+                        assert len(b_data) == 4, "Unexpected number of builds"
 
-                    # check transactions
-                    transaction_keys = t.keys()
-                    logger.debug("Transaction keys (# %r): %r", len(transaction_keys), transaction_keys)
-                    assert len(transaction_keys) == t.size(), "Unexpected transaction size"
+                        logger.debug("\n\nChecking test builds...")
+                        get_test_build_method = i.testing_service.get_test_build
 
-        # check the cache after the transaction is completed
-        if check_cache_size:
-            cache_size = cache.size()
-            assert len(transaction_keys) == cache_size, "Unpexpected cache size: it should be equal to the transaction size"
+                        for count in range(0, len(b_data)):
+                            b = b_data[count]
+                            i.testing_service.get_test_build = SerializableMock()
+                            i.testing_service.get_test_build.return_value = b
 
-        # check latest build
-        logger.debug("\n\nGetting latest build: %r", i.last_test_build)
-        if check_cache_size:
-            assert cache.size() == cache_size, "Unexpected cache size"
+                            cache_key = make_cache_key(i.get_test_build, client_scope=False, args=[i, b.id])
 
-        sleep(2)
-        assert cache.size() > 0, "Cache should not be empty"
-        logger.debug(cache.keys())
-        if not multithreaded:
-            assert len(cache.backend.keys("lock*")) == 0, "No lock should be set"
-        else:
-            assert results, "Results should not be none"
-            if results:
-                results[index]['result'].extend(transactions)
-        return transactions
+                        # first call #############################################################
+                            logger.debug("\n\nChecking build (first call): buildID=%r", b.id)
+                            logger.debug("Build data: %r", i.get_test_build(b.id))
+                            assert t.has(cache_key), "The key should be in the current transaction"
+                            if not multithreaded:
+                                i.testing_service.get_test_build.call_count == count + 1, "i.testing_service.get_test_build should be called once"
+                                logger.debug(f"Checking if key {cache_key} is in cache...")
+                                assert not cache.has(cache_key), "The key should not be in cache"
+                            cache_size = cache.size()
+                            logger.debug("Current cache size: %r", cache_size)
+
+                        # second call #############################################################
+                            logger.debug("\n\nChecking build (second call): buildID=%r", b.id)
+                            logger.debug("Build data: %r", i.get_test_build(b.id))
+                            assert t.has(cache_key), "The key should be in the current transaction"
+                            if not multithreaded:
+                                i.testing_service.get_test_build.call_count == count + 1, "i.testing_service.get_test_build should be called once"
+                                logger.debug(f"Checking if key {cache_key} is in cache...")
+                                assert not cache.has(cache_key), "The key should not be in cache"
+                            if check_cache_size:
+                                assert cache.size() == cache_size, "Unexpected cache size"
+                        # third call #############################################################
+                            logger.debug("\n\nChecking build (third call): buildID=%r", b.id)
+                            logger.debug("Build data: %r", i.get_test_build(b.id))
+                            assert t.has(cache_key), "The key should be in the current transaction"
+                            if not multithreaded:
+                                i.testing_service.get_test_build.call_count == count + 1, "i.testing_service.get_test_build should be called once"
+                                logger.debug(f"Checking if key {cache_key} is in cache...")
+                                assert not cache.has(cache_key), "The key should not be in cache"
+                            if check_cache_size:
+                                assert cache.size() == cache_size, "Unexpected cache size"
+
+                        # check last test build
+                        logger.debug("\n\nGetting latest build: %r", i.last_test_build)
+                        if not multithreaded:
+                            i.testing_service.get_test_builds.assert_called_once(), "i.testing_service.get_test_builds should be called once"
+                        logger.debug("\n\nGetting latest build... DONE\n\n")
+
+                        # restore original method
+                        i.testing_service.get_test_build = get_test_build_method
+                        i.testing_service.get_test_builds = get_test_builds_method
+
+                        ############################################################################
+                        # check latest build
+                        ############################################################################
+                        logger.debug("\n\nGetting latest build: %r", i.last_test_build)
+                        if check_cache_size:
+                            assert cache.size() == cache_size, "Unexpected cache size"
+
+            # check transactions
+            transaction_keys = t.keys()
+            logger.debug("Transaction keys (# %r): %r", len(transaction_keys), transaction_keys)
+            assert len(transaction_keys) == t.size(), "Unexpected transaction size"
+
+            # check the cache after the transaction is completed
+            if check_cache_size:
+                cache_size = cache.size()
+                assert len(transaction_keys) == cache_size, "Unpexpected cache size: it should be equal to the transaction size"
+
+            sleep(2)
+            assert cache.size() > 0, "Cache should not be empty"
+            logger.debug(cache.keys())
+            if not multithreaded:
+                assert len(cache.backend.keys("lock*")) == 0, "No lock should be set"
+            else:
+                if results:
+                    assert results, "Results should not be none"
+                    results[index]['result'].extend(transactions)
+            return transactions
+    except Exception as e:
+        logger.exception(e)
 
 
 def test_cache_task_last_build(app_context, redis_cache, user1):
@@ -314,16 +342,23 @@ def test_cache_task_last_build(app_context, redis_cache, user1):
 def check_results(results):
     logger.debug("Results: %r", results)
     assert len(cache.backend.keys(pattern="locks*")) == 0, "Locks should not be in cache"
+
     for i in range(0, len(results)):
+        r = results[i]['result']
+        for tdx in range(0, len(r)):
+            logger.debug("Transaction %r keys: # %r", r[tdx], len(r[tdx].keys()))
+            logger.debug("Transaction %r keys: %r", r[tdx], r[tdx].keys())
+
         if i == len(results) - 1:
             break
         r1 = results[i]['result']
         r2 = results[i + 1]['result']
+
         assert len(r1) == len(r2), "Transactions should be the same length"
 
         for tdx in range(0, len(r1)):
-            logger.debug("Transaction %r keys: %r", tdx, r1[tdx].keys())
-            logger.debug("Transaction %r keys: %r", tdx, r2[tdx].keys())
+            logger.debug("Transaction %r keys: %r", r1[tdx], r1[tdx].keys())
+            logger.debug("Transaction %r keys: %r", r2[tdx], r2[tdx].keys())
             assert r1[tdx].size() == r2[tdx].size(), \
                 f"Transactions {r1[tdx]} and {r2[tdx]} should have the same number of keys"
 
@@ -331,8 +366,9 @@ def check_results(results):
 def test_cache_last_build_update_multi_thread(app_context, redis_cache, user1):
     # set up a workflow
     w = setup_test_cache_last_build_update(app_context, redis_cache, user1)
+    logger.debug("Workflow %r", w)
     # set up threads
-    number_of_threads = 4
+    number_of_threads = 2
     results = []
     for index in range(number_of_threads):
         t = threading.Thread(
@@ -347,6 +383,8 @@ def test_cache_last_build_update_multi_thread(app_context, redis_cache, user1):
             "result": []
         })
         t.start()
+        sleep(2)
+
     # wait for results
     for tdata in results:
         t = tdata['t']
@@ -360,7 +398,7 @@ def test_cache_last_build_update_multi_process(app_context, redis_cache, user1):
     # set up a workflow
     w = setup_test_cache_last_build_update(app_context, redis_cache, user1)
     # set up processes
-    processes = 4
+    processes = 3
     pool = ThreadPool(processes=processes)
     results = []
     for index in range(processes):
