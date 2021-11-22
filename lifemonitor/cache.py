@@ -351,7 +351,10 @@ class Cache(object):
         if key is not None and self.cache_enabled:
             key = self._make_key(key, prefix=prefix)
             logger.debug("Setting cache value for key %r.... (timeout: %r)", key, timeout)
-            self.backend.set(key, pickle.dumps(value), ex=timeout if timeout > 0 else None)
+            if value is None:
+                self.backend.delete(key)
+            else:
+                self.backend.set(key, pickle.dumps(value), ex=timeout if timeout > 0 else None)
 
     def has(self, key: str, prefix: str = CACHE_PREFIX) -> bool:
         return self.get(key, prefix=prefix) is not None
