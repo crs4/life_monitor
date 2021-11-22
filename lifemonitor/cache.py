@@ -172,7 +172,7 @@ class CacheTransaction(object):
         return self.__started__
 
     def start(self):
-        logger.debug(f"Starting {self} ...")
+        logger.debug(f"Starting transaction {self} ...")
         self.__data__.clear()
         self.__locks__.clear()
         self.__started__ = True
@@ -202,9 +202,9 @@ class CacheTransaction(object):
                             except redis_lock.NotAcquired as e:
                                 logger.warning(e)
                         else:
-                            logger.warning("Lock for key '%s' not acquired or expired")
+                            logger.debug("Lock for key '%s' not acquired or expired")
                     else:
-                        logger.warning("No lock for key %r", k)
+                        logger.debug("No lock for key %r", k)
                 logger.debug(f"All lock of {self} released")
                 logger.debug(f"{self} closed")
             except Exception as e:
@@ -339,7 +339,7 @@ class Cache(object):
             try:
                 logger.debug("Exiting from transactional lock context for key '%s'", key)
                 if not lock.locked:
-                    logger.warning("Lock for key '%s' not acquired", key)
+                    logger.debug("Lock for key '%s' not acquired", key)
                 else:
                     logger.debug("Auto release of lock for key '%s'", key)
                     lock.release()
@@ -520,11 +520,13 @@ def cached(timeout=Timeout.REQUEST, client_scope=True, unless=None, transactiona
                 if transaction or transactional_update:
                     read_from_cache = transaction is None
                     with hc.transaction() as transaction:
+                        logger.debug("Getting value using transaction: new=%r", read_from_cache)
                         result = _process_cache_data(cache, transaction,
                                                      key, unless, timeout,
                                                      read_from_cache, False,
                                                      function, args, kwargs)
                 else:
+                    logger.debug("Getting value from cache")
                     result = _process_cache_data(cache, transaction, key, unless, timeout,
                                                  True, True, function, args, kwargs)
             else:
