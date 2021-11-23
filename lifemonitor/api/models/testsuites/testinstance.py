@@ -26,6 +26,7 @@ from typing import List
 
 import lifemonitor.api.models as models
 from lifemonitor.api.models import db
+from lifemonitor.cache import Timeout, cached
 from lifemonitor.models import JSON, UUID, ModelMixin
 
 from .testsuite import TestSuite
@@ -74,6 +75,13 @@ class TestInstance(db.Model, ModelMixin):
     def __repr__(self):
         return '<TestInstance {} on TestSuite {}>'.format(self.uuid, self.test_suite.uuid)
 
+    def __eq__(self, o: object) -> bool:
+        return isinstance(o, TestInstance) and o.uuid == self.uuid
+
+    @property
+    def _cache_key_prefix(self):
+        return str(self)
+
     @property
     def is_roc_instance(self):
         return self.roc_instance is not None
@@ -84,15 +92,30 @@ class TestInstance(db.Model, ModelMixin):
 
     @property
     def external_link(self):
+        try:
+            return self.get_external_link()
+        except Exception:
+            return None
+
+    @cached(timeout=Timeout.BUILD, client_scope=False)
+    def get_external_link(self):
         return self.testing_service.get_instance_external_link(self)
 
     @property
     def last_test_build(self):
-        return self.testing_service.get_last_test_build(self)
+        return self.get_last_test_build()
 
+    @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True)
+    def get_last_test_build(self):
+        builds = self.get_test_builds()
+        return builds[0] if builds and len(builds) > 0 else None
+
+    @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True)
     def get_test_builds(self, limit=10):
         return self.testing_service.get_test_builds(self, limit=limit)
 
+    @cached(timeout=Timeout.BUILD, client_scope=False, transactional_update=True,
+            unless=lambda b: b.status in [models.BuildStatus.RUNNING, models.BuildStatus.WAITING])
     def get_test_build(self, build_number):
         return self.testing_service.get_test_build(self, build_number)
 

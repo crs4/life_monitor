@@ -25,6 +25,7 @@ from abc import ABC, abstractmethod
 from enum import Enum
 
 import lifemonitor.api.models as models
+from lifemonitor.cache import CacheMixin, Timeout, cached
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -39,7 +40,7 @@ class BuildStatus:
     ABORTED = "aborted"
 
 
-class TestBuild(ABC):
+class TestBuild(ABC, CacheMixin):
     class Result(Enum):
         SUCCESS = 0
         FAILED = 1
@@ -52,6 +53,10 @@ class TestBuild(ABC):
 
     def __repr__(self) -> str:
         return f"TestBuild '{self.id}' @ instance '{self.test_instance.uuid}'"
+
+    def __eq__(self, other):
+        return isinstance(other, TestBuild) \
+            and self.id == other.id and self.test_instance == other.test_instance
 
     def is_successful(self):
         return self.result == TestBuild.Result.SUCCESS
@@ -106,9 +111,12 @@ class TestBuild(ABC):
         pass
 
     @property
-    @abstractmethod
     def external_link(self) -> str:
-        pass
+        return self.get_external_link()
+
+    @cached(timeout=Timeout.BUILD, client_scope=False)
+    def get_external_link(self):
+        return self.testing_service.get_test_build_external_link(self)
 
     def get_output(self, offset_bytes=0, limit_bytes=131072):
         return self.testing_service.get_test_build_output(self.test_instance, self.id, offset_bytes, limit_bytes)
@@ -123,3 +131,15 @@ class TestBuild(ABC):
         if test_output:
             data['output'] = self.output
         return data
+
+    def __getstate__(self):
+        return {
+            "testing_service": self.testing_service.uuid,
+            "test_instance": self.test_instance.uuid,
+            "metadata": self._metadata
+        }
+
+    def __setstate__(self, state):
+        self.testing_service = models.TestingService.find_by_uuid(state['testing_service'])
+        self.test_instance = models.TestInstance.find_by_uuid(state['test_instance'])
+        self._metadata = state['metadata']

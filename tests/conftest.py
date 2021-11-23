@@ -25,6 +25,7 @@ import random
 import re
 import string
 import uuid
+from collections.abc import Iterable
 from unittest.mock import MagicMock
 
 import lifemonitor.db as lm_db
@@ -33,6 +34,7 @@ from lifemonitor import auth
 from lifemonitor.api.models import (TestingService, TestingServiceTokenManager,
                                     TestSuite, User)
 from lifemonitor.api.services import LifeMonitor
+from lifemonitor.cache import cache, clear_cache
 from lifemonitor.utils import ClassManager
 
 from tests.utils import register_workflow
@@ -76,7 +78,9 @@ def lm() -> LifeMonitor:
 
 @pytest.fixture
 def service_registry() -> ClassManager:
-    return TestingService.service_type_registry
+    registry = TestingService.service_type_registry
+    registry._load_concrete_types()
+    return registry
 
 
 @pytest.fixture
@@ -84,10 +88,30 @@ def token_manager() -> TestingServiceTokenManager:
     return TestingServiceTokenManager.get_instance()
 
 
+@pytest.fixture
+def no_cache(app_context):
+    app_context.app.config['CACHE_TYPE'] = "flask_caching.backends.nullcache.NullCache"
+    assert app_context.app.config.get('CACHE_TYPE') == "flask_caching.backends.nullcache.NullCache"
+    cache.init_app(app_context.app)
+    assert cache.cache_enabled is False, "Cache should be disabled"
+    return cache
+
+
+@pytest.fixture
+def redis_cache(app_context):
+    app_context.app.config['CACHE_TYPE'] = "flask_caching.backends.rediscache.RedisCache"
+    assert app_context.app.config.get('CACHE_TYPE') == "flask_caching.backends.rediscache.RedisCache"
+    cache.init_app(app_context.app)
+    assert cache.cache_enabled is True, "Cache should not be disabled"
+    cache.clear()
+    return cache
+
+
 @pytest.fixture(autouse=True)
 def initialize(app_settings, request_context, service_registry: ClassManager):
     service_registry.remove_class("unknown")
     helpers.clean_db()
+    clear_cache(client_scope=False)
     helpers.init_db(app_settings)
     helpers.disable_auto_login()
     auth.logout_user()
@@ -96,10 +120,12 @@ def initialize(app_settings, request_context, service_registry: ClassManager):
     os.environ.pop("FLASK_APP_CONFIG_FILE", None)
 
 
-def _get_app_settings(include_env=True):
+def _get_app_settings(include_env=True, extra=None):
     settings = env_settings.copy() if include_env else {}
     settings.update(helpers.load_settings(app_settings_path))
     settings.update(helpers.load_settings(tests_settings_path))
+    if extra:
+        settings.update(extra)
     # remove API KEYS
     api_keys = {}
     pattern = re.compile("((\\w+)_API_KEY(_\\w+)?)")
@@ -116,7 +142,11 @@ def _get_app_settings(include_env=True):
 @pytest.fixture(scope="session")
 def app_settings(request):
     if hasattr(request, 'param'):
-        return _get_app_settings(request.param)
+        logger.debug("App settings param: %r", request.param)
+        if isinstance(request.param, Iterable):
+            return _get_app_settings(*request.param)
+        else:
+            return _get_app_settings(request.param)
     return _get_app_settings()
 
 

@@ -29,10 +29,15 @@ from lifemonitor.utils import OpenApiSpecs
 from sqlalchemy.exc import IntegrityError
 from wtforms import (BooleanField, HiddenField, PasswordField, SelectField,
                      SelectMultipleField, StringField)
-from wtforms.fields.html5 import URLField
 from wtforms.validators import URL, DataRequired, EqualTo, Optional
 
 from .models import User, db
+
+try:
+    from wtforms import URLField
+except ImportError:
+    from wtforms.fields.html5 import URLField
+
 
 # Set the module level logger
 logger = logging.getLogger(__name__)

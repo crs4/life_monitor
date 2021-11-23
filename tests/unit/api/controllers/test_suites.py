@@ -42,7 +42,7 @@ def test_get_suite_error_not_found(m, request_context, mock_user):
 
 
 @patch("lifemonitor.api.controllers.lm")
-def test_get_suite_by_user_without_auth_access_to_workflow(m, request_context, mock_user):
+def test_get_suite_by_user_without_auth_access_to_workflow(m, request_context, no_cache, mock_user):
     # add one user to the current session
     assert not auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_user == mock_user, "Unexpected user in session"
@@ -65,7 +65,7 @@ def test_get_suite_by_user_without_auth_access_to_workflow(m, request_context, m
 
 
 @patch("lifemonitor.api.controllers.lm")
-def test_get_suite_by_registry_without_auth_access_to_workflow(m, request_context, mock_registry):
+def test_get_suite_by_registry_without_auth_access_to_workflow(m, request_context, no_cache, mock_registry):
     # add one user to the current session
     assert auth.current_user.is_anonymous, "Unexpected user in session"
     logger.debug("Current registry: %r", auth.current_registry)
@@ -133,7 +133,7 @@ def test_get_suite_by_registry(m, request_context, mock_registry):
 
 
 @patch("lifemonitor.api.controllers.lm")
-def test_get_suite_status_by_user(m, request_context, mock_user):
+def test_get_suite_status_by_user(m, request_context, no_cache, mock_user):
     # add one user to the current session
     assert not auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_user == mock_user, "Unexpected user in session"
@@ -179,7 +179,7 @@ def test_get_suite_status_by_user_rate_limit_exceeded(lm, mock_user, rate_limit_
 
 
 @patch("lifemonitor.api.controllers.lm")
-def test_get_suite_status_by_registry(m, request_context, mock_registry):
+def test_get_suite_status_by_registry(m, request_context, no_cache, mock_registry):
     # add one user to the current session
     assert auth.current_user.is_anonymous, "Unexpected user in session"
     logger.debug("Current registry: %r", auth.current_registry)
@@ -226,7 +226,7 @@ def test_get_suite_status_by_registry_rate_limit_exceeded(lm, request_context, m
 
 
 @patch("lifemonitor.api.controllers.lm")
-def test_get_suite_instances_by_user(m, request_context, mock_user):
+def test_get_suite_instances_by_user(m, request_context, no_cache, mock_user):
     # add one user to the current session
     assert not auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_user == mock_user, "Unexpected user in session"
@@ -248,7 +248,7 @@ def test_get_suite_instances_by_user(m, request_context, mock_user):
 
 
 @patch("lifemonitor.api.controllers.lm")
-def test_get_suite_instances_by_registry(m, request_context, mock_registry):
+def test_get_suite_instances_by_registry(m, request_context, no_cache, mock_registry):
     # add one user to the current session
     assert auth.current_user.is_anonymous, "Unexpected user in session"
     logger.debug("Current registry: %r", auth.current_registry)

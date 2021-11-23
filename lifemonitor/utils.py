@@ -453,14 +453,18 @@ class ClassManager:
                         logger.exception(e)
         return self.__concrete_types__
 
+    @property
+    def _concrete_types(self):
+        return self._load_concrete_types()
+
     def add_class(self, type_name, type_class):
-        self.__concrete_types__[type_name] = (type_class,)
+        self._concrete_types[type_name] = (type_class,)
 
     def remove_class(self, type_name):
-        return self.__concrete_types__.pop(type_name, None)
+        return self._concrete_types.pop(type_name, None)
 
     def get_class(self, concrete_type):
-        return self._load_concrete_types()[concrete_type][0]
+        return self._concrete_types[concrete_type][0]
 
     def get_classes(self):
-        return [_[0] for _ in self._load_concrete_types().values()]
+        return [_[0] for _ in self._concrete_types.values()]

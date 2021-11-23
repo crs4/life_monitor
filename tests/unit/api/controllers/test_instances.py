@@ -71,7 +71,7 @@ def test_get_instance_by_user_error_forbidden(m, request_context, mock_user):
 
 
 @patch("lifemonitor.api.controllers.lm")
-def test_get_instance_by_user(m, request_context, mock_user):
+def test_get_instance_by_user(m, request_context, no_cache, mock_user):
     assert not auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry is not None, "Unexpected registry in session"
     workflow = MagicMock()
@@ -95,7 +95,7 @@ def test_get_instance_by_user(m, request_context, mock_user):
 
 
 @patch("lifemonitor.api.controllers.lm")
-def test_get_instance_build_by_user_error_not_found(m, request_context, mock_user):
+def test_get_instance_build_by_user_error_not_found(m, request_context, no_cache, mock_user):
     assert not auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry is not None, "Unexpected registry in session"
     instance = MagicMock()
@@ -161,7 +161,7 @@ def test_get_instance_build_by_user_rate_limit_exceeded(lm, request_context, moc
 
 
 @patch("lifemonitor.api.controllers.lm")
-def test_get_instance_build_last_logs_by_user(m, request_context, mock_user):
+def test_get_instance_build_last_logs_by_user(m, request_context, no_cache, mock_user):
     assert not auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry is not None, "Unexpected registry in session"
     workflow = {"uuid": "1111-222"}
@@ -307,7 +307,7 @@ def test_get_instance_by_registry_error_forbidden(m, request_context, mock_regis
 
 
 @patch("lifemonitor.api.controllers.lm")
-def test_get_instance_by_registry_error_not_found(m, request_context, mock_registry):
+def test_get_instance_by_registry_error_not_found(m, request_context, no_cache, mock_registry):
     assert auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry, "Unexpected registry in session"
     workflow = {"uuid": "1111-222"}
@@ -322,7 +322,7 @@ def test_get_instance_by_registry_error_not_found(m, request_context, mock_regis
 
 
 @patch("lifemonitor.api.controllers.lm")
-def test_get_instance_build_by_registry_error_not_found(m, request_context, mock_registry):
+def test_get_instance_build_by_registry_error_not_found(m, request_context, no_cache, mock_registry):
     assert auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry, "Unexpected registry in session"
     build = MagicMock()

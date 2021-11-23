@@ -24,10 +24,11 @@ import uuid
 from typing import List
 
 from lifemonitor.db import db
+from lifemonitor.cache import CacheMixin
 from sqlalchemy import types
 
 
-class ModelMixin(object):
+class ModelMixin(CacheMixin):
 
     def refresh(self, **kwargs):
         db.session.refresh(self, **kwargs)
