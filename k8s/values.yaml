@@ -143,6 +143,7 @@ worker:
   imagePullSecrets: []
 
   processes: 1
+  #threads: 1
 
   podAnnotations: {}
 

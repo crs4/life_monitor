@@ -41,11 +41,17 @@ if [[ -n "${WORKER_PROCESSES:-}" ]]; then
   log "Worker starting ${WORKER_PROCESSES} processes"
 fi
 
+if [[ -n "${WORKER_THREADS:-}" ]]; then
+  processes="--threads ${WORKER_THREADS}"
+  log "Worker starting with ${WORKER_THREADS} threads per process"
+fi
+
 while : ; do
-  /usr/local/bin/dramatiq \
+  /opt/homebrew/bin/dramatiq \
     ${verbose:-} \
     ${watch:-} \
     ${processes:-} \
+    ${threads:-} \
     lifemonitor.tasks.worker:broker lifemonitor.tasks.tasks
   exit_code=$?
   if [[ $exit_code == 3 ]]; then
