@@ -12,7 +12,7 @@ spec:
         image: {{ include "chart.lifemonitor.image" . }}
         imagePullPolicy: {{ .Values.lifemonitor.imagePullPolicy }}
         command: ["/bin/sh","-c"]
-        args: ["wait-for-postgres.sh && flask init db"]
+        args: ["wait-for-postgres.sh && flask init db && flask task-queue reset"]
         env:
         {{- include "lifemonitor.common-env" . | nindent 10 }}
         volumeMounts:
