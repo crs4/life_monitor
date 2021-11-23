@@ -1,9 +1,27 @@
-<div class="" style="margin-top: 20px;">
-  <div class="m-2 p-2">
+<div class="row" style="margin-top: 20px;">
+  <div class="col-sm-9 col-lg-10 mt-2 p-4">
     Allow an OAuth2 client to interact with LifeMonitor on behalf of a user.
     This authentication method is appropriate for applications that need to interact
     with LifeMonitor as a user.
+  </div>  
+  <div class="col-sm-3 col-lg-2 d-block">
+      <div>
+          <a href="/openapi.html" title="LifeMonitor OpenAPI Explorer">        
+              <div class="row">
+                  <div class="col-12 text-center font-weight-light">
+                      <img src="{{ url_for('auth.static', filename='img/logo/openapi-custom-colors.svg') }}" width="90px">    
+                      <div class="ml-n4">
+                      <div class="mt-n1">
+                          <b class="larger" style="font-size: 1.2rem;">Open<span class="m-1">API</span></b>
+                      </div>
+                      <div class="mt-n2" style="text-align: center;">explorer</div>
+                      </div>
+                  </div>                    
+              </div>
+          </a>
+      </div>
   </div>
+</div>
 
   <div class="card-header m-2">
     <h3 class="card-title"><b>OAuth2 Apps</b></h3>
@@ -87,4 +105,4 @@
       </tbody>
     </table>
   </div>
-</div>
+
