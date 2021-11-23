@@ -151,6 +151,7 @@ def setup_test_cache_last_build_update(app_context, redis_cache, user1):
 def test_cache_last_build_update(app_context, redis_cache, user1):
     w = setup_test_cache_last_build_update(app_context, redis_cache, user1)
     cache.reset_locks()
+    sleep(2)
     cache_last_build_update(app_context.app, w, user1, check_cache_size=True)
 
 
