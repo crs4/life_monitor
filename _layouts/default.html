@@ -21,7 +21,7 @@
         <div class="col-sm-12 col-md-3 header fixed-top">
             <div class="">
                 <div class="logo">
-                    <a href="{{ " /" | absolute_url }}" title="{{ site.title | default: site.github.repository_name }}">
+                    <a href="index" title="LifeMonitor HomePage">
                         {% if site.logo %}
                         <img width="80%" src="{{site.logo | relative_url}}" alt="LifeMonitor Logo" />
                         {% endif %}
@@ -91,7 +91,10 @@
             </div>
         </div>
         <div class="section col-sm-12 ml-auto col-md-9">
+            {% if page.category != "index"%}
+            {% endif %}
             {{ content }}
+            
         </div>
     </div>
     <!-- <script src="{{ " /assets/js/scale.fix.js" | relative_url }}"></script> -->
