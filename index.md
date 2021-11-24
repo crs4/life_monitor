@@ -70,15 +70,13 @@ LifeMonitor is still in early development.  Here is our planned development road
 
 LifeMonitor is being developed as part of the [EOSC-Life project](https://www.eosc-life.eu/)
 
-<a title="EOSC-Life" href="https://www.eosc-life.eu">
-  <img alt="EOSC-Life Logo" src="https://github.com/crs4/life_monitor/raw/master/docs/logo_EOSC-Life.png" width="130" style="vertical-align: middle" />
-</a>
-<a title="CRS4" href="https://www.crs4.it/">
-  <img alt="CRS4 Logo" src="https://github.com/crs4/life_monitor/raw/master/docs/logo_crs4-transparent.png" width="130" style="vertical-align: middle" />
-</a>
-<a title="BBMRI-ERIC" href="https://www.bbmri-eric.eu/">
-  <img alt="BBMRI-ERIC Logo" src="https://github.com/crs4/life_monitor/raw/master/docs/logo_bbmri-eric.png" width="130" style="vertical-align: middle; margin-left: 10px" />
-</a>
+<div>                    
+  <a title="Acknowledgments" href="https://www.eosc-life.eu">
+      <img alt="Acknowledgments" 
+           width="300px"
+           src="https://github.com/crs4/life_monitor/raw/master/docs/footer-logo.svg" style="vertical-align: middle" />
+  </a>                      
+</div>
 
 ---
 <a name="hinsen2019">[1]</a> K. Hinsen, <em>Dealing with software collapse</em>. Computing in Science & Engineering 21 (3), 104-108 (2019).
