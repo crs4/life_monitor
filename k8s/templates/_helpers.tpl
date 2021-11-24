@@ -35,9 +35,9 @@ Common labels
 */}}
 {{- define "chart.labels" -}}
 app.kubernetes.io/name: {{ include "chart.name" . }}
-helm.sh/chart: {{ include "chart.chart" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
+helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
 {{- end }}
 
 {{/*
@@ -47,6 +47,19 @@ Selector labels
 app.kubernetes.io/name: {{ include "chart.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
+
+{{/*
+
+Define lifemonitor image
+*/}}
+{{- define "chart.lifemonitor.image" -}}
+{{- if .Values.lifemonitor.image }}
+{{- printf "%s" .Values.lifemonitor.image }}
+{{- else }}
+{{- printf "crs4/lifemonitor:%s" .Chart.AppVersion }}
+{{- end }}
+{{- end }}
+
 
 {{/*
 Create the name of the service account to use
@@ -77,6 +90,10 @@ Define environment variables shared by some pods.
   value: "{{ .Values.postgresql.postgresqlPassword }}"
 - name: POSTGRESQL_DATABASE
   value: "{{ .Values.postgresql.postgresqlDatabase }}"
+- name: REDIS_HOST
+  value: "{{ .Release.Name }}-redis-master"
+- name: WORKER_PROCESSES
+  value: "{{ .Values.worker.processes }}"
 - name: LIFEMONITOR_TLS_KEY
   value: "/lm/certs/tls.key"
 - name: LIFEMONITOR_TLS_CERT
