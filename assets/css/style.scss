@@ -101,12 +101,11 @@ Override static width settings.
 .footer {
     /* background: #133233;*/
     color: whitesmoke;
-    text-align: center;
-    width: 100%;
+    text-align: center;    
     padding: 40px 0;
     position: absolute;
     bottom: 0px;
-    left: 40px;
+    width: 100%;
 }
 
 .section {
@@ -115,8 +114,14 @@ Override static width settings.
     background-color: white;
 }
 
+.view {
+    color: whitesmoke;
+    margin: 0 auto;
+}
+
 .view a small {
     color: whitesmoke;
+    margin: 0 auto;
 }
 
 p img {
