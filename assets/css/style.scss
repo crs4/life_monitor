@@ -94,11 +94,16 @@ Override static width settings.
 }
 
 .section {
-  margin: 0 0 40px;
+  margin: 0;
   padding: 40px 60px;
-  background-color: whitesmoke;
+  background-color: white;
 }
 
-.view {
+.view a small {
   color: whitesmoke;
+}
+
+p img {
+  width: "80%";
+  text-align: center;
 }
