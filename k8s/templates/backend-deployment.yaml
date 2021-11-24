@@ -4,6 +4,7 @@ metadata:
   name: {{ include "chart.fullname" . }}-backend
   labels:
     {{- include "chart.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
 spec:
   {{- if not .Values.lifemonitor.autoscaling.enabled }}
   replicas: {{ .Values.lifemonitor.replicaCount }}
@@ -11,14 +12,17 @@ spec:
   selector:
     matchLabels:
       {{- include "chart.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: backend
   template:
     metadata:
-      {{- with .Values.lifemonitor.podAnnotations }}
       annotations:
+        checksum/settings: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+      {{- with .Values.lifemonitor.podAnnotations }}
         {{- toYaml . | nindent 8 }}
-      {{- end }}
+      {{- end }}       
       labels:
         {{- include "chart.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: backend
     spec:
       {{- with .Values.lifemonitor.imagePullSecrets }}
       imagePullSecrets:
@@ -36,12 +40,12 @@ spec:
         - name: app
           securityContext:
             {{- toYaml .Values.lifemonitor.securityContext | nindent 12 }}
-          image: {{ .Values.lifemonitor.image }}
+          image: {{ include "chart.lifemonitor.image" . }}
           imagePullPolicy: {{ .Values.lifemonitor.imagePullPolicy }}
           env:
-{{ include "lifemonitor.common-env" . | indent 12 }}
+          {{- include "lifemonitor.common-env" . | nindent 12 }}
           volumeMounts:
-{{ include "lifemonitor.common-volume-mounts" . | indent 12 }}
+          {{- include "lifemonitor.common-volume-mounts" . | nindent 12 }}
           ports:
             - name: http
               containerPort: 8000
@@ -61,7 +65,7 @@ spec:
           resources:
             {{- toYaml .Values.lifemonitor.resources | nindent 12 }}
       volumes:
-{{ include "lifemonitor.common-volume" . | indent 12 }}        
+      {{- include "lifemonitor.common-volume" . | nindent 8 }}
       {{- with .Values.lifemonitor.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

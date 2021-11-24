@@ -24,6 +24,7 @@ import logging
 from typing import List, Union
 
 import lifemonitor.api.models as models
+from lifemonitor.cache import Timeout, cached
 import lifemonitor.exceptions as lm_exceptions
 from lifemonitor import utils as lm_utils
 from lifemonitor.api.models import db
@@ -221,6 +222,10 @@ class WorkflowVersion(ROCrate):
 
     @property
     def external_link(self) -> str:
+        return self.get_external_link()
+
+    @cached(Timeout.WORKFLOW, client_scope=False)
+    def get_external_link(self) -> str:
         if self.hosting_service is None:
             return self.uri
         return self.hosting_service.get_external_link(self.workflow.external_id, self.version)
@@ -236,6 +241,10 @@ class WorkflowVersion(ROCrate):
     @hybrid_property
     def roc_link(self) -> str:
         return self.uri
+
+    @property
+    def workflow_name(self) -> str:
+        return self.name or self.main_entity_name or self.dataset_name
 
     @property
     def is_latest(self) -> bool:
@@ -307,7 +316,7 @@ class WorkflowVersion(ROCrate):
                 .filter(Workflow.public == true())\
                 .filter(cls.version == version).one()  # noqa: E712
         except NoResultFound as e:
-            logger.exception(e)
+            logger.debug(e)
             return None
         except Exception as e:
             raise lm_exceptions.LifeMonitorException(detail=str(e), stack=str(e))
@@ -322,7 +331,7 @@ class WorkflowVersion(ROCrate):
                 .filter(Permission.user_id == owner.id)\
                 .filter(cls.version == version).one()
         except NoResultFound as e:
-            logger.exception(e)
+            logger.debug(e)
             return None
         except Exception as e:
             raise lm_exceptions.LifeMonitorException(detail=str(e), stack=str(e))

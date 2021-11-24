@@ -71,7 +71,7 @@ def test_get_instance_by_user_error_forbidden(m, request_context, mock_user):
 
 
 @patch("lifemonitor.api.controllers.lm")
-def test_get_instance_by_user(m, request_context, mock_user):
+def test_get_instance_by_user(m, request_context, no_cache, mock_user):
     assert not auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry is not None, "Unexpected registry in session"
     workflow = MagicMock()
@@ -95,7 +95,7 @@ def test_get_instance_by_user(m, request_context, mock_user):
 
 
 @patch("lifemonitor.api.controllers.lm")
-def test_get_instance_build_by_user_error_not_found(m, request_context, mock_user):
+def test_get_instance_build_by_user_error_not_found(m, request_context, no_cache, mock_user):
     assert not auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry is not None, "Unexpected registry in session"
     instance = MagicMock()
@@ -136,7 +136,32 @@ def test_get_instance_build_by_user(m, request_context, mock_user):
 
 
 @patch("lifemonitor.api.controllers.lm")
-def test_get_instance_build_last_logs_by_user(m, request_context, mock_user):
+def test_get_instance_build_by_user_rate_limit_exceeded(lm, request_context, mock_user, rate_limit_exceeded_workflow: models.Workflow):
+    assert not auth.current_user.is_anonymous, "Unexpected user in session"
+    assert auth.current_registry is not None, "Unexpected registry in session"
+    # set workflow
+    workflow = rate_limit_exceeded_workflow
+    lm.get_public_workflows.return_value = []
+    lm.get_user_workflows.return_value = [rate_limit_exceeded_workflow]
+    # set suite
+    suite: models.TestSuite = workflow.latest_version.test_suites[0]
+    lm.get_suite.return_value = suite
+    # set instance
+    instance: models.TestInstance = suite.test_instances[0]
+    lm.get_test_instance.return_value = instance
+    # get and check suite status
+    response = controllers.instances_builds_get_by_id(instance.uuid, "123")
+    logger.debug(response.data)
+    lm.get_test_instance.assert_called_once()
+    lm.get_suite.assert_called_once()
+    data = json.loads(response.data)
+    assert isinstance(data, dict), "Unexpected response type"
+    assert 403 == int(data["status"]), "Unexpected status code"
+    assert "Rate Limit Exceeded" == data["title"], "Unexpected error title"
+
+
+@patch("lifemonitor.api.controllers.lm")
+def test_get_instance_build_last_logs_by_user(m, request_context, no_cache, mock_user):
     assert not auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry is not None, "Unexpected registry in session"
     workflow = {"uuid": "1111-222"}
@@ -282,7 +307,7 @@ def test_get_instance_by_registry_error_forbidden(m, request_context, mock_regis
 
 
 @patch("lifemonitor.api.controllers.lm")
-def test_get_instance_by_registry_error_not_found(m, request_context, mock_registry):
+def test_get_instance_by_registry_error_not_found(m, request_context, no_cache, mock_registry):
     assert auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry, "Unexpected registry in session"
     workflow = {"uuid": "1111-222"}
@@ -297,7 +322,7 @@ def test_get_instance_by_registry_error_not_found(m, request_context, mock_regis
 
 
 @patch("lifemonitor.api.controllers.lm")
-def test_get_instance_build_by_registry_error_not_found(m, request_context, mock_registry):
+def test_get_instance_build_by_registry_error_not_found(m, request_context, no_cache, mock_registry):
     assert auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry, "Unexpected registry in session"
     build = MagicMock()
@@ -331,3 +356,28 @@ def test_get_instance_build_by_registry(m, request_context, mock_registry):
     response = controllers.instances_builds_get_by_id(instance['uuid'], build.id)
     m.get_test_instance.assert_called_once()
     assert isinstance(response, dict), "Unexpected response type"
+
+
+@patch("lifemonitor.api.controllers.lm")
+def test_get_instance_build_by_registry_rate_limit_exceeded(lm, request_context, mock_registry, rate_limit_exceeded_workflow: models.Workflow):
+    assert auth.current_user.is_anonymous, "Unexpected user in session"
+    assert auth.current_registry, "Unexpected registry in session"
+    # set workflow
+    workflow = rate_limit_exceeded_workflow
+    lm.get_public_workflows.return_value = []
+    lm.get_user_workflows.return_value = [rate_limit_exceeded_workflow]
+    # set suite
+    suite: models.TestSuite = workflow.latest_version.test_suites[0]
+    lm.get_suite.return_value = suite
+    # set instance
+    instance: models.TestInstance = suite.test_instances[0]
+    lm.get_test_instance.return_value = instance
+    # get and check suite status
+    response = controllers.instances_builds_get_by_id(instance.uuid, "123")
+    logger.debug(response.data)
+    lm.get_test_instance.assert_called_once()
+    lm.get_suite.assert_called_once()
+    data = json.loads(response.data)
+    assert isinstance(data, dict), "Unexpected response type"
+    assert 403 == int(data["status"]), "Unexpected status code"
+    assert "Rate Limit Exceeded" == data["title"], "Unexpected error title"

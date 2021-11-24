@@ -18,10 +18,12 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+
 import logging
 from unittest.mock import MagicMock, patch
 
 import pytest
+
 
 import lifemonitor.api.controllers as controllers
 import lifemonitor.api.models as models
@@ -46,9 +48,9 @@ def test_get_workflows_with_user(m, request_context, mock_user, fake_uri):
     # make empty the list of public workflows
     m.get_public_workflows.return_value = []
     # add one fake workflow
-    data = {"uuid": "123456", "version": "1.0", "uri": fake_uri}
+    data = {"uuid": "123456", "version": "1.0", "name": "Fake workflow", "uri": fake_uri}
     w = models.Workflow(uuid=data['uuid'])
-    w.add_version(data["version"], data['uri'], MagicMock())
+    w.add_version(data["version"], data['uri'], MagicMock(), name="Prova")
     m.get_user_workflows.return_value = [w]
     response = controllers.workflows_get(status=True)
     m.get_public_workflows.assert_called_once()
@@ -56,6 +58,46 @@ def test_get_workflows_with_user(m, request_context, mock_user, fake_uri):
     assert isinstance(response, dict), "Unexpected result type"
     logger.debug("Response: %r", response)
     assert response == serializers.ListOfWorkflows(workflow_status=True).dump([w])
+
+
+@patch("lifemonitor.api.controllers.lm")
+def test_get_public_workflows_rate_limit_exceeded(lm, rate_limit_exceeded_workflow):
+    # set workflow as public
+    lm.get_public_workflows.return_value = [rate_limit_exceeded_workflow]
+    # get workflows
+    data = controllers.workflows_get(status=True)
+    logger.info(data)
+    # check number of items
+    assert len(data['items']) == 1, "Unexpected number of items"
+    # inspect item
+    item = data['items'][0]
+    assert 'status' in item, "Workflow status should be set"
+    assert 'aggregate_test_status' in item['status'], "AggregateStatus Workflow status should be set"
+    assert item['status']['aggregate_test_status'] == 'not_available'
+    assert "Rate Limit Exceeded" in item['status']['reason'], "Unexpected reason for unavailability"
+
+
+@patch("lifemonitor.api.controllers.lm")
+def test_get_workflows_with_user_rate_limit_exceeded(lm, mock_user, no_cache, rate_limit_exceeded_workflow):
+    # add one user to the current session
+    assert not auth.current_user.is_anonymous, "Unexpected user in session"
+    assert auth.current_user == mock_user, "Unexpected user in session"
+    logger.debug("Current registry: %r", auth.current_registry)
+    assert not auth.current_registry, "Unexpected registry in session"
+    # set workflows
+    lm.get_public_workflows.return_value = []
+    lm.get_user_workflows.return_value = [rate_limit_exceeded_workflow]
+    # get workflows
+    data = controllers.workflows_get(status=True)
+    logger.info(data)
+    # check number of items
+    assert len(data['items']) == 1, "Unexpected number of items"
+    # inspect item
+    item = data['items'][0]
+    assert 'status' in item, "Workflow status should be set"
+    assert 'aggregate_test_status' in item['status'], "AggregateStatus Workflow status should be set"
+    assert item['status']['aggregate_test_status'] == 'not_available'
+    assert "Rate Limit Exceeded" in item['status']['reason'], "Unexpected reason for unavailability"
 
 
 @patch("lifemonitor.api.controllers.lm")
@@ -73,6 +115,30 @@ def test_get_workflows_with_registry(m, request_context, mock_registry, fake_uri
     m.get_registry_workflows.assert_called_once()
     assert isinstance(response, dict), "Unexpected result type"
     assert response == serializers.ListOfWorkflows(workflow_status=True).dump([w])
+
+
+@patch("lifemonitor.api.controllers.lm")
+def test_get_workflows_with_registry_rate_limit_exceeded(m, request_context, mock_registry, fake_uri, rate_limit_exceeded_workflow):
+    assert auth.current_user.is_anonymous, "Unexpected user in session"
+    assert auth.current_registry, "Unexpected registry in session"
+    # make empty the list of public workflows
+    m.get_public_workflows.return_value = []
+    m.get_registry_workflows.return_value = [rate_limit_exceeded_workflow]
+    response = controllers.workflows_get(status=True)
+    m.get_registry_workflows.assert_called_once()
+    assert isinstance(response, dict), "Unexpected result type"
+    assert response == serializers.ListOfWorkflows(workflow_status=True).dump([rate_limit_exceeded_workflow])
+    # check number of items
+    assert len(response['items']) == 1, "Unexpected number of items"
+    # inspect item
+    item = response['items'][0]
+    assert 'status' in item, "Workflow status should be set"
+    assert 'aggregate_test_status' in item['status'], "AggregateStatus Workflow status should be set"
+    assert item['status']['aggregate_test_status'] == 'not_available'
+    assert 'status' in item, "Workflow status should be set"
+    assert 'aggregate_test_status' in item['status'], "AggregateStatus Workflow status should be set"
+    assert item['status']['aggregate_test_status'] == 'not_available'
+    assert "Rate Limit Exceeded" in item['status']['reason'], "Unexpected reason for unavailability"
 
 
 @patch("lifemonitor.api.controllers.lm")

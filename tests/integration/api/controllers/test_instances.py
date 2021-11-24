@@ -19,12 +19,12 @@
 # SOFTWARE.
 
 import json
-import pytest
 import logging
 
+import pytest
+from lifemonitor.api import models
 from tests import utils
 from tests.conftest_types import ClientAuthenticationMethod
-
 
 logger = logging.getLogger()
 
@@ -51,7 +51,7 @@ def test_add_unmanaged_instance(app_client, client_auth_method, user1, user1_aut
     logger.debug(response)
     utils.assert_status_code(201, response.status_code)
     response_data = json.loads(response.data)
-    assert "test_instance_uuid" in response_data, "Unexpcted response: missing 'test_instance_uuid'"
+    assert "uuid" in response_data, "Unexpcted response: missing 'uuid'"
     # check number of instances after
     assert len(suite.test_instances) == num_of_instances + 1, "Unexpected number of instances"
 
@@ -185,6 +185,22 @@ def test_get_instance_builds(app_client, client_auth_method, user1, user1_auth, 
     utils.assert_properties_exist(["build_id", "instance"], item)
 
 
+def test_get_instance_builds_rate_limit_exceeded(app_client, client_auth_method, user1, user1_auth, rate_limit_exceeded_workflow: models.Workflow):
+    workflow = rate_limit_exceeded_workflow.latest_version
+    assert len(workflow.test_suites) > 0, "Unexpected number of test suites"
+    suite = workflow.test_suites[0]
+    logger.debug("The test suite: %r", suite)
+    assert len(suite.test_instances) > 0, "Unexpected number of test instances"
+    instance = suite.test_instances[0]
+    logger.debug("The test instance: %r", instance)
+    response = app_client.get(f"{utils.build_instances_path(instance.uuid)}/latest-builds?limit=2", headers=user1_auth)
+    logger.debug(response)
+    utils.assert_status_code(403, response.status_code)
+    data = json.loads(response.data)
+    logger.debug("Response data: %r", data)
+    assert data['title'] == 'Rate Limit Exceeded', "Unexpected error title"
+
+
 @pytest.mark.parametrize("client_auth_method", [
     #    ClientAuthenticationMethod.BASIC,
     ClientAuthenticationMethod.API_KEY,
@@ -240,7 +256,7 @@ def test_get_instance_build(app_client, client_auth_method, user1, user1_auth, v
     response = app_client.get(f"{utils.build_instances_path(instance.uuid)}/builds/{build.id}",
                               headers=user1_auth)
     logger.debug(response)
-    utils.assert_status_code(response.status_code, 200)
+    utils.assert_status_code(200, response.status_code)
     data = json.loads(response.data)
     logger.debug("Response data: %r", data)
     # redundant check: the validation is performed by the connexion framework
@@ -249,27 +265,24 @@ def test_get_instance_build(app_client, client_auth_method, user1, user1_auth, v
 
 @pytest.mark.parametrize("client_auth_method", [
     #    ClientAuthenticationMethod.BASIC,
+    ClientAuthenticationMethod.NOAUTH,
     ClientAuthenticationMethod.API_KEY,
     ClientAuthenticationMethod.AUTHORIZATION_CODE,
     ClientAuthenticationMethod.CLIENT_CREDENTIALS,
     ClientAuthenticationMethod.REGISTRY_CODE_FLOW
 ], indirect=True)
-def test_get_instance_build_logs(app_client, client_auth_method, user1, user1_auth, valid_workflow):
-    w, workflow = utils.pick_and_register_workflow(user1, valid_workflow)
+def test_get_instance_build_rate_limit_exceeded(app_client, client_auth_method, user1, user1_auth, rate_limit_exceeded_workflow: models.Workflow):
+    workflow = rate_limit_exceeded_workflow.latest_version
     assert len(workflow.test_suites) > 0, "Unexpected number of test suites"
     suite = workflow.test_suites[0]
     logger.debug("The test suite: %r", suite)
     assert len(suite.test_instances) > 0, "Unexpected number of test instances"
     instance = suite.test_instances[0]
     logger.debug("The test instance: %r", instance)
-    assert len(instance.get_test_builds()) > 0, "Unexpected number of test builds"
-    build = instance.get_test_builds()[0]
 
-    response = app_client.get(f"{utils.build_instances_path(instance.uuid)}/builds/{build.id}/logs",
-                              headers=user1_auth)
-    logger.debug(response.data)
-    utils.assert_status_code(response.status_code, 200)
+    response = app_client.get(f"{utils.build_instances_path(instance.uuid)}/builds/0", headers=user1_auth)
+    logger.debug(response)
+    utils.assert_status_code(403, response.status_code)
     data = json.loads(response.data)
     logger.debug("Response data: %r", data)
-    # redundant check: the validation is performed by the connexion framework
-    assert isinstance(data, str), "Unexpected result type"
+    assert data['title'] == 'Rate Limit Exceeded', "Unexpected error title"

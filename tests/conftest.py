@@ -25,16 +25,23 @@ import random
 import re
 import string
 import uuid
+from collections.abc import Iterable
 from unittest.mock import MagicMock
 
 import lifemonitor.db as lm_db
 import pytest
 from lifemonitor import auth
-from lifemonitor.api.models import TestSuite, User
+from lifemonitor.api.models import (TestingService, TestingServiceTokenManager,
+                                    TestSuite, User)
 from lifemonitor.api.services import LifeMonitor
+from lifemonitor.cache import cache, clear_cache
+from lifemonitor.utils import ClassManager
+
+from tests.utils import register_workflow
 
 from . import conftest_helpers as helpers
 from .conftest_types import ClientAuthenticationMethod, RegistryType
+from .rate_limit_exceeded import RateLimitExceededTestingService
 
 # set the module level logger
 logger = logging.getLogger(__name__)
@@ -64,9 +71,47 @@ def headers():
     return helpers.get_headers()
 
 
+@pytest.fixture
+def lm() -> LifeMonitor:
+    return LifeMonitor.get_instance()
+
+
+@pytest.fixture
+def service_registry() -> ClassManager:
+    registry = TestingService.service_type_registry
+    registry._load_concrete_types()
+    return registry
+
+
+@pytest.fixture
+def token_manager() -> TestingServiceTokenManager:
+    return TestingServiceTokenManager.get_instance()
+
+
+@pytest.fixture
+def no_cache(app_context):
+    app_context.app.config['CACHE_TYPE'] = "flask_caching.backends.nullcache.NullCache"
+    assert app_context.app.config.get('CACHE_TYPE') == "flask_caching.backends.nullcache.NullCache"
+    cache.init_app(app_context.app)
+    assert cache.cache_enabled is False, "Cache should be disabled"
+    return cache
+
+
+@pytest.fixture
+def redis_cache(app_context):
+    app_context.app.config['CACHE_TYPE'] = "flask_caching.backends.rediscache.RedisCache"
+    assert app_context.app.config.get('CACHE_TYPE') == "flask_caching.backends.rediscache.RedisCache"
+    cache.init_app(app_context.app)
+    assert cache.cache_enabled is True, "Cache should not be disabled"
+    cache.clear()
+    return cache
+
+
 @pytest.fixture(autouse=True)
-def initialize(app_settings, request_context):
+def initialize(app_settings, request_context, service_registry: ClassManager):
+    service_registry.remove_class("unknown")
     helpers.clean_db()
+    clear_cache(client_scope=False)
     helpers.init_db(app_settings)
     helpers.disable_auto_login()
     auth.logout_user()
@@ -75,10 +120,12 @@ def initialize(app_settings, request_context):
     os.environ.pop("FLASK_APP_CONFIG_FILE", None)
 
 
-def _get_app_settings(include_env=True):
+def _get_app_settings(include_env=True, extra=None):
     settings = env_settings.copy() if include_env else {}
     settings.update(helpers.load_settings(app_settings_path))
     settings.update(helpers.load_settings(tests_settings_path))
+    if extra:
+        settings.update(extra)
     # remove API KEYS
     api_keys = {}
     pattern = re.compile("((\\w+)_API_KEY(_\\w+)?)")
@@ -95,7 +142,11 @@ def _get_app_settings(include_env=True):
 @pytest.fixture(scope="session")
 def app_settings(request):
     if hasattr(request, 'param'):
-        return _get_app_settings(request.param)
+        logger.debug("App settings param: %r", request.param)
+        if isinstance(request.param, Iterable):
+            return _get_app_settings(*request.param)
+        else:
+            return _get_app_settings(request.param)
     return _get_app_settings()
 
 
@@ -147,11 +198,6 @@ def client_auth_method(request):
 @pytest.fixture(scope="session")
 def app_context(app_settings):
     yield from helpers.app_context(app_settings, init_db=True, clean_db=False, drop_db=False)
-
-
-@pytest.fixture
-def lm() -> LifeMonitor:
-    return LifeMonitor.get_instance()
 
 
 @pytest.fixture()
@@ -248,10 +294,44 @@ def generic_workflow(app_client):
         'uuid': str(uuid.uuid4()),
         'version': '1',
         'roc_link': "http://webserver:5000/download?file=ro-crate-galaxy-sortchangecase.crate.zip",
-        'name': 'Galaxy workflow from Generic Link',
+        'name': 'sort-and-change-case',
         'testing_service_type': 'jenkins',
         'authorization': app_client.application.config['WEB_SERVER_AUTH_TOKEN']
     }
+
+
+@pytest.fixture
+def workflow_no_name(app_client):
+    return {
+        'uuid': str(uuid.uuid4()),
+        'version': '1',
+        'roc_link': "http://webserver:5000/download?file=ro-crate-galaxy-sortchangecase-no-name.crate.zip",
+        'name': 'Galaxy workflow from Generic Link (no name)',
+        'testing_service_type': 'jenkins',
+        'authorization': app_client.application.config['WEB_SERVER_AUTH_TOKEN']
+    }
+
+
+@pytest.fixture
+def rate_limit_exceeded_workflow(app_client, service_registry: ClassManager, user1):
+    service_registry.add_class("unknown", RateLimitExceededTestingService)
+    wfdata = {
+        'uuid': str(uuid.uuid4()),
+        'version': '1',
+        'roc_link': "http://webserver:5000/download?file=ro-crate-galaxy-sortchangecase-rate-limit-exceeded.crate.zip",
+        'name': 'Galaxy workflow (rate limit exceeded)',
+        'testing_service_type': 'unknown',
+        'authorization': app_client.application.config['WEB_SERVER_AUTH_TOKEN']
+    }
+    wfdata, workflow_version = register_workflow(user1, wfdata)
+    logger.info(wfdata)
+    logger.info(workflow_version)
+    assert workflow_version, "Workflows not found"
+    workflow = workflow_version.workflow
+    workflow.public = True
+    workflow.save()
+    assert workflow.public is True, "Workflow should be public"
+    return workflow
 
 
 @pytest.fixture

@@ -84,6 +84,10 @@ class ROCrate(Resource):
         return self._roc_helper.name
 
     @property
+    def main_entity_name(self):
+        return self._roc_helper.mainEntity['name']
+
+    @property
     def _roc_helper(self):
         if not self.__roc_helper:
             if not self._metadata_loaded:

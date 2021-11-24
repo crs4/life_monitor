@@ -18,22 +18,29 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import os
-import tempfile
-from unittest.mock import MagicMock, Mock
 
-import lifemonitor.exceptions as lm_exceptions
-import lifemonitor.utils as utils
-import pytest
+import logging
+from flask.blueprints import Blueprint
+from flask.cli import with_appcontext
 
+# set module level logger
+logger = logging.getLogger()
 
-def test_download_url_404():
-    with tempfile.TemporaryDirectory() as d:
-        with pytest.raises(lm_exceptions.DownloadException) as excinfo:
-            _ = utils.download_url('http://httpbin.org/status/404', os.path.join(d, 'get_404'))
-        assert excinfo.value.status == 404
+# define the blueprint for DB commands
+blueprint = Blueprint('task-queue', __name__)
 
 
-class SerializableMock(MagicMock):
-    def __reduce__(self):
-        return (Mock, ())
+@blueprint.cli.command('reset')
+@with_appcontext
+def reset():
+    """
+    Reset task-queue status
+    """
+    from lifemonitor.cache import clear_cache
+    from lifemonitor.tasks.task_queue import REDIS_NAMESPACE
+    try:
+        clear_cache(client_scope=False, prefix=REDIS_NAMESPACE)
+    except Exception as e:
+        print("Error when deleting cache: %s" % (str(e)))
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.exception(e)

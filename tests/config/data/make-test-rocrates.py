@@ -49,6 +49,9 @@ test_crates.append(('ro-crate-galaxy-sortchangecase', 'ro-crate-galaxy-sortchang
 test_crates.append(('ro-crate-galaxy-sortchangecase', 'ro-crate-galaxy-sortchangecase-invalid-service-type'))
 test_crates.append(('ro-crate-galaxy-sortchangecase', 'ro-crate-galaxy-sortchangecase-invalid-service-url'))
 test_crates.append(('ro-crate-galaxy-sortchangecase', 'ro-crate-galaxy-sortchangecase-github-actions'))
+test_crates.append(('ro-crate-galaxy-sortchangecase', 'ro-crate-galaxy-sortchangecase-no-name'))
+
+test_crates.append(('ro-crate-galaxy-sortchangecase', 'ro-crate-galaxy-sortchangecase-rate-limit-exceeded'))
 
 # clean up RO-Crates folder
 if os.path.exists(crates_target_path):
@@ -91,6 +94,27 @@ patch_metadata_graph_node('crates/ro-crate-galaxy-sortchangecase/ro-crate-metada
                               "name": "Jenkins",
                               "url": {
                                   "@id": "http://jenkins:8080"
+                              }
+                          })
+
+
+patch_metadata_graph_node('crates/ro-crate-galaxy-sortchangecase-rate-limit-exceeded/ro-crate-metadata.json',
+                          node=("@type", "TestInstance"),
+                          properties={
+                              'url': 'http://ratelimit:8080/',
+                              'resource': 'job/test/',
+                              "runsOn": {
+                                  "@id": "https://w3id.org/ro/terms/test#RateLimitExceededService"
+                              }
+                          })
+
+patch_metadata_graph_node('crates/ro-crate-galaxy-sortchangecase-rate-limit-exceeded/ro-crate-metadata.json',
+                          node=("@type", "TestService"),
+                          properties={
+                              "@id": "https://w3id.org/ro/terms/test#RateLimitExceededService",
+                              "name": "RateLimit",
+                              "url": {
+                                  "@id": "http://ratelimit:8080"
                               }
                           })
 
@@ -166,6 +190,17 @@ patch_metadata_graph_node('crates/ro-crate-galaxy-sortchangecase-github-actions/
                               "@id": "https://w3id.org/ro/terms/test#GithubService",
                               "name": "Github",
                               "url": {"@id": "https://github.com"}
+                          })
+
+patch_metadata_graph_node('crates/ro-crate-galaxy-sortchangecase-no-name/ro-crate-metadata.json',
+                          node=("@type", "Dataset"),
+                          properties={
+                              'name': None
+                          })
+patch_metadata_graph_node('crates/ro-crate-galaxy-sortchangecase-no-name/ro-crate-metadata.json',
+                          node=("@id", "sort-and-change-case.ga"),
+                          properties={
+                              'name': None
                           })
 
 # create zip archives

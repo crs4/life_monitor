@@ -3,7 +3,7 @@
 openapi: "3.0.0"
 
 info:
-  version: "0.3.0"
+  version: "0.4.0"
   title: "Life Monitor API"
   description: |
     *Workflow sustainability service*
@@ -18,7 +18,7 @@ info:
 servers:
   - url: /
     description: >
-      Version 0.3.0 of API.
+      Version 0.4.0 of API.
 
 tags:
   - name: Registries
@@ -969,7 +969,7 @@ paths:
               #     valueB: "#/components/schemas/ManagedTestInstanceCreationData"
       responses:
         "201":
-          description: Instance created by this operation
+          $ref: "#/components/responses/TestInstanceRegistered"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -1101,47 +1101,6 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
-  /instances/{instance_uuid}/builds/{build_id}/logs:
-    get:
-      summary: "Get test instance build logs"
-      description: "Get the build logs for the specified test instance and build"
-      x-openapi-router-controller: lifemonitor.api.controllers
-      operationId: "instances_builds_get_logs"
-      tags: ["Test Instances"]
-      deprecated: true
-      security:
-        - apiKey: ["workflow.read"]
-        - RegistryClientCredentials: ["workflow.read"]
-        - RegistryCodeFlow: ["workflow.read"]
-        - AuthorizationCodeFlow: ["workflow.read"]
-        - {}
-      parameters:
-        - $ref: "#/components/parameters/instance_uuid"
-        - $ref: "#/components/parameters/build_id"
-        - $ref: "#/components/parameters/offset_bytes"
-        - $ref: "#/components/parameters/limit_bytes"
-      responses:
-        "200":
-          description: "Log data"
-          content:
-            application/json:
-              schema:
-                type: string
-                description: |
-                  Log messages from the test build
-                example: |
-                  [15/April/2021:13:55:36 -0700] "GET /workflow.cwl HTTP/1.0" 200 2326
-                  [15/April/2021:13:55:36 -0700] "GET /workflow.cwl HTTP/1.0" 200 2326
-                  [15/April/2021:13:55:36 -0700] "GET /workflow.cwl HTTP/1.0" 200 2326
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-        "404":
-          $ref: "#/components/responses/NotFound"
-
 components:
   parameters:
     registry_uuid:
@@ -1260,22 +1219,6 @@ components:
         minimum: 1
         default: 10
       description: "Maximum number of items to retrieve"
-    limit_bytes:
-      name: "limit_bytes"
-      description: "Maximum number of log bytes to retrieve"
-      in: query
-      schema:
-        type: integer
-        minimum: 1
-        default: 131072 # 128 kB
-    offset_bytes:
-      name: "offset_bytes"
-      description: "Number of bytes to skip while fetching the log"
-      in: query
-      schema:
-        type: integer
-        minimum: 0
-        default: 0
 
   responses:
     NotFound:
@@ -1326,6 +1269,20 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/Workflow"
+
+    TestInstanceRegistered:
+      description: A new test instance has been registered.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              uuid:
+                type: string
+                description: |
+                  Universal unique identifier of the test instance
+                readOnly: true
+                example: ba5bbdc3-d9fb-4381-a1d8-96a8ac5594d7
 
   schemas:
     User:
@@ -1786,6 +1743,10 @@ components:
               type: array
               items:
                 $ref: "#/components/schemas/BuildSummary"
+            reason:
+              description: "Reason why the status is unavailable"
+              type: string
+              nullable: true
           required:
             - aggregate_test_status
             - version
@@ -1805,6 +1766,10 @@ components:
               type: array
               items:
                 $ref: "#/components/schemas/BuildSummary"
+            reason:
+              description: "Reason why the status is unavailable"
+              type: string
+              nullable: true
           required:
             - version
             - workflow
@@ -1890,6 +1855,10 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/BuildSummary"
+        reason:
+          description: Reason why the status is unavailable
+          type: string
+          nullable: true
       required:
         - suite_uuid
         - status
@@ -2054,6 +2023,7 @@ components:
                   type: string
                   description: Link to the test instance on the testing service
                   example: "https://github.com/crs4/life_monitor/workflows/docs.yaml"
+                  nullable: true
           required:
             - service
             - resource

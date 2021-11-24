@@ -50,7 +50,8 @@ class LifeMonitorException(Exception):
                 pass
 
     def __repr__(self):
-        return f"[{self.status}] {self.title}: {self.detail}"
+        detail = f": {self.detail}" if self.detail else ""
+        return f"[{self.status}] {self.title}{detail}"
 
     def __str__(self):
         return self.__repr__()
@@ -176,7 +177,7 @@ class TestingServiceException(LifeMonitorException):
 class RateLimitExceededException(TestingServiceException):
     def __init__(self, detail=None,
                  type="about:blank", status=403, instance=None, **kwargs):
-        super().__init__(title="RateLimitExceededException",
+        super().__init__(title="Rate Limit Exceeded",
                          detail=detail, status=status, **kwargs)
 
 
