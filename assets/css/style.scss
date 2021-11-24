@@ -77,6 +77,9 @@ input[type=radio] {
     margin-right: 5px;
 }
 
+.github-owner {
+    color: hsl(180, 63%, 33%);
+}
 
 /*
 Override static width settings.
@@ -104,7 +107,7 @@ Override static width settings.
     /* background: #133233;*/
     color: whitesmoke;
     text-align: center;    
-    padding: 40px 0;
+    padding: 40px 0 10px;
     position: relative;
     bottom: 0px;
     left: 0px;
@@ -160,7 +163,7 @@ p img {
 .toc .toc-title {
     font-size: large;
     font-weight: bold;
-    margin: 20px 0;
+    margin: 40px 0 10px;
     color: hsl(180, 63%, 33%);
 }
 
