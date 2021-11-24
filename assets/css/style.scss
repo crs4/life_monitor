@@ -105,7 +105,16 @@ Override static width settings.
     padding: 40px 0;
     position: absolute;
     bottom: 0px;
+    left: 0px;
     width: 100%;
+}
+
+.footer a {
+    color: whitesmoke;
+}
+
+.footer a:hover {
+    color: hsl(180, 63%, 33%);
 }
 
 .section {
@@ -132,7 +141,8 @@ p img {
 .toc {
     text-align: left;
     color: whitesmoke;
-    margin: 80px 0;
+    margin: 80px auto;
+    width: 100%;
 }
 
 /*.toc ul {
@@ -146,7 +156,7 @@ p img {
 }
 
 .toc .toc-title {
-    font-size: medium;
+    font-size: large;
     font-weight: bold;
 }
 
