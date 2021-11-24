@@ -1,4 +1,4 @@
-# Welcome to LifeMonitor
+# Welcome to *Life*-**Monitor**
 
 LifeMonitor is a service to support the **sustainability** and **reusability**
 of published computational workflows.
