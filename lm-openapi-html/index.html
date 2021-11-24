@@ -189,7 +189,7 @@ that they might be solved, thus extending the useful life of the workflow.</p>
 </div>
     <div class="app-desc">More information: <a href="https://openapi-generator.tech">https://openapi-generator.tech</a></div>
     <div class="app-desc">Contact Info: <a href="team@openapitools.org">team@openapitools.org</a></div>
-    <div class="app-desc">Version: 0.3.0</div>
+    <div class="app-desc">Version: 0.4.0</div>
     <div class="app-desc">BasePath:</div>
     <div class="license-info">All rights reserved</div>
     <div class="license-url">http://apache.org/licenses/LICENSE-2.0.html</div>
@@ -225,7 +225,6 @@ that they might be solved, thus extending the useful life of the workflow.</p>
   <h4><a href="#TestInstances">TestInstances</a></h4>
   <ul>
   <li><a href="#instancesBuildsGetById"><code><span class="http-method">get</span> /instances/{instance_uuid}/builds/{build_id}</code></a></li>
-  <li><a href="#instancesBuildsGetLogs"><code><span class="http-method">get</span> /instances/{instance_uuid}/builds/{build_id}/logs</code></a></li>
   <li><a href="#instancesDeleteById"><code><span class="http-method">delete</span> /instances/{instance_uuid}</code></a></li>
   <li><a href="#instancesGetBuilds"><code><span class="http-method">get</span> /instances/{instance_uuid}/latest-builds</code></a></li>
   <li><a href="#instancesGetById"><code><span class="http-method">get</span> /instances/{instance_uuid}</code></a></li>
@@ -963,72 +962,6 @@ OAuth2 clients can use this endpoint.</p>
         <a href="#Error">Error</a>
   </div> <!-- method -->
   <hr/>
-  <div class="method"><a name="instancesBuildsGetLogs"/>
-    <div class="method-path">
-    <a class="up" href="#__Methods">Up</a>
-    <pre class="get"><code class="huge"><span class="http-method">get</span> /instances/{instance_uuid}/builds/{build_id}/logs</code></pre></div>
-    <div class="method-summary">Get test instance build logs (<span class="nickname">instancesBuildsGetLogs</span>)</div>
-    <div class="method-notes">Get the build logs for the specified test instance and build</div>
-
-    <h3 class="field-label">Path parameters</h3>
-    <div class="field-items">
-      <div class="param">instance_uuid (required)</div>
-
-      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Universal unique identifier of the test instance default: null </div><div class="param">build_id (required)</div>
-
-      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Build identifier default: null </div>
-    </div>  <!-- field-items -->
-
-
-
-
-    <h3 class="field-label">Query parameters</h3>
-    <div class="field-items">
-      <div class="param">offset_bytes (optional)</div>
-
-      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Number of bytes to skip while fetching the log default: 0 </div><div class="param">limit_bytes (optional)</div>
-
-      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Maximum number of log bytes to retrieve default: 131072 </div>
-    </div>  <!-- field-items -->
-
-
-    <h3 class="field-label">Return type</h3>
-    <div class="return-type">
-      
-      String
-    </div>
-
-    <!--Todo: process Response Object and its headers, schema, examples -->
-
-    <h3 class="field-label">Example data</h3>
-    <div class="example-data-content-type">Content-Type: application/json</div>
-    <pre class="example"><code>"[15/April/2021:13:55:36 -0700] \"GET /workflow.cwl HTTP/1.0\" 200 2326\n[15/April/2021:13:55:36 -0700] \"GET /workflow.cwl HTTP/1.0\" 200 2326\n[15/April/2021:13:55:36 -0700] \"GET /workflow.cwl HTTP/1.0\" 200 2326\n"</code></pre>
-
-    <h3 class="field-label">Produces</h3>
-    This API call produces the following media types according to the <span class="header">Accept</span> request header;
-    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
-    <ul>
-      <li><code>application/json</code></li>
-    </ul>
-
-    <h3 class="field-label">Responses</h3>
-    <h4 class="field-label">200</h4>
-    Log data
-        <a href="#String">String</a>
-    <h4 class="field-label">400</h4>
-    The request is malformed
-        <a href="#Error">Error</a>
-    <h4 class="field-label">401</h4>
-    Unauthorized
-        <a href="#Error">Error</a>
-    <h4 class="field-label">403</h4>
-    Forbidden
-        <a href="#Error">Error</a>
-    <h4 class="field-label">404</h4>
-    Resource not found
-        <a href="#Error">Error</a>
-  </div> <!-- method -->
-  <hr/>
   <div class="method"><a name="instancesDeleteById"/>
     <div class="method-path">
     <a class="up" href="#__Methods">Up</a>
@@ -1426,6 +1359,7 @@ OAuth2 clients can use this endpoint.</p>
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
     <pre class="example"><code>{
+  "reason" : "reason",
   "latest_builds" : [ {
     "duration" : 2648,
     "instance" : {
@@ -1522,9 +1456,19 @@ through the service's API).</li>
 
 
 
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#inline_response_201">inline_response_201</a>
+      
+    </div>
 
     <!--Todo: process Response Object and its headers, schema, examples -->
 
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "uuid" : "ba5bbdc3-d9fb-4381-a1d8-96a8ac5594d7"
+}</code></pre>
 
     <h3 class="field-label">Produces</h3>
     This API call produces the following media types according to the <span class="header">Accept</span> request header;
@@ -1535,8 +1479,8 @@ through the service's API).</li>
 
     <h3 class="field-label">Responses</h3>
     <h4 class="field-label">201</h4>
-    Instance created by this operation
-        <a href="#"></a>
+    A new test instance has been registered.
+        <a href="#inline_response_201">inline_response_201</a>
     <h4 class="field-label">400</h4>
     The request is malformed
         <a href="#Error">Error</a>
@@ -2586,6 +2530,7 @@ RO-Crate specifcation is available at https://www.researchobject.org/ro-crate/.
     <li><a href="#Workflow_allOf"><code>Workflow_allOf</code> - </a></li>
     <li><a href="#inline_object"><code>inline_object</code> - </a></li>
     <li><a href="#inline_object_1"><code>inline_object_1</code> - </a></li>
+    <li><a href="#inline_response_201"><code>inline_response_201</code> - </a></li>
   </ol>
 
   <div class="model">
@@ -2921,6 +2866,7 @@ from a Workflow RO-Crate </div>
       <div class="param">suite_uuid </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Universal unique identifier of the test suite </div>
 <div class="param">status </div><div class="param-desc"><span class="param-type"><a href="#AggregateTestStatus">AggregateTestStatus</a></span>  </div>
 <div class="param">latest_builds (optional)</div><div class="param-desc"><span class="param-type"><a href="#BuildSummary">array[BuildSummary]</a></span>  </div>
+<div class="param">reason (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Reason why the status is unavailable </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
@@ -3048,6 +2994,7 @@ accessible to the user for download
 <div class="param">version </div><div class="param-desc"><span class="param-type"><a href="#WorkflowVersion">WorkflowVersion</a></span>  </div>
 <div class="param">aggregate_test_status </div><div class="param-desc"><span class="param-type"><a href="#AggregateTestStatus">AggregateTestStatus</a></span>  </div>
 <div class="param">latest_builds (optional)</div><div class="param-desc"><span class="param-type"><a href="#BuildSummary">array[BuildSummary]</a></span> Latest builds, one for each test instance </div>
+<div class="param">reason (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Reason why the status is unavailable </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
@@ -3057,6 +3004,7 @@ accessible to the user for download
       <div class="param">version </div><div class="param-desc"><span class="param-type"><a href="#WorkflowVersion">WorkflowVersion</a></span>  </div>
 <div class="param">aggregate_test_status </div><div class="param-desc"><span class="param-type"><a href="#AggregateTestStatus">AggregateTestStatus</a></span>  </div>
 <div class="param">latest_builds (optional)</div><div class="param-desc"><span class="param-type"><a href="#BuildSummary">array[BuildSummary]</a></span> Latest builds, one for each test instance </div>
+<div class="param">reason (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Reason why the status is unavailable </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
@@ -3113,6 +3061,7 @@ accessible to the user for download
 <div class="param">workflow </div><div class="param-desc"><span class="param-type"><a href="#Workflow">Workflow</a></span>  </div>
 <div class="param">aggregate_test_status </div><div class="param-desc"><span class="param-type"><a href="#AggregateTestStatus">AggregateTestStatus</a></span>  </div>
 <div class="param">latest_builds (optional)</div><div class="param-desc"><span class="param-type"><a href="#BuildSummary">array[BuildSummary]</a></span> Latest builds, one for each test instance </div>
+<div class="param">reason (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Reason why the status is unavailable </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
@@ -3123,6 +3072,7 @@ accessible to the user for download
 <div class="param">workflow </div><div class="param-desc"><span class="param-type"><a href="#Workflow">Workflow</a></span>  </div>
 <div class="param">aggregate_test_status </div><div class="param-desc"><span class="param-type"><a href="#AggregateTestStatus">AggregateTestStatus</a></span>  </div>
 <div class="param">latest_builds (optional)</div><div class="param-desc"><span class="param-type"><a href="#BuildSummary">array[BuildSummary]</a></span> Latest builds, one for each test instance </div>
+<div class="param">reason (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Reason why the status is unavailable </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
@@ -3158,6 +3108,13 @@ If not provided, it will be auto-generated by the system. </div>
     <div class="field-items">
       <div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A name for the workflow version. If not provided, the RO-Crate dataset name is used as default. </div>
 <div class="param">version (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Workflow version </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="inline_response_201"><code>inline_response_201</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">uuid (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Universal unique identifier of the test instance </div>
     </div>  <!-- field-items -->
   </div>
   </body>
