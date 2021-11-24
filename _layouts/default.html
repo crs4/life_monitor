@@ -26,9 +26,11 @@
                         <img width="70%" src="{{site.logo | relative_url}}" alt="LifeMonitor Logo" />
                         {% endif %}
                     </a>
+                    <div class="smaller">
+                        A testing and monitoring service <br/>
+                        for scientific workflows
+                    </div>
                 </div>
-
-                <p>{{ site.description | default: site.github.project_tagline }}</p>
 
                 {% if site.show_downloads %}
                 <ul class="downloads">
@@ -76,16 +78,14 @@
                 {% if site.github.is_project_page %}
                 <div class="mt-4">
                     <small>This project is maintained by
-                        <a href="{{ site.github.owner_url }}">{{ site.github.owner_name }}</a>
+                        <a href="{{ site.github.owner_url }}">@{{ site.github.owner_name }}</a>
                     </small>
                 </div>
                 {% endif %}
             </div>
         </div>
         <div class="section col-sm-12 ml-auto col-md-9">
-
             {{ content }}
-
         </div>
     </div>
     <!-- <script src="{{ " /assets/js/scale.fix.js" | relative_url }}"></script> -->
