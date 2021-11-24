@@ -1,4 +1,9 @@
---- --- @import "{{ site.theme }}";
+--- 
+--- 
+
+@import "{{ site.theme }}";
+
+
 body {
     padding: 0;
     margin: 0;
@@ -121,12 +126,11 @@ p img {
     color: whitesmoke;
 }
 
-
-/* .toc ul {
-  list-style-type: none;
-  padding: 0;
-  margin: 0;
-} */
+.toc ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
 
 .toc a {
     color: whitesmoke
