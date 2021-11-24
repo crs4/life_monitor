@@ -108,3 +108,15 @@ p img {
   width: "80%";
   text-align: center;
 }
+
+.toc {
+  color: whitesmoke;
+}
+
+.toc a{
+  color: whitesmoke
+}
+
+.toc a:hover {
+  color: hsl(180, 63%, 33%);
+}
