@@ -103,7 +103,7 @@ Override static width settings.
     color: whitesmoke;
     text-align: center;
     width: 100%;
-    padding: 40px;
+    padding: 40px 0;
     position: absolute;
     bottom: 0px;
 }
@@ -128,11 +128,11 @@ p img {
     color: whitesmoke;
 }
 
-.toc ul {
+/*.toc ul {
     list-style-type: none;
     padding: 0;
     margin: 0;
-}
+}*/
 
 .toc a {
     color: whitesmoke
