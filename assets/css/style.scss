@@ -7,6 +7,7 @@
 body {
   padding: 0;
   margin: 0;
+  background-color: #133233;
 }
 
 
@@ -89,11 +90,13 @@ Override static width settings.
   color: whitesmoke;
   text-align: center;
   width: 100%;
+  padding: 40px;
 }
 
 .section {
-  margin: 20px 0 40px;
-  padding: 20px 60px;
+  margin: 0 0 40px;
+  padding: 40px 60px;
+  background-color: whitesmoke;
 }
 
 .view {
