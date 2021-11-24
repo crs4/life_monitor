@@ -92,6 +92,8 @@ Override static width settings.
     text-align: center;
     padding: 20px;
     height: 100%;
+    /* min-height: 800px;*/
+    overflow-y: scroll;
 }
 
 .logo {
@@ -141,7 +143,7 @@ p img {
 .toc {
     text-align: left;
     color: whitesmoke;
-    margin: 40px auto;
+    margin: 80px auto;
     width: 100%;
 }
 
