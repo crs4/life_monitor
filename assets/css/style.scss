@@ -1,125 +1,137 @@
----
----
-
-@import "{{ site.theme }}";
-
-
+--- --- @import "{{ site.theme }}";
 body {
-  padding: 0;
-  margin: 0;
-  background-color: #133233;
+    padding: 0;
+    margin: 0;
+    background-color: #133233;
 }
 
-
-h1, h2, h3, h4, h5, h6 {  
-  color: #133233;
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    color: #133233;
 }
 
-h1{
-  font-size: 2.5rem;
-  margin: 0 0 40px;
+h1 {
+    font-size: 2.5rem;
+    margin: 0 0 40px;
 }
 
 h2 {
-  font-size: 1.8rem;
-  margin: 40px 0 20px;
+    font-size: 1.8rem;
+    margin: 40px 0 20px;
 }
 
 h3 {
-  font-size: 1.6rem;
-  margin: 30px 0 20px;
+    font-size: 1.6rem;
+    margin: 30px 0 20px;
 }
 
 h4 {
-  font-size: 1.4rem;
+    font-size: 1.4rem;
 }
 
 h5 {
-  font-size: 1.2rem;
+    font-size: 1.2rem;
 }
 
 h6 {
-  font-size: 1.1rem;
+    font-size: 1.1rem;
 }
 
-h4, h5, h6 {
-  margin: 20px 0 10px;
+h4,
+h5,
+h6 {
+    margin: 20px 0 10px;
 }
+
 
 /*
 Override the bold fond-weight when hovering over links as it frequently makes the
 text move.
 */
+
 a {
-  color: hsl(180, 63%, 33%);
+    color: hsl(180, 63%, 33%);
 }
 
-a:hover, a:focus {
+a:hover,
+a:focus {
     font-weight: normal;
     color: #094b4b;
 }
 
-strong {
-  color: #094b4b;
+strong {
+    color: #094b4b;
 }
 
-input[type=checkbox], input[type=radio] {
-  margin-right: 5px;
+input[type=checkbox],
+input[type=radio] {
+    margin-right: 5px;
 }
+
 
 /*
 Override static width settings.
 */
+
 .wrapper {
-  width: 100%;
+    width: 100%;
 }
 
-.header {  
-  background: #133233;
-  color: whitesmoke;
-  text-align: center;
-  padding: 20px;
-  height: 100%;
+.header {
+    background: #133233;
+    color: whitesmoke;
+    text-align: center;
+    padding: 20px;
+    height: 100%;
 }
 
 .logo {
-  margin: 20px 0;
+    margin: 20px 0;
 }
 
-.footer {  
-  /* background: #133233;*/
-  color: whitesmoke;
-  text-align: center;
-  width: 100%;
-  padding: 40px;
+.footer {
+    /* background: #133233;*/
+    color: whitesmoke;
+    text-align: center;
+    width: 100%;
+    padding: 40px;
 }
 
 .section {
-  margin: 0;
-  padding: 40px 60px;
-  background-color: white;
+    margin: 0;
+    padding: 40px 60px;
+    background-color: white;
 }
 
 .view a small {
-  color: whitesmoke;
+    color: whitesmoke;
 }
 
 p img {
-  width: "80%";
-  text-align: center;
+    width: "80%";
+    text-align: center;
 }
 
 .toc {
-  color: whitesmoke;
-  list-style-type: none; /* Remove bullets */
-  padding: 0; /* Remove padding */
-  margin: 0; /* Remove margins */
+    text-align: left;
+    color: whitesmoke;
 }
 
-.toc a{
-  color: whitesmoke
+
+/* .toc ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+} */
+
+.toc a {
+    color: whitesmoke
 }
 
-.toc a:hover {
-  color: hsl(180, 63%, 33%);
+.toc a:hover {
+    color: hsl(180, 63%, 33%);
 }
