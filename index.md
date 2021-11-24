@@ -1,4 +1,4 @@
-# Welcome to *Life*-**Monitor**
+# Welcome to <span style="font-style: italic; font-family: Baskerville,Baskerville Old Face,Hoefler Text,Garamond,Times New Roman,serif;">Life</span><span class="small" style="font-size: 75%; margin: 0 -1px 0 1px;">-</span><span style="font-weight: bold; font-family: Gill Sans,Gill Sans MT,Calibri,sans-serif;">Monitor</span>
 
 LifeMonitor is a service to support the **sustainability** and **reusability**
 of published computational workflows.
