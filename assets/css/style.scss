@@ -9,18 +9,9 @@ body {
   margin: 0;
 }
 
-header, footer {
-  max-width: 350px;
-  background: #094b4b;
-  color: whitesmoke;
-}
-
-section {
-  margin: 20px 0 0;
-}
 
 h1, h2, h3, h4, h5, h6 {  
-  color: #094b4b;
+  color: #133233;
 }
 
 h1{
@@ -71,6 +62,10 @@ strong {
   color: #094b4b;
 }
 
+input[type=checkbox], input[type=radio] {
+  margin-right: 5px;
+}
+
 /*
 Override static width settings.
 */
@@ -78,11 +73,29 @@ Override static width settings.
   width: 100%;
 }
 
-section {
-  width: 70%;
+.header {  
+  background: #133233;
+  color: whitesmoke;
+  text-align: center;
+  padding: 40px;
 }
 
-header {
-  width: 30%;
-  max-width: 270px;
+.logo {
+  margin: 20px 0;
+}
+
+.footer {  
+  background: #133233;
+  color: whitesmoke;
+  text-align: center;
+  width: 100%;
+}
+
+.section {
+  margin: 20px 0 40px;
+  padding: 20px 60px;
+}
+
+.view {
+  color: whitesmoke;
 }
