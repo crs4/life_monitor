@@ -1,10 +1,13 @@
 # Getting Started
 
-At the moment, LifeMonitor can be used through its [REST API](lm_api_specs)
-or a [command line client](restish-cli).
+There are several ways you can interact with LifeMonitor:
 
-To interact with the API, the first thing to do is to authenticate with
-LifeMonitor.
+* through the [Web Application](https://app.lifemonitor.eu/);
+* by using a [command line client](restish-cli);
+* programmatically via its [REST API](lm_api_specs);
+
+Under the hood, all of the above access the service via the API. Most API
+calls require authentication, so the first thing to do is create an account.
 
 
 ## Create an account and authenticate
@@ -31,10 +34,14 @@ to create an LM-specific account.
 
 <img alt="LM Sign In form" src="images/lm_sign_in_form.png" width="400" />
 
+
 ## Start Life Monitoring
 
-Until [WorkflowHub](https://workflowhub.eu/) integration and the LifeMonitor
-web interface are ready, the only way to use the LifeMonitor service is through
+How to interact with LifeMonitor depends on your tech level and what you want
+to achieve. The [web GUI](https://app.lifemonitor.eu/) is the easiest way to
+access the service and get an immediate visual feedback on workflow status. At
+the moment, however, it does not allow to submit new workflows or make any
+other changes (except modifying a workflow's visibility). To do that, use
 its [REST API](lm_api_specs) -- e.g., with your own custom client or with a
 general openAPI [command line client](restish-cli).
 

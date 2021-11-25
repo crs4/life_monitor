@@ -5,14 +5,14 @@ of published computational workflows.
 
 The collapse [[1](#hinsen2019)] over time of the software and services on
 which computational workflows depend is destructive to their reusability, and
-to the **reproducibility** of work for which they were used; this phenomenon
+to the reproducibility of work for which they were used; this phenomenon
 can be caused by an API change that is not backwards compatible, a regression
 in a tool whose version was not pinned, a change in URL of an external
 resource, etc. Frequent **testing** is crucial to the preservation of workflow
 health, allowing to expose problems when they arise and providing a
 machine-actionable way to verify changes to the workflow
 structure. LifeMonitor aims to facilitate the maintenance of computational
-workflows, supporting their reusability over time, with a strong focus on
+workflows, supporting their **reusability** over time, with a strong focus on
 testing and test monitoring.
 
 The project's main goals are to:
@@ -52,14 +52,15 @@ LifeMonitor is still in early development.  Here is our planned development road
         [ro-crate-py](https://github.com/ResearchObject/ro-crate-py))
   - [x] Alpha release on <https://lifemonitor.eu>
 
-#### Mid 2021
-  - [ ] WorkflowHub integration?
-  - [ ] Command line client
-  - [ ] Web interface
+#### End of 2021
+  - [x] Command line client
+  - [x] Web interface
   - Support monitoring tests running on external testing services:
-      - [ ] Github Actions
+      - [x] Github Actions
+  - [ ] Workflow submission from the Web interface
 
 #### Later
+  - [ ] WorkflowHub integration
   - [ ] Programmable periodic test execution
   - [ ] Support workflow test creation
   - [ ] Workflow maintenance plugins (e.g., Docker image linting)
