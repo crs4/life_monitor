@@ -1,18 +1,18 @@
-# Welcome to LifeMonitor
+# Welcome to <span style="font-style: italic; font-family: Baskerville,Baskerville Old Face,Hoefler Text,Garamond,Times New Roman,serif;">Life</span><span class="small" style="font-size: 75%; margin: 0 -1px 0 1px;">-</span><span style="font-weight: bold; font-family: Gill Sans,Gill Sans MT,Calibri,sans-serif;">Monitor</span>
 
 LifeMonitor is a service to support the **sustainability** and **reusability**
 of published computational workflows.
 
 The collapse [[1](#hinsen2019)] over time of the software and services on
 which computational workflows depend is destructive to their reusability, and
-to the **reproducibility** of work for which they were used; this phenomenon
+to the reproducibility of work for which they were used; this phenomenon
 can be caused by an API change that is not backwards compatible, a regression
 in a tool whose version was not pinned, a change in URL of an external
 resource, etc. Frequent **testing** is crucial to the preservation of workflow
 health, allowing to expose problems when they arise and providing a
 machine-actionable way to verify changes to the workflow
 structure. LifeMonitor aims to facilitate the maintenance of computational
-workflows, supporting their reusability over time, with a strong focus on
+workflows, supporting their **reusability** over time, with a strong focus on
 testing and test monitoring.
 
 The project's main goals are to:
@@ -26,13 +26,13 @@ The project's main goals are to:
 * Assist in test suite creation and workflow maintenance.
 
 
-## Documentation
+<!-- ## Documentation
 
 * [Getting started](getting_started)
 * [REST API](lm_api_specs)
 * [Using the API via CLI](restish-cli)
 * [Administration Guide](lm_admin_guide)
-* [Workflow Testing RO-crate specification](workflow_testing_ro_crate)
+* [Workflow Testing RO-crate specification](workflow_testing_ro_crate) -->
 
 
 ## Road map
@@ -52,14 +52,15 @@ LifeMonitor is still in early development.  Here is our planned development road
         [ro-crate-py](https://github.com/ResearchObject/ro-crate-py))
   - [x] Alpha release on <https://lifemonitor.eu>
 
-#### Mid 2021
-  - [ ] WorkflowHub integration?
-  - [ ] Command line client
-  - [ ] Web interface
+#### End of 2021
+  - [x] Command line client
+  - [x] Web interface
   - Support monitoring tests running on external testing services:
-      - [ ] Github Actions
+      - [x] Github Actions
+  - [ ] Workflow submission from the Web interface
 
 #### Later
+  - [ ] WorkflowHub integration
   - [ ] Programmable periodic test execution
   - [ ] Support workflow test creation
   - [ ] Workflow maintenance plugins (e.g., Docker image linting)
@@ -70,15 +71,13 @@ LifeMonitor is still in early development.  Here is our planned development road
 
 LifeMonitor is being developed as part of the [EOSC-Life project](https://www.eosc-life.eu/)
 
-<a title="EOSC-Life" href="https://www.eosc-life.eu">
-  <img alt="EOSC-Life Logo" src="https://github.com/crs4/life_monitor/raw/master/docs/logo_EOSC-Life.png" width="130" style="vertical-align: middle" />
-</a>
-<a title="CRS4" href="https://www.crs4.it/">
-  <img alt="CRS4 Logo" src="https://github.com/crs4/life_monitor/raw/master/docs/logo_crs4-transparent.png" width="130" style="vertical-align: middle" />
-</a>
-<a title="BBMRI-ERIC" href="https://www.bbmri-eric.eu/">
-  <img alt="BBMRI-ERIC Logo" src="https://github.com/crs4/life_monitor/raw/master/docs/logo_bbmri-eric.png" width="130" style="vertical-align: middle; margin-left: 10px" />
-</a>
+<div>                    
+  <a title="Acknowledgments" href="https://www.eosc-life.eu">
+      <img alt="Acknowledgments" 
+           width="300px"
+           src="https://github.com/crs4/life_monitor/raw/master/docs/footer-logo.svg" style="vertical-align: middle" />
+  </a>                      
+</div>
 
 ---
 <a name="hinsen2019">[1]</a> K. Hinsen, <em>Dealing with software collapse</em>. Computing in Science & Engineering 21 (3), 104-108 (2019).

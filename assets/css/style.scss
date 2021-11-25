@@ -1,28 +1,175 @@
----
----
+--- 
+--- 
 
 @import "{{ site.theme }}";
+
+
+body {
+    padding: 0;
+    margin: 0;
+    background-color: #003333;
+    font-family: "Open Sans";
+    font-size: 16px;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    color: #133233;
+}
+
+h1 {
+    font-size: 2.5rem;
+    margin: 0 0 40px;
+}
+
+h2 {
+    font-size: 1.8rem;
+    margin: 40px 0 20px;
+}
+
+h3 {
+    font-size: 1.6rem;
+    margin: 30px 0 20px;
+}
+
+h4 {
+    font-size: 1.4rem;
+}
+
+h5 {
+    font-size: 1.2rem;
+}
+
+h6 {
+    font-size: 1.1rem;
+}
+
+h4,
+h5,
+h6 {
+    margin: 20px 0 10px;
+}
+
 
 /*
 Override the bold fond-weight when hovering over links as it frequently makes the
 text move.
 */
-a:hover, a:focus {
+
+a {
+    color: hsl(180, 63%, 33%);
+}
+
+a:hover,
+a:focus {
     font-weight: normal;
+    color: #094b4b;
+}
+
+strong {
+    color: #094b4b;
+}
+
+input[type=checkbox],
+input[type=radio] {
+    margin-right: 5px;
+}
+
+.github-owner {
+    color: hsl(180, 63%, 33%);
 }
 
 /*
 Override static width settings.
 */
+
 .wrapper {
-  width: 100%;
+    width: 100%;
 }
 
-section {
-  width: 70%;
+.header {
+    background: #003333;
+    color: whitesmoke;
+    text-align: center;
+    padding: 20px;
+    height: 100%;
+    /* min-height: 800px;*/
+    overflow-y: scroll;
+    font-size: 15px;
 }
 
-header {
-  width: 30%;
-  max-width: 270px;
+.logo {
+    margin: 20px 0;
+}
+
+.footer {
+    /* background: #003333;*/
+    color: whitesmoke;
+    text-align: center;    
+    padding: 40px 0 10px;
+    position: relative;
+    bottom: 0px;
+    left: 0px;
+    width: 100%;
+}
+
+.footer a {
+    color: whitesmoke;
+}
+
+.footer a:hover {
+    color: hsl(180, 63%, 33%);
+}
+
+.section {
+    margin: 0;
+    padding: 40px 60px;
+    background-color: white;
+}
+
+.view {
+    color: whitesmoke;
+    margin: 0 auto;
+}
+
+.view a small {
+    color: whitesmoke;
+    margin: 0 auto;
+}
+
+p img {
+    width: "80%";
+    text-align: center;
+}
+
+.toc {
+    text-align: left;
+    color: whitesmoke;
+    margin: 60px auto;
+    width: 100%;
+}
+
+/*.toc ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}*/
+
+.toc a {
+    color: whitesmoke
+}
+
+.toc .toc-title {
+    font-size: large;
+    font-weight: bold;
+    margin: 40px 0 10px;
+    color: hsl(180, 63%, 33%);
+}
+
+.toc a:hover {
+    color: hsl(180, 63%, 33%);
 }

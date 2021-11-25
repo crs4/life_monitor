@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="{{ site.lang | default: " en-US" }}">
+<head>
+    <!-- Required meta tags -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    {% seo %}
+    <!-- include font -->
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;600&amp;family=Roboto+Mono&amp;display=swap" rel="stylesheet">
+    <!-- include bootstrap -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <!-- Add custom css -->
+    <link rel="stylesheet" href="{{ '/assets/css/style.css?v=' | append: site.github.build_revision | relative_url }}">
+    <!--[if lt IE 9]>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.min.js"></script>
+    <![endif]-->
+    {% include head-custom.html %}
+</head>
+<body>
+    <div class="row">
+        <div class="col-sm-12 col-md-3 header fixed-top">
+            <div class="">
+                <div class="logo">
+                    <a href="index" title="LifeMonitor HomePage">
+                        {% if site.logo %}
+                        <img width="80%" src="{{site.logo | relative_url}}" alt="LifeMonitor Logo" />
+                        {% endif %}
+                    </a>
+                    <div class="smaller" style="color: lightgrey;">
+                        Workflow Sustainability Service
+                    </div>
+                </div>
+
+                {% if site.show_downloads %}
+                <ul class="downloads">
+                    <li><a href="{{ site.github.zip_url }}">Download <strong>ZIP File</strong></a></li>
+                    <li><a href="{{ site.github.tar_url }}">Download <strong>TAR Ball</strong></a></li>
+                    <li><a href="{{ site.github.repository_url }}">View On <strong>GitHub</strong></a></li>
+                </ul>
+                {% endif %}
+            </div>
+            <div class="toc">
+                <div class="toc-title text-center">
+                    <i class="fa-regular fa-books"></i>Documentation
+                </div>
+                <ul>
+                    <li><a href="getting_started">Getting started</a></li>
+                    <li><a href="lm_api_specs">REST API</a></li>
+                    <li><a href="restish-cli">Using the API via CLI</a></li>
+                    <li><a href="lm_admin_guide">Administration Guide</a></li>
+                    <li><a href="workflow_testing_ro_crate">Workflow Testing RO-crate specification</a></li>
+                </ul>
+                <div class="toc-title text-center">
+                    <i class="fa-regular fa-link"></i>Useful links
+                </div>
+                <ul>
+                    <li><a href="https://api.lifemonitor.eu/openapi.html" target="_blank">API Explorer</a></li>
+                    <li><a href="https://app.lifemonitor.eu" target="_blank">Web Application</a></li>
+                </ul>
+            </div>
+            <div class="footer">
+                {% if site.github.is_project_page %}
+                <div class="row">
+                    <div class="view">
+                        <a href="{{ site.github.repository_url }}">
+                            <img src="images/github-icon-white.png" width="55px" alt="Github Repository" />
+                            <div class="float-right m-2 text-left">
+                                <div>View on <b>GitHub</b></div>
+                                <div class="small">{{ site.github.repository_nwo }}</div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if site.github.is_user_page %}
+                <div class="view">
+                    <a href="{{ site.github.owner_url }}">View My GitHub Profile</a>
+                </div>
+                {% endif %}
+                {% if site.github.is_project_page %}
+                <div class="mt-4">
+                    <small>This project is maintained by
+                        <a class="github-owner" href="{{ site.github.owner_url }}">
+                            @{{ site.github.owner_name }}
+                        </a>
+                    </small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        <div class="section col-sm-12 ml-auto col-md-9">
+            {% if page.category != "index"%}
+            {% endif %}
+            {{ content }}
+            
+        </div>
+    </div>
+    <!-- <script src="{{ " /assets/js/scale.fix.js" | relative_url }}"></script> -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+        integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+        crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+        integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+        crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+        integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+        crossorigin="anonymous"></script>
+</body>
+</html>
