@@ -168,6 +168,7 @@ def login():
         user = form.get_user()
         if user:
             login_user(user)
+            session.pop('_flashes', None)
             flash("You have logged in", category="success")
             return redirect(NextRouteRegistry.pop(url_for("auth.index")))
     return render_template("auth/login.j2", form=form, providers=get_providers())
@@ -177,6 +178,7 @@ def login():
 @login_required
 def logout():
     logout_user()
+    session.pop('_flashes', None)
     flash("You have logged out", category="success")
     NextRouteRegistry.clear()
     return redirect(url_for("auth.index"))
