@@ -1822,6 +1822,10 @@ components:
           type: string
           description: RO-Crate identifier of the TestSuite
           example: "#test1"
+        name:
+          type: string
+          description: A name for the test suite.
+          example: Workflow Test Suite
         definition:
           $ref: "#/components/schemas/TestSuiteDefinition"
         instances:
