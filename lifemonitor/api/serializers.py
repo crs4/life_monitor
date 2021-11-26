@@ -376,6 +376,7 @@ class SuiteSchema(ResourceMetadataSchema):
 
     uuid = ma.auto_field()
     roc_suite = fields.String(attribute="roc_suite")
+    name = ma.auto_field()
     definition = fields.Method("get_definition")
     instances = fields.Nested(TestInstanceSchema(self_link=False, exclude=('meta',)),
                               attribute="test_instances", many=True)
