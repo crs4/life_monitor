@@ -276,6 +276,7 @@ def save_generic_code_flow_client():
                                               data['auth_method'])
                 logger.debug("lient created: %r", client)
                 flash("App Created", category="success")
+                clear_cache()
             else:
                 clientId = request.values.get('clientId', None)
                 client = server.get_client(current_user, clientId)
@@ -290,7 +291,6 @@ def save_generic_code_flow_client():
                                      data['auth_method'])
                 logger.debug("Client updated: %r", client)
                 flash("App Updated", category="success")
-                clear_cache()
         else:
             logger.debug("Ops... validation failed")
             return profile(form=form, currentView="oauth2ClientEditorPane")
