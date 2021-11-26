@@ -26,15 +26,6 @@ The project's main goals are to:
 * Assist in test suite creation and workflow maintenance.
 
 
-<!-- ## Documentation
-
-* [Getting started](getting_started)
-* [REST API](lm_api_specs)
-* [Using the API via CLI](restish-cli)
-* [Administration Guide](lm_admin_guide)
-* [Workflow Testing RO-crate specification](workflow_testing_ro_crate) -->
-
-
 ## Road map
 
 LifeMonitor is still in early development.  Here is our planned development road map.
