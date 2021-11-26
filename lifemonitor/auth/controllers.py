@@ -97,7 +97,6 @@ def index():
 
 
 @blueprint.route("/profile", methods=("GET",))
-@cached(timeout=Timeout.SESSION)
 def profile(form=None, passwordForm=None, currentView=None):
     currentView = currentView or request.args.get("currentView", 'accountsTab')
     logger.debug(OpenApiSpecs.get_instance().authorization_code_scopes)
