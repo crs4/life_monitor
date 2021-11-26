@@ -97,7 +97,6 @@ def index():
 
 
 @blueprint.route("/profile", methods=("GET",))
-@cached(timeout=Timeout.SESSION)
 def profile(form=None, passwordForm=None, currentView=None):
     currentView = currentView or request.args.get("currentView", 'accountsTab')
     logger.debug(OpenApiSpecs.get_instance().authorization_code_scopes)
@@ -169,6 +168,7 @@ def login():
         user = form.get_user()
         if user:
             login_user(user)
+            session.pop('_flashes', None)
             flash("You have logged in", category="success")
             return redirect(NextRouteRegistry.pop(url_for("auth.index")))
     return render_template("auth/login.j2", form=form, providers=get_providers())
@@ -178,6 +178,7 @@ def login():
 @login_required
 def logout():
     logout_user()
+    session.pop('_flashes', None)
     flash("You have logged out", category="success")
     NextRouteRegistry.clear()
     return redirect(url_for("auth.index"))
@@ -275,6 +276,7 @@ def save_generic_code_flow_client():
                                               data['auth_method'])
                 logger.debug("lient created: %r", client)
                 flash("App Created", category="success")
+                clear_cache()
             else:
                 clientId = request.values.get('clientId', None)
                 client = server.get_client(current_user, clientId)
@@ -289,7 +291,6 @@ def save_generic_code_flow_client():
                                      data['auth_method'])
                 logger.debug("Client updated: %r", client)
                 flash("App Updated", category="success")
-                clear_cache()
         else:
             logger.debug("Ops... validation failed")
             return profile(form=form, currentView="oauth2ClientEditorPane")
