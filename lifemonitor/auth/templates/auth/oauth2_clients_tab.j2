@@ -25,86 +25,86 @@
     </div>
 </div>
 
-  <div class="card-header m-2">
-    <h3 class="card-title"><b>OAuth2 Apps</b></h3>
-  </div>
+<div class="card-header m-2">
+  <h3 class="card-title"><b>OAuth2 Apps</b></h3>
+</div>
 
-  <div class="card-body p-0">
-    <table class="table table-striped">
-      <thead>
-        <tr>
-          <th style="width: 10px">#</th>
-          <th>App</th>
-          <th></th>
-          <th style="width: 44px">
-            <button class="btn btn-link" style="padding: 0" 
-                    onclick="showOAuth2ClientEditorPane()">
-                <span class="badge bg-success">NEW</span>
-            </button>
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for client in current_user.clients %}
-        <tr ondblclick="$('tr > td >form[name=edit_{{client.client_id}}] > button').click();">
-          <td>{{loop.index}}</td>
-          <td id="oauth2app_{{loop.index}}" class="text-sm-left" style="max-width: 50%;">
-            <div class="h4">{{client.client_name}}</div>
-            <div class="font-weight-light text-muted small">
-              <div><span class="font-weight-bold">client ID</span>: {{client.client_id}}</div>
-              <div><span class="font-weight-bold">confidential</span>: {{client.is_confidential()}}</div>
-              <div><span class="font-weight-bold">scopes</span>: {{", ".join(client.scopes)}}</div>
-              <div><span class="font-weight-bold">url</span>: {{client.client_uri}}</div>
-              <div><span class="font-weight-bold">callbacks</span>: {{", ".join(client.redirect_uris)}}</div>
-              {% if client.is_confidential() %}
-              <div><span class="font-weight-bold">auth method</span>: {{ client.auth_method }}</div>
-              {% endif %}
-            </div>
-          </td>
-          <td>
-            <button class="btn btn-link" type="submit" style="padding: 0"
-                    data-bs-toggle="tooltip" data-bs-placement="left" title="Copy Client ID"
-                    onclick="copyToClipboard('{{client.client_id}}', 'Client ID copied to clipboard')">
-              <div class="badge bg-primary">
-                <span class="m-1">ID</span><i class="far fa-copy"></i>
-              </div>
-            </button><br/>
+<div class="card-body p-0">
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th style="width: 10px">#</th>
+        <th>App</th>
+        <th></th>
+        <th style="width: 44px">
+          <button class="btn btn-link" style="padding: 0" 
+                  onclick="showOAuth2ClientEditorPane()">
+              <span class="badge bg-success">NEW</span>
+          </button>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for client in current_user.clients %}
+      <tr ondblclick="$('tr > td >form[name=edit_{{client.client_id}}] > button').click();">
+        <td>{{loop.index}}</td>
+        <td id="oauth2app_{{loop.index}}" class="text-sm-left" style="max-width: 50%;">
+          <div class="h4">{{client.client_name}}</div>
+          <div class="font-weight-light text-muted small">
+            <div><span class="font-weight-bold">client ID</span>: {{client.client_id}}</div>
+            <div><span class="font-weight-bold">confidential</span>: {{client.is_confidential()}}</div>
+            <div><span class="font-weight-bold">scopes</span>: {{", ".join(client.scopes)}}</div>
+            <div><span class="font-weight-bold">url</span>: {{client.client_uri}}</div>
+            <div><span class="font-weight-bold">callbacks</span>: {{", ".join(client.redirect_uris)}}</div>
             {% if client.is_confidential() %}
-              <button class="btn btn-link" type="submit" style="padding: 0"
-                data-bs-toggle="tooltip" data-bs-placement="left" title="Copy Client SECRET"
-                onclick="copyToClipboard('{{client.client_secret}}', 'Client SECRET copied to clipboard')">
-                <div class="badge bg-success">
-                  <span class="m-1">SECRET</span><i class="far fa-copy"></i>
-                </div>
-              </button>
+            <div><span class="font-weight-bold">auth method</span>: {{ client.auth_method }}</div>
             {% endif %}
-          </td>
-          <td>
-            <form method="POST"
-                  name="edit_{{client.client_id}}"
-                  action="{{ url_for('auth.edit_generic_code_flow_client') }}">
-              <input type="hidden" name="clientId" value="{{client.client_id}}" />
-              <button class="btn btn-link" type="submit" style="padding: 0"
-                      title="click to edit">
-                <span class="badge bg-warning">
-                EDIT
-                </span>
-              </button>
-            </form>
-            <form method="POST"
-                  action="{{ url_for('auth.delete_generic_code_flow_client') }}">
-              <input type="hidden" name="clientId" value="{{client.client_id}}" />
-              <button class="btn btn-link" type="submit" style="padding: 0"
-                      title="click to delete">
-                <span class="badge bg-danger">
-                DELETE
-                </span>
-              </button>
-            </form>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+          </div>
+        </td>
+        <td>
+          <button class="btn btn-link" type="submit" style="padding: 0"
+                  data-bs-toggle="tooltip" data-bs-placement="left" title="Copy Client ID"
+                  onclick="copyToClipboard('{{client.client_id}}', 'Client ID copied to clipboard')">
+            <div class="badge bg-primary">
+              <span class="m-1">ID</span><i class="far fa-copy"></i>
+            </div>
+          </button><br/>
+          {% if client.is_confidential() %}
+            <button class="btn btn-link" type="submit" style="padding: 0"
+              data-bs-toggle="tooltip" data-bs-placement="left" title="Copy Client SECRET"
+              onclick="copyToClipboard('{{client.client_secret}}', 'Client SECRET copied to clipboard')">
+              <div class="badge bg-success">
+                <span class="m-1">SECRET</span><i class="far fa-copy"></i>
+              </div>
+            </button>
+          {% endif %}
+        </td>
+        <td>
+          <form method="POST"
+                name="edit_{{client.client_id}}"
+                action="{{ url_for('auth.edit_generic_code_flow_client') }}">
+            <input type="hidden" name="clientId" value="{{client.client_id}}" />
+            <button class="btn btn-link" type="submit" style="padding: 0"
+                    title="click to edit">
+              <span class="badge bg-warning">
+              EDIT
+              </span>
+            </button>
+          </form>
+          <form method="POST"
+                action="{{ url_for('auth.delete_generic_code_flow_client') }}">
+            <input type="hidden" name="clientId" value="{{client.client_id}}" />
+            <button class="btn btn-link" type="submit" style="padding: 0"
+                    title="click to delete">
+              <span class="badge bg-danger">
+              DELETE
+              </span>
+            </button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
 
