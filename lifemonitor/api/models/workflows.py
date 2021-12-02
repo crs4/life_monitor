@@ -148,11 +148,12 @@ class Workflow(Resource):
         result: List[Workflow] = cls.query.join(Permission)\
             .filter(Permission.user_id == owner.id).all()
         if include_subscriptions:
-            result.extend(cls.query
-                          .join(Subscription).filter(Subscription.user_id == owner.id and Subscription.resource_id == cls.id)
-                          .filter(cls.public == true())
-                          .all())
-        return list({x.name: x for x in result}.values())
+            subscribed_workflows = cls.query\
+                .join(Subscription).filter(Subscription.user_id == owner.id and Subscription.resource_id == cls.id) \
+                .filter(cls.public == true()).all()
+            user_wf_ids = [w.uuid for w in result]
+            result.extend([w for w in subscribed_workflows if w.uuid not in user_wf_ids])
+        return result
 
     @classmethod
     def get_public_workflows(cls) -> List[Workflow]:
