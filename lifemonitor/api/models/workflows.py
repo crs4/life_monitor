@@ -227,7 +227,7 @@ class WorkflowVersion(ROCrate):
     @cached(Timeout.WORKFLOW, client_scope=False)
     def get_external_link(self) -> str:
         if self.hosting_service is None:
-            return self.uri
+            return self.uri if 'tmp://' not in self.uri else ''
         return self.hosting_service.get_external_link(self.workflow.external_id, self.version)
 
     @hybrid_property
