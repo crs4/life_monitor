@@ -301,6 +301,20 @@ def generic_workflow(app_client):
 
 
 @pytest.fixture
+def encoded_rocrate_workflow(app_client):
+    with open('tests/config/data/rocrateBase64.txt') as f:
+        data = f.read()
+    return {
+        'uuid': str(uuid.uuid4()),
+        'version': '1',
+        'rocrate': data,
+        'name': 'sort-and-change-case',
+        'testing_service_type': 'jenkins',
+        'authorization': app_client.application.config['WEB_SERVER_AUTH_TOKEN']
+    }
+
+
+@pytest.fixture
 def workflow_no_name(app_client):
     return {
         'uuid': str(uuid.uuid4()),
