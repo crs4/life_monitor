@@ -97,7 +97,7 @@ class VersionDetailsSchema(BaseSchema):
     def get_rocrate(self, obj):
         rocrate = {
             'links': {
-                'origin': obj.uri,
+                'origin': obj.external_link,
                 'metadata': urljoin(lm_utils.get_external_server_url(),
                                     f"workflows/{obj.workflow.uuid}/rocrate/{obj.version}/metadata"),
                 'download': urljoin(lm_utils.get_external_server_url(),
