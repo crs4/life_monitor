@@ -196,7 +196,7 @@ def download_url(url: str, target_path: str = None, authorization: str = None) -
         target_path = tempfile.mktemp()
     try:
         parsed_url = urllib.parse.urlparse(url)
-        if parsed_url.scheme == '' or parsed_url.scheme == 'file':
+        if parsed_url.scheme == '' or parsed_url.scheme in ['file', 'tmp']:
             logger.debug("Copying %s to local path %s", url, target_path)
             shutil.copyfile(parsed_url.path, target_path)
         else:
