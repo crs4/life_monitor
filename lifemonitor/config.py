@@ -77,6 +77,8 @@ class BaseConfig:
     # Default Cache Settings
     CACHE_TYPE = "flask_caching.backends.simplecache.SimpleCache"
     CACHE_DEFAULT_TIMEOUT = 60
+    # Workflow Data Folder
+    DATA_WORKFLOWS = "./data"
 
 
 class DevelopmentConfig(BaseConfig):
