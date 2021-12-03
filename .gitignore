@@ -18,6 +18,7 @@ instance
 *.pyc
 ./certs
 **/node_modules
+data
 lifemonitor/static/dist
 docker-compose.yml
 utils/certs/data
