@@ -141,7 +141,7 @@ class ROCrate(Resource):
 
         # report an error if the workflow is not locally available
         if self._metadata and not self._local_path:
-            raise lm_exceptions.DownloadException(detail=f"Unable to find the RO-Crate", status=410)
+            raise lm_exceptions.DownloadException(detail="RO-Crate unavailable", status=410)
 
         tmpdir_path = Path(target_path)
         local_zip = download_url(self.local_path,
