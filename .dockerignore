@@ -8,6 +8,7 @@
 **/__pycache__
 **/.npm
 *.pyc
+data
 docker/Dockerfile
 package-lock.json
 **/node_modules
