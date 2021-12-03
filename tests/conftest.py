@@ -302,7 +302,7 @@ def generic_workflow(app_client):
 
 @pytest.fixture
 def encoded_rocrate_workflow(app_client):
-    with open('tests/config/data/rocrateBase64.txt') as f:
+    with open('tests/config/data/rocrate.base64') as f:
         data = f.read()
     return {
         'uuid': str(uuid.uuid4()),
