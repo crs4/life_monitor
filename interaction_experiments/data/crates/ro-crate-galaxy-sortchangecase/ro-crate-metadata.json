@@ -24,9 +24,14 @@
             "about": {
                 "@id": "./"
             },
-            "conformsTo": {
-                "@id": "https://w3id.org/ro/crate/1.1"
-            }
+            "conformsTo": [
+                {
+                    "@id": "https://w3id.org/ro/crate/1.1"
+                },
+                {
+                    "@id": "https://w3id.org/workflowhub/workflow-ro-crate/1.0"
+                }
+            ]
         },
         {
             "@id": "./",
@@ -82,7 +87,9 @@
         },
         {
             "@id": "README.md",
-            "@type": "File"
+            "@type": "File",
+            "about": "./",
+            "encodingFormat": "text/markdown"
         },
         {
             "@id": "#galaxy",

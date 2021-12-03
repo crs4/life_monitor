@@ -31,7 +31,6 @@ import tempfile
 from rocrate.rocrate import ROCrate
 
 
-GALAXY_IMG = "bgruening/galaxy-stable:20.09"
 PLANEMO_ENTITY = "https://w3id.org/ro/terms/test#PlanemoEngine"
 
 
@@ -67,8 +66,7 @@ def check_workflow(crate, crate_dir):
     new_workflow_path = def_path.parent / workflow_path.name
     # Planemo expects the test file in the same dir as the workflow
     shutil.copy2(workflow_path, new_workflow_path)
-    cmd = ["planemo", "test", "--engine", "docker_galaxy",
-           "--docker_galaxy_image", GALAXY_IMG, new_workflow_path]
+    cmd = ["planemo", "test", "--biocontainers", str(new_workflow_path)]
     print("Running Planemo (this may take a while)")
     p = subprocess.run(cmd)
     p.check_returncode()
