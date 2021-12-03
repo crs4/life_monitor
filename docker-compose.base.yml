@@ -40,7 +40,7 @@ services:
       - "./certs:/certs:ro"
       - "./instance:/lm/instance:ro"
       - "./settings.conf:/lm/settings.conf:ro" # default settings
-      - "data_workflows:/lm/data"
+      - "data_workflows:/var/data/lm"
     networks:
       - life_monitor
 
@@ -64,7 +64,7 @@ services:
       - "./certs:/certs:ro"
       - "./instance:/lm/instance:ro"
       - "./settings.conf:/lm/settings.conf:ro" # default settings
-      - "data_workflows:/lm/data"
+      - "data_workflows:/var/data/lm"
       - type: volume
         source: data_static_files
         target: /lm/lifemonitor/static
@@ -87,7 +87,7 @@ services:
       - "./certs:/certs:ro"
       - "./instance:/lm/instance:ro"
       - "./settings.conf:/lm/settings.conf:ro" # default settings
-      - "data_workflows:/lm/data"
+      - "data_workflows:/var/data/lm"
     networks:
       - life_monitor
 
