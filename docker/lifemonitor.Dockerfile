@@ -46,6 +46,12 @@ RUN chmod 755 \
 # Set the container entrypoint
 ENTRYPOINT /usr/local/bin/lm_entrypoint.sh
 
+# Prepare data folder
+RUN mkdir -p /var/data/lm \
+    && chown -R lm:lm /var/data/lm \
+    && ln -s /var/data/lm /lm/data \
+    && chown -R lm:lm /lm/data
+
 # Set the default user
 USER lm
 
