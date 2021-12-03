@@ -135,6 +135,21 @@ class ROCrate(Resource):
         raise lm_exceptions.NotAuthorizedException(detail=f"Not authorized to download {self.uri}", original_errors=errors)
 
     def download(self, target_path: str) -> str:
+        # load ro-crate if not locally stored
+        if not self._local_path:
+            self.load_metadata()
+
+        # report an error if the workflow is not locally available
+        if self._metadata and not self._local_path:
+            raise lm_exceptions.DownloadException(detail=f"Unable to find the RO-Crate", status=410)
+
+        tmpdir_path = Path(target_path)
+        local_zip = download_url(self.local_path,
+                                 target_path=(tmpdir_path / 'rocrate.zip').as_posix())
+        logger.debug("ZIP Archive: %s", local_zip)
+        return (tmpdir_path / 'rocrate.zip').as_posix()
+
+    def download_from_source(self, target_path: str) -> str:
         # report if the workflow is not longer available on the origin server
         if self._metadata and not check_resource_exists(self.uri, self._get_authorizations()):
             raise lm_exceptions.DownloadException(detail=f"Not found: {self.uri}", status=410)
