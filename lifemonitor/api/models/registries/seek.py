@@ -84,7 +84,8 @@ class SeekWorkflowRegistryClient(WorkflowRegistryClient):
             raise LifeMonitorException(original_error=e)
 
     def get_external_link(self, external_id: str, version: str) -> str:
-        return f"{self.registry.uri}/workflows/{external_id}?version={version}"
+        version_param = '' if not version or version == 'latest' else f"?version={version}"
+        return f"{self.registry.uri}/workflows/{external_id}{version_param}"
 
     def get_rocrate_external_link(self, external_id: str, version: str) -> str:
         return f'{self.registry.uri}/workflows/{external_id}/ro_crate?version={version}'
