@@ -123,6 +123,12 @@ class WorkflowRegistryClient(ABC):
         response.raise_for_status()
         return response
 
+    def get_index(self, user: auth_models.User) -> List[RegistryWorkflow]:
+        pass
+
+    def get_index_workflow(self, user: auth_models.User, workflow_identifier: str) -> RegistryWorkflow:
+        pass
+
     def download_url(self, url, user, target_path=None):
         return download_url(url, target_path,
                             authorization=f'Bearer {self._get_access_token(user.id)["access_token"]}')
