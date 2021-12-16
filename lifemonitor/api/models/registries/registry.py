@@ -291,6 +291,12 @@ class WorkflowRegistry(auth_models.HostingService):
     def get_user_workflow_versions(self, user: auth_models.User) -> List[models.WorkflowVersion]:
         return self.client.filter_by_user(self.registered_workflow_versions, user)
 
+    def get_index(self, user: auth_models.User) -> List[RegistryWorkflow]:
+        return self.client.get_index(user)
+
+    def get_index_workflow(self, user: auth_models.User, workflow_identifier: str) -> RegistryWorkflow:
+        return self.client.get_index_workflow(user, workflow_identifier)
+
     @classmethod
     def all(cls) -> List[WorkflowRegistry]:
         return cls.query.all()
