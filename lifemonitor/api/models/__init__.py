@@ -30,7 +30,7 @@ from .rocrate import ROCrate
 from .status import Status, AggregateTestStatus, WorkflowStatus, SuiteStatus
 
 # 'registries' package
-from .registries import WorkflowRegistry, WorkflowRegistryClient
+from .registries import RegistryWorkflow, WorkflowRegistry, WorkflowRegistryClient
 
 # 'workflows' package
 from .workflows import Workflow, WorkflowVersion
@@ -72,6 +72,7 @@ __all__ = [
     "WorkflowRegistryClient",
     "WorkflowStatus",
     "WorkflowVersion",
+    "RegistryWorkflow"
 ]
 
 # set module level logger
