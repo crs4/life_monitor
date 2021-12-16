@@ -41,6 +41,51 @@ from sqlalchemy.orm.exc import NoResultFound
 logger = logging.getLogger(__name__)
 
 
+class RegistryWorkflow(object):
+    _registry: WorkflowRegistry
+    _identifier: str
+    _name: str
+    _latest_version: str
+    _versions: List[str] = None
+
+    def __init__(self,
+                 registry: WorkflowRegistry,
+                 identifier: str,
+                 name: str,
+                 latest_version: str = None,
+                 versions: List[str] = None) -> None:
+        self._registry = registry
+        self._identifier = identifier
+        self._name = name
+        self._latest_version = latest_version
+        if versions:
+            self._versions = versions.copy()
+
+    @property
+    def registry(self) -> WorkflowRegistry:
+        return self._registry
+
+    @property
+    def identifier(self) -> str:
+        return self._identifier
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @property
+    def latest_version(self) -> str:
+        return self._latest_version
+
+    @property
+    def versions(self) -> List[str]:
+        return self._versions.copy()
+
+    @property
+    def external_link(self) -> str:
+        return self._registry.get_external_link(self._identifier, self._latest_version)
+
+
 class WorkflowRegistryClient(ABC):
 
     client_types = ClassManager('lifemonitor.api.models.registries', class_suffix="WorkflowRegistryClient", skip=["registry"])
