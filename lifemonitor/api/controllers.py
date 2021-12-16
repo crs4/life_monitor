@@ -66,6 +66,35 @@ def workflow_registries_get_by_uuid(registry_uuid):
 
 @authorized
 @cached(timeout=Timeout.REQUEST)
+def registry_index(registry_uuid):
+    if not current_user:
+        return lm_exceptions.report_problem(401, "Unauthorized")
+    registry = lm.get_workflow_registry_by_uuid(registry_uuid)
+    if not registry:
+        return lm_exceptions.report_problem(404, "Not Found",
+                                            detail=messages.no_registry_found.format(registry_uuid))
+    workflows = registry.get_index(current_user)
+    return serializers.ListOfRegistryIndexItemsSchema().dump(workflows)
+
+
+@authorized
+@cached(timeout=Timeout.REQUEST)
+def registry_index_workflow(registry_uuid, registry_workflow_identifier):
+    if not current_user:
+        return lm_exceptions.report_problem(401, "Unauthorized")
+    registry = lm.get_workflow_registry_by_uuid(registry_uuid)
+    if not registry:
+        return lm_exceptions.report_problem(404, "Not Found",
+                                            detail=messages.no_registry_found.format(registry_uuid))
+    workflow = registry.get_index_workflow(current_user, registry_workflow_identifier)
+    if not workflow:
+        return lm_exceptions.report_problem(404, "Not Found",
+                                            detail=messages.workflow_not_found.format(registry_workflow_identifier, 'latest'))
+    return serializers.RegistryIndexItemSchema().dump(workflow)
+
+
+@authorized
+@cached(timeout=Timeout.REQUEST)
 def workflow_registries_get_current():
     if current_registry:
         registry = current_registry
