@@ -3,7 +3,7 @@
 openapi: "3.0.0"
 
 info:
-  version: "0.4.3"
+  version: "0.5.0"
   title: "Life Monitor API"
   description: |
     *Workflow sustainability service*
@@ -18,7 +18,7 @@ info:
 servers:
   - url: /
     description: >
-      Version 0.4.3 of API.
+      Version 0.5.0 of API.
 
 tags:
   - name: Registries
@@ -217,7 +217,8 @@ paths:
           application/json:
             schema:
               oneOf:
-                - $ref: "#/components/schemas/GenericWorkflowVersion"
+                - $ref: "#/components/schemas/RoCrateWorkflowVersion"
+                - $ref: "#/components/schemas/RoCrateLinkWorkflowVersion"
                 - $ref: "#/components/schemas/RegistryWorkflowVersion"
       responses:
         "201":
@@ -335,7 +336,8 @@ paths:
           application/json:
             schema:
               oneOf:
-                - $ref: "#/components/schemas/GenericWorkflowVersion"
+                - $ref: "#/components/schemas/RoCrateWorkflowVersion"
+                - $ref: "#/components/schemas/RoCrateLinkWorkflowVersion"
                 - $ref: "#/components/schemas/RegistryWorkflowVersion"
       responses:
         "201":
@@ -391,7 +393,9 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/GenericWorkflowVersion"
+              oneOf:
+                - $ref: "#/components/schemas/RoCrateLinkWorkflowVersion"
+                - $ref: "#/components/schemas/RoCrateWorkflowVersion"
       responses:
         "201":
           $ref: "#/components/responses/WorkflowRegistered"
@@ -1530,18 +1534,18 @@ components:
           description: |
             A name for the workflow. If not provided, the RO-Crate dataset name is used as default.
           example: "COVID-19 Workflow"
-        authorization:
-          type: string
-          nullable: true
-          writeOnly: true
-          description: |
-            An optional authorization header.
+        # authorization:
+        #   type: string
+        #   nullable: true
+        #   writeOnly: true
+        #   description: |
+        #     An optional authorization header.
 
-            The `authorization` parameter might be required to download
-            the RO-Crate containing the workflow if it is not directly
-            accessible to the user for download
-            (e.g., `authorization: "ApiKey 1234567890"`).
-          example: "Bearer xxx__ZRBhqf9eeRasjqMw90pgEeMpTZ7__"
+        #     The `authorization` parameter might be required to download
+        #     the RO-Crate containing the workflow if it is not directly
+        #     accessible to the user for download
+        #     (e.g., `authorization: "ApiKey 1234567890"`).
+        #   example: "Bearer xxx__ZRBhqf9eeRasjqMw90pgEeMpTZ7__"
 
     WorkflowVersionBase:
       allOf:
@@ -1598,6 +1602,56 @@ components:
               example: 123e4567-e89b-12d3-a456-426614174000
           required:
             - roc_link
+        - $ref: "#/components/schemas/WorkflowVersionBase"
+
+    RoCrateLinkWorkflowVersion:
+      description: A generic workflow version
+      allOf:
+        - type: object
+          properties:
+            roc_link:
+              type: string
+              description: |
+                Link to the workflow RO-Crate
+              example: http://webserver:5000/download?file=ro-crate-galaxy-sortchangecase.crate.zip
+            uuid:
+              type: string
+              description: |
+                Universal unique identifier of the workflow.
+              example: 123e4567-e89b-12d3-a456-426614174000
+            authorization:
+              type: string
+              nullable: true
+              writeOnly: true
+              description: |
+                An optional authorization header.
+
+                The `authorization` parameter might be required to download
+                the RO-Crate containing the workflow if it is not directly
+                accessible to the user for download
+                (e.g., `authorization: "ApiKey 1234567890"`).
+              example: "Bearer xxx__ZRBhqf9eeRasjqMw90pgEeMpTZ7__"
+          required:
+            - roc_link
+        - $ref: "#/components/schemas/WorkflowVersionBase"
+
+    RoCrateWorkflowVersion:
+      description: A generic workflow version
+      allOf:
+        - type: object
+          properties:
+            rocrate:
+              type: string
+              format: base64
+              description: |
+                Base64 encoding of the RO-Crate archive
+            uuid:
+              type: string
+              description: |
+                Universal unique identifier of the workflow.
+              example: 123e4567-e89b-12d3-a456-426614174000
+          required:
+            - rocrate
         - $ref: "#/components/schemas/WorkflowVersionBase"
 
     RegistryWorkflowVersion:

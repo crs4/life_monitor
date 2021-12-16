@@ -20,11 +20,13 @@
 
 from __future__ import annotations
 
+import os
 import json
 import logging
 import tempfile
 from pathlib import Path
-
+import uuid as _uuid
+from flask import current_app
 import lifemonitor.exceptions as lm_exceptions
 from lifemonitor.api.models import db
 from lifemonitor.auth.models import HostingService, Resource
@@ -47,7 +49,7 @@ class ROCrate(Resource):
                                                       backref=db.backref("ro_crates", cascade="all, delete-orphan"),
                                                       foreign_keys=[hosting_service_id])
     _metadata = db.Column("metadata", JSON, nullable=True)
-    _local_path = None
+    _local_path = db.Column("local_path", db.String, nullable=True)
     _metadata_loaded = False
     __roc_helper = None
 
@@ -61,6 +63,19 @@ class ROCrate(Resource):
         super().__init__(uri, uuid=uuid, name=name, version=version)
         self.hosting_service = hosting_service
         self.__roc_helper = None
+
+    @property
+    def local_path(self):
+        if not self._local_path:
+            root_path = current_app.config.get('DATA_WORKFLOWS', '/data_workflows')
+            if not self.workflow.uuid:
+                self.workflow.uuid = _uuid.uuid4()
+            if not self.uuid:
+                self.uuid = _uuid.uuid4()
+            base_path = os.path.join(root_path, str(self.workflow.uuid))
+            os.makedirs(base_path, exist_ok=True)
+            self._local_path = os.path.join(base_path, f"{self.uuid}.zip")
+        return self._local_path
 
     @hybrid_property
     def crate_metadata(self):
@@ -103,13 +118,15 @@ class ROCrate(Resource):
 
     def load_metadata(self) -> dict:
         errors = []
+        local_target_path = self.local_path
+
         # try either with authorization header and without authorization
         for authorization in self._get_authorizations():
             try:
                 auth_header = authorization.as_http_header() if authorization else None
                 logger.debug(auth_header)
                 self.__roc_helper, self._metadata = \
-                    self.load_metadata_files(self.uri, authorization_header=auth_header)
+                    self.load_metadata_files(self.uri, local_target_path, authorization_header=auth_header)
                 self._metadata_loaded = True
                 return self._metadata
             except lm_exceptions.NotAuthorizedException as e:
@@ -118,6 +135,21 @@ class ROCrate(Resource):
         raise lm_exceptions.NotAuthorizedException(detail=f"Not authorized to download {self.uri}", original_errors=errors)
 
     def download(self, target_path: str) -> str:
+        # load ro-crate if not locally stored
+        if not self._local_path:
+            self.load_metadata()
+
+        # report an error if the workflow is not locally available
+        if self._metadata and not self._local_path:
+            raise lm_exceptions.DownloadException(detail="RO-Crate unavailable", status=410)
+
+        tmpdir_path = Path(target_path)
+        local_zip = download_url(self.local_path,
+                                 target_path=(tmpdir_path / 'rocrate.zip').as_posix())
+        logger.debug("ZIP Archive: %s", local_zip)
+        return (tmpdir_path / 'rocrate.zip').as_posix()
+
+    def download_from_source(self, target_path: str) -> str:
         # report if the workflow is not longer available on the origin server
         if self._metadata and not check_resource_exists(self.uri, self._get_authorizations()):
             raise lm_exceptions.DownloadException(detail=f"Not found: {self.uri}", status=410)
@@ -140,11 +172,12 @@ class ROCrate(Resource):
         raise lm_exceptions.NotAuthorizedException(detail=f"Not authorized to download {self.uri}", original_errors=errors)
 
     @classmethod
-    def load_metadata_files(cls, roc_link, authorization_header=None):
+    def load_metadata_files(cls, roc_link, target_local_path, authorization_header=None):
+
         with tempfile.TemporaryDirectory() as tmpdir:
             tmpdir_path = Path(tmpdir)
             local_zip = download_url(roc_link,
-                                     target_path=(tmpdir_path / 'rocrate.zip').as_posix(),
+                                     target_path=target_local_path,
                                      authorization=authorization_header)
 
             logger.debug("ZIP Archive: %s", local_zip)
