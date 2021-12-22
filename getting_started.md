@@ -38,7 +38,7 @@ to create an LM-specific account.
 ## Start Life Monitoring
 
 How to interact with LifeMonitor depends on your tech level and what you want
-to achieve. The [web GUI](https://app.lifemonitor.eu/) is the easiest way to
+to achieve. The [web GUI](web-app) is the easiest way to
 access the service and get an immediate visual feedback on workflow status. At
 the moment, however, it does not allow to submit new workflows or make any
 other changes (except modifying a workflow's visibility). To do that, use
