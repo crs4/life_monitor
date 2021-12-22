@@ -12,14 +12,14 @@ top, an overall summary bar shows the number of workflows for each category:
 * **Failing:** workflows whose test suites are all unsuccessful
 * **Unavailable:** workflows with no testing data available
 
-<div align="center">
+<div class="mb-5" align="center">
 <img alt="LM workflow status summary" src="images/lm_web_summary.png" width="800" />
 </div>
 
 The rest of the page is devoted to a table that reports the detailed status of
 each workflow:
 
-<div align="center">
+<div class="mb-4" align="center">
 <img alt="LM workflow status details" src="images/lm_web_workflows.png" width="800" />
 </div>
 
@@ -36,7 +36,7 @@ A click on either the workflow's name/UUID or the pie chart leads to a similar
 table, this time containing detailed information on each test _suite_ belonging
 to the workflow:
 
-<div align="center">
+<div class="mb-4" align="center">
 <img alt="LM test suite status" src="images/lm_web_suites.png" width="800" />
 </div>
 
