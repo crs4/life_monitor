@@ -110,6 +110,9 @@ Define volumes shared by some pods.
 - name: lifemonitor-settings
   secret:
     secretName: {{ include "chart.fullname" . }}-settings
+- name: lifemonitor-data
+  persistentVolumeClaim:
+    claimName: data-{{- .Release.Name -}}-workflows
 {{- end -}}
 
 {{/*
@@ -122,4 +125,6 @@ Define mount points shared by some pods.
 - name: lifemonitor-settings
   mountPath: "/lm/settings.conf"
   subPath: settings.conf
+- name: lifemonitor-data
+  mountPath: "/var/data/lm"
 {{- end -}}

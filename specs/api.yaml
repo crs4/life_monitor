@@ -3,7 +3,7 @@
 openapi: "3.0.0"
 
 info:
-  version: "0.4.3"
+  version: "0.5.0"
   title: "Life Monitor API"
   description: |
     *Workflow sustainability service*
@@ -18,7 +18,7 @@ info:
 servers:
   - url: /
     description: >
-      Version 0.4.3 of API.
+      Version 0.5.0 of API.
 
 tags:
   - name: Registries
@@ -74,6 +74,65 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Registry"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /registries/{registry_uuid}/index:
+    get:
+      tags: ["Registries"]
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "registry_index"
+      summary: "Get registry index"
+      description: "Get the index of workflows available on the registry"
+      security:
+        - apiKey: ["user.workflow.read"]
+        - RegistryCodeFlow: ["user.workflow.read"]
+        - AuthorizationCodeFlow: ["user.workflow.read"]
+      parameters:
+        - $ref: "#/components/parameters/registry_uuid"
+      responses:
+        "200":
+          description: List of workflows on the registry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListOfRegistryWorkflows"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /registries/{registry_uuid}/index/{registry_workflow_identifier}:
+    get:
+      tags: ["Registries"]
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "registry_index_workflow"
+      summary: "Get registry index workflow"
+      description: "Get information about the specified workflow of the registry index"
+      security:
+        - apiKey: ["user.workflow.read"]
+        - RegistryCodeFlow: ["user.workflow.read"]
+        - AuthorizationCodeFlow: ["user.workflow.read"]
+      parameters:
+        - $ref: "#/components/parameters/registry_uuid"
+        - $ref: "#/components/parameters/registry_workflow_identifier"
+      responses:
+        "200":
+          description: List of workflows on the registry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegistryWorkflow"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -217,7 +276,8 @@ paths:
           application/json:
             schema:
               oneOf:
-                - $ref: "#/components/schemas/GenericWorkflowVersion"
+                - $ref: "#/components/schemas/RoCrateWorkflowVersion"
+                - $ref: "#/components/schemas/RoCrateLinkWorkflowVersion"
                 - $ref: "#/components/schemas/RegistryWorkflowVersion"
       responses:
         "201":
@@ -335,7 +395,8 @@ paths:
           application/json:
             schema:
               oneOf:
-                - $ref: "#/components/schemas/GenericWorkflowVersion"
+                - $ref: "#/components/schemas/RoCrateWorkflowVersion"
+                - $ref: "#/components/schemas/RoCrateLinkWorkflowVersion"
                 - $ref: "#/components/schemas/RegistryWorkflowVersion"
       responses:
         "201":
@@ -391,7 +452,9 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/GenericWorkflowVersion"
+              oneOf:
+                - $ref: "#/components/schemas/RoCrateLinkWorkflowVersion"
+                - $ref: "#/components/schemas/RoCrateWorkflowVersion"
       responses:
         "201":
           $ref: "#/components/responses/WorkflowRegistered"
@@ -1114,6 +1177,14 @@ components:
         type: string
       required: true
       example: aa16c6a9-571f-4a62-976f-60ea514ad2c1
+    registry_workflow_identifier:
+      name: "registry_workflow_identifier"
+      description: "Identifier of the workflow on the registry"
+      in: path
+      schema:
+        type: string
+      required: true
+      example: 123e4567-e89b-12d3-a456-426614174000
     user_id:
       name: "user_id"
       description: "Registry user's identifier"
@@ -1530,18 +1601,60 @@ components:
           description: |
             A name for the workflow. If not provided, the RO-Crate dataset name is used as default.
           example: "COVID-19 Workflow"
-        authorization:
-          type: string
-          nullable: true
-          writeOnly: true
-          description: |
-            An optional authorization header.
+        # authorization:
+        #   type: string
+        #   nullable: true
+        #   writeOnly: true
+        #   description: |
+        #     An optional authorization header.
 
-            The `authorization` parameter might be required to download
-            the RO-Crate containing the workflow if it is not directly
-            accessible to the user for download
-            (e.g., `authorization: "ApiKey 1234567890"`).
-          example: "Bearer xxx__ZRBhqf9eeRasjqMw90pgEeMpTZ7__"
+        #     The `authorization` parameter might be required to download
+        #     the RO-Crate containing the workflow if it is not directly
+        #     accessible to the user for download
+        #     (e.g., `authorization: "ApiKey 1234567890"`).
+        #   example: "Bearer xxx__ZRBhqf9eeRasjqMw90pgEeMpTZ7__"
+
+    RegistryWorkflowBase:
+      allOf:
+        - $ref: "#/components/schemas/WorkflowBase"
+        - type: object
+          description: Registry workflow
+          properties:
+            identifier:
+              type: string
+              description: |
+                The identifier of the workflow on the registry
+              example: 148
+            registry:
+              description:
+              $ref: "#/components/schemas/Registry"
+
+    RegistryWorkflow:
+      allOf:
+        - $ref: "#/components/schemas/RegistryWorkflowBase"
+        - type: object
+          description: Registry workflow
+          properties:
+            latest_version:
+              type: string
+              description: The workflow identifier on the registry
+              example: '1.0'
+            versions:
+              description: The list of workflow versions
+              type: array
+              items:
+                type: string
+              example: ['1.0', "1.0-dev"]
+
+    ListOfRegistryWorkflows:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/RegistryWorkflowBase"
+      required:
+        - items
 
     WorkflowVersionBase:
       allOf:
@@ -1598,6 +1711,56 @@ components:
               example: 123e4567-e89b-12d3-a456-426614174000
           required:
             - roc_link
+        - $ref: "#/components/schemas/WorkflowVersionBase"
+
+    RoCrateLinkWorkflowVersion:
+      description: A generic workflow version
+      allOf:
+        - type: object
+          properties:
+            roc_link:
+              type: string
+              description: |
+                Link to the workflow RO-Crate
+              example: http://webserver:5000/download?file=ro-crate-galaxy-sortchangecase.crate.zip
+            uuid:
+              type: string
+              description: |
+                Universal unique identifier of the workflow.
+              example: 123e4567-e89b-12d3-a456-426614174000
+            authorization:
+              type: string
+              nullable: true
+              writeOnly: true
+              description: |
+                An optional authorization header.
+
+                The `authorization` parameter might be required to download
+                the RO-Crate containing the workflow if it is not directly
+                accessible to the user for download
+                (e.g., `authorization: "ApiKey 1234567890"`).
+              example: "Bearer xxx__ZRBhqf9eeRasjqMw90pgEeMpTZ7__"
+          required:
+            - roc_link
+        - $ref: "#/components/schemas/WorkflowVersionBase"
+
+    RoCrateWorkflowVersion:
+      description: A generic workflow version
+      allOf:
+        - type: object
+          properties:
+            rocrate:
+              type: string
+              format: base64
+              description: |
+                Base64 encoding of the RO-Crate archive
+            uuid:
+              type: string
+              description: |
+                Universal unique identifier of the workflow.
+              example: 123e4567-e89b-12d3-a456-426614174000
+          required:
+            - rocrate
         - $ref: "#/components/schemas/WorkflowVersionBase"
 
     RegistryWorkflowVersion:

@@ -3,7 +3,9 @@ kind: Job
 metadata:
   name: {{ include "chart.fullname" . }}-init
   labels:
-    {{- include "chart.labels" . | nindent 4 }}
+    app.kubernetes.io/name: {{ include "chart.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
 spec:
   template:
     spec:

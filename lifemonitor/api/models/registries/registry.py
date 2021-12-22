@@ -41,6 +41,51 @@ from sqlalchemy.orm.exc import NoResultFound
 logger = logging.getLogger(__name__)
 
 
+class RegistryWorkflow(object):
+    _registry: WorkflowRegistry
+    _identifier: str
+    _name: str
+    _latest_version: str
+    _versions: List[str] = None
+
+    def __init__(self,
+                 registry: WorkflowRegistry,
+                 identifier: str,
+                 name: str,
+                 latest_version: str = None,
+                 versions: List[str] = None) -> None:
+        self._registry = registry
+        self._identifier = identifier
+        self._name = name
+        self._latest_version = latest_version
+        if versions:
+            self._versions = versions.copy()
+
+    @property
+    def registry(self) -> WorkflowRegistry:
+        return self._registry
+
+    @property
+    def identifier(self) -> str:
+        return self._identifier
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @property
+    def latest_version(self) -> str:
+        return self._latest_version
+
+    @property
+    def versions(self) -> List[str]:
+        return self._versions.copy()
+
+    @property
+    def external_link(self) -> str:
+        return self._registry.get_external_link(self._identifier, self._latest_version)
+
+
 class WorkflowRegistryClient(ABC):
 
     client_types = ClassManager('lifemonitor.api.models.registries', class_suffix="WorkflowRegistryClient", skip=["registry"])
@@ -77,6 +122,12 @@ class WorkflowRegistryClient(ABC):
             raise lm_exceptions.NotAuthorizedException(details=response.content)
         response.raise_for_status()
         return response
+
+    def get_index(self, user: auth_models.User) -> List[RegistryWorkflow]:
+        pass
+
+    def get_index_workflow(self, user: auth_models.User, workflow_identifier: str) -> RegistryWorkflow:
+        pass
 
     def download_url(self, url, user, target_path=None):
         return download_url(url, target_path,
@@ -239,6 +290,12 @@ class WorkflowRegistry(auth_models.HostingService):
 
     def get_user_workflow_versions(self, user: auth_models.User) -> List[models.WorkflowVersion]:
         return self.client.filter_by_user(self.registered_workflow_versions, user)
+
+    def get_index(self, user: auth_models.User) -> List[RegistryWorkflow]:
+        return self.client.get_index(user)
+
+    def get_index_workflow(self, user: auth_models.User, workflow_identifier: str) -> RegistryWorkflow:
+        return self.client.get_index_workflow(user, workflow_identifier)
 
     @classmethod
     def all(cls) -> List[WorkflowRegistry]:

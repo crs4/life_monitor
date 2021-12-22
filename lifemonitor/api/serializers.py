@@ -59,6 +59,41 @@ class ListOfWorkflowRegistriesSchema(ListOfItems):
     __item_scheme__ = WorkflowRegistrySchema
 
 
+class RegistryIndexItemSchema(ResourceMetadataSchema):
+    __envelope__ = {"single": None, "many": "items"}
+    __model__ = models.RegistryWorkflow
+
+    class Meta:
+        model = models.RegistryWorkflow
+
+    identifier = fields.String(attribute="identifier")
+    name = fields.String(attribute="name")
+    latest_version = fields.String(attribute="latest_version")
+    versions = fields.List(fields.String, attribute="versions")
+    registry = ma.Nested(WorkflowRegistrySchema(exclude=('meta', 'links')), attribute="registry")
+    links = fields.Method('get_links')
+
+    def get_links(self, obj):
+        links = ResourceMetadataSchema.get_links(self, obj)
+        if links is not None:
+            links['origin'] = obj.external_link
+            return links
+        return {
+            'origin': obj.external_link
+        }
+
+    @post_dump
+    def remove_skip_values(self, data, **kwargs):
+        return {
+            key: value for key, value in data.items()
+            if value is not None
+        }
+
+
+class ListOfRegistryIndexItemsSchema(ListOfItems):
+    __item_scheme__ = RegistryIndexItemSchema
+
+
 class WorkflowSchema(ResourceMetadataSchema):
     __envelope__ = {"single": None, "many": "items"}
     __model__ = models.WorkflowVersion
@@ -97,7 +132,7 @@ class VersionDetailsSchema(BaseSchema):
     def get_rocrate(self, obj):
         rocrate = {
             'links': {
-                'origin': obj.uri,
+                'origin': obj.external_link,
                 'metadata': urljoin(lm_utils.get_external_server_url(),
                                     f"workflows/{obj.workflow.uuid}/rocrate/{obj.version}/metadata"),
                 'download': urljoin(lm_utils.get_external_server_url(),
@@ -273,7 +308,7 @@ def format_availability_issues(status: models.WorkflowStatus):
     issues = status.availability_issues
     logger.info(issues)
     if 'not_available' == status.aggregated_status and len(issues) > 0:
-        return ', '.join([f"{i['issue']}: Unable to get resource '{i['resource']}' from service '{i['service']}'" if 'service' in i else i['issue'] for i in issues])
+        return ', '.join([f"{i['issue']}: Unable to get resource '{i['resource']}' from service '{i['service']}'" if 'service' in i and 'resource' in i else i['issue'] for i in issues])
     return None
 
 
