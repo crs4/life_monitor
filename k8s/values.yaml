@@ -107,6 +107,7 @@ lifemonitor:
 
   persistence:
     storageClass: *storageClass
+    storageSize: 8Gi
 
   # Enable/Disable the pod to test connection to the LifeMonitor back-end
   enableTestConnection: false
