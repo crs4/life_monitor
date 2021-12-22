@@ -83,6 +83,65 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  /registries/{registry_uuid}/index:
+    get:
+      tags: ["Registries"]
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "registry_index"
+      summary: "Get registry index"
+      description: "Get the index of workflows available on the registry"
+      security:
+        - apiKey: ["user.workflow.read"]
+        - RegistryCodeFlow: ["user.workflow.read"]
+        - AuthorizationCodeFlow: ["user.workflow.read"]
+      parameters:
+        - $ref: "#/components/parameters/registry_uuid"
+      responses:
+        "200":
+          description: List of workflows on the registry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListOfRegistryWorkflows"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /registries/{registry_uuid}/index/{registry_workflow_identifier}:
+    get:
+      tags: ["Registries"]
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "registry_index_workflow"
+      summary: "Get registry index workflow"
+      description: "Get information about the specified workflow of the registry index"
+      security:
+        - apiKey: ["user.workflow.read"]
+        - RegistryCodeFlow: ["user.workflow.read"]
+        - AuthorizationCodeFlow: ["user.workflow.read"]
+      parameters:
+        - $ref: "#/components/parameters/registry_uuid"
+        - $ref: "#/components/parameters/registry_workflow_identifier"
+      responses:
+        "200":
+          description: List of workflows on the registry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegistryWorkflow"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   /users/current:
     get:
       tags: ["Users"]
@@ -1118,6 +1177,14 @@ components:
         type: string
       required: true
       example: aa16c6a9-571f-4a62-976f-60ea514ad2c1
+    registry_workflow_identifier:
+      name: "registry_workflow_identifier"
+      description: "Identifier of the workflow on the registry"
+      in: path
+      schema:
+        type: string
+      required: true
+      example: 123e4567-e89b-12d3-a456-426614174000
     user_id:
       name: "user_id"
       description: "Registry user's identifier"
@@ -1546,6 +1613,48 @@ components:
         #     accessible to the user for download
         #     (e.g., `authorization: "ApiKey 1234567890"`).
         #   example: "Bearer xxx__ZRBhqf9eeRasjqMw90pgEeMpTZ7__"
+
+    RegistryWorkflowBase:
+      allOf:
+        - $ref: "#/components/schemas/WorkflowBase"
+        - type: object
+          description: Registry workflow
+          properties:
+            identifier:
+              type: string
+              description: |
+                The identifier of the workflow on the registry
+              example: 148
+            registry:
+              description:
+              $ref: "#/components/schemas/Registry"
+
+    RegistryWorkflow:
+      allOf:
+        - $ref: "#/components/schemas/RegistryWorkflowBase"
+        - type: object
+          description: Registry workflow
+          properties:
+            latest_version:
+              type: string
+              description: The workflow identifier on the registry
+              example: '1.0'
+            versions:
+              description: The list of workflow versions
+              type: array
+              items:
+                type: string
+              example: ['1.0', "1.0-dev"]
+
+    ListOfRegistryWorkflows:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/RegistryWorkflowBase"
+      required:
+        - items
 
     WorkflowVersionBase:
       allOf:

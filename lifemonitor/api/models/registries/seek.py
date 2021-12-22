@@ -21,13 +21,16 @@
 from __future__ import annotations
 
 import logging
-from typing import Union
+from typing import List, Union
 
+import requests
 from lifemonitor.api import models
 from lifemonitor.auth.models import User
-from lifemonitor.exceptions import EntityNotFoundException
+from lifemonitor.exceptions import (EntityNotFoundException,
+                                    LifeMonitorException)
 
-from .registry import WorkflowRegistry, WorkflowRegistryClient
+from .registry import (RegistryWorkflow, WorkflowRegistry,
+                       WorkflowRegistryClient)
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -63,8 +66,26 @@ class SeekWorkflowRegistryClient(WorkflowRegistryClient):
             raise RuntimeError(f"ERROR: unable to get workflow (status code: {r.status_code})")
         return r.json()['data']
 
+    def get_index(self, user: User) -> List[RegistryWorkflow]:
+        result = []
+        for w in self.get_workflows_metadata(user):
+            result.append(RegistryWorkflow(self.registry, w['id'], w['attributes']['title']))
+        return result
+
+    def get_index_workflow(self, user: User, workflow_identifier: str) -> RegistryWorkflow:
+        try:
+            w = self.get_workflow_metadata(user, workflow_identifier)
+            return RegistryWorkflow(self.registry, w['id'], w['attributes']['title'],
+                                    latest_version=w['attributes']['version'],
+                                    versions=[_['version'] for _ in w['attributes']['versions']]) if w else None
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 404:
+                raise EntityNotFoundException(WorkflowRegistry, entity_id=workflow_identifier)
+            raise LifeMonitorException(original_error=e)
+
     def get_external_link(self, external_id: str, version: str) -> str:
-        return f"{self.registry.uri}/workflows/{external_id}?version={version}"
+        version_param = '' if not version or version == 'latest' else f"?version={version}"
+        return f"{self.registry.uri}/workflows/{external_id}{version_param}"
 
     def get_rocrate_external_link(self, external_id: str, version: str) -> str:
         return f'{self.registry.uri}/workflows/{external_id}/ro_crate?version={version}'
