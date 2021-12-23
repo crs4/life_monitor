@@ -93,7 +93,7 @@ def check_last_build():
                 logger.info("Updating workflow: %r", w)
                 for i in s.test_instances:
                     with i.cache.transaction(str(i)):
-                        builds = i.get_test_builds()
+                        builds = i.get_test_builds(limit=10)
                         logger.debug("Updating latest builds: %r", builds)
                         for b in builds:
                             logger.debug("Updating build: %r", i.get_test_build(b.id))
