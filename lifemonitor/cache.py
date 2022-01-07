@@ -547,3 +547,11 @@ class CacheMixin(object):
         if self._cache is None:
             self._cache = Cache(parent=cache)
         return self._cache
+
+    def __getstate__(self):
+        data = self.__dict__.copy()
+        try:
+            del data['_cache']
+        except KeyError:
+            pass
+        return data
