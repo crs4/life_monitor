@@ -94,10 +94,10 @@ def check_last_build():
                 for i in s.test_instances:
                     with i.cache.transaction(str(i)):
                         builds = i.get_test_builds(limit=10)
-                        logger.debug("Updating latest builds: %r", builds)
+                        logger.info("Updating latest builds: %r", builds)
                         for b in builds:
-                            logger.debug("Updating build: %r", i.get_test_build(b.id))
-                        logger.debug("Updating latest build: %r", i.last_test_build)
+                            logger.info("Updating build: %r", i.get_test_build(b.id))
+                        logger.info("Updating latest build: %r", i.last_test_build)
         except Exception as e:
             logger.error("Error when executing task 'check_last_build': %s", str(e))
             if logger.isEnabledFor(logging.DEBUG):
