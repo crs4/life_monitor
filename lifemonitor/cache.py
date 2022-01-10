@@ -188,6 +188,7 @@ class CacheTransaction(object):
                 pipeline = self.__cache__.backend.pipeline()
                 for k, data in self.__data__.items():
                     logger.debug(f"Setting key {k} on transaction pipeline (timeout: {data[1]}")
+                    pipeline.delete(k)
                     pipeline.set(k, pickle.dumps(data[0]), ex=data[1] if data[1] > 0 else None)
                 pipeline.execute()
                 logger.debug("Transaction finalized!")
@@ -351,10 +352,8 @@ class Cache(object):
         if key is not None and self.cache_enabled:
             key = self._make_key(key, prefix=prefix)
             logger.debug("Setting cache value for key %r.... (timeout: %r)", key, timeout)
-            if value is None:
-                self.backend.delete(key)
-            else:
-                self.backend.set(key, pickle.dumps(value), ex=timeout if timeout > 0 else None)
+            self.backend.delete(key)
+            self.backend.set(key, pickle.dumps(value), ex=timeout if timeout > 0 else None)
 
     def has(self, key: str, prefix: str = CACHE_PREFIX) -> bool:
         return self.get(key, prefix=prefix) is not None
