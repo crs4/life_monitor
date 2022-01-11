@@ -227,6 +227,10 @@ class Cache(object):
     _ignore_cache_values = False
     # Reference to Redis back-end
     __cache__ = None
+    # Reference to the hash function to be used
+    _hash_function = None
+    # Reference to the current app
+    app: Flask = None
 
     @classmethod
     def init_backend(cls, config):
@@ -251,6 +255,8 @@ class Cache(object):
     @classmethod
     def init_app(cls, app: Flask):
         cls.init_backend(app.config)
+        cls.app = app
+        cls._hash_function = cls.hash_function()
         if cls.__cache__ is not None:
             cls.reset_locks()
 
@@ -258,9 +264,25 @@ class Cache(object):
         self._local = _current_transaction
         self._parent = parent
 
-    @staticmethod
-    def _make_key(key: str, prefix: str = CACHE_PREFIX) -> str:
+    @classmethod
+    def _make_key(cls, key: str, prefix: str = CACHE_PREFIX) -> str:
+        if cls._hash_function:
+            key = cls._hash_function(key.encode()).hexdigest()
         return f"{prefix}{key}"
+
+    @classmethod
+    def hash_function(cls):
+        if not cls.app:
+            raise IllegalStateException("App not configured")
+        hash_algorithm = cls.app.config.get("CACHE_KEY_HASH_ALGORITHM", 'sha256')
+        if not hash_algorithm:
+            return None
+        try:
+            import hashlib
+            return getattr(hashlib, hash_algorithm)
+        except Exception:
+            logger.error("hashlib module doesn't support the hash algorithm '%r'", hash_algorithm)
+            return None
 
     @property
     def parent(self) -> Cache:
@@ -426,15 +448,12 @@ def init_cache(app: Flask):
 
 def make_cache_key(func=None, client_scope=True, args=None, kwargs=None) -> str:
     from lifemonitor.auth import current_registry, current_user
-
-    hash_enabled = not logger.isEnabledFor(logging.DEBUG)
     fname = "" if func is None \
         else func if isinstance(func, str) \
         else f"{func.__module__}.{func.__name__}" if callable(func) else str(func)
     logger.debug("make_key func: %r", fname)
     logger.debug("make_key args: %r", args)
     logger.debug("make_key kwargs: %r", kwargs)
-    logger.debug("make_key hash enabled: %r", hash_enabled)
     result = ""
     if client_scope:
         client_id = ""
@@ -446,15 +465,15 @@ def make_cache_key(func=None, client_scope=True, args=None, kwargs=None) -> str:
             client_id += "anonymous"
         if request:
             client_id += f"@{request.remote_addr}"
-        result += f"{hash(client_id) if hash_enabled else client_id}::"
+        result += f"{client_id}::"
     if func:
         result += fname
     if args:
         args_str = "-".join([str(_) for _ in args])
-        result += f"#{hash(args_str) if hash_enabled else args_str}"
+        result += f"#{args_str}"
     if kwargs:
         kwargs_str = "-".join([f"{k}={str(v)}" for k, v in kwargs.items()])
-        result += f"#{hash(kwargs_str) if hash_enabled else kwargs_str}"
+        result += f"#{kwargs_str}"
     logger.debug("make_key calculated key: %r", result)
     return result
 
