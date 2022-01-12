@@ -75,3 +75,22 @@ def init_db(revision):
             admin.password = current_app.config["LIFEMONITOR_ADMIN_PASSWORD"]
             db.session.add(admin)
             db.session.commit()
+
+
+@blueprint.cli.command('wait-for-db')
+@with_appcontext
+def wait_for_db():
+    """
+    Wait until that DB is initialized
+    """
+    from lifemonitor.db import db_initialized, db_revision
+
+    is_initialized = False
+    while not is_initialized:
+        is_initialized = db_initialized()
+    logger.info("DB initialized")
+
+    current_revision = None
+    while current_revision is None:
+        current_revision = db_revision()
+    logger.info(f"Current revision: {current_revision}")

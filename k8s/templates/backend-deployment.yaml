@@ -33,9 +33,16 @@ spec:
         {{- toYaml .Values.lifemonitor.podSecurityContext | nindent 8 }}
       initContainers:
         - name: init
-          image: "crs4/k8s-wait-for:latest"
-          imagePullPolicy: IfNotPresent
-          args: ["job", "{{ include "chart.fullname" . }}-init"]
+          securityContext:
+            {{- toYaml .Values.lifemonitor.securityContext | nindent 12 }}
+          image: {{ include "chart.lifemonitor.image" . }}
+          imagePullPolicy: {{ .Values.lifemonitor.imagePullPolicy }}
+          command: ["/bin/sh","-c"]
+          args: ["wait-for-redis.sh && wait-for-postgres.sh && flask init wait-for-db"]
+          env:
+          {{- include "lifemonitor.common-env" . | nindent 12 }}
+          volumeMounts:
+          {{- include "lifemonitor.common-volume-mounts" . | nindent 12 }}
       containers:
         - name: app
           securityContext:
