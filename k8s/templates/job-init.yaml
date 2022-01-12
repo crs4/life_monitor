@@ -6,6 +6,12 @@ metadata:
     app.kubernetes.io/name: {{ include "chart.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
+  annotations:
+    # This is what defines this resource as a hook. Without this line, the
+    # job is considered part of the release.
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": hook-succeeded    
 spec:
   template:
     spec:
@@ -14,7 +20,7 @@ spec:
         image: {{ include "chart.lifemonitor.image" . }}
         imagePullPolicy: {{ .Values.lifemonitor.imagePullPolicy }}
         command: ["/bin/sh","-c"]
-        args: ["wait-for-postgres.sh && flask init db && flask task-queue reset"]
+        args: ["wait-for-redis.sh && wait-for-postgres.sh && flask init db && flask task-queue reset"]
         env:
         {{- include "lifemonitor.common-env" . | nindent 10 }}
         volumeMounts:
