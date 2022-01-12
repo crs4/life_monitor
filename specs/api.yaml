@@ -3,7 +3,7 @@
 openapi: "3.0.0"
 
 info:
-  version: "0.5.0"
+  version: "0.5.1"
   title: "Life Monitor API"
   description: |
     *Workflow sustainability service*
@@ -18,7 +18,7 @@ info:
 servers:
   - url: /
     description: >
-      Version 0.5.0 of API.
+      Version 0.5.1 of API.
 
 tags:
   - name: Registries
