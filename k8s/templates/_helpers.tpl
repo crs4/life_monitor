@@ -92,6 +92,10 @@ Define environment variables shared by some pods.
   value: "{{ .Values.postgresql.postgresqlDatabase }}"
 - name: REDIS_HOST
   value: "{{ .Release.Name }}-redis-master"
+- name: REDIS_PORT
+  value: "{{ .Values.redis.master.service.port }}"
+- name: REDIS_PASSWORD
+  value: "{{ .Values.redis.auth.password }}"
 - name: WORKER_PROCESSES
   value: "{{ .Values.worker.processes }}"
 - name: LIFEMONITOR_TLS_KEY

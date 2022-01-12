@@ -181,14 +181,14 @@ def cache_last_build_update(app, w, user1, check_cache_size=True, index=0,
                     assert cache.get_current_transaction() == t, "Unexpected transaction"
                     assert i.cache.get_current_transaction() == t, "Unexpected transaction"
 
-                    cache_key = make_cache_key(i.get_test_builds, client_scope=False, args=[i])
+                    cache_key = make_cache_key(i.get_test_builds, client_scope=False, args=[i], kwargs={'limit': 10})
                     logger.debug("The cache key: %r", cache_key)
 
                     #############################################################################
                     # latest builds (first call)
                     #############################################################################
                     logger.debug("\n\nGetting latest builds (first call)...")
-                    builds = i.get_test_builds()
+                    builds = i.get_test_builds(limit=10)
                     logger.debug("Getting latest builds (first call): %r\n", builds)
                     assert t.has(cache_key), "The key should be in the current transaction"
                     cache_size = cache.size()
@@ -204,7 +204,7 @@ def cache_last_build_update(app, w, user1, check_cache_size=True, index=0,
                     # latest builds (second call)
                     #############################################################################
                     logger.debug("\n\nGetting latest builds (second call)...")
-                    builds = i.get_test_builds()
+                    builds = i.get_test_builds(limit=10)
                     logger.debug("Getting latest builds (second call): %r\n", builds)
                     assert i.cache.get_current_transaction() == t, "Unexpected transaction"
                     assert t.has(cache_key), "The key should be in the current transaction"
@@ -219,7 +219,7 @@ def cache_last_build_update(app, w, user1, check_cache_size=True, index=0,
                     # latest builds (third call)
                     #############################################################################
                     logger.debug("\n\nGetting latest builds (third call)...")
-                    builds = i.get_test_builds()
+                    builds = i.get_test_builds(limit=10)
                     logger.debug("Getting latest builds (third call): %r\n", builds)
                     assert i.cache.get_current_transaction() == t, "Unexpected transaction"
                     assert t.has(cache_key), "The key should be in the current transaction"

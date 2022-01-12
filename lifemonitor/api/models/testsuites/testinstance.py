@@ -107,7 +107,7 @@ class TestInstance(db.Model, ModelMixin):
 
     @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True)
     def get_last_test_build(self):
-        builds = self.get_test_builds()
+        builds = self.get_test_builds(limit=10)
         return builds[0] if builds and len(builds) > 0 else None
 
     @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True)
