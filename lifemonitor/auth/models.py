@@ -62,6 +62,7 @@ class User(db.Model, UserMixin):
                                      cascade="all, delete-orphan")
 
     subscriptions = db.relationship("Subscription", cascade="all, delete-orphan")
+    notifications = db.relationship("Notification", cascade="all, delete-orphan")
 
     def __init__(self, username=None) -> None:
         super().__init__()
@@ -275,6 +276,38 @@ class Subscription(db.Model, ModelMixin):
     def __init__(self, resource: Resource, user: User) -> None:
         self.resource = resource
         self.user = user
+
+
+class Notification(db.Model, ModelMixin):
+
+    class Types(Enum):
+        BUILD_FAILED = 0
+        BUILD_RECOVERED = 1
+
+    id = db.Column(db.Integer, primary_key=True)
+    created = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    emailed = db.Column(db.DateTime, default=None, nullable=True)
+    read = db.Column(db.DateTime, default=None, nullable=True)
+    name = db.Column("name", db.String, nullable=True)
+    _type = db.Column("type", db.String, nullable=False)
+    _data = db.Column("data", JSON, nullable=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    user: User = db.relationship("User", uselist=False,
+                                 back_populates="notifications", foreign_keys=[user_id])
+
+    def __init__(self, user: User, type: str, name: str, data: object) -> None:
+        self.user = user
+        self.name = name
+        self._type = type
+        self._data = data
+
+    @property
+    def type(self) -> str:
+        return self._type
+
+    @property
+    def data(self) -> object:
+        return self._data
 
 
 class HostingService(Resource):
