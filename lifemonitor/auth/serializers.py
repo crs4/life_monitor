@@ -22,7 +22,9 @@ from __future__ import annotations
 
 import logging
 
-from lifemonitor.serializers import (BaseSchema, ListOfItems,
+from marshmallow.decorators import post_dump
+
+from lifemonitor.serializers import (BaseSchema, ListOfItems, MetadataSchema,
                                      ResourceMetadataSchema, ma)
 from marshmallow import fields
 
@@ -128,3 +130,29 @@ class SubscriptionSchema(ResourceMetadataSchema):
 
 class ListOfSubscriptions(ListOfItems):
     __item_scheme__ = SubscriptionSchema
+
+
+class NotificationSchema(MetadataSchema):
+    __envelope__ = {"single": None, "many": "items"}
+    __model__ = models.Notification
+
+    class Meta:
+        model = models.Notification
+
+    created = fields.DateTime(attribute='created')
+    emailed = fields.DateTime(attribute='emailed')
+    read = fields.DateTime(attribute='read')
+    name = fields.String(attribute="name")
+    type = fields.String(attribute="type")
+    data = fields.Dict(attribute="data")
+
+    @post_dump
+    def remove_skip_values(self, data, **kwargs):
+        return {
+            key: value for key, value in data.items()
+            if value is not None
+        }
+
+
+class ListOfNotifications(ListOfItems):
+    __item_scheme__ = NotificationSchema
