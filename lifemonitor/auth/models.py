@@ -21,17 +21,23 @@
 from __future__ import annotations
 
 import abc
+import base64
 import datetime
+import json
 import logging
+import random
+import string
 import uuid as _uuid
+from enum import Enum
 from typing import List
 
 from authlib.integrations.sqla_oauth2 import OAuth2TokenMixin
 from flask_bcrypt import check_password_hash, generate_password_hash
 from flask_login import AnonymousUserMixin, UserMixin
+from lifemonitor import exceptions as lm_exceptions
 from lifemonitor import utils as lm_utils
 from lifemonitor.db import db
-from lifemonitor.models import UUID, ModelMixin
+from lifemonitor.models import JSON, UUID, ModelMixin
 from sqlalchemy.ext.hybrid import hybrid_property
 
 # Set the module level logger
@@ -62,7 +68,8 @@ class User(db.Model, UserMixin):
                                      cascade="all, delete-orphan")
 
     subscriptions = db.relationship("Subscription", cascade="all, delete-orphan")
-    notifications = db.relationship("Notification", cascade="all, delete-orphan")
+
+    notifications: List[UserNotification] = db.relationship("UserNotification", back_populates="user")
 
     def __init__(self, username=None) -> None:
         super().__init__()
@@ -286,20 +293,18 @@ class Notification(db.Model, ModelMixin):
 
     id = db.Column(db.Integer, primary_key=True)
     created = db.Column(db.DateTime, default=datetime.datetime.utcnow)
-    emailed = db.Column(db.DateTime, default=None, nullable=True)
-    read = db.Column(db.DateTime, default=None, nullable=True)
     name = db.Column("name", db.String, nullable=True)
     _type = db.Column("type", db.String, nullable=False)
     _data = db.Column("data", JSON, nullable=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
-    user: User = db.relationship("User", uselist=False,
-                                 back_populates="notifications", foreign_keys=[user_id])
 
-    def __init__(self, user: User, type: str, name: str, data: object) -> None:
-        self.user = user
+    users: List[UserNotification] = db.relationship("UserNotification", back_populates="notification")
+
+    def __init__(self, type: str, name: str, data: object, users: List[User]) -> None:
         self.name = name
         self._type = type
         self._data = data
+        for u in users:
+            self.add_user(u)
 
     @property
     def type(self) -> str:
@@ -308,6 +313,41 @@ class Notification(db.Model, ModelMixin):
     @property
     def data(self) -> object:
         return self._data
+
+    def add_user(self, user: User):
+        if user and user not in self.users:
+            UserNotification(user, self)
+
+    def remove_user(self, user: User):
+        self.users.remove(user)
+
+class UserNotification(db.Model):
+
+    emailed = db.Column(db.DateTime, default=None, nullable=True)
+    read = db.Column(db.DateTime, default=None, nullable=True)
+
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False, primary_key=True)
+
+    notification_id = db.Column(db.Integer, db.ForeignKey("notification.id"), nullable=False, primary_key=True)
+
+    user: User = db.relationship("User", uselist=False,
+                                 back_populates="notifications", foreign_keys=[user_id])
+
+    notification: Notification = db.relationship("Notification", uselist=False,
+                                                 back_populates="users",
+                                                 foreign_keys=[notification_id])
+
+    def __init__(self, user: User, notification: Notification) -> None:
+        self.user = user
+        self.notification = notification
+
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
 
 
 class HostingService(Resource):
