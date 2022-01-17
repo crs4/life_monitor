@@ -321,6 +321,17 @@ class Notification(db.Model, ModelMixin):
     def remove_user(self, user: User):
         self.users.remove(user)
 
+    @classmethod
+    def not_read(cls) -> List[Notification]:
+        return cls.query.join(UserNotification, UserNotification.notification_id == cls.id)\
+            .filter(UserNotification.read == None).all()
+
+    @classmethod
+    def not_emailed(cls) -> List[Notification]:
+        return cls.query.join(UserNotification, UserNotification.notification_id == cls.id)\
+            .filter(UserNotification.emailed == None).all()
+
+
 class UserNotification(db.Model):
 
     emailed = db.Column(db.DateTime, default=None, nullable=True)
