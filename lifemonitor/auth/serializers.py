@@ -22,14 +22,13 @@ from __future__ import annotations
 
 import logging
 
-from marshmallow.decorators import post_dump
-
 from lifemonitor.serializers import (BaseSchema, ListOfItems, MetadataSchema,
                                      ResourceMetadataSchema, ma)
 from marshmallow import fields
+from marshmallow.decorators import post_dump
 
-from . import models
 from ..utils import get_external_server_url
+from . import models
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
@@ -132,19 +131,19 @@ class ListOfSubscriptions(ListOfItems):
     __item_scheme__ = SubscriptionSchema
 
 
-class NotificationSchema(MetadataSchema):
+class NotificationSchema(ResourceMetadataSchema):
     __envelope__ = {"single": None, "many": "items"}
-    __model__ = models.Notification
+    __model__ = models.UserNotification
 
     class Meta:
-        model = models.Notification
+        model = models.UserNotification
 
-    created = fields.DateTime(attribute='created')
+    created = fields.DateTime(attribute='notification.created')
     emailed = fields.DateTime(attribute='emailed')
     read = fields.DateTime(attribute='read')
-    name = fields.String(attribute="name")
-    type = fields.String(attribute="type")
-    data = fields.Dict(attribute="data")
+    name = fields.String(attribute="notification.name")
+    type = fields.String(attribute="notification.type")
+    data = fields.Dict(attribute="notification.data")
 
     @post_dump
     def remove_skip_values(self, data, **kwargs):
