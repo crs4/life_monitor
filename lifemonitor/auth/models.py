@@ -118,6 +118,9 @@ class User(db.Model, UserMixin):
     def has_password(self):
         return bool(self.password_hash)
 
+    def verify_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
     def _generate_random_code(self, chars=string.ascii_uppercase + string.digits):
         return base64.b64encode(
             json.dumps(
@@ -193,9 +196,6 @@ class User(db.Model, UserMixin):
 
     def get_permission(self, resource: Resource) -> Permission:
         return next((p for p in self.permissions if p.resource == resource), None)
-
-    def verify_password(self, password):
-        return check_password_hash(self.password_hash, password)
 
     def get_subscription(self, resource: Resource) -> Subscription:
         return next((s for s in self.subscriptions if s.resource == resource), None)
