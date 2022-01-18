@@ -118,6 +118,76 @@ class User(db.Model, UserMixin):
     def has_password(self):
         return bool(self.password_hash)
 
+    def _generate_random_code(self, chars=string.ascii_uppercase + string.digits):
+        return base64.b64encode(
+            json.dumps(
+                {
+                    "email": self._email,
+                    "code": ''.join(random.choice(chars) for _ in range(16)),
+                    "expires": (datetime.datetime.now() + datetime.timedelta(hours=1)).timestamp()
+                }
+            ).encode('ascii')
+        ).decode()
+
+    @staticmethod
+    def _decode_random_code(code):
+        try:
+            code = code.encode() if isinstance(code, str) else code
+            return json.loads(base64.b64decode(code.decode('ascii')))
+        except Exception as e:
+            logger.debug(e)
+            return None
+
+    @property
+    def email(self) -> str:
+        return self._email
+
+    @email.setter
+    def email(self, email: str):
+        if email and email != self._email:
+            self._email = email
+            self._email_verified = False
+            code = self._generate_random_code()
+            self._email_verification_code = code
+            self._email_verification_hash = generate_password_hash(code)
+
+    @email.deleter
+    def email(self):
+        self._email = None
+        self._email_verified = False
+
+    @property
+    def email_verification_code(self) -> str:
+        return self._email_verification_code
+
+    @property
+    def email_verified(self) -> bool:
+        return self._email_verified
+
+    def verify_email(self, code):
+        if not self._email:
+            raise lm_exceptions.IllegalStateException(detail="No notification email found")
+        # verify integrity
+        if not code or \
+            not check_password_hash(
+                self._email_verification_hash, code):
+            raise lm_exceptions.LifeMonitorException(detail="Invalid verification code")
+        try:
+            data = self._decode_random_code(code)
+        except Exception as e:
+            logger.debug(e)
+            raise lm_exceptions.LifeMonitorException(detail="Invalid verification code")
+        if data['email'] != self._email:
+            raise lm_exceptions.LifeMonitorException(detail="Notification email not valid")
+        if data['expires'] < datetime.datetime.now().timestamp():
+            raise lm_exceptions.LifeMonitorException(detail="Verification code expired")
+        self._email_verified = True
+        return True
+
+    def remove_notification(self, n: Notification):
+        if n is not None:
+            n.remove_user(n)
+
     def has_permission(self, resource: Resource) -> bool:
         return self.get_permission(resource) is not None
 
