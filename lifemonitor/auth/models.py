@@ -62,7 +62,10 @@ class User(db.Model, UserMixin):
     username = db.Column(db.String(256), unique=True, nullable=False)
     password_hash = db.Column(db.LargeBinary, nullable=True)
     picture = db.Column(db.String(), nullable=True)
-
+    _email = db.Column("email", db.String(), nullable=True)
+    _email_verification_code = None
+    _email_verification_hash = db.Column("email_verification_hash", db.String(256), nullable=True)
+    _email_verified = db.Column("email_verified", db.Boolean, nullable=True, default=False)
     permissions = db.relationship("Permission", back_populates="user",
                                   cascade="all, delete-orphan")
     authorizations = db.relationship("ExternalServiceAccessAuthorization",
