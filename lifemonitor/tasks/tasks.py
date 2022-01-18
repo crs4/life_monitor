@@ -114,3 +114,26 @@ def check_last_build():
             if logger.isEnabledFor(logging.DEBUG):
                 logger.exception(e)
     logger.info("Checking last build: DONE!")
+
+
+@schedule(IntervalTrigger(seconds=60))
+@dramatiq.actor(max_retries=0)
+def send_email_notifications():
+    notifications = Notification.not_emailed()
+    logger.info("Found %r notifications to send by email", len(notifications))
+    count = 0
+    for n in notifications:
+        logger.debug("Processing notification %r ...", n)
+        recipients = [u.user.email for u in n.users
+                      if u.emailed is None and u.user.email is not None]
+        sent = send_notification(n, recipients)
+        logger.debug("Notification email sent: %r", sent is not None)
+        if sent:
+            logger.debug("Notification '%r' sent by email @ %r", n.id, sent)
+            for u in n.users:
+                if u.user.email in recipients:
+                    u.emailed = sent
+            n.save()
+            count += 1
+        logger.debug("Processing notification %r ... DONE", n)
+    logger.info("%r notifications sent by email", count)
