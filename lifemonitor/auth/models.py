@@ -38,6 +38,7 @@ from lifemonitor import exceptions as lm_exceptions
 from lifemonitor import utils as lm_utils
 from lifemonitor.db import db
 from lifemonitor.models import JSON, UUID, ModelMixin
+from sqlalchemy import null
 from sqlalchemy.ext.hybrid import hybrid_property
 
 # Set the module level logger
@@ -324,12 +325,12 @@ class Notification(db.Model, ModelMixin):
     @classmethod
     def not_read(cls) -> List[Notification]:
         return cls.query.join(UserNotification, UserNotification.notification_id == cls.id)\
-            .filter(UserNotification.read == None).all()
+            .filter(UserNotification.read == null()).all()
 
     @classmethod
     def not_emailed(cls) -> List[Notification]:
         return cls.query.join(UserNotification, UserNotification.notification_id == cls.id)\
-            .filter(UserNotification.emailed == None).all()
+            .filter(UserNotification.emailed == null()).all()
 
 
 class UserNotification(db.Model):
