@@ -32,6 +32,7 @@ from lifemonitor.routes import register_routes
 from lifemonitor.tasks.task_queue import init_task_queue
 
 from . import commands
+from .mail import init_mail
 from .cache import init_cache
 from .db import db
 from .exceptions import handle_exception
@@ -130,6 +131,8 @@ def initialize_app(app, app_context, prom_registry=None):
     commands.register_commands(app)
     # init scheduler/worker for async tasks
     init_task_queue(app)
+    # init mail system
+    init_mail(app)
 
     # configure prometheus exporter
     # must be configured after the routes are registered
