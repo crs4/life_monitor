@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import logging
 
-from lifemonitor.serializers import (BaseSchema, ListOfItems, MetadataSchema,
+from lifemonitor.serializers import (BaseSchema, ListOfItems,
                                      ResourceMetadataSchema, ma)
 from marshmallow import fields
 from marshmallow.decorators import post_dump
