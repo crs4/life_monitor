@@ -97,7 +97,18 @@ def check_last_build():
                         logger.info("Updating latest builds: %r", builds)
                         for b in builds:
                             logger.info("Updating build: %r", i.get_test_build(b.id))
-                        logger.info("Updating latest build: %r", i.last_test_build)
+                        last_build = i.last_test_build
+                        logger.info("Updating latest build: %r", last_build)
+                        if last_build.status == BuildStatus.FAILED:
+                            # TODO: allow to esclude users which have notifications disabled
+                            notification_name = f"{last_build} FAILED"
+                            if len(Notification.find_by_name(notification_name)) == 0:
+                                users = [w.latest_version.submitter]
+                                n = Notification(Notification.Types.BUILD_FAILED.name,
+                                                 notification_name,
+                                                 {'build': BuildSummarySchema().dump(last_build)},
+                                                 users)
+                                n.save()
         except Exception as e:
             logger.error("Error when executing task 'check_last_build': %s", str(e))
             if logger.isEnabledFor(logging.DEBUG):
