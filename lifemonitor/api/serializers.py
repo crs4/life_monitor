@@ -267,7 +267,7 @@ class TestInstanceSchema(ResourceMetadataSchema):
         logger.debug("Test current obj: %r", obj)
         assert obj.testing_service, "Missing testing service"
         return {
-            'uuid': obj.testing_service.uuid,
+            'uuid': str(obj.testing_service.uuid),
             'url': obj.testing_service.url,
             'type': obj.testing_service._type.replace('_testing_service', '')
         }
