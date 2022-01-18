@@ -367,7 +367,7 @@ class Notification(db.Model, ModelMixin):
 
     id = db.Column(db.Integer, primary_key=True)
     created = db.Column(db.DateTime, default=datetime.datetime.utcnow)
-    name = db.Column("name", db.String, nullable=True)
+    name = db.Column("name", db.String, nullable=True, index=True)
     _type = db.Column("type", db.String, nullable=False)
     _data = db.Column("data", JSON, nullable=True)
 
@@ -394,6 +394,10 @@ class Notification(db.Model, ModelMixin):
 
     def remove_user(self, user: User):
         self.users.remove(user)
+
+    @classmethod
+    def find_by_name(cls, name: str) -> List[Notification]:
+        return cls.query.filter(cls.name == name).all()
 
     @classmethod
     def not_read(cls) -> List[Notification]:
