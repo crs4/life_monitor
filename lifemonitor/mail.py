@@ -21,6 +21,7 @@
 import json
 import logging
 from datetime import datetime
+from typing import List, Optional
 
 from flask import Flask
 from flask_mail import Mail, Message
@@ -42,3 +43,23 @@ def init_mail(app: Flask):
         mail.disabled = False
     else:
         mail.disabled = True
+
+
+def send_notification(n: Notification, recipients: List[str]) -> Optional[datetime]:
+    if mail.disabled:
+        logger.info("Mail notifications are disabled")
+    else:
+        with mail.connect() as conn:
+            logger.debug("Mail recipients for notification '%r': %r", n.id, recipients)
+            if len(recipients) > 0:
+                # FIXME: reformat mail subject
+                msg = Message(
+                    f'LifeMonitor notification: {n.type}',
+                    bcc=recipients,
+                    reply_to="noreply-lifemonitor@crs4.it"
+                )
+                # TODO: format body using a proper template
+                msg.body = f"{n.id}<pre>{json.dumps(n.data)}</pre>"
+                conn.send(msg)
+                return datetime.utcnow()
+    return None
