@@ -121,7 +121,7 @@ def check_last_build():
 
 
 @schedule(IntervalTrigger(seconds=60))
-@dramatiq.actor(max_retries=0)
+@dramatiq.actor(max_retries=0, max_age=30000)
 def send_email_notifications():
     notifications = Notification.not_emailed()
     logger.info("Found %r notifications to send by email", len(notifications))
