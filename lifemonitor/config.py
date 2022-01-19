@@ -79,6 +79,8 @@ class BaseConfig:
     CACHE_DEFAULT_TIMEOUT = 60
     # Workflow Data Folder
     DATA_WORKFLOWS = "./data"
+    # Base URL of the LifeMonitor web app associated with this back-end instance
+    WEBAPP_URL = "https://app.lifemonitor.eu"
 
 
 class DevelopmentConfig(BaseConfig):

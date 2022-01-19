@@ -41,6 +41,7 @@ def init_mail(app: Flask):
         mail.init_app(app)
         logger.info("Mail service bound to server '%s'", mail_server)
         mail.disabled = False
+        mail.webapp_url = app.config.get('WEBAPP_URL')
     else:
         mail.disabled = True
 
