@@ -468,3 +468,30 @@ class ClassManager:
 
     def get_classes(self):
         return [_[0] for _ in self._concrete_types.values()]
+
+
+class Base64Encoder(object):
+
+    _cache = {}
+
+    @classmethod
+    def encode_file(cls, file: str) -> str:
+        data = cls._cache.get(file, None)
+        if data is None:
+            with open(file, "rb") as f:
+                data = base64.b64encode(f.read())
+                cls._cache[file] = data
+        return data.decode()
+
+    @classmethod
+    def encode_object(cls, obj: object) -> str:
+        key = hash(frozenset(obj.items()))
+        data = cls._cache.get(key, None)
+        if data is None:
+            data = base64.b64encode(json.dumps(obj).encode())
+            cls._cache[key] = data
+        return data.decode()
+
+    @classmethod
+    def decode(cls, data: str) -> object:
+        return base64.b64decode(data.encode())
