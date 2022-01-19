@@ -18,15 +18,19 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import json
+
 import logging
 from datetime import datetime
 from typing import List, Optional
 
-from flask import Flask
+from flask import Flask, render_template
 from flask_mail import Mail, Message
+from sqlalchemy.exc import InternalError
 
+from lifemonitor.api.models import TestInstance
 from lifemonitor.auth.models import Notification
+from lifemonitor.db import db
+from lifemonitor.utils import Base64Encoder
 
 # set logger
 logger = logging.getLogger(__name__)
@@ -53,14 +57,34 @@ def send_notification(n: Notification, recipients: List[str]) -> Optional[dateti
         with mail.connect() as conn:
             logger.debug("Mail recipients for notification '%r': %r", n.id, recipients)
             if len(recipients) > 0:
-                # FIXME: reformat mail subject
-                msg = Message(
-                    f'LifeMonitor notification: {n.type}',
-                    bcc=recipients,
-                    reply_to="noreply-lifemonitor@crs4.it"
-                )
-                # TODO: format body using a proper template
-                msg.body = f"{n.id}<pre>{json.dumps(n.data)}</pre>"
-                conn.send(msg)
-                return datetime.utcnow()
+                build_data = n.data['build']
+                try:
+                    i = TestInstance.find_by_uuid(build_data['instance']['uuid'])
+                    if i is not None:
+                        wv = i.test_suite.workflow_version
+                        b = i.last_test_build
+                        suite = i.test_suite
+                        logo = Base64Encoder.encode_file('lifemonitor/static/img/logo/lm/LifeMonitorLogo.png')
+                        icon = Base64Encoder.encode_file('lifemonitor/static/img/icons/times-circle-solid.svg')
+                        suite.url_param = Base64Encoder.encode_object({
+                            'workflow': str(wv.workflow.uuid),
+                            'suite': str(suite.uuid)
+                        })
+                        msg = Message(
+                            f'Workflow "{wv.name} ({wv.version})": some builds were not successful',
+                            bcc=recipients,
+                            reply_to="noreply-lifemonitor@crs4.it"
+                        )
+                        msg.html = render_template("mail/build_failure_notification.j2",
+                                                   webapp_url=mail.webapp_url,
+                                                   workflow_version=wv, build=b,
+                                                   test_instance=i,
+                                                   suite=suite,
+                                                   json_data=build_data,
+                                                   logo=logo, icon=icon)
+                        conn.send(msg)
+                        return datetime.utcnow()
+                except InternalError as e:
+                    logger.debug(e)
+                    db.session.rollback()
     return None
