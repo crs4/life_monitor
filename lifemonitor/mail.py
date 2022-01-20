@@ -28,9 +28,9 @@ from flask_mail import Mail, Message
 from sqlalchemy.exc import InternalError
 
 from lifemonitor.api.models import TestInstance
-from lifemonitor.auth.models import Notification
+from lifemonitor.auth.models import Notification, User
 from lifemonitor.db import db
-from lifemonitor.utils import Base64Encoder
+from lifemonitor.utils import Base64Encoder, get_external_server_url
 
 # set logger
 logger = logging.getLogger(__name__)
@@ -48,6 +48,24 @@ def init_mail(app: Flask):
         mail.webapp_url = app.config.get('WEBAPP_URL')
     else:
         mail.disabled = True
+
+
+def send_email_validation_message(user: User):
+    if mail.disabled:
+        logger.info("Mail notifications are disabled")
+    if user is None or user.is_anonymous:
+        logger.warning("An authenticated user is required")
+    with mail.connect() as conn:
+        confirmation_address = f"{get_external_server_url()}/validate_email?code={user.email_verification_code}"
+        logo = Base64Encoder.encode_file('lifemonitor/static/img/logo/lm/LifeMonitorLogo.png')
+        msg = Message(
+            f'Confirm your email address',
+            recipients=[user.email],
+            reply_to="noreply-lifemonitor@crs4.it"
+        )
+        msg.html = render_template("mail/validate_email.j2",
+                                   confirmation_address=confirmation_address, user=user, logo=logo)
+        conn.send(msg)
 
 
 def send_notification(n: Notification, recipients: List[str]) -> Optional[datetime]:
