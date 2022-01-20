@@ -159,17 +159,21 @@ class User(db.Model, UserMixin):
 
     @email.setter
     def email(self, email: str):
-        if email and (email != self._email or not self.email_verified):
+        if email and email != self._email:
             self._email = email
-            self._email_verified = False
-            code = self._generate_random_code()
-            self._email_verification_code = code
-            self._email_verification_hash = generate_password_hash(code).decode('utf-8')
+            self.generate_email_verification_code()
 
     @email.deleter
     def email(self):
         self._email = None
         self._email_verified = False
+
+    def generate_email_verification_code(self):
+        self._email_verified = False
+        code = self._generate_random_code()
+        self._email_verification_code = code
+        self._email_verification_hash = generate_password_hash(code).decode('utf-8')
+        return self._email_verification_code
 
     @property
     def email_verification_code(self) -> str:
