@@ -29,7 +29,7 @@
 </div>
 
 <div class="card-body">
-    {% if not current_user.email_verified %}
+    {% if current_user.email and not current_user.email_verified %}
     <div style="margin: 20px auto; width: 80%; border-radius: 10px; background-color: whitesmoke; padding: 20px;">
         <div class="row">
             <div class="col-md-2 h-100 m-auto text-center" style="min-width: 70px;">
