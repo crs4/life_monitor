@@ -29,7 +29,7 @@ from lifemonitor.utils import OpenApiSpecs
 from sqlalchemy.exc import IntegrityError
 from wtforms import (BooleanField, HiddenField, PasswordField, SelectField,
                      SelectMultipleField, StringField)
-from wtforms.validators import URL, DataRequired, EqualTo, Optional
+from wtforms.validators import URL, DataRequired, Email, EqualTo, Optional, NoneOf
 
 from .models import User, db
 
@@ -106,6 +106,27 @@ class SetPasswordForm(FlaskForm):
         ],
     )
     repeat_password = PasswordField("Repeat Password")
+
+
+class NotificationsForm(FlaskForm):
+    enable_notifications = BooleanField(
+        "enable_notifications",
+        validators=[
+            DataRequired()
+        ],
+    )
+
+
+class EmailForm(FlaskForm):
+    email = StringField(
+        "Email",
+        validators=[
+            DataRequired(),
+            Email(),
+            EqualTo("repeat_email", message="email addresses do not match"),
+        ],
+    )
+    repeat_email = StringField("Repeat Email")
 
 
 class Oauth2ClientForm(FlaskForm):
