@@ -62,6 +62,8 @@ class User(db.Model, UserMixin):
     username = db.Column(db.String(256), unique=True, nullable=False)
     password_hash = db.Column(db.LargeBinary, nullable=True)
     picture = db.Column(db.String(), nullable=True)
+    _email_notifications_enabled = db.Column("email_notifications", db.Boolean,
+                                             nullable=False, default=True)
     _email = db.Column("email", db.String(), nullable=True)
     _email_verification_code = None
     _email_verification_hash = db.Column("email_verification_hash", db.String(256), nullable=True)
@@ -140,6 +142,16 @@ class User(db.Model, UserMixin):
         except Exception as e:
             logger.debug(e)
             return None
+
+    @property
+    def email_notifications_enabled(self):
+        return self._email_notifications_enabled
+
+    def disable_email_notifications(self):
+        self._email_notifications_enabled = False
+
+    def enable_email_notifications(self):
+        self._email_notifications_enabled = True
 
     @property
     def email(self) -> str:
