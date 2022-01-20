@@ -85,6 +85,16 @@ def values_as_string(values, in_separator='\\s?,\\s?|\\s+', out_separator=" "):
         raise ValueError("Invalid format")
 
 
+def boolean_value(value) -> bool:
+    if value is None or value == "":
+        return False
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        return bool_from_string(value)
+    raise ValueError(f"Invalid value for boolean. Got '{value}'")
+
+
 def bool_from_string(s) -> bool:
     if s is None or s == "":
         return None

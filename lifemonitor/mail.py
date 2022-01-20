@@ -30,7 +30,7 @@ from sqlalchemy.exc import InternalError
 from lifemonitor.api.models import TestInstance
 from lifemonitor.auth.models import Notification, User
 from lifemonitor.db import db
-from lifemonitor.utils import Base64Encoder, get_external_server_url
+from lifemonitor.utils import Base64Encoder, get_external_server_url, boolean_value
 
 # set logger
 logger = logging.getLogger(__name__)
@@ -42,6 +42,8 @@ mail = Mail()
 def init_mail(app: Flask):
     mail_server = app.config.get('MAIL_SERVER', None)
     if mail_server:
+        app.config['MAIL_USE_TLS'] = boolean_value(app.config.get('MAIL_USE_TLS', False))
+        app.config['MAIL_USE_SSL'] = boolean_value(app.config.get('MAIL_USE_SSL', False))
         mail.init_app(app)
         logger.info("Mail service bound to server '%s'", mail_server)
         mail.disabled = False
