@@ -53,6 +53,10 @@
                 <a class="nav-link font-weight-bold" tab="oauth2ClientsTab"
                     href="#oauthapps" data-toggle="tab">OAuth Apps</a>
               </li>
+              <li class="nav-item">
+                <a class="nav-link font-weight-bold" tab="notificationsTab"
+                    href="#notifications" data-toggle="tab">Notifications</a>
+              </li>
           </div><!-- /.card-header -->
           <div class="card-body">
             <div class="tab-content">
@@ -70,6 +74,9 @@
               <div class="tab-pane" id="oauthapps">
                 <!-- The timeline -->
                 {% include 'auth/oauth2_clients_tab.j2' %}
+              </div>
+              <div class="tab-pane" id="notifications">
+                {% include 'auth/notifications.j2' %}
               </div>
               <!-- /.tab-pane -->
             </div>
