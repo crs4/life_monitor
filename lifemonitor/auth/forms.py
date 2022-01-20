@@ -29,7 +29,7 @@ from lifemonitor.utils import OpenApiSpecs
 from sqlalchemy.exc import IntegrityError
 from wtforms import (BooleanField, HiddenField, PasswordField, SelectField,
                      SelectMultipleField, StringField)
-from wtforms.validators import URL, DataRequired, Email, EqualTo, Optional, NoneOf
+from wtforms.validators import URL, DataRequired, Email, EqualTo, Optional
 
 from .models import User, db
 

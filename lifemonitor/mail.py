@@ -59,7 +59,7 @@ def send_email_validation_message(user: User):
         confirmation_address = f"{get_external_server_url()}/validate_email?code={user.email_verification_code}"
         logo = Base64Encoder.encode_file('lifemonitor/static/img/logo/lm/LifeMonitorLogo.png')
         msg = Message(
-            f'Confirm your email address',
+            'Confirm your email address',
             recipients=[user.email],
             reply_to="noreply-lifemonitor@crs4.it"
         )
