@@ -217,6 +217,9 @@ class User(db.Model, UserMixin):
     def get_subscription(self, resource: Resource) -> Subscription:
         return next((s for s in self.subscriptions if s.resource == resource), None)
 
+    def is_subscribed_to(self, resource: Resource) -> bool:
+        return self.get_subscription(resource) is not None
+
     def subscribe(self, resource: Resource) -> Subscription:
         s = self.get_subscription(resource)
         if not s:
@@ -385,6 +388,11 @@ class Resource(db.Model, ModelMixin):
     @classmethod
     def find_by_uuid(cls, uuid):
         return cls.query.filter(cls.uuid == lm_utils.uuid_param(uuid)).first()
+
+    def get_subscribers(self, event: EventType = EventType.ALL) -> List[User]:
+        users = {s.user for s in self.subscriptions if s.has_event(event)}
+        users.update({s.user for s in self.subscriptions if s.has_event(event)})
+        return users
 
 
 resource_authorization_table = db.Table(
