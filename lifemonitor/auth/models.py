@@ -37,9 +37,10 @@ from flask_login import AnonymousUserMixin, UserMixin
 from lifemonitor import exceptions as lm_exceptions
 from lifemonitor import utils as lm_utils
 from lifemonitor.db import db
-from lifemonitor.models import JSON, UUID, ModelMixin
+from lifemonitor.models import JSON, UUID, IntegerSet, ModelMixin
 from sqlalchemy import null
 from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.ext.mutable import MutableSet
 
 # Set the module level logger
 logger = logging.getLogger(__name__)
@@ -408,10 +409,32 @@ class Subscription(db.Model, ModelMixin):
     resource: Resource = db.relationship("Resource", uselist=False,
                                          backref=db.backref("subscriptions", cascade="all, delete-orphan"),
                                          foreign_keys=[resource_id])
+    _events = db.Column("events", MutableSet.as_mutable(IntegerSet()), default={0})
 
     def __init__(self, resource: Resource, user: User) -> None:
         self.resource = resource
         self.user = user
+
+    def __get_events(self):
+        if self._events is None:
+            self._events = {0}
+        return self._events
+
+    @property
+    def events(self) -> set:
+        return [EventType(e) for e in self.__get_events()]
+
+    @events.setter
+    def events(self, events: List[EventType]):
+        self.__get_events().clear()
+        if events:
+            for e in events:
+                self.__get_events().add(e.value)
+
+    def has_event(self, event: EventType) -> bool:
+        return False if event is None else \
+            EventType.ALL.value in self.__get_events() or \
+            event.value in self.__get_events()
 
 
 class Notification(db.Model, ModelMixin):
