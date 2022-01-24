@@ -119,12 +119,16 @@ class SubscriptionSchema(ResourceMetadataSchema):
     modified = fields.String(attribute='modified')
 
     resource = fields.Method("get_resource")
+    events = fields.Method("get_events")
 
     def get_resource(self, obj: models.Subscription):
         return {
             'uuid': obj.resource.uuid,
             'type': obj.resource.type
         }
+
+    def get_events(self, obj: models.Subscription):
+        return models.EventType.to_strings(obj.events)
 
 
 class ListOfSubscriptions(ListOfItems):
