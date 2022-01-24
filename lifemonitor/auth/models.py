@@ -439,28 +439,24 @@ class Subscription(db.Model, ModelMixin):
 
 class Notification(db.Model, ModelMixin):
 
-    class Types(Enum):
-        BUILD_FAILED = 0
-        BUILD_RECOVERED = 1
-
     id = db.Column(db.Integer, primary_key=True)
     created = db.Column(db.DateTime, default=datetime.datetime.utcnow)
     name = db.Column("name", db.String, nullable=True, index=True)
-    _type = db.Column("type", db.String, nullable=False)
+    _event = db.Column("event", db.Integer, nullable=False)
     _data = db.Column("data", JSON, nullable=True)
 
     users: List[UserNotification] = db.relationship("UserNotification", back_populates="notification")
 
-    def __init__(self, type: str, name: str, data: object, users: List[User]) -> None:
+    def __init__(self, event: EventType, name: str, data: object, users: List[User]) -> None:
         self.name = name
-        self._type = type
+        self._event = event.value
         self._data = data
         for u in users:
             self.add_user(u)
 
     @property
-    def type(self) -> str:
-        return self._type
+    def event(self) -> EventType:
+        return EventType(self._event)
 
     @property
     def data(self) -> object:
