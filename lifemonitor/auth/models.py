@@ -297,6 +297,45 @@ class ApiKey(db.Model, ModelMixin):
         return cls.query.all()
 
 
+class EventType(Enum):
+    ALL = 0
+    BUILD_FAILED = 1
+    BUILD_RECOVERED = 2
+
+    @classmethod
+    def list(cls):
+        return list(map(lambda c: c, cls))
+
+    @classmethod
+    def names(cls):
+        return list(map(lambda c: c.name, cls))
+
+    @classmethod
+    def values(cls):
+        return list(map(lambda c: c.value, cls))
+
+    @classmethod
+    def to_string(cls, event: EventType) -> str:
+        return event.name if event else None
+
+    @classmethod
+    def to_strings(cls, event_list: List[EventType]) -> List[str]:
+        return [cls.to_string(_) for _ in event_list if _] if event_list else []
+
+    @classmethod
+    def from_string(cls, event_name: str) -> EventType:
+        try:
+            return cls[event_name]
+        except KeyError:
+            raise ValueError("'%s' is not a valid EventType", event_name)
+
+    @classmethod
+    def from_strings(cls, event_name_list: List[str]) -> List[EventType]:
+        if not event_name_list:
+            return []
+        return [cls.from_string(_) for _ in event_name_list]
+
+
 class Resource(db.Model, ModelMixin):
 
     id = db.Column('id', db.Integer, primary_key=True)
