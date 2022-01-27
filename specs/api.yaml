@@ -474,7 +474,7 @@ paths:
       tags: ["Users"]
       x-openapi-router-controller: lifemonitor.auth.controllers
       operationId: "user_subscriptions_get"
-      summary: "List all subscriptions for the current user"
+      summary: "List subscriptions for the current user"
       description: |
         List all subscriptions for the current user
       security:
@@ -616,6 +616,42 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Subscription"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    put:
+      summary: Subscribe user to workflow events
+      description: "Subscribe the current (authenticated) user to a list of events for the specified workflow"
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "user_workflow_subscribe_events"
+      tags: ["Users"]
+      security:
+        - apiKey: ["workflow.write"]
+        - AuthorizationCodeFlow: ["workflow.write"]
+        - RegistryCodeFlow: ["workflow.write"]
+      parameters:
+        - $ref: "#/components/parameters/wf_uuid"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ListOfEvents"
+      responses:
+        "201":
+          description: "Subscription to events created"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+        "204":
+          description: "Subscription updated with events"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -1462,11 +1498,29 @@ components:
           description: |
             A timestamp for the modification time of the subscription
           example: 1616427512.0
+        events:
+          $ref: "#/components/schemas/ListOfEvents"
       required:
         - user
         - resource
         - created
         - modified
+        - events
+
+    EventType:
+      type: string
+      enum:
+        - ALL
+        - BUILD_FAILED
+        - BUILD_RECOVERED
+
+    ListOfEvents:
+      type: array
+      items:
+        $ref: "#/components/schemas/EventType"
+      description: |
+        List of events related to the specified workflow
+      example: ["all"]
 
     ListOfSubscriptions:
       type: object

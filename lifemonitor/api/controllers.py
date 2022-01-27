@@ -277,6 +277,25 @@ def user_workflow_subscribe(wf_uuid):
 
 
 @authorized
+def user_workflow_subscribe_events(wf_uuid, body):
+    workflow_version = _get_workflow_or_problem(wf_uuid)
+    events = body
+    if events is None or not isinstance(events, list):
+        return lm_exceptions.report_problem(400, "Bad request",
+                                            detail=messages.unexpected_registry_uri)
+    if isinstance(workflow_version, Response):
+        return workflow_version
+    subscribed = current_user.is_subscribed_to(workflow_version.workflow)
+    subscription = lm.subscribe_user_resource(current_user, workflow_version.workflow, events=events)
+    logger.debug("Updated subscription events: %r", subscription)
+    clear_cache()
+    if not subscribed:
+        return auth_serializers.SubscriptionSchema(exclude=('meta', 'links')).dump(subscription), 201
+    else:
+        return connexion.NoContent, 204
+
+
+@authorized
 def user_workflow_unsubscribe(wf_uuid):
     response = _get_workflow_or_problem(wf_uuid)
     if isinstance(response, Response):
