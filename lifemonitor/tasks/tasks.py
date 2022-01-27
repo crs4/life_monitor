@@ -7,7 +7,7 @@ from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
 from lifemonitor.api.models.testsuites.testbuild import BuildStatus
 from lifemonitor.api.serializers import BuildSummarySchema
-from lifemonitor.auth.models import Notification
+from lifemonitor.auth.models import EventType, Notification
 from lifemonitor.cache import Timeout
 from lifemonitor.mail import send_notification
 
@@ -96,7 +96,8 @@ def check_last_build():
     logger.info("Starting 'check_last build' task...")
     for w in Workflow.all():
         try:
-            for s in w.latest_version.test_suites:
+            latest_version = w.latest_version
+            for s in latest_version.test_suites:
                 logger.info("Updating workflow: %r", w)
                 for i in s.test_instances:
                     with i.cache.transaction(str(i)):
@@ -109,10 +110,8 @@ def check_last_build():
                         if last_build.status == BuildStatus.FAILED:
                             notification_name = f"{last_build} FAILED"
                             if len(Notification.find_by_name(notification_name)) == 0:
-                                users = {s.user for s in w.subscriptions if s.user.email_notifications_enabled}
-                                users.update({v.submitter for v in w.versions.values() if v.submitter.email_notifications_enabled})
-                                users.update({s.user for v in w.versions.values() for s in v.subscriptions if s.user.email_notifications_enabled})
-                                n = Notification(Notification.Types.BUILD_FAILED.name,
+                                users = latest_version.workflow.get_subscribers()
+                                n = Notification(EventType.BUILD_FAILED,
                                                  notification_name,
                                                  {'build': BuildSummarySchema().dump(last_build)},
                                                  users)
@@ -133,7 +132,8 @@ def send_email_notifications():
     for n in notifications:
         logger.debug("Processing notification %r ...", n)
         recipients = [u.user.email for u in n.users
-                      if u.emailed is None and u.user.email is not None]
+                      if u.emailed is None and
+                      u.user.email_notifications_enabled and u.user.email is not None]
         sent = send_notification(n, recipients)
         logger.debug("Notification email sent: %r", sent is not None)
         if sent:
