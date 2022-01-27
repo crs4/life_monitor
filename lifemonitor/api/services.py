@@ -133,6 +133,8 @@ class LifeMonitor:
 
         if workflow_submitter:
             wv.permissions.append(Permission(user=workflow_submitter, roles=[RoleType.owner]))
+            # automatically register submitter's subscription to workflow events
+            workflow_submitter.subscribe(w)
         if authorization:
             auth = ExternalServiceAuthorizationHeader(workflow_submitter, header=authorization)
             auth.resources.append(wv)
