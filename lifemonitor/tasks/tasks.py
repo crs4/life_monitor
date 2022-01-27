@@ -14,6 +14,9 @@ from lifemonitor.mail import send_notification
 # set module level logger
 logger = logging.getLogger(__name__)
 
+# set expiration time (in msec) of tasks
+TASK_EXPIRATION_TIME = 30000
+
 
 def schedule(trigger):
     """
@@ -42,13 +45,13 @@ logger.info("Importing task definitions")
 
 
 @schedule(CronTrigger(second=0))
-@dramatiq.actor(max_retries=3)
+@dramatiq.actor(max_retries=3, max_age=TASK_EXPIRATION_TIME)
 def heartbeat():
     logger.info("Heartbeat!")
 
 
 @schedule(IntervalTrigger(seconds=Timeout.WORKFLOW * 3 / 4))
-@dramatiq.actor(max_retries=3)
+@dramatiq.actor(max_retries=3, max_age=TASK_EXPIRATION_TIME)
 def check_workflows():
     from flask import current_app
     from lifemonitor.api.controllers import workflows_rocrate_download
@@ -86,7 +89,7 @@ def check_workflows():
 
 
 @schedule(IntervalTrigger(seconds=Timeout.BUILD * 3 / 4))
-@dramatiq.actor(max_retries=3)
+@dramatiq.actor(max_retries=3, max_age=TASK_EXPIRATION_TIME)
 def check_last_build():
     from lifemonitor.api.models import Workflow
 
@@ -122,7 +125,7 @@ def check_last_build():
 
 
 @schedule(IntervalTrigger(seconds=60))
-@dramatiq.actor(max_retries=0, max_age=30000)
+@dramatiq.actor(max_retries=0, max_age=TASK_EXPIRATION_TIME)
 def send_email_notifications():
     notifications = Notification.not_emailed()
     logger.info("Found %r notifications to send by email", len(notifications))
