@@ -21,13 +21,14 @@
 from __future__ import annotations
 
 import logging
+from datetime import datetime
 from typing import List, Optional, Union
 
 import lifemonitor.exceptions as lm_exceptions
 from lifemonitor.api import models
 from lifemonitor.auth.models import (ExternalServiceAuthorizationHeader,
-                                     Permission, Resource, RoleType,
-                                     Subscription, User)
+                                     Notification, Permission, Resource,
+                                     RoleType, Subscription, User)
 from lifemonitor.auth.oauth2.client import providers
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 from lifemonitor.auth.oauth2.server import server
@@ -499,3 +500,23 @@ class LifeMonitor:
     @staticmethod
     def get_workflow_registry(uuid) -> models.WorkflowRegistry:
         return models.WorkflowRegistry.find_by_uuid(uuid)
+
+    @staticmethod
+    def setUserNotificationReadingTime(user: User, notifications: List[dict]):
+        for n in notifications:
+            un = user.get_user_notification(n['uuid'])
+            if un is None:
+                return lm_exceptions.EntityNotFoundException(Notification, entity_id=n['uuid'])
+            un.read = datetime.utcnow()
+        user.save()
+
+    @staticmethod
+    def deleteUserNotifications(user: User, list_of_uuids: List[str]):
+        for n_uuid in list_of_uuids:
+            logger.debug("Searching notification %r ...", n_uuid)
+            n = user.get_user_notification(n_uuid)
+            logger.debug("Search result notification %r ...", n)
+            if n is None:
+                return lm_exceptions.EntityNotFoundException(Notification, entity_id=n_uuid)
+            user.notifications.remove(n)
+        user.save()

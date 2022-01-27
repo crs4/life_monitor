@@ -19,11 +19,15 @@
 # SOFTWARE.
 
 import logging
+from datetime import datetime
 
+import connexion
 import flask
 from flask import flash, redirect, render_template, request, session, url_for
 from flask_login import login_required, login_user, logout_user
+from lifemonitor.api.services import LifeMonitor
 from lifemonitor.cache import Timeout, cached, clear_cache
+from lifemonitor.lang import messages as lm_messages
 from lifemonitor.utils import (NextRouteRegistry, next_route_aware,
                                split_by_crlf)
 
@@ -38,6 +42,9 @@ from .oauth2.client.services import (get_current_user_identity, get_providers,
 from .oauth2.server.services import server
 from .services import (authorized, current_registry, current_user,
                        delete_api_key, generate_new_api_key, login_manager)
+
+# Initialize a reference to the LifeMonitor instance
+lm = LifeMonitor.get_instance()
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
@@ -58,6 +65,48 @@ def show_current_user_profile():
             return serializers.UserSchema().dump(current_user)
         raise exceptions.Forbidden(detail="Client type unknown")
     except Exception as e:
+        return exceptions.report_problem_from_exception(e)
+
+
+@authorized
+@cached(timeout=Timeout.REQUEST)
+def user_notifications_get():
+    try:
+        if current_user and not current_user.is_anonymous:
+            return serializers.ListOfNotifications().dump(current_user.notifications)
+        raise exceptions.Forbidden(detail="Client type unknown")
+    except Exception as e:
+        return exceptions.report_problem_from_exception(e)
+
+
+@authorized
+@cached(timeout=Timeout.REQUEST)
+def user_notifications_put(body):
+    try:
+        if not current_user or current_user.is_anonymous:
+            raise exceptions.Forbidden(detail="Client type unknown")
+        lm.setUserNotificationReadingTime(current_user, body.get('items', []))
+        clear_cache()
+        return connexion.NoContent, 204
+    except Exception as e:
+        logger.debug(e)
+        return exceptions.report_problem_from_exception(e)
+
+
+@authorized
+@cached(timeout=Timeout.REQUEST)
+def user_notifications_patch(body):
+    try:
+        if not current_user or current_user.is_anonymous:
+            raise exceptions.Forbidden(detail="Client type unknown")
+        logger.debug("PATCH BODY: %r", body)
+        lm.deleteUserNotifications(current_user, body)
+        clear_cache()
+        return connexion.NoContent, 204
+    except exceptions.EntityNotFoundException as e:
+        return exceptions.report_problem_from_exception(e)
+    except Exception as e:
+        logger.debug(e)
         return exceptions.report_problem_from_exception(e)
 
 

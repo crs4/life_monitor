@@ -170,6 +170,96 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  /users/current/notifications:
+    get:
+      tags: ["Users"]
+      x-openapi-router-controller: lifemonitor.auth.controllers
+      operationId: "user_notifications_get"
+      summary: List notifications for the current user
+      description: |
+        List all notifications for the current (authenticated) user
+      security:
+        - apiKey: ["user.profile"]
+        - RegistryCodeFlow: ["user.profile"]
+        - AuthorizationCodeFlow: ["user.profile"]
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListOfNotifications"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    put:
+      tags: ["Users"]
+      x-openapi-router-controller: lifemonitor.auth.controllers
+      operationId: "user_notifications_put"
+      summary: Mark as read notifications for the current user
+      description: |
+        Mark as read notifications for the current (authenticated) user
+      security:
+        - apiKey: ["user.profile"]
+        - RegistryCodeFlow: ["user.profile"]
+        - AuthorizationCodeFlow: ["user.profile"]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ListOfNotifications"
+      responses:
+        "204":
+          description: "Notifications updated"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    patch:
+      tags: ["Users"]
+      x-openapi-router-controller: lifemonitor.auth.controllers
+      operationId: "user_notifications_patch"
+      summary: Delete notifications for the current user
+      description: |
+        Delete notifications for the current (authenticated) user
+      security:
+        - apiKey: ["user.profile"]
+        - RegistryCodeFlow: ["user.profile"]
+        - AuthorizationCodeFlow: ["user.profile"]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              description: List of UUIDs
+              type: array
+              items:
+                type: string
+                example: "21ac72ec-b9a5-49e0-b5a6-1322b8b54552"
+      responses:
+        "204":
+          description: "Notifications updated"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   /registries/current:
     get:
       tags: ["Registry Client Operations"]
@@ -1532,6 +1622,49 @@ components:
       required:
         - items
 
+    Notification:
+      type: object
+      description: A notification for the current user.
+      properties:
+        uuid:
+          type: string
+          description: Universal unique identifier of notification
+          example: aa16c6a9-571f-4a62-976f-60ea514ad2c1
+        data:
+          type: object
+          description: "Notification payload"
+          readOnly: true
+        created:
+          type: string
+          description: |
+            A timestamp for the creation time of the notification
+          example: 1616427012.0
+          readOnly: true
+        read:
+          type: string
+          description: |
+            A timestamp for the read time of the notification
+          example: 1616427012.0
+        emailed:
+          type: string
+          description: |
+            A timestamp for the time when the email was sent
+          example: 1616427012.0
+          readOnly: true
+      required:
+        - uuid
+        - created
+
+    ListOfNotifications:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Notification"
+      required:
+        - items
+
     IdentityProviderType:
       type: string
       enum:
@@ -1692,13 +1825,13 @@ components:
             latest_version:
               type: string
               description: The workflow identifier on the registry
-              example: '1.0'
+              example: "1.0"
             versions:
               description: The list of workflow versions
               type: array
               items:
                 type: string
-              example: ['1.0', "1.0-dev"]
+              example: ["1.0", "1.0-dev"]
 
     ListOfRegistryWorkflows:
       type: object
