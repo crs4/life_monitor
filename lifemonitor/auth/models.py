@@ -206,9 +206,25 @@ class User(db.Model, UserMixin):
         self._email_verified = True
         return True
 
-    def remove_notification(self, n: Notification):
-        if n is not None:
-            n.remove_user(n)
+    def get_user_notification(self, notification_uuid: str) -> UserNotification:
+        return next((n for n in self.notifications if str(n.notification.uuid) == notification_uuid), None)
+
+    def get_notification(self, notification_uuid: str) -> Notification:
+        user_notification = self.get_user_notification(notification_uuid)
+        return None if not user_notification else user_notification.notification
+
+    def remove_notification(self, n: Notification | UserNotification):
+        user_notification = None
+        try:
+            user_notification = self.get_user_notification(n.uuid)
+            if user_notification is None:
+                raise ValueError(f"notification {n.uuid} not associated to this user")
+        except Exception:
+            user_notification = n
+        if n is None:
+            raise ValueError("notification cannot be None")
+        self.notifications.remove(user_notification)
+        logger.debug("User notification %r removed", user_notification)
 
     def has_permission(self, resource: Resource) -> bool:
         return self.get_permission(resource) is not None
