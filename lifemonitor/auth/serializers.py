@@ -142,11 +142,12 @@ class NotificationSchema(ResourceMetadataSchema):
     class Meta:
         model = models.UserNotification
 
+    uuid = fields.String(attribute='notification.uuid')
     created = fields.DateTime(attribute='notification.created')
     emailed = fields.DateTime(attribute='emailed')
     read = fields.DateTime(attribute='read')
     name = fields.String(attribute="notification.name")
-    type = fields.String(attribute="notification.type")
+    event = fields.String(attribute="notification.event.name")
     data = fields.Dict(attribute="notification.data")
 
     @post_dump
