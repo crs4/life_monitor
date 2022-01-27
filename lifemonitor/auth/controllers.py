@@ -25,7 +25,7 @@ import connexion
 import flask
 from flask import flash, redirect, render_template, request, session, url_for
 from flask_login import login_required, login_user, logout_user
-from lifemonitor.api.services import LifeMonitor
+
 from lifemonitor.cache import Timeout, cached, clear_cache
 from lifemonitor.lang import messages as lm_messages
 from lifemonitor.utils import (NextRouteRegistry, next_route_aware,
@@ -43,9 +43,6 @@ from .oauth2.server.services import server
 from .services import (authorized, current_registry, current_user,
                        delete_api_key, generate_new_api_key, login_manager)
 
-# Initialize a reference to the LifeMonitor instance
-lm = LifeMonitor.get_instance()
-
 # Config a module level logger
 logger = logging.getLogger(__name__)
 
@@ -55,6 +52,11 @@ blueprint = flask.Blueprint("auth", __name__,
 
 # Set the login view
 login_manager.login_view = "auth.login"
+
+
+def __lifemonitor_service__():
+    from lifemonitor.api.services import LifeMonitor
+    return LifeMonitor.get_instance()
 
 
 @authorized
@@ -85,7 +87,7 @@ def user_notifications_put(body):
     try:
         if not current_user or current_user.is_anonymous:
             raise exceptions.Forbidden(detail="Client type unknown")
-        lm.setUserNotificationReadingTime(current_user, body.get('items', []))
+        __lifemonitor_service__().setUserNotificationReadingTime(current_user, body.get('items', []))
         clear_cache()
         return connexion.NoContent, 204
     except Exception as e:
@@ -100,7 +102,7 @@ def user_notifications_patch(body):
         if not current_user or current_user.is_anonymous:
             raise exceptions.Forbidden(detail="Client type unknown")
         logger.debug("PATCH BODY: %r", body)
-        lm.deleteUserNotifications(current_user, body)
+        __lifemonitor_service__().deleteUserNotifications(current_user, body)
         clear_cache()
         return connexion.NoContent, 204
     except exceptions.EntityNotFoundException as e:
