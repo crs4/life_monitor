@@ -56,3 +56,4 @@ unauthorized_user_with_expired_registry_token = ("The current token issued by th
                                                  "to start the authorization flow")
 invalid_log_offset = "Invalid offset: it should be a positive integer"
 invalid_log_limit = "Invalid limit: it should be a positive integer"
+notification_not_found = "Notification '{}' not found"
