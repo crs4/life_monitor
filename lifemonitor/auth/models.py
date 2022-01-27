@@ -76,7 +76,9 @@ class User(db.Model, UserMixin):
 
     subscriptions = db.relationship("Subscription", cascade="all, delete-orphan")
 
-    notifications: List[UserNotification] = db.relationship("UserNotification", back_populates="user")
+    notifications: List[UserNotification] = db.relationship("UserNotification",
+                                                            back_populates="user",
+                                                            cascade="all, delete-orphan")
 
     def __init__(self, username=None) -> None:
         super().__init__()
@@ -453,7 +455,8 @@ class Notification(db.Model, ModelMixin):
     _event = db.Column("event", db.Integer, nullable=False)
     _data = db.Column("data", JSON, nullable=True)
 
-    users: List[UserNotification] = db.relationship("UserNotification", back_populates="notification")
+    users: List[UserNotification] = db.relationship("UserNotification",
+                                                    back_populates="notification", cascade="all, delete-orphan")
 
     def __init__(self, event: EventType, name: str, data: object, users: List[User]) -> None:
         self.name = name
@@ -502,11 +505,13 @@ class UserNotification(db.Model):
     notification_id = db.Column(db.Integer, db.ForeignKey("notification.id"), nullable=False, primary_key=True)
 
     user: User = db.relationship("User", uselist=False,
-                                 back_populates="notifications", foreign_keys=[user_id])
+                                 back_populates="notifications", foreign_keys=[user_id],
+                                 cascade="save-update")
 
     notification: Notification = db.relationship("Notification", uselist=False,
                                                  back_populates="users",
-                                                 foreign_keys=[notification_id])
+                                                 foreign_keys=[notification_id],
+                                                 cascade="save-update")
 
     def __init__(self, user: User, notification: Notification) -> None:
         self.user = user
