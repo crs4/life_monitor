@@ -232,10 +232,12 @@ class LifeMonitor:
             raise lm_exceptions.SpecificationNotValidException(f"Missing property: {e}")
 
     @staticmethod
-    def subscribe_user_resource(user: User, resource: Resource) -> Subscription:
+    def subscribe_user_resource(user: User, resource: Resource, events: List[str] = None) -> Subscription:
         assert user and not user.is_anonymous, "Invalid user"
         assert resource, "Invalid resource"
         subscription = user.subscribe(resource)
+        if events:
+            subscription.events = events
         user.save()
         return subscription
 
