@@ -81,6 +81,25 @@ def test_user_subscribe_workflow(app_client, client_auth_method, user1, user1_au
     ClientAuthenticationMethod.REGISTRY_CODE_FLOW
 ], indirect=True)
 @pytest.mark.parametrize("user1", [True], indirect=True)
+def test_user_subscribe_workflow_events(app_client, client_auth_method, user1, user1_auth, valid_workflow):
+    workflow = utils.pick_workflow(user1, valid_workflow)
+    logger.debug("User1 Auth Headers: %r", user1_auth)
+    enable_auto_login(user1['user'])
+    r = app_client.post(
+        utils.build_workflow_path(workflow, include_version=False, subpath='subscribe'), headers=user1_auth
+    )
+    assert r.status_code == 201, f"Error when subscribing to the workflow {workflow}"
+    data = json.loads(r.data.decode())
+    logger.debug(data)
+
+
+@pytest.mark.parametrize("client_auth_method", [
+    #    ClientAuthenticationMethod.BASIC,
+    ClientAuthenticationMethod.API_KEY,
+    ClientAuthenticationMethod.AUTHORIZATION_CODE,
+    ClientAuthenticationMethod.REGISTRY_CODE_FLOW
+], indirect=True)
+@pytest.mark.parametrize("user1", [True], indirect=True)
 def test_user_unsubscribe_workflow(app_client, client_auth_method, user1, user1_auth, valid_workflow, lm: LifeMonitor):
     wdata = utils.pick_workflow(user1, valid_workflow)
     user: User = user1['user']
@@ -88,14 +107,38 @@ def test_user_unsubscribe_workflow(app_client, client_auth_method, user1, user1_
     # register a subscription
     workflow = lm.get_workflow(wdata['uuid'])
     assert workflow, "Invalid workflow"
-    lm.subscribe_user_resource(user, workflow)
-    assert len(user.subscriptions) == 1, "Invalid number of subscriptions"
+    subscription = user.get_subscription(workflow)
+    assert subscription, "User should be subscribed to the workflow"
+
+    # check number of subscriptions before unsubscribing
+    r = app_client.get('/users/current/subscriptions', headers=user1_auth)
+    assert r.status_code == 200, f"Error when getting the list of subscriptions to the workflow {workflow}"
+    data = r.get_json()
+    logger.debug("Current list of subscriptions: %r", data)
+    assert 'items' in data, "Unexpected response type: missing 'items' property"
+    number_of_subscriptions = len(data['items'])
+    logger.debug("Current number of subscriptions: %r", number_of_subscriptions)
+
+    # check if there exists a subscription for the workflow
+    found = False
+    for s in data['items']:
+        if s['resource']['uuid'] == str(workflow.uuid):
+            found = True
+            break
+    assert found, "Unable to find the workflow among subscriptions"
 
     # try to delete the subscription via API
     r = app_client.post(
         utils.build_workflow_path(workflow, include_version=False, subpath='unsubscribe'), headers=user1_auth
     )
     assert r.status_code == 204, f"Error when unsubscribing to the workflow {workflow}"
+
+    # check number of subscriptions after unsubscribing
+    r = app_client.get('/users/current/subscriptions', headers=user1_auth)
+    assert r.status_code == 200, f"Error when getting the list of subscriptions to the workflow {workflow}"
+    data = r.get_json()
+    assert 'items' in data, "Unexpected response type: missing 'items' property"
+    assert len(data['items']) == number_of_subscriptions - 1, "Unexpected number of subscriptions"
 
 
 @pytest.mark.parametrize("client_auth_method", [
