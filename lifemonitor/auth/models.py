@@ -450,6 +450,7 @@ class Subscription(db.Model, ModelMixin):
 class Notification(db.Model, ModelMixin):
 
     id = db.Column(db.Integer, primary_key=True)
+    uuid = db.Column(UUID, default=_uuid.uuid4, nullable=False, index=True)
     created = db.Column(db.DateTime, default=datetime.datetime.utcnow)
     name = db.Column("name", db.String, nullable=True, index=True)
     _event = db.Column("event", db.Integer, nullable=False)
