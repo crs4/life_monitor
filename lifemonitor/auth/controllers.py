@@ -19,15 +19,12 @@
 # SOFTWARE.
 
 import logging
-from datetime import datetime
 
 import connexion
 import flask
 from flask import flash, redirect, render_template, request, session, url_for
 from flask_login import login_required, login_user, logout_user
-
 from lifemonitor.cache import Timeout, cached, clear_cache
-from lifemonitor.lang import messages as lm_messages
 from lifemonitor.utils import (NextRouteRegistry, next_route_aware,
                                split_by_crlf)
 

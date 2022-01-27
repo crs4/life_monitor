@@ -131,9 +131,10 @@ def send_email_notifications():
     count = 0
     for n in notifications:
         logger.debug("Processing notification %r ...", n)
-        recipients = [u.user.email for u in n.users
-                      if u.emailed is None and
-                      u.user.email_notifications_enabled and u.user.email is not None]
+        recipients = [
+            u.user.email for u in n.users
+            if u.emailed is None and u.user.email_notifications_enabled and u.user.email is not None
+        ]
         sent = send_notification(n, recipients)
         logger.debug("Notification email sent: %r", sent is not None)
         if sent:

@@ -22,7 +22,7 @@
 
 import logging
 
-from lifemonitor.auth.models import Subscription, User, EventType
+from lifemonitor.auth.models import User, EventType
 from tests import utils
 
 logger = logging.getLogger()
