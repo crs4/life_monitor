@@ -22,6 +22,7 @@ import logging
 
 import lifemonitor.auth.oauth2 as oauth2
 
+from .models import User, UserNotification, Notification, EventType
 from .controllers import blueprint as auth_blueprint
 from .services import (NotAuthorizedException, authorized, current_registry,
                        current_user, login_manager, login_registry, login_user,
@@ -40,6 +41,7 @@ def register_api(app, specs_dir):
 
 
 __all__ = [
+    User, UserNotification, Notification, EventType,
     register_api, current_user, current_registry, authorized,
     login_user, logout_user, login_registry, logout_registry,
     NotAuthorizedException
