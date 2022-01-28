@@ -462,6 +462,13 @@ class Subscription(db.Model, ModelMixin):
             EventType.ALL.value in self.__get_events() or \
             event.value in self.__get_events()
 
+    def has_events(self, events: List[EventType]) -> bool:
+        if events:
+            for e in events:
+                if not self.has_event(e):
+                    return False
+        return True
+
 
 class Notification(db.Model, ModelMixin):
 
