@@ -38,7 +38,7 @@ def test_workflow_subscription(user1: dict, valid_workflow: str):
     # check default events
     assert len(s.events) == 1, "Invalid number of events"
     assert s.has_event(EventType.ALL), f"Event '{EventType.ALL.name}' not registered on the subscription"
-    for event in EventType.list():
+    for event in EventType.all():
         assert s.has_event(event), f"Event '{event.name}' should be included"
 
     # check delete all events

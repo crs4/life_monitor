@@ -23,7 +23,7 @@ import logging
 
 import pytest
 from lifemonitor.api.services import LifeMonitor
-from lifemonitor.auth.models import User
+from lifemonitor.auth.models import EventType, User
 from tests import utils
 from tests.conftest_helpers import enable_auto_login
 from tests.conftest_types import ClientAuthenticationMethod
@@ -62,12 +62,34 @@ def test_user_unsubscribe_not_authorized(app_client, client_auth_method, user1, 
     ClientAuthenticationMethod.REGISTRY_CODE_FLOW
 ], indirect=True)
 @pytest.mark.parametrize("user1", [True], indirect=True)
-def test_user_subscribe_workflow(app_client, client_auth_method, user1, user1_auth, valid_workflow):
+def test_submitter_subscribe_workflow(app_client, client_auth_method,
+                                      user1, user1_auth, valid_workflow):
     workflow = utils.pick_workflow(user1, valid_workflow)
     logger.debug("User1 Auth Headers: %r", user1_auth)
     enable_auto_login(user1['user'])
     r = app_client.post(
-        utils.build_workflow_path(workflow, include_version=False, subpath='subscribe'), headers=user1_auth
+        utils.build_workflow_path(workflow, include_version=False, subpath='subscribe'),
+        headers=user1_auth
+    )
+    assert r.status_code == 204, f"Error when subscribing to the workflow {workflow}"
+
+
+@pytest.mark.parametrize("client_auth_method", [
+    #    ClientAuthenticationMethod.BASIC,
+    ClientAuthenticationMethod.API_KEY,
+    ClientAuthenticationMethod.AUTHORIZATION_CODE,
+    ClientAuthenticationMethod.REGISTRY_CODE_FLOW
+], indirect=True)
+@pytest.mark.parametrize("user1", [True], indirect=True)
+def test_user_subscribe_workflow(app_client, client_auth_method,
+                                 user1, user1_auth, user2, user2_auth,
+                                 valid_workflow):
+    workflow = utils.pick_workflow(user1, valid_workflow)
+    logger.debug("User1 Auth Headers: %r", user1_auth)
+    enable_auto_login(user1['user'])
+    r = app_client.post(
+        utils.build_workflow_path(workflow, include_version=False, subpath='subscribe'),
+        headers=user2_auth
     )
     assert r.status_code == 201, f"Error when subscribing to the workflow {workflow}"
     data = json.loads(r.data.decode())
@@ -81,12 +103,37 @@ def test_user_subscribe_workflow(app_client, client_auth_method, user1, user1_au
     ClientAuthenticationMethod.REGISTRY_CODE_FLOW
 ], indirect=True)
 @pytest.mark.parametrize("user1", [True], indirect=True)
-def test_user_subscribe_workflow_events(app_client, client_auth_method, user1, user1_auth, valid_workflow):
+def test_user_subscribe_workflow_old_events(app_client, client_auth_method,
+                                            user1, user1_auth, valid_workflow):
     workflow = utils.pick_workflow(user1, valid_workflow)
     logger.debug("User1 Auth Headers: %r", user1_auth)
     enable_auto_login(user1['user'])
-    r = app_client.post(
-        utils.build_workflow_path(workflow, include_version=False, subpath='subscribe'), headers=user1_auth
+    body = [EventType.ALL.name]
+    r = app_client.put(
+        utils.build_workflow_path(workflow, include_version=False, subpath='subscribe'),
+        headers=user1_auth,
+        json=body
+    )
+    assert r.status_code == 204, f"Error when subscribing to the workflow {workflow}"
+
+
+@pytest.mark.parametrize("client_auth_method", [
+    #    ClientAuthenticationMethod.BASIC,
+    ClientAuthenticationMethod.API_KEY,
+    ClientAuthenticationMethod.AUTHORIZATION_CODE,
+    ClientAuthenticationMethod.REGISTRY_CODE_FLOW
+], indirect=True)
+@pytest.mark.parametrize("user1", [True], indirect=True)
+def test_user_subscribe_workflow_new_events(app_client, client_auth_method,
+                                            user1, user1_auth, valid_workflow):
+    workflow = utils.pick_workflow(user1, valid_workflow)
+    logger.debug("User1 Auth Headers: %r", user1_auth)
+    enable_auto_login(user1['user'])
+    body = [EventType.BUILD_FAILED.name, EventType.BUILD_RECOVERED.name]
+    r = app_client.put(
+        utils.build_workflow_path(workflow, include_version=False, subpath='subscribe'),
+        headers=user1_auth,
+        json=body
     )
     assert r.status_code == 201, f"Error when subscribing to the workflow {workflow}"
     data = json.loads(r.data.decode())
@@ -148,9 +195,13 @@ def test_user_unsubscribe_workflow(app_client, client_auth_method, user1, user1_
     ClientAuthenticationMethod.REGISTRY_CODE_FLOW
 ], indirect=True)
 @pytest.mark.parametrize("user1", [True], indirect=True)
-def test_user_subscriptions(app_client, client_auth_method, user1, user1_auth, valid_workflow, lm: LifeMonitor):
+def test_user_subscriptions(app_client, client_auth_method,
+                            user1, user1_auth, user2, user2_auth,
+                            valid_workflow, lm: LifeMonitor):
+    # pick user1 workflow
     wdata = utils.pick_workflow(user1, valid_workflow)
-    user: User = user1['user']
+    # set user2 as current user
+    user: User = user2['user']
     enable_auto_login(user)
     # register a subscription
     workflow = lm.get_workflow(wdata['uuid'])
@@ -160,7 +211,7 @@ def test_user_subscriptions(app_client, client_auth_method, user1, user1_auth, v
 
     # get subscriptions of the current user
     r = app_client.get(
-        '/users/current/subscriptions', headers=user1_auth
+        '/users/current/subscriptions', headers=user2_auth
     )
     assert r.status_code == 200, "Error when trying to get user subscriptions"
     data = json.loads(r.data.decode())
