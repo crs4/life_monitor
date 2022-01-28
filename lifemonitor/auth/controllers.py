@@ -23,14 +23,15 @@ import logging
 import flask
 from flask import flash, redirect, render_template, request, session, url_for
 from flask_login import login_required, login_user, logout_user
-from lifemonitor.cache import cached, Timeout, clear_cache
+from lifemonitor.cache import Timeout, cached, clear_cache
 from lifemonitor.utils import (NextRouteRegistry, next_route_aware,
                                split_by_crlf)
 
 from .. import exceptions
 from ..utils import OpenApiSpecs
 from . import serializers
-from .forms import LoginForm, Oauth2ClientForm, RegisterForm, SetPasswordForm
+from .forms import (EmailForm, LoginForm, NotificationsForm, Oauth2ClientForm,
+                    RegisterForm, SetPasswordForm)
 from .models import db
 from .oauth2.client.services import (get_current_user_identity, get_providers,
                                      merge_users, save_current_user_identity)
@@ -97,7 +98,8 @@ def index():
 
 
 @blueprint.route("/profile", methods=("GET",))
-def profile(form=None, passwordForm=None, currentView=None):
+def profile(form=None, passwordForm=None, currentView=None,
+            emailForm=None, notificationsForm=None):
     currentView = currentView or request.args.get("currentView", 'accountsTab')
     logger.debug(OpenApiSpecs.get_instance().authorization_code_scopes)
     back_param = request.args.get('back', None)
@@ -111,6 +113,8 @@ def profile(form=None, passwordForm=None, currentView=None):
         logger.debug("detected back param: %s", back_param)
     return render_template("auth/profile.j2",
                            passwordForm=passwordForm or SetPasswordForm(),
+                           emailForm=emailForm or EmailForm(),
+                           notificationsForm=notificationsForm or NotificationsForm(),
                            oauth2ClientForm=form or Oauth2ClientForm(),
                            providers=get_providers(), currentView=currentView,
                            oauth2_generic_client_scopes=OpenApiSpecs.get_instance().authorization_code_scopes,
@@ -195,6 +199,77 @@ def set_password():
         flash("Password set successfully")
         return redirect(url_for("auth.profile"))
     return profile(passwordForm=form)
+
+
+@blueprint.route("/set_email", methods=("GET", "POST"))
+@login_required
+def set_email():
+    form = EmailForm()
+    if request.method == "GET":
+        return profile(emailForm=form, currentView='notificationsTab')
+    if form.validate_on_submit():
+        if form.email.data == current_user.email:
+            flash("email address not changed")
+        else:
+            current_user.email = form.email.data
+            db.session.add(current_user)
+            db.session.commit()
+            from lifemonitor.mail import send_email_validation_message
+            send_email_validation_message(current_user)
+            flash("email address registered")
+        return redirect(url_for("auth.profile", emailForm=form, currentView='notificationsTab'))
+    return profile(emailForm=form, currentView='notificationsTab')
+
+
+@blueprint.route("/send_verification_email", methods=("GET", "POST"))
+@login_required
+def send_verification_email():
+    try:
+        current_user.generate_email_verification_code()
+        from lifemonitor.mail import send_email_validation_message
+        send_email_validation_message(current_user)
+        current_user.save()
+        flash("Confirmation email sent")
+        logger.info("Confirmation email sent %r", current_user.id)
+    except Exception as e:
+        logger.error("An error occurred when sending email verification message for user %r",
+                     current_user.id)
+        logger.debug(e)
+    return redirect(url_for("auth.profile", currentView='notificationsTab'))
+
+
+@blueprint.route("/validate_email", methods=("GET", "POST"))
+@login_required
+def validate_email():
+    validated = False
+    try:
+        code = request.args.get("code", None)
+        current_user.verify_email(code)
+        current_user.save()
+        flash("Email address validated")
+    except exceptions.LifeMonitorException as e:
+        logger.debug(e)
+    logger.info("Email validated for user %r: %r", current_user.id, validated)
+    return redirect(url_for("auth.profile", currentView='notificationsTab'))
+
+
+@blueprint.route("/update_notifications_switch", methods=("GET", "POST"))
+@login_required
+def update_notifications_switch():
+    logger.debug("Updating notifications")
+    form = NotificationsForm()
+    if request.method == "GET":
+        return redirect(url_for('auth.profile', notificationsForm=form, currentView='notificationsTab'))
+    enable_notifications = form.enable_notifications.data
+    logger.debug("Enable notifications: %r", enable_notifications)
+    if enable_notifications:
+        current_user.enable_email_notifications()
+    else:
+        current_user.disable_email_notifications()
+    current_user.save()
+    enabled_str = "enabled" if current_user.email_notifications_enabled else "disabled"
+    flash(f"email notifications {enabled_str}")
+    return redirect(url_for("auth.profile", notificationsForm=form, currentView='notificationsTab'))
 
 
 @blueprint.route("/merge", methods=("GET", "POST"))

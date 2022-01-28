@@ -85,6 +85,16 @@ def values_as_string(values, in_separator='\\s?,\\s?|\\s+', out_separator=" "):
         raise ValueError("Invalid format")
 
 
+def boolean_value(value) -> bool:
+    if value is None or value == "":
+        return False
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        return bool_from_string(value)
+    raise ValueError(f"Invalid value for boolean. Got '{value}'")
+
+
 def bool_from_string(s) -> bool:
     if s is None or s == "":
         return None
@@ -468,3 +478,30 @@ class ClassManager:
 
     def get_classes(self):
         return [_[0] for _ in self._concrete_types.values()]
+
+
+class Base64Encoder(object):
+
+    _cache = {}
+
+    @classmethod
+    def encode_file(cls, file: str) -> str:
+        data = cls._cache.get(file, None)
+        if data is None:
+            with open(file, "rb") as f:
+                data = base64.b64encode(f.read())
+                cls._cache[file] = data
+        return data.decode()
+
+    @classmethod
+    def encode_object(cls, obj: object) -> str:
+        key = hash(frozenset(obj.items()))
+        data = cls._cache.get(key, None)
+        if data is None:
+            data = base64.b64encode(json.dumps(obj).encode())
+            cls._cache[key] = data
+        return data.decode()
+
+    @classmethod
+    def decode(cls, data: str) -> object:
+        return base64.b64decode(data.encode())

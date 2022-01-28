@@ -181,6 +181,13 @@ class RateLimitExceededException(TestingServiceException):
                          detail=detail, status=status, **kwargs)
 
 
+class IllegalStateException(LifeMonitorException):
+    def __init__(self, detail=None,
+                 type="about:blank", status=403, instance=None, **kwargs):
+        super().__init__(title="Illegal State Exception",
+                         detail=detail, status=status, **kwargs)
+
+
 def handle_exception(e: Exception):
     """Return JSON instead of HTML for HTTP errors."""
     # start with the correct headers and status code from the error

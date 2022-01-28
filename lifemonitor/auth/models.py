@@ -21,17 +21,24 @@
 from __future__ import annotations
 
 import abc
+import base64
 import datetime
+import json
 import logging
+import random
+import string
 import uuid as _uuid
+from enum import Enum
 from typing import List
 
 from authlib.integrations.sqla_oauth2 import OAuth2TokenMixin
 from flask_bcrypt import check_password_hash, generate_password_hash
 from flask_login import AnonymousUserMixin, UserMixin
+from lifemonitor import exceptions as lm_exceptions
 from lifemonitor import utils as lm_utils
 from lifemonitor.db import db
-from lifemonitor.models import UUID, ModelMixin
+from lifemonitor.models import JSON, UUID, ModelMixin
+from sqlalchemy import null
 from sqlalchemy.ext.hybrid import hybrid_property
 
 # Set the module level logger
@@ -55,13 +62,20 @@ class User(db.Model, UserMixin):
     username = db.Column(db.String(256), unique=True, nullable=False)
     password_hash = db.Column(db.LargeBinary, nullable=True)
     picture = db.Column(db.String(), nullable=True)
-
+    _email_notifications_enabled = db.Column("email_notifications", db.Boolean,
+                                             nullable=False, default=True)
+    _email = db.Column("email", db.String(), nullable=True)
+    _email_verification_code = None
+    _email_verification_hash = db.Column("email_verification_hash", db.String(256), nullable=True)
+    _email_verified = db.Column("email_verified", db.Boolean, nullable=True, default=False)
     permissions = db.relationship("Permission", back_populates="user",
                                   cascade="all, delete-orphan")
     authorizations = db.relationship("ExternalServiceAccessAuthorization",
                                      cascade="all, delete-orphan")
 
     subscriptions = db.relationship("Subscription", cascade="all, delete-orphan")
+
+    notifications: List[UserNotification] = db.relationship("UserNotification", back_populates="user")
 
     def __init__(self, username=None) -> None:
         super().__init__()
@@ -106,14 +120,98 @@ class User(db.Model, UserMixin):
     def has_password(self):
         return bool(self.password_hash)
 
+    def verify_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
+    def _generate_random_code(self, chars=string.ascii_uppercase + string.digits):
+        return base64.b64encode(
+            json.dumps(
+                {
+                    "email": self._email,
+                    "code": ''.join(random.choice(chars) for _ in range(16)),
+                    "expires": (datetime.datetime.now() + datetime.timedelta(hours=1)).timestamp()
+                }
+            ).encode('ascii')
+        ).decode()
+
+    @staticmethod
+    def _decode_random_code(code):
+        try:
+            code = code.encode() if isinstance(code, str) else code
+            return json.loads(base64.b64decode(code.decode('ascii')))
+        except Exception as e:
+            logger.debug(e)
+            return None
+
+    @property
+    def email_notifications_enabled(self):
+        return self._email_notifications_enabled
+
+    def disable_email_notifications(self):
+        self._email_notifications_enabled = False
+
+    def enable_email_notifications(self):
+        self._email_notifications_enabled = True
+
+    @property
+    def email(self) -> str:
+        return self._email
+
+    @email.setter
+    def email(self, email: str):
+        if email and email != self._email:
+            self._email = email
+            self.generate_email_verification_code()
+
+    @email.deleter
+    def email(self):
+        self._email = None
+        self._email_verified = False
+
+    def generate_email_verification_code(self):
+        self._email_verified = False
+        code = self._generate_random_code()
+        self._email_verification_code = code
+        self._email_verification_hash = generate_password_hash(code).decode('utf-8')
+        return self._email_verification_code
+
+    @property
+    def email_verification_code(self) -> str:
+        return self._email_verification_code
+
+    @property
+    def email_verified(self) -> bool:
+        return self._email_verified
+
+    def verify_email(self, code):
+        if not self._email:
+            raise lm_exceptions.IllegalStateException(detail="No notification email found")
+        # verify integrity
+        if not code or \
+            not check_password_hash(
+                self._email_verification_hash, code):
+            raise lm_exceptions.LifeMonitorException(detail="Invalid verification code")
+        try:
+            data = self._decode_random_code(code)
+        except Exception as e:
+            logger.debug(e)
+            raise lm_exceptions.LifeMonitorException(detail="Invalid verification code")
+        if data['email'] != self._email:
+            raise lm_exceptions.LifeMonitorException(detail="Notification email not valid")
+        if data['expires'] < datetime.datetime.now().timestamp():
+            raise lm_exceptions.LifeMonitorException(detail="Verification code expired")
+        self._email_verified = True
+        return True
+
+    def remove_notification(self, n: Notification):
+        if n is not None:
+            n.remove_user(n)
+
     def has_permission(self, resource: Resource) -> bool:
         return self.get_permission(resource) is not None
 
     def get_permission(self, resource: Resource) -> Permission:
         return next((p for p in self.permissions if p.resource == resource), None)
-
-    def verify_password(self, password):
-        return check_password_hash(self.password_hash, password)
 
     def get_subscription(self, resource: Resource) -> Subscription:
         return next((s for s in self.subscriptions if s.resource == resource), None)
@@ -275,6 +373,86 @@ class Subscription(db.Model, ModelMixin):
     def __init__(self, resource: Resource, user: User) -> None:
         self.resource = resource
         self.user = user
+
+
+class Notification(db.Model, ModelMixin):
+
+    class Types(Enum):
+        BUILD_FAILED = 0
+        BUILD_RECOVERED = 1
+
+    id = db.Column(db.Integer, primary_key=True)
+    created = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    name = db.Column("name", db.String, nullable=True, index=True)
+    _type = db.Column("type", db.String, nullable=False)
+    _data = db.Column("data", JSON, nullable=True)
+
+    users: List[UserNotification] = db.relationship("UserNotification", back_populates="notification")
+
+    def __init__(self, type: str, name: str, data: object, users: List[User]) -> None:
+        self.name = name
+        self._type = type
+        self._data = data
+        for u in users:
+            self.add_user(u)
+
+    @property
+    def type(self) -> str:
+        return self._type
+
+    @property
+    def data(self) -> object:
+        return self._data
+
+    def add_user(self, user: User):
+        if user and user not in self.users:
+            UserNotification(user, self)
+
+    def remove_user(self, user: User):
+        self.users.remove(user)
+
+    @classmethod
+    def find_by_name(cls, name: str) -> List[Notification]:
+        return cls.query.filter(cls.name == name).all()
+
+    @classmethod
+    def not_read(cls) -> List[Notification]:
+        return cls.query.join(UserNotification, UserNotification.notification_id == cls.id)\
+            .filter(UserNotification.read == null()).all()
+
+    @classmethod
+    def not_emailed(cls) -> List[Notification]:
+        return cls.query.join(UserNotification, UserNotification.notification_id == cls.id)\
+            .filter(UserNotification.emailed == null()).all()
+
+
+class UserNotification(db.Model):
+
+    emailed = db.Column(db.DateTime, default=None, nullable=True)
+    read = db.Column(db.DateTime, default=None, nullable=True)
+
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False, primary_key=True)
+
+    notification_id = db.Column(db.Integer, db.ForeignKey("notification.id"), nullable=False, primary_key=True)
+
+    user: User = db.relationship("User", uselist=False,
+                                 back_populates="notifications", foreign_keys=[user_id])
+
+    notification: Notification = db.relationship("Notification", uselist=False,
+                                                 back_populates="users",
+                                                 foreign_keys=[notification_id])
+
+    def __init__(self, user: User, notification: Notification) -> None:
+        self.user = user
+        self.notification = notification
+
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
 
 
 class HostingService(Resource):

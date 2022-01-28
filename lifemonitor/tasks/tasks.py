@@ -5,7 +5,11 @@ import dramatiq
 import flask
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
+from lifemonitor.api.models.testsuites.testbuild import BuildStatus
+from lifemonitor.api.serializers import BuildSummarySchema
+from lifemonitor.auth.models import Notification
 from lifemonitor.cache import Timeout
+from lifemonitor.mail import send_notification
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -97,9 +101,44 @@ def check_last_build():
                         logger.info("Updating latest builds: %r", builds)
                         for b in builds:
                             logger.info("Updating build: %r", i.get_test_build(b.id))
-                        logger.info("Updating latest build: %r", i.last_test_build)
+                        last_build = i.last_test_build
+                        logger.info("Updating latest build: %r", last_build)
+                        if last_build.status == BuildStatus.FAILED:
+                            notification_name = f"{last_build} FAILED"
+                            if len(Notification.find_by_name(notification_name)) == 0:
+                                users = {s.user for s in w.subscriptions if s.user.email_notifications_enabled}
+                                users.update({v.submitter for v in w.versions.values() if v.submitter.email_notifications_enabled})
+                                users.update({s.user for v in w.versions.values() for s in v.subscriptions if s.user.email_notifications_enabled})
+                                n = Notification(Notification.Types.BUILD_FAILED.name,
+                                                 notification_name,
+                                                 {'build': BuildSummarySchema().dump(last_build)},
+                                                 users)
+                                n.save()
         except Exception as e:
             logger.error("Error when executing task 'check_last_build': %s", str(e))
             if logger.isEnabledFor(logging.DEBUG):
                 logger.exception(e)
     logger.info("Checking last build: DONE!")
+
+
+@schedule(IntervalTrigger(seconds=60))
+@dramatiq.actor(max_retries=0, max_age=30000)
+def send_email_notifications():
+    notifications = Notification.not_emailed()
+    logger.info("Found %r notifications to send by email", len(notifications))
+    count = 0
+    for n in notifications:
+        logger.debug("Processing notification %r ...", n)
+        recipients = [u.user.email for u in n.users
+                      if u.emailed is None and u.user.email is not None]
+        sent = send_notification(n, recipients)
+        logger.debug("Notification email sent: %r", sent is not None)
+        if sent:
+            logger.debug("Notification '%r' sent by email @ %r", n.id, sent)
+            for u in n.users:
+                if u.user.email in recipients:
+                    u.emailed = sent
+            n.save()
+            count += 1
+        logger.debug("Processing notification %r ... DONE", n)
+    logger.info("%r notifications sent by email", count)

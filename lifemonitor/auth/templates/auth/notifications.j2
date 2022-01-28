@@ -1,0 +1,70 @@
+{% import 'auth/macros.j2' as macros %}
+
+<form method="POST" action="{{ url_for('auth.update_notifications_switch') }}">
+    {{ notificationsForm.hidden_tag() }}
+    <div class="row">
+        <div class="card-body offset-8 col-4">
+            <div class="checkbox">
+                <label class="p-2" for="enable_notifications">
+                    Email notifications
+                </label>
+                <input type="checkbox" name="enable_notifications" onChange="this.form.submit()" data-toggle="toggle" {%
+                    if current_user.email_notifications_enabled %}checked{% endif%}>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        label.toggle-off {
+            width: 70px;
+            padding-left: 0;
+            margin: 0;
+        }
+
+    </style>
+</form>
+
+<div class="card-header">
+    <h3 class="card-title"><b>Email</b></h3>
+</div>
+
+<div class="card-body">
+    {% if current_user.email and not current_user.email_verified %}
+    <div style="margin: 20px auto; width: 80%; border-radius: 10px; background-color: whitesmoke; padding: 20px;">
+        <div class="row">
+            <div class="col-md-2 h-100 m-auto text-center" style="min-width: 70px;">
+                <div class="align-middle">
+                    <i class="fas fa-exclamation-circle fa-4x" style="color: #f9b233"></i>
+                </div>
+            </div>
+            <div class="col-md-10 p-1">
+                Your current email address <b>{{ current_user.email }}</b> is not validated!
+                Check your email inbox or click <a href="{{ url_for('auth.send_verification_email') }}">here</a>
+                if you do not have received the verification email.
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="text-muted pt-2 pb-2">
+        Use the form below to
+        {% if not current_user.email %}set{% endif %}
+        {% if current_user.email %}update{% endif %}
+        your email.
+    </div>
+
+    <form method="POST" action="{{ url_for('auth.set_email') }}">
+        {{ emailForm.hidden_tag() }}
+        <div class="form-group">
+            <label for="Email" class="col-form-label">Email</label>
+            {{ macros.render_custom_field(emailForm.email, value=current_user.email) }}
+        </div>
+        <div class="form-group">
+            <label for="Repeat Email" class="col-form-label">Repeat email</label>
+            {{ macros.render_custom_field(emailForm.repeat_email) }}
+        </div>
+        <div class="form-group pt-3">
+            <button type="submit" class="btn btn-primary">Update</button>
+        </div>
+    </form>
+</div>

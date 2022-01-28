@@ -10,6 +10,9 @@ fullnameOverride: ""
 # used as base_url on all the links returned by the API
 externalServerName: &hostname api.lifemonitor.eu
 
+# Base URL of the LifeMonitor web app associated with this back-end instance
+webappUrl: &webapp_url https://app.lifemonitor.eu
+
 # global storage class
 storageClass: &storageClass "-"
 
@@ -67,6 +70,16 @@ cache:
     session: 3600
     workflow: 1800
     build: 84600
+
+# Email settings
+mail:
+  server: ""
+  port: 465
+  username: ""
+  password: ""
+  tls: false
+  ssl: true
+  default_sender: ""
 
 lifemonitor:
   replicaCount: 1

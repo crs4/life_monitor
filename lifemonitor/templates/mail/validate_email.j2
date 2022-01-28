@@ -1,0 +1,86 @@
+<html>
+<head>
+  <!-- include font -->
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;600&amp;family=Roboto+Mono&amp;display=swap"
+    rel="stylesheet">
+  <style>
+    body {
+      font-family: "Open Sans";
+      font-size: 16px;
+      font-weight: 200;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4 {
+      font-weight: 150;
+      color: hsl(180, 63%, 33%);
+    }
+
+    a:link,
+    a:visited {
+      color: hsl(180, 63%, 33%);
+      text-decoration: none;
+    }
+
+    a:hover,
+    a:active {
+      color: #003333;
+      text-decoration: none;
+    }
+
+    a.button:link,
+    a.button:visited {
+      background-color: hsl(180, 63%, 33%);
+      color: white;
+      padding: 14px 25px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    a.button:hover,
+    a.button:active {
+      background-color: #003333;
+    }
+
+    div.details-box {
+      width: 400px;
+      margin: 25px auto;
+      padding: 10px;
+      background: whitesmoke;
+      border-radius: 10px;
+    }
+
+  </style>
+</head>
+<body>
+  <div style="text-align: center;">
+    <img alt="My Image" src="data:image/png;base64,{{logo}}" height="80px" />
+
+    <h1>
+      email updated
+    </h1>
+
+    <h3 style="margin-top: 50px;">
+      Hi, <b>{{user.username}}</b>
+    </h3>
+
+    <div style="width=400px;">
+      Click the button below to confirm your email address
+
+    </div>
+    <div style="padding: 25px;">
+      <a class="button" target="_blank" href="{{confirmation_address}}">
+        Confirm your email
+      </a>
+    </div>
+
+    <div style="font-size: small; padding: 20px;">
+      or copy and paste the following link into your browser
+      <a href="{{confirmation_address}}">{{confirmation_address}}</a>
+    </div>
+    <div>
+</body>
+</html>
