@@ -113,7 +113,7 @@ def check_last_build():
                                 users = latest_version.workflow.get_subscribers()
                                 n = Notification(EventType.BUILD_FAILED,
                                                  notification_name,
-                                                 {'build': BuildSummarySchema().dump(last_build)},
+                                                 {'build': BuildSummarySchema(exclude_nested=False).dump(last_build)},
                                                  users)
                                 n.save()
         except Exception as e:
