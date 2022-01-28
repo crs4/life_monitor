@@ -1,4 +1,5 @@
 
+import datetime
 import logging
 
 import dramatiq
@@ -146,3 +147,21 @@ def send_email_notifications():
             count += 1
         logger.debug("Processing notification %r ... DONE", n)
     logger.info("%r notifications sent by email", count)
+
+
+@schedule(CronTrigger(minute=0, hour=1))
+@dramatiq.actor(max_retries=0, max_age=TASK_EXPIRATION_TIME)
+def cleanup_notifications():
+    logger.info("Starting notification cleanup")
+    count = 0
+    current_time = datetime.datetime.utcnow()
+    one_week_ago = current_time - datetime.timedelta(days=0)
+    notifications = Notification.older_than(one_week_ago)
+    for n in notifications:
+        try:
+            n.delete()
+            count += 1
+        except Exception as e:
+            logger.debug(e)
+            logger.error("Error when deleting notification %r", n)
+    logger.info("Notification cleanup completed: deleted %r notifications", count)
