@@ -325,15 +325,15 @@ class EventType(Enum):
     BUILD_RECOVERED = 2
 
     @classmethod
-    def list(cls):
+    def all(cls):
         return list(map(lambda c: c, cls))
 
     @classmethod
-    def names(cls):
+    def all_names(cls):
         return list(map(lambda c: c.name, cls))
 
     @classmethod
-    def values(cls):
+    def all_values(cls):
         return list(map(lambda c: c.value, cls))
 
     @classmethod
