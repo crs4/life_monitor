@@ -455,6 +455,8 @@ class Subscription(db.Model, ModelMixin):
         self.__get_events().clear()
         if events:
             for e in events:
+                if not isinstance(e, EventType):
+                    raise ValueError(f"Not valid event value: expected {EventType.__class__}, got {type(e)}")
                 self.__get_events().add(e.value)
 
     def has_event(self, event: EventType) -> bool:
