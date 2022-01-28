@@ -26,7 +26,7 @@ from typing import List, Optional, Union
 
 import lifemonitor.exceptions as lm_exceptions
 from lifemonitor.api import models
-from lifemonitor.auth.models import (ExternalServiceAuthorizationHeader,
+from lifemonitor.auth.models import (EventType, ExternalServiceAuthorizationHeader,
                                      Notification, Permission, Resource,
                                      RoleType, Subscription, User)
 from lifemonitor.auth.oauth2.client import providers
@@ -233,7 +233,7 @@ class LifeMonitor:
             raise lm_exceptions.SpecificationNotValidException(f"Missing property: {e}")
 
     @staticmethod
-    def subscribe_user_resource(user: User, resource: Resource, events: List[str] = None) -> Subscription:
+    def subscribe_user_resource(user: User, resource: Resource, events: List[EventType] = None) -> Subscription:
         assert user and not user.is_anonymous, "Invalid user"
         assert resource, "Invalid resource"
         subscription = user.subscribe(resource)
