@@ -270,10 +270,14 @@ def user_workflow_subscribe(wf_uuid):
     response = _get_workflow_or_problem(wf_uuid)
     if isinstance(response, Response):
         return response
+    subscribed = current_user.is_subscribed_to(response.workflow)
     subscription = lm.subscribe_user_resource(current_user, response.workflow)
     logger.debug("Created new subscription: %r", subscription)
     clear_cache()
-    return auth_serializers.SubscriptionSchema(exclude=('meta', 'links')).dump(subscription), 201
+    if not subscribed:
+        return auth_serializers.SubscriptionSchema(exclude=('meta', 'links')).dump(subscription), 201
+    else:
+        return connexion.NoContent, 204
 
 
 @authorized
