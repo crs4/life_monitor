@@ -18,9 +18,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import os
 import base64
 import logging
+import os
 import tempfile
 
 import connexion
@@ -29,8 +29,10 @@ import werkzeug
 from flask import Response, request
 from lifemonitor.api import serializers
 from lifemonitor.api.services import LifeMonitor
-from lifemonitor.auth import authorized, current_registry, current_user
+from lifemonitor.auth import (EventType, authorized, current_registry,
+                              current_user)
 from lifemonitor.auth import serializers as auth_serializers
+from lifemonitor.auth.models import Subscription
 from lifemonitor.auth.oauth2.client.models import \
     OAuthIdentityNotFoundException
 from lifemonitor.cache import Timeout, cached, clear_cache
@@ -283,20 +285,28 @@ def user_workflow_subscribe(wf_uuid):
 @authorized
 def user_workflow_subscribe_events(wf_uuid, body):
     workflow_version = _get_workflow_or_problem(wf_uuid)
-    events = body
-    if events is None or not isinstance(events, list):
+
+    if body is None or not isinstance(body, list):
         return lm_exceptions.report_problem(400, "Bad request",
-                                            detail=messages.unexpected_registry_uri)
-    if isinstance(workflow_version, Response):
-        return workflow_version
-    subscribed = current_user.is_subscribed_to(workflow_version.workflow)
-    subscription = lm.subscribe_user_resource(current_user, workflow_version.workflow, events=events)
-    logger.debug("Updated subscription events: %r", subscription)
-    clear_cache()
-    if not subscribed:
+                                            detail=messages.invalid_event_type.format(EventType.all_names()))
+    try:
+        events = EventType.from_strings(body)
+        if isinstance(workflow_version, Response):
+            return workflow_version
+        subscription: Subscription = current_user.get_subscription(workflow_version.workflow)
+        if subscription and subscription.events == events:
+            return connexion.NoContent, 204
+        subscription = lm.subscribe_user_resource(current_user, workflow_version.workflow, events=events)
+        logger.debug("Updated subscription events: %r", subscription)
+        clear_cache()
         return auth_serializers.SubscriptionSchema(exclude=('meta', 'links')).dump(subscription), 201
-    else:
-        return connexion.NoContent, 204
+    except ValueError as e:
+        logger.debug(e)
+        return lm_exceptions.report_problem(400, "Bad request",
+                                            detail=messages.invalid_event_type.format(EventType.all_names()))
+    except Exception as e:
+        logger.debug(e)
+        return lm_exceptions.report_problem_from_exception(e)
 
 
 @authorized
