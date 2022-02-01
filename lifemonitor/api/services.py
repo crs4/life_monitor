@@ -511,6 +511,16 @@ class LifeMonitor:
         user.save()
 
     @staticmethod
+    def deleteUserNotification(user: User, notitification_uuid: str):
+        if notitification_uuid is not None:
+            n = user.get_user_notification(notitification_uuid)
+            logger.debug("Search result notification %r ...", n)
+            if n is None:
+                return lm_exceptions.EntityNotFoundException(Notification, entity_id=n_uuid)
+            user.notifications.remove(n)
+            user.save()
+
+    @staticmethod
     def deleteUserNotifications(user: User, list_of_uuids: List[str]):
         for n_uuid in list_of_uuids:
             logger.debug("Searching notification %r ...", n_uuid)

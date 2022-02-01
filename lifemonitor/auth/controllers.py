@@ -110,6 +110,22 @@ def user_notifications_patch(body):
 
 
 @authorized
+@cached(timeout=Timeout.REQUEST)
+def user_notifications_delete(notification_uuid):
+    try:
+        if not current_user or current_user.is_anonymous:
+            raise exceptions.Forbidden(detail="Client type unknown")
+        __lifemonitor_service__().deleteUserNotification(current_user, notification_uuid)
+        clear_cache()
+        return connexion.NoContent, 204
+    except exceptions.EntityNotFoundException as e:
+        return exceptions.report_problem_from_exception(e)
+    except Exception as e:
+        logger.debug(e)
+        return exceptions.report_problem_from_exception(e)
+
+
+@authorized
 def user_subscriptions_get():
     return serializers.ListOfSubscriptions().dump(current_user.subscriptions)
 

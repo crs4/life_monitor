@@ -260,6 +260,32 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  /users/current/notifications/{notification_uuid}:
+    delete:
+      tags: ["Users"]
+      x-openapi-router-controller: lifemonitor.auth.controllers
+      operationId: "user_notifications_delete"
+      summary: Delete notification for the current user
+      description: |
+        Delete notification for the current (authenticated) user
+      security:
+        - apiKey: ["user.profile"]
+        - RegistryCodeFlow: ["user.profile"]
+        - AuthorizationCodeFlow: ["user.profile"]
+      parameters:
+        - $ref: "#/components/parameters/notification_uuid"
+      responses:
+        "204":
+          description: "Notifications updated"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   /registries/current:
     get:
       tags: ["Registry Client Operations"]
@@ -1416,6 +1442,14 @@ components:
         minimum: 1
         default: 10
       description: "Maximum number of items to retrieve"
+    notification_uuid:
+      name: "notification_uuid"
+      description: "Universal unique identifier of the user notification"
+      in: path
+      schema:
+        type: string
+      required: true
+      example: 123e4567-e89b-12d3-a456-426614174000
 
   responses:
     NotFound:
