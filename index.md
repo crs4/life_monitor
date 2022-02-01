@@ -48,14 +48,14 @@ LifeMonitor is still in early development.  Here is our planned development road
   - [x] Web interface
   - Support monitoring tests running on external testing services:
       - [x] Github Actions
-  - [ ] Workflow submission from the Web interface
+  - [x] Workflow submission from the Web interface
 
 #### Later
   - [ ] WorkflowHub integration
-  - [ ] Programmable periodic test execution
-  - [ ] Support workflow test creation
-  - [ ] Workflow maintenance plugins (e.g., Docker image linting)
   - [ ] Automatic configuration of GitHub Actions for workflow testing
+  - [ ] Support workflow test creation
+  - [ ] Programmable periodic test execution
+  - [ ] Workflow maintenance plugins (e.g., Docker image linting)
 
 
 ## Acknowledgments
