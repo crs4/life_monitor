@@ -113,7 +113,7 @@ includes the main workflow file:
 {
     "@id": "workflow/Snakefile",
     "@type": "File"
-},
+}
 ```
 
 To register it as a computational workflow, run the following command:
@@ -193,7 +193,7 @@ LifeMonitor will set them to the default values. Finally, click on "Register"
 to complete the process.
 
 The "Remote RO-Crate Archive" registration option is similar to the above, but
-in that case you need to specify a URL for the RO-Crate zip, rather than
+in this case you need to specify a URL for the RO-Crate zip, rather than
 choose a file from your local file system.
 
 The third option is to register with LifeMonitor a workflow that's already
