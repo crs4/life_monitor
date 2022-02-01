@@ -27,8 +27,8 @@ from typing import Optional
 
 import lifemonitor.api.models as models
 import lifemonitor.exceptions as lm_exceptions
-
 from lifemonitor.lang import messages
+from requests.exceptions import ConnectionError
 
 import jenkins
 
@@ -114,6 +114,8 @@ class JenkinsTestingService(TestingService):
                     self.get_job_name(test_instance.resource), fetch_all_builds=fetch_all_builds)
             except jenkins.JenkinsException as e:
                 raise lm_exceptions.TestingServiceException(f"{self}: {e}")
+            except ConnectionError as e:
+                raise lm_exceptions.TestingServiceException(f"Unable to connect to {self}", detail=str(e))
         return test_instance._raw_metadata
 
     def get_test_builds(self, test_instance: models.TestInstance, limit=10) -> list:
