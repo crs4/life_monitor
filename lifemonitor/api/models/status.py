@@ -106,6 +106,14 @@ class Status:
                         "issue": str(e)
                     })
                     logger.exception(e)
+                except Exception as e:
+                    availability_issues.append({
+                        "service": test_instance.testing_service.url,
+                        "resource": test_instance.resource,
+                        "issue": str(e)
+                    })
+                    logger.exception(e)
+
         # update the current status
         return status, latest_builds, availability_issues
 
