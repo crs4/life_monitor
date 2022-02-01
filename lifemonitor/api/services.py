@@ -516,7 +516,7 @@ class LifeMonitor:
             n = user.get_user_notification(notitification_uuid)
             logger.debug("Search result notification %r ...", n)
             if n is None:
-                return lm_exceptions.EntityNotFoundException(Notification, entity_id=n_uuid)
+                return lm_exceptions.EntityNotFoundException(Notification, entity_id=notitification_uuid)
             user.notifications.remove(n)
             user.save()
 
