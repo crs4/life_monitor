@@ -6,11 +6,7 @@ Workflow Testing RO-Crate is a specialization of [Workflow RO-Crate](https://abo
 
 ## Introduction
 
-The LifeMonitor service aims to provide two main functionalities:
-
-* Monitor workflow tests being executed on one or more Continuous Integration (CI) services. In this case the test metadata specifies a series of test **instances**, corresponding to execution jobs of the test suite on the testing service(s).
-
-* Execute test suites according to a **definition** included in the metadata. Tests are defined according to specific test **engines**, such as [Planemo](https://planemo.readthedocs.io/en/latest/test_format.html).
+The LifeMonitor service monitors workflow tests being executed on one or more Continuous Integration (CI) services (e.g., [GitHub Actions](https://docs.github.com/en/actions)). In this case, the testing metadata specifies one or more test **instances**, corresponding to execution jobs of the test suite on the testing service(s). LifeMonitor also aims to aid users in setting up such instances: for this reason, this spec also includes a formalism to describe test **definitions**, where tests are defined according to specific test **engines**, such as [Planemo](https://planemo.readthedocs.io/en/latest/test_format.html).
 
 ## Concepts
 
