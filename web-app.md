@@ -229,3 +229,11 @@ above](#making-a-workflow-testing-ro-crate), pick that workflow from the
 list. Similarly to other registration types, you will now have the option to
 choose a name for the workflow. When you're done, click on "Register" to
 finish. If all went well, the new workflow should show up on your dashboard.
+
+### Changing the visibility of your workflow
+
+By default, after registering a workflow, its visibility will be private,
+i.e., only the submitting user will be able to see it. To make it publicly
+visible, click on the "edit" icon at the top right of the workflows table,
+then click on the "change" button that appears in the "Visibility" column: you
+will be asked to confirm your choice, then the workflow will become public.
