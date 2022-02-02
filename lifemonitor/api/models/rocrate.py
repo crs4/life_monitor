@@ -100,7 +100,8 @@ class ROCrate(Resource):
 
     @property
     def main_entity_name(self):
-        return self._roc_helper.mainEntity['name']
+        mainEntity = self._roc_helper.mainEntity
+        return mainEntity['name'] if mainEntity and 'name' in mainEntity else None
 
     @property
     def _roc_helper(self):
