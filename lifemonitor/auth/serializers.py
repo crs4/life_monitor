@@ -119,12 +119,16 @@ class SubscriptionSchema(ResourceMetadataSchema):
     modified = fields.String(attribute='modified')
 
     resource = fields.Method("get_resource")
+    events = fields.Method("get_events")
 
     def get_resource(self, obj: models.Subscription):
         return {
             'uuid': obj.resource.uuid,
             'type': obj.resource.type
         }
+
+    def get_events(self, obj: models.Subscription):
+        return models.EventType.to_strings(obj.events)
 
 
 class ListOfSubscriptions(ListOfItems):
@@ -138,11 +142,12 @@ class NotificationSchema(ResourceMetadataSchema):
     class Meta:
         model = models.UserNotification
 
+    uuid = fields.String(attribute='notification.uuid')
     created = fields.DateTime(attribute='notification.created')
     emailed = fields.DateTime(attribute='emailed')
     read = fields.DateTime(attribute='read')
     name = fields.String(attribute="notification.name")
-    type = fields.String(attribute="notification.type")
+    event = fields.String(attribute="notification.event.name")
     data = fields.Dict(attribute="notification.data")
 
     @post_dump

@@ -266,7 +266,9 @@ class Cache(object):
     @classmethod
     def _make_key(cls, key: str, prefix: str = CACHE_PREFIX) -> str:
         if cls._hash_function:
-            key = cls._hash_function(key.encode()).hexdigest()
+            parts = key.split("::")
+            if len(parts) > 1 and parts[1] != '*':
+                key = f"{parts[0]}::{cls._hash_function(parts[1].encode()).hexdigest()}"
         return f"{prefix}{key}"
 
     @classmethod

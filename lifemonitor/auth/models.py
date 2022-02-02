@@ -37,9 +37,10 @@ from flask_login import AnonymousUserMixin, UserMixin
 from lifemonitor import exceptions as lm_exceptions
 from lifemonitor import utils as lm_utils
 from lifemonitor.db import db
-from lifemonitor.models import JSON, UUID, ModelMixin
+from lifemonitor.models import JSON, UUID, IntegerSet, ModelMixin
 from sqlalchemy import null
 from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.ext.mutable import MutableSet
 
 # Set the module level logger
 logger = logging.getLogger(__name__)
@@ -75,7 +76,9 @@ class User(db.Model, UserMixin):
 
     subscriptions = db.relationship("Subscription", cascade="all, delete-orphan")
 
-    notifications: List[UserNotification] = db.relationship("UserNotification", back_populates="user")
+    notifications: List[UserNotification] = db.relationship("UserNotification",
+                                                            back_populates="user",
+                                                            cascade="all, delete-orphan")
 
     def __init__(self, username=None) -> None:
         super().__init__()
@@ -203,9 +206,25 @@ class User(db.Model, UserMixin):
         self._email_verified = True
         return True
 
-    def remove_notification(self, n: Notification):
-        if n is not None:
-            n.remove_user(n)
+    def get_user_notification(self, notification_uuid: str) -> UserNotification:
+        return next((n for n in self.notifications if str(n.notification.uuid) == notification_uuid), None)
+
+    def get_notification(self, notification_uuid: str) -> Notification:
+        user_notification = self.get_user_notification(notification_uuid)
+        return None if not user_notification else user_notification.notification
+
+    def remove_notification(self, n: Notification | UserNotification):
+        user_notification = None
+        try:
+            user_notification = self.get_user_notification(n.uuid)
+            if user_notification is None:
+                raise ValueError(f"notification {n.uuid} not associated to this user")
+        except Exception:
+            user_notification = n
+        if n is None:
+            raise ValueError("notification cannot be None")
+        self.notifications.remove(user_notification)
+        logger.debug("User notification %r removed", user_notification)
 
     def has_permission(self, resource: Resource) -> bool:
         return self.get_permission(resource) is not None
@@ -215,6 +234,9 @@ class User(db.Model, UserMixin):
 
     def get_subscription(self, resource: Resource) -> Subscription:
         return next((s for s in self.subscriptions if s.resource == resource), None)
+
+    def is_subscribed_to(self, resource: Resource) -> bool:
+        return self.get_subscription(resource) is not None
 
     def subscribe(self, resource: Resource) -> Subscription:
         s = self.get_subscription(resource)
@@ -297,6 +319,45 @@ class ApiKey(db.Model, ModelMixin):
         return cls.query.all()
 
 
+class EventType(Enum):
+    ALL = 0
+    BUILD_FAILED = 1
+    BUILD_RECOVERED = 2
+
+    @classmethod
+    def all(cls):
+        return list(map(lambda c: c, cls))
+
+    @classmethod
+    def all_names(cls):
+        return list(map(lambda c: c.name, cls))
+
+    @classmethod
+    def all_values(cls):
+        return list(map(lambda c: c.value, cls))
+
+    @classmethod
+    def to_string(cls, event: EventType) -> str:
+        return event.name if event else None
+
+    @classmethod
+    def to_strings(cls, event_list: List[EventType]) -> List[str]:
+        return [cls.to_string(_) for _ in event_list if _] if event_list else []
+
+    @classmethod
+    def from_string(cls, event_name: str) -> EventType:
+        try:
+            return cls[event_name]
+        except KeyError:
+            raise ValueError("'%s' is not a valid EventType", event_name)
+
+    @classmethod
+    def from_strings(cls, event_name_list: List[str]) -> List[EventType]:
+        if not event_name_list:
+            return []
+        return [cls.from_string(_) for _ in event_name_list]
+
+
 class Resource(db.Model, ModelMixin):
 
     id = db.Column('id', db.Integer, primary_key=True)
@@ -346,6 +407,11 @@ class Resource(db.Model, ModelMixin):
     def find_by_uuid(cls, uuid):
         return cls.query.filter(cls.uuid == lm_utils.uuid_param(uuid)).first()
 
+    def get_subscribers(self, event: EventType = EventType.ALL) -> List[User]:
+        users = {s.user for s in self.subscriptions if s.has_event(event)}
+        users.update({s.user for s in self.subscriptions if s.has_event(event)})
+        return users
+
 
 resource_authorization_table = db.Table(
     'resource_authorization', db.Model.metadata,
@@ -369,36 +435,65 @@ class Subscription(db.Model, ModelMixin):
     resource: Resource = db.relationship("Resource", uselist=False,
                                          backref=db.backref("subscriptions", cascade="all, delete-orphan"),
                                          foreign_keys=[resource_id])
+    _events = db.Column("events", MutableSet.as_mutable(IntegerSet()), default={0})
 
     def __init__(self, resource: Resource, user: User) -> None:
         self.resource = resource
         self.user = user
 
+    def __get_events(self):
+        if self._events is None:
+            self._events = {0}
+        return self._events
+
+    @property
+    def events(self) -> set:
+        return [EventType(e) for e in self.__get_events()]
+
+    @events.setter
+    def events(self, events: List[EventType]):
+        self.__get_events().clear()
+        if events:
+            for e in events:
+                if not isinstance(e, EventType):
+                    raise ValueError(f"Not valid event value: expected {EventType.__class__}, got {type(e)}")
+                self.__get_events().add(e.value)
+
+    def has_event(self, event: EventType) -> bool:
+        return False if event is None else \
+            EventType.ALL.value in self.__get_events() or \
+            event.value in self.__get_events()
+
+    def has_events(self, events: List[EventType]) -> bool:
+        if events:
+            for e in events:
+                if not self.has_event(e):
+                    return False
+        return True
+
 
 class Notification(db.Model, ModelMixin):
 
-    class Types(Enum):
-        BUILD_FAILED = 0
-        BUILD_RECOVERED = 1
-
     id = db.Column(db.Integer, primary_key=True)
+    uuid = db.Column(UUID, default=_uuid.uuid4, nullable=False, index=True)
     created = db.Column(db.DateTime, default=datetime.datetime.utcnow)
     name = db.Column("name", db.String, nullable=True, index=True)
-    _type = db.Column("type", db.String, nullable=False)
+    _event = db.Column("event", db.Integer, nullable=False)
     _data = db.Column("data", JSON, nullable=True)
 
-    users: List[UserNotification] = db.relationship("UserNotification", back_populates="notification")
+    users: List[UserNotification] = db.relationship("UserNotification",
+                                                    back_populates="notification", cascade="all, delete-orphan")
 
-    def __init__(self, type: str, name: str, data: object, users: List[User]) -> None:
+    def __init__(self, event: EventType, name: str, data: object, users: List[User]) -> None:
         self.name = name
-        self._type = type
+        self._event = event.value
         self._data = data
         for u in users:
             self.add_user(u)
 
     @property
-    def type(self) -> str:
-        return self._type
+    def event(self) -> EventType:
+        return EventType(self._event)
 
     @property
     def data(self) -> object:
@@ -436,11 +531,13 @@ class UserNotification(db.Model):
     notification_id = db.Column(db.Integer, db.ForeignKey("notification.id"), nullable=False, primary_key=True)
 
     user: User = db.relationship("User", uselist=False,
-                                 back_populates="notifications", foreign_keys=[user_id])
+                                 back_populates="notifications", foreign_keys=[user_id],
+                                 cascade="save-update")
 
     notification: Notification = db.relationship("Notification", uselist=False,
                                                  back_populates="users",
-                                                 foreign_keys=[notification_id])
+                                                 foreign_keys=[notification_id],
+                                                 cascade="save-update")
 
     def __init__(self, user: User, notification: Notification) -> None:
         self.user = user

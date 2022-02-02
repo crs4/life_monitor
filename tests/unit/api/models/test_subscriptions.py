@@ -22,21 +22,48 @@
 
 import logging
 
-from lifemonitor.auth.models import Subscription, User
+from lifemonitor.auth.models import User, EventType
 from tests import utils
 
 logger = logging.getLogger()
 
 
 def test_workflow_subscription(user1: dict, valid_workflow: str):
-    _, workflow = utils.pick_and_register_workflow(user1, valid_workflow)
+    _, workflow_version = utils.pick_and_register_workflow(user1, valid_workflow)
     user: User = user1['user']
-    s: Subscription = user.subscribe(workflow)
-    logger.debug("Subscription: %r", s)
-    assert s, "Subscription should not be empty"
-    assert len(user.subscriptions) == 1, "Unexpected number of subscriptions"
 
-    s: Subscription = user.unsubscribe(workflow)
-    logger.debug("Subscription: %r", s)
-    assert s, "Subscription should not be empty"
+    # check default subscription
+    s = user.get_subscription(workflow_version.workflow)
+    assert s, "The submitter subscription should be automatically registered"
+    # check default events
+    assert len(s.events) == 1, "Invalid number of events"
+    assert s.has_event(EventType.ALL), f"Event '{EventType.ALL.name}' not registered on the subscription"
+    for event in EventType.all():
+        assert s.has_event(event), f"Event '{event.name}' should be included"
+
+    # check delete all events
+    s.events = None
+    assert len(s.events) == 0, "Invalid number of events"
+    s.save()
+
+    # check event udpate
+    s.events = [EventType.BUILD_FAILED, EventType.BUILD_RECOVERED]
+    s.save()
+    assert len(s.events) == 2, "Invalid number of events"
+    assert not s.has_event(EventType.ALL), f"Event '{EventType.ALL.name}' should not be registered on the subscription"
+
+
+def test_workflow_unsubscription(user1: dict, valid_workflow: str):
+    _, workflow_version = utils.pick_and_register_workflow(user1, valid_workflow)
+    user: User = user1['user']
+
+    # check default subscription
+    s = user.get_subscription(workflow_version.workflow)
+    assert s, "The submitter subscription should be automatically registered"
+
+    # test unsubscription
+    user.unsubscribe(workflow_version.workflow)
+    user.save()
     assert len(user.subscriptions) == 0, "Unexpected number of subscriptions"
+    s = user.get_subscription(workflow_version.workflow)
+    assert s is None, "Subscription should be empty"

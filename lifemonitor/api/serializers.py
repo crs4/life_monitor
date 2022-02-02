@@ -280,6 +280,14 @@ class TestInstanceSchema(ResourceMetadataSchema):
         }
 
 
+def format_availability_issues(status: models.WorkflowStatus):
+    issues = status.availability_issues
+    logger.info(issues)
+    if 'not_available' == status.aggregated_status and len(issues) > 0:
+        return ', '.join([f"{i['issue']}: Unable to get resource '{i['resource']}' from service '{i['service']}'" if 'service' in i and 'resource' in i else i['issue'] for i in issues])
+    return None
+
+
 class BuildSummarySchema(ResourceMetadataSchema):
     __envelope__ = {"single": None, "many": None}
     __model__ = models.TestBuild
@@ -287,13 +295,24 @@ class BuildSummarySchema(ResourceMetadataSchema):
     class Meta:
         model = models.TestBuild
 
+    def __init__(self, *args, self_link: bool = True, exclude_nested=True, **kwargs):
+        exclude = set(kwargs.pop('exclude', ()))
+        if exclude_nested:
+            exclude = exclude.union(('suite', 'workflow'))
+        super().__init__(*args, self_link=self_link, exclude=tuple(exclude), **kwargs)
+
     build_id = fields.String(attribute="id")
     suite_uuid = fields.String(attribute="test_instance.test_suite.uuid")
     status = fields.String()
-    instance = ma.Nested(TestInstanceSchema(self_link=False, exclude=('meta',)), attribute="test_instance")
+    instance = ma.Nested(TestInstanceSchema(self_link=False, exclude=('meta',)),
+                         attribute="test_instance")
     timestamp = fields.String()
     duration = fields.Integer()
     links = fields.Method('get_links')
+    suite = ma.Nested(TestInstanceSchema(self_link=False,
+                                         only=('uuid', 'name')), attribute="test_instance.test_suite")
+    workflow = ma.Nested(WorkflowVersionSchema(self_link=False, only=('uuid', 'name', 'version')),
+                         attribute="test_instance.test_suite.workflow_version")
 
     def get_links(self, obj):
         links = {
@@ -302,14 +321,6 @@ class BuildSummarySchema(ResourceMetadataSchema):
         if self._self_link:
             links['self'] = self.self_link
         return links
-
-
-def format_availability_issues(status: models.WorkflowStatus):
-    issues = status.availability_issues
-    logger.info(issues)
-    if 'not_available' == status.aggregated_status and len(issues) > 0:
-        return ', '.join([f"{i['issue']}: Unable to get resource '{i['resource']}' from service '{i['service']}'" if 'service' in i and 'resource' in i else i['issue'] for i in issues])
-    return None
 
 
 class WorkflowStatusSchema(WorkflowVersionSchema):

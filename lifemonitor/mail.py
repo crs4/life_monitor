@@ -28,7 +28,7 @@ from flask_mail import Mail, Message
 from sqlalchemy.exc import InternalError
 
 from lifemonitor.api.models import TestInstance
-from lifemonitor.auth.models import Notification, User
+from lifemonitor.auth.models import EventType, Notification, User
 from lifemonitor.db import db
 from lifemonitor.utils import Base64Encoder, get_external_server_url, boolean_value
 
@@ -82,20 +82,25 @@ def send_notification(n: Notification, recipients: List[str]) -> Optional[dateti
                     i = TestInstance.find_by_uuid(build_data['instance']['uuid'])
                     if i is not None:
                         wv = i.test_suite.workflow_version
-                        b = i.last_test_build
+                        b = i.get_test_build(build_data['build_id'])
                         suite = i.test_suite
                         logo = Base64Encoder.encode_file('lifemonitor/static/img/logo/lm/LifeMonitorLogo.png')
-                        icon = Base64Encoder.encode_file('lifemonitor/static/img/icons/times-circle-solid.svg')
+                        icon_path = 'lifemonitor/static/img/icons/' \
+                            + ('times-circle-solid.svg'
+                                if n.event == EventType.BUILD_FAILED else 'check-circle-solid.svg')
+                        icon = Base64Encoder.encode_file(icon_path)
                         suite.url_param = Base64Encoder.encode_object({
                             'workflow': str(wv.workflow.uuid),
                             'suite': str(suite.uuid)
                         })
+                        instance_status = "is failing" \
+                            if n.event == EventType.BUILD_FAILED else "has recovered"
                         msg = Message(
-                            f'Workflow "{wv.name} ({wv.version})": some builds were not successful',
+                            f'Workflow "{wv.name} ({wv.version})": test instance {i.name} {instance_status}',
                             bcc=recipients,
                             reply_to="noreply-lifemonitor@crs4.it"
                         )
-                        msg.html = render_template("mail/build_failure_notification.j2",
+                        msg.html = render_template("mail/instance_status_notification.j2",
                                                    webapp_url=mail.webapp_url,
                                                    workflow_version=wv, build=b,
                                                    test_instance=i,
