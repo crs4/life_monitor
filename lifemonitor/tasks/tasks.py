@@ -107,12 +107,15 @@ def check_last_build():
                         for b in builds:
                             logger.info("Updating build: %r", i.get_test_build(b.id))
                         last_build = i.last_test_build
-                        logger.info("Updating latest build: %r", last_build)
-                        if last_build.status == BuildStatus.FAILED:
-                            notification_name = f"{last_build} FAILED"
+                        # check state transition
+                        failed = last_build.status == BuildStatus.FAILED
+                        if len(builds) == 1 and failed or \
+                                len(builds) > 1 and builds[1].status != last_build.status:
+                            logger.info("Updating latest build: %r", last_build)
+                            notification_name = f"{last_build} {'FAILED' if failed else 'RECOVERED'}"
                             if len(Notification.find_by_name(notification_name)) == 0:
                                 users = latest_version.workflow.get_subscribers()
-                                n = Notification(EventType.BUILD_FAILED,
+                                n = Notification(EventType.BUILD_FAILED if failed else EventType.BUILD_RECOVERED,
                                                  notification_name,
                                                  {'build': BuildSummarySchema(exclude_nested=False).dump(last_build)},
                                                  users)
