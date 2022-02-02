@@ -65,7 +65,11 @@
     </h1>
 
     <h2>
-      Some builds were not successful
+      {% if build.status == 'failed' %}
+      Some builds on instance <b>{{test_instance.name}}</b> were not successful
+      {% else %}
+      Test instance <b>{{test_instance.name}}</b> has recovered
+      {% endif %}
     </h2>
 
     <div style="padding: 25px;">
@@ -75,7 +79,7 @@
     <h3 style="margin: 0">
       <a href="{{build.external_link}}" title="build {{build.id}}" target="_blank">
         Test <b>Build #{{build.id}}</b>
-      </a> failed !!!
+      </a> {{ 'failed' if build.status == 'failed' else 'passed' }} !!!
     </h3>
 
     <div class="details-box">
