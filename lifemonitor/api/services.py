@@ -143,8 +143,8 @@ class LifeMonitor:
         if name is None:
             if wv.workflow_name is None:
                 raise lm_exceptions.LifeMonitorException(title="Missing attribute 'name'",
-                                                         detail="Attribute 'name' is not defined and it cannot be retrieved ' \
-                                                         'from the workflow RO-Crate (name of 'mainEntity' and '/' dataset not set)",
+                                                         detail="Attribute 'name' is not defined and it cannot be retrieved \
+                                                         from the workflow RO-Crate (name of 'mainEntity' not found)",
                                                          status=400)
             w.name = wv.workflow_name
             wv.name = wv.workflow_name

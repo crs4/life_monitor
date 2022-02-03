@@ -546,7 +546,7 @@ def suites_get_by_uuid(suite_uuid):
 def suites_get_status(suite_uuid):
     response = _get_suite_or_problem(suite_uuid)
     return response if isinstance(response, Response) \
-        else serializers.SuiteStatusSchema().dump(response.status)
+        else serializers.SuiteStatusSchema().dump(response)
 
 
 @cached(timeout=Timeout.REQUEST)
