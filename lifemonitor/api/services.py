@@ -107,10 +107,13 @@ class LifeMonitor:
                           workflow_uuid=None, workflow_identifier=None,
                           workflow_registry: Optional[models.WorkflowRegistry] = None,
                           authorization=None, name=None, public=False):
-
         # find or create a user workflow
+        w = None
         if workflow_registry:
-            w = workflow_registry.get_workflow(workflow_uuid or workflow_identifier)
+            if workflow_uuid:
+                w = workflow_registry.get_workflow(workflow_uuid)
+            else:
+                w = workflow_registry.get_workflow(workflow_identifier)
         else:
             w = models.Workflow.get_user_workflow(workflow_submitter, workflow_uuid)
         if not w:
