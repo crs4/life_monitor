@@ -39,10 +39,9 @@ to create an LM-specific account.
 
 How to interact with LifeMonitor depends on your tech level and what you want
 to achieve. The [web GUI](web-app) is the easiest way to
-access the service and get an immediate visual feedback on workflow status. At
-the moment, however, it does not allow to submit new workflows or make any
-other changes (except modifying a workflow's visibility). To do that, use
-its [REST API](lm_api_specs) -- e.g., with your own custom client or with a
+access the service and get an immediate visual feedback on workflow status.
+For more advanced, feature-complete and programmatic interaction, you can use
+the [REST API](lm_api_specs) -- e.g., with your own custom client or with a
 general openAPI [command line client](restish-cli).
 
 You will need to decide how to [authenticate your
