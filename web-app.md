@@ -73,7 +73,7 @@ ones by _subscribing_ to them. To do that, start typing the name in the Search
 box, choose a workflow and click on the "subscribe" button:
 
 <div align="center">
-  <img alt="LM workflow subscription" src="images/wf_subscribe.png" width="600" />
+  <img alt="LM workflow subscription" src="images/wf_subscribe.png" width="500" />
 </div>
 
 ### Notifications
@@ -83,7 +83,7 @@ passing to failing or the other way around. To access notifications, click on
 the bell-shaped icon in the top-right corner:
 
 <div align="center">
-  <img alt="LM notifications" src="images/notifications.png" width="500" />
+  <img alt="LM notifications" src="images/notifications.png" width="400" />
 </div>
 
 By clicking on an event from the list, you will be taken to the corresponding
