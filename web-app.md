@@ -67,8 +67,14 @@ receive an authorization request from the Web application:
 </div>
 
 Click on "Allow" at the bottom; you will be taken back to the dashboard, but
-this time you should also be able to see any workflow you've registered with
-private visibility.
+this time you should be able to see all workflows that you submitted. By
+default, public workflows are not shown here: you can opt to display selected
+ones by _subscribing_ to them. To do that, start typing the name in the Search
+box, choose a workflow and click on the "subscribe" button:
+
+<div align="center">
+  <img alt="LM workflow subscription" src="images/wf_subscribe" width="600" />
+</div>
 
 
 ## Submitting a workflow
