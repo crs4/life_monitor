@@ -80,7 +80,8 @@ box, choose a workflow and click on the "subscribe" button:
 
 LifeMonitor notifies you each time a test instance changes state, i.e., from
 passing to failing or the other way around. To access notifications, click on
-the bell-shaped icon in the top-right corner:
+the bell-shaped icon in the top-right corner (note that it appears only when
+there are new notifications to show):
 
 <div align="center">
   <img alt="LM notifications" src="images/notifications.png" width="400" />
