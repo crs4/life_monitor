@@ -189,7 +189,7 @@ that they might be solved, thus extending the useful life of the workflow.</p>
 </div>
     <div class="app-desc">More information: <a href="https://openapi-generator.tech">https://openapi-generator.tech</a></div>
     <div class="app-desc">Contact Info: <a href="team@openapitools.org">team@openapitools.org</a></div>
-    <div class="app-desc">Version: 0.5.1</div>
+    <div class="app-desc">Version: 0.6.0</div>
     <div class="app-desc">BasePath:</div>
     <div class="license-info">All rights reserved</div>
     <div class="license-url">http://apache.org/licenses/LICENSE-2.0.html</div>
@@ -241,8 +241,13 @@ that they might be solved, thus extending the useful life of the workflow.</p>
   <h4><a href="#Users">Users</a></h4>
   <ul>
   <li><a href="#showCurrentUserProfile"><code><span class="http-method">get</span> /users/current</code></a></li>
+  <li><a href="#userNotificationsDelete"><code><span class="http-method">delete</span> /users/current/notifications/{notification_uuid}</code></a></li>
+  <li><a href="#userNotificationsGet"><code><span class="http-method">get</span> /users/current/notifications</code></a></li>
+  <li><a href="#userNotificationsPatch"><code><span class="http-method">patch</span> /users/current/notifications</code></a></li>
+  <li><a href="#userNotificationsPut"><code><span class="http-method">put</span> /users/current/notifications</code></a></li>
   <li><a href="#userSubscriptionsGet"><code><span class="http-method">get</span> /users/current/subscriptions</code></a></li>
   <li><a href="#userWorkflowSubscribe"><code><span class="http-method">post</span> /workflows/{wf_uuid}/subscribe</code></a></li>
+  <li><a href="#userWorkflowSubscribeEvents"><code><span class="http-method">put</span> /workflows/{wf_uuid}/subscribe</code></a></li>
   <li><a href="#userWorkflowUnsubscribe"><code><span class="http-method">post</span> /workflows/{wf_uuid}/unsubscribe</code></a></li>
   <li><a href="#userWorkflowsGet"><code><span class="http-method">get</span> /users/current/workflows</code></a></li>
   <li><a href="#userWorkflowsPost"><code><span class="http-method">post</span> /users/current/workflows</code></a></li>
@@ -1672,11 +1677,231 @@ through the service's API).</li>
         <a href="#Error">Error</a>
   </div> <!-- method -->
   <hr/>
+  <div class="method"><a name="userNotificationsDelete"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="delete"><code class="huge"><span class="http-method">delete</span> /users/current/notifications/{notification_uuid}</code></pre></div>
+    <div class="method-summary">Delete notification for the current user (<span class="nickname">userNotificationsDelete</span>)</div>
+    <div class="method-notes">Delete notification for the current (authenticated) user</div>
+
+    <h3 class="field-label">Path parameters</h3>
+    <div class="field-items">
+      <div class="param">notification_uuid (required)</div>
+
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Universal unique identifier of the user notification default: null </div>
+    </div>  <!-- field-items -->
+
+
+
+
+
+
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">204</h4>
+    Notifications updated
+        <a href="#"></a>
+    <h4 class="field-label">400</h4>
+    The request is malformed
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">403</h4>
+    Forbidden
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Resource not found
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="userNotificationsGet"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /users/current/notifications</code></pre></div>
+    <div class="method-summary">List notifications for the current user (<span class="nickname">userNotificationsGet</span>)</div>
+    <div class="method-notes">List all notifications for the current (authenticated) user</div>
+
+
+
+
+
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#ListOfNotifications">ListOfNotifications</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "items" : [ {
+    "read" : "1616427012",
+    "data" : "{}",
+    "created" : "1616427012",
+    "emailed" : "1616427012",
+    "uuid" : "aa16c6a9-571f-4a62-976f-60ea514ad2c1"
+  }, {
+    "read" : "1616427012",
+    "data" : "{}",
+    "created" : "1616427012",
+    "emailed" : "1616427012",
+    "uuid" : "aa16c6a9-571f-4a62-976f-60ea514ad2c1"
+  } ]
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    User profile
+        <a href="#ListOfNotifications">ListOfNotifications</a>
+    <h4 class="field-label">400</h4>
+    The request is malformed
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">403</h4>
+    Forbidden
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Resource not found
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="userNotificationsPatch"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="patch"><code class="huge"><span class="http-method">patch</span> /users/current/notifications</code></pre></div>
+    <div class="method-summary">Delete notifications for the current user (<span class="nickname">userNotificationsPatch</span>)</div>
+    <div class="method-notes">Delete notifications for the current (authenticated) user</div>
+
+
+    <h3 class="field-label">Consumes</h3>
+    This API call consumes the following media types via the <span class="header">Content-Type</span> request header:
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Request body</h3>
+    <div class="field-items">
+      <div class="param">string <a href="#string">string</a> (required)</div>
+
+      <div class="param-desc"><span class="param-type">Body Parameter</span> &mdash;  </div>
+
+    </div>  <!-- field-items -->
+
+
+
+
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">204</h4>
+    Notifications updated
+        <a href="#"></a>
+    <h4 class="field-label">400</h4>
+    The request is malformed
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">403</h4>
+    Forbidden
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Resource not found
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="userNotificationsPut"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="put"><code class="huge"><span class="http-method">put</span> /users/current/notifications</code></pre></div>
+    <div class="method-summary">Mark as read notifications for the current user (<span class="nickname">userNotificationsPut</span>)</div>
+    <div class="method-notes">Mark as read notifications for the current (authenticated) user</div>
+
+
+    <h3 class="field-label">Consumes</h3>
+    This API call consumes the following media types via the <span class="header">Content-Type</span> request header:
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Request body</h3>
+    <div class="field-items">
+      <div class="param">ListOfNotifications <a href="#ListOfNotifications">ListOfNotifications</a> (required)</div>
+
+      <div class="param-desc"><span class="param-type">Body Parameter</span> &mdash;  </div>
+
+    </div>  <!-- field-items -->
+
+
+
+
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">204</h4>
+    Notifications updated
+        <a href="#"></a>
+    <h4 class="field-label">400</h4>
+    The request is malformed
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">403</h4>
+    Forbidden
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Resource not found
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
   <div class="method"><a name="userSubscriptionsGet"/>
     <div class="method-path">
     <a class="up" href="#__Methods">Up</a>
     <pre class="get"><code class="huge"><span class="http-method">get</span> /users/current/subscriptions</code></pre></div>
-    <div class="method-summary">List all subscriptions for the current user (<span class="nickname">userSubscriptionsGet</span>)</div>
+    <div class="method-summary">List subscriptions for the current user (<span class="nickname">userSubscriptionsGet</span>)</div>
     <div class="method-notes">List all subscriptions for the current user</div>
 
 
@@ -1706,7 +1931,8 @@ through the service's API).</li>
     "user" : {
       "id" : 501,
       "username" : "lm"
-    }
+    },
+    "events" : [ "all" ]
   }, {
     "resource" : {
       "type" : "workflow",
@@ -1717,7 +1943,8 @@ through the service's API).</li>
     "user" : {
       "id" : 501,
       "username" : "lm"
-    }
+    },
+    "events" : [ "all" ]
   } ]
 }</code></pre>
 
@@ -1776,7 +2003,8 @@ through the service's API).</li>
   "user" : {
     "id" : 501,
     "username" : "lm"
-  }
+  },
+  "events" : [ "all" ]
 }</code></pre>
 
     <h3 class="field-label">Produces</h3>
@@ -1790,6 +2018,89 @@ through the service's API).</li>
     <h4 class="field-label">201</h4>
     Subscription registered
         <a href="#Subscription">Subscription</a>
+    <h4 class="field-label">400</h4>
+    The request is malformed
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">403</h4>
+    Forbidden
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Resource not found
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="userWorkflowSubscribeEvents"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="put"><code class="huge"><span class="http-method">put</span> /workflows/{wf_uuid}/subscribe</code></pre></div>
+    <div class="method-summary">Subscribe user to workflow events (<span class="nickname">userWorkflowSubscribeEvents</span>)</div>
+    <div class="method-notes">Subscribe the current (authenticated) user to a list of events for the specified workflow</div>
+
+    <h3 class="field-label">Path parameters</h3>
+    <div class="field-items">
+      <div class="param">wf_uuid (required)</div>
+
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Universal unique identifier of the workflow default: null </div>
+    </div>  <!-- field-items -->
+
+    <h3 class="field-label">Consumes</h3>
+    This API call consumes the following media types via the <span class="header">Content-Type</span> request header:
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Request body</h3>
+    <div class="field-items">
+      <div class="param">EventType <a href="#EventType">EventType</a> (required)</div>
+
+      <div class="param-desc"><span class="param-type">Body Parameter</span> &mdash;  </div>
+
+    </div>  <!-- field-items -->
+
+
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#Subscription">Subscription</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "resource" : {
+    "type" : "workflow",
+    "uuid" : "550e8400-e29b-41d4-a716-446655440000"
+  },
+  "created" : "1616427012",
+  "modified" : "1616427512",
+  "user" : {
+    "id" : 501,
+    "username" : "lm"
+  },
+  "events" : [ "all" ]
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">201</h4>
+    Subscription to events created
+        <a href="#Subscription">Subscription</a>
+    <h4 class="field-label">204</h4>
+    Subscription updated with events
+        <a href="#"></a>
     <h4 class="field-label">400</h4>
     The request is malformed
         <a href="#Error">Error</a>
@@ -2603,11 +2914,13 @@ RO-Crate specifcation is available at https://www.researchobject.org/ro-crate/.
     <li><a href="#BuildSummary"><code>BuildSummary</code> - </a></li>
     <li><a href="#BuildSummary_links"><code>BuildSummary_links</code> - </a></li>
     <li><a href="#Error"><code>Error</code> - </a></li>
+    <li><a href="#EventType"><code>EventType</code> - </a></li>
     <li><a href="#GenericWorkflowVersion"><code>GenericWorkflowVersion</code> - </a></li>
     <li><a href="#GenericWorkflowVersion_allOf"><code>GenericWorkflowVersion_allOf</code> - </a></li>
     <li><a href="#IdentityProvider"><code>IdentityProvider</code> - </a></li>
     <li><a href="#IdentityProviderType"><code>IdentityProviderType</code> - </a></li>
     <li><a href="#ListOfBuildSummary"><code>ListOfBuildSummary</code> - </a></li>
+    <li><a href="#ListOfNotifications"><code>ListOfNotifications</code> - </a></li>
     <li><a href="#ListOfRegistries"><code>ListOfRegistries</code> - </a></li>
     <li><a href="#ListOfRegistryWorkflows"><code>ListOfRegistryWorkflows</code> - </a></li>
     <li><a href="#ListOfSubscriptions"><code>ListOfSubscriptions</code> - </a></li>
@@ -2616,6 +2929,7 @@ RO-Crate specifcation is available at https://www.researchobject.org/ro-crate/.
     <li><a href="#ListOfUsers"><code>ListOfUsers</code> - </a></li>
     <li><a href="#ListOfWorkflow"><code>ListOfWorkflow</code> - </a></li>
     <li><a href="#ManagedTestInstanceCreationData"><code>ManagedTestInstanceCreationData</code> - </a></li>
+    <li><a href="#Notification"><code>Notification</code> - </a></li>
     <li><a href="#ROCrate"><code>ROCrate</code> - </a></li>
     <li><a href="#ROCrateBase"><code>ROCrateBase</code> - </a></li>
     <li><a href="#ROCrateBase_links"><code>ROCrateBase_links</code> - </a></li>
@@ -2736,6 +3050,12 @@ information if dereferenced. </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
+    <h3><a name="EventType"><code>EventType</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+          </div>  <!-- field-items -->
+  </div>
+  <div class="model">
     <h3><a name="GenericWorkflowVersion"><code>GenericWorkflowVersion</code> - </a> <a class="up" href="#__Models">Up</a></h3>
     <div class='model-description'>A generic workflow version</div>
     <div class="field-items">
@@ -2775,6 +3095,13 @@ information if dereferenced. </div>
     <div class='model-description'></div>
     <div class="field-items">
       <div class="param">items </div><div class="param-desc"><span class="param-type"><a href="#BuildSummary">array[BuildSummary]</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="ListOfNotifications"><code>ListOfNotifications</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">items </div><div class="param-desc"><span class="param-type"><a href="#Notification">array[Notification]</a></span>  </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
@@ -2834,6 +3161,17 @@ information if dereferenced. </div>
 from a Workflow RO-Crate </div>
 <div class="param">managed </div><div class="param-desc"><span class="param-type"><a href="#boolean">Boolean</a></span> <code>true</code> for <strong>managed</strong>;
 <code>false</code> for <strong>unmanaged</strong> </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="Notification"><code>Notification</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'>A notification for the current user.</div>
+    <div class="field-items">
+      <div class="param">uuid </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Universal unique identifier of notification </div>
+<div class="param">data (optional)</div><div class="param-desc"><span class="param-type"><a href="#">Object</a></span> Notification payload </div>
+<div class="param">created </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A timestamp for the creation time of the notification </div>
+<div class="param">read (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A timestamp for the read time of the notification </div>
+<div class="param">emailed (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A timestamp for the time when the email was sent </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
@@ -2996,6 +3334,7 @@ accessible to the user for download
 <div class="param">resource </div><div class="param-desc"><span class="param-type"><a href="#Subscription_resource">Subscription_resource</a></span>  </div>
 <div class="param">created </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A timestamp for the creation time of the subscription </div>
 <div class="param">modified </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A timestamp for the modification time of the subscription </div>
+<div class="param">events </div><div class="param-desc"><span class="param-type"><a href="#EventType">array[EventType]</a></span> List of events related to the specified workflow </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
