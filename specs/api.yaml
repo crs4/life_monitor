@@ -3,7 +3,7 @@
 openapi: "3.0.0"
 
 info:
-  version: "0.5.1"
+  version: "0.6.0"
   title: "Life Monitor API"
   description: |
     *Workflow sustainability service*
@@ -18,7 +18,7 @@ info:
 servers:
   - url: /
     description: >
-      Version 0.5.1 of API.
+      Version 0.6.0 of API.
 
 tags:
   - name: Registries
@@ -161,6 +161,122 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/UserProfile"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /users/current/notifications:
+    get:
+      tags: ["Users"]
+      x-openapi-router-controller: lifemonitor.auth.controllers
+      operationId: "user_notifications_get"
+      summary: List notifications for the current user
+      description: |
+        List all notifications for the current (authenticated) user
+      security:
+        - apiKey: ["user.profile"]
+        - RegistryCodeFlow: ["user.profile"]
+        - AuthorizationCodeFlow: ["user.profile"]
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListOfNotifications"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    put:
+      tags: ["Users"]
+      x-openapi-router-controller: lifemonitor.auth.controllers
+      operationId: "user_notifications_put"
+      summary: Mark as read notifications for the current user
+      description: |
+        Mark as read notifications for the current (authenticated) user
+      security:
+        - apiKey: ["user.profile"]
+        - RegistryCodeFlow: ["user.profile"]
+        - AuthorizationCodeFlow: ["user.profile"]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ListOfNotifications"
+      responses:
+        "204":
+          description: "Notifications updated"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    patch:
+      tags: ["Users"]
+      x-openapi-router-controller: lifemonitor.auth.controllers
+      operationId: "user_notifications_patch"
+      summary: Delete notifications for the current user
+      description: |
+        Delete notifications for the current (authenticated) user
+      security:
+        - apiKey: ["user.profile"]
+        - RegistryCodeFlow: ["user.profile"]
+        - AuthorizationCodeFlow: ["user.profile"]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              description: List of UUIDs
+              type: array
+              items:
+                type: string
+                example: "21ac72ec-b9a5-49e0-b5a6-1322b8b54552"
+      responses:
+        "204":
+          description: "Notifications updated"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /users/current/notifications/{notification_uuid}:
+    delete:
+      tags: ["Users"]
+      x-openapi-router-controller: lifemonitor.auth.controllers
+      operationId: "user_notifications_delete"
+      summary: Delete notification for the current user
+      description: |
+        Delete notification for the current (authenticated) user
+      security:
+        - apiKey: ["user.profile"]
+        - RegistryCodeFlow: ["user.profile"]
+        - AuthorizationCodeFlow: ["user.profile"]
+      parameters:
+        - $ref: "#/components/parameters/notification_uuid"
+      responses:
+        "204":
+          description: "Notifications updated"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -474,7 +590,7 @@ paths:
       tags: ["Users"]
       x-openapi-router-controller: lifemonitor.auth.controllers
       operationId: "user_subscriptions_get"
-      summary: "List all subscriptions for the current user"
+      summary: "List subscriptions for the current user"
       description: |
         List all subscriptions for the current user
       security:
@@ -616,6 +732,42 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Subscription"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    put:
+      summary: Subscribe user to workflow events
+      description: "Subscribe the current (authenticated) user to a list of events for the specified workflow"
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "user_workflow_subscribe_events"
+      tags: ["Users"]
+      security:
+        - apiKey: ["workflow.write"]
+        - AuthorizationCodeFlow: ["workflow.write"]
+        - RegistryCodeFlow: ["workflow.write"]
+      parameters:
+        - $ref: "#/components/parameters/wf_uuid"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ListOfEvents"
+      responses:
+        "201":
+          description: "Subscription to events created"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+        "204":
+          description: "Subscription updated with events"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -1290,6 +1442,14 @@ components:
         minimum: 1
         default: 10
       description: "Maximum number of items to retrieve"
+    notification_uuid:
+      name: "notification_uuid"
+      description: "Universal unique identifier of the user notification"
+      in: path
+      schema:
+        type: string
+      required: true
+      example: 123e4567-e89b-12d3-a456-426614174000
 
   responses:
     NotFound:
@@ -1462,11 +1622,29 @@ components:
           description: |
             A timestamp for the modification time of the subscription
           example: 1616427512.0
+        events:
+          $ref: "#/components/schemas/ListOfEvents"
       required:
         - user
         - resource
         - created
         - modified
+        - events
+
+    EventType:
+      type: string
+      enum:
+        - ALL
+        - BUILD_FAILED
+        - BUILD_RECOVERED
+
+    ListOfEvents:
+      type: array
+      items:
+        $ref: "#/components/schemas/EventType"
+      description: |
+        List of events related to the specified workflow
+      example: ["all"]
 
     ListOfSubscriptions:
       type: object
@@ -1475,6 +1653,49 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Subscription"
+      required:
+        - items
+
+    Notification:
+      type: object
+      description: A notification for the current user.
+      properties:
+        uuid:
+          type: string
+          description: Universal unique identifier of notification
+          example: aa16c6a9-571f-4a62-976f-60ea514ad2c1
+        data:
+          type: object
+          description: "Notification payload"
+          readOnly: true
+        created:
+          type: string
+          description: |
+            A timestamp for the creation time of the notification
+          example: 1616427012.0
+          readOnly: true
+        read:
+          type: string
+          description: |
+            A timestamp for the read time of the notification
+          example: 1616427012.0
+        emailed:
+          type: string
+          description: |
+            A timestamp for the time when the email was sent
+          example: 1616427012.0
+          readOnly: true
+      required:
+        - uuid
+        - created
+
+    ListOfNotifications:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Notification"
       required:
         - items
 
@@ -1638,13 +1859,13 @@ components:
             latest_version:
               type: string
               description: The workflow identifier on the registry
-              example: '1.0'
+              example: "1.0"
             versions:
               description: The list of workflow versions
               type: array
               items:
                 type: string
-              example: ['1.0', "1.0-dev"]
+              example: ["1.0", "1.0-dev"]
 
     ListOfRegistryWorkflows:
       type: object

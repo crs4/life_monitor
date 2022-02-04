@@ -21,13 +21,14 @@
 from __future__ import annotations
 
 import logging
+from datetime import datetime
 from typing import List, Optional, Union
 
 import lifemonitor.exceptions as lm_exceptions
 from lifemonitor.api import models
-from lifemonitor.auth.models import (ExternalServiceAuthorizationHeader,
-                                     Permission, Resource, RoleType,
-                                     Subscription, User)
+from lifemonitor.auth.models import (EventType, ExternalServiceAuthorizationHeader,
+                                     Notification, Permission, Resource,
+                                     RoleType, Subscription, User)
 from lifemonitor.auth.oauth2.client import providers
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 from lifemonitor.auth.oauth2.server import server
@@ -106,10 +107,13 @@ class LifeMonitor:
                           workflow_uuid=None, workflow_identifier=None,
                           workflow_registry: Optional[models.WorkflowRegistry] = None,
                           authorization=None, name=None, public=False):
-
         # find or create a user workflow
+        w = None
         if workflow_registry:
-            w = workflow_registry.get_workflow(workflow_uuid or workflow_identifier)
+            if workflow_uuid:
+                w = workflow_registry.get_workflow(workflow_uuid)
+            else:
+                w = workflow_registry.get_workflow(workflow_identifier)
         else:
             w = models.Workflow.get_user_workflow(workflow_submitter, workflow_uuid)
         if not w:
@@ -133,6 +137,8 @@ class LifeMonitor:
 
         if workflow_submitter:
             wv.permissions.append(Permission(user=workflow_submitter, roles=[RoleType.owner]))
+            # automatically register submitter's subscription to workflow events
+            workflow_submitter.subscribe(w)
         if authorization:
             auth = ExternalServiceAuthorizationHeader(workflow_submitter, header=authorization)
             auth.resources.append(wv)
@@ -140,8 +146,8 @@ class LifeMonitor:
         if name is None:
             if wv.workflow_name is None:
                 raise lm_exceptions.LifeMonitorException(title="Missing attribute 'name'",
-                                                         detail="Attribute 'name' is not defined and it cannot be retrieved ' \
-                                                         'from the workflow RO-Crate (name of 'mainEntity' and '/' dataset not set)",
+                                                         detail="Attribute 'name' is not defined and it cannot be retrieved \
+                                                         from the workflow RO-Crate (name of 'mainEntity' not found)",
                                                          status=400)
             w.name = wv.workflow_name
             wv.name = wv.workflow_name
@@ -230,10 +236,12 @@ class LifeMonitor:
             raise lm_exceptions.SpecificationNotValidException(f"Missing property: {e}")
 
     @staticmethod
-    def subscribe_user_resource(user: User, resource: Resource) -> Subscription:
+    def subscribe_user_resource(user: User, resource: Resource, events: List[EventType] = None) -> Subscription:
         assert user and not user.is_anonymous, "Invalid user"
         assert resource, "Invalid resource"
         subscription = user.subscribe(resource)
+        if events:
+            subscription.events = events
         user.save()
         return subscription
 
@@ -495,3 +503,33 @@ class LifeMonitor:
     @staticmethod
     def get_workflow_registry(uuid) -> models.WorkflowRegistry:
         return models.WorkflowRegistry.find_by_uuid(uuid)
+
+    @staticmethod
+    def setUserNotificationReadingTime(user: User, notifications: List[dict]):
+        for n in notifications:
+            un = user.get_user_notification(n['uuid'])
+            if un is None:
+                return lm_exceptions.EntityNotFoundException(Notification, entity_id=n['uuid'])
+            un.read = datetime.utcnow()
+        user.save()
+
+    @staticmethod
+    def deleteUserNotification(user: User, notitification_uuid: str):
+        if notitification_uuid is not None:
+            n = user.get_user_notification(notitification_uuid)
+            logger.debug("Search result notification %r ...", n)
+            if n is None:
+                return lm_exceptions.EntityNotFoundException(Notification, entity_id=notitification_uuid)
+            user.notifications.remove(n)
+            user.save()
+
+    @staticmethod
+    def deleteUserNotifications(user: User, list_of_uuids: List[str]):
+        for n_uuid in list_of_uuids:
+            logger.debug("Searching notification %r ...", n_uuid)
+            n = user.get_user_notification(n_uuid)
+            logger.debug("Search result notification %r ...", n)
+            if n is None:
+                return lm_exceptions.EntityNotFoundException(Notification, entity_id=n_uuid)
+            user.notifications.remove(n)
+        user.save()

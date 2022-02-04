@@ -129,6 +129,10 @@ class TestingService(db.Model, ModelMixin):
         return self.url
 
     @property
+    def type(self):
+        return self._type.replace('_testing_service', '').capitalize()
+
+    @property
     def token(self) -> TestingServiceToken:
         if not self._token:
             logger.debug("Querying the token registry for the service '%r'...", self.url)

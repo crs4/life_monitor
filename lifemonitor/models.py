@@ -23,9 +23,10 @@ from __future__ import annotations
 import uuid
 from typing import List
 
-from lifemonitor.db import db
+from sqlalchemy import VARCHAR, types
+
 from lifemonitor.cache import CacheMixin
-from sqlalchemy import types
+from lifemonitor.db import db
 
 
 class ModelMixin(CacheMixin):
@@ -98,3 +99,39 @@ class JSON(types.TypeDecorator):
             return dialect.type_descriptor(JSONB())
         else:
             return dialect.type_descriptor(types.JSON())
+
+
+class CustomSet(types.TypeDecorator):
+    """Represents an immutable structure as a json-encoded string."""
+    impl = VARCHAR
+
+    def process_bind_param(self, value, dialect):
+        if value is not None:
+            if not isinstance(value, set):
+                raise ValueError("Invalid value type. Got %r", type(value))
+            value = ",".join(value)
+        return value
+
+    def process_result_value(self, value, dialect):
+        return set() if value is None or len(value) == 0 \
+            else set(value.split(','))
+
+
+class StringSet(CustomSet):
+    """Represents an immutable structure as a json-encoded string."""
+    pass
+
+
+class IntegerSet(CustomSet):
+    """Represents an immutable structure as a json-encoded string."""
+
+    def process_bind_param(self, value, dialect):
+        if value is not None:
+            if not isinstance(value, set):
+                raise ValueError("Invalid value type. Got %r", type(value))
+            value = ",".join([str(_) for _ in value])
+        return value
+
+    def process_result_value(self, value, dialect):
+        return set() if value is None or len(value) == 0 \
+            else set({int(_) for _ in value.split(',')})

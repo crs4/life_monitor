@@ -1,14 +1,22 @@
 
+import datetime
 import logging
 
 import dramatiq
 import flask
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
+from lifemonitor.api.models.testsuites.testbuild import BuildStatus
+from lifemonitor.api.serializers import BuildSummarySchema
+from lifemonitor.auth.models import EventType, Notification
 from lifemonitor.cache import Timeout
+from lifemonitor.mail import send_notification
 
 # set module level logger
 logger = logging.getLogger(__name__)
+
+# set expiration time (in msec) of tasks
+TASK_EXPIRATION_TIME = 30000
 
 
 def schedule(trigger):
@@ -38,13 +46,13 @@ logger.info("Importing task definitions")
 
 
 @schedule(CronTrigger(second=0))
-@dramatiq.actor(max_retries=3)
+@dramatiq.actor(max_retries=3, max_age=TASK_EXPIRATION_TIME)
 def heartbeat():
     logger.info("Heartbeat!")
 
 
 @schedule(IntervalTrigger(seconds=Timeout.WORKFLOW * 3 / 4))
-@dramatiq.actor(max_retries=3)
+@dramatiq.actor(max_retries=3, max_age=TASK_EXPIRATION_TIME)
 def check_workflows():
     from flask import current_app
     from lifemonitor.api.controllers import workflows_rocrate_download
@@ -82,14 +90,15 @@ def check_workflows():
 
 
 @schedule(IntervalTrigger(seconds=Timeout.BUILD * 3 / 4))
-@dramatiq.actor(max_retries=3)
+@dramatiq.actor(max_retries=3, max_age=TASK_EXPIRATION_TIME)
 def check_last_build():
     from lifemonitor.api.models import Workflow
 
     logger.info("Starting 'check_last build' task...")
     for w in Workflow.all():
         try:
-            for s in w.latest_version.test_suites:
+            latest_version = w.latest_version
+            for s in latest_version.test_suites:
                 logger.info("Updating workflow: %r", w)
                 for i in s.test_instances:
                     with i.cache.transaction(str(i)):
@@ -97,9 +106,65 @@ def check_last_build():
                         logger.info("Updating latest builds: %r", builds)
                         for b in builds:
                             logger.info("Updating build: %r", i.get_test_build(b.id))
-                        logger.info("Updating latest build: %r", i.last_test_build)
+                        last_build = i.last_test_build
+                        # check state transition
+                        failed = last_build.status == BuildStatus.FAILED
+                        if len(builds) == 1 and failed or \
+                                len(builds) > 1 and builds[1].status != last_build.status:
+                            logger.info("Updating latest build: %r", last_build)
+                            notification_name = f"{last_build} {'FAILED' if failed else 'RECOVERED'}"
+                            if len(Notification.find_by_name(notification_name)) == 0:
+                                users = latest_version.workflow.get_subscribers()
+                                n = Notification(EventType.BUILD_FAILED if failed else EventType.BUILD_RECOVERED,
+                                                 notification_name,
+                                                 {'build': BuildSummarySchema(exclude_nested=False).dump(last_build)},
+                                                 users)
+                                n.save()
         except Exception as e:
             logger.error("Error when executing task 'check_last_build': %s", str(e))
             if logger.isEnabledFor(logging.DEBUG):
                 logger.exception(e)
     logger.info("Checking last build: DONE!")
+
+
+@schedule(IntervalTrigger(seconds=60))
+@dramatiq.actor(max_retries=0, max_age=TASK_EXPIRATION_TIME)
+def send_email_notifications():
+    notifications = Notification.not_emailed()
+    logger.info("Found %r notifications to send by email", len(notifications))
+    count = 0
+    for n in notifications:
+        logger.debug("Processing notification %r ...", n)
+        recipients = [
+            u.user.email for u in n.users
+            if u.emailed is None and u.user.email_notifications_enabled and u.user.email is not None
+        ]
+        sent = send_notification(n, recipients)
+        logger.debug("Notification email sent: %r", sent is not None)
+        if sent:
+            logger.debug("Notification '%r' sent by email @ %r", n.id, sent)
+            for u in n.users:
+                if u.user.email in recipients:
+                    u.emailed = sent
+            n.save()
+            count += 1
+        logger.debug("Processing notification %r ... DONE", n)
+    logger.info("%r notifications sent by email", count)
+
+
+@schedule(CronTrigger(minute=0, hour=1))
+@dramatiq.actor(max_retries=0, max_age=TASK_EXPIRATION_TIME)
+def cleanup_notifications():
+    logger.info("Starting notification cleanup")
+    count = 0
+    current_time = datetime.datetime.utcnow()
+    one_week_ago = current_time - datetime.timedelta(days=0)
+    notifications = Notification.older_than(one_week_ago)
+    for n in notifications:
+        try:
+            n.delete()
+            count += 1
+        except Exception as e:
+            logger.debug(e)
+            logger.error("Error when deleting notification %r", n)
+    logger.info("Notification cleanup completed: deleted %r notifications", count)

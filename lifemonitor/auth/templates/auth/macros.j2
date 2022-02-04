@@ -113,7 +113,7 @@
       <div class="input-group-text">
         {% if field.name == 'username' %}
         <span class="fas fa-user-circle"></span>
-        {% elif field.name == 'email' %}
+        {% elif field.name == 'email' or field.name == 'repeat_email' %}
         <span class="fas fa-envelope"></span>
         {% elif field.name == 'password' %}
         <span class="fas fa-key"></span>

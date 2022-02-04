@@ -267,7 +267,7 @@ class TestInstanceSchema(ResourceMetadataSchema):
         logger.debug("Test current obj: %r", obj)
         assert obj.testing_service, "Missing testing service"
         return {
-            'uuid': obj.testing_service.uuid,
+            'uuid': str(obj.testing_service.uuid),
             'url': obj.testing_service.url,
             'type': obj.testing_service._type.replace('_testing_service', '')
         }
@@ -280,6 +280,14 @@ class TestInstanceSchema(ResourceMetadataSchema):
         }
 
 
+def format_availability_issues(status: models.WorkflowStatus):
+    issues = status.availability_issues
+    logger.info(issues)
+    if 'not_available' == status.aggregated_status and len(issues) > 0:
+        return ', '.join([f"{i['issue']}: Unable to get resource '{i['resource']}' from service '{i['service']}'" if 'service' in i and 'resource' in i else i['issue'] for i in issues])
+    return None
+
+
 class BuildSummarySchema(ResourceMetadataSchema):
     __envelope__ = {"single": None, "many": None}
     __model__ = models.TestBuild
@@ -287,13 +295,24 @@ class BuildSummarySchema(ResourceMetadataSchema):
     class Meta:
         model = models.TestBuild
 
+    def __init__(self, *args, self_link: bool = True, exclude_nested=True, **kwargs):
+        exclude = set(kwargs.pop('exclude', ()))
+        if exclude_nested:
+            exclude = exclude.union(('suite', 'workflow'))
+        super().__init__(*args, self_link=self_link, exclude=tuple(exclude), **kwargs)
+
     build_id = fields.String(attribute="id")
     suite_uuid = fields.String(attribute="test_instance.test_suite.uuid")
     status = fields.String()
-    instance = ma.Nested(TestInstanceSchema(self_link=False, exclude=('meta',)), attribute="test_instance")
+    instance = ma.Nested(TestInstanceSchema(self_link=False, exclude=('meta',)),
+                         attribute="test_instance")
     timestamp = fields.String()
     duration = fields.Integer()
     links = fields.Method('get_links')
+    suite = ma.Nested(TestInstanceSchema(self_link=False,
+                                         only=('uuid', 'name')), attribute="test_instance.test_suite")
+    workflow = ma.Nested(WorkflowVersionSchema(self_link=False, only=('uuid', 'name', 'version')),
+                         attribute="test_instance.test_suite.workflow_version")
 
     def get_links(self, obj):
         links = {
@@ -304,14 +323,6 @@ class BuildSummarySchema(ResourceMetadataSchema):
         return links
 
 
-def format_availability_issues(status: models.WorkflowStatus):
-    issues = status.availability_issues
-    logger.info(issues)
-    if 'not_available' == status.aggregated_status and len(issues) > 0:
-        return ', '.join([f"{i['issue']}: Unable to get resource '{i['resource']}' from service '{i['service']}'" if 'service' in i and 'resource' in i else i['issue'] for i in issues])
-    return None
-
-
 class WorkflowStatusSchema(WorkflowVersionSchema):
     __envelope__ = {"single": None, "many": "items"}
     __model__ = models.WorkflowStatus
@@ -319,13 +330,36 @@ class WorkflowStatusSchema(WorkflowVersionSchema):
     class Meta:
         model = models.WorkflowStatus
 
-    aggregate_test_status = fields.String(attribute="status.aggregated_status")
-    latest_builds = ma.Nested(BuildSummarySchema(exclude=('meta', 'links')),
-                              attribute="status.latest_builds", many=True)
+    _errors = []
+
+    aggregate_test_status = fields.Method("get_aggregate_test_status")
+    latest_builds = fields.Method("get_latest_builds")
     reason = fields.Method("get_reason")
 
+    def get_aggregate_test_status(self, workflow_version):
+        try:
+            return workflow_version.status.aggregated_status
+        except Exception as e:
+            logger.debug(e)
+            self._errors.append(str(e))
+            return "not_available"
+
+    def get_latest_builds(self, workflow_version):
+        try:
+            return BuildSummarySchema(exclude=('meta', 'links'), many=True).dump(
+                workflow_version.status.latest_builds)
+        except Exception as e:
+            logger.debug(e)
+            self._errors.append(str(e))
+            return []
+
     def get_reason(self, workflow_version):
-        return format_availability_issues(workflow_version.status)
+        try:
+            if(len(self._errors) > 0):
+                return ', '.join([str(i) for i in self._errors])
+            return format_availability_issues(workflow_version.status)
+        except Exception as e:
+            return str(e)
 
     @post_dump
     def remove_skip_values(self, data, **kwargs):
@@ -361,15 +395,26 @@ class WorkflowVersionListItem(WorkflowSchema):
             logger.debug(e)
             return {
                 "aggregate_test_status": "not_available",
-                "latest_build": [],
+                "latest_build": None,
+                "reason": str(e)
+            }
+        except Exception as e:
+            logger.debug(e)
+            return {
+                "aggregate_test_status": "not_available",
+                "latest_build": None,
                 "reason": str(e)
             }
 
     def get_latest_build(self, workflow):
-        latest_builds = workflow.latest_version.status.latest_builds
-        if latest_builds and len(latest_builds) > 0:
-            return BuildSummarySchema(exclude=('meta', 'links')).dump(latest_builds[0])
-        return None
+        try:
+            latest_builds = workflow.latest_version.status.latest_builds
+            if latest_builds and len(latest_builds) > 0:
+                return BuildSummarySchema(exclude=('meta', 'links')).dump(latest_builds[0])
+            return None
+        except Exception as e:
+            logger.debug(e)
+            return None
 
     def get_subscriptions(self, w: models.Workflow):
         result = []
@@ -434,18 +479,40 @@ class ListOfSuites(ListOfItems):
 
 class SuiteStatusSchema(ResourceMetadataSchema):
     __envelope__ = {"single": None, "many": "items"}
-    __model__ = models.SuiteStatus
+    __model__ = models.TestSuite
 
     class Meta:
-        model = models.SuiteStatus
+        model = models.TestSuite
 
-    suite_uuid = fields.String(attribute="suite.uuid")
-    status = fields.String(attribute="aggregated_status")
-    latest_builds = fields.Nested(BuildSummarySchema(exclude=('meta', 'links')), many=True)
+    suite_uuid = fields.String(attribute="uuid")
+    status = fields.Method("get_aggregated_status")
+    latest_builds = fields.Method("get_builds")
     reason = fields.Method("get_reason")
+    _errors = []
 
-    def get_reason(self, status):
-        return format_availability_issues(status)
+    def get_builds(self, suite):
+        try:
+            return BuildSummarySchema(
+                exclude=('meta', 'links'), many=True).dump(suite.status.latest_builds)
+        except Exception as e:
+            self._errors.append(str(e))
+            logger.debug(e)
+            return []
+
+    def get_reason(self, suite):
+        if(len(self._errors) > 0):
+            return ", ".join(self._errors)
+        try:
+            return format_availability_issues(suite.status)
+        except Exception as e:
+            return str(e)
+
+    def get_aggregated_status(self, suite):
+        try:
+            return suite.status.aggregated_status
+        except Exception as e:
+            self._errors.append(str(e))
+            return 'not_available'
 
     @post_dump
     def remove_skip_values(self, data, **kwargs):

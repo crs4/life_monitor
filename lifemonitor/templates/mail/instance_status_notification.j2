@@ -1,0 +1,112 @@
+<html>
+<head>
+  <!-- include font -->
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;600&amp;family=Roboto+Mono&amp;display=swap"
+    rel="stylesheet">
+  <style>
+    body {
+      font-family: "Open Sans";
+      font-size: 16px;
+      font-weight: 200;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4 {
+      font-weight: 150;
+      color: hsl(180, 63%, 33%);
+    }
+
+    a:link,
+    a:visited {
+      color: hsl(180, 63%, 33%);
+      text-decoration: none;
+    }
+
+    a:hover,
+    a:active {
+      color: #003333;
+      text-decoration: none;
+    }
+
+    a.button:link,
+    a.button:visited {
+      background-color: hsl(180, 63%, 33%);
+      color: white;
+      padding: 14px 25px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    a.button:hover,
+    a.button:active {
+      background-color: #003333;
+    }
+
+    div.details-box {
+      width: 400px;
+      margin: 25px auto;
+      padding: 10px;
+      background: whitesmoke;
+      border-radius: 10px;
+    }
+
+  </style>
+</head>
+<body>
+  <div style="text-align: center;">
+    <img alt="My Image" src="data:image/png;base64,{{logo}}" height="80px" />
+
+    <h1>
+      <b>{{workflow_version.name}}</b> <br>
+      <span style="font-size: 12pt">(version {{workflow_version.version}})</span>
+    </h1>
+
+    <h2>
+      {% if build.status == 'failed' %}
+      Some builds on instance <b>{{test_instance.name}}</b> were not successful
+      {% else %}
+      Test instance <b>{{test_instance.name}}</b> has recovered
+      {% endif %}
+    </h2>
+
+    <div style="padding: 25px;">
+      <img src="data:image/svg+xml;base64,{{icon}}" alt="triangle with all three sides equal" height="100px">
+    </div>
+
+    <h3 style="margin: 0">
+      <a href="{{build.external_link}}" title="build {{build.id}}" target="_blank">
+        Test <b>Build #{{build.id}}</b>
+      </a> {{ 'failed' if build.status == 'failed' else 'passed' }} !!!
+    </h3>
+
+    <div class="details-box">
+      test suite
+      <a href="{{webapp_url}}/suite;s={{suite.url_param}}" title="suite '{{suite.name}}' (id: {{suite.uuid}})"
+        target="_blank">
+        <b>{{suite.name}}</b>
+      </a>
+      running on the
+      <a href="{{test_instance.testing_service.url}}" target="_blank"
+        title="{{test_instance.testing_service.type}} Service">
+        <b>{{test_instance.testing_service.type}}</b>
+      </a> service
+      <br>
+      through the
+      <a href="{{test_instance.external_link}}" target="_blank"
+        title="test instance {{test_instance.name}} (id: {{test_instance.uuid}})">
+        <b>{{test_instance.name}}</b>
+      </a>
+      instance
+    </div>
+
+    <div style="padding: 25px;">
+      <a class="button" target="_blank" href="{{webapp_url}}/workflow;uuid={{workflow_version.workflow.uuid}}">
+        View on LifeMonitor
+      </a>
+    </div>
+    <div>
+</body>
+</html>
