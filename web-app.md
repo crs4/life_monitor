@@ -67,8 +67,28 @@ receive an authorization request from the Web application:
 </div>
 
 Click on "Allow" at the bottom; you will be taken back to the dashboard, but
-this time you should also be able to see any workflow you've registered with
-private visibility.
+this time you should be able to see all workflows that you submitted. By
+default, public workflows are not shown here: you can opt to display selected
+ones by _subscribing_ to them. To do that, start typing the name in the Search
+box, choose a workflow and click on the "subscribe" button:
+
+<div align="center">
+  <img alt="LM workflow subscription" src="images/wf_subscribe.png" width="500" />
+</div>
+
+### Notifications
+
+LifeMonitor notifies you each time a test instance changes state, i.e., from
+passing to failing or the other way around. To access notifications, click on
+the bell-shaped icon in the top-right corner:
+
+<div align="center">
+  <img alt="LM notifications" src="images/notifications.png" width="400" />
+</div>
+
+By clicking on an event from the list, you will be taken to the corresponding
+instance in the dashboard. The panel also allows you to clear selected or all
+notifications.
 
 
 ## Submitting a workflow
@@ -89,9 +109,9 @@ pip install rocrate
 
 Now move into the directory that contains your workflow and associated
 assets. This can be, for instance, a copy of a repository in a version control
-provider such as [GitHub](https://github.com/). As an example, we'll get the
-[FAIR CRCC - send data](https://github.com/crs4/fair-crcc-send-data)
-repository.
+provider such as [GitHub](https://github.com/). As an example, we're going to
+use the [FAIR CRCC - send data](https://github.com/crs4/fair-crcc-send-data)
+workflow.
 
 ```
 git clone https://github.com/crs4/fair-crcc-send-data
@@ -126,7 +146,13 @@ If you check the JSON file now, you'll see that the entry for
 `workflow/Snakefile` is more articulate: for instance, it has a more specific
 `@type` and it links to an entity representing the Snakemake language. Other
 changes have also been made to the crate so that it conforms to the [Workflow
-RO-Crate spec](https://about.workflowhub.eu/Workflow-RO-Crate/).
+RO-Crate spec](https://about.workflowhub.eu/Workflow-RO-Crate/). If your
+workflow is written in a different language, specify it using the `-l` option
+as shown above. To get a list of supported options, run:
+
+```
+rocrate add workflow --help
+```
 
 Now we need to point the crate to a test instance for the
 workflow. LifeMonitor supports monitoring test executions that run on [Travis
@@ -182,10 +208,10 @@ The following interface appears:
   <img alt="LM - Add workflow as local RO-Crate" src="images/add_wf_local_crate.png" width="600" />
 </div>
 
-The default option is to submit a local RO-Crate. If you followed the [above
-instructions](#making-a-workflow-testing-ro-crate), you already have a
-Workflow Testing RO-Crate you can upload. Click on "Browse" to select the zip
-file from your local file system, then click on "Next":
+The default option is to submit a local Workflow Testing RO-Crate (see the
+[above instructions](#making-a-workflow-testing-ro-crate) to create one). Click
+on "Browse" to select the zip file from your local file system, then click on
+"Next":
 
 <div align="center">
   <img alt="LM - Add workflow as local RO-Crate - details" src="images/add_wf_local_crate_details.png" width="600" />
