@@ -76,6 +76,20 @@ box, choose a workflow and click on the "subscribe" button:
   <img alt="LM workflow subscription" src="images/wf_subscribe" width="600" />
 </div>
 
+### Notifications
+
+LifeMonitor notifies you each time a test instance changes state, i.e., from
+passing to failing or the other way around. To access notifications, click on
+the bell-shaped icon in the top-right corner:
+
+<div align="center">
+  <img alt="LM notifications" src="images/notifications" width="500" />
+</div>
+
+By clicking on an event from the list, you will be taken to the corresponding
+instance in the dashboard. The panel also allows you to clear selected or all
+notifications.
+
 
 ## Submitting a workflow
 
