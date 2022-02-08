@@ -6,6 +6,7 @@ import dramatiq
 import flask
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
+from lifemonitor.api.models.notifications import WorkflowStatusNotification
 from lifemonitor.api.models.testsuites.testbuild import BuildStatus
 from lifemonitor.api.serializers import BuildSummarySchema
 from lifemonitor.auth.models import EventType, Notification
@@ -117,10 +118,11 @@ def check_last_build():
                             notification_name = f"{last_build} {'FAILED' if failed else 'RECOVERED'}"
                             if len(Notification.find_by_name(notification_name)) == 0:
                                 users = latest_version.workflow.get_subscribers()
-                                n = Notification(EventType.BUILD_FAILED if failed else EventType.BUILD_RECOVERED,
-                                                 notification_name,
-                                                 {'build': BuildSummarySchema(exclude_nested=False).dump(last_build)},
-                                                 users)
+                                n = WorkflowStatusNotification(
+                                    EventType.BUILD_FAILED if failed else EventType.BUILD_RECOVERED,
+                                    notification_name,
+                                    {'build': BuildSummarySchema(exclude_nested=False).dump(last_build)},
+                                    users)
                                 n.save()
         except Exception as e:
             logger.error("Error when executing task 'check_last_build': %s", str(e))

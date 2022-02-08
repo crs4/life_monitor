@@ -70,46 +70,21 @@ def send_email_validation_message(user: User):
         conn.send(msg)
 
 
-def send_notification(n: Notification, recipients: List[str]) -> Optional[datetime]:
+def send_notification(n: Notification, recipients: List[str] = None) -> Optional[datetime]:
     if mail.disabled:
         logger.info("Mail notifications are disabled")
     else:
         with mail.connect() as conn:
             logger.debug("Mail recipients for notification '%r': %r", n.id, recipients)
+            if not recipients:
+                recipients = [
+                    u.user.email for u in n.users
+                    if u.emailed is None and u.user.email_notifications_enabled and u.user.email
+                ]
             if len(recipients) > 0:
-                build_data = n.data['build']
                 try:
-                    i = TestInstance.find_by_uuid(build_data['instance']['uuid'])
-                    if i is not None:
-                        wv = i.test_suite.workflow_version
-                        b = i.get_test_build(build_data['build_id'])
-                        suite = i.test_suite
-                        logo = Base64Encoder.encode_file('lifemonitor/static/img/logo/lm/LifeMonitorLogo.png')
-                        icon_path = 'lifemonitor/static/img/icons/' \
-                            + ('times-circle-solid.svg'
-                                if n.event == EventType.BUILD_FAILED else 'check-circle-solid.svg')
-                        icon = Base64Encoder.encode_file(icon_path)
-                        suite.url_param = Base64Encoder.encode_object({
-                            'workflow': str(wv.workflow.uuid),
-                            'suite': str(suite.uuid)
-                        })
-                        instance_status = "is failing" \
-                            if n.event == EventType.BUILD_FAILED else "has recovered"
-                        msg = Message(
-                            f'Workflow "{wv.name} ({wv.version})": test instance {i.name} {instance_status}',
-                            bcc=recipients,
-                            reply_to="noreply-lifemonitor@crs4.it"
-                        )
-                        msg.html = render_template("mail/instance_status_notification.j2",
-                                                   webapp_url=mail.webapp_url,
-                                                   workflow_version=wv, build=b,
-                                                   test_instance=i,
-                                                   suite=suite,
-                                                   json_data=build_data,
-                                                   logo=logo, icon=icon)
-                        conn.send(msg)
-                        return datetime.utcnow()
-                except InternalError as e:
+                    conn.send(n.to_mail_message(recipients))
+                    return datetime.utcnow()
+                except Exception as e:
                     logger.debug(e)
-                    db.session.rollback()
     return None
