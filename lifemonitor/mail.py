@@ -25,12 +25,10 @@ from typing import List, Optional
 
 from flask import Flask, render_template
 from flask_mail import Mail, Message
-from sqlalchemy.exc import InternalError
 
-from lifemonitor.api.models import TestInstance
-from lifemonitor.auth.models import EventType, Notification, User
-from lifemonitor.db import db
-from lifemonitor.utils import Base64Encoder, get_external_server_url, boolean_value
+from lifemonitor.auth.models import Notification, User
+from lifemonitor.utils import (Base64Encoder, boolean_value,
+                               get_external_server_url)
 
 # set logger
 logger = logging.getLogger(__name__)
