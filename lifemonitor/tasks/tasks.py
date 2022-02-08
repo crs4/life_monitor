@@ -9,7 +9,8 @@ from apscheduler.triggers.interval import IntervalTrigger
 from lifemonitor.api.models.notifications import WorkflowStatusNotification
 from lifemonitor.api.models.testsuites.testbuild import BuildStatus
 from lifemonitor.api.serializers import BuildSummarySchema
-from lifemonitor.auth.models import EventType, Notification
+from lifemonitor.auth.models import (EventType, Notification,
+                                     UnconfiguredEmailNotification, User)
 from lifemonitor.cache import Timeout
 from lifemonitor.mail import send_notification
 
@@ -141,9 +142,9 @@ def send_email_notifications():
         logger.debug("Processing notification %r ...", n)
         recipients = [
             u.user.email for u in n.users
-            if u.emailed is None and u.user.email_notifications_enabled and u.user.email is not None
+            if u.emailed is None and u.user.email_notifications_enabled and u.user.email
         ]
-        sent = send_notification(n, recipients)
+        sent = send_notification(n, recipients=recipients)
         logger.debug("Notification email sent: %r", sent is not None)
         if sent:
             logger.debug("Notification '%r' sent by email @ %r", n.id, sent)
@@ -172,3 +173,25 @@ def cleanup_notifications():
             logger.debug(e)
             logger.error("Error when deleting notification %r", n)
     logger.info("Notification cleanup completed: deleted %r notifications", count)
+
+
+@schedule(IntervalTrigger(seconds=60))
+@dramatiq.actor(max_retries=0, max_age=TASK_EXPIRATION_TIME)
+def check_email_configuration():
+    logger.info("Check for users without notification email")
+    count = 0
+    users = []
+    try:
+        for u in User.all():
+            if not u.email and len(UnconfiguredEmailNotification.find_by_user(u)) == 0:
+                users.append(u)
+                count += 1
+        if len(users) > 0:
+            n = UnconfiguredEmailNotification(
+                "Unconfigured email",
+                users=users)
+            n.save()
+    except Exception as e:
+        logger.debug(e)
+        logger.error("Error when deleting notification %r", n)
+    logger.info("Check for users without notification email configured: generated notification for %r users", count)

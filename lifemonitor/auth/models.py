@@ -323,6 +323,7 @@ class EventType(Enum):
     ALL = 0
     BUILD_FAILED = 1
     BUILD_RECOVERED = 2
+    UNCONFIGURED_EMAIL = 3
 
     @classmethod
     def all(cls):
@@ -555,6 +556,21 @@ class Notification(db.Model, ModelMixin):
     @classmethod
     def older_than(cls, date: datetime) -> List[Notification]:
         return cls.query.filter(Notification.created < date).all()
+
+    @classmethod
+    def find_by_user(cls, user: User) -> List[Notification]:
+        return cls.query.join(UserNotification, UserNotification.notification_id == cls.id)\
+            .filter(UserNotification.user_id == user.id).all()
+
+
+class UnconfiguredEmailNotification(Notification):
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'unconfigured_email'
+    }
+
+    def __init__(self, name: str, data: object = None, users: List[User] = None) -> None:
+        super().__init__(EventType.UNCONFIGURED_EMAIL, name, data, users)
 
     @classmethod
     def find_by_user(cls, user: User) -> List[Notification]:
