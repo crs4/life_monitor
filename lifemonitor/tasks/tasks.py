@@ -156,6 +156,7 @@ def send_email_notifications():
             count += 1
         logger.debug("Processing notification %r ... DONE", n)
     logger.info("%r notifications sent by email", count)
+    return count
 
 
 @schedule(CronTrigger(minute=0, hour=1))
