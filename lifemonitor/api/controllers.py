@@ -574,6 +574,22 @@ def suites_post(wf_uuid, wf_version, body):
 
 
 @authorized
+def suites_put(suite_uuid, body):
+    try:
+        suite = _get_suite_or_problem(suite_uuid)
+        if isinstance(suite, Response):
+            return suite
+        suite.name = body.get('name', suite.name)
+        suite.save()
+        clear_cache()
+        logger.debug("Suite %r updated", suite_uuid)
+        return connexion.NoContent, 204
+    except Exception as e:
+        return lm_exceptions.report_problem(500, "Internal Error", extra_info={"exception": str(e)},
+                                            detail=messages.unable_to_delete_suite.format(suite_uuid))
+
+
+@authorized
 def suites_delete(suite_uuid):
     try:
         response = _get_suite_or_problem(suite_uuid)

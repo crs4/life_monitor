@@ -1086,6 +1086,42 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+    put:
+      summary: Update a test suite
+      description: "Update basic information of the specified suite"
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "suites_put"
+      tags: ["Test Suites"]
+      security:
+        - apiKey: ["workflow.write"]
+        - AuthorizationCodeFlow: ["workflow.write"]
+        - RegistryClientCredentials: ["workflow.write"]
+        - RegistryCodeFlow: ["workflow.write"]
+      parameters:
+        - $ref: "#/components/parameters/suite_uuid"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: A name for the test suite.
+                  example: Workflow Test Suite
+      responses:
+        "204":
+          description: "Suite updated"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   /suites/{suite_uuid}/status:
     get:
       summary: "Get test suite status"
