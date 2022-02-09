@@ -181,13 +181,17 @@ def cleanup_notifications():
 @dramatiq.actor(max_retries=0, max_age=TASK_EXPIRATION_TIME)
 def check_email_configuration():
     logger.info("Check for users without notification email")
-    count = 0
     users = []
     try:
         for u in User.all():
-            if not u.email and len(UnconfiguredEmailNotification.find_by_user(u)) == 0:
-                users.append(u)
-                count += 1
+            n_list = UnconfiguredEmailNotification.find_by_user(u)
+            if not u.email:
+                if len(n_list) == 0:
+                    users.append(u)
+            elif len(n_list) > 0:
+                for n in n_list:
+                    n.remove_user(u)
+                u.save()
         if len(users) > 0:
             n = UnconfiguredEmailNotification(
                 "Unconfigured email",
@@ -195,5 +199,4 @@ def check_email_configuration():
             n.save()
     except Exception as e:
         logger.debug(e)
-        logger.error("Error when deleting notification %r", n)
-    logger.info("Check for users without notification email configured: generated notification for %r users", count)
+    logger.info("Check for users without notification email configured: generated a notification for users %r", users)
