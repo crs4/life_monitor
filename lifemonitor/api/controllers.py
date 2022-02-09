@@ -667,6 +667,22 @@ def instances_get_by_id(instance_uuid):
 
 
 @authorized
+def instances_put(instance_uuid, body):
+    try:
+        instance = _get_instances_or_problem(instance_uuid)
+        if isinstance(instance, Response):
+            return instance
+        instance.name = body.get('name', instance.name)
+        instance.save()
+        clear_cache()
+        logger.debug("Instance %r updated", instance_uuid)
+        return connexion.NoContent, 204
+    except Exception as e:
+        return lm_exceptions.report_problem(500, "Internal Error", extra_info={"exception": str(e)},
+                                            detail=messages.unable_to_delete_suite.format(instance_uuid))
+
+
+@authorized
 def instances_delete_by_id(instance_uuid):
     try:
         response = _get_instances_or_problem(instance_uuid)
