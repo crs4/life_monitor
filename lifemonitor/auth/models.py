@@ -323,6 +323,7 @@ class EventType(Enum):
     ALL = 0
     BUILD_FAILED = 1
     BUILD_RECOVERED = 2
+    UNCONFIGURED_EMAIL = 3
 
     @classmethod
     def all(cls):
@@ -480,9 +481,15 @@ class Notification(db.Model, ModelMixin):
     name = db.Column("name", db.String, nullable=True, index=True)
     _event = db.Column("event", db.Integer, nullable=False)
     _data = db.Column("data", JSON, nullable=True)
+    _type = db.Column("type", db.String, nullable=False)
 
     users: List[UserNotification] = db.relationship("UserNotification",
                                                     back_populates="notification", cascade="all, delete-orphan")
+
+    __mapper_args__ = {
+        'polymorphic_on': _type,
+        'polymorphic_identity': 'generic'
+    }
 
     def __init__(self, event: EventType, name: str, data: object, users: List[User]) -> None:
         self.name = name
@@ -490,6 +497,13 @@ class Notification(db.Model, ModelMixin):
         self._data = data
         for u in users:
             self.add_user(u)
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__} ({self.id})"
+
+    @property
+    def reply_to(self) -> str:
+        return "noreply-lifemonitor@crs4.it"
 
     @property
     def event(self) -> EventType:
@@ -506,6 +520,25 @@ class Notification(db.Model, ModelMixin):
     def remove_user(self, user: User):
         self.users.remove(user)
 
+    def to_mail_message(self, recipients: List[User]) -> str:
+        return None
+
+    @property
+    def base64Logo(self) -> str:
+        try:
+            return lm_utils.Base64Encoder.encode_file('lifemonitor/static/img/logo/lm/LifeMonitorLogo.png')
+        except Exception as e:
+            logger.debug(e)
+            return None
+
+    @staticmethod
+    def encodeFile(file_path: str) -> str:
+        try:
+            return lm_utils.Base64Encoder.encode_file(file_path)
+        except Exception as e:
+            logger.debug(e)
+            return None
+
     @classmethod
     def find_by_name(cls, name: str) -> List[Notification]:
         return cls.query.filter(cls.name == name).all()
@@ -519,6 +552,30 @@ class Notification(db.Model, ModelMixin):
     def not_emailed(cls) -> List[Notification]:
         return cls.query.join(UserNotification, UserNotification.notification_id == cls.id)\
             .filter(UserNotification.emailed == null()).all()
+
+    @classmethod
+    def older_than(cls, date: datetime) -> List[Notification]:
+        return cls.query.filter(Notification.created < date).all()
+
+    @classmethod
+    def find_by_user(cls, user: User) -> List[Notification]:
+        return cls.query.join(UserNotification, UserNotification.notification_id == cls.id)\
+            .filter(UserNotification.user_id == user.id).all()
+
+
+class UnconfiguredEmailNotification(Notification):
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'unconfigured_email'
+    }
+
+    def __init__(self, name: str, data: object = None, users: List[User] = None) -> None:
+        super().__init__(EventType.UNCONFIGURED_EMAIL, name, data, users)
+
+    @classmethod
+    def find_by_user(cls, user: User) -> List[Notification]:
+        return cls.query.join(UserNotification, UserNotification.notification_id == cls.id)\
+            .filter(UserNotification.user_id == user.id).all()
 
 
 class UserNotification(db.Model):

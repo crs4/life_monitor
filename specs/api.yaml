@@ -3,7 +3,7 @@
 openapi: "3.0.0"
 
 info:
-  version: "0.6.0"
+  version: "0.7.0"
   title: "Life Monitor API"
   description: |
     *Workflow sustainability service*
@@ -18,7 +18,7 @@ info:
 servers:
   - url: /
     description: >
-      Version 0.6.0 of API.
+      Version 0.7.0 of API.
 
 tags:
   - name: Registries
@@ -1086,6 +1086,42 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+    put:
+      summary: Update a test suite
+      description: "Update basic information of the specified suite"
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "suites_put"
+      tags: ["Test Suites"]
+      security:
+        - apiKey: ["workflow.write"]
+        - AuthorizationCodeFlow: ["workflow.write"]
+        - RegistryClientCredentials: ["workflow.write"]
+        - RegistryCodeFlow: ["workflow.write"]
+      parameters:
+        - $ref: "#/components/parameters/suite_uuid"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: A name for the test suite.
+                  example: Workflow Test Suite
+      responses:
+        "204":
+          description: "Suite updated"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   /suites/{suite_uuid}/status:
     get:
       summary: "Get test suite status"
@@ -1218,6 +1254,42 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TestInstance"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    put:
+      summary: Update a test instance
+      description: "Update basic information of the specified test instance"
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "instances_put"
+      tags: ["Test Instances"]
+      security:
+        - apiKey: ["workflow.write"]
+        - AuthorizationCodeFlow: ["workflow.write"]
+        - RegistryClientCredentials: ["workflow.write"]
+        - RegistryCodeFlow: ["workflow.write"]
+      parameters:
+        - $ref: "#/components/parameters/instance_uuid"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: A name for the test instance.
+                  example: Workflow Test Instance
+      responses:
+        "204":
+          description: "Test instance updated"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
