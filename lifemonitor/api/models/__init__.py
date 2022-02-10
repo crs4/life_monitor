@@ -38,6 +38,9 @@ from .workflows import Workflow, WorkflowVersion
 # 'testsuites' package
 from .testsuites import TestSuite, TestInstance, ManagedTestInstance, BuildStatus, TestBuild
 
+# notifications
+from .notifications import WorkflowStatusNotification
+
 # 'testing_services'
 from .services import TestingService, \
     GithubTestingService, GithubTestBuild, \
@@ -71,8 +74,9 @@ __all__ = [
     "WorkflowRegistry",
     "WorkflowRegistryClient",
     "WorkflowStatus",
+    "WorkflowStatusNotification",
     "WorkflowVersion",
-    "RegistryWorkflow"
+    "RegistryWorkflow",
 ]
 
 # set module level logger

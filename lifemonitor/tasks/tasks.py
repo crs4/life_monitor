@@ -6,9 +6,11 @@ import dramatiq
 import flask
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
+from lifemonitor.api.models.notifications import WorkflowStatusNotification
 from lifemonitor.api.models.testsuites.testbuild import BuildStatus
 from lifemonitor.api.serializers import BuildSummarySchema
-from lifemonitor.auth.models import EventType, Notification
+from lifemonitor.auth.models import (EventType, Notification,
+                                     UnconfiguredEmailNotification, User)
 from lifemonitor.cache import Timeout
 from lifemonitor.mail import send_notification
 
@@ -117,10 +119,11 @@ def check_last_build():
                             notification_name = f"{last_build} {'FAILED' if failed else 'RECOVERED'}"
                             if len(Notification.find_by_name(notification_name)) == 0:
                                 users = latest_version.workflow.get_subscribers()
-                                n = Notification(EventType.BUILD_FAILED if failed else EventType.BUILD_RECOVERED,
-                                                 notification_name,
-                                                 {'build': BuildSummarySchema(exclude_nested=False).dump(last_build)},
-                                                 users)
+                                n = WorkflowStatusNotification(
+                                    EventType.BUILD_FAILED if failed else EventType.BUILD_RECOVERED,
+                                    notification_name,
+                                    {'build': BuildSummarySchema(exclude_nested=False).dump(last_build)},
+                                    users)
                                 n.save()
         except Exception as e:
             logger.error("Error when executing task 'check_last_build': %s", str(e))
@@ -132,16 +135,17 @@ def check_last_build():
 @schedule(IntervalTrigger(seconds=60))
 @dramatiq.actor(max_retries=0, max_age=TASK_EXPIRATION_TIME)
 def send_email_notifications():
-    notifications = Notification.not_emailed()
+    notifications = [n for n in Notification.not_emailed()
+                     if not isinstance(n, UnconfiguredEmailNotification)]
     logger.info("Found %r notifications to send by email", len(notifications))
     count = 0
     for n in notifications:
         logger.debug("Processing notification %r ...", n)
         recipients = [
             u.user.email for u in n.users
-            if u.emailed is None and u.user.email_notifications_enabled and u.user.email is not None
+            if u.emailed is None and u.user.email_notifications_enabled and u.user.email
         ]
-        sent = send_notification(n, recipients)
+        sent = send_notification(n, recipients=recipients)
         logger.debug("Notification email sent: %r", sent is not None)
         if sent:
             logger.debug("Notification '%r' sent by email @ %r", n.id, sent)
@@ -152,6 +156,7 @@ def send_email_notifications():
             count += 1
         logger.debug("Processing notification %r ... DONE", n)
     logger.info("%r notifications sent by email", count)
+    return count
 
 
 @schedule(CronTrigger(minute=0, hour=1))
@@ -170,3 +175,28 @@ def cleanup_notifications():
             logger.debug(e)
             logger.error("Error when deleting notification %r", n)
     logger.info("Notification cleanup completed: deleted %r notifications", count)
+
+
+@schedule(IntervalTrigger(seconds=60))
+@dramatiq.actor(max_retries=0, max_age=TASK_EXPIRATION_TIME)
+def check_email_configuration():
+    logger.info("Check for users without notification email")
+    users = []
+    try:
+        for u in User.all():
+            n_list = UnconfiguredEmailNotification.find_by_user(u)
+            if not u.email:
+                if len(n_list) == 0:
+                    users.append(u)
+            elif len(n_list) > 0:
+                for n in n_list:
+                    n.remove_user(u)
+                u.save()
+        if len(users) > 0:
+            n = UnconfiguredEmailNotification(
+                "Unconfigured email",
+                users=users)
+            n.save()
+    except Exception as e:
+        logger.debug(e)
+    logger.info("Check for users without notification email configured: generated a notification for users %r", users)
