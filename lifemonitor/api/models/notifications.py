@@ -42,6 +42,7 @@ class WorkflowStatusNotification(Notification):
         'polymorphic_identity': 'workflow_status_notification'
     }
 
+    @property
     def get_icon_path(self) -> str:
         return 'lifemonitor/static/img/icons/' \
             + ('times-circle-solid.svg'
