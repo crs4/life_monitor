@@ -189,7 +189,7 @@ that they might be solved, thus extending the useful life of the workflow.</p>
 </div>
     <div class="app-desc">More information: <a href="https://openapi-generator.tech">https://openapi-generator.tech</a></div>
     <div class="app-desc">Contact Info: <a href="team@openapitools.org">team@openapitools.org</a></div>
-    <div class="app-desc">Version: 0.6.0</div>
+    <div class="app-desc">Version: 0.7.0</div>
     <div class="app-desc">BasePath:</div>
     <div class="license-info">All rights reserved</div>
     <div class="license-url">http://apache.org/licenses/LICENSE-2.0.html</div>
@@ -230,6 +230,7 @@ that they might be solved, thus extending the useful life of the workflow.</p>
   <li><a href="#instancesDeleteById"><code><span class="http-method">delete</span> /instances/{instance_uuid}</code></a></li>
   <li><a href="#instancesGetBuilds"><code><span class="http-method">get</span> /instances/{instance_uuid}/latest-builds</code></a></li>
   <li><a href="#instancesGetById"><code><span class="http-method">get</span> /instances/{instance_uuid}</code></a></li>
+  <li><a href="#instancesPut"><code><span class="http-method">put</span> /instances/{instance_uuid}</code></a></li>
   </ul>
   <h4><a href="#TestSuites">TestSuites</a></h4>
   <ul>
@@ -237,6 +238,7 @@ that they might be solved, thus extending the useful life of the workflow.</p>
   <li><a href="#suitesGetInstances"><code><span class="http-method">get</span> /suites/{suite_uuid}/instances</code></a></li>
   <li><a href="#suitesGetStatus"><code><span class="http-method">get</span> /suites/{suite_uuid}/status</code></a></li>
   <li><a href="#suitesPostInstance"><code><span class="http-method">post</span> /suites/{suite_uuid}/instances</code></a></li>
+  <li><a href="#suitesPut"><code><span class="http-method">put</span> /suites/{suite_uuid}</code></a></li>
   </ul>
   <h4><a href="#Users">Users</a></h4>
   <ul>
@@ -1299,6 +1301,66 @@ OAuth2 clients can use this endpoint.</p>
         <a href="#Error">Error</a>
   </div> <!-- method -->
   <hr/>
+  <div class="method"><a name="instancesPut"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="put"><code class="huge"><span class="http-method">put</span> /instances/{instance_uuid}</code></pre></div>
+    <div class="method-summary">Update a test instance (<span class="nickname">instancesPut</span>)</div>
+    <div class="method-notes">Update basic information of the specified test instance</div>
+
+    <h3 class="field-label">Path parameters</h3>
+    <div class="field-items">
+      <div class="param">instance_uuid (required)</div>
+
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Universal unique identifier of the test instance default: null </div>
+    </div>  <!-- field-items -->
+
+    <h3 class="field-label">Consumes</h3>
+    This API call consumes the following media types via the <span class="header">Content-Type</span> request header:
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Request body</h3>
+    <div class="field-items">
+      <div class="param">inline_object_3 <a href="#inline_object_3">inline_object_3</a> (required)</div>
+
+      <div class="param-desc"><span class="param-type">Body Parameter</span> &mdash;  </div>
+
+    </div>  <!-- field-items -->
+
+
+
+
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">204</h4>
+    Test instance updated
+        <a href="#"></a>
+    <h4 class="field-label">400</h4>
+    The request is malformed
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">403</h4>
+    Forbidden
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Resource not found
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
   <h1><a name="TestSuites">TestSuites</a></h1>
   <div class="method"><a name="suitesGetByUuid"/>
     <div class="method-path">
@@ -1624,6 +1686,66 @@ through the service's API).</li>
     <h4 class="field-label">501</h4>
     Not implemented
         <a href="#"></a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="suitesPut"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="put"><code class="huge"><span class="http-method">put</span> /suites/{suite_uuid}</code></pre></div>
+    <div class="method-summary">Update a test suite (<span class="nickname">suitesPut</span>)</div>
+    <div class="method-notes">Update basic information of the specified suite</div>
+
+    <h3 class="field-label">Path parameters</h3>
+    <div class="field-items">
+      <div class="param">suite_uuid (required)</div>
+
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Universal unique identifier of the test suite default: null </div>
+    </div>  <!-- field-items -->
+
+    <h3 class="field-label">Consumes</h3>
+    This API call consumes the following media types via the <span class="header">Content-Type</span> request header:
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Request body</h3>
+    <div class="field-items">
+      <div class="param">inline_object_2 <a href="#inline_object_2">inline_object_2</a> (required)</div>
+
+      <div class="param-desc"><span class="param-type">Body Parameter</span> &mdash;  </div>
+
+    </div>  <!-- field-items -->
+
+
+
+
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">204</h4>
+    Suite updated
+        <a href="#"></a>
+    <h4 class="field-label">400</h4>
+    The request is malformed
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">403</h4>
+    Forbidden
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Resource not found
+        <a href="#Error">Error</a>
   </div> <!-- method -->
   <hr/>
   <h1><a name="Users">Users</a></h1>
@@ -2978,6 +3100,8 @@ RO-Crate specifcation is available at https://www.researchobject.org/ro-crate/.
     <li><a href="#Workflow_allOf"><code>Workflow_allOf</code> - </a></li>
     <li><a href="#inline_object"><code>inline_object</code> - </a></li>
     <li><a href="#inline_object_1"><code>inline_object_1</code> - </a></li>
+    <li><a href="#inline_object_2"><code>inline_object_2</code> - </a></li>
+    <li><a href="#inline_object_3"><code>inline_object_3</code> - </a></li>
     <li><a href="#inline_response_201"><code>inline_response_201</code> - </a></li>
   </ol>
 
@@ -3633,6 +3757,20 @@ If not provided, it will be auto-generated by the system. </div>
     <div class="field-items">
       <div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A name for the workflow version. If not provided, the RO-Crate dataset name is used as default. </div>
 <div class="param">version (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Workflow version </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="inline_object_2"><code>inline_object_2</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A name for the test suite. </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="inline_object_3"><code>inline_object_3</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A name for the test instance. </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
