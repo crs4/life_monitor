@@ -138,6 +138,10 @@ class TestInstance(db.Model, ModelMixin):
     def find_by_uuid(cls, uuid) -> TestInstance:
         return cls.query.get(uuid)
 
+    @classmethod
+    def find_by_resource(cls, resource: str) -> List[TestInstance]:
+        return cls.query.filter(cls.resource == resource).all()
+
 
 class ManagedTestInstance(TestInstance):
 
