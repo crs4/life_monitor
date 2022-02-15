@@ -164,7 +164,7 @@ def workflow_run(event: object):
                 i.get_test_builds(limit=10)
                 i.get_test_build(workflow_run['id'])
                 i.last_test_build
-        return "Workflow RUN update", 200
+        return f"Test instance related with resource '{workflow_resource}' updated", 200
     except Exception as e:
         logger.error(e)
         return "Internal Error", 500
