@@ -28,7 +28,7 @@ import jwt
 import requests
 from flask import Blueprint, Flask, request
 from lifemonitor.api.models import TestInstance
-from lifemonitor.cache import IllegalStateException
+from lifemonitor.cache import IllegalStateException, cache
 
 import github
 
@@ -159,8 +159,8 @@ def workflow_run(event: object):
         logger.debug("Workflow Resource: %r", workflow_resource)
         instances = TestInstance.find_by_resource(workflow_resource)
         logger.debug("Instances: %r", instances)
-        for i in instances:
-            with i.cache.transaction():
+        with cache.transaction():
+            for i in instances:
                 i.get_test_builds(limit=10)
                 i.get_test_build(workflow_run['id'])
                 i.last_test_build
