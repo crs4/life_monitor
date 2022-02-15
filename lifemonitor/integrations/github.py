@@ -185,22 +185,25 @@ blueprint = Blueprint("github_integration", __name__,
 
 @blueprint.route("/integrations/github", methods=("POST",))
 def webhook_test():
-    logger.debug("Received: %r", request.data)
     logger.debug("Request header keys: %r", [k for k in request.headers.keys()])
     logger.debug("Request header values: %r", request.headers)
     valid = GithubAppHelper.validate_signature(request)
     logger.debug("Signature valid?: %r", valid)
     if not valid:
         return "Signature Invalid", 401
+    data = request.get_json()
     event = {
         "id": request.headers.get("X-Github-Delivery"),
         "type": request.headers.get("X-Github-Event"),
+        "action": data.get("action", None),
         "signature": request.headers.get("X-Hub-Signature-256").replace("256=", ""),
-        "data": request.get_json()
+        "data": data
     }
     event_handler = __event_handlers__.get(event['type'], None)
+    logger.debug("Event: %r", event)
     if not event_handler:
-        logger.warning(f"No event handler registered for the event GitHub event '{event['type']}'")
+        action = f"- action: {event['action']}" if event['action'] else None
+        logger.warning(f"No event handler registered for the event GitHub event '{event['type']}' {action}")
         return f"No handler registered for the '{event['type']}' event", 204
     else:
         return event_handler(event)
