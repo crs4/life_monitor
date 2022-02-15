@@ -201,7 +201,7 @@ def webhook_test():
     event_handler = __event_handlers__.get(event['type'], None)
     if not event_handler:
         logger.warning(f"No event handler registered for the event GitHub event '{event['type']}'")
-        return "No handler registered for this event", 204
+        return f"No handler registered for the '{event['type']}' event", 204
     else:
         return event_handler(event)
 
