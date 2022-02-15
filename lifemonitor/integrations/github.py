@@ -93,7 +93,6 @@ class GithubAppHelper():
     @classmethod
     def get_installation_client(cls, installation_id: str) -> requests.Session:
         token = cls.get_installation_token(installation_id)
-        logger.debug("Current token: %r", token)
         installation_client = requests.Session()
         installation_client.headers.update({
             'Authorization': f"Bearer {token['token']}",
