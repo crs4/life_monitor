@@ -27,6 +27,7 @@ from typing import List
 import jwt
 import requests
 from flask import Blueprint, Flask, request
+from lifemonitor.api.models import TestInstance
 from lifemonitor.cache import IllegalStateException
 
 import github
@@ -144,9 +145,36 @@ def ping(event: object):
     return "Pong", 200
 
 
+def workflow_run(event: object):
+    try:
+        logger.debug("Workflow run event: %r", event)
+        repository = event['data']['repository']
+        logger.debug("Workflow repository: %r", repository)
+        workflow = event['data']['workflow']
+        logger.debug("Workflow: %r", workflow)
+        workflow_run = event['data']['workflow_run']
+        logger.debug("Workflow run: %r", workflow_run)
+        workflow_name = workflow['path'].replace('.github/workflows/', '')
+        logger.debug("Workflow NAME: %r", workflow_name)
+        workflow_resource = f"repos/{repository['full_name']}/actions/workflows/{workflow_name}"
+        logger.debug("Workflow Resource: %r", workflow_resource)
+        instances = TestInstance.find_by_resource(workflow_resource)
+        logger.debug("Instances: %r", instances)
+        for i in instances:
+            with i.cache.transaction():
+                i.get_test_builds(limit=10)
+                i.get_test_build(workflow_run['id'])
+                i.last_test_build
+        return "Workflow RUN update", 200
+    except Exception as e:
+        logger.error(e)
+        return "Internal Error", 500
+
+
 # Register Handlers
 __event_handlers__ = {
-    "ping": ping
+    "ping": ping,
+    "workflow_run": workflow_run
 }
 
 
