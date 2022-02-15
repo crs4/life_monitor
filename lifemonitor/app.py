@@ -33,10 +33,10 @@ from lifemonitor.routes import register_routes
 from lifemonitor.tasks.task_queue import init_task_queue
 
 from . import commands
-from .mail import init_mail
 from .cache import init_cache
 from .db import db
 from .exceptions import handle_exception
+from .mail import init_mail
 from .serializers import ma
 
 # set module level logger
