@@ -28,6 +28,7 @@ from flask_migrate import Migrate
 
 import lifemonitor.config as config
 from lifemonitor import __version__ as version
+from lifemonitor.integrations import init_integrations
 from lifemonitor.routes import register_routes
 from lifemonitor.tasks.task_queue import init_task_queue
 
@@ -133,6 +134,8 @@ def initialize_app(app, app_context, prom_registry=None):
     init_task_queue(app)
     # init mail system
     init_mail(app)
+    # initialize integrations
+    init_integrations(app)
 
     # configure prometheus exporter
     # must be configured after the routes are registered
