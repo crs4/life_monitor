@@ -62,6 +62,18 @@ testing_services:
   #   token: <YOUR_TRAVIS_TOKEN_>
   #   type: travis
 
+# Settings for integrations with third-party apps
+integrations:
+  {}
+  # github:
+  #   api_id:
+  #   client_id:
+  #   client_secret:
+  #   web_secret:
+  #   private_key:
+  #     secret:
+  #     filename:
+
 cache:
   db: 0
   timeout:

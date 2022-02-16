@@ -117,6 +117,13 @@ Define volumes shared by some pods.
 - name: lifemonitor-data
   persistentVolumeClaim:
     claimName: data-{{- .Release.Name -}}-workflows
+{{- if .Values.integrations -}}
+{{- range $k, $v := .Values.integrations }}
+- name: lifemonitor-{{ $k }}-key
+  secret:
+    secretName: {{ $v.private_key.secret }}
+{{- end -}}
+{{- end -}}
 {{- end -}}
 
 {{/*
@@ -131,6 +138,12 @@ Define mount points shared by some pods.
   subPath: settings.conf
 - name: lifemonitor-data
   mountPath: "/var/data/lm"
+{{- if .Values.integrations -}}
+{{- range $k, $v := .Values.integrations }}
+- name: lifemonitor-{{ $k }}-key
+  mountPath: "/lm/integrations/{{ $k | lower }}"
+{{- end -}}
+{{- end -}}
 {{- end -}}
 
 
