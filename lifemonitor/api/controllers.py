@@ -437,12 +437,14 @@ def workflows_post(body, _registry=None, _submitter_id=None):
 @authorized
 def workflows_put(wf_uuid, body):
     logger.debug("PUT called for workflow (%s)", wf_uuid)
-    wv = _get_workflow_or_problem(wf_uuid, None)
-    if isinstance(wv, Response):
-        return wv
-    wv.workflow.name = body.get('name', wv.workflow.name)
-    wv.workflow.public = body.get('public', wv.workflow.public)
-    wv.workflow.save()
+    workflow_version = _get_workflow_or_problem(wf_uuid, None)
+    if isinstance(workflow_version, Response):
+        return workflow_version
+    lm.update_workflow(
+        workflow_version,
+        name=body.get('name', workflow_version.workflow.name),
+        public=body.get('public', workflow_version.workflow.public),
+    )
     clear_cache()
     return connexion.NoContent, 204
 
@@ -450,12 +452,14 @@ def workflows_put(wf_uuid, body):
 @authorized
 def workflows_version_put(wf_uuid, wf_version, body):
     logger.debug("PUT called for workflow version (%s)", wf_uuid)
-    wv = _get_workflow_or_problem(wf_uuid, wf_version)
-    if isinstance(wv, Response):
-        return wv
-    wv.name = body.get('name', wv.name)
-    wv.version = body.get('version', wv.version)
-    wv.save()
+    workflow_version = _get_workflow_or_problem(wf_uuid, wf_version)
+    if isinstance(workflow_version, Response):
+        return workflow_version
+    lm.update_workflow(
+        workflow_version,
+        name=body.get('name', workflow_version.name),
+        public=body.get('version', workflow_version.version),
+    )
     clear_cache()
     return connexion.NoContent, 204
 
