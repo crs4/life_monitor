@@ -214,6 +214,16 @@ class LifeMonitor:
             raise lm_exceptions.EntityNotFoundException(models.WorkflowVersion, (workflow_uuid, workflow_version))
 
     @staticmethod
+    def update_workflow(workflow_version: models.WorkflowVersion,
+                        name: str = None, public: bool = None):
+        if name:
+            workflow_version.workflow.name = name
+        if public is not None:
+            workflow_version.workflow.public = public
+
+        workflow_version.workflow.save()
+
+    @staticmethod
     def _init_test_suite_from_json(wv: models.WorkflowVersion, submitter: models.User, raw_suite):
         """ Create a TestSuite instance (with its related TestInstance)
             from an intermediate JSON representation like:
