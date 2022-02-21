@@ -164,6 +164,13 @@ def get_external_server_url():
     return get_base_url() if not external_server_url else external_server_url
 
 
+def validate_url(url: str) -> bool:
+    try:
+        result = urllib.parse.urlparse(url)
+        return all([result.scheme, result.netloc])
+    except:
+        return False
+
 def _download_from_remote(url, output_stream, authorization=None):
     with requests.Session() as session:
         if authorization:
