@@ -171,6 +171,27 @@ def validate_url(url: str) -> bool:
     except:
         return False
 
+
+def get_rocrate_link(rocrate_or_link: str) -> str:
+    # Returns a roc_link.
+    # If the input is an encoded rocrate, it will be decoded,
+    # written into a local file and a local roc_link will be returned.
+    if validate_url(rocrate_or_link):
+        return rocrate_or_link
+    if rocrate_or_link:
+        try:
+            rocrate = base64.b64decode(rocrate_or_link)
+            temp_rocrate_file = tempfile.NamedTemporaryFile(delete=False, prefix="/tmp/")
+            temp_rocrate_file.write(rocrate)
+            local_roc_link = f"tmp://{temp_rocrate_file.name}"
+            logger.debug("ROCrate written to %r", temp_rocrate_file.name)
+            logger.debug("Local roc_link: %r", local_roc_link)
+            return local_roc_link
+        except Exception as e:
+            logger.debug(e)
+            raise lm_exceptions.DecodeROCrateException(detail=str(e))
+
+
 def _download_from_remote(url, output_stream, authorization=None):
     with requests.Session() as session:
         if authorization:
