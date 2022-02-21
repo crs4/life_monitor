@@ -105,7 +105,7 @@ class LifeMonitor:
         return w
 
     @classmethod
-    def register_workflow(cls, roc_link, workflow_submitter: User, workflow_version,
+    def register_workflow(cls, rocrate_or_link, workflow_submitter: User, workflow_version,
                           workflow_uuid=None, workflow_identifier=None,
                           workflow_registry: Optional[models.WorkflowRegistry] = None,
                           authorization=None, name=None, public=False):
