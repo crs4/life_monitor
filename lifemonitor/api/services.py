@@ -21,18 +21,20 @@
 from __future__ import annotations
 
 import logging
+import os
 from datetime import datetime
 from typing import List, Optional, Union
 
 import lifemonitor.exceptions as lm_exceptions
 from lifemonitor.api import models
-from lifemonitor.auth.models import (EventType, ExternalServiceAuthorizationHeader,
+from lifemonitor.auth.models import (EventType,
+                                     ExternalServiceAuthorizationHeader,
                                      Notification, Permission, Resource,
                                      RoleType, Subscription, User, HostingService)
 from lifemonitor.auth.oauth2.client import providers
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 from lifemonitor.auth.oauth2.server import server
-from lifemonitor.utils import OpenApiSpecs
+from lifemonitor.utils import OpenApiSpecs, get_rocrate_link
 
 logger = logging.getLogger()
 
@@ -126,53 +128,64 @@ class LifeMonitor:
 
         if str(workflow_version) in w.versions:
             raise lm_exceptions.WorkflowVersionConflictException(workflow_uuid, workflow_version)
-        if not roc_link:
-            if not workflow_registry:
-                raise ValueError("Missing ROC link")
-            else:
-                roc_link = workflow_registry.get_rocrate_external_link(w.external_id, workflow_version)
-
-        wv = w.add_version(workflow_version, roc_link, workflow_submitter,
-                           name=name, registry=workflow_registry)
-
-        if workflow_submitter:
-            wv.permissions.append(Permission(user=workflow_submitter, roles=[RoleType.owner]))
-            # automatically register submitter's subscription to workflow events
-            workflow_submitter.subscribe(w)
-        if authorization:
-            auth = ExternalServiceAuthorizationHeader(workflow_submitter, header=authorization)
-            auth.resources.append(wv)
-
-        if name is None:
-            if wv.workflow_name is None:
-                raise lm_exceptions.LifeMonitorException(title="Missing attribute 'name'",
-                                                         detail="Attribute 'name' is not defined and it cannot be retrieved \
-                                                         from the workflow RO-Crate (name of 'mainEntity' not found)",
-                                                         status=400)
-            w.name = wv.workflow_name
-            wv.name = wv.workflow_name
-
-        # set workflow visibility
-        w.public = public
-
-        # set hosting service
-        hosting_service = None
-        if wv.based_on:
-            hosting_service = HostingService.from_url(wv.based_on)
-        elif workflow_registry:
-            hosting_service = workflow_registry
-        if hosting_service:
-            wv.hosting_service = hosting_service
-
-        # parse roc_metadata and register suites and instances
         try:
-            if wv.roc_suites:
-                for _, raw_suite in wv.roc_suites.items():
-                    cls._init_test_suite_from_json(wv, workflow_submitter, raw_suite)
-        except KeyError as e:
-            raise lm_exceptions.SpecificationNotValidException(f"Missing property: {e}")
-        w.save()
-        return wv
+            roc_link = get_rocrate_link(rocrate_or_link)
+
+            if not roc_link:
+                if not workflow_registry:
+                    raise ValueError("Missing ROC link")
+                else:
+                    roc_link = workflow_registry.get_rocrate_external_link(w.external_id, workflow_version)
+
+            wv = w.add_version(workflow_version, roc_link, workflow_submitter,
+                               name=name, hosting_service=workflow_registry)
+
+            if workflow_submitter:
+                wv.permissions.append(Permission(user=workflow_submitter, roles=[RoleType.owner]))
+                # automatically register submitter's subscription to workflow events
+                workflow_submitter.subscribe(w)
+            if authorization:
+                auth = ExternalServiceAuthorizationHeader(workflow_submitter, header=authorization)
+                auth.resources.append(wv)
+
+            if name is None:
+                if wv.workflow_name is None:
+                    raise lm_exceptions.LifeMonitorException(title="Missing attribute 'name'",
+                                                             detail="Attribute 'name' is not defined and it cannot be retrieved \
+                                                            from the workflow RO-Crate (name of 'mainEntity' not found)",
+                                                             status=400)
+                w.name = wv.workflow_name
+                wv.name = wv.workflow_name
+
+            # set workflow visibility
+            w.public = public
+            
+            # set hosting service
+            hosting_service = None
+            if wv.based_on:
+                hosting_service = HostingService.from_url(wv.based_on)
+            elif workflow_registry:
+                hosting_service = workflow_registry
+            if hosting_service:
+                wv.hosting_service = hosting_service
+
+            # parse roc_metadata and register suites and instances
+            try:
+                if wv.roc_suites:
+                    for _, raw_suite in wv.roc_suites.items():
+                        cls._init_test_suite_from_json(wv, workflow_submitter, raw_suite)
+            except KeyError as e:
+                raise lm_exceptions.SpecificationNotValidException(f"Missing property: {e}")
+            w.save()
+            return wv
+
+        finally:
+            if roc_link and roc_link.startswith("tmp://"):
+                try:
+                    os.remove(roc_link.replace('tmp://', ''))
+                    logger.debug("Temporary file removed: %r", roc_link)
+                except Exception as e:
+                    logger.error("Error deleting temp rocrate: %r", str(e))
 
     @classmethod
     def deregister_user_workflow(cls, workflow_uuid, workflow_version, user: User):
