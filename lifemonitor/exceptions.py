@@ -205,7 +205,8 @@ class IllegalStateException(LifeMonitorException):
 def handle_exception(e: Exception):
     """Return JSON instead of HTML for HTTP errors."""
     # start with the correct headers and status code from the error
-    logger.exception(e)
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.exception(e)
     if isinstance(e, LifeMonitorException):
         return Response(response=e.to_json(),
                         status=e.status,
