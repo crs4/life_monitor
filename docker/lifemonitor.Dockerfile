@@ -1,4 +1,4 @@
-FROM python:3.7-buster as base
+FROM python:3.9-buster as base
 
 # Install base requirements
 RUN apt-get update -q \
