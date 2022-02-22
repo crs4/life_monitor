@@ -60,6 +60,12 @@ class LifeMonitorException(Exception):
         return serializers.ProblemDetailsSchema().dumps(self)
 
 
+class BadRequestException(LifeMonitorException):
+
+    def __init__(self, title="Bad Request", detail=None, type="about:blank", instance=None, **kwargs):
+        super().__init__(title, detail, type, 400, instance, **kwargs)
+
+
 class NotImplementedException(LifeMonitorException):
 
     def __init__(self, title="Not Implemented", detail=None,
@@ -145,6 +151,14 @@ class DownloadException(LifeMonitorException):
 class NotValidROCrateException(LifeMonitorException):
 
     def __init__(self, detail="Not valid RO Crate",
+                 type="about:blank", status=400, instance=None, **kwargs):
+        super().__init__(title="Bad request",
+                         detail=detail, status=status, **kwargs)
+
+
+class DecodeROCrateException(LifeMonitorException):
+
+    def __init__(self, detail="Unable to decode RO Crate",
                  type="about:blank", status=400, instance=None, **kwargs):
         super().__init__(title="Bad request",
                          detail=detail, status=status, **kwargs)
