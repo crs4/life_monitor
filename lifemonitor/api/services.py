@@ -89,7 +89,7 @@ class LifeMonitor:
                 w = cls._find_and_check_shared_workflow_version(user, uuid, version=version)
 
         if w is None:
-            raise lm_exceptions.EntityNotFoundException(models.WorkflowVersion, f"{uuid}_{version}")
+            raise lm_exceptions.EntityNotFoundException(models.WorkflowVersion, entity_id=f"{uuid}_{version}")
         # Check whether the user can access the workflow.
         # As a general rule, we grant user access to the workflow
         #   1. if the user belongs to the owners group
@@ -262,7 +262,7 @@ class LifeMonitor:
         workflow = cls._find_and_check_workflow_version(user, workflow_uuid, workflow_version)
         logger.debug("WorkflowVersion to delete: %r", workflow)
         if not workflow:
-            raise lm_exceptions.EntityNotFoundException(models.WorkflowVersion, (workflow_uuid, workflow_version))
+            raise lm_exceptions.EntityNotFoundException(models.WorkflowVersion, entity_id=(workflow_uuid, workflow_version))
         if workflow.submitter != user:
             raise lm_exceptions.NotAuthorizedException("Only the workflow submitter can delete the workflow")
         workflow.delete()
