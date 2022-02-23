@@ -30,3 +30,4 @@ PyGithub~=1.55
 PyYAML~=5.4.1
 pika~=1.2.0
 redis~=4.1.4
+rocrate==0.5.5
