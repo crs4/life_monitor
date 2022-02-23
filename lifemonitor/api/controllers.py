@@ -434,32 +434,64 @@ def workflows_post(body, _registry=None, _submitter_id=None):
 
 @authorized
 def workflows_put(wf_uuid, body):
-    logger.debug("PUT called for workflow (%s)", wf_uuid)
-    workflow_version = _get_workflow_or_problem(wf_uuid, None)
-    if isinstance(workflow_version, Response):
-        return workflow_version
-    lm.update_workflow(
-        workflow_version,
-        name=body.get('name', workflow_version.workflow.name),
-        public=body.get('public', workflow_version.workflow.public),
-    )
-    clear_cache()
-    return connexion.NoContent, 204
+    wf_version = request.args.get('version', None)
+    logger.debug(f"PUT called for workflow {wf_uuid} (version '{wf_version}')")
+    return __update_workflow__(wf_uuid, wf_version, body)
 
 
 @authorized
 def workflows_version_put(wf_uuid, wf_version, body):
-    logger.debug("PUT called for workflow version (%s)", wf_uuid)
-    workflow_version = _get_workflow_or_problem(wf_uuid, wf_version)
-    if isinstance(workflow_version, Response):
-        return workflow_version
-    lm.update_workflow(
-        workflow_version,
-        name=body.get('name', workflow_version.name),
-        public=body.get('version', workflow_version.version),
-    )
-    clear_cache()
-    return connexion.NoContent, 204
+    logger.debug(f"PUT called for workflow {wf_uuid} (version {wf_version})")
+    return __update_workflow__(wf_uuid, wf_version, body)
+
+
+def __update_workflow__(wf_uuid, wf_version, body):
+    # get a reference to the workflow version to be updated
+    workflow_version = __get_workflow_version__(wf_uuid, wf_version)
+    # check if there exists a submitter and/or a registry in the current request
+    registry, submitter = __check_submitter_and_registry__(body, _check_identifier=False)
+    # registry workflows cannot be updated through roc_link or rocrate
+    # (roc_link and rocrate will be ignored by the 'lm' service)
+    rocrate_or_link = body.get('roc_link', None) or body.get('rocrate', None)
+    if workflow_version.hosting_service is not None and rocrate_or_link is not None:
+        raise lm_exceptions.Forbidden(detail=messages.forbidden_roclink_or_rocrate_for_registry_workflows)
+    # perform the update through the service
+    try:
+        updated_workflow_version = lm.update_workflow(
+            submitter,
+            wf_uuid, workflow_version.version,
+            name=body.get('name', workflow_version.workflow.name),
+            new_version_label=body.get('version', None),
+            public=body.get('public', workflow_version.workflow.public),
+            rocrate_or_link=rocrate_or_link,
+            authorization=body.get('authorization', None)
+        )
+        clear_cache()
+        if updated_workflow_version.uuid != workflow_version.uuid:
+            return {'uuid': str(updated_workflow_version.workflow.uuid),
+                    'wf_version': updated_workflow_version.version,
+                    'name': updated_workflow_version.name}, 201
+        return connexion.NoContent, 204
+
+    except KeyError as e:
+        return lm_exceptions.report_problem(400, "Bad Request", extra_info={"exception": str(e)},
+                                            detail=messages.input_data_missing)
+    except lm_exceptions.DownloadException as e:
+        return lm_exceptions.report_problem(400, "Bad Request", extra_info={"exception": str(e)},
+                                            detail=messages.invalid_ro_crate)
+    except lm_exceptions.NotValidROCrateException as e:
+        return lm_exceptions.report_problem(400, "Bad Request", extra_info={"exception": str(e)},
+                                            detail=messages.invalid_ro_crate)
+    except lm_exceptions.NotAuthorizedException as e:
+        return lm_exceptions.report_problem(403, "Forbidden", extra_info={"exception": str(e)},
+                                            detail=messages.not_authorized_registry_access.format(registry.name)
+                                            if registry else messages.not_authorized_workflow_access)
+    except lm_exceptions.LifeMonitorException:
+        # Catch and re-raise to avoid the last catch-all exception handler
+        raise
+    except Exception as e:
+        logger.exception(e)
+        raise lm_exceptions.LifeMonitorException(title="Internal Error", detail=str(e))
 
 
 @authorized
