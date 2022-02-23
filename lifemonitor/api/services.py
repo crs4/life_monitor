@@ -188,6 +188,76 @@ class LifeMonitor:
                     logger.error("Error deleting temp rocrate: %r", str(e))
 
     @classmethod
+    def update_workflow(cls, workflow_submitter: User,
+                        workflow_uuid: str, workflow_version: str,
+                        name=None, new_version_label: str = None, public=False,
+                        rocrate_or_link: str = None,
+                        authorization=None) -> models.WorkflowVersion:
+
+        # get reference to the current workflow version
+        wv: models.WorkflowVersion = cls.get_user_workflow_version(workflow_submitter, workflow_uuid, workflow_version)
+        w: models.Workflow = wv.workflow
+        workflow_registry: models.WorkflowRegistry = wv.hosting_service
+        # compute the roc_link
+        roc_link = None
+        if workflow_registry is not None:
+            # if the workflow comes from a hosting service
+            # always reuse the original roc_link pointing to the workflow on the service
+            roc_link = workflow_registry.get_rocrate_external_link(w.external_id, workflow_version)
+            logger.debug("Reusing original ROC link: %r", roc_link)
+        elif rocrate_or_link is not None:
+            # if an rocrate or link is provided, the workflow version will be replaced
+            roc_link = get_rocrate_link(rocrate_or_link)
+            logger.debug("New roc_link or RO-crate: %r", rocrate_or_link)
+
+        if roc_link is not None:
+            try:
+                w.remove_version(wv)
+                wv = w.add_version(workflow_version, roc_link, workflow_submitter,
+                                   name=name, hosting_service=workflow_registry)
+                if workflow_submitter:
+                    wv.permissions.append(Permission(user=workflow_submitter, roles=[RoleType.owner]))
+                    # automatically register submitter's subscription to workflow events
+                    workflow_submitter.subscribe(w)
+                if authorization:
+                    auth = ExternalServiceAuthorizationHeader(workflow_submitter, header=authorization)
+                    auth.resources.append(wv)
+                # parse roc_metadata and register suites and instances
+                try:
+                    if wv.roc_suites:
+                        for _, raw_suite in wv.roc_suites.items():
+                            cls._init_test_suite_from_json(wv, workflow_submitter, raw_suite)
+                except KeyError as e:
+                    raise lm_exceptions.SpecificationNotValidException(f"Missing property: {e}")
+            finally:
+                if roc_link and roc_link.startswith("tmp://"):
+                    try:
+                        os.remove(roc_link.replace('tmp://', ''))
+                        logger.debug("Temporary file removed: %r", roc_link)
+                    except Exception as e:
+                        logger.error("Error deleting temp rocrate: %r", str(e))
+
+        if name is None:
+            if wv.workflow_name is None and w.name is None:
+                raise lm_exceptions.LifeMonitorException(title="Missing attribute 'name'",
+                                                         detail="Attribute 'name' is not defined and it cannot be retrieved \
+                                                        from the workflow RO-Crate (name of 'mainEntity' not found)",
+                                                         status=400)
+            w.name = wv.workflow_name if wv.workflow_name else w.name
+        else:
+            w.name = name
+            wv.name = name
+
+        if new_version_label is not None:
+            wv.version = new_version_label
+
+        if public is not None:
+            w.public = public
+
+        w.save()
+        return wv
+
+    @classmethod
     def deregister_user_workflow(cls, workflow_uuid, workflow_version, user: User):
         workflow = cls._find_and_check_workflow_version(user, workflow_uuid, workflow_version)
         logger.debug("WorkflowVersion to delete: %r", workflow)
@@ -212,16 +282,6 @@ class LifeMonitor:
             return workflow_uuid, workflow_version
         except KeyError:
             raise lm_exceptions.EntityNotFoundException(models.WorkflowVersion, (workflow_uuid, workflow_version))
-
-    @staticmethod
-    def update_workflow(workflow_version: models.WorkflowVersion,
-                        name: str = None, public: bool = None):
-        if name:
-            workflow_version.workflow.name = name
-        if public is not None:
-            workflow_version.workflow.public = public
-
-        workflow_version.workflow.save()
 
     @staticmethod
     def _init_test_suite_from_json(wv: models.WorkflowVersion, submitter: models.User, raw_suite):
