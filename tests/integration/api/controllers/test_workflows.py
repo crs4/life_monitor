@@ -221,37 +221,6 @@ def test_update_workflows_not_authorized(app_client, client_auth_method, user1, 
 
 
 @pytest.mark.parametrize("client_auth_method", [
-    #    ClientAuthenticationMethod.BASIC,
-    ClientAuthenticationMethod.API_KEY,
-    ClientAuthenticationMethod.AUTHORIZATION_CODE,
-    ClientAuthenticationMethod.CLIENT_CREDENTIALS,
-    ClientAuthenticationMethod.REGISTRY_CODE_FLOW
-], indirect=True)
-@pytest.mark.parametrize("user1", [True], indirect=True)
-def test_update_workflows(app_client, client_auth_method, user1, user1_auth, valid_workflow):
-    workflow = utils.pick_workflow(user1, valid_workflow)
-    logger.debug("User1 Auth Headers: %r", user1_auth)
-    updates = {
-        'name': 'Just another workflow name',
-        'public': not workflow['public']
-    }
-    r = app_client.put(
-        utils.build_workflow_path(workflow, include_version=False),
-        json=updates, headers=user1_auth
-    )
-    assert r.status_code == 204, f"Error when updating the workflow {workflow}"
-
-    r = app_client.get(
-        utils.build_workflow_path(workflow, include_version=False), headers=user1_auth
-    )
-    assert r.status_code == 200, f"Error when getting the workflow {workflow}"
-    data = r.get_json()
-    logger.debug("The Workflow: %r", data)
-    assert updates['name'] == data['name'], "Unexpected workflow name"
-    assert updates['public'] == data['public'], "Unexpected workflow visibility"
-
-
-@pytest.mark.parametrize("client_auth_method", [
     ClientAuthenticationMethod.NOAUTH,
 ], indirect=True)
 @pytest.mark.parametrize("user1", [True], indirect=True)
@@ -278,29 +247,232 @@ def test_update_version_workflows_not_authorized(app_client, client_auth_method,
     ClientAuthenticationMethod.REGISTRY_CODE_FLOW
 ], indirect=True)
 @pytest.mark.parametrize("user1", [True], indirect=True)
-def test_update_version_workflows(app_client, client_auth_method,
-                                  user1, user1_auth, valid_workflow):
-    workflow = utils.pick_workflow(user1, valid_workflow)
+def test_shallow_workflow_update(app_client, client_auth_method, user1, user1_auth, generic_workflow):
+    workflow, workflow_version = utils.register_workflow(user1, generic_workflow)
     logger.debug("User1 Auth Headers: %r", user1_auth)
     updates = {
-        'name': 'Just another workflow version name',
-        'version': "1.0-alpha"
+        'name': 'Just another workflow name',
+        'public': not workflow_version.workflow.public,
+        'roc_link': None
     }
     r = app_client.put(
-        utils.build_workflow_path(workflow, include_version=True, version_as_subpath=True),
+        utils.build_workflow_path(workflow, include_version=False),
         json=updates, headers=user1_auth
     )
     assert r.status_code == 204, f"Error when updating the workflow {workflow}"
 
     r = app_client.get(
-        utils.build_workflow_path(workflow, include_version=True), headers=user1_auth
+        utils.build_workflow_path(workflow, include_version=False), headers=user1_auth
     )
-    assert r.status_code == 200, f"Error when getting the workflow version {workflow}"
+    assert r.status_code == 200, f"Error when getting the workflow {workflow}"
     data = r.get_json()
-    logger.debug("The Workflow version: %r", data)
-    assert workflow['name'] == data['name'], "Unexpected workflow name"
-    assert updates['name'] == data['version']['name'], "Unexpected workflow version name"
-    assert updates['version'] == data['version']['version'], "Unexpected workflow visibility"
+    logger.debug("The Workflow: %r", data)
+    assert updates['name'] == data['name'], "Unexpected workflow name"
+    assert updates['public'] == data['public'], "Unexpected workflow visibility"
+
+
+@pytest.mark.parametrize("client_auth_method", [
+    #    ClientAuthenticationMethod.BASIC,
+    ClientAuthenticationMethod.API_KEY,
+    ClientAuthenticationMethod.AUTHORIZATION_CODE,
+    ClientAuthenticationMethod.CLIENT_CREDENTIALS,
+    ClientAuthenticationMethod.REGISTRY_CODE_FLOW
+], indirect=True)
+@pytest.mark.parametrize("user1", [True], indirect=True)
+def test_forbidden_deep_registry_workflow_update_with_roclink(app_client, client_auth_method,
+                                                              user1, user1_auth, valid_workflow, generic_workflow):
+    workflow = utils.pick_workflow(user1, valid_workflow)
+    logger.debug("User1 Auth Headers: %r", user1_auth)
+    updates = {
+        'name': 'Just another workflow name',
+        'public': not workflow['public'],
+        'roc_link': generic_workflow['roc_link'],
+        'authorization': generic_workflow['authorization']
+    }
+    r = app_client.put(
+        utils.build_workflow_path(workflow, include_version=False),
+        json=updates, headers=user1_auth
+    )
+    assert r.status_code == 403, \
+        "Registry workflows cannot be updated through external roc_link or rocrate"
+
+
+@pytest.mark.parametrize("client_auth_method", [
+    #    ClientAuthenticationMethod.BASIC,
+    ClientAuthenticationMethod.API_KEY,
+    ClientAuthenticationMethod.AUTHORIZATION_CODE,
+    ClientAuthenticationMethod.CLIENT_CREDENTIALS,
+    ClientAuthenticationMethod.REGISTRY_CODE_FLOW
+], indirect=True)
+@pytest.mark.parametrize("user1", [True], indirect=True)
+def test_forbidden_deep_registry_workflow_update_with_encoded_rocrate(
+        app_client, client_auth_method,
+        user1, user1_auth, valid_workflow, encoded_rocrate_workflow):
+    workflow = utils.pick_workflow(user1, valid_workflow)
+    logger.debug("User1 Auth Headers: %r", user1_auth)
+    updates = {
+        'name': 'Just another workflow name',
+        'public': not workflow['public'],
+        'rocrate': encoded_rocrate_workflow['rocrate']
+    }
+    r = app_client.put(
+        utils.build_workflow_path(workflow, include_version=False),
+        json=updates, headers=user1_auth
+    )
+    assert r.status_code == 403, \
+        "Registry workflows cannot be updated through external roc_link or rocrate"
+
+
+@pytest.mark.parametrize("client_auth_method", [
+    #    ClientAuthenticationMethod.BASIC,
+    ClientAuthenticationMethod.API_KEY,
+    ClientAuthenticationMethod.AUTHORIZATION_CODE,
+    ClientAuthenticationMethod.CLIENT_CREDENTIALS,
+    ClientAuthenticationMethod.REGISTRY_CODE_FLOW
+], indirect=True)
+@pytest.mark.parametrize("user1", [True], indirect=True)
+def test_deep_registry_workflow_update(app_client, client_auth_method,
+                                       user1, user1_auth, valid_workflow):
+    workflows_count = len(WorkflowVersion.all())
+    workflow = utils.pick_workflow(user1, valid_workflow)
+    logger.debug("User1 Auth Headers: %r", user1_auth)
+    updates = {
+        'name': 'Just another workflow name',
+        'public': not workflow['public'],
+        'version': '1.1'
+    }
+    r = app_client.put(
+        utils.build_workflow_path(workflow=workflow, include_version=False),
+        json=updates, headers=user1_auth
+    )
+    assert r.status_code == 201, f"Error when updating the workflow {workflow}"
+    logger.debug("Workflow path: %r", utils.build_workflow_path(
+        workflow=workflow, include_version=False))
+    assert workflows_count == len(WorkflowVersion.all()), "Number of workflow versions should not change"
+    r = app_client.get(
+        utils.build_workflow_path(workflow=workflow, include_version=False),
+        headers=user1_auth
+    )
+    assert r.status_code == 200, f"Error when getting the workflow {workflow}"
+    data = r.get_json()
+    logger.debug("The Workflow: %r", data)
+    assert updates['name'] == data['name'], "Unexpected workflow name"
+    assert updates['public'] == data['public'], "Unexpected workflow visibility"
+    assert data['version'] != workflow['version'], "Unexpected workflow version label"
+    assert data['version']['version'] != workflow['version'], "Unexpected workflow version label"
+
+
+@pytest.mark.parametrize("client_auth_method", [
+    #    ClientAuthenticationMethod.BASIC,
+    ClientAuthenticationMethod.API_KEY,
+    ClientAuthenticationMethod.AUTHORIZATION_CODE,
+    ClientAuthenticationMethod.CLIENT_CREDENTIALS,
+    ClientAuthenticationMethod.REGISTRY_CODE_FLOW
+], indirect=True)
+def test_deep_workflow_update_with_rocrate(app_client, client_auth_method,
+                                           user1, user1_auth,
+                                           generic_workflow, encoded_rocrate_workflow):
+    workflow, workflow_version = utils.register_workflow(user1, generic_workflow)
+    suites_count = len(workflow_version.test_suites)
+    assert suites_count == 1, "Unexpected number of suites"
+    instances_count = len(workflow_version.test_suites[0].test_instances)
+    assert instances_count == 1, "Unexpected number of instances"
+    logger.debug("User1 Auth Headers: %r", user1_auth)
+    updates = {
+        'name': 'Just another workflow name',
+        'public': not workflow_version.workflow.public,
+        'version': '1.0.1',
+        'rocrate': encoded_rocrate_workflow['rocrate'],
+        'authorization': encoded_rocrate_workflow['authorization']
+    }
+    r = app_client.put(
+        utils.build_workflow_path(workflow=workflow, include_version=False),
+        json=updates, headers=user1_auth
+    )
+    assert r.status_code == 201, f"Error when updating the workflow {workflow_version}"
+    assert len(WorkflowVersion.all()) == 1, "Number of workflow versions should not change"
+    logger.debug("Workflow path: %r", utils.build_workflow_path(
+        workflow=workflow, include_version=False))
+    r = app_client.get(
+        utils.build_workflow_path(workflow=workflow, include_version=False),
+        headers=user1_auth
+    )
+    assert r.status_code == 200, f"Error when getting the workflow {workflow_version}"
+    data = r.get_json()
+    logger.debug("The Workflow: %r", data)
+    assert updates['name'] == data['name'], "Unexpected workflow name"
+    assert updates['public'] == data['public'], "Unexpected workflow visibility"
+    assert data['version'] != workflow['version'], "Unexpected workflow version label"
+    assert data['version']['version'] != workflow['version'], "Unexpected workflow version label"
+    assert data['version']['version'] == updates['version'], "Unexpected workflow version label"
+    logger.debug("Workflow SUITE path: %r", utils.build_workflow_path(
+        workflow=workflow, include_version=False, subpath='suites'))
+    r = app_client.get(
+        utils.build_workflow_path(workflow=workflow, include_version=False, subpath='suites'),
+        headers=user1_auth
+    )
+    assert r.status_code == 200, f"Error when getting suites for the workflow {workflow_version}"
+    suites = r.get_json()['items']
+    logger.debug("Suites of workflow: %r", suites)
+    assert len(suites) == suites_count, "Unexpected number of suites for the updated workflow"
+    assert len(suites[0]['instances']) != instances_count, "Unexpected number of instances for the updated workflow"
+    assert len(suites[0]['instances']) == 2, "Unexpected number of instances for the updated workflow"
+
+
+@pytest.mark.parametrize("client_auth_method", [
+    #    ClientAuthenticationMethod.BASIC,
+    ClientAuthenticationMethod.API_KEY,
+    ClientAuthenticationMethod.AUTHORIZATION_CODE,
+    ClientAuthenticationMethod.CLIENT_CREDENTIALS,
+    ClientAuthenticationMethod.REGISTRY_CODE_FLOW
+], indirect=True)
+def test_deep_workflow_update_with_roclink(app_client, client_auth_method,
+                                           user1, user1_auth,
+                                           generic_workflow, encoded_rocrate_workflow):
+    workflow, workflow_version = utils.register_workflow(user1, encoded_rocrate_workflow)
+    suites_count = len(workflow_version.test_suites)
+    assert suites_count == 1, "Unexpected number of suites"
+    instances_count = len(workflow_version.test_suites[0].test_instances)
+    assert instances_count == 2, "Unexpected number of instances"
+    logger.debug("User1 Auth Headers: %r", user1_auth)
+    updates = {
+        'name': 'Just another workflow name',
+        'public': not workflow_version.workflow.public,
+        'version': '1.0.1',
+        'roc_link': generic_workflow['roc_link'],
+        'authorization': generic_workflow['authorization']
+    }
+    r = app_client.put(
+        utils.build_workflow_path(workflow=workflow, include_version=False),
+        json=updates, headers=user1_auth
+    )
+    assert r.status_code == 201, f"Error when updating the workflow {workflow_version}"
+    assert len(WorkflowVersion.all()) == 1, "Number of workflow versions should not change"
+    logger.debug("Workflow path: %r", utils.build_workflow_path(
+        workflow=workflow, include_version=False))
+    r = app_client.get(
+        utils.build_workflow_path(workflow=workflow, include_version=False),
+        headers=user1_auth
+    )
+    assert r.status_code == 200, f"Error when getting the workflow {workflow_version}"
+    data = r.get_json()
+    logger.debug("The Workflow: %r", data)
+    assert updates['name'] == data['name'], "Unexpected workflow name"
+    assert updates['public'] == data['public'], "Unexpected workflow visibility"
+    assert data['version']['version'] != workflow['version'], "Unexpected workflow version label"
+    assert data['version']['version'] == updates['version'], "Unexpected workflow version label"
+    logger.debug("Workflow SUITE path: %r", utils.build_workflow_path(
+        workflow=workflow, include_version=False, subpath='suites'))
+    r = app_client.get(
+        utils.build_workflow_path(workflow=workflow, include_version=False, subpath='suites'),
+        headers=user1_auth
+    )
+    assert r.status_code == 200, f"Error when getting suites for the workflow {workflow_version}"
+    suites = r.get_json()['items']
+    logger.debug("Suites of workflow: %r", suites)
+    assert len(suites) == suites_count, "Unexpected number of suites for the updated workflow"
+    assert len(suites[0]['instances']) != instances_count, "Unexpected number of instances for the updated workflow"
+    assert len(suites[0]['instances']) == 1, "Unexpected number of instances for the updated workflow"
 
 
 @pytest.mark.parametrize("client_auth_method", [
@@ -456,3 +628,5 @@ def test_workflow_registry_roc_not_found(app_client, client_auth_method, user1_a
     }
     response = app_client.post('/users/current/workflows', json=wf, headers=user1_auth)
     utils.assert_status_code(400, response.status_code)
+    data = json.loads(response.data)
+    logger.debug(data)
