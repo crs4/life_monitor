@@ -232,6 +232,14 @@ class WorkflowRegistry(auth_models.HostingService):
     def get_workflows(self) -> List[models.Workflow]:
         return list({w.workflow for w in self.registered_workflow_versions})
 
+    def get_workflow_by_external_id(self, identifier) -> models.Workflow:
+        try:
+            w = next((w for w in self.registered_workflow_versions if w.workflow.external_id == identifier), None)
+            return w.workflow if w is not None else None
+        except Exception:
+            if models.Workflow.find_by_uuid(identifier) is not None:
+                raise lm_exceptions.NotAuthorizedException()
+
     def get_workflow(self, uuid_or_identifier) -> models.Workflow:
         try:
             w = next((w for w in self.registered_workflow_versions if w.workflow.uuid == lm_utils.uuid_param(uuid_or_identifier)), None)
