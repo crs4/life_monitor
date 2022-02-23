@@ -26,8 +26,4 @@ python-redis-lock~=3.7.0
 PyGithub~=1.55
 PyYAML~=5.4.1
 pika~=1.2.0
-redis~=3.5.3
-requests~=2.26.0
-rocrate==0.5.2
-SQLAlchemy~=1.3.23
-wheel~=0.37.0
+redis~=4.1.4
