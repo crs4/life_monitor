@@ -688,19 +688,10 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                name:
-                  type: string
-                  description: |
-                    A name for the workflow. If not provided, the RO-Crate dataset name is used as default.
-                  example: "COVID-19 Workflow"
-                public:
-                  type: boolean
-                  description: <code>true</code> if the workflow is <b>public</b>; false otherwise (default `false`).
-                  default: false
-                  example: false
+              $ref: "#/components/schemas/WorkflowBase"
       responses:
+        "201":
+          $ref: "#/components/responses/WorkflowRegistered"
         "204":
           description: "Workflow updated"
         "400":
@@ -879,17 +870,22 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                name:
-                  type: string
-                  description: |
-                    A name for the workflow version. If not provided, the RO-Crate dataset name is used as default.
-                  example: "COVID-19 Workflow"
-                version:
-                  type: string
-                  description: "Workflow version"
-                  example: "1.0"
+              oneOf:
+                - $ref: "#/components/schemas/RoCrateWorkflowVersionBase"
+                - $ref: "#/components/schemas/RoCrateLinkWorkflowVersionBase"
+                - $ref: "#/components/schemas/WorkflowVersionBase"
+            # schema:
+            #   type: object
+            #   properties:
+            #     name:
+            #       type: string
+            #       description: |
+            #         A name for the workflow version. If not provided, the RO-Crate dataset name is used as default.
+            #       example: "COVID-19 Workflow"
+            #     version:
+            #       type: string
+            #       description: "Workflow version"
+            #       example: "1.0"
       responses:
         "204":
           description: "Workflow version updated"
@@ -1887,13 +1883,18 @@ components:
 
     WorkflowBase:
       type: object
-      description: Generic workflow
+      description: Basic information about a workflow
       properties:
         name:
           type: string
           description: |
             A name for the workflow. If not provided, the RO-Crate dataset name is used as default.
           example: "COVID-19 Workflow"
+        public:
+          type: boolean
+          description: <code>true</code> if the workflow is <b>public</b>; false otherwise (default `false`).
+          default: false
+          example: false
         # authorization:
         #   type: string
         #   nullable: true
@@ -1953,18 +1954,13 @@ components:
       allOf:
         - $ref: "#/components/schemas/WorkflowBase"
         - type: object
-          description: Base workflow version
+          description: Basic information about a workflow version
           properties:
             version:
               type: string
               description: A string identifying the workflow version (e.g., 1.0)
               example: "1.0"
               writeOnly: true
-            public:
-              type: boolean
-              description: <code>true</code> if the workflow is <b>public</b>; false otherwise (default `false`).
-              default: false
-              example: false
           required:
             - version
 
@@ -1988,7 +1984,7 @@ components:
         - $ref: "#/components/schemas/WorkflowBase"
 
     GenericWorkflowVersion:
-      description: A generic workflow version
+      description: Basic information about a workflow version
       allOf:
         - type: object
           properties:
@@ -2006,8 +2002,8 @@ components:
             - roc_link
         - $ref: "#/components/schemas/WorkflowVersionBase"
 
-    RoCrateLinkWorkflowVersion:
-      description: A generic workflow version
+    RoCrateLinkWorkflowVersionBase:
+      description: A generic workflow version from an exteranl RO-Crate
       allOf:
         - type: object
           properties:
@@ -2016,11 +2012,6 @@ components:
               description: |
                 Link to the workflow RO-Crate
               example: http://webserver:5000/download?file=ro-crate-galaxy-sortchangecase.crate.zip
-            uuid:
-              type: string
-              description: |
-                Universal unique identifier of the workflow.
-              example: 123e4567-e89b-12d3-a456-426614174000
             authorization:
               type: string
               nullable: true
@@ -2037,8 +2028,19 @@ components:
             - roc_link
         - $ref: "#/components/schemas/WorkflowVersionBase"
 
-    RoCrateWorkflowVersion:
-      description: A generic workflow version
+    RoCrateLinkWorkflowVersion:
+      allOf:
+        - type: object
+          properties:
+            uuid:
+              type: string
+              description: |
+                Universal unique identifier of the workflow.
+              example: 123e4567-e89b-12d3-a456-426614174000
+        - $ref: "#/components/schemas/RoCrateLinkWorkflowVersionBase"
+
+    RoCrateWorkflowVersionBase:
+      description: A generic workflow version from an embedded (base64 encoded) **RO-Crate**
       allOf:
         - type: object
           properties:
@@ -2047,14 +2049,20 @@ components:
               format: base64
               description: |
                 Base64 encoding of the RO-Crate archive
+          required:
+            - rocrate
+        - $ref: "#/components/schemas/WorkflowVersionBase"
+
+    RoCrateWorkflowVersion:
+      allOf:
+        - type: object
+          properties:
             uuid:
               type: string
               description: |
                 Universal unique identifier of the workflow.
               example: 123e4567-e89b-12d3-a456-426614174000
-          required:
-            - rocrate
-        - $ref: "#/components/schemas/WorkflowVersionBase"
+        - $ref: "#/components/schemas/RoCrateWorkflowVersionBase"
 
     RegistryWorkflowVersion:
       description: A (version of a) workflow indexed by a registry.
