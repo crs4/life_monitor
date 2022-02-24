@@ -19,22 +19,28 @@
 # SOFTWARE.
 
 from __future__ import annotations
-
-import logging
-import os
-import tempfile
-import uuid as _uuid
-from pathlib import Path
-
-import lifemonitor.exceptions as lm_exceptions
-from flask import current_app
-from lifemonitor.api.models import db, repositories
+from sqlalchemy.ext.hybrid import hybrid_property
+from lifemonitor.utils import (check_resource_exists, compare_json,
+                               download_url, extract_zip)
+from lifemonitor.test_metadata import get_roc_suites
+from lifemonitor.auth.models import HostingService, Resource, ExternalServiceAuthorizationHeader
+from lifemonitor.api.models import db
+from typing import List
+from lifemonitor.utils import check_resource_exists, download_url
+from lifemonitor.models import JSON
+from lifemonitor.config import BaseConfig
 from lifemonitor.auth.models import (ExternalServiceAuthorizationHeader,
                                      HostingService, Resource)
-from lifemonitor.config import BaseConfig
-from lifemonitor.models import JSON
-from lifemonitor.utils import check_resource_exists, download_url
-from sqlalchemy.ext.hybrid import hybrid_property
+from lifemonitor.api.models import db, repositories
+from flask import current_app
+import lifemonitor.exceptions as lm_exceptions
+from pathlib import Path
+import uuid as _uuid
+import tempfile
+import os
+import logging
+import json
+
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -124,10 +130,31 @@ class ROCrate(Resource):
     def main_entity_name(self):
         return self.repository.metadata.main_entity_name
 
-    def _get_authorizations(self):
+    def _get_authorizations(self, extra_auth: ExternalServiceAuthorizationHeader = None):
+        if extra_auth:
+            authorizations.append(extra_auth)
         authorizations = self.authorizations.copy()
         authorizations.append(None)
         return authorizations
+
+    def check_for_changes(self, roc_link: str, extra_auth: ExternalServiceAuthorizationHeader = None) -> List:
+        errors = []
+        # try either with authorization header and without authorization
+        with tempfile.NamedTemporaryFile(dir='/tmp') as target_path:
+            for authorization in self._get_authorizations(extra_auth=extra_auth):
+                try:
+                    auth_header = authorization.as_http_header() if authorization else None
+                    logger.debug(auth_header)
+                    _, metadata = \
+                        self.load_metadata_files(roc_link, target_path.name, authorization_header=auth_header)
+                    changes = []
+                    if not compare_json(self.crate_metadata, metadata):
+                        changes.append(metadata)
+                    return changes
+                except lm_exceptions.NotAuthorizedException as e:
+                    logger.info("Caught authorization error exception while downloading and processing RO-crate: %s", e)
+                    errors.append(str(e))
+        raise lm_exceptions.NotAuthorizedException(detail=f"Not authorized to download {self.uri}", original_errors=errors)
 
     def download(self, target_path: str) -> str:
         # load ro-crate if not locally stored
