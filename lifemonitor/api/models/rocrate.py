@@ -67,11 +67,14 @@ class ROCrate(Resource):
     def local_path(self):
         if not self._local_path:
             root_path = current_app.config.get('DATA_WORKFLOWS', '/data_workflows')
-            if not self.workflow.uuid:
-                self.workflow.uuid = _uuid.uuid4()
+            try:
+                if not self.workflow.uuid:
+                    self.workflow.uuid = _uuid.uuid4()
+                base_path = os.path.join(root_path, str(self.workflow.uuid))
+            except Exception:
+                base_path = os.path.join(root_path, str(_uuid.uuid4()))
             if not self.uuid:
                 self.uuid = _uuid.uuid4()
-            base_path = os.path.join(root_path, str(self.workflow.uuid))
             os.makedirs(base_path, exist_ok=True)
             self._local_path = os.path.join(base_path, f"{self.uuid}.zip")
         return self._local_path
