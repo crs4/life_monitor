@@ -330,6 +330,14 @@ def load_test_definition_filename(filename):
         return json.load(f)
 
 
+def compare_json(obj1, obj2) -> bool:
+    json1 = json.dumps(obj1, sort_keys=True)
+    json2 = json.dumps(obj2, sort_keys=True)
+    result = json1 == json2
+    logger.debug("The two JSON objects are different")
+    return result
+
+
 def generate_username(user_info, salt_length=4):
     return "{}{}".format(
         user_info.preferred_username,
