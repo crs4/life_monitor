@@ -23,6 +23,8 @@ import logging
 import os
 from unittest.mock import MagicMock, Mock, patch
 
+import pytest
+
 import lifemonitor.api.controllers as controllers
 import lifemonitor.api.models as models
 import lifemonitor.auth as auth
@@ -62,12 +64,11 @@ def test_get_instance_by_user_error_forbidden(m, request_context, mock_user):
     m.get_public_workflow_version.return_value = None
     m.get_user_workflow_version = Mock(side_effect=lm_exceptions.NotAuthorizedException)
     # m.get_registry_workflow_version = workflow
-    response = controllers.instances_get_by_id(instance['uuid'])
-    logger.debug("Response: %r", response.data)
+    with pytest.raises(lm_exceptions.Forbidden):
+        controllers.instances_get_by_id(instance['uuid'])
     m.get_test_instance.assert_called_once()
     m.get_suite.assert_called_once()
     m.get_user_workflow_version.assert_called_once()
-    assert_status_code(403, response.status_code)
 
 
 @patch("lifemonitor.api.controllers.lm")
@@ -300,10 +301,9 @@ def test_get_instance_by_registry_error_forbidden(m, request_context, mock_regis
     m.get_suite.return_value = instance.suite
     m.get_public_workflow_version.return_value = None
     m.get_registry_workflow_version = Mock(side_effect=lm_exceptions.NotAuthorizedException)
-    response = controllers.instances_get_by_id(instance['uuid'])
+    with pytest.raises(lm_exceptions.Forbidden):
+        controllers.instances_get_by_id(instance['uuid'])
     m.get_test_instance.assert_called_once()
-    assert isinstance(response, Response), "Unexpected response type"
-    assert_status_code(403, response.status_code)
 
 
 @patch("lifemonitor.api.controllers.lm")

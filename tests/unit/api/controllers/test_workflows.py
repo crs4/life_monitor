@@ -169,11 +169,10 @@ def test_post_workflow_by_user_error_invalid_registry_uri(m, request_context, mo
     # add one fake workflow
     data = {"registry": "123456"}
     m.get_workflow_registry_by_generic_reference.side_effect = lm_exceptions.EntityNotFoundException(models.WorkflowRegistry)
-    response = controllers.workflows_post(body=data)
+    with pytest.raises(lm_exceptions.EntityNotFoundException):
+        controllers.workflows_post(body=data)
     m.get_workflow_registry_by_generic_reference.assert_called_once_with(data["registry"]), \
         "get_workflow_registry_by_uri should be used"
-    logger.debug("Response: %r, %r", response, str(response.data))
-    assert response.status_code == 404, "Unexpected Workflow registry"
 
 
 @patch("lifemonitor.api.controllers.lm")
@@ -184,11 +183,10 @@ def test_post_workflow_by_user_error_missing_input_data(m, request_context, mock
     # add one fake workflow
     data = {"registry": "123456"}
     m.get_workflow_registry_by_generic_reference.return_value = MagicMock()
-    response = controllers.workflows_post(body=data)
+    with pytest.raises(lm_exceptions.BadRequestException):
+        controllers.workflows_post(body=data)
     m.get_workflow_registry_by_generic_reference.assert_called_once_with(data["registry"]), \
         "get_workflow_registry_by_uri should be used"
-    logger.debug("Response: %r, %r", response, str(response.data))
-    assert_status_code(400, response.status_code)
 
 
 @patch("lifemonitor.api.controllers.lm")
@@ -224,11 +222,9 @@ def test_post_workflow_by_registry_error_registry_uri(m, request_context, mock_r
     assert auth.current_registry, "Unexpected registry in session"
     # add one fake workflow
     data = {"registry": "123456"}
-    response = controllers.workflows_post(body=data)
-    logger.debug("Response: %r, %r", response, str(response.data))
-    assert_status_code(400, response.status_code)
-    assert messages.unexpected_registry_uri in response.data.decode(),\
-        "Unexpected error message"
+    with pytest.raises(lm_exceptions.BadRequestException) as ex:
+        controllers.workflows_post(body=data)
+    assert messages.unexpected_registry_uri in ex.exconly(True), "Unexpected error message"
 
 
 @patch("lifemonitor.api.controllers.lm")
@@ -238,11 +234,10 @@ def test_post_workflow_by_registry_error_submitter_not_found(m, request_context,
     # add one fake workflow
     data = {"submitter_id": 1, "identifier": 1}
     m.find_registry_user_identity.side_effect = OAuthIdentityNotFoundException()
-    response = controllers.workflows_post(body=data)
-    logger.debug("Response: %r, %r", response, str(response.data))
-    assert_status_code(401, response.status_code)
+    with pytest.raises(lm_exceptions.NotAuthorizedException) as ex:
+        controllers.workflows_post(body=data)
     assert messages.no_user_oauth_identity_on_registry \
-        .format(data["submitter_id"], mock_registry.name) in response.data.decode(),\
+        .format(data["submitter_id"], mock_registry.name) in ex.exconly(True),\
         "Unexpected error message"
 
 
@@ -319,18 +314,16 @@ def test_get_workflow_by_id_error_not_found(m, request_context, mock_registry):
     assert auth.current_registry, "Unexpected registry in session"
     m.get_public_workflow_version.return_value = None
     m.get_registry_workflow_version.side_effect = lm_exceptions.EntityNotFoundException(models.WorkflowVersion)
-    response = controllers.workflows_get_by_id(wf_uuid="12345", wf_version="1")
-    logger.debug("Response: %r", response)
-    assert_status_code(404, response.status_code)
+    with pytest.raises(lm_exceptions.EntityNotFoundException) as ex:
+        controllers.workflows_get_by_id(wf_uuid="12345", wf_version="1")
     assert messages.workflow_not_found\
-        .format("12345", "1") in response.data.decode()
+        .format("12345", "1") in ex.exconly(True)
     # test when the service return None
     m.get_registry_workflow_version.return_value = None
-    response = controllers.workflows_get_by_id(wf_uuid="12345", wf_version="1")
-    logger.debug("Response: %r", response)
-    assert_status_code(404, response.status_code)
+    with pytest.raises(lm_exceptions.EntityNotFoundException) as ex:
+        controllers.workflows_get_by_id(wf_uuid="12345", wf_version="1")
     assert messages.workflow_not_found\
-        .format("12345", "1") in response.data.decode()
+        .format("12345", "1") in ex.exconly(True)
 
 
 @patch("lifemonitor.api.controllers.lm")

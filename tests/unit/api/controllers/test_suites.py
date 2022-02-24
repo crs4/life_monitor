@@ -21,11 +21,11 @@
 import logging
 from unittest.mock import MagicMock, patch
 
-import lifemonitor.api.models as models
 import lifemonitor.api.controllers as controllers
+import lifemonitor.api.models as models
 import lifemonitor.auth as auth
 import lifemonitor.exceptions as lm_exceptions
-from lifemonitor.lang import messages
+import pytest
 from tests.utils import assert_status_code
 
 logger = logging.getLogger(__name__)
@@ -56,12 +56,10 @@ def test_get_suite_by_user_without_auth_access_to_workflow(m, request_context, n
     m.get_suite.return_value = suite
     m.get_public_workflow_version.return_value = None
     m.get_user_workflow_version.side_effect = lm_exceptions.NotAuthorizedException
-    response = controllers.suites_get_by_uuid(suite.uuid)
+    with pytest.raises(lm_exceptions.Forbidden):
+        controllers.suites_get_by_uuid(suite.uuid)
     m.get_suite.assert_called_once()
     m.get_user_workflow_version.assert_called_once()
-    assert response.status_code == 403, "The user should not be able to access"
-    assert messages.unauthorized_user_suite_access\
-        .format(mock_user.username, suite.uuid) in response.data.decode()
 
 
 @patch("lifemonitor.api.controllers.lm")
@@ -82,13 +80,10 @@ def test_get_suite_by_registry_without_auth_access_to_workflow(m, request_contex
     # the worklow exists but it is not linked to the registry
     m.get_public_workflow_version.return_value = None
     m.get_registry_workflow_version.side_effect = lm_exceptions.NotAuthorizedException
-    response = controllers.suites_get_by_uuid(suite.uuid)
-    logger.debug("Response: %r", response.data.decode())
+    with pytest.raises(lm_exceptions.Forbidden):
+        controllers.suites_get_by_uuid(suite.uuid)
     m.get_suite.assert_called_once()
     m.get_registry_workflow_version.assert_called_once()
-    assert response.status_code == 403, "The registry should not be able to access"
-    assert messages.unauthorized_registry_suite_access.format(
-        mock_registry.name, suite.uuid) in response.data.decode()
 
 
 @patch("lifemonitor.api.controllers.lm")
