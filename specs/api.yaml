@@ -690,8 +690,6 @@ paths:
             schema:
               $ref: "#/components/schemas/WorkflowBase"
       responses:
-        "201":
-          $ref: "#/components/responses/WorkflowRegistered"
         "204":
           description: "Workflow updated"
         "400":
@@ -870,22 +868,10 @@ paths:
         content:
           application/json:
             schema:
-              oneOf:
+              anyOf:
                 - $ref: "#/components/schemas/RoCrateWorkflowVersionBase"
                 - $ref: "#/components/schemas/RoCrateLinkWorkflowVersionBase"
                 - $ref: "#/components/schemas/WorkflowVersionBase"
-            # schema:
-            #   type: object
-            #   properties:
-            #     name:
-            #       type: string
-            #       description: |
-            #         A name for the workflow version. If not provided, the RO-Crate dataset name is used as default.
-            #       example: "COVID-19 Workflow"
-            #     version:
-            #       type: string
-            #       description: "Workflow version"
-            #       example: "1.0"
       responses:
         "204":
           description: "Workflow version updated"
@@ -1961,8 +1947,6 @@ components:
               description: A string identifying the workflow version (e.g., 1.0)
               example: "1.0"
               writeOnly: true
-          required:
-            - version
 
     Workflow:
       allOf:
