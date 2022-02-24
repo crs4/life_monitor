@@ -224,8 +224,8 @@ def test_update_workflows_not_authorized(app_client, client_auth_method, user1, 
     ClientAuthenticationMethod.NOAUTH,
 ], indirect=True)
 @pytest.mark.parametrize("user1", [True], indirect=True)
-def test_update_version_workflows_not_authorized(app_client, client_auth_method,
-                                                 user1, user1_auth, valid_workflow):
+def test_update_workflow_version_not_authorized(app_client, client_auth_method,
+                                                user1, user1_auth, valid_workflow):
     workflow = utils.pick_workflow(user1, valid_workflow)
     logger.debug("User1 Auth Headers: %r", user1_auth)
     updates = {
@@ -247,7 +247,8 @@ def test_update_version_workflows_not_authorized(app_client, client_auth_method,
     ClientAuthenticationMethod.REGISTRY_CODE_FLOW
 ], indirect=True)
 @pytest.mark.parametrize("user1", [True], indirect=True)
-def test_shallow_workflow_update(app_client, client_auth_method, user1, user1_auth, valid_workflow):
+def test_shallow_workflow_version_update(app_client, client_auth_method,
+                                         user1, user1_auth, valid_workflow):
     workflow = utils.pick_workflow(user1, valid_workflow)
     logger.debug("User1 Auth Headers: %r", user1_auth)
     updates = {
@@ -256,13 +257,14 @@ def test_shallow_workflow_update(app_client, client_auth_method, user1, user1_au
         'roc_link': None
     }
     r = app_client.put(
-        utils.build_workflow_path(workflow, include_version=False),
+        utils.build_workflow_path(workflow, include_version=True, version_as_subpath=True),
         json=updates, headers=user1_auth
     )
     assert r.status_code == 204, f"Error when updating the workflow {workflow}"
 
     r = app_client.get(
-        utils.build_workflow_path(workflow, include_version=False), headers=user1_auth
+        utils.build_workflow_path(workflow, include_version=True, version_as_subpath=True),
+        headers=user1_auth
     )
     assert r.status_code == 200, f"Error when getting the workflow {workflow}"
     data = r.get_json()
@@ -279,8 +281,8 @@ def test_shallow_workflow_update(app_client, client_auth_method, user1, user1_au
     ClientAuthenticationMethod.REGISTRY_CODE_FLOW
 ], indirect=True)
 @pytest.mark.parametrize("user1", [True], indirect=True)
-def test_forbidden_deep_registry_workflow_update_with_roclink(app_client, client_auth_method,
-                                                              user1, user1_auth, valid_workflow, generic_workflow):
+def test_forbidden_deep_registry_workflow_version_update_with_roclink(
+        app_client, client_auth_method, user1, user1_auth, valid_workflow, generic_workflow):
     workflow = utils.pick_workflow(user1, valid_workflow)
     logger.debug("User1 Auth Headers: %r", user1_auth)
     updates = {
@@ -290,7 +292,7 @@ def test_forbidden_deep_registry_workflow_update_with_roclink(app_client, client
         'authorization': generic_workflow['authorization']
     }
     r = app_client.put(
-        utils.build_workflow_path(workflow, include_version=False),
+        utils.build_workflow_path(workflow, include_version=True, version_as_subpath=True),
         json=updates, headers=user1_auth
     )
     assert r.status_code == 403, \
@@ -316,7 +318,7 @@ def test_forbidden_deep_registry_workflow_update_with_encoded_rocrate(
         'rocrate': encoded_rocrate_workflow['rocrate']
     }
     r = app_client.put(
-        utils.build_workflow_path(workflow, include_version=False),
+        utils.build_workflow_path(workflow, include_version=True, version_as_subpath=True),
         json=updates, headers=user1_auth
     )
     assert r.status_code == 403, \
@@ -337,12 +339,13 @@ def test_deep_registry_workflow_update(app_client, client_auth_method,
     workflow = utils.pick_workflow(user1, valid_workflow)
     logger.debug("User1 Auth Headers: %r", user1_auth)
     updates = {
+        'uuid': workflow['uuid'],
         'name': 'Just another workflow name',
         'public': not workflow['public'],
         'version': '1.1'
     }
     r = app_client.put(
-        utils.build_workflow_path(workflow=workflow, include_version=False),
+        utils.build_workflow_path(workflow=workflow, include_version=True, version_as_subpath=True),
         json=updates, headers=user1_auth
     )
     assert r.status_code == 204, f"Error when updating the workflow {workflow}"
@@ -350,7 +353,7 @@ def test_deep_registry_workflow_update(app_client, client_auth_method,
         workflow=workflow, include_version=False))
     assert workflows_count == len(WorkflowVersion.all()), "Number of workflow versions should not change"
     r = app_client.get(
-        utils.build_workflow_path(workflow=workflow, include_version=False),
+        utils.build_workflow_path(workflow=updates, include_version=True, version_as_subpath=True),
         headers=user1_auth
     )
     assert r.status_code == 200, f"Error when getting the workflow {workflow}"
@@ -377,6 +380,7 @@ def test_deep_workflow_update_with_rocrate(app_client, client_auth_method,
     assert instances_count == 1, "Unexpected number of instances"
     logger.debug("User1 Auth Headers: %r", user1_auth)
     updates = {
+        'uuid': workflow['uuid'],
         'name': 'Just another workflow name',
         'public': not workflow_version.workflow.public,
         'version': '1.0.1',
@@ -384,7 +388,7 @@ def test_deep_workflow_update_with_rocrate(app_client, client_auth_method,
         'authorization': encoded_rocrate_workflow['authorization']
     }
     r = app_client.put(
-        utils.build_workflow_path(workflow=workflow, include_version=False),
+        utils.build_workflow_path(workflow=workflow, include_version=True, version_as_subpath=True),
         json=updates, headers=user1_auth
     )
     assert r.status_code == 201, f"Error when updating the workflow {workflow_version}"
@@ -392,7 +396,7 @@ def test_deep_workflow_update_with_rocrate(app_client, client_auth_method,
     logger.debug("Workflow path: %r", utils.build_workflow_path(
         workflow=workflow, include_version=False))
     r = app_client.get(
-        utils.build_workflow_path(workflow=workflow, include_version=False),
+        utils.build_workflow_path(workflow=updates, include_version=True, version_as_subpath=True),
         headers=user1_auth
     )
     assert r.status_code == 200, f"Error when getting the workflow {workflow_version}"
@@ -406,7 +410,8 @@ def test_deep_workflow_update_with_rocrate(app_client, client_auth_method,
     logger.debug("Workflow SUITE path: %r", utils.build_workflow_path(
         workflow=workflow, include_version=False, subpath='suites'))
     r = app_client.get(
-        utils.build_workflow_path(workflow=workflow, include_version=False, subpath='suites'),
+        utils.build_workflow_path(workflow=updates, subpath='suites',
+                                  include_version=True, version_as_subpath=False),
         headers=user1_auth
     )
     assert r.status_code == 200, f"Error when getting suites for the workflow {workflow_version}"
@@ -432,6 +437,7 @@ def test_deep_workflow_update_with_roclink(app_client, client_auth_method,
     assert instances_count == 2, "Unexpected number of instances"
     logger.debug("User1 Auth Headers: %r", user1_auth)
     updates = {
+        'uuid': workflow['uuid'],
         'name': 'Just another workflow name',
         'public': not workflow_version.workflow.public,
         'version': '1.0.1',
@@ -439,7 +445,7 @@ def test_deep_workflow_update_with_roclink(app_client, client_auth_method,
         'authorization': generic_workflow['authorization']
     }
     r = app_client.put(
-        utils.build_workflow_path(workflow=workflow, include_version=False),
+        utils.build_workflow_path(workflow=workflow, include_version=True, version_as_subpath=True),
         json=updates, headers=user1_auth
     )
     assert r.status_code == 201, f"Error when updating the workflow {workflow_version}"
@@ -447,7 +453,7 @@ def test_deep_workflow_update_with_roclink(app_client, client_auth_method,
     logger.debug("Workflow path: %r", utils.build_workflow_path(
         workflow=workflow, include_version=False))
     r = app_client.get(
-        utils.build_workflow_path(workflow=workflow, include_version=False),
+        utils.build_workflow_path(workflow=updates, include_version=True, version_as_subpath=True),
         headers=user1_auth
     )
     assert r.status_code == 200, f"Error when getting the workflow {workflow_version}"
@@ -460,7 +466,8 @@ def test_deep_workflow_update_with_roclink(app_client, client_auth_method,
     logger.debug("Workflow SUITE path: %r", utils.build_workflow_path(
         workflow=workflow, include_version=False, subpath='suites'))
     r = app_client.get(
-        utils.build_workflow_path(workflow=workflow, include_version=False, subpath='suites'),
+        utils.build_workflow_path(workflow=updates, subpath='suites',
+                                  include_version=True, version_as_subpath=False),
         headers=user1_auth
     )
     assert r.status_code == 200, f"Error when getting suites for the workflow {workflow_version}"
