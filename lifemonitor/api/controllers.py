@@ -453,9 +453,14 @@ def workflows_post(body, _registry=None, _submitter_id=None):
 
 @authorized
 def workflows_put(wf_uuid, body):
-    wf_version = request.args.get('version', None)
-    logger.debug(f"PUT called for workflow {wf_uuid} (version '{wf_version}')")
-    return __update_workflow__(wf_uuid, wf_version, body)
+    logger.debug(f"PUT called for workflow {wf_uuid} (basic info)")
+    # get a reference to the workflow version to be updated
+    workflow_version = __get_workflow_version__(wf_uuid)
+    # update basic information aboud the specified workflow
+    workflow_version.workflow.name = body.get('name', workflow_version.workflow.name)
+    workflow_version.workflow.public = body.get('public', workflow_version.workflow.public)
+    workflow_version.workflow.save()
+    return connexion.NoContent, 204
 
 
 @authorized
