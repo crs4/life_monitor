@@ -902,7 +902,7 @@ paths:
               anyOf:
                 - $ref: "#/components/schemas/RoCrateWorkflowVersionBase"
                 - $ref: "#/components/schemas/RoCrateLinkWorkflowVersionBase"
-                - $ref: "#/components/schemas/WorkflowVersionBase"            
+                - $ref: "#/components/schemas/WorkflowVersionBase"
       responses:
         "204":
           description: "Workflow version updated"
