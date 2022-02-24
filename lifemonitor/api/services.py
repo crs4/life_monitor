@@ -212,23 +212,33 @@ class LifeMonitor:
 
         if roc_link is not None:
             try:
-                w.remove_version(wv)
-                wv = w.add_version(workflow_version, roc_link, workflow_submitter,
-                                   name=name, hosting_service=workflow_registry)
-                if workflow_submitter:
-                    wv.permissions.append(Permission(user=workflow_submitter, roles=[RoleType.owner]))
-                    # automatically register submitter's subscription to workflow events
-                    workflow_submitter.subscribe(w)
+                auth = None
                 if authorization:
                     auth = ExternalServiceAuthorizationHeader(workflow_submitter, header=authorization)
-                    auth.resources.append(wv)
-                # parse roc_metadata and register suites and instances
-                try:
-                    if wv.roc_suites:
-                        for _, raw_suite in wv.roc_suites.items():
-                            cls._init_test_suite_from_json(wv, workflow_submitter, raw_suite)
-                except KeyError as e:
-                    raise lm_exceptions.SpecificationNotValidException(f"Missing property: {e}")
+                # check for changes
+                rocrate_changes = wv.check_for_changes(roc_link, extra_auth=auth)
+                logger.debug(f"Detected changes wrt '{roc_link}': {rocrate_changes}")
+                if len(rocrate_changes) > 0:
+                    # remove old workflow version
+                    w.remove_version(wv)
+                    # create a new workflow version to replace the old one
+                    wv = w.add_version(workflow_version, roc_link, workflow_submitter,
+                                       name=name, hosting_service=workflow_registry)
+                    if workflow_submitter:
+                        wv.permissions.append(Permission(user=workflow_submitter, roles=[RoleType.owner]))
+                        # automatically register submitter's subscription to workflow events
+                        workflow_submitter.subscribe(w)
+                    if auth:
+                        auth.resources.append(wv)
+                    # parse roc_metadata and register suites and instances
+                    try:
+                        if wv.roc_suites:
+                            for _, raw_suite in wv.roc_suites.items():
+                                cls._init_test_suite_from_json(wv, workflow_submitter, raw_suite)
+                    except KeyError as e:
+                        raise lm_exceptions.SpecificationNotValidException(f"Missing property: {e}")
+                else:
+                    logger.debug("No changes detected in the ROCrate")
             finally:
                 if roc_link and roc_link.startswith("tmp://"):
                     try:
