@@ -166,6 +166,17 @@ def workflows_get_latest_version_by_id(wf_uuid, previous_versions=False, ro_crat
 
 
 @cached(timeout=Timeout.REQUEST)
+def workflows_get_version_by_id(wf_uuid, wf_version, ro_crate=False):
+    response = __get_workflow_version__(wf_uuid, wf_version)
+    exclude = ['previous_versions']
+    logger.debug("Previous versions: %r", exclude)
+    return response if isinstance(response, Response) \
+        else serializers.LatestWorkflowVersionSchema(
+            exclude=exclude, rocrate_metadata=ro_crate,
+            subscriptionsOf=[current_user] if not current_user.is_anonymous else None).dump(response)
+
+
+@cached(timeout=Timeout.REQUEST)
 def workflows_get_versions_by_id(wf_uuid):
     response = __get_workflow_version__(wf_uuid, None)
     return response if isinstance(response, Response) \
