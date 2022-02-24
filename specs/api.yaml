@@ -849,6 +849,37 @@ paths:
           $ref: "#/components/responses/NotFound"
 
   /workflows/{wf_uuid}/versions/{wf_version}:
+    get:
+      summary: Get a workflow version
+      description: "Get information of the specified workflow version"
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "workflows_get_version_by_id"
+      tags: ["Workflows"]
+      security:
+        - apiKey: ["workflow.read"]
+        - AuthorizationCodeFlow: ["workflow.read"]
+        - RegistryClientCredentials: ["workflow.read"]
+        - RegistryCodeFlow: ["workflow.read"]
+      parameters:
+        - $ref: "#/components/parameters/wf_uuid"
+        - $ref: "#/components/parameters/wf_version"
+        - $ref: "#/components/parameters/rocrate_specs"
+      responses:
+        "200":
+          description: >
+            A Workflow object for the version of the specified workflow.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowVersionDetails"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
     put:
       summary: Update a workflow version
       description: "Update basic information of the specified workflow"
@@ -871,7 +902,7 @@ paths:
               anyOf:
                 - $ref: "#/components/schemas/RoCrateWorkflowVersionBase"
                 - $ref: "#/components/schemas/RoCrateLinkWorkflowVersionBase"
-                - $ref: "#/components/schemas/WorkflowVersionBase"
+                - $ref: "#/components/schemas/WorkflowVersionBase"            
       responses:
         "204":
           description: "Workflow version updated"
@@ -2022,6 +2053,7 @@ components:
                 Universal unique identifier of the workflow.
               example: 123e4567-e89b-12d3-a456-426614174000
         - $ref: "#/components/schemas/RoCrateLinkWorkflowVersionBase"
+        - required: [version]
 
     RoCrateWorkflowVersionBase:
       description: A generic workflow version from an embedded (base64 encoded) **RO-Crate**
@@ -2047,6 +2079,7 @@ components:
                 Universal unique identifier of the workflow.
               example: 123e4567-e89b-12d3-a456-426614174000
         - $ref: "#/components/schemas/RoCrateWorkflowVersionBase"
+        - required: [version]
 
     RegistryWorkflowVersion:
       description: A (version of a) workflow indexed by a registry.
@@ -2112,7 +2145,7 @@ components:
               readOnly: true
               nullable: true
 
-    WorkflowDetails:
+    WorkflowVersionDetails:
       allOf:
         - $ref: "#/components/schemas/Workflow"
           readOnly: true
@@ -2121,6 +2154,19 @@ components:
             version:
               $ref: "#/components/schemas/WorkflowVersion"
               readOnly: true
+            registry:
+              $ref: "#/components/schemas/Registry"
+              readOnly: true
+              nullable: true
+          required:
+            - version
+
+    WorkflowDetails:
+      allOf:
+        - $ref: "#/components/schemas/WorkflowVersionDetails"
+          readOnly: true
+        - type: object
+          properties:
             previous_versions:
               readOnly: true
               type: array
@@ -2147,12 +2193,6 @@ components:
                     submitter: { id: 501, username: "lm" },
                   },
                 ]
-            registry:
-              $ref: "#/components/schemas/Registry"
-              readOnly: true
-              nullable: true
-          required:
-            - version
 
     ListOfWorkflow:
       type: object
