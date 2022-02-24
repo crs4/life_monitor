@@ -360,7 +360,9 @@ def __check_submitter_and_registry__(body, _registry=None, _submitter_id=None, _
         try:
             registry = lm.get_workflow_registry_by_generic_reference(registry_ref)
         except lm_exceptions.EntityNotFoundException:
-            raise lm_exceptions.EntityNotFoundException(detail=messages.no_registry_found.format(registry_ref))
+            raise lm_exceptions.EntityNotFoundException(
+                models.WorkflowRegistry, entity_id=registry_ref,
+                detail=messages.no_registry_found.format(registry_ref))
             # return lm_exceptions.report_problem(404, "Not Found",
             #                                     detail=messages.no_registry_found.format(registry_ref))
     if registry and _check_identifier:

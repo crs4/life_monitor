@@ -247,12 +247,12 @@ def test_update_version_workflows_not_authorized(app_client, client_auth_method,
     ClientAuthenticationMethod.REGISTRY_CODE_FLOW
 ], indirect=True)
 @pytest.mark.parametrize("user1", [True], indirect=True)
-def test_shallow_workflow_update(app_client, client_auth_method, user1, user1_auth, generic_workflow):
-    workflow, workflow_version = utils.register_workflow(user1, generic_workflow)
+def test_shallow_workflow_update(app_client, client_auth_method, user1, user1_auth, valid_workflow):
+    workflow = utils.pick_workflow(user1, valid_workflow)
     logger.debug("User1 Auth Headers: %r", user1_auth)
     updates = {
         'name': 'Just another workflow name',
-        'public': not workflow_version.workflow.public,
+        'public': not workflow["public"],
         'roc_link': None
     }
     r = app_client.put(
@@ -345,7 +345,7 @@ def test_deep_registry_workflow_update(app_client, client_auth_method,
         utils.build_workflow_path(workflow=workflow, include_version=False),
         json=updates, headers=user1_auth
     )
-    assert r.status_code == 201, f"Error when updating the workflow {workflow}"
+    assert r.status_code == 204, f"Error when updating the workflow {workflow}"
     logger.debug("Workflow path: %r", utils.build_workflow_path(
         workflow=workflow, include_version=False))
     assert workflows_count == len(WorkflowVersion.all()), "Number of workflow versions should not change"
@@ -366,8 +366,6 @@ def test_deep_registry_workflow_update(app_client, client_auth_method,
     #    ClientAuthenticationMethod.BASIC,
     ClientAuthenticationMethod.API_KEY,
     ClientAuthenticationMethod.AUTHORIZATION_CODE,
-    ClientAuthenticationMethod.CLIENT_CREDENTIALS,
-    ClientAuthenticationMethod.REGISTRY_CODE_FLOW
 ], indirect=True)
 def test_deep_workflow_update_with_rocrate(app_client, client_auth_method,
                                            user1, user1_auth,
@@ -422,9 +420,7 @@ def test_deep_workflow_update_with_rocrate(app_client, client_auth_method,
 @pytest.mark.parametrize("client_auth_method", [
     #    ClientAuthenticationMethod.BASIC,
     ClientAuthenticationMethod.API_KEY,
-    ClientAuthenticationMethod.AUTHORIZATION_CODE,
-    ClientAuthenticationMethod.CLIENT_CREDENTIALS,
-    ClientAuthenticationMethod.REGISTRY_CODE_FLOW
+    ClientAuthenticationMethod.AUTHORIZATION_CODE
 ], indirect=True)
 def test_deep_workflow_update_with_roclink(app_client, client_auth_method,
                                            user1, user1_auth,
