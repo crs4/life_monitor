@@ -131,9 +131,10 @@ class ROCrate(Resource):
         return self.repository.metadata.main_entity_name
 
     def _get_authorizations(self, extra_auth: ExternalServiceAuthorizationHeader = None):
+        authorizations = []
         if extra_auth:
             authorizations.append(extra_auth)
-        authorizations = self.authorizations.copy()
+        authorizations.extend(self.authorizations)
         authorizations.append(None)
         return authorizations
 
