@@ -32,6 +32,13 @@ services:
       - "HOME=/lm"
     volumes:
       - "./:/lm"
+
+  worker:
+    user: "${USER_UID}:${USER_GID}"
+    volumes:
+      - "./:/lm"
+      - "/lm/lifemonitor/static/dist"
+
   dev_proxy:
     image: bitnami/nginx:1.19-debian-10
     depends_on:
