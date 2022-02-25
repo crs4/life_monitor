@@ -56,6 +56,14 @@ class GithubAppHelper():
         cls._signing_secret = signing_secret
 
     @classmethod
+    def check_initialization(cls) -> bool:
+        if not cls.app_identifier or not cls.signing_key_path or not cls.signing_secret:
+            logger.warning("Github App integration not properly configured: "
+                           "check GITHUB_INTEGRATION_* properties on your settings.conf")
+            return False
+        return True
+
+    @classmethod
     def _get_signing_key(cls):
         if not cls._signing_key_path:
             raise IllegalStateException(f"{cls.__name__}")
@@ -187,6 +195,8 @@ blueprint = Blueprint("github_integration", __name__,
 def webhook_test():
     logger.debug("Request header keys: %r", [k for k in request.headers.keys()])
     logger.debug("Request header values: %r", request.headers)
+    if not GithubAppHelper.check_initialization():
+        return "GitHub Integration not configured", 503
     valid = GithubAppHelper.validate_signature(request)
     logger.debug("Signature valid?: %r", valid)
     if not valid:
