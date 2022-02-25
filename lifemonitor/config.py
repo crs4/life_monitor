@@ -44,7 +44,9 @@ def load_settings(config=None):
     if config.CONFIG_NAME in ('development', 'testing', 'testingSupport'):
         test_settings = dotenv.dotenv_values(dotenv_path=TestingConfig.SETTINGS_FILE)
         if not config.TESTING:
-            result.update(test_settings)
+            for k, v in test_settings.items():
+                if not hasattr(config, k):
+                    result[k] = v
     if os.path.exists(file_path):
         result.update(dotenv.dotenv_values(dotenv_path=file_path))
     if config.CONFIG_NAME in ('testingSupport', 'testing'):
