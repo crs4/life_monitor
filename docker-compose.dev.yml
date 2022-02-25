@@ -51,3 +51,22 @@ services:
       - "./certs:/nginx/certs:ro"
       - "./docker/nginx.dev.conf:/opt/bitnami/nginx/conf/server_blocks/lm.conf:ro"
 
+  github_event_proxy:
+    image: crs4/smeeio
+    restart: "always"
+    command: |
+      sh -c "smee --url https://smee.io/$$GITHUB_INTEGRATION_EVENTS_CHANNEL --target https://dev_proxy:8443/integrations/github"
+    depends_on:
+      - "db"
+      - "init"
+    env_file:
+      - settings.conf
+    environment:
+      - "FLASK_ENV=development"
+      - "SMEE_TARGET=https://lm:8000/integrations/github"
+      - "NODE_EXTRA_CA_CERTS=/certs/ca.key"
+      - "NODE_TLS_REJECT_UNAUTHORIZED=0"
+    volumes:
+      - "./certs:/certs:ro"
+    networks:
+      - life_monitor
