@@ -57,6 +57,9 @@ class BaseConfig:
     SETTINGS_FILE = "settings.conf"
     USE_MOCK_EQUIVALENCY = False
     DEBUG = False
+    # Initialize SERVER_NAME from env
+    SERVER_NAME = os.environ.get('SERVER_NAME', None)
+    # Initialize LOG_LEVEL from env
     LOG_LEVEL = os.environ.get('LOG_LEVEL', 'DEBUG' if DEBUG else 'INFO')
     # Add a random secret (required to enable HTTP sessions)
     SECRET_KEY = os.urandom(24)
