@@ -57,7 +57,7 @@ class GithubAppHelper():
 
     @classmethod
     def check_initialization(cls) -> bool:
-        if not cls.app_identifier or not cls.signing_key_path or not cls.signing_secret:
+        if not cls.app_identifier or not cls._signing_key_path or not cls._signing_secret:
             logger.warning("Github App integration not properly configured: "
                            "check GITHUB_INTEGRATION_* properties on your settings.conf")
             return False
