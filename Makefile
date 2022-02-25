@@ -75,7 +75,7 @@ endif
 
 all: images
 
-images: lifemonitor
+images: lifemonitor smeeio
 
 compose-files: docker-compose.base.yml \
 	docker-compose.prod.yml \
@@ -117,6 +117,14 @@ lifemonitor: docker/lifemonitor.Dockerfile certs app.py gunicorn.conf.py
 		  ${sw_version_arg} ${build_number_arg} \
 		  ${tags_opt} ${labels_opt} ${platforms_opt} \
 		  -f docker/lifemonitor.Dockerfile -t crs4/lifemonitor . ;\
+	printf "$(done)\n"
+
+smeeio:
+	@printf "\n$(bold)Building smee.io Docker image...$(reset)\n" ; \
+	$(build_kit) docker $(build_cmd) $(cache_from_opt) $(cache_to_opt) \
+		  ${sw_version_arg} ${build_number_arg} \
+		  ${tags_opt} ${labels_opt} ${platforms_opt} \
+		  -f docker/smee.io.Dockerfile -t crs4/smeeio . ;\
 	printf "$(done)\n"
 
 webserver:
@@ -313,7 +321,7 @@ clean: ## Clean up the working environment (i.e., running services, network, vol
 help: ## Show help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-.PHONY: all images aux_images certs lifemonitor ro_crates webserver \
+.PHONY: all images aux_images certs lifemonitor smeeio ro_crates webserver \
 		start start-dev start-testing start-nginx start-aux-services \
 		run-tests tests \
 		stop-aux-services stop-nginx stop-testing \
