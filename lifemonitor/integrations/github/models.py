@@ -23,12 +23,10 @@ from __future__ import annotations
 import hashlib
 import hmac
 import logging
-import re
 from datetime import datetime, timedelta, timezone
-from typing import List, Tuple
+from typing import List
 
 import jwt
-import pygit2
 import requests
 from lifemonitor.cache import IllegalStateException
 
@@ -171,42 +169,6 @@ class GithubApp():
         if response.status_code == 404:
             return None
         return "Internal Error", 500
-
-    @classmethod
-    def get_github_client_for_event(cls, event: object) -> github.Github:
-        return GithubApp.get_github_client(event['installation']['id'])
-
-    @staticmethod
-    def get_repo_and_ref_from_event(gh_client: github.Github, event: object) -> Tuple[object, str]:
-        return gh_client.get_repo(event['data']['repository']['full_name']), event['data']['ref']
-
-    @classmethod
-    def find_file_by_pattern(cls, repo: object, ref: str, search: str):
-        for e in repo.get_contents('.', ref=ref):
-            logger.debug("Name: %r -- type: %r", e.name, e.type)
-            if re.search(search, e.name):
-                return e.decoded_content
-        return None
-
-    @classmethod
-    def find_file_by_regex_pattern(cls, repo: object, ref: str, pattern: re.Pattern):
-        for e in repo.get_contents('.', ref=ref):
-            logger.debug("Name: %r -- type: %r", e.name, e.type)
-            if pattern.match(e.name):
-                return e.decoded_content
-        return None
-
-    @staticmethod
-    def clone_repo(repo: object, target_path: str):
-        # Clone the newly created repo
-        return pygit2.clone_repository(repo.git_url, target_path)
-
-    @staticmethod
-    def crate_new_branch(repo: object, branch_name: str):
-        head = repo.get_commit('HEAD')
-        logger.debug("HEAD commit: %r", head.sha)
-        logger.debug("New target branch ref: %r", f'refs/heads/{branch_name}'.format(**locals()))
-        return repo.create_git_ref(ref=f'refs/heads/{branch_name}'.format(**locals()), sha=head.sha)
 
 
 class GithubInstallationClient():
