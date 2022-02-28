@@ -28,11 +28,9 @@ from lifemonitor.integrations.github.models import GithubApp
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
+
 # Register Handlers
-
-
 __event_handlers__ = get_event_map()
-
 
 # Integration Blueprint
 blueprint = Blueprint("github_integration", __name__,
@@ -41,7 +39,7 @@ blueprint = Blueprint("github_integration", __name__,
 
 
 @blueprint.route("/integrations/github", methods=("POST",))
-def webhook_test():
+def handle_event():
     logger.debug("Request header keys: %r", [k for k in request.headers.keys()])
     logger.debug("Request header values: %r", request.headers)
     if not GithubApp.check_initialization():
