@@ -199,6 +199,11 @@ class LifeMonitorInstallation(Installation):
     def _requester(self, value: Requester):
         self.__requester = value
 
+    @classmethod
+    def from_event(cls, event: object) -> LifeMonitorInstallation:
+        app = LifeMonitorGithubApp.get_instance()
+        return app.get_installation(event['installation']['id'])
+
 
 def __make_requester__(jwt: str = None, token: str = None, base_url: str = DEFAULT_BASE_URL) -> Requester:
     assert jwt or token, "Auth JWT or TOKEN should be set"
