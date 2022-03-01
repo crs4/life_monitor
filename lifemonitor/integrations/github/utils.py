@@ -28,21 +28,15 @@ import pygit2
 
 import github
 
-from .models import GithubApp
-
 # Config a module level logger
 logger = logging.getLogger(__name__)
-
-
-def get_github_client_for_event(cls, event: object) -> github.Github:
-    return GithubApp.get_github_client(event['installation']['id'])
 
 
 def get_repo_and_ref_from_event(gh_client: github.Github, event: object) -> Tuple[object, str]:
     return gh_client.get_repo(event['data']['repository']['full_name']), event['data']['ref']
 
 
-def find_file_by_pattern(cls, repo: object, ref: str, search: str):
+def find_file_by_pattern(repo: object, ref: str, search: str):
     for e in repo.get_contents('.', ref=ref):
         logger.debug("Name: %r -- type: %r", e.name, e.type)
         if re.search(search, e.name):
@@ -50,7 +44,7 @@ def find_file_by_pattern(cls, repo: object, ref: str, search: str):
     return None
 
 
-def find_file_by_regex_pattern(cls, repo: object, ref: str, pattern: re.Pattern):
+def find_file_by_regex_pattern(repo: object, ref: str, pattern: re.Pattern):
     for e in repo.get_contents('.', ref=ref):
         logger.debug("Name: %r -- type: %r", e.name, e.type)
         if pattern.match(e.name):
