@@ -22,13 +22,9 @@
 from __future__ import annotations
 
 import logging
-import os
-import shutil
-import time
 
 from lifemonitor.api.models import TestInstance
 from lifemonitor.cache import cache
-from lifemonitor.integrations.github.models import GithubApp
 
 # Config a module level logger
 logger = logging.getLogger(__name__)

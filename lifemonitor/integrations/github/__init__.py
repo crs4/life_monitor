@@ -20,13 +20,13 @@
 
 from __future__ import annotations
 
-from lifemonitor.integrations.github.models import (GithubApp,
-                                                    GithubInstallationClient)
+from lifemonitor.integrations.github.models import (LifeMonitorGithubApp,
+                                                    LifeMonitorInstallation)
 
 from .controllers import init_integration
 
 __all__ = [
     init_integration,
-    GithubApp,
-    GithubInstallationClient
+    LifeMonitorGithubApp,
+    LifeMonitorInstallation
 ]

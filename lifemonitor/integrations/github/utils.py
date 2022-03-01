@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import List, Tuple
+from typing import Tuple
 
 import pygit2
 

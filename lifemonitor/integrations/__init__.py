@@ -20,7 +20,7 @@
 
 import logging
 
-from .github import GithubApp, GithubInstallationClient
+from .github import LifeMonitorGithubApp, LifeMonitorInstallation
 from .github import init_integration as init_github_integration
 
 # Config a module level logger
@@ -35,5 +35,5 @@ def init_integrations(app):
 
 __all__ = [
     init_integrations,
-    GithubApp, GithubInstallationClient
+    LifeMonitorGithubApp, LifeMonitorInstallation
 ]

@@ -24,7 +24,7 @@ import logging
 
 from flask import Blueprint, Flask, request
 from lifemonitor.integrations.github.events import get_event_map
-from lifemonitor.integrations.github.models import GithubApp
+from lifemonitor.integrations.github.models import LifeMonitorGithubApp
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
@@ -42,9 +42,9 @@ blueprint = Blueprint("github_integration", __name__,
 def handle_event():
     logger.debug("Request header keys: %r", [k for k in request.headers.keys()])
     logger.debug("Request header values: %r", request.headers)
-    if not GithubApp.check_initialization():
+    if not LifeMonitorGithubApp.check_initialization():
         return "GitHub Integration not configured", 503
-    valid = GithubApp.validate_signature(request)
+    valid = LifeMonitorGithubApp.validate_signature(request)
     logger.debug("Signature valid?: %r", valid)
     if not valid:
         return "Signature Invalid", 401
@@ -74,6 +74,6 @@ def init_integration(app: Flask):
     app_identifier = app.config.get('GITHUB_INTEGRATION_APP_ID')
     webhook_secret = app.config.get('GITHUB_INTEGRATION_WEB_SECRET')
     private_key_path = app.config.get('GITHUB_INTEGRATION_PRIVATE_KEY_PATH')
-    GithubApp.init(app_identifier, private_key_path, webhook_secret)
+    LifeMonitorGithubApp.init(app_identifier, private_key_path, webhook_secret)
     app.register_blueprint(blueprint)
     logger.info("Integration registered for GitHub App: %r", app_identifier)
