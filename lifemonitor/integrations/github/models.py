@@ -61,7 +61,7 @@ class LifeMonitorGithubApp(GithubApp):
         cls._app_identifier = app_identifier
         cls._signing_key_path = signing_key_path
         cls._signing_secret = signing_secret
-        if not cls.__instance__:
+        if not cls.__instance__ and cls.check_initialization():
             integration = GithubIntegration(cls._app_identifier, cls._get_signing_key(), base_url=base_url)
             cls.__instance__ = cls(integration, base_url=base_url, token_expiration=token_expiration)
 
