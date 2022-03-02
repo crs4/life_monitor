@@ -35,6 +35,7 @@ from github import GithubIntegration as GithubIntegrationBase
 from github.GithubApp import GithubApp
 from github.Installation import Installation
 from github.InstallationAuthorization import InstallationAuthorization
+from github.Repository import Repository as GithubRepository
 from github.Requester import Requester
 
 DEFAULT_BASE_URL = "https://api.github.com"
@@ -242,6 +243,66 @@ def github_repo_from_event(event: object) -> GithubRepository:
 
 
 GithubRepository.from_event = github_repo_from_event
+
+
+class GithubRepoInfo(object):
+
+    def __init__(self, raw_data: object = None) -> None:
+        self._raw_data = raw_data
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}: {self.full_name} (id: {self.id})"
+
+    @property
+    def id(self) -> int:
+        return self._raw_data['repository']['id']
+
+    @property
+    def owner(self) -> str:
+        return self._raw_data['repository']['owner']['login']
+
+    @property
+    def owner_info(self) -> object:
+        return self._raw_data['repository']['owner']
+
+    @property
+    def name(self) -> str:
+        return self._raw_data['repository']['name']
+
+    @property
+    def full_name(self) -> str:
+        return self._raw_data['repository']['full_name']
+
+    @property
+    def ref(self) -> str:
+        return self._raw_data.get('ref', None)
+
+    @property
+    def branch(self) -> str:
+        ref = self.ref
+        ref_type = self._raw_data.get('ref_type', None)
+        if not ref or ref_type == 'tag':
+            return None
+        return ref.replace('refs/heads/', '')
+
+    @property
+    def tag(self) -> str:
+        ref = self.ref
+        ref_type = self._raw_data.get('ref_type', None)
+        if not ref or ref_type != 'tag':
+            return None
+        return ref.replace('refs/tags/', '')
+
+    @classmethod
+    def from_event(cls, event: object, ignore_errors: bool = False) -> GithubRepoInfo:
+        try:
+            return cls(
+                raw_data=event['payload']
+            )
+        except KeyError as e:
+            if not ignore_errors:
+                raise LifeMonitorException(title="Bad request", detail="Missing properties on payload",
+                                           status=400, missing_key=str(e))
 
 
 def __make_requester__(jwt: str = None, token: str = None, base_url: str = DEFAULT_BASE_URL) -> Requester:
