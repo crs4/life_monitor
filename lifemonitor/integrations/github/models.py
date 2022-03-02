@@ -199,6 +199,29 @@ class LifeMonitorInstallation(Installation):
     def _requester(self, value: Requester):
         self.__requester = value
 
+    def get_repo(self, owner: str, name: str) -> GithubRepository:
+        logger.debug("Searning repo: %r -- %r", owner, name)
+        for r in self.get_repos():
+            logger.debug("Checking: %r - %r", r.owner.login, r.name)
+            if r.owner.login == owner and r.name == name:
+                return r
+        return None
+
+    def get_repo_from_event(self, event: object, ignore_errors: bool = False) -> GithubRepository:
+        try:
+            return self.get_repo(
+                event['payload']['repository']['owner']['login'],
+                event['payload']['repository']['name']
+            )
+        except KeyError:
+            if not ignore_errors:
+                raise LifeMonitorException(title="Bad request",
+                                           detail="Missing payload.repository property", status=400)
+            return None
+
+    def get_repo_from_info(self, repo: GithubRepoInfo) -> GithubRepository:
+        return self.get_repo(repo.owner, repo.name)
+
     @classmethod
     def from_event(cls, event: object, ignore_errors: bool = False) -> LifeMonitorInstallation:
         try:
@@ -210,6 +233,15 @@ class LifeMonitorInstallation(Installation):
                                            detail="Missing payload.installation.id property", status=400)
             return None
 
+
+def github_repo_from_event(event: object) -> GithubRepository:
+    installation = LifeMonitorInstallation.from_event(event)
+    if not installation:
+        return None
+    return installation.get_repo_from_event(event)
+
+
+GithubRepository.from_event = github_repo_from_event
 
 
 def __make_requester__(jwt: str = None, token: str = None, base_url: str = DEFAULT_BASE_URL) -> Requester:
