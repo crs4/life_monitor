@@ -38,11 +38,11 @@ def ping(event: object):
 def workflow_run(event: object):
     try:
         logger.debug("Workflow run event: %r", event)
-        repository = event['data']['repository']
+        repository = event['payload']['repository']
         logger.debug("Workflow repository: %r", repository)
-        workflow = event['data']['workflow']
+        workflow = event['payload']['workflow']
         logger.debug("Workflow: %r", workflow)
-        workflow_run = event['data']['workflow_run']
+        workflow_run = event['payload']['workflow_run']
         logger.debug("Workflow run: %r", workflow_run)
         workflow_name = workflow['path'].replace('.github/workflows/', '')
         logger.debug("Workflow NAME: %r", workflow_name)
