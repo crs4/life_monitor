@@ -57,7 +57,7 @@ def handle_event():
         "installation_id": installation['id'] if installation else None,
         "installation": data.get("installation", None),
         "signature": request.headers.get("X-Hub-Signature-256").replace("256=", ""),
-        "data": data
+        "payload": data['payload']
     }
     event_handler = __event_handlers__.get(event['type'], None)
     logger.debug("Event: %r", event)
