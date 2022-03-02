@@ -200,9 +200,16 @@ class LifeMonitorInstallation(Installation):
         self.__requester = value
 
     @classmethod
-    def from_event(cls, event: object) -> LifeMonitorInstallation:
-        app = LifeMonitorGithubApp.get_instance()
-        return app.get_installation(event['installation']['id'])
+    def from_event(cls, event: object, ignore_errors: bool = False) -> LifeMonitorInstallation:
+        try:
+            app = LifeMonitorGithubApp.get_instance()
+            return app.get_installation(event['payload']['installation']['id'])
+        except KeyError:
+            if not ignore_errors:
+                raise LifeMonitorException(title="Bad request",
+                                           detail="Missing payload.installation.id property", status=400)
+            return None
+
 
 
 def __make_requester__(jwt: str = None, token: str = None, base_url: str = DEFAULT_BASE_URL) -> Requester:
