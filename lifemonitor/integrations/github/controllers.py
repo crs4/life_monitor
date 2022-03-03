@@ -24,7 +24,7 @@ import logging
 
 from flask import Blueprint, Flask, request
 from lifemonitor.integrations.github.events import get_event_map
-from lifemonitor.integrations.github.models import LifeMonitorGithubApp
+from lifemonitor.integrations.github.models import GithubEvent, LifeMonitorGithubApp
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
@@ -48,17 +48,7 @@ def handle_event():
     logger.debug("Signature valid?: %r", valid)
     if not valid:
         return "Signature Invalid", 401
-    data = request.get_json()
-    installation = data.get("installation", None)
-    event = {
-        "id": request.headers.get("X-Github-Delivery"),
-        "type": request.headers.get("X-Github-Event"),
-        "action": data.get("action", None),
-        "installation_id": installation['id'] if installation else None,
-        "installation": data.get("installation", None),
-        "signature": request.headers.get("X-Hub-Signature-256").replace("256=", ""),
-        "payload": data['payload']
-    }
+    event = GithubEvent.from_request()
     event_handler = __event_handlers__.get(event['type'], None)
     logger.debug("Event: %r", event)
     if not event_handler:

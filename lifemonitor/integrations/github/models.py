@@ -309,9 +309,88 @@ class ROCrateGithubRepository(GithubRepository):
         return installation.get_repo_from_event(event)
 
 
+class GithubEvent():
 
-    def __init__(self, raw_data: object = None) -> None:
-        self._raw_data = raw_data
+    def __init__(self, headers: dict, payload: dict) -> None:
+        self._headers = headers
+        self._repository_reference = None
+        assert isinstance(payload, dict), payload
+        try:
+            self._raw_data = payload['payload']
+        except KeyError:
+            self._raw_data = payload
+
+    @property
+    def type(self) -> str:
+        return self._headers.get("X-Github-Event", None)
+
+    @property
+    def delivery(self) -> str:
+        return self._headers.get("X-Github-Delivery", None)
+
+    @property
+    def application_id(self) -> int:
+        return int(self.installation_target_id)
+
+    @property
+    def installation_target_id(self) -> str:
+        return self._headers.get("X-GitHub-Hook-Installation-Target-ID", None)
+
+    @property
+    def installation_target_type(self) -> str:
+        return self._headers.get("X-Github-Hook-Installation-Target-Type", None)
+
+    @property
+    def installation_id(self) -> str:
+        inst = self._raw_data.get('installation', None)
+        assert isinstance(inst, dict), "Invalid installation data"
+        return inst.get('id')
+
+    @property
+    def headers(self) -> dict:
+        return self._headers
+
+    @property
+    def payload(self) -> dict:
+        return self._raw_data
+
+    @property
+    def signature(self) -> str:
+        return self._headers.get("X-Hub-Signature-256").replace("256=", "")
+
+    @property
+    def application(self) -> LifeMonitorGithubApp:
+        app = LifeMonitorGithubApp.get_instance()
+        logger.debug("Comparing: %r - %r", self.application_id, app.id)
+        assert self.application_id == app.id, "Invalid application ID"
+        return app
+
+    @property
+    def installation(self) -> LifeMonitorInstallation:
+        return self.application.get_installation(self.installation_id)
+
+    @property
+    def repository_reference(self) -> GithubRepositoryReference:
+        if not self._repository_reference:
+            self._repository_reference = GithubRepositoryReference(event=self)
+        return self._repository_reference
+
+    @staticmethod
+    def from_request(request: Request = None) -> GithubEvent:
+        request = request or current_request
+        assert isinstance(request, Request), request
+        return GithubEvent(request.headers.copy(), request.get_json())
+
+
+class GithubRepositoryReference(object):
+
+    def __init__(self, event: GithubEvent) -> None:
+        self._event = event
+        self._raw_data = self._event._raw_data
+
+    @property
+    def event(self) -> GithubEvent:
+        return self._event
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}: {self.full_name} (id: {self.id})"
@@ -364,27 +443,13 @@ class ROCrateGithubRepository(GithubRepository):
             return None
         return ref.replace('refs/tags/', '')
 
-    @classmethod
-    def from_event(cls, event: object, ignore_errors: bool = False) -> GithubRepo:
-        try:
-            return cls(
-                raw_data=event['payload']
-            )
-        except KeyError as e:
-            if not ignore_errors:
-                raise LifeMonitorException(title="Bad request", detail="Missing properties on payload",
-                                           status=400, missing_key=str(e))
+    @property
+    def repository(self) -> ROCrateGithubRepository:
+        return self.event.installation.get_repo(self.full_name)
 
-    def clone(self, target_path: str = None) -> RepoCloneContextManager:
-        assert target_path is None or isinstance(str, target_path), target_path
-        return RepoCloneContextManager(self.clone_url, repo_branch=self.branch, target_path=target_path)
-
-    def generate_rocrate_metadata(self, repo_path: str = None) -> object:
-        with self.clone(target_path=repo_path) as local_path:
-            crate = ROCrate(local_path, init=True, gen_preview=False)
-            crate.metadata.write(local_path)
-            with open(f"{local_path}/ro-crate-metadata.json") as f:
-                return json.load(f)
+    def clone(self, local_path: str = None) -> RepoCloneContextManager:
+        assert local_path is None or isinstance(str, local_path), local_path
+        return RepoCloneContextManager(self.clone_url, repo_branch=self.branch, local_path=local_path)
 
 
 class RepoCloneContextManager():
