@@ -44,7 +44,7 @@ from github.PaginatedList import PaginatedList
 from github.GithubObject import NotSet
 from github import GithubIntegration as GithubIntegrationBase
 from github.GithubApp import GithubApp
-from github.Installation import Installation
+from github import Installation
 from github.InstallationAuthorization import InstallationAuthorization
 from github.Repository import Repository as GithubRepository
 from github.Requester import Requester
@@ -200,7 +200,7 @@ class GithubIntegration(GithubIntegrationBase):
         return jwt.JWT().encode(message, self.private_key, alg='RS256')
 
 
-class LifeMonitorInstallation(Installation):
+class LifeMonitorInstallation(Installation.Installation):
 
     def __init__(self, app: LifeMonitorGithubApp, data: object, requester=None, headers={}, completed=True):
         super().__init__(requester, headers, data, completed)
