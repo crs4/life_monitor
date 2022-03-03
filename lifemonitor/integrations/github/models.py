@@ -224,9 +224,6 @@ class LifeMonitorInstallation(Installation):
                                            detail="Missing payload.repository property", status=400)
             return None
 
-    def get_repo_from_info(self, repo: GithubRepoInfo) -> GithubRepository:
-        return self.get_repo(repo.owner, repo.name)
-
     @classmethod
     def from_event(cls, event: object, ignore_errors: bool = False) -> LifeMonitorInstallation:
         try:
