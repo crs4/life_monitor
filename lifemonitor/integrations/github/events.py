@@ -25,17 +25,21 @@ import logging
 
 from lifemonitor.api.models import TestInstance
 from lifemonitor.cache import cache
+from lifemonitor.integrations.github.models import (GithubEvent, GithubRepositoryReference,
+                                                    GithubRepository,
+                                                    LifeMonitorGithubApp,
+                                                    LifeMonitorInstallation)
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
 
 
-def ping(event: object):
+def ping(event: GithubEvent):
     logger.debug("Ping event: %r", event)
     return "Pong", 200
 
 
-def workflow_run(event: object):
+def workflow_run(event: GithubEvent):
     try:
         logger.debug("Workflow run event: %r", event)
         repository = event['payload']['repository']
