@@ -22,15 +22,26 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import json
 import logging
+import os
+import shutil
+from flask import Request, request as current_request
+import tempfile
 from datetime import datetime, timedelta, timezone
-from typing import List
+from typing import Any, Dict, List, Union
 
 import jwt
 import requests
 from lifemonitor.exceptions import IllegalStateException, LifeMonitorException
+from lifemonitor.integrations.github.utils import clone_repo
+from rocrate.rocrate import ROCrate
+
 
 from github import Github
+from github.Branch import Branch
+from github.PaginatedList import PaginatedList
+from github.GithubObject import NotSet
 from github import GithubIntegration as GithubIntegrationBase
 from github.GithubApp import GithubApp
 from github.Installation import Installation
@@ -218,20 +229,31 @@ class LifeMonitorInstallation(Installation):
     def _requester(self, value: Requester):
         self.__requester = value
 
-    def get_repo(self, owner: str, name: str) -> GithubRepository:
-        logger.debug("Searning repo: %r -- %r", owner, name)
-        for r in self.get_repos():
-            logger.debug("Checking: %r - %r", r.owner.login, r.name)
-            if r.owner.login == owner and r.name == name:
-                return r
-        return None
+    def get_repo(self, full_name_or_id, lazy=False):
+        assert isinstance(full_name_or_id, (str, int)), full_name_or_id
+        url_base = "/repositories/" if isinstance(full_name_or_id, int) else "/repos/"
+        url = f"{url_base}{full_name_or_id}"
+        if lazy:
+            return ROCrateGithubRepository(
+                self._requester, {}, {"url": url}, completed=False
+            )
+        headers, data = self._requester.requestJsonAndCheck("GET", url)
+        return ROCrateGithubRepository(self._requester, headers, data, completed=True)
+
+    def get_repos(self):
+        url_parameters = dict()
+        return PaginatedList(
+            contentClass=ROCrateGithubRepository,
+            requester=self._requester,
+            firstUrl="/installation/repositories",
+            firstParams=url_parameters,
+            headers=Installation.INTEGRATION_PREVIEW_HEADERS,
+            list_item="repositories",
+        )
 
     def get_repo_from_event(self, event: object, ignore_errors: bool = False) -> GithubRepository:
         try:
-            return self.get_repo(
-                event['payload']['repository']['owner']['login'],
-                event['payload']['repository']['name']
-            )
+            return self.get_repo(event['payload']['repository']['full_name'])
         except KeyError:
             if not ignore_errors:
                 raise LifeMonitorException(title="Bad request",
@@ -260,7 +282,33 @@ def github_repo_from_event(event: object) -> GithubRepository:
 GithubRepository.from_event = github_repo_from_event
 
 
-class GithubRepo(object):
+class ROCrateGithubRepository(GithubRepository):
+
+    def __init__(self, requester: Requester,
+                 headers: Dict[str, Union[str, int]],
+                 attributes: Dict[str, Any], completed: bool) -> None:
+        super().__init__(requester, headers, attributes, completed)
+
+    def clone(self, branch: str, local_path: str = None) -> RepoCloneContextManager:
+        assert isinstance(branch, str), branch
+        assert local_path is None or isinstance(str, local_path), local_path
+        return RepoCloneContextManager(self.clone_url, repo_branch=branch, local_path=local_path)
+
+    def generate_rocrate_metadata(self, branch: str, repo_path: str = None) -> object:
+        with self.clone(branch, local_path=repo_path) as local_path:
+            crate = ROCrate(local_path, init=True, gen_preview=False)
+            crate.metadata.write(local_path)
+            with open(f"{local_path}/ro-crate-metadata.json") as f:
+                return json.load(f)
+
+    @staticmethod
+    def from_event(event: object) -> ROCrateGithubRepository:
+        installation = LifeMonitorInstallation.from_event(event)
+        if not installation:
+            return None
+        return installation.get_repo_from_event(event)
+
+
 
     def __init__(self, raw_data: object = None) -> None:
         self._raw_data = raw_data
