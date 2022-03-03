@@ -52,9 +52,24 @@ def find_file_by_regex_pattern(repo: object, ref: str, pattern: re.Pattern):
     return None
 
 
-def clone_repo(repo: object, target_path: str):
-    # Clone the newly created repo
-    return pygit2.clone_repository(repo.git_url, target_path)
+def clone_repo(url: str, branch: str = None, target_path: str = None,
+               remote_url: str = None, remote_branch: str = None,
+               remote_user_token: str = None):
+    try:
+        local_path = target_path
+        if not local_path:
+            local_path = tempfile.TemporaryDirectory(dir='/tmp').name
+        user_credentials = None
+        if remote_user_token:
+            user_credentials = pygit2.RemoteCallbacks(pygit2.UserPass('x-access-token', remote_user_token))
+        clone = pygit2.clone_repository(url, local_path, checkout_branch=branch)
+        if remote_url:
+            remote = clone.create_remote("remote", url=remote_url)
+            remote.push([f'+refs/heads/{branch}:refs/heads/{remote_branch}'], callbacks=user_credentials)
+        return local_path
+    finally:
+        if target_path is None:
+            shutil.rmtree(local_path, ignore_errors=True)
 
 
 def crate_new_branch(repo: object, branch_name: str):

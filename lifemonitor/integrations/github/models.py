@@ -246,7 +246,7 @@ def github_repo_from_event(event: object) -> GithubRepository:
 GithubRepository.from_event = github_repo_from_event
 
 
-class GithubRepoInfo(object):
+class GithubRepo(object):
 
     def __init__(self, raw_data: object = None) -> None:
         self._raw_data = raw_data
@@ -257,6 +257,14 @@ class GithubRepoInfo(object):
     @property
     def id(self) -> int:
         return self._raw_data['repository']['id']
+
+    @property
+    def url(self) -> str:
+        return self._raw_data['repository']['url']
+
+    @property
+    def clone_url(self) -> str:
+        return self._raw_data['repository']['clone_url']
 
     @property
     def owner(self) -> str:
@@ -295,7 +303,7 @@ class GithubRepoInfo(object):
         return ref.replace('refs/tags/', '')
 
     @classmethod
-    def from_event(cls, event: object, ignore_errors: bool = False) -> GithubRepoInfo:
+    def from_event(cls, event: object, ignore_errors: bool = False) -> GithubRepo:
         try:
             return cls(
                 raw_data=event['payload']
@@ -304,6 +312,48 @@ class GithubRepoInfo(object):
             if not ignore_errors:
                 raise LifeMonitorException(title="Bad request", detail="Missing properties on payload",
                                            status=400, missing_key=str(e))
+
+    def clone(self, target_path: str = None) -> RepoCloneContextManager:
+        assert target_path is None or isinstance(str, target_path), target_path
+        return RepoCloneContextManager(self.clone_url, repo_branch=self.branch, target_path=target_path)
+
+    def generate_rocrate_metadata(self, repo_path: str = None) -> object:
+        with self.clone(target_path=repo_path) as local_path:
+            crate = ROCrate(local_path, init=True, gen_preview=False)
+            crate.metadata.write(local_path)
+            with open(f"{local_path}/ro-crate-metadata.json") as f:
+                return json.load(f)
+
+
+class RepoCloneContextManager():
+
+    def __init__(self, repo_url: str, repo_branch: str = None,
+                 base_dir: str = '/tmp', target_path: str = None) -> None:
+        self.base_dir = base_dir
+        self.target_path = target_path
+        self.repo_url = repo_url
+        self.repo_branch = repo_branch
+        self._current_path = None
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__} for {self.repo_url}"
+
+    def __enter__(self):
+        logger.debug("Entering the context %r ...", self)
+        self._current_path = self.target_path
+        if not self.target_path or not os.path.exists(self.target_path):
+            self._current_path = tempfile.TemporaryDirectory(dir='/tmp').name
+            logger.debug(f"Creating clone of repo {self.repo_url}<{self.repo_branch} @ {self._current_path}...")
+            clone_repo(self.repo_url, branch=self.repo_branch, target_path=self._current_path)
+        if not os.path.isdir(self._current_path):
+            raise ValueError(f"The target_path '{self._current_path}' should be a folder")
+        return self._current_path
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        logger.debug("Leaving the context %r ...", self)
+        if not self.target_path and self._current_path:
+            logger.debug(f"Removing local clone of {self.repo_url} @ '{self._current_path}'")
+            shutil.rmtree(self._current_path, ignore_errors=True)
 
 
 def __make_requester__(jwt: str = None, token: str = None, base_url: str = DEFAULT_BASE_URL) -> Requester:
