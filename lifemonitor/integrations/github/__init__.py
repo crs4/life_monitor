@@ -20,13 +20,17 @@
 
 from __future__ import annotations
 
-from lifemonitor.integrations.github.models import (LifeMonitorGithubApp,
-                                                    LifeMonitorInstallation)
+from .events import GithubEvent, GithubRepositoryReference
+from .repository import ROCrateGithubRepository
+from .app import (LifeMonitorGithubApp, LifeMonitorInstallation)
 
 from .controllers import init_integration
 
 __all__ = [
     init_integration,
     LifeMonitorGithubApp,
-    LifeMonitorInstallation
+    LifeMonitorInstallation,
+    ROCrateGithubRepository,
+    GithubEvent,
+    GithubRepositoryReference
 ]

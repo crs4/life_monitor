@@ -23,14 +23,63 @@ from __future__ import annotations
 import logging
 
 from flask import Blueprint, Flask, request
-from lifemonitor.integrations.github.events import get_event_map
-from lifemonitor.integrations.github.models import GithubEvent, LifeMonitorGithubApp
+from lifemonitor import cache
+from lifemonitor.api.models.testsuites.testinstance import TestInstance
+from lifemonitor.integrations.github.app import LifeMonitorGithubApp
+from lifemonitor.integrations.github.events import GithubEvent
+from lifemonitor.integrations.github.repository import ROCrateGithubRepository
+from lifemonitor.integrations.github.services import check_repository
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
 
+
+def ping(event: GithubEvent):
+    logger.debug("Ping event: %r", event)
+    return "Pong", 200
+
+
+def workflow_run(event: GithubEvent):
+    try:
+        logger.debug("Workflow run event: %r", event)
+        repository = event['payload']['repository']
+        logger.debug("Workflow repository: %r", repository)
+        workflow = event['payload']['workflow']
+        logger.debug("Workflow: %r", workflow)
+        workflow_run = event['payload']['workflow_run']
+        logger.debug("Workflow run: %r", workflow_run)
+        workflow_name = workflow['path'].replace('.github/workflows/', '')
+        logger.debug("Workflow NAME: %r", workflow_name)
+        workflow_resource = f"repos/{repository['full_name']}/actions/workflows/{workflow_name}"
+        logger.debug("Workflow Resource: %r", workflow_resource)
+        instances = TestInstance.find_by_resource(workflow_resource)
+        logger.debug("Instances: %r", instances)
+        with cache.transaction():
+            for i in instances:
+                i.get_test_builds(limit=10)
+                i.get_test_build(workflow_run['id'])
+                i.last_test_build
+        return f"Test instance related with resource '{workflow_resource}' updated", 200
+    except Exception as e:
+        logger.error(e)
+        return "Internal Error", 500
+
+
+def installation(event: GithubEvent):
+    try:
+        logger.debug("Installation event: %r", event)
+        return "No content", 204
+    except Exception as e:
+        logger.error(e)
+        return "Internal Error", 500
+
 # Register Handlers
-__event_handlers__ = get_event_map()
+__event_handlers__ = {
+    "ping": ping,
+    "workflow_run": workflow_run,
+    "installation": installation,
+}
+
 
 # Integration Blueprint
 blueprint = Blueprint("github_integration", __name__,
@@ -65,7 +114,7 @@ def init_integration(app: Flask):
     webhook_secret = app.config.get('GITHUB_INTEGRATION_WEB_SECRET')
     service_token = app.config.get('GITHUB_INTEGRATION_SERVICE_TOKEN')
     service_repository = app.config.get('GITHUB_INTEGRATION_SERVICE_REPOSITORY')
-    private_key_path = app.config.get('GITHUB_INTEGRATION_PRIVATE_KEY_PATH')    
+    private_key_path = app.config.get('GITHUB_INTEGRATION_PRIVATE_KEY_PATH')
     LifeMonitorGithubApp.init(app_identifier, private_key_path, webhook_secret, service_token,
                               service_repository_full_name=service_repository)
     app.register_blueprint(blueprint)

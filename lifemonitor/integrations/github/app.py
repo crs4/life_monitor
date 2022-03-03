@@ -26,26 +26,27 @@ import json
 import logging
 import os
 import shutil
-from flask import Request, request as current_request
 import tempfile
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Union
 
 import jwt
 import requests
+from flask import Request
+from flask import request as current_request
 from lifemonitor.exceptions import IllegalStateException, LifeMonitorException
+from lifemonitor.integrations.github.repository import ROCrateGithubRepository
 from lifemonitor.integrations.github.utils import clone_repo
 from rocrate.rocrate import ROCrate
 
-
 from github import Github
-from github.Branch import Branch
-from github.PaginatedList import PaginatedList
-from github.GithubObject import NotSet
 from github import GithubIntegration as GithubIntegrationBase
-from github.GithubApp import GithubApp
 from github import Installation
+from github.Branch import Branch
+from github.GithubApp import GithubApp
+from github.GithubObject import NotSet
 from github.InstallationAuthorization import InstallationAuthorization
+from github.PaginatedList import PaginatedList
 from github.Repository import Repository as GithubRepository
 from github.Requester import Requester
 
@@ -206,6 +207,13 @@ class LifeMonitorInstallation(Installation.Installation):
         super().__init__(requester, headers, data, completed)
         self.app = app
         self._auth: InstallationAuthorization = None
+        self._gh_client = None
+
+    @property
+    def github_client(self) -> Github:
+        if not self._gh_client:
+            self._gh_client = Github(login_or_token=self.auth.token)
+        return self._gh_client
 
     @property
     def auth(self) -> InstallationAuthorization:
@@ -270,217 +278,6 @@ class LifeMonitorInstallation(Installation.Installation):
                 raise LifeMonitorException(title="Bad request",
                                            detail="Missing payload.installation.id property", status=400)
             return None
-
-
-def github_repo_from_event(event: object) -> GithubRepository:
-    installation = LifeMonitorInstallation.from_event(event)
-    if not installation:
-        return None
-    return installation.get_repo_from_event(event)
-
-
-GithubRepository.from_event = github_repo_from_event
-
-
-class ROCrateGithubRepository(GithubRepository):
-
-    def __init__(self, requester: Requester,
-                 headers: Dict[str, Union[str, int]],
-                 attributes: Dict[str, Any], completed: bool) -> None:
-        super().__init__(requester, headers, attributes, completed)
-
-    def clone(self, branch: str, local_path: str = None) -> RepoCloneContextManager:
-        assert isinstance(branch, str), branch
-        assert local_path is None or isinstance(str, local_path), local_path
-        return RepoCloneContextManager(self.clone_url, repo_branch=branch, local_path=local_path)
-
-    def generate_rocrate_metadata(self, branch: str, repo_path: str = None) -> object:
-        with self.clone(branch, local_path=repo_path) as local_path:
-            crate = ROCrate(local_path, init=True, gen_preview=False)
-            crate.metadata.write(local_path)
-            with open(f"{local_path}/ro-crate-metadata.json") as f:
-                return json.load(f)
-
-    @staticmethod
-    def from_event(event: object) -> ROCrateGithubRepository:
-        installation = LifeMonitorInstallation.from_event(event)
-        if not installation:
-            return None
-        return installation.get_repo_from_event(event)
-
-
-class GithubEvent():
-
-    def __init__(self, headers: dict, payload: dict) -> None:
-        self._headers = headers
-        self._repository_reference = None
-        assert isinstance(payload, dict), payload
-        try:
-            self._raw_data = payload['payload']
-        except KeyError:
-            self._raw_data = payload
-
-    @property
-    def type(self) -> str:
-        return self._headers.get("X-Github-Event", None)
-
-    @property
-    def delivery(self) -> str:
-        return self._headers.get("X-Github-Delivery", None)
-
-    @property
-    def application_id(self) -> int:
-        return int(self.installation_target_id)
-
-    @property
-    def installation_target_id(self) -> str:
-        return self._headers.get("X-GitHub-Hook-Installation-Target-ID", None)
-
-    @property
-    def installation_target_type(self) -> str:
-        return self._headers.get("X-Github-Hook-Installation-Target-Type", None)
-
-    @property
-    def installation_id(self) -> str:
-        inst = self._raw_data.get('installation', None)
-        assert isinstance(inst, dict), "Invalid installation data"
-        return inst.get('id')
-
-    @property
-    def headers(self) -> dict:
-        return self._headers
-
-    @property
-    def payload(self) -> dict:
-        return self._raw_data
-
-    @property
-    def signature(self) -> str:
-        return self._headers.get("X-Hub-Signature-256").replace("256=", "")
-
-    @property
-    def application(self) -> LifeMonitorGithubApp:
-        app = LifeMonitorGithubApp.get_instance()
-        logger.debug("Comparing: %r - %r", self.application_id, app.id)
-        assert self.application_id == app.id, "Invalid application ID"
-        return app
-
-    @property
-    def installation(self) -> LifeMonitorInstallation:
-        return self.application.get_installation(self.installation_id)
-
-    @property
-    def repository_reference(self) -> GithubRepositoryReference:
-        if not self._repository_reference:
-            self._repository_reference = GithubRepositoryReference(event=self)
-        return self._repository_reference
-
-    @staticmethod
-    def from_request(request: Request = None) -> GithubEvent:
-        request = request or current_request
-        assert isinstance(request, Request), request
-        return GithubEvent(request.headers.copy(), request.get_json())
-
-
-class GithubRepositoryReference(object):
-
-    def __init__(self, event: GithubEvent) -> None:
-        self._event = event
-        self._raw_data = self._event._raw_data
-
-    @property
-    def event(self) -> GithubEvent:
-        return self._event
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}: {self.full_name} (id: {self.id})"
-
-    @property
-    def id(self) -> int:
-        return self._raw_data['repository']['id']
-
-    @property
-    def url(self) -> str:
-        return self._raw_data['repository']['url']
-
-    @property
-    def clone_url(self) -> str:
-        return self._raw_data['repository']['clone_url']
-
-    @property
-    def owner(self) -> str:
-        return self._raw_data['repository']['owner']['login']
-
-    @property
-    def owner_info(self) -> object:
-        return self._raw_data['repository']['owner']
-
-    @property
-    def name(self) -> str:
-        return self._raw_data['repository']['name']
-
-    @property
-    def full_name(self) -> str:
-        return self._raw_data['repository']['full_name']
-
-    @property
-    def ref(self) -> str:
-        return self._raw_data.get('ref', None)
-
-    @property
-    def branch(self) -> str:
-        ref = self.ref
-        ref_type = self._raw_data.get('ref_type', None)
-        if not ref or ref_type == 'tag':
-            return None
-        return ref.replace('refs/heads/', '')
-
-    @property
-    def tag(self) -> str:
-        ref = self.ref
-        ref_type = self._raw_data.get('ref_type', None)
-        if not ref or ref_type != 'tag':
-            return None
-        return ref.replace('refs/tags/', '')
-
-    @property
-    def repository(self) -> ROCrateGithubRepository:
-        return self.event.installation.get_repo(self.full_name)
-
-    def clone(self, local_path: str = None) -> RepoCloneContextManager:
-        assert local_path is None or isinstance(str, local_path), local_path
-        return RepoCloneContextManager(self.clone_url, repo_branch=self.branch, local_path=local_path)
-
-
-class RepoCloneContextManager():
-
-    def __init__(self, repo_url: str, repo_branch: str = None,
-                 base_dir: str = '/tmp', local_path: str = None) -> None:
-        self.base_dir = base_dir
-        self.local_path = local_path
-        self.repo_url = repo_url
-        self.repo_branch = repo_branch
-        self._current_path = None
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__} for {self.repo_url}"
-
-    def __enter__(self):
-        logger.debug("Entering the context %r ...", self)
-        self._current_path = self.local_path
-        if not self.local_path or not os.path.exists(self.local_path):
-            self._current_path = tempfile.TemporaryDirectory(dir='/tmp').name
-            logger.debug(f"Creating clone of repo {self.repo_url}<{self.repo_branch} @ {self._current_path}...")
-            clone_repo(self.repo_url, branch=self.repo_branch, local_path=self._current_path)
-        if not os.path.isdir(self._current_path):
-            raise ValueError(f"The local path '{self._current_path}' should be a folder")
-        return self._current_path
-
-    def __exit__(self, exc_type, exc_value, exc_tb):
-        logger.debug("Leaving the context %r ...", self)
-        if not self.local_path and self._current_path:
-            logger.debug(f"Removing local clone of {self.repo_url} @ '{self._current_path}'")
-            shutil.rmtree(self._current_path, ignore_errors=True)
 
 
 def __make_requester__(jwt: str = None, token: str = None, base_url: str = DEFAULT_BASE_URL) -> Requester:
