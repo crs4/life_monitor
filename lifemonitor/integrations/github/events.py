@@ -23,54 +23,155 @@ from __future__ import annotations
 
 import logging
 
-from lifemonitor.api.models import TestInstance
-from lifemonitor.cache import cache
-from lifemonitor.integrations.github.models import (GithubEvent, GithubRepositoryReference,
-                                                    GithubRepository,
-                                                    LifeMonitorGithubApp,
-                                                    LifeMonitorInstallation)
+from flask import Request
+from flask import request as current_request
+from lifemonitor.integrations.github.app import (LifeMonitorGithubApp,
+                                                 LifeMonitorInstallation)
+from lifemonitor.integrations.github.repository import (
+    RepoCloneContextManager, ROCrateGithubRepository)
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
 
 
-def ping(event: GithubEvent):
-    logger.debug("Ping event: %r", event)
-    return "Pong", 200
+class GithubEvent():
+
+    def __init__(self, headers: dict, payload: dict) -> None:
+        self._headers = headers
+        self._repository_reference = None
+        assert isinstance(payload, dict), payload
+        try:
+            self._raw_data = payload['payload']
+        except KeyError:
+            self._raw_data = payload
+
+    @property
+    def type(self) -> str:
+        return self._headers.get("X-Github-Event", None)
+
+    @property
+    def delivery(self) -> str:
+        return self._headers.get("X-Github-Delivery", None)
+
+    @property
+    def application_id(self) -> int:
+        return int(self.installation_target_id)
+
+    @property
+    def installation_target_id(self) -> str:
+        return self._headers.get("X-GitHub-Hook-Installation-Target-ID", None)
+
+    @property
+    def installation_target_type(self) -> str:
+        return self._headers.get("X-Github-Hook-Installation-Target-Type", None)
+
+    @property
+    def installation_id(self) -> str:
+        inst = self._raw_data.get('installation', None)
+        assert isinstance(inst, dict), "Invalid installation data"
+        return inst.get('id')
+
+    @property
+    def headers(self) -> dict:
+        return self._headers
+
+    @property
+    def payload(self) -> dict:
+        return self._raw_data
+
+    @property
+    def signature(self) -> str:
+        return self._headers.get("X-Hub-Signature-256").replace("256=", "")
+
+    @property
+    def application(self) -> LifeMonitorGithubApp:
+        app = LifeMonitorGithubApp.get_instance()
+        logger.debug("Comparing: %r - %r", self.application_id, app.id)
+        assert self.application_id == app.id, "Invalid application ID"
+        return app
+
+    @property
+    def installation(self) -> LifeMonitorInstallation:
+        return self.application.get_installation(self.installation_id)
+
+    @property
+    def repository_reference(self) -> GithubRepositoryReference:
+        if not self._repository_reference:
+            self._repository_reference = GithubRepositoryReference(event=self)
+        return self._repository_reference
+
+    @staticmethod
+    def from_request(request: Request = None) -> GithubEvent:
+        request = request or current_request
+        assert isinstance(request, Request), request
+        return GithubEvent(request.headers.copy(), request.get_json())
 
 
-def workflow_run(event: GithubEvent):
-    try:
-        logger.debug("Workflow run event: %r", event)
-        repository = event['payload']['repository']
-        logger.debug("Workflow repository: %r", repository)
-        workflow = event['payload']['workflow']
-        logger.debug("Workflow: %r", workflow)
-        workflow_run = event['payload']['workflow_run']
-        logger.debug("Workflow run: %r", workflow_run)
-        workflow_name = workflow['path'].replace('.github/workflows/', '')
-        logger.debug("Workflow NAME: %r", workflow_name)
-        workflow_resource = f"repos/{repository['full_name']}/actions/workflows/{workflow_name}"
-        logger.debug("Workflow Resource: %r", workflow_resource)
-        instances = TestInstance.find_by_resource(workflow_resource)
-        logger.debug("Instances: %r", instances)
-        with cache.transaction():
-            for i in instances:
-                i.get_test_builds(limit=10)
-                i.get_test_build(workflow_run['id'])
-                i.last_test_build
-        return f"Test instance related with resource '{workflow_resource}' updated", 200
-    except Exception as e:
-        logger.error(e)
-        return "Internal Error", 500
+class GithubRepositoryReference(object):
 
+    def __init__(self, event: GithubEvent) -> None:
+        self._event = event
+        self._raw_data = self._event._raw_data
 
-# Register Handlers
-__event_handlers__ = {
-    "ping": ping,
-    "workflow_run": workflow_run,
-}
+    @property
+    def event(self) -> GithubEvent:
+        return self._event
 
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}: {self.full_name} (id: {self.id})"
 
-def get_event_map() -> dict:
-    return __event_handlers__.copy()
+    @property
+    def id(self) -> int:
+        return self._raw_data['repository']['id']
+
+    @property
+    def url(self) -> str:
+        return self._raw_data['repository']['url']
+
+    @property
+    def clone_url(self) -> str:
+        return self._raw_data['repository']['clone_url']
+
+    @property
+    def owner(self) -> str:
+        return self._raw_data['repository']['owner']['login']
+
+    @property
+    def owner_info(self) -> object:
+        return self._raw_data['repository']['owner']
+
+    @property
+    def name(self) -> str:
+        return self._raw_data['repository']['name']
+
+    @property
+    def full_name(self) -> str:
+        return self._raw_data['repository']['full_name']
+
+    @property
+    def ref(self) -> str:
+        return self._raw_data.get('ref', None)
+
+    @property
+    def branch(self) -> str:
+        ref = self.ref
+        ref_type = self._raw_data.get('ref_type', None)
+        if not ref or ref_type == 'tag':
+            return None
+        return ref.replace('refs/heads/', '')
+
+    @property
+    def tag(self) -> str:
+        ref = self.ref
+        ref_type = self._raw_data.get('ref_type', None)
+        if not ref or ref_type != 'tag':
+            return None
+        return ref.replace('refs/tags/', '')
+
+    @property
+    def repository(self) -> ROCrateGithubRepository:
+        return self.event.installation.get_repo(self.full_name)
+
+    def clone(self, local_path: str = None) -> RepoCloneContextManager:
+        assert local_path is None or isinstance(str, local_path), local_path
+        return RepoCloneContextManager(self.clone_url, repo_branch=self.branch, local_path=local_path)
