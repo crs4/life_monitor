@@ -133,6 +133,10 @@ class LifeMonitorGithubApp(GithubApp):
         return s
 
     @property
+    def bot(self) -> str:
+        return f"{self.slug}[bot]"
+
+    @property
     def integration(self) -> GithubIntegration:
         return self._integration
 
