@@ -73,7 +73,10 @@ def init_integration(app: Flask):
     # Initialize GitHub App Integration
     app_identifier = app.config.get('GITHUB_INTEGRATION_APP_ID')
     webhook_secret = app.config.get('GITHUB_INTEGRATION_WEB_SECRET')
-    private_key_path = app.config.get('GITHUB_INTEGRATION_PRIVATE_KEY_PATH')
-    LifeMonitorGithubApp.init(app_identifier, private_key_path, webhook_secret)
+    service_token = app.config.get('GITHUB_INTEGRATION_SERVICE_TOKEN')
+    service_repository = app.config.get('GITHUB_INTEGRATION_SERVICE_REPOSITORY')
+    private_key_path = app.config.get('GITHUB_INTEGRATION_PRIVATE_KEY_PATH')    
+    LifeMonitorGithubApp.init(app_identifier, private_key_path, webhook_secret, service_token,
+                              service_repository_full_name=service_repository)
     app.register_blueprint(blueprint)
     logger.info("Integration registered for GitHub App: %r", app_identifier)
