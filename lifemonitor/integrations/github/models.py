@@ -390,9 +390,9 @@ class ROCrateGithubRepository(GithubRepository):
 class RepoCloneContextManager():
 
     def __init__(self, repo_url: str, repo_branch: str = None,
-                 base_dir: str = '/tmp', target_path: str = None) -> None:
+                 base_dir: str = '/tmp', local_path: str = None) -> None:
         self.base_dir = base_dir
-        self.target_path = target_path
+        self.local_path = local_path
         self.repo_url = repo_url
         self.repo_branch = repo_branch
         self._current_path = None
@@ -402,18 +402,18 @@ class RepoCloneContextManager():
 
     def __enter__(self):
         logger.debug("Entering the context %r ...", self)
-        self._current_path = self.target_path
-        if not self.target_path or not os.path.exists(self.target_path):
+        self._current_path = self.local_path
+        if not self.local_path or not os.path.exists(self.local_path):
             self._current_path = tempfile.TemporaryDirectory(dir='/tmp').name
             logger.debug(f"Creating clone of repo {self.repo_url}<{self.repo_branch} @ {self._current_path}...")
-            clone_repo(self.repo_url, branch=self.repo_branch, target_path=self._current_path)
+            clone_repo(self.repo_url, branch=self.repo_branch, local_path=self._current_path)
         if not os.path.isdir(self._current_path):
-            raise ValueError(f"The target_path '{self._current_path}' should be a folder")
+            raise ValueError(f"The local path '{self._current_path}' should be a folder")
         return self._current_path
 
     def __exit__(self, exc_type, exc_value, exc_tb):
         logger.debug("Leaving the context %r ...", self)
-        if not self.target_path and self._current_path:
+        if not self.local_path and self._current_path:
             logger.debug(f"Removing local clone of {self.repo_url} @ '{self._current_path}'")
             shutil.rmtree(self._current_path, ignore_errors=True)
 
