@@ -53,18 +53,23 @@ class LifeMonitorGithubApp(GithubApp):
     _signing_key_path = None
     _signing_secret = None
     _app_identifier = None
+    _service_token = None
 
     @classmethod
     def init(cls, app_identifier: str,
-             signing_key_path: str, signing_secret: str,
+             signing_key_path: str, signing_secret: str, service_token: str,
              base_url: str = DEFAULT_BASE_URL,
-             token_expiration: timedelta = DEFAULT_TOKEN_EXPIRATION):
+             token_expiration: timedelta = DEFAULT_TOKEN_EXPIRATION,
+             service_repository_full_name: str = None):
         cls._app_identifier = app_identifier
         cls._signing_key_path = signing_key_path
         cls._signing_secret = signing_secret
+        cls._service_token = service_token
         if not cls.__instance__ and cls.check_initialization():
             integration = GithubIntegration(cls._app_identifier, cls._get_signing_key(), base_url=base_url)
-            cls.__instance__ = cls(integration, base_url=base_url, token_expiration=token_expiration)
+            cls.__instance__ = cls(integration, cls._service_token, base_url=base_url,
+                                   token_expiration=token_expiration,
+                                   service_repository_full_name=service_repository_full_name)
 
     @classmethod
     def get_instance(cls) -> LifeMonitorGithubApp:
@@ -102,11 +107,14 @@ class LifeMonitorGithubApp(GithubApp):
         # See if they match
         return hmac.compare_digest(local_signature.hexdigest(), github_signature)
 
-    def __init__(self, integration: GithubIntegration,
-                 base_url=DEFAULT_BASE_URL, token_expiration=DEFAULT_TOKEN_EXPIRATION) -> None:
+    def __init__(self, integration: GithubIntegration, service_token: str,
+                 base_url=DEFAULT_BASE_URL, token_expiration=DEFAULT_TOKEN_EXPIRATION,
+                 service_repository_full_name: str = None) -> None:
         self._integration = integration
+        self.service_token = service_token
         self.token_expiration = token_expiration
         self.base_url = base_url
+        self.service_repository_full_name = service_repository_full_name
         session = self.app_client_session()
         app = self._get_app_info(session=session)
         self._requester = __make_requester__(
@@ -139,6 +147,12 @@ class LifeMonitorGithubApp(GithubApp):
     @property
     def integration(self) -> GithubIntegration:
         return self._integration
+
+    @property
+    def repository_service(self) -> GithubRepository:
+        assert self.service_token, "No service token set"
+        gh_client = Github(login_or_token=self.service_token)
+        return gh_client.get_repo(self.service_repository_full_name)
 
     @property
     def installations(self) -> List[LifeMonitorInstallation]:
