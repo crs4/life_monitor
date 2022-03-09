@@ -39,7 +39,7 @@ def ping(event: GithubEvent):
     return "Pong", 200
 
 
-def workflow_run(event: GithubEvent):
+def refresh_workflow_builds(event: GithubEvent):
     try:
         logger.debug("Workflow run event: %r", event)
         repository = event['payload']['repository']
@@ -76,7 +76,7 @@ def installation(event: GithubEvent):
 # Register Handlers
 __event_handlers__ = {
     "ping": ping,
-    "workflow_run": workflow_run,
+    "workflow_run": refresh_workflow_builds,
     "installation": installation,
 }
 
