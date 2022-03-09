@@ -69,12 +69,47 @@ class WorkflowRepository():
     def find_workflow(self) -> WorkflowFile:
         pass
 
+    def check(self, fail_fast: bool = True) -> IssueCheckResult:
+        found_issues = []
+        checked = []
+        for issue_type in issues.WorkflowRepositoryIssue.all():
+            issue = issue_type()
+            to_be_solved = issue.check(self)
+            checked.append(issue)
+            if to_be_solved:
+                found_issues.append(issue)
+                if fail_fast:
+                    break
+        return IssueCheckResult(self, checked, found_issues)
+
     def make_crate(self):
         self._metadata = WorkflowRepositoryMetadata(self, init=True)
         self._metadata.write(self._local_path)
 
     def write_zip(self, target_path: str):
         self.metadata.write_zip(target_path)
+
+
+class IssueCheckResult:
+
+    def __init__(self, repo: WorkflowRepository,
+                 checked: List[issues.WorkflowRepositoryIssue],
+                 issues: List[issues.WorkflowRepositoryIssue]):
+        self.repo = repo
+        self.checked = checked
+        self.issues = issues
+        self.created = datetime.utcnow()
+        self._solved = None
+
+    def __repr__(self) -> str:
+        return f"Check repo {self.repo.local_path} @ {self.created} " \
+            f"=> checks: {len(self.checked)}, issues: {len(self.issues)}"
+
+    @property
+    def solved(self) -> List[issues.WorkflowRepositoryIssue]:
+        if not self._solved:
+            self._solved = [i for i in self.checked if i not in self.issues]
+        return self._solved
 
 
 class WorkflowRepositoryMetadata(ROCrate):
