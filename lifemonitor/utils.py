@@ -254,7 +254,7 @@ def extract_zip(archive_path, target_path=None):
     logger.debug("Target path: %r", target_path)
     try:
         if not target_path:
-            target_path = tempfile.mkdtemp()
+            target_path = tempfile.mkdtemp(dir='/tmp')
         with zipfile.ZipFile(archive_path, "r") as zip_ref:
             zip_ref.extractall(target_path)
         return target_path
