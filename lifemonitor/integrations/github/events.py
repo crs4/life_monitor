@@ -27,8 +27,8 @@ from flask import Request
 from flask import request as current_request
 from lifemonitor.integrations.github.app import (LifeMonitorGithubApp,
                                                  LifeMonitorInstallation)
-from lifemonitor.integrations.github.repository import (
-    RepoCloneContextManager, ROCrateGithubRepository)
+from lifemonitor.api.models.repositories.github import (
+    RepoCloneContextManager, GithubWorkflowRepository)
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
@@ -55,7 +55,7 @@ class GithubEvent():
 
     @property
     def application_id(self) -> int:
-        return int(self.installation_target_id)
+        return int(self.installation_target_id) if self.installation_target_id else None
 
     @property
     def installation_target_id(self) -> str:
@@ -104,7 +104,7 @@ class GithubEvent():
     def from_request(request: Request = None) -> GithubEvent:
         request = request or current_request
         assert isinstance(request, Request), request
-        return GithubEvent(request.headers.copy(), request.get_json())
+        return GithubEvent(request.headers, request.get_json())
 
 
 class GithubRepositoryReference(object):
@@ -169,8 +169,10 @@ class GithubRepositoryReference(object):
         return ref.replace('refs/tags/', '')
 
     @property
-    def repository(self) -> ROCrateGithubRepository:
-        return self.event.installation.get_repo(self.full_name)
+    def repository(self) -> GithubWorkflowRepository:
+        repo = self.event.installation.get_repo(self.full_name)
+        repo.ref = self.branch
+        return repo
 
     def clone(self, local_path: str = None) -> RepoCloneContextManager:
         assert local_path is None or isinstance(str, local_path), local_path
