@@ -21,59 +21,39 @@
 from __future__ import annotations
 
 import logging
-import re
-from typing import Tuple
+from typing import List
 
-import pygit2
-
-import github
+from github.GithubException import GithubException
+from github.Label import Label
+from github.Repository import Repository
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
 
 
-def get_repo_and_ref_from_event(gh_client: github.Github, event: object) -> Tuple[object, str]:
-    return gh_client.get_repo(event['data']['repository']['full_name']), event['data']['ref']
-
-
-def find_file_by_pattern(repo: object, ref: str, search: str):
-    for e in repo.get_contents('.', ref=ref):
-        logger.debug("Name: %r -- type: %r", e.name, e.type)
-        if re.search(search, e.name):
-            return e.decoded_content
-    return None
-
-
-def find_file_by_regex_pattern(repo: object, ref: str, pattern: re.Pattern):
-    for e in repo.get_contents('.', ref=ref):
-        logger.debug("Name: %r -- type: %r", e.name, e.type)
-        if pattern.match(e.name):
-            return e.decoded_content
-    return None
-
-
-def clone_repo(url: str, branch: str = None, target_path: str = None,
-               remote_url: str = None, remote_branch: str = None,
-               remote_user_token: str = None):
-    try:
-        local_path = target_path
-        if not local_path:
-            local_path = tempfile.TemporaryDirectory(dir='/tmp').name
-        user_credentials = None
-        if remote_user_token:
-            user_credentials = pygit2.RemoteCallbacks(pygit2.UserPass('x-access-token', remote_user_token))
-        clone = pygit2.clone_repository(url, local_path, checkout_branch=branch)
-        if remote_url:
-            remote = clone.create_remote("remote", url=remote_url)
-            remote.push([f'+refs/heads/{branch}:refs/heads/{remote_branch}'], callbacks=user_credentials)
-        return local_path
-    finally:
-        if target_path is None:
-            shutil.rmtree(local_path, ignore_errors=True)
-
-
-def crate_new_branch(repo: object, branch_name: str):
+def crate_branch(repo: Repository, branch_name: str):
     head = repo.get_commit('HEAD')
     logger.debug("HEAD commit: %r", head.sha)
     logger.debug("New target branch ref: %r", f'refs/heads/{branch_name}'.format(**locals()))
     return repo.create_git_ref(ref=f'refs/heads/{branch_name}'.format(**locals()), sha=head.sha)
+
+
+def delete_branch(repo: Repository, branch_name: str) -> bool:
+    try:
+        ref = repo.get_git_ref(f"heads/{branch_name}")
+        ref.delete()
+        return True
+    except GithubException as e:
+        logger.debug("Unable to delete branch '%s': %s", branch_name, str(e))
+        return False
+
+
+def get_labels_from_strings(repo: Repository, labels: List[str]) -> List[Label]:
+    result = []
+    if labels:
+        for l in labels:
+            label = repo.get_label(l)
+            if not label:
+                label = repo.create_label(l, 'orange')
+            result.append(label)
+    return result
