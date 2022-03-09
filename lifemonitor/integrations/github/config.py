@@ -20,14 +20,10 @@
 
 from __future__ import annotations
 
-from .app import LifeMonitorGithubApp, LifeMonitorInstallation
-from .controllers import init_integration
-from .events import GithubEvent, GithubRepositoryReference
+from datetime import timedelta
 
-__all__ = [
-    init_integration,
-    LifeMonitorGithubApp,
-    LifeMonitorInstallation,
-    GithubEvent,
-    GithubRepositoryReference
-]
+
+DEFAULT_BASE_URL = "https://api.github.com"
+DEFAULT_TIMEOUT = 15
+DEFAULT_PER_PAGE = 30
+DEFAULT_TOKEN_EXPIRATION = timedelta(seconds=60)

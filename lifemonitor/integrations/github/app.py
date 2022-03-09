@@ -22,38 +22,27 @@ from __future__ import annotations
 
 import hashlib
 import hmac
-import json
 import logging
-import os
-import shutil
-import tempfile
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Union
+from typing import List
 
 import jwt
 import requests
-from flask import Request
-from flask import request as current_request
+from lifemonitor.api.models.repositories.github import (
+    GithubWorkflowRepository, InstallationGithubWorkflowRepository)
 from lifemonitor.exceptions import IllegalStateException, LifeMonitorException
-from lifemonitor.integrations.github.repository import ROCrateGithubRepository
-from lifemonitor.integrations.github.utils import clone_repo
-from rocrate.rocrate import ROCrate
 
 from github import Github
 from github import GithubIntegration as GithubIntegrationBase
 from github import Installation
-from github.Branch import Branch
 from github.GithubApp import GithubApp
-from github.GithubObject import NotSet
 from github.InstallationAuthorization import InstallationAuthorization
 from github.PaginatedList import PaginatedList
 from github.Repository import Repository as GithubRepository
 from github.Requester import Requester
 
-DEFAULT_BASE_URL = "https://api.github.com"
-DEFAULT_TIMEOUT = 15
-DEFAULT_PER_PAGE = 30
-DEFAULT_TOKEN_EXPIRATION = timedelta(seconds=60)
+from .config import (DEFAULT_BASE_URL, DEFAULT_PER_PAGE, DEFAULT_TIMEOUT,
+                     DEFAULT_TOKEN_EXPIRATION)
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
@@ -237,21 +226,21 @@ class LifeMonitorInstallation(Installation.Installation):
     def _requester(self, value: Requester):
         self.__requester = value
 
-    def get_repo(self, full_name_or_id, lazy=False):
+    def get_repo(self, full_name_or_id, lazy=False) -> InstallationGithubWorkflowRepository:
         assert isinstance(full_name_or_id, (str, int)), full_name_or_id
         url_base = "/repositories/" if isinstance(full_name_or_id, int) else "/repos/"
         url = f"{url_base}{full_name_or_id}"
         if lazy:
-            return ROCrateGithubRepository(
+            return GithubWorkflowRepository(
                 self._requester, {}, {"url": url}, completed=False
             )
         headers, data = self._requester.requestJsonAndCheck("GET", url)
-        return ROCrateGithubRepository(self._requester, headers, data, completed=True)
+        return InstallationGithubWorkflowRepository(self._requester, headers, data, completed=True)
 
-    def get_repos(self):
+    def get_repos(self) -> List[InstallationGithubWorkflowRepository]:
         url_parameters = dict()
         return PaginatedList(
-            contentClass=ROCrateGithubRepository,
+            contentClass=InstallationGithubWorkflowRepository,
             requester=self._requester,
             firstUrl="/installation/repositories",
             firstParams=url_parameters,
