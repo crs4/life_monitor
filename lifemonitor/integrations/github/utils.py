@@ -51,9 +51,9 @@ def delete_branch(repo: Repository, branch_name: str) -> bool:
 def get_labels_from_strings(repo: Repository, labels: List[str]) -> List[Label]:
     result = []
     if labels:
-        for l in labels:
-            label = repo.get_label(l)
+        for name in labels:
+            label = repo.get_label(name)
             if not label:
-                label = repo.create_label(l, 'orange')
+                label = repo.create_label(name, 'orange')
             result.append(label)
     return result
