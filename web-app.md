@@ -119,11 +119,10 @@ git clone https://github.com/crs4/fair-crcc-send-data
 cd fair-crcc-send-data/
 ```
 
-Remove the Git and GitHub auxiliary directories and initialize the crate:
+Initialize the crate, ignoring the `.git` and `.github` directories:
 
 ```
-rm -rf .git .github
-rocrate init
+rocrate init --exclude .git,.github
 ```
 
 The above command creates an `ro-crate-metadata.json` file at the top level
@@ -168,15 +167,15 @@ workflow via a remote URL).
 First, create a test suite:
 
 ```
-rocrate add test-suite -i \#test1
+rocrate add test-suite -i suite_1
 ```
 
 Then, add a test instance that points to the CI workflow:
 
 ```
-rocrate add test-instance \#test1 https://api.github.com -s github \
+rocrate add test-instance suite_1 https://api.github.com -s github \
   -r repos/crs4/fair-crcc-send-data/actions/workflows/main.yml \
-  -i \#test1_1
+  -i first_test
 ```
 
 Where `https://api.github.com` is the service URL, while the argument of the
