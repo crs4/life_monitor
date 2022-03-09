@@ -24,10 +24,10 @@ import logging
 
 from flask import Blueprint, Flask, request
 from lifemonitor import cache
+from lifemonitor.api.models.repositories.github import GithubWorkflowRepository
 from lifemonitor.api.models.testsuites.testinstance import TestInstance
 from lifemonitor.integrations.github.app import LifeMonitorGithubApp
 from lifemonitor.integrations.github.events import GithubEvent
-from lifemonitor.integrations.github.repository import ROCrateGithubRepository
 from lifemonitor.integrations.github.services import check_repository
 
 # Config a module level logger
@@ -73,11 +73,39 @@ def installation(event: GithubEvent):
         logger.error(e)
         return "Internal Error", 500
 
+
+def push(event: GithubEvent):
+    try:
+        logger.debug("Push event: %r", event)
+
+        installation = event.installation
+        logger.debug("Installation: %r", installation)
+
+        repositories = installation.get_repos()
+        logger.debug("Repositories: %r", repositories)
+
+        repo_info = event.repository_reference
+        logger.debug(repo_info)
+
+        repo: GithubWorkflowRepository = repo_info.repository
+        logger.debug("Repository: %r", repo)
+
+        check_repository(repo_info)
+
+        return "No content", 204
+    except Exception as e:
+        logger.error(str(e))
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.exception(e)
+        return "Internal Error", 500
+
+
 # Register Handlers
 __event_handlers__ = {
     "ping": ping,
     "workflow_run": refresh_workflow_builds,
     "installation": installation,
+    "push": push
 }
 
 
