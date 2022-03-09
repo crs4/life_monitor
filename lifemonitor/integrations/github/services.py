@@ -1,4 +1,3 @@
-
 # Copyright (c) 2020-2021 CRS4
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -23,13 +22,11 @@ from __future__ import annotations
 
 import logging
 
-from lifemonitor.api.models import TestInstance
 from lifemonitor.api.models.repositories.base import IssueCheckResult
 from lifemonitor.api.models.repositories.github import GithubWorkflowRepository
-from lifemonitor.cache import cache
 from lifemonitor.integrations.github.events import GithubRepositoryReference
 
-from . import issues, pull_requests, utils
+from . import issues, pull_requests
 
 # Config a module level logger
 logger = logging.getLogger(__name__)

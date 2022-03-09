@@ -21,12 +21,11 @@
 from __future__ import annotations
 
 import abc
-from functools import cmp_to_key
 import glob
-from hashlib import sha1
 import inspect
 import logging
-from dataclasses import dataclass
+from functools import cmp_to_key
+from hashlib import sha1
 from importlib import import_module
 from os.path import basename, dirname, isfile, join
 from typing import List
@@ -35,7 +34,6 @@ import lifemonitor.api.models.repositories as repositories
 
 # set module level logger
 logger = logging.getLogger(__name__)
-
 
 
 class WorkflowRepositoryIssue():

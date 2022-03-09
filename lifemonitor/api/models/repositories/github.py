@@ -73,8 +73,6 @@ class TempWorkflowRepositoryMetadata(WorkflowRepositoryMetadata):
         local_path = local_path or tempfile.mkdtemp(dir='/tmp')
         try:
             target_path = f'{local_path}/ro-crate-metadata.json'
-            #self.source = local_path
-            #self.repository = repo
             mf = repo.find_file_by_name('ro-crate-metadata.json')
             if not mf:
                 raise IllegalStateException(detail="RO-Crate metadata not found!")
@@ -103,7 +101,6 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
         super().__init__(requester, headers, attributes, completed)
         self.ref = ref or self.default_branch
         self.auto_cleanup = auto_cleanup
-        # self._local_path = None
         self._metadata = None
         self._local_repo: LocalWorkflowRepository = None
 
@@ -161,10 +158,9 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
 
     def make_crate(self):
         if self.local_repo:
-            # if (self.local_repo and os.path.isdir(self.local_path) and len(os.listdir(self.local_path)) > 0):
             if not self.auto_cleanup:
-                #raise IllegalStateException(detail="local path not empty")
-                logger.warning(f"Local temp folder '{self.local_repo.local_path}' will not be deleted")
+                logger.warning("'auto cleanup' disabled: local temp folder "
+                               f"'{self.local_repo.local_path}' will not be deleted")
             else:
                 self.cleanup()
         self._local_repo = self._setup_local_clone()

@@ -21,7 +21,6 @@
 from __future__ import annotations
 
 import logging
-from hashlib import sha1
 from typing import Union
 
 from lifemonitor.api.models.issues import WorkflowRepositoryIssue
