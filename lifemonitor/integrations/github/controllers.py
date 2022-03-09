@@ -98,12 +98,14 @@ def handle_event():
     if not valid:
         return "Signature Invalid", 401
     event = GithubEvent.from_request()
-    event_handler = __event_handlers__.get(event['type'], None)
+    if event.repository_reference.branch.startswith('lifemonitor-issue'):
+        return f"Nothing to do for the event '{event.type}' on branch {event.repository_reference.branch}", 204
+    event_handler = __event_handlers__.get(event.type, None)
     logger.debug("Event: %r", event)
     if not event_handler:
-        action = f"- action: {event['action']}" if event['action'] else None
-        logger.warning(f"No event handler registered for the event GitHub event '{event['type']}' {action}")
-        return f"No handler registered for the '{event['type']}' event", 204
+        action = f"- action: {event._raw_data.get('action')}" if event._raw_data.get('action', None) else None
+        logger.warning(f"No event handler registered for the event GitHub event '{event.type}' {action}")
+        return f"No handler registered for the '{event.type}' event", 204
     else:
         return event_handler(event)
 
