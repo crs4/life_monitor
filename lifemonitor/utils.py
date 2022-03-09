@@ -28,6 +28,7 @@ import os
 import random
 import re
 import shutil
+import pygit2
 import socket
 import string
 import tempfile
@@ -254,6 +255,26 @@ def extract_zip(archive_path, target_path=None):
         msg = "Downloaded RO-crate has bad zip format"
         logger.error(msg + ": %s", e)
         raise lm_exceptions.NotValidROCrateException(detail=msg, original_error=str(e))
+
+
+def clone_repo(url: str, branch: str = None, target_path: str = None,
+               remote_url: str = None, remote_branch: str = None,
+               remote_user_token: str = None):
+    try:
+        local_path = target_path
+        if not local_path:
+            local_path = tempfile.TemporaryDirectory(dir='/tmp').name
+        user_credentials = None
+        if remote_user_token:
+            user_credentials = pygit2.RemoteCallbacks(pygit2.UserPass('x-access-token', remote_user_token))
+        clone = pygit2.clone_repository(url, local_path, checkout_branch=branch)
+        if remote_url:
+            remote = clone.create_remote("remote", url=remote_url)
+            remote.push([f'+refs/heads/{branch}:refs/heads/{remote_branch}'], callbacks=user_credentials)
+        return local_path
+    finally:
+        if target_path is None:
+            shutil.rmtree(local_path, ignore_errors=True)
 
 
 def load_test_definition_filename(filename):
