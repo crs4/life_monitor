@@ -265,21 +265,30 @@ def extract_zip(archive_path, target_path=None):
         raise lm_exceptions.NotValidROCrateException(detail=msg, original_error=str(e))
 
 
-def clone_repo(url: str, branch: str = None, target_path: str = None,
-               remote_url: str = None, remote_branch: str = None,
-               remote_user_token: str = None):
+def _make_git_credentials_callback(token: str = None):
+    return pygit2.RemoteCallbacks(pygit2.UserPass('x-access-token', token)) if token else None
+
+
+def clone_repo(url: str, branch: str = None, target_path: str = None, auth_token: str = None,
+               remote_url: str = None, remote_branch: str = None, remote_user_token: str = None):
     try:
         local_path = target_path
         if not local_path:
             local_path = tempfile.TemporaryDirectory(dir='/tmp').name
-        user_credentials = None
-        if remote_user_token:
-            user_credentials = pygit2.RemoteCallbacks(pygit2.UserPass('x-access-token', remote_user_token))
-        clone = pygit2.clone_repository(url, local_path, checkout_branch=branch)
+        user_credentials = _make_git_credentials_callback(auth_token)
+        clone = pygit2.clone_repository(url, local_path,
+                                        checkout_branch=branch, callbacks=user_credentials)
         if remote_url:
+            user_credentials = _make_git_credentials_callback(remote_user_token)
             remote = clone.create_remote("remote", url=remote_url)
             remote.push([f'+refs/heads/{branch}:refs/heads/{remote_branch}'], callbacks=user_credentials)
         return local_path
+    except pygit2.errors.GitError as e:
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.exception(e)
+        if 'authentication' in str(e):
+            raise lm_exceptions.NotAuthorizedException("Token authorization not valid")
+        raise lm_exceptions.DownloadException(detail=str(e))
     finally:
         if target_path is None:
             shutil.rmtree(local_path, ignore_errors=True)
