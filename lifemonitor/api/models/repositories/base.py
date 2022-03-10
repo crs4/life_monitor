@@ -134,7 +134,7 @@ class WorkflowRepositoryMetadata(ROCrate):
 
     @property
     def dataset_name(self):
-        return self._roc_helper.name
+        return self.name
 
     def get_roc_suites(self):
         return get_roc_suites(self)
