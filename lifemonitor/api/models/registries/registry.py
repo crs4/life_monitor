@@ -34,7 +34,6 @@ from lifemonitor.auth import models as auth_models
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 from lifemonitor.auth.oauth2.client.services import oauth2_registry
 from lifemonitor.utils import ClassManager, download_url
-from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.orm.exc import NoResultFound
 
 # set module level logger
@@ -170,16 +169,6 @@ class WorkflowRegistry(auth_models.HostingService):
 
     id = db.Column(db.Integer, db.ForeignKey(auth_models.HostingService.id), primary_key=True)
     registry_type = db.Column(db.String, nullable=False)
-    _client_id = db.Column(db.Integer, db.ForeignKey('oauth2_client.id', ondelete='CASCADE'))
-    _server_id = db.Column(db.Integer, db.ForeignKey('oauth2_identity_provider.id', ondelete='CASCADE'))
-    client_credentials = db.relationship("Client", uselist=False, cascade="all, delete")
-    server_credentials = db.relationship("OAuth2IdentityProvider",
-                                         uselist=False, cascade="all, delete",
-                                         foreign_keys=[_server_id],
-                                         backref="workflow_registry")
-    client_id = association_proxy('client_credentials', 'client_id')
-
-    _client = None
 
     registry_types = ClassManager('lifemonitor.api.models.registries', class_suffix="WorkflowRegistry", skip=["registry"])
 
@@ -197,37 +186,6 @@ class WorkflowRegistry(auth_models.HostingService):
     def __repr__(self):
         return '<WorkflowRegistry ({}) -- name {}, url {}>'.format(
             self.uuid, self.name, self.uri)
-
-    @property
-    def api(self) -> auth_models.Resource:
-        return self.server_credentials.api_resource
-
-    def set_name(self, name):
-        self.name = name
-        self.server_credentials.name = name
-
-    def set_uri(self, uri):
-        self.uri = uri
-        self.server_credentials.api_resource.uri = uri
-        self.client_credentials.api_base_url = uri
-
-    def update_client(self, client_id=None, client_secret=None,
-                      redirect_uris=None, client_auth_method=None):
-        if client_id:
-            self.server_credentials.client_id = client_id
-        if client_secret:
-            self.server_credentials.client_secret = client_secret
-        if redirect_uris:
-            self.client_credentials.redirect_uris = redirect_uris
-        if client_auth_method:
-            self.client_credentials.auth_method = client_auth_method
-
-    @property
-    def client(self) -> WorkflowRegistryClient:
-        if self._client is None:
-            rtype = self.__class__.__name__.replace("WorkflowRegistry", "").lower()
-            return WorkflowRegistryClient.get_client_class(rtype)(self)
-        return self._client
 
     def get_external_uuid(self, external_id, version, user: auth_models.User) -> str:
         return self.client.get_external_uuid(external_id, version, user)
@@ -297,6 +255,13 @@ class WorkflowRegistry(auth_models.HostingService):
     def get_index_workflow(self, user: auth_models.User, workflow_identifier: str) -> RegistryWorkflow:
         return self.client.get_index_workflow(user, workflow_identifier)
 
+    @property
+    def client(self) -> WorkflowRegistryClient:
+        if self._client is None:
+            rtype = self.__class__.__name__.replace("WorkflowRegistry", "").lower()
+            return WorkflowRegistryClient.get_client_class(rtype)(self)
+        return self._client
+
     @classmethod
     def all(cls) -> List[WorkflowRegistry]:
         return cls.query.all()
@@ -324,16 +289,6 @@ class WorkflowRegistry(auth_models.HostingService):
             return cls.query.filter(WorkflowRegistry.uri == uri).one()
         except Exception as e:
             raise lm_exceptions.EntityNotFoundException(WorkflowRegistry, entity_id=uri, exception=e)
-
-    @classmethod
-    def find_by_client_id(cls, client_id):
-        try:
-            return cls.query.filter_by(client_id=client_id).one()
-        except NoResultFound as e:
-            logger.debug(e)
-            return None
-        except Exception as e:
-            raise lm_exceptions.LifeMonitorException(detail=str(e), stack=str(e))
 
     @classmethod
     def get_registry_class(cls, registry_type):
