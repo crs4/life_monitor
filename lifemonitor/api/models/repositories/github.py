@@ -215,10 +215,11 @@ class GithubWorkflowRepository(InstallationGithubWorkflowRepository):
 
 class RepoCloneContextManager():
 
-    def __init__(self, repo_url: str, repo_branch: str = None,
+    def __init__(self, repo_url: str, repo_branch: str = None, auth_token: str = None,
                  base_dir: str = '/tmp', local_path: str = None) -> None:
         self.base_dir = base_dir
         self.local_path = local_path
+        self.auth_token = auth_token
         self.repo_url = repo_url
         self.repo_branch = repo_branch
         self._current_path = None
@@ -232,7 +233,8 @@ class RepoCloneContextManager():
         if not self.local_path or not os.path.exists(self.local_path):
             self._current_path = tempfile.TemporaryDirectory(dir='/tmp').name
             logger.debug(f"Creating clone of repo {self.repo_url}<{self.repo_branch} @ {self._current_path}...")
-            clone_repo(self.repo_url, branch=self.repo_branch, target_path=self._current_path)
+            clone_repo(self.repo_url, branch=self.repo_branch,
+                       target_path=self._current_path, auth_token=self.auth_token)
         if not os.path.isdir(self._current_path):
             raise ValueError(f"The local path '{self._current_path}' should be a folder")
         return self._current_path

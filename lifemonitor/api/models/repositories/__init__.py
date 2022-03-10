@@ -24,7 +24,7 @@ from __future__ import annotations
 from .base import (IssueCheckResult, WorkflowRepository,
                    WorkflowRepositoryMetadata)
 from .files import RepositoryFile, WorkflowFile
-from .github import (GithubWorkflowRepository,
+from .github import (GithubWorkflowRepository, RepoCloneContextManager,
                      InstallationGithubWorkflowRepository)
 from .local import LocalWorkflowRepository, ZippedWorkflowRepository
 
@@ -32,5 +32,5 @@ __all__ = [
     "RepositoryFile", "WorkflowFile",
     "WorkflowRepository", "WorkflowRepositoryMetadata", "IssueCheckResult",
     "LocalWorkflowRepository", "ZippedWorkflowRepository",
-    "InstallationGithubWorkflowRepository", "GithubWorkflowRepository"
+    "InstallationGithubWorkflowRepository", "GithubWorkflowRepository", "RepoCloneContextManager"
 ]

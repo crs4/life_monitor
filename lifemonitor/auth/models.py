@@ -700,6 +700,22 @@ class ExternalServiceAuthorizationHeader(ExternalServiceAccessAuthorization):
         super().__init__(user)
         self.header = header
 
+    def _get_header_parts(self):
+        parts = self.header.split(' ')
+        if len(parts) == 2:
+            return parts
+        if len(parts) == 1:
+            return None, parts[0]
+        return None, None
+
+    @property
+    def auth_type(self) -> str:
+        return self._get_header_parts()[0]
+
+    @property
+    def auth_token(self) -> str:
+        return self._get_header_parts()[1]
+
     def as_http_header(self):
         return self.header
 
