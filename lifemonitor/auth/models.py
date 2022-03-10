@@ -39,8 +39,10 @@ from lifemonitor import utils as lm_utils
 from lifemonitor.db import db
 from lifemonitor.models import JSON, UUID, IntegerSet, ModelMixin
 from sqlalchemy import null
+from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.ext.mutable import MutableSet
+from sqlalchemy.orm.exc import NoResultFound
 
 # Set the module level logger
 logger = logging.getLogger(__name__)
@@ -613,6 +615,17 @@ class HostingService(Resource):
 
     id = db.Column(db.Integer, db.ForeignKey(Resource.id), primary_key=True)
 
+    _client_id = db.Column("client_id", db.Integer, db.ForeignKey('oauth2_client.id', ondelete='CASCADE'))
+    _server_id = db.Column("server_id", db.Integer, db.ForeignKey('oauth2_identity_provider.id', ondelete='CASCADE'))
+    client_credentials = db.relationship("Client", uselist=False, cascade="all, delete")
+    server_credentials = db.relationship("OAuth2IdentityProvider",
+                                         uselist=False, cascade="all, delete",
+                                         foreign_keys=[_server_id],
+                                         backref="workflow_registry")
+    client_id = association_proxy('client_credentials', 'client_id')
+
+    _client = None
+
     __mapper_args__ = {
         'polymorphic_identity': 'hosting_service'
     }
@@ -628,6 +641,62 @@ class HostingService(Resource):
     @abc.abstractmethod
     def get_rocrate_external_link(self, external_id: str, version: str) -> str:
         pass
+
+    @property
+    def api(self) -> Resource:
+        return self.server_credentials.api_resource
+
+    def set_name(self, name):
+        self.name = name
+        self.server_credentials.name = name
+
+    def set_uri(self, uri):
+        self.uri = uri
+        self.server_credentials.api_resource.uri = uri
+        self.client_credentials.api_base_url = uri
+
+    def update_client(self, client_id=None, client_secret=None,
+                      redirect_uris=None, client_auth_method=None):
+        if client_id:
+            self.server_credentials.client_id = client_id
+        if client_secret:
+            self.server_credentials.client_secret = client_secret
+        if redirect_uris:
+            self.client_credentials.redirect_uris = redirect_uris
+        if client_auth_method:
+            self.client_credentials.auth_method = client_auth_method
+
+    @classmethod
+    def find_by_provider_id(cls, server_id):
+        try:
+            return cls.query.filter(server_id == server_id).one()
+        except NoResultFound as e:
+            logger.debug(e)
+            return None
+        except Exception as e:
+            raise lm_exceptions.LifeMonitorException(detail=str(e), stack=str(e))
+
+    @classmethod
+    def find_by_provider_name(cls, name: str):
+        try:
+            from lifemonitor.auth.oauth2.client.models import OAuth2IdentityProvider
+            return cls.query.join(OAuth2IdentityProvider, OAuth2IdentityProvider.id == cls._server_id)\
+                .filter(OAuth2IdentityProvider.name == name).one()
+        except NoResultFound as e:
+            logger.debug(e)
+            return None
+        except Exception as e:
+            raise lm_exceptions.LifeMonitorException(detail=str(e), stack=str(e))
+
+    @classmethod
+    def find_by_client_id(cls, client_id):
+        try:
+            return cls.query.filter(cls.client_id == client_id).one()
+        except NoResultFound as e:
+            logger.debug(e)
+            return None
+        except Exception as e:
+            raise lm_exceptions.LifeMonitorException(detail=str(e), stack=str(e))
 
 
 class RoleType:
