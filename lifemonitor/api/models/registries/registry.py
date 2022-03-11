@@ -187,6 +187,10 @@ class WorkflowRegistry(auth_models.HostingService):
         return '<WorkflowRegistry ({}) -- name {}, url {}>'.format(
             self.uuid, self.name, self.uri)
 
+    @property
+    def api(self) -> auth_models.Resource:
+        return self.server_credentials.api_resource
+
     def get_external_uuid(self, external_id, version, user: auth_models.User) -> str:
         return self.client.get_external_uuid(external_id, version, user)
 
@@ -205,10 +209,6 @@ class WorkflowRegistry(auth_models.HostingService):
     @property
     def users(self) -> List[auth_models.User]:
         return self.get_users()
-
-    @property
-    def registered_workflow_versions(self) -> List[models.WorkflowVersion]:
-        return self.ro_crates
 
     def get_authorization(self, user: auth_models.User):
         auths = auth_models.ExternalServiceAccessAuthorization.find_by_user_and_resource(user, self)
