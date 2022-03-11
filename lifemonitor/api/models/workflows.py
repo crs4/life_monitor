@@ -24,7 +24,6 @@ import logging
 from typing import List, Union
 
 import lifemonitor.api.models as models
-from lifemonitor.cache import Timeout, cached
 import lifemonitor.exceptions as lm_exceptions
 from lifemonitor import utils as lm_utils
 from lifemonitor.api.models import db
@@ -33,6 +32,7 @@ from lifemonitor.api.models.rocrate import ROCrate
 from lifemonitor.auth.models import (HostingService, Permission, Resource,
                                      Subscription, User)
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
+from lifemonitor.cache import Timeout, cached
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm.collections import (MappedCollection,
