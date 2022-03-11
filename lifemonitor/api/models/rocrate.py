@@ -104,6 +104,14 @@ class ROCrate(Resource):
         return self.repository.metadata.get_get_roc_suite(roc_suite_identifier)
 
     @property
+    def based_on(self) -> str:
+        return self.repository.metadata.isBasedOn
+
+    @property
+    def based_on_link(self) -> str:
+        return self.repository.metadata.isBasedOn
+
+    @property
     def dataset_name(self):
         return self.repository.metadata.dataset_name
 
