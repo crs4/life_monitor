@@ -54,6 +54,13 @@ class WorkflowRegistrySchema(ResourceMetadataSchema):
     def get_type(self, obj):
         return obj.type.replace('_registry', '')
 
+    @post_dump
+    def remove_skip_values(self, data, **kwargs):
+        return {
+            key: value for key, value in data.items()
+            if value is not None
+        }
+
 
 class ListOfWorkflowRegistriesSchema(ListOfItems):
     __item_scheme__ = WorkflowRegistrySchema
