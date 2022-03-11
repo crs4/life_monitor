@@ -28,7 +28,7 @@ import lifemonitor.exceptions as lm_exceptions
 from lifemonitor.api import models
 from lifemonitor.auth.models import (EventType, ExternalServiceAuthorizationHeader,
                                      Notification, Permission, Resource,
-                                     RoleType, Subscription, User)
+                                     RoleType, Subscription, User, HostingService)
 from lifemonitor.auth.oauth2.client import providers
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 from lifemonitor.auth.oauth2.server import server
@@ -154,6 +154,15 @@ class LifeMonitor:
 
         # set workflow visibility
         w.public = public
+
+        # set hosting service
+        hosting_service = None
+        if wv.based_on:
+            hosting_service = HostingService.from_url(wv.based_on)
+        elif workflow_registry:
+            hosting_service = workflow_registry
+        if hosting_service:
+            wv.hosting_service = hosting_service
 
         # parse roc_metadata and register suites and instances
         try:
