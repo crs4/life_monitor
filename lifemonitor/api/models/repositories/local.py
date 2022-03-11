@@ -97,4 +97,6 @@ class ZippedWorkflowRepository(LocalWorkflowRepository):
         super().__init__(local_path=local_path)
 
     def __del__(self):
-        shutil.rmtree(self._local_path)
+        logger.debug(f"Cleaning temp extraction folder of zipped repository @ {self.local_path} .... ")
+        shutil.rmtree(self.local_path, ignore_errors=True)
+        logger.debug(f"Cleaning temp extraction folder of zipped repository @ {self.local_path} .... ")
