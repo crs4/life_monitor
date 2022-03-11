@@ -35,7 +35,6 @@ from lifemonitor.auth.oauth2.client.models import \
     OAuthIdentityNotFoundException
 from lifemonitor.cache import Timeout, cached, clear_cache
 from lifemonitor.lang import messages
-from lifemonitor.config import BaseConfig
 
 # Initialize a reference to the LifeMonitor instance
 lm = LifeMonitor.get_instance()

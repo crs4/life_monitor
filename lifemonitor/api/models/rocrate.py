@@ -19,28 +19,23 @@
 # SOFTWARE.
 
 from __future__ import annotations
-from sqlalchemy.ext.hybrid import hybrid_property
-from lifemonitor.utils import (check_resource_exists, compare_json,
-                               download_url, extract_zip)
-from lifemonitor.test_metadata import get_roc_suites
-from lifemonitor.auth.models import HostingService, Resource, ExternalServiceAuthorizationHeader
-from lifemonitor.api.models import db
+
+import logging
+import os
+import tempfile
+import uuid as _uuid
+from pathlib import Path
 from typing import List
-from lifemonitor.utils import check_resource_exists, download_url
-from lifemonitor.models import JSON
-from lifemonitor.config import BaseConfig
+
+import lifemonitor.exceptions as lm_exceptions
+from flask import current_app
+from lifemonitor.api.models import db, repositories
 from lifemonitor.auth.models import (ExternalServiceAuthorizationHeader,
                                      HostingService, Resource)
-from lifemonitor.api.models import db, repositories
-from flask import current_app
-import lifemonitor.exceptions as lm_exceptions
-from pathlib import Path
-import uuid as _uuid
-import tempfile
-import os
-import logging
-import json
-
+from lifemonitor.config import BaseConfig
+from lifemonitor.models import JSON
+from lifemonitor.utils import check_resource_exists, compare_json, download_url
+from sqlalchemy.ext.hybrid import hybrid_property
 
 # set module level logger
 logger = logging.getLogger(__name__)
