@@ -29,8 +29,8 @@ import lifemonitor.exceptions as lm_exceptions
 from lifemonitor.api import models
 from lifemonitor.auth.models import (EventType,
                                      ExternalServiceAuthorizationHeader,
-                                     Notification, Permission, Resource,
-                                     RoleType, Subscription, User, HostingService)
+                                     HostingService, Notification, Permission,
+                                     Resource, RoleType, Subscription, User)
 from lifemonitor.auth.oauth2.client import providers
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 from lifemonitor.auth.oauth2.server import server
@@ -159,7 +159,7 @@ class LifeMonitor:
 
             # set workflow visibility
             w.public = public
-            
+
             # set hosting service
             hosting_service = None
             if wv.based_on:
