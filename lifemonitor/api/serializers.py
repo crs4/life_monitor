@@ -125,11 +125,16 @@ class VersionDetailsSchema(BaseSchema):
         additional = ('rocrate_metadata',)
 
     def get_links(self, obj: models.WorkflowVersion):
-        return {
+        links = {
             'origin': obj.external_link
         }
+        if obj.based_on:
+            links['based_on'] = obj.based_on
+        if obj.registry_link:
+            links['registry'] = obj.registry_link
+        return links
 
-    def get_rocrate(self, obj):
+    def get_rocrate(self, obj: models.WorkflowVersion):
         rocrate = {
             'links': {
                 'origin': obj.external_link,
@@ -139,6 +144,10 @@ class VersionDetailsSchema(BaseSchema):
                                     f"workflows/{obj.workflow.uuid}/rocrate/{obj.version}/download")
             }
         }
+        if obj.based_on:
+            rocrate['links']['based_on'] = obj.based_on
+        if obj.registry_link:
+            rocrate['links']['registry'] = obj.registry_link
         rocrate['metadata'] = obj.crate_metadata
         if 'rocrate_metadata' in self.exclude or \
                 self.only and 'rocrate_metadata' not in self.only:
@@ -166,7 +175,7 @@ class WorkflowVersionSchema(ResourceSchema):
     version = fields.Method("get_version")
     public = fields.Boolean(attribute="workflow.public")
     registry = ma.Nested(WorkflowRegistrySchema(exclude=('meta', 'links')),
-                         attribute="hosting_service")
+                         attribute="registry")
     subscriptions = fields.Method("get_subscriptions")
 
     rocrate_metadata = False
