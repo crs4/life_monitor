@@ -306,6 +306,7 @@ class OAuth2IdentityProvider(db.Model, ModelMixin):
 
     id = db.Column(db.Integer, primary_key=True)
     _type = db.Column("type", db.String, nullable=False)
+    uri = db.Column(db.String, nullable=False, unique=True)
     name = db.Column(db.String, nullable=False, unique=True)
     client_id = db.Column(db.String, nullable=False)
     client_secret = db.Column(db.String, nullable=False)
@@ -329,11 +330,13 @@ class OAuth2IdentityProvider(db.Model, ModelMixin):
     def __init__(self, name,
                  client_id, client_secret,
                  api_base_url, authorize_url, access_token_url, userinfo_endpoint,
+                 uri=None,
                  client_kwargs=None,
                  authorize_params=None,
                  access_token_params=None,
                  **kwargs):
         self.name = name
+        self.uri = uri or api_base_url
         self.client_id = client_id
         self.client_secret = client_secret
         self.api_resource = models.Resource(api_base_url, name=self.name)
@@ -437,6 +440,13 @@ class OAuth2IdentityProvider(db.Model, ModelMixin):
             return cls.query.filter(cls.name == name).one()
         except NoResultFound:
             raise EntityNotFoundException(cls, entity_id=name)
+
+    @classmethod
+    def find_by_uri(cls, uri) -> OAuth2IdentityProvider:
+        try:
+            return cls.query.filter(cls.uri == uri).one()
+        except NoResultFound:
+            raise EntityNotFoundException(cls, entity_id=uri)
 
     @classmethod
     def find_by_api_url(cls, api_url: str):
