@@ -57,6 +57,7 @@ class GitHub:
     oauth_config = {
         'client_id': current_app.config.get('GITHUB_CLIENT_ID', None),
         'client_secret': current_app.config.get('GITHUB_CLIENT_SECRET', None),
+        'uri': 'https://github.com',
         'api_base_url': 'https://api.github.com',
         'access_token_url': 'https://github.com/login/oauth/access_token',
         'authorize_url': 'https://github.com/login/oauth/authorize',
