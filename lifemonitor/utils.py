@@ -224,25 +224,35 @@ def download_url(url: str, target_path: str = None, authorization: str = None) -
             with open(target_path, 'wb') as fd:
                 _download_from_remote(url, fd, authorization)
             logger.info("Fetched %s of data from %s",
-                        sizeof_fmt(os.path.getsize(target_path)),
-                        url)
+                        sizeof_fmt(os.path.getsize(target_path)), url)
     except urllib.error.URLError as e:
-        logger.exception(e)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.exception(e)
         raise \
             lm_exceptions.DownloadException(
                 detail=f"Error downloading from {url}",
                 status=400,
                 original_error=str(e))
     except requests.exceptions.HTTPError as e:
-        logger.exception(e)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.exception(e)
         raise \
             lm_exceptions.DownloadException(
                 detail=f"Error downloading from {url}",
                 status=e.response.status_code,
                 original_error=str(e))
+    except requests.exceptions.ConnectionError as e:
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.exception(e)
+        raise \
+            lm_exceptions.DownloadException(
+                detail=f"Unable to establish connection to {url}",
+                status=404,
+                original_error=str(e))
     except IOError as e:
         # requests raised on an exception as we were trying to download.
-        logger.exception(e)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.exception(e)
         raise \
             lm_exceptions.DownloadException(
                 detail=f"Error downloading from {url}",
