@@ -487,7 +487,7 @@ def __update_workflow__(wf_uuid, wf_version, body):
     # registry workflows cannot be updated through roc_link or rocrate
     # (roc_link and rocrate will be ignored by the 'lm' service)
     rocrate_or_link = body.get('roc_link', None) or body.get('rocrate', None)
-    if workflow_version.hosting_service is not None and rocrate_or_link is not None:
+    if workflow_version.registry is not None and rocrate_or_link is not None:
         raise lm_exceptions.Forbidden(detail=messages.forbidden_roclink_or_rocrate_for_registry_workflows)
     # perform the update through the service
     try:
