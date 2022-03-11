@@ -340,6 +340,9 @@ def test_get_workflow_by_id(m, request_context, mock_registry):
     data = {"uuid": "12345", "version": "2", "roc_link": "https://somelink"}
     w = models.Workflow(uuid=data["uuid"])
     wv = w.add_version(data["version"], data["roc_link"], MagicMock())
+    wv._repository = MagicMock()
+    wv._repository.metadata = MagicMock()
+    wv._repository.metadata.isBasedOn = "https://somelink"
     wv._metadata_loaded = True
     m.get_public_workflow_version.return_value = None
     m.get_registry_workflow_version.return_value = wv
