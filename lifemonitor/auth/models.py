@@ -27,6 +27,7 @@ import json
 import logging
 import random
 import string
+import urllib
 import uuid as _uuid
 from enum import Enum
 from typing import List
@@ -642,18 +643,17 @@ class HostingService(Resource):
     def get_rocrate_external_link(self, external_id: str, version: str) -> str:
         pass
 
-    @property
-    def api(self) -> Resource:
-        return self.server_credentials.api_resource
-
     def set_name(self, name):
         self.name = name
-        self.server_credentials.name = name
+        if self.server_credentials:
+            self.server_credentials.name = name
 
     def set_uri(self, uri):
         self.uri = uri
-        self.server_credentials.api_resource.uri = uri
-        self.client_credentials.api_base_url = uri
+        if self.server_credentials:
+            self.server_credentials.api_resource.uri = uri
+        if self.client_credentials:
+            self.client_credentials.api_base_url = uri
 
     def update_client(self, client_id=None, client_secret=None,
                       redirect_uris=None, client_auth_method=None):
@@ -665,6 +665,16 @@ class HostingService(Resource):
             self.client_credentials.redirect_uris = redirect_uris
         if client_auth_method:
             self.client_credentials.auth_method = client_auth_method
+
+    @classmethod
+    def find_by_uri(cls, uri) -> HostingService:
+        try:
+            return cls.query.filter(cls.uri == uri).one()
+        except NoResultFound as e:
+            logger.debug(e)
+            return None
+        except Exception as e:
+            raise lm_exceptions.LifeMonitorException(detail=str(e), stack=str(e))
 
     @classmethod
     def find_by_provider_id(cls, server_id):
@@ -697,6 +707,27 @@ class HostingService(Resource):
             return None
         except Exception as e:
             raise lm_exceptions.LifeMonitorException(detail=str(e), stack=str(e))
+
+    @classmethod
+    def from_url(cls, url: str) -> HostingService:
+        instance = None
+        try:
+            from lifemonitor.auth.oauth2.client.models import OAuth2IdentityProvider
+            p_url = urllib.parse.urlparse(url)
+            uri = f"{p_url.scheme}://{p_url.netloc}"  # it doesn't discriminate between subdomains
+            instance = HostingService.find_by_uri(uri)
+            if not instance:
+                instance = HostingService(uri)
+                try:
+                    instance.server_credentials = \
+                        OAuth2IdentityProvider.find_by_api_url(uri)
+                except lm_exceptions.EntityNotFoundException as e:
+                    logger.warning(f"No identity provider associated with the hosting service '{uri}'")
+        except Exception as e:
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.exception(e)
+            raise lm_exceptions.LifeMonitorException(detail=str(e))
+        return instance
 
 
 class RoleType:
