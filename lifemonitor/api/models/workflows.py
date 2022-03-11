@@ -243,7 +243,7 @@ class WorkflowVersion(ROCrate):
     def get_external_link(self) -> str:
         if self.registry:
             return self.registry.get_external_link(self.workflow.external_id, self.version)
-        return self.based_on if self.based_on is None else self.uri if 'tmp://' not in self.uri else ''
+        return self.based_on if self.based_on else self.uri if 'tmp://' not in self.uri else ''
 
     @cached(Timeout.WORKFLOW, client_scope=False)
     def get_registry_link(self) -> str:
