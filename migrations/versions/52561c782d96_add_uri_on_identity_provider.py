@@ -27,7 +27,7 @@ def upgrade():
     for url in urls:
         bind.execute(f"UPDATE oauth2_identity_provider SET uri = '{url[2]}' WHERE id = {url[0]}")
     # patch Github URI
-    bind.execute(f"UPDATE oauth2_identity_provider SET uri = 'https://github.com' WHERE name = 'github'")
+    bind.execute("UPDATE oauth2_identity_provider SET uri = 'https://github.com' WHERE name = 'github'")
     # add constraints
     op.alter_column('oauth2_identity_provider', 'uri', nullable=False)
     op.create_unique_constraint(None, 'oauth2_identity_provider', ['uri'])

@@ -721,7 +721,7 @@ class HostingService(Resource):
                 try:
                     instance.server_credentials = \
                         OAuth2IdentityProvider.find_by_api_url(uri)
-                except lm_exceptions.EntityNotFoundException as e:
+                except lm_exceptions.EntityNotFoundException:
                     logger.warning(f"No identity provider associated with the hosting service '{uri}'")
         except Exception as e:
             if logger.isEnabledFor(logging.DEBUG):
