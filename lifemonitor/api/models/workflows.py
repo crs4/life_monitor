@@ -28,6 +28,7 @@ from lifemonitor.cache import Timeout, cached
 import lifemonitor.exceptions as lm_exceptions
 from lifemonitor import utils as lm_utils
 from lifemonitor.api.models import db
+from lifemonitor.api.models.registries.registry import WorkflowRegistry
 from lifemonitor.api.models.rocrate import ROCrate
 from lifemonitor.auth.models import (HostingService, Permission, Resource,
                                      Subscription, User)
@@ -207,9 +208,8 @@ class WorkflowVersion(ROCrate):
 
     def __init__(self, workflow: Workflow,
                  uri, version, submitter: User, uuid=None, name=None,
-                 registry: HostingService = None) -> None:
-        super().__init__(uri, uuid=uuid, name=name,
-                         version=version)
+                 registry: WorkflowRegistry = None) -> None:
+        super().__init__(uri, uuid=uuid, name=name, version=version)
         self.submitter = submitter
         self.workflow = workflow
         self.registry = registry
