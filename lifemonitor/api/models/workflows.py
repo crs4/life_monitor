@@ -254,6 +254,9 @@ class WorkflowVersion(ROCrate):
     @hybrid_property
     def authorizations(self):
         auths = [a for a in self._authorizations]
+        if self.registry and self.submitter:
+            for auth in self.submitter.get_authorization(self.registry):
+                auths.append(auth)
         if self.hosting_service and self.submitter:
             for auth in self.submitter.get_authorization(self.hosting_service):
                 auths.append(auth)
