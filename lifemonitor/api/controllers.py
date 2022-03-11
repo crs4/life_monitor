@@ -37,6 +37,7 @@ from lifemonitor.auth.oauth2.client.models import \
     OAuthIdentityNotFoundException
 from lifemonitor.cache import Timeout, cached, clear_cache
 from lifemonitor.lang import messages
+from lifemonitor.config import BaseConfig
 
 # Initialize a reference to the LifeMonitor instance
 lm = LifeMonitor.get_instance()
@@ -379,7 +380,7 @@ def workflows_post(body, _registry=None, _submitter_id=None):
     if encoded_rocrate:
         try:
             rocrate = base64.b64decode(encoded_rocrate)
-            temp_rocrate_file = tempfile.NamedTemporaryFile(delete=False, prefix="/tmp/")
+            temp_rocrate_file = tempfile.NamedTemporaryFile(delete=False, dir=BaseConfig.BASE_TEMP_FOLDER)
             temp_rocrate_file.write(rocrate)
             roc_link = f"tmp://{temp_rocrate_file.name}"
             logger.debug("ROCrate written to %r", temp_rocrate_file.name)

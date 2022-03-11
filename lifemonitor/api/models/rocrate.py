@@ -29,7 +29,9 @@ from pathlib import Path
 import lifemonitor.exceptions as lm_exceptions
 from flask import current_app
 from lifemonitor.api.models import db, repositories
-from lifemonitor.auth.models import ExternalServiceAuthorizationHeader, HostingService, Resource
+from lifemonitor.auth.models import (ExternalServiceAuthorizationHeader,
+                                     HostingService, Resource)
+from lifemonitor.config import BaseConfig
 from lifemonitor.models import JSON
 from lifemonitor.utils import check_resource_exists, download_url
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -148,7 +150,7 @@ class ROCrate(Resource):
 
         # set target_path
         if not target_path:
-            target_path = tempfile.mktemp(dir='/tmp')
+            target_path = tempfile.mktemp(dir=BaseConfig.BASE_TEMP_FOLDER)
         try:
             # try either with authorization header and without authorization
             for authorization in self._get_authorizations():

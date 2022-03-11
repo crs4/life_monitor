@@ -31,6 +31,7 @@ from lifemonitor.api.models.repositories.base import (
     WorkflowRepository, WorkflowRepositoryMetadata)
 from lifemonitor.api.models.repositories.files import (RepositoryFile,
                                                        WorkflowFile)
+from lifemonitor.config import BaseConfig
 from lifemonitor.exceptions import IllegalStateException
 from lifemonitor.utils import extract_zip
 
@@ -92,7 +93,7 @@ class LocalWorkflowRepository(WorkflowRepository):
 class ZippedWorkflowRepository(LocalWorkflowRepository):
 
     def __init__(self, archive_path: str = None) -> None:
-        local_path = tempfile.mkdtemp(dir='/tmp')
+        local_path = tempfile.mkdtemp(dir=BaseConfig.BASE_TEMP_FOLDER)
         extract_zip(archive_path, local_path)
         super().__init__(local_path=local_path)
 

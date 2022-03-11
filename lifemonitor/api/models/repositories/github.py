@@ -30,8 +30,10 @@ from typing import Any, Dict, Union
 
 from lifemonitor.api.models.repositories.base import (
     WorkflowRepository, WorkflowRepositoryMetadata)
+from lifemonitor.api.models.repositories.files import (RepositoryFile,
+                                                       WorkflowFile)
 from lifemonitor.api.models.repositories.local import LocalWorkflowRepository
-from lifemonitor.api.models.repositories.files import RepositoryFile, WorkflowFile
+from lifemonitor.config import BaseConfig
 from lifemonitor.exceptions import IllegalStateException
 from lifemonitor.utils import clone_repo
 
@@ -70,7 +72,7 @@ class TempWorkflowRepositoryMetadata(WorkflowRepositoryMetadata):
 
     def __init__(self, repo: InstallationGithubWorkflowRepository,
                  local_path: str = None, gen_preview=False, init=False):
-        local_path = local_path or tempfile.mkdtemp(dir='/tmp')
+        local_path = local_path or tempfile.mkdtemp(dir=BaseConfig.BASE_TEMP_FOLDER)
         try:
             target_path = f'{local_path}/ro-crate-metadata.json'
             mf = repo.find_file_by_name('ro-crate-metadata.json')
@@ -167,7 +169,7 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
         return self._local_repo.make_crate()
 
     def _setup_local_clone(self):
-        local_path = tempfile.mkdtemp(dir="/tmp")
+        local_path = tempfile.mkdtemp(dir=BaseConfig.BASE_TEMP_FOLDER)
         clone_repo(self.clone_url, branch=self.ref, target_path=local_path)
         return LocalWorkflowRepository(local_path=local_path)
 
@@ -216,7 +218,7 @@ class GithubWorkflowRepository(InstallationGithubWorkflowRepository):
 class RepoCloneContextManager():
 
     def __init__(self, repo_url: str, repo_branch: str = None, auth_token: str = None,
-                 base_dir: str = '/tmp', local_path: str = None) -> None:
+                 base_dir: str = BaseConfig.BASE_TEMP_FOLDER, local_path: str = None) -> None:
         self.base_dir = base_dir
         self.local_path = local_path
         self.auth_token = auth_token
@@ -231,7 +233,7 @@ class RepoCloneContextManager():
         logger.debug("Entering the context %r ...", self)
         self._current_path = self.local_path
         if not self.local_path or not os.path.exists(self.local_path):
-            self._current_path = tempfile.TemporaryDirectory(dir='/tmp').name
+            self._current_path = tempfile.TemporaryDirectory(dir=BaseConfig.BASE_TEMP_FOLDER).name
             logger.debug(f"Creating clone of repo {self.repo_url}<{self.repo_branch} @ {self._current_path}...")
             clone_repo(self.repo_url, branch=self.repo_branch,
                        target_path=self._current_path, auth_token=self.auth_token)

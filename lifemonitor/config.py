@@ -82,6 +82,8 @@ class BaseConfig:
     # Default Cache Settings
     CACHE_TYPE = "flask_caching.backends.simplecache.SimpleCache"
     CACHE_DEFAULT_TIMEOUT = 60
+    # Default Temp folder
+    BASE_TEMP_FOLDER = '/tmp/lifemonitor'
     # Workflow Data Folder
     DATA_WORKFLOWS = "./data"
     # Base URL of the LifeMonitor web app associated with this back-end instance
@@ -115,7 +117,7 @@ class TestingConfig(BaseConfig):
     # SQLALCHEMY_DATABASE_URI = "sqlite:///{0}/app-test.db".format(basedir)
     # CACHE_TYPE = "flask_caching.backends.nullcache.NullCache"
     CACHE_TYPE = "flask_caching.backends.rediscache.RedisCache"
-    DATA_WORKFLOWS = "/tmp/lm_tests_data"
+    DATA_WORKFLOWS = f"{BaseConfig.BASE_TEMP_FOLDER}/lm_tests_data"
 
 
 class TestingSupportConfig(TestingConfig):
@@ -123,7 +125,7 @@ class TestingSupportConfig(TestingConfig):
     DEBUG = True
     TESTING = False
     LOG_LEVEL = "DEBUG"
-    DATA_WORKFLOWS = "/tmp/lm_tests_data"
+    DATA_WORKFLOWS = f"{BaseConfig.BASE_TEMP_FOLDER}/lm_tests_data"
 
 
 _EXPORT_CONFIGS: List[Type[BaseConfig]] = [
