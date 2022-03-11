@@ -97,8 +97,8 @@ class LifeMonitor:
             # if the user is not the submitter
             # and the workflow is associated with a registry
             # then we try to check whether the user is allowed to view the workflow
-            if w.hosting_service is None or \
-                    isinstance(w.hosting_service, models.WorkflowRegistry) and w.workflow not in w.hosting_service.get_user_workflows(user):
+            if w.registry is None or \
+                    isinstance(w.registry, models.WorkflowRegistry) and w.workflow not in w.registry.get_user_workflows(user):
                 raise lm_exceptions.NotAuthorizedException(f"User {user.username} is not allowed to access workflow")
         return w
 
@@ -133,7 +133,7 @@ class LifeMonitor:
                 roc_link = workflow_registry.get_rocrate_external_link(w.external_id, workflow_version)
 
         wv = w.add_version(workflow_version, roc_link, workflow_submitter,
-                           name=name, hosting_service=workflow_registry)
+                           name=name, registry=workflow_registry)
 
         if workflow_submitter:
             wv.permissions.append(Permission(user=workflow_submitter, roles=[RoleType.owner]))
