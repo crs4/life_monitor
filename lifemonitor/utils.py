@@ -46,6 +46,7 @@ import requests
 import yaml
 from dateutil import parser
 
+from . import config
 from . import exceptions as lm_exceptions
 
 logger = logging.getLogger()
@@ -255,7 +256,7 @@ def extract_zip(archive_path, target_path=None):
     logger.debug("Target path: %r", target_path)
     try:
         if not target_path:
-            target_path = tempfile.mkdtemp(dir='/tmp')
+            target_path = tempfile.mkdtemp(dir=config.BaseConfig.BASE_TEMP_FOLDER)
         with zipfile.ZipFile(archive_path, "r") as zip_ref:
             zip_ref.extractall(target_path)
         return target_path
@@ -274,7 +275,7 @@ def clone_repo(url: str, branch: str = None, target_path: str = None, auth_token
     try:
         local_path = target_path
         if not local_path:
-            local_path = tempfile.TemporaryDirectory(dir='/tmp').name
+            local_path = tempfile.TemporaryDirectory(dir=config.BaseConfig.BASE_TEMP_FOLDER).name
         user_credentials = _make_git_credentials_callback(auth_token)
         clone = pygit2.clone_repository(url, local_path,
                                         checkout_branch=branch, callbacks=user_credentials)

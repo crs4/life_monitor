@@ -115,7 +115,9 @@ def create_app(env=None, settings=None, init_app=True, worker=False, **kwargs):
     return app
 
 
-def initialize_app(app, app_context, prom_registry=None):
+def initialize_app(app: Flask, app_context, prom_registry=None):
+    # init tmp folder
+    os.makedirs(app.config.get('BASE_TEMP_FOLDER'), exist_ok=True)
     # configure logging
     config.configure_logging(app)
     # configure app DB
