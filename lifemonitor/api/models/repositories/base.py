@@ -19,8 +19,8 @@
 # SOFTWARE.
 
 from __future__ import annotations
-import json
 
+import json
 import logging
 import os
 from abc import abstractclassmethod
@@ -31,6 +31,7 @@ import lifemonitor.api.models.issues as issues
 from lifemonitor.api.models.repositories.files import (RepositoryFile,
                                                        WorkflowFile)
 from lifemonitor.test_metadata import get_roc_suites
+from lifemonitor.utils import compare_json
 from rocrate.rocrate import ROCrate
 
 # set module level logger
@@ -80,6 +81,13 @@ class WorkflowRepository():
                 if fail_fast:
                     break
         return IssueCheckResult(self, checked, found_issues)
+
+    def compare(self, repo: WorkflowRepository) -> List[RepositoryFile]:
+        assert repo and isinstance(repo, WorkflowRepository), repo
+        differences = []
+        if not compare_json(self.metadata.to_json(), repo.metadata.to_json()):
+            differences.append(repo.find_file_by_name(self.metadata.id))
+        return differences
 
     def make_crate(self):
         self._metadata = WorkflowRepositoryMetadata(self, init=True)
