@@ -475,11 +475,7 @@ def workflows_put(wf_uuid, body):
 
 @authorized
 def workflows_version_put(wf_uuid, wf_version, body):
-    logger.debug(f"PUT called for workflow {wf_uuid} (version {wf_version})")
-    return __update_workflow__(wf_uuid, wf_version, body)
-
-
-def __update_workflow__(wf_uuid, wf_version, body):
+    logger.debug(f"PUT called for workflow {wf_uuid} (version {wf_version})")    
     # get a reference to the workflow version to be updated
     workflow_version = __get_workflow_version__(wf_uuid, wf_version)
     # check if there exists a submitter and/or a registry in the current request
