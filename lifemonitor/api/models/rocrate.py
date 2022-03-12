@@ -34,7 +34,7 @@ from lifemonitor.auth.models import (ExternalServiceAuthorizationHeader,
                                      HostingService, Resource)
 from lifemonitor.config import BaseConfig
 from lifemonitor.models import JSON
-from lifemonitor.utils import check_resource_exists, compare_json, download_url
+from lifemonitor.utils import compare_json, download_url
 from sqlalchemy.ext.hybrid import hybrid_property
 
 # set module level logger
