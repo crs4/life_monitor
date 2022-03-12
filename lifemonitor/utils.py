@@ -172,24 +172,48 @@ def validate_url(url: str) -> bool:
         return False
 
 
-def get_rocrate_link(rocrate_or_link: str) -> str:
-    # Returns a roc_link.
-    # If the input is an encoded rocrate, it will be decoded,
-    # written into a local file and a local roc_link will be returned.
-    if validate_url(rocrate_or_link):
-        return rocrate_or_link
-    if rocrate_or_link:
-        try:
-            rocrate = base64.b64decode(rocrate_or_link)
-            temp_rocrate_file = tempfile.NamedTemporaryFile(delete=False, prefix="/tmp/")
-            temp_rocrate_file.write(rocrate)
-            local_roc_link = f"tmp://{temp_rocrate_file.name}"
-            logger.debug("ROCrate written to %r", temp_rocrate_file.name)
-            logger.debug("Local roc_link: %r", local_roc_link)
-            return local_roc_link
-        except Exception as e:
-            logger.debug(e)
-            raise lm_exceptions.DecodeROCrateException(detail=str(e))
+class ROCrateLinkContext(object):
+
+    def __init__(self, rocrate_or_link: str):
+        self.rocrate_or_link = rocrate_or_link
+        self._local_path = None
+
+    def __enter__(self):
+        # Returns a roc_link.
+        # If the input is an encoded rocrate, it will be decoded,
+        # written into a local file and a local roc_link will be returned.
+        logger.debug("Entering ROCrateLinkContext: %r", self.rocrate_or_link)
+        if validate_url(self.rocrate_or_link):
+            logger.debug("RO Crate param is a link: %r", self.rocrate_or_link)
+            return self.rocrate_or_link
+        if self.rocrate_or_link:
+            try:
+                rocrate = base64.b64decode(self.rocrate_or_link)
+                temp_rocrate_file = tempfile.NamedTemporaryFile(delete=False,
+                                                                dir=config.BaseConfig.BASE_TEMP_FOLDER,
+                                                                prefix="base64-rocrate")
+                temp_rocrate_file.write(rocrate)
+                local_roc_link = f"tmp://{temp_rocrate_file.name}"
+                logger.debug("ROCrate written to %r", temp_rocrate_file.name)
+                logger.debug("Local roc_link: %r", local_roc_link)
+                self._local_path = temp_rocrate_file
+                return local_roc_link
+            except Exception as e:
+                logger.debug(e)
+                raise lm_exceptions.DecodeROCrateException(detail=str(e))
+        logger.debug("RO Crate link is undefined!!!")
+        return None
+
+    def __exit__(self, type, value, traceback):
+        logger.debug("Exiting ROCrateLinkContext...")
+        if self._local_path:
+            try:
+                os.remove(self._local_path)
+                logger.debug("Temporary file removed: %r", self._local_path)
+            except Exception as e:
+                logger.error("Error deleting temp rocrate: %r", str(e))
+        else:
+            logger.debug("Nothing to remove: local path is %r", self._local_path)
 
 
 def _download_from_remote(url, output_stream, authorization=None):

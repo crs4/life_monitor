@@ -34,7 +34,7 @@ from lifemonitor.auth.models import (EventType,
 from lifemonitor.auth.oauth2.client import providers
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 from lifemonitor.auth.oauth2.server import server
-from lifemonitor.utils import OpenApiSpecs, get_rocrate_link
+from lifemonitor.utils import OpenApiSpecs, ROCrateLinkContext
 
 logger = logging.getLogger()
 
@@ -128,9 +128,8 @@ class LifeMonitor:
 
         if str(workflow_version) in w.versions:
             raise lm_exceptions.WorkflowVersionConflictException(workflow_uuid, workflow_version)
-        try:
-            roc_link = get_rocrate_link(rocrate_or_link)
 
+        with ROCrateLinkContext(rocrate_or_link) as roc_link:
             if not roc_link:
                 if not workflow_registry:
                     raise ValueError("Missing ROC link")
@@ -179,14 +178,6 @@ class LifeMonitor:
             w.save()
             return wv
 
-        finally:
-            if roc_link and roc_link.startswith("tmp://"):
-                try:
-                    os.remove(roc_link.replace('tmp://', ''))
-                    logger.debug("Temporary file removed: %r", roc_link)
-                except Exception as e:
-                    logger.error("Error deleting temp rocrate: %r", str(e))
-
     @classmethod
     def update_workflow(cls, workflow_submitter: User,
                         workflow_uuid: str, workflow_version: str,
@@ -199,54 +190,54 @@ class LifeMonitor:
         w: models.Workflow = wv.workflow
         workflow_registry: models.WorkflowRegistry = wv.registry
         # compute the roc_link
-        roc_link = None
         if workflow_registry is not None:
             # if the workflow comes from a hosting service
             # always reuse the original roc_link pointing to the workflow on the service
-            roc_link = workflow_registry.get_rocrate_external_link(w.external_id, workflow_version)
-            logger.debug("Reusing original ROC link: %r", roc_link)
+            rocrate_or_link = workflow_registry.get_rocrate_external_link(w.external_id, workflow_version)
+            logger.debug("Reusing original ROC link: %r", rocrate_or_link)
         elif rocrate_or_link is not None:
             # if an rocrate or link is provided, the workflow version will be replaced
-            roc_link = get_rocrate_link(rocrate_or_link)
-            logger.debug("New roc_link or RO-crate: %r", rocrate_or_link)
+            logger.debug("New roc_link or RO-crate detected: %r", rocrate_or_link)
 
-        if roc_link is not None:
-            try:
-                auth = None
-                if authorization:
-                    auth = ExternalServiceAuthorizationHeader(workflow_submitter, header=authorization)
-                # check for changes
-                rocrate_changes = wv.check_for_changes(roc_link, extra_auth=auth)
-                logger.debug(f"Detected changes wrt '{roc_link}': {rocrate_changes}")
-                if len(rocrate_changes) > 0:
-                    # remove old workflow version
-                    w.remove_version(wv)
-                    # create a new workflow version to replace the old one
-                    wv = w.add_version(workflow_version, roc_link, workflow_submitter,
-                                       name=name, registry=workflow_registry)
-                    if workflow_submitter:
-                        wv.permissions.append(Permission(user=workflow_submitter, roles=[RoleType.owner]))
-                        # automatically register submitter's subscription to workflow events
-                        workflow_submitter.subscribe(w)
-                    if auth:
-                        auth.resources.append(wv)
-                    # parse roc_metadata and register suites and instances
-                    try:
-                        if wv.roc_suites:
-                            for _, raw_suite in wv.roc_suites.items():
-                                cls._init_test_suite_from_json(wv, workflow_submitter, raw_suite)
-                    except KeyError as e:
-                        raise lm_exceptions.SpecificationNotValidException(f"Missing property: {e}")
-                else:
-                    logger.debug("No changes detected in the ROCrate")
-            finally:
-                if roc_link and roc_link.startswith("tmp://"):
-                    try:
-                        os.remove(roc_link.replace('tmp://', ''))
-                        logger.debug("Temporary file removed: %r", roc_link)
-                    except Exception as e:
-                        logger.error("Error deleting temp rocrate: %r", str(e))
+        with ROCrateLinkContext(rocrate_or_link) as roc_link:
+            # if roc_link is not None:
+            auth = None
+            if authorization:
+                auth = ExternalServiceAuthorizationHeader(workflow_submitter, header=authorization)
+            # check for changes
+            rocrate_changes = wv.check_for_changes(roc_link, extra_auth=auth)
+            logger.debug(f"Detected changes wrt '{roc_link}': {rocrate_changes}")
+            if len(rocrate_changes) > 0:
+                # remove old workflow version
+                w.remove_version(wv)
+                # create a new workflow version to replace the old one
+                wv = w.add_version(workflow_version, roc_link, workflow_submitter,
+                                   name=name, registry=workflow_registry)
+                if workflow_submitter:
+                    wv.permissions.append(Permission(user=workflow_submitter, roles=[RoleType.owner]))
+                    # automatically register submitter's subscription to workflow events
+                    workflow_submitter.subscribe(w)
+                if auth:
+                    auth.resources.append(wv)
+                # set hosting service
+                hosting_service = None
+                if wv.based_on:
+                    hosting_service = HostingService.from_url(wv.based_on)
+                elif workflow_registry:
+                    hosting_service = workflow_registry
+                if hosting_service:
+                    wv.hosting_service = hosting_service
+                # parse roc_metadata and register suites and instances
+                try:
+                    if wv.roc_suites:
+                        for _, raw_suite in wv.roc_suites.items():
+                            cls._init_test_suite_from_json(wv, workflow_submitter, raw_suite)
+                except KeyError as e:
+                    raise lm_exceptions.SpecificationNotValidException(f"Missing property: {e}")
+            else:
+                logger.debug("No changes detected in the ROCrate")
 
+        # update name
         if name is None:
             if wv.workflow_name is None and w.name is None:
                 raise lm_exceptions.LifeMonitorException(title="Missing attribute 'name'",
@@ -257,13 +248,13 @@ class LifeMonitor:
         else:
             w.name = name
             wv.name = name
-
+        # update version label
         if new_version_label is not None:
             wv.version = new_version_label
-
+        # update visibility
         if public is not None:
             w.public = public
-
+        # store the new version
         w.save()
         return wv
 
