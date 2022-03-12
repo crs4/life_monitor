@@ -134,23 +134,16 @@ class ROCrate(Resource):
         return authorizations
 
     def check_for_changes(self, roc_link: str, extra_auth: ExternalServiceAuthorizationHeader = None) -> List:
-        errors = []
         # try either with authorization header and without authorization
-        with tempfile.NamedTemporaryFile(dir='/tmp') as target_path:
-            for authorization in self._get_authorizations(extra_auth=extra_auth):
-                try:
-                    auth_header = authorization.as_http_header() if authorization else None
-                    logger.debug(auth_header)
-                    _, metadata = \
-                        self.load_metadata_files(roc_link, target_path.name, authorization_header=auth_header)
-                    changes = []
-                    if not compare_json(self.crate_metadata, metadata):
-                        changes.append(metadata)
-                    return changes
-                except lm_exceptions.NotAuthorizedException as e:
-                    logger.info("Caught authorization error exception while downloading and processing RO-crate: %s", e)
-                    errors.append(str(e))
-        raise lm_exceptions.NotAuthorizedException(detail=f"Not authorized to download {self.uri}", original_errors=errors)
+        with tempfile.NamedTemporaryFile(dir=BaseConfig.BASE_TEMP_FOLDER) as target_path:
+            repo = repositories.ZippedWorkflowRepository(
+                self.download_from_source(target_path.name, uri=roc_link, extra_auth=extra_auth))
+            changes = []
+            metadata = repo.metadata.to_json()
+            logger.debug("New metadata: %r", metadata)
+            if not compare_json(self.crate_metadata, metadata):
+                changes.append(metadata)
+            return changes
 
     def download(self, target_path: str) -> str:
         # load ro-crate if not locally stored
@@ -167,11 +160,8 @@ class ROCrate(Resource):
         logger.debug("ZIP Archive: %s", local_zip)
         return (tmpdir_path / 'rocrate.zip').as_posix()
 
-    def download_from_source(self, target_path: str) -> str:
-        # report if the workflow is not longer available on the origin server
-        if self._metadata and not check_resource_exists(self.uri, self._get_authorizations()):
-            raise lm_exceptions.DownloadException(detail=f"Not found: {self.uri}", status=410)
-
+    def download_from_source(self, target_path: str, uri: str = None,
+                             extra_auth: ExternalServiceAuthorizationHeader = None) -> str:
         errors = []
 
         # set target_path
@@ -179,21 +169,22 @@ class ROCrate(Resource):
             target_path = tempfile.mktemp(dir=BaseConfig.BASE_TEMP_FOLDER)
         try:
             # try either with authorization header and without authorization
-            for authorization in self._get_authorizations():
+            for authorization in self._get_authorizations(extra_auth=extra_auth):
                 try:
                     # FIXME: replace with a better detection mechanism
-                    if self.uri.startswith('https://github.com'):
+                    uri = uri or self.uri
+                    if uri.startswith('https://github.com'):
                         token = None
                         if authorization and isinstance(authorization, ExternalServiceAuthorizationHeader):
                             token = authorization.auth_token
-                        with repositories.RepoCloneContextManager(self.uri, auth_token=token) as tmp_path:
+                        with repositories.RepoCloneContextManager(uri, auth_token=token) as tmp_path:
                             repo = repositories.LocalWorkflowRepository(tmp_path)
                             repo.write_zip(target_path)
                             return target_path
                     else:
                         auth_header = authorization.as_http_header() if authorization else None
                         logger.debug(auth_header)
-                        local_zip = download_url(self.uri,
+                        local_zip = download_url(uri,
                                                  target_path=target_path,
                                                  authorization=auth_header)
                         logger.debug("ZIP Archive: %s", local_zip)
@@ -204,4 +195,4 @@ class ROCrate(Resource):
         except lm_exceptions.IllegalStateException as e:
             logger.exception(e)
             raise lm_exceptions.NotValidROCrateException(detail=e.detail)
-        raise lm_exceptions.NotAuthorizedException(detail=f"Not authorized to download {self.uri}", original_errors=errors)
+        raise lm_exceptions.NotAuthorizedException(detail=f"Not authorized to download {uri}", original_errors=errors)
