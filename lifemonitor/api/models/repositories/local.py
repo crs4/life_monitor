@@ -21,18 +21,23 @@
 
 from __future__ import annotations
 
+import base64
 import logging
 import os
 import re
 import shutil
 import tempfile
+import zipfile
+from io import BytesIO
 
 from lifemonitor.api.models.repositories.base import (
     WorkflowRepository, WorkflowRepositoryMetadata)
 from lifemonitor.api.models.repositories.files import (RepositoryFile,
                                                        WorkflowFile)
 from lifemonitor.config import BaseConfig
-from lifemonitor.exceptions import IllegalStateException
+from lifemonitor.exceptions import (DecodeROCrateException,
+                                    IllegalStateException,
+                                    NotValidROCrateException)
 from lifemonitor.utils import extract_zip
 
 # set module level logger
@@ -92,7 +97,7 @@ class LocalWorkflowRepository(WorkflowRepository):
 
 class ZippedWorkflowRepository(LocalWorkflowRepository):
 
-    def __init__(self, archive_path: str = None) -> None:
+    def __init__(self, archive_path: str) -> None:
         local_path = tempfile.mkdtemp(dir=BaseConfig.BASE_TEMP_FOLDER)
         extract_zip(archive_path, local_path)
         super().__init__(local_path=local_path)
@@ -101,3 +106,26 @@ class ZippedWorkflowRepository(LocalWorkflowRepository):
         logger.debug(f"Cleaning temp extraction folder of zipped repository @ {self.local_path} .... ")
         shutil.rmtree(self.local_path, ignore_errors=True)
         logger.debug(f"Cleaning temp extraction folder of zipped repository @ {self.local_path} .... ")
+
+
+class Base64WorkflowRepository(LocalWorkflowRepository):
+
+    def __init__(self, base64_rocrate: str) -> None:
+        try:
+            rocrate = base64.b64decode(base64_rocrate)
+            local_path = tempfile.mkdtemp(dir=BaseConfig.BASE_TEMP_FOLDER)
+            zip_file = zipfile.ZipFile(BytesIO(rocrate))
+            zip_file.extractall(local_path)
+            super().__init__(local_path)
+        except (zipfile.BadZipFile, zipfile.LargeZipFile) as e:
+            msg = "RO-crate has bad zip format"
+            logger.error(msg + ": %s", e)
+            raise NotValidROCrateException(detail=msg, original_error=str(e))
+        except Exception as e:
+            logger.debug(e)
+            raise DecodeROCrateException(detail=str(e))
+
+    def __del__(self):
+        logger.debug(f"Cleaning temp extraction folder of base64 repository @ {self.local_path} .... ")
+        shutil.rmtree(self.local_path, ignore_errors=True)
+        logger.debug(f"Cleaning temp extraction folder of base64 repository @ {self.local_path} .... ")
