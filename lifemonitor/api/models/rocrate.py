@@ -34,7 +34,7 @@ from lifemonitor.auth.models import (ExternalServiceAuthorizationHeader,
                                      HostingService, Resource)
 from lifemonitor.config import BaseConfig
 from lifemonitor.models import JSON
-from lifemonitor.utils import compare_json, download_url
+from lifemonitor.utils import download_url
 from sqlalchemy.ext.hybrid import hybrid_property
 
 # set module level logger
@@ -138,12 +138,7 @@ class ROCrate(Resource):
         with tempfile.NamedTemporaryFile(dir=BaseConfig.BASE_TEMP_FOLDER) as target_path:
             repo = repositories.ZippedWorkflowRepository(
                 self.download_from_source(target_path.name, uri=roc_link, extra_auth=extra_auth))
-            changes = []
-            metadata = repo.metadata.to_json()
-            logger.debug("New metadata: %r", metadata)
-            if not compare_json(self.crate_metadata, metadata):
-                changes.append(metadata)
-            return changes
+            return self.repository.compare(repo)
 
     def download(self, target_path: str) -> str:
         # load ro-crate if not locally stored
