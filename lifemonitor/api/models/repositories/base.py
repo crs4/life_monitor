@@ -32,7 +32,7 @@ from lifemonitor.api.models.repositories.files import (RepositoryFile,
                                                        WorkflowFile)
 from lifemonitor.test_metadata import get_roc_suites
 from lifemonitor.utils import compare_json
-from rocrate.rocrate import ROCrate
+from rocrate.rocrate import Metadata, ROCrate
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -86,7 +86,7 @@ class WorkflowRepository():
         assert repo and isinstance(repo, WorkflowRepository), repo
         differences = []
         if not compare_json(self.metadata.to_json(), repo.metadata.to_json()):
-            differences.append(repo.find_file_by_name(self.metadata.id))
+            differences.append(repo.find_file_by_name(self.metadata.DEFAULT_METADATA_FILENAME))
         return differences
 
     def make_crate(self):
@@ -120,6 +120,8 @@ class IssueCheckResult:
 
 
 class WorkflowRepositoryMetadata(ROCrate):
+
+    DEFAULT_METADATA_FILENAME = Metadata.BASENAME
 
     def __init__(self, repo: WorkflowRepository,
                  local_path: str = None, gen_preview=False, init=False):
