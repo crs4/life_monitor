@@ -82,10 +82,7 @@ class ROCrate(Resource):
 
     @hybrid_property
     def crate_metadata(self):
-        if not self._metadata and not self._metadata_loaded:
-            self._metadata = self.load_metadata()
-            self._metadata_loaded = True
-        return self._metadata
+        return self.repository.metadata.to_json()
 
     def load_metadata(self) -> dict:
         return self.repository.metadata.to_json()
@@ -100,6 +97,9 @@ class ROCrate(Resource):
                 self.download_from_source(self.local_path)
             # instantiate a local ROCrate repository
             self._repository = repositories.ZippedWorkflowRepository(self.local_path)
+            # set metadata
+            self._metadata = self.repository.metadata.to_json()
+            self._metadata_loaded = True
         return self._repository
 
     @hybrid_property
@@ -142,11 +142,10 @@ class ROCrate(Resource):
 
     def download(self, target_path: str) -> str:
         # load ro-crate if not locally stored
-        if not self._local_path:
-            self.load_metadata()
+        metadata = self.crate_metadata
 
         # report an error if the workflow is not locally available
-        if self._metadata and not self._local_path:
+        if metadata and not self._local_path:
             raise lm_exceptions.DownloadException(detail="RO-Crate unavailable", status=410)
 
         tmpdir_path = Path(target_path)
