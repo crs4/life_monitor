@@ -164,6 +164,17 @@ class Workflow(Resource):
         return cls.query\
             .filter(cls.public == true()).all()  # noqa: E712
 
+    @classmethod
+    def get_hosted_workflows_by_uri(cls, hosting_service: HostingService, uri: str, submitter: User = None) -> List[Workflow]:
+        query = cls.query\
+            .join(WorkflowVersion, cls.id == WorkflowVersion.workflow_id)\
+            .join(HostingService, WorkflowVersion.hosting_service_id == HostingService.id)\
+            .filter(HostingService.uuid == lm_utils.uuid_param(hosting_service.uuid))\
+            .filter(WorkflowVersion.uri == uri)
+        if submitter:
+            query.filter(WorkflowVersion.submitter_id == submitter.id)
+        return query.all()
+
 
 class WorkflowVersionCollection(MappedCollection):
 
@@ -388,3 +399,11 @@ class WorkflowVersion(ROCrate):
             .join(HostingService, cls.hosting_service)\
             .filter(HostingService.uuid == lm_utils.uuid_param(hosting_service.uuid))\
             .order_by(WorkflowVersion.version.desc()).all()
+
+    @classmethod
+    def get_hosted_workflow_versions_by_uri(cls, hosting_service: HostingService, uri: str) -> List[WorkflowVersion]:
+        return cls.query\
+            .join(HostingService, cls.hosting_service)\
+            .join(WorkflowVersion, WorkflowVersion.hosting_service_id == hosting_service.id)\
+            .filter(HostingService.uuid == lm_utils.uuid_param(hosting_service.uuid))\
+            .filter(WorkflowVersion.uri == uri).all()
