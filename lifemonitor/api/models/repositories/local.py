@@ -92,7 +92,7 @@ class LocalWorkflowRepository(WorkflowRepository):
     def write_zip(self, target_path: str):
         if not self.metadata:
             raise IllegalStateException(detail="Missing RO Crate metadata")
-        self.metadata.write_zip(target_path)
+        return self.metadata.write_zip(target_path)
 
 
 class ZippedWorkflowRepository(LocalWorkflowRepository):
