@@ -51,10 +51,12 @@ def map_issues(check_result: IssueCheckResult):
             issues.close_issue(repo, issue)
 
 
-def check_repository(repository_reference: GithubRepositoryReference):
+def check_repository_issues(repository_reference: GithubRepositoryReference) -> IssueCheckResult:
     logger.debug("Repository ref: %r", repository_reference)
     repo: GithubWorkflowRepository = repository_reference.repository
     logger.debug("Repository: %r", repo)
     check_result = repo.check(fail_fast=True)
     logger.debug("Issue check result: %r", check_result)
     map_issues(check_result)
+    return check_result
+
