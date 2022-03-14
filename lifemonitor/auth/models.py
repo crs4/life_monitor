@@ -666,6 +666,14 @@ class HostingService(Resource):
         if client_auth_method:
             self.client_credentials.auth_method = client_auth_method
 
+    def find_crates_by_uri(self, uri: str, version: str = None) -> List[Resource]:
+        result = []
+        for crate in self.ro_crates:
+            logger.debug("Checking RO-Crate: %r (%r)", crate, crate.based_on)
+            if crate.based_on == uri and (not version or crate.version == version):
+                result.append(crate)
+        return result
+
     @classmethod
     def find_by_uri(cls, uri) -> HostingService:
         try:
