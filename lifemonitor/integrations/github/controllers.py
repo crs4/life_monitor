@@ -77,6 +77,7 @@ def installation(event: GithubEvent):
 def push(event: GithubEvent):
     try:
         logger.debug("Push event: %r", event)
+        logger.debug("Event ref: %r", event.repository_reference.branch or event.repository_reference.tag)
 
         installation = event.installation
         logger.debug("Installation: %r", installation)
@@ -90,7 +91,10 @@ def push(event: GithubEvent):
         repo: GithubWorkflowRepository = repo_info.repository
         logger.debug("Repository: %r", repo)
 
-        check_repository(repo_info)
+        watched_branches = ('main')
+        if repo_info.tag and repo_info.created or\
+                repo_info.branch and repo_info.branch in watched_branches:
+            check_result = check_repository_issues(repo_info)
 
         return "No content", 204
     except Exception as e:
