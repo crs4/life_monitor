@@ -28,7 +28,7 @@ from lifemonitor.api.models.repositories.github import GithubWorkflowRepository
 from lifemonitor.api.models.testsuites.testinstance import TestInstance
 from lifemonitor.integrations.github.app import LifeMonitorGithubApp
 from lifemonitor.integrations.github.events import GithubEvent
-from lifemonitor.integrations.github.services import check_repository
+from lifemonitor.integrations.github.services import check_repository_issues, delete_repository_workflow_version, register_repository_workflow
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
@@ -95,6 +95,11 @@ def push(event: GithubEvent):
         if repo_info.tag and repo_info.created or\
                 repo_info.branch and repo_info.branch in watched_branches:
             check_result = check_repository_issues(repo_info)
+            if not check_result.found_issues():
+                register_repository_workflow(repo_info)
+
+        if repo_info.ref and repo_info.deleted:
+            delete_repository_workflow_version(repo_info)
 
         return "No content", 204
     except Exception as e:
@@ -130,8 +135,10 @@ def handle_event():
     if not valid:
         return "Signature Invalid", 401
     event = GithubEvent.from_request()
-    if event.repository_reference.branch.startswith('lifemonitor-issue'):
-        return f"Nothing to do for the event '{event.type}' on branch {event.repository_reference.branch}", 204
+    if event.repository_reference.branch and event.repository_reference.branch.startswith('lifemonitor-issue'):
+        msg = f"Nothing to do for the event '{event.type}' on branch {event.repository_reference.branch}"
+        logger.debug(msg)
+        return msg, 204
     event_handler = __event_handlers__.get(event.type, None)
     logger.debug("Event: %r", event)
     if not event_handler:
