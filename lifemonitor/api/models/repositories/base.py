@@ -112,6 +112,9 @@ class IssueCheckResult:
         return f"Check repo {self.repo.local_path} @ {self.created} " \
             f"=> checks: {len(self.checked)}, issues: {len(self.issues)}"
 
+    def found_issues(self) -> bool:
+        return len(self.issues) > 0
+
     @property
     def solved(self) -> List[issues.WorkflowRepositoryIssue]:
         if not self._solved:
