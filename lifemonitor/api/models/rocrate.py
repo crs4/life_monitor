@@ -176,8 +176,9 @@ class ROCrate(Resource):
                             token = authorization.auth_token
                         with repositories.RepoCloneContextManager(uri, auth_token=token) as tmp_path:
                             repo = repositories.LocalWorkflowRepository(tmp_path)
-                            repo.write_zip(target_path)
-                            return target_path
+                            archive = repo.write_zip(target_path)
+                            logger.debug("Zip file written to: %r", archive)
+                            return archive
                     else:
                         auth_header = authorization.as_http_header() if authorization else None
                         logger.debug(auth_header)
