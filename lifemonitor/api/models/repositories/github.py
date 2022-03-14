@@ -170,7 +170,7 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
 
     def _setup_local_clone(self):
         local_path = tempfile.mkdtemp(dir=BaseConfig.BASE_TEMP_FOLDER)
-        clone_repo(self.clone_url, branch=self.ref, target_path=local_path)
+        clone_repo(self.clone_url, branch=re.sub(r'refs/(heads|tags)/', '', self.ref), target_path=local_path)
         return LocalWorkflowRepository(local_path=local_path)
 
     def clone(self, branch: str, local_path: str = None) -> RepoCloneContextManager:
