@@ -25,6 +25,7 @@ import logging
 
 from flask import Request
 from flask import request as current_request
+from lifemonitor.auth.models import HostingService
 from lifemonitor.integrations.github.app import (LifeMonitorGithubApp,
                                                  LifeMonitorInstallation)
 from lifemonitor.api.models.repositories.github import (
@@ -117,6 +118,10 @@ class GithubRepositoryReference(object):
     def event(self) -> GithubEvent:
         return self._event
 
+    @property
+    def hosting_service(self) -> HostingService:
+        return HostingService.from_url('https://github.com')
+
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}: {self.full_name} (id: {self.id})"
 
@@ -137,6 +142,10 @@ class GithubRepositoryReference(object):
         return self._raw_data['repository']['owner']['login']
 
     @property
+    def owner_id(self) -> str:
+        return self._raw_data['repository']['owner']['id']
+
+    @property
     def owner_info(self) -> object:
         return self._raw_data['repository']['owner']
 
@@ -150,13 +159,17 @@ class GithubRepositoryReference(object):
 
     @property
     def ref(self) -> str:
-        return self._raw_data.get('ref', None)
+        ref = self._raw_data.get('ref', None)
+        ref_type = self._raw_data.get('ref_type', None)
+        if ref and ref_type == 'tag' and not ref.startswith('ref/'):
+            return f"refs/tags/{ref}"
+        return ref
 
     @property
     def branch(self) -> str:
         ref = self.ref
         ref_type = self._raw_data.get('ref_type', None)
-        if not ref or ref_type == 'tag':
+        if not ref or ref_type == 'tag' or 'refs/tags' in ref:
             return None
         return ref.replace('refs/heads/', '')
 
@@ -164,14 +177,26 @@ class GithubRepositoryReference(object):
     def tag(self) -> str:
         ref = self.ref
         ref_type = self._raw_data.get('ref_type', None)
-        if not ref or ref_type != 'tag':
+        if not ref or (ref_type and ref_type != 'tag') or 'refs/heads' in ref:
             return None
         return ref.replace('refs/tags/', '')
 
     @property
+    def created(self) -> bool:
+        return self._raw_data.get('created', False)
+
+    @property
+    def deleted(self) -> bool:
+        return self._raw_data.get('deleted', False)
+
+    @property
+    def forced(self) -> bool:
+        return self._raw_data.get('forced', False)
+
+    @property
     def repository(self) -> GithubWorkflowRepository:
         repo = self.event.installation.get_repo(self.full_name)
-        repo.ref = self.branch
+        repo.ref = self.ref
         return repo
 
     def clone(self, local_path: str = None) -> RepoCloneContextManager:
