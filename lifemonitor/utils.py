@@ -195,6 +195,8 @@ class ROCrateLinkContext(object):
             logger.debug("RO Crate param is a link: %r", self.rocrate_or_link)
             return self.rocrate_or_link
         if self.rocrate_or_link:
+            if os.path.isdir(self.rocrate_or_link) or os.path.isfile(self.rocrate_or_link):
+                return self.rocrate_or_link
             try:
                 rocrate = base64.b64decode(self.rocrate_or_link)
                 temp_rocrate_file = tempfile.NamedTemporaryFile(delete=False,
