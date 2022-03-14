@@ -46,6 +46,8 @@ logger = logging.getLogger(__name__)
 
 class LocalWorkflowRepository(WorkflowRepository):
 
+    _local_path = None
+
     def __init__(self, local_path: str = None) -> None:
         self._local_path = local_path
         self._metadata = None
