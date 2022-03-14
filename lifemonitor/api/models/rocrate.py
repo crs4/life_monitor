@@ -169,6 +169,9 @@ class ROCrate(Resource):
                     uri = uri or self.uri
                     if uri.startswith('https://github.com'):
                         token = None
+                        # normalize uri as clone URL
+                        if not uri.endswith('.git'):
+                            uri += '.git'
                         if authorization and isinstance(authorization, ExternalServiceAuthorizationHeader):
                             token = authorization.auth_token
                         with repositories.RepoCloneContextManager(uri, auth_token=token) as tmp_path:
