@@ -136,8 +136,9 @@ class ROCrate(Resource):
     def check_for_changes(self, roc_link: str, extra_auth: ExternalServiceAuthorizationHeader = None) -> List:
         # try either with authorization header and without authorization
         with tempfile.NamedTemporaryFile(dir=BaseConfig.BASE_TEMP_FOLDER) as target_path:
-            repo = repositories.ZippedWorkflowRepository(
-                self.download_from_source(target_path.name, uri=roc_link, extra_auth=extra_auth))
+            local_path = self.download_from_source(target_path.name, uri=roc_link, extra_auth=extra_auth)
+            logger.debug("Temp local path of crate to compare: %r", local_path)
+            repo = repositories.ZippedWorkflowRepository(local_path)
             return self.repository.compare(repo)
 
     def download(self, target_path: str) -> str:
@@ -154,9 +155,12 @@ class ROCrate(Resource):
         logger.debug("ZIP Archive: %s", local_zip)
         return (tmpdir_path / 'rocrate.zip').as_posix()
 
-    def download_from_source(self, target_path: str, uri: str = None,
+    def download_from_source(self, target_path: str = None, uri: str = None,
                              extra_auth: ExternalServiceAuthorizationHeader = None) -> str:
         errors = []
+
+        # set URI
+        uri = uri or self.uri
 
         # set target_path
         if not target_path:
@@ -166,7 +170,6 @@ class ROCrate(Resource):
             for authorization in self._get_authorizations(extra_auth=extra_auth):
                 try:
                     # FIXME: replace with a better detection mechanism
-                    uri = uri or self.uri
                     if uri.startswith('https://github.com'):
                         token = None
                         # normalize uri as clone URL
