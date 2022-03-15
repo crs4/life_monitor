@@ -245,7 +245,12 @@ class WorkflowRegistry(auth_models.HostingService):
 
     def get_authorization(self, user: auth_models.User):
         auths = auth_models.ExternalServiceAccessAuthorization.find_by_user_and_resource(user, self)
-        # check for sub-resource authorizations
+        # add user authorization related with the registry as Identity provider
+        identity = user.oauth_identity.get(self.server_credentials.name, None)
+        if identity:
+            auths.append(auth_models.ExternalServiceAuthorizationHeader(user, f"{identity.token['token_type']} {identity.token['access_token']}"))
+        else:
+            logger.warning(f"No '{self.server_credentials.name}' identity for the user {user}")
         return auths
 
     def get_user(self, user_id) -> auth_models.User:
