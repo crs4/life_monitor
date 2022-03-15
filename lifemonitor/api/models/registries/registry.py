@@ -105,22 +105,55 @@ class WorkflowRegistryClient(ABC):
         return OAuthIdentity.find_by_user_id(user_id, self.registry.name).token
 
     def _get(self, user, *args, **kwargs):
+        return self._requester(user, 'get', *args, **kwargs)
+
+    def _patch(self, user, *args, **kwargs):
+        return self._requester(user, 'patch', *args, **kwargs)
+
+    def _post(self, user, *args, **kwargs):
+        return self._requester(user, 'post', *args, **kwargs)
+
+    def _put(self, user, *args, **kwargs):
+        return self._requester(user, 'put', *args, **kwargs)
+
+    def _delete(self, user, *args, **kwargs):
+        return self._requester(user, 'delete', *args, **kwargs)
+
+    def _requester(self, user, method: str, *args, **kwargs):
+        errors = []
         authorizations = []
         if user:
             authorizations.extend([
-                auth.as_http_header() for auth in user.get_authorization(self.registry)])
+                auth.as_http_header() for auth in self.registry.get_authorization(user)])
         authorizations.append(None)
         response = None
         for auth in authorizations:
+            # cache = requests_cache.CachedSession(f'lifemonitor_registry_cache_{auth}')
+            # with cache as session:
             with requests.Session() as session:
-                session.headers['Authorization'] = auth
-                response = session.get(*args, **kwargs)
-                if response.status_code == 200:
-                    break
+                session.headers.update({
+                    'Authorization': f'Bearer {self._get_access_token(user.id)["access_token"]}'
+                })
+                if not kwargs.get('files', None):
+                    session.headers.update({
+                        "Content-type": "application/vnd.api+json",
+                        "Accept": "application/vnd.api+json",
+                        "Accept-Charset": "ISO-8859-1",
+                    })
+                logger.debug("Header: %r", session.headers)
+                logger.debug("Args: %r, KwArgs: %r", args, kwargs)
+                try:
+                    response = getattr(session, method)(*args, **kwargs)
+                    logger.debug("Response: %r", response.content)
+                    response.raise_for_status()
+                    return response
+                except requests.HTTPError as e:
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.exception(e)
+                    errors.append(str(e))
         if response.status_code == 401 or response.status_code == 403:
             raise lm_exceptions.NotAuthorizedException(details=response.content)
-        response.raise_for_status()
-        return response
+        raise lm_exceptions.LifeMonitorException(errors=[str(e) for e in errors])
 
     def get_index(self, user: auth_models.User) -> List[RegistryWorkflow]:
         pass
