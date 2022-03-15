@@ -197,6 +197,14 @@ class WorkflowRegistryClient(ABC):
     def filter_by_user(workflows: list, user: auth_models.User):
         pass
 
+    @abstractmethod
+    def register_workflow(self, user, crate_path, external_id: str = None, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def delete_workflow(self, user, external_id: str):
+        pass
+
     @classmethod
     def get_client_class(cls, client_type):
         return cls.client_types.get_class(client_type)
