@@ -174,6 +174,10 @@ class WorkflowRegistryClient(ABC):
         return ",".join([str(identifier), str(version)])
 
     @abstractmethod
+    def get_user_info(self, user) -> object:
+        pass
+
+    @abstractmethod
     def get_external_link(self, external_id: str, version: str) -> str:
         pass
 
@@ -238,6 +242,9 @@ class WorkflowRegistry(auth_models.HostingService):
 
     def download_url(self, url, user, target_path=None):
         return self.client.download_url(url, user, target_path=target_path)
+
+    def get_registry_user_info(self, user) -> object:
+        return self.client.get_user_info(user)
 
     @property
     def users(self) -> List[auth_models.User]:
