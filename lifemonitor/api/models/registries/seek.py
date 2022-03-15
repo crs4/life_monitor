@@ -21,11 +21,15 @@
 from __future__ import annotations
 
 import logging
+from pathlib import Path
+import shutil
+import tempfile
 from typing import List, Union
 
 import requests
 from lifemonitor.api import models
 from lifemonitor.auth.models import User
+from lifemonitor.config import BaseConfig
 from lifemonitor.exceptions import (EntityNotFoundException,
                                     LifeMonitorException)
 
@@ -108,3 +112,62 @@ class SeekWorkflowRegistryClient(WorkflowRegistryClient):
 
     def get_external_uuid(self, identifier, version, user) -> str:
         return self.get_workflow_metadata(user, identifier)['meta']['uuid']
+
+    def get_user_info(self, user) -> object:
+        return self._get(user, f"{self.registry.uri}/people/current").json()['data']
+
+    def get_projects(self, user) -> List[object]:
+        return self._get(user, f"{self.registry.uri}/projects")
+
+    def register_workflow(self, user, crate_path, external_id: str = None, project_id: str = None, *args, **kwargs):
+        url = f"{self.registry.uri}/workflows"
+        if external_id:
+            url = f"{url}/{external_id}/create_version"
+        with tempfile.NamedTemporaryFile(dir=BaseConfig.BASE_TEMP_FOLDER, suffix='.crate.zip') as out:
+            try:
+                shutil.copy2(crate_path, out.name)
+                with open(out.name, "rb") as f:
+                    payload = {
+                        "ro_crate": (Path(out.name).name, f),
+                        "workflow[project_ids][]": (None, project_id)
+                    }
+                    logger.debug("Payload: %r", payload)
+                    r = self._requester(user, 'post', url, files=payload)
+                    r.raise_for_status()
+                    wf_data = r.json()["data"]
+                    if not external_id:
+                        wf_data = self.update_workflow_visibility(user, wf_data['id'], project_id)
+                    return wf_data
+            except Exception as e:
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.exception(e)
+                raise LifeMonitorException(detail=str(e))
+
+    def update_workflow_visibility(self, user, external_id: str, project_id: str = None):
+        payload = {
+            "data": {
+                "id": external_id,
+                "type": "workflows",
+                "attributes": {
+                    "policy": {
+                        "access": "download",
+                        "permissions": [
+                            {
+                                "resource": {"id": project_id, "type": "projects"},
+                                "access": "manage"
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+        response = self._patch(user, f"{self.registry.uri}/workflows/{external_id}", json=payload)
+        logger.debug(response.content)
+        response.raise_for_status()
+        return response.json()['data']
+
+    def delete_workflow(self, user, external_id: str):
+        response = self._delete(user, f"{self.registry.uri}/workflows/{external_id}")
+        logger.debug(response.content)
+        response.raise_for_status()
+        return response.json()['data']
