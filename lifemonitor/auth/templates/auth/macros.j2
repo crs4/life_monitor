@@ -119,6 +119,10 @@
         <span class="fas fa-key"></span>
         {% elif field.name == 'repeat_password' %}
         <span class="fas fa-unlock-alt"></span>
+        {% elif 'branch' in field.name %}
+        <span class="fas fa-code-branch"></span>
+        {% elif 'tag' in field.name %}
+        <span class="fas fa-tags"></span>
         {% endif %}
       </div>
     </div>
@@ -128,8 +132,11 @@
           <span class="error">{{ error }}</span>
         {% endfor %}
       {% endif %}
-    </div>
-  </div>
+    </div>    
+  </div>  
+  <div class="form-text text-muted">
+      <small>{{ field.description }}</small>
+  </div>  
 </div>
 {%- endmacro %}
 
