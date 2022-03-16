@@ -62,7 +62,7 @@ class Anonymous(AnonymousUserMixin):
 
 
 class User(db.Model, UserMixin):
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column("id", db.Integer, primary_key=True)
     username = db.Column(db.String(256), unique=True, nullable=False)
     password_hash = db.Column(db.LargeBinary, nullable=True)
     picture = db.Column(db.String(), nullable=True)
@@ -82,10 +82,12 @@ class User(db.Model, UserMixin):
     notifications: List[UserNotification] = db.relationship("UserNotification",
                                                             back_populates="user",
                                                             cascade="all, delete-orphan")
+    settings = db.Column("settings", JSON, nullable=False)
 
     def __init__(self, username=None) -> None:
         super().__init__()
         self.username = username
+        self.settings = {}
 
     def get_user_id(self):
         return self.id
