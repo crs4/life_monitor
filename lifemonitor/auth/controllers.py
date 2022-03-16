@@ -164,7 +164,7 @@ def index():
 
 @blueprint.route("/profile", methods=("GET",))
 def profile(form=None, passwordForm=None, currentView=None,
-            emailForm=None, notificationsForm=None):
+            emailForm=None, notificationsForm=None, githubSettingsForm=None):
     currentView = currentView or request.args.get("currentView", 'accountsTab')
     logger.debug(OpenApiSpecs.get_instance().authorization_code_scopes)
     back_param = request.args.get('back', None)
