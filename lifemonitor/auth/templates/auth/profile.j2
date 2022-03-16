@@ -57,6 +57,10 @@
                 <a class="nav-link font-weight-bold" tab="notificationsTab"
                     href="#notifications" data-toggle="tab">Notifications</a>
               </li>
+              <li class="nav-item">
+                <a class="nav-link font-weight-bold" tab="githubSettingsTab"
+                    href="#githubsettings" data-toggle="tab">Github Integration</a>
+              </li>
           </div><!-- /.card-header -->
           <div class="card-body">
             <div class="tab-content">
@@ -77,6 +81,9 @@
               </div>
               <div class="tab-pane" id="notifications">
                 {% include 'auth/notifications.j2' %}
+              </div>
+              <div class="tab-pane" id="githubsettings">
+                {% include 'auth/github_settings.j2' %}
               </div>
               <!-- /.tab-pane -->
             </div>
@@ -121,6 +128,9 @@
 
   // Initialize tooltips
   $('[data-bs-toggle="tooltip"]').tooltip();
+
+  // Initialize input selector with search box
+  $('.selectpicker').select2();
 
 </script>
 {% endblock javascripts %}

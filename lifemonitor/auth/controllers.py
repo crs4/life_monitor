@@ -31,8 +31,9 @@ from lifemonitor.utils import (NextRouteRegistry, next_route_aware,
 from .. import exceptions
 from ..utils import OpenApiSpecs
 from . import serializers
-from .forms import (EmailForm, LoginForm, NotificationsForm, Oauth2ClientForm,
-                    RegisterForm, SetPasswordForm)
+from .forms import (EmailForm, GithubSettingsForm, LoginForm,
+                    NotificationsForm, Oauth2ClientForm, RegisterForm,
+                    SetPasswordForm)
 from .models import db
 from .oauth2.client.services import (get_current_user_identity, get_providers,
                                      merge_users, save_current_user_identity)
@@ -180,6 +181,7 @@ def profile(form=None, passwordForm=None, currentView=None,
                            emailForm=emailForm or EmailForm(),
                            notificationsForm=notificationsForm or NotificationsForm(),
                            oauth2ClientForm=form or Oauth2ClientForm(),
+                           githubSettingsForm=githubSettingsForm or GithubSettingsForm.from_model(current_user),
                            providers=get_providers(), currentView=currentView,
                            oauth2_generic_client_scopes=OpenApiSpecs.get_instance().authorization_code_scopes,
                            back_param=back_param)
@@ -334,6 +336,20 @@ def update_notifications_switch():
     enabled_str = "enabled" if current_user.email_notifications_enabled else "disabled"
     flash(f"email notifications {enabled_str}")
     return redirect(url_for("auth.profile", notificationsForm=form, currentView='notificationsTab'))
+
+
+@blueprint.route("/update_github_settings", methods=("GET", "POST"))
+@login_required
+def update_github_settings():
+    logger.debug("Updating Github Settings")
+    if request.method == "GET":
+        return redirect(url_for('auth.profile', currentView='githubSettingsTab'))
+    form = GithubSettingsForm()
+    if not form.validate_on_submit():
+        return redirect(url_for('auth.profile', githubSettingsForm=form, currentView='githubSettingsTab'))
+    form.update_model(current_user)
+    current_user.save()
+    return redirect(url_for('auth.profile', currentView='githubSettingsTab'))
 
 
 @blueprint.route("/merge", methods=("GET", "POST"))

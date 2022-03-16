@@ -25,11 +25,13 @@ import logging
 
 from flask_wtf import FlaskForm
 from lifemonitor.auth.oauth2.server.models import Client
+from lifemonitor.integrations.github.settings import GithubUserSettings
 from lifemonitor.utils import OpenApiSpecs
 from sqlalchemy.exc import IntegrityError
 from wtforms import (BooleanField, HiddenField, PasswordField, SelectField,
                      SelectMultipleField, StringField)
-from wtforms.validators import URL, DataRequired, Email, EqualTo, Optional
+from wtforms.validators import (URL, AnyOf, DataRequired, Email, EqualTo,
+                                Optional)
 
 from .models import User, db
 
@@ -127,6 +129,52 @@ class EmailForm(FlaskForm):
         ],
     )
     repeat_email = StringField("Repeat Email")
+
+
+class GithubSettingsForm(FlaskForm):
+    branches = StringField(
+        "branches",
+        description="List of comma-separated branches (e.g., master, develop, feature/123)")
+    tags = StringField(
+        "tags",
+        description="List of comma-separated tag patterns (e.g., v*, v*.*.*, release-v*)")
+    all_branches = BooleanField(
+        "all_branches",
+        validators=[AnyOf([True, False])]
+    )
+    all_tags = BooleanField(
+        "all_tags",
+        validators=[AnyOf([True, False])]
+    )
+    check_issues = BooleanField(
+        "check_issues",
+        validators=[AnyOf([True, False])]
+    )
+
+    def update_model(self, user: User) -> GithubUserSettings:
+        assert user and not user.is_anonymous, user
+        settings = GithubUserSettings(user) \
+            if not user.github_settings else user.github_settings
+        settings.all_branches = self.all_branches.data
+        settings.all_tags = self.all_tags.data
+        settings.check_issues = self.check_issues.data
+        settings.branches = [_.strip() for _ in self.branches.data.split(',')] if self.branches.data else []
+        settings.tags = [_.strip() for _ in self.tags.data.split(',')] if self.tags.data else []
+        return settings
+
+    @classmethod
+    def from_model(cls, user: User) -> GithubSettingsForm:
+        if user.is_anonymous:
+            return None
+        settings = GithubUserSettings(user) \
+            if not user.github_settings else user.github_settings
+        form = cls()
+        form.all_branches.data = settings.all_branches
+        form.all_tags.data = settings.all_tags
+        form.branches.data = ', '.join(settings.branches)
+        form.tags.data = ', '.join(settings.tags)
+        form.check_issues.data = settings.check_issues
+        return form
 
 
 class Oauth2ClientForm(FlaskForm):

@@ -1,0 +1,96 @@
+{% import 'auth/macros.j2' as macros %}
+
+<form method="POST" action="{{ url_for('auth.update_github_settings') }}">
+
+    <div class="card-header">
+        <h3 class="card-title"><b>Global Settings</b></h3>
+    </div>
+
+    <div class="card-body">
+        <!-- Branches to track -->
+        <div class="mb-1">
+            <label for="{{githubSettingsForm.all_branches.name}}">Repository Branches:</label>
+        </div>
+        <small class="form-text text-muted my-2">
+            LifeMonitor will automatically create and keep up to date
+            a workflow version tracking changes for each of the following branches:
+        </small>
+        <div class="form-group row">
+            <div class="col-1">
+                <div class="checkbox">
+                    <input type="checkbox" name="{{githubSettingsForm.all_branches.name}}" data-on="all"
+                        onchange="toggleInputField('{{githubSettingsForm.branches.name}}')"
+                        value="{{githubSettingsForm.all_branches.data}}"
+                        data-off='<i class="fas fa-angle-double-right"></i>' data-toggle="toggle" {% if
+                        githubSettingsForm.all_branches.data %}checked{% endif%}>
+                </div>
+            </div>
+            <div class="col-11">
+                <div class="">
+                    {{ macros.render_custom_field(githubSettingsForm.branches, class="ml-5",
+                    disabled=githubSettingsForm.all_branches.data) }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Tags to track -->
+        <div class="mb-2">
+            <label for="{{githubSettingsForm.all_tags.name}}">Repository Tags:</label>
+        </div>
+        <small class="form-text text-muted my-2">
+            LifeMonitor will automatically create
+            a workflow version for each of the following tags:
+        </small>
+        <div class="form-group row">
+            <div class="col-1">
+                <div class="checkbox">
+                    <input type="checkbox" name="{{githubSettingsForm.all_tags.name}}"
+                        value="{{githubSettingsForm.all_tags.data}}"
+                        onchange="toggleInputField('{{githubSettingsForm.tags.name}}')" data-toggle="toggle" {% if
+                        githubSettingsForm.all_tags.data %}checked{% endif%} data-on="all"
+                        data-off='<i class="fas fa-angle-double-right"></i>'>
+                </div>
+            </div>
+            <div class="col-11">
+                <div class="">
+                    {{ macros.render_custom_field(githubSettingsForm.tags, class="ml-5",
+                    disabled=githubSettingsForm.all_tags.data) }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Issue Checker -->
+        <div class="mb-2">
+            <label for="{{githubSettingsForm.check_issues.name}}">Issue Check:</label>
+        </div>
+        <div class="form-group row">
+            <div class="col-1">
+                <div class="checkbox">
+                    <input type="checkbox" name="{{githubSettingsForm.check_issues.name}}"
+                        value="{{githubSettingsForm.check_issues.data}}" data-toggle="toggle" {% if
+                        githubSettingsForm.check_issues.data %}checked{% endif%} data-on="on" data-off='off'>
+                </div>
+            </div>
+            <div class="col-11 my-auto">
+                <small class="form-text text-muted px-4 my-n1">
+                    LifeMonitor will check for issues on your repositories
+                    and will notify them as Github issues or pull requests
+                </small>
+            </div>
+        </div>
+
+        {{ githubSettingsForm.hidden_tag() }}
+
+        <div class="form-group pt-5 text-center">
+            <button type="submit" class="btn btn-primary text-bold" style="width: 120px">Save</button>
+        </div>
+</form>
+
+<script>
+    function toggleInputField(fieldName) {
+        const el = $("input[name=" + fieldName + "]");
+        if (el) {
+            el.prop("disabled", !el.prop('disabled'));
+        }
+    }
+</script>
