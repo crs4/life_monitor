@@ -100,15 +100,15 @@
 {%- endmacro %}
 
 
-{% macro render_custom_field(field, value=None, class="") -%}
-<div class="form-group {{class}}">
-  <div class="input-group mb-3">
+{% macro render_custom_field(field, value=None, class="", caption=None, disabled=False) -%}
+<div class="form-group mb-2 {{class}}">
+  <div class="input-group">
     <input type="{{ field.name if field.name != 'repeat_password' else 'password' }}"
           name="{{ field.name }}"
-          {% if value %}value="{{value}}"{% endif %}
+          {% if value %}value="{{value}}"{% elif field.data %}value="{{field.data}}"{% endif %}
           class="form-control {% if field.errors %} is-invalid {% endif %}"
           placeholder="{{field.name.capitalize().replace('_', ' ')}}"
-          aria-invalid="true">
+          aria-invalid="true" {%if disabled%}disabled{%endif%}>
     <div class="input-group-append">
       <div class="input-group-text">
         {% if field.name == 'username' %}
