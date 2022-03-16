@@ -131,9 +131,7 @@ class WorkflowRegistryClient(ABC):
             # cache = requests_cache.CachedSession(f'lifemonitor_registry_cache_{auth}')
             # with cache as session:
             with requests.Session() as session:
-                session.headers.update({
-                    'Authorization': f'Bearer {self._get_access_token(user.id)["access_token"]}'
-                })
+                session.headers['Authorization'] = auth
                 if not kwargs.get('files', None):
                     session.headers.update({
                         "Content-type": "application/vnd.api+json",
