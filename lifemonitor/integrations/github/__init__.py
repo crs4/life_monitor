@@ -23,11 +23,13 @@ from __future__ import annotations
 from .app import LifeMonitorGithubApp, LifeMonitorInstallation
 from .controllers import init_integration
 from .events import GithubEvent, GithubRepositoryReference
+from .settings import GithubUserSettings
 
 __all__ = [
     init_integration,
     LifeMonitorGithubApp,
     LifeMonitorInstallation,
     GithubEvent,
-    GithubRepositoryReference
+    GithubRepositoryReference,
+    GithubUserSettings
 ]
