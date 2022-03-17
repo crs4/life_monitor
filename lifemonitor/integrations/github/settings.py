@@ -113,7 +113,7 @@ class GithubUserSettings():
 
     @staticmethod
     def _get_pattern_(values: List[str]) -> str:
-        return "^{0}$".format('|'.join([f"({v})".replace('*', "[a-zA-Z0-9\.-_/]+") for v in values]))
+        return "^{0}$".format('|'.join([f"({v})".replace('*', "[a-zA-Z0-9.-_/]+") for v in values]))
 
 
 def __get_github_settings(self) -> GithubUserSettings:
