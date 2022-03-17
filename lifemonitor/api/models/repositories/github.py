@@ -163,19 +163,13 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
         return self.local_repo.find_workflow()
 
     def make_crate(self):
-        if self.local_repo:
+        if self._local_repo:
             if not self.auto_cleanup:
                 logger.warning("'auto cleanup' disabled: local temp folder "
-                               f"'{self.local_repo.local_path}' will not be deleted")
+                               f"'{self.local_repo._local_path}' will not be deleted")
             else:
                 self.cleanup()
-        self._local_repo = self._setup_local_clone()
-        return self._local_repo.make_crate()
-
-    def _setup_local_clone(self):
-        local_path = tempfile.mkdtemp(dir=BaseConfig.BASE_TEMP_FOLDER)
-        clone_repo(self.clone_url, branch=re.sub(r'refs/(heads|tags)/', '', self.ref), target_path=local_path)
-        return LocalWorkflowRepository(local_path=local_path)
+        return self.local_repo.make_crate()
 
     def clone(self, branch: str, local_path: str = None) -> RepoCloneContextManager:
         assert isinstance(branch, str), branch
@@ -183,13 +177,15 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
         return RepoCloneContextManager(self.clone_url, repo_branch=branch, local_path=local_path)
 
     def write_zip(self, target_path: str):
-        if self.local_repo:
-            return self.local_repo.write_zip(target_path=target_path)
-        with self.clone(self.ref) as local_path:
-            return LocalWorkflowRepository(local_path).write_zip(target_path)
+        return self.local_repo.write_zip(target_path=target_path)
 
     @property
     def local_repo(self) -> LocalWorkflowRepository:
+        if not self._local_repo:
+            local_path = tempfile.mkdtemp(dir=BaseConfig.BASE_TEMP_FOLDER)
+            logger.debug("Cloning %r", self)
+            clone_repo(self.clone_url, ref=self.ref, target_path=local_path)
+            self._local_repo = LocalWorkflowRepository(local_path=local_path)
         return self._local_repo
 
     @property
@@ -202,7 +198,8 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
 
     def cleanup(self):
         logger.debug("Repository cleanup")
-        if self.local_repo:
+        if self._local_repo:
+            logger.debug("Removing temp folder %r of %r", self.local_path, self)
             shutil.rmtree(self.local_repo.local_path, ignore_errors=True)
             self._local_repo = None
 
