@@ -162,6 +162,7 @@ def handle_event():
 
 
 def init_integration(app: Flask):
+    try:
     # Initialize GitHub App Integration
     app_identifier = app.config.get('GITHUB_INTEGRATION_APP_ID')
     webhook_secret = app.config.get('GITHUB_INTEGRATION_WEB_SECRET')
@@ -172,3 +173,7 @@ def init_integration(app: Flask):
                               service_repository_full_name=service_repository)
     app.register_blueprint(blueprint)
     logger.info("Integration registered for GitHub App: %r", app_identifier)
+    except Exception as e:
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.exception(e)
+        logger.warning("Unable to initialize Github App integration: %r", str(e))
