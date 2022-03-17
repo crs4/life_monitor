@@ -55,13 +55,16 @@ class SeekWorkflowRegistry(WorkflowRegistry):
 
 class SeekWorkflowRegistryClient(WorkflowRegistryClient):
 
-    def get_workflows_metadata(self, user, details=False):
+    def get_workflows_metadata(self, user, details=False, user_as_submitter: bool = False):
         r = self._get(user, f"{self.registry.uri}/workflows?format=json")
         if r.status_code != 200:
             raise RuntimeError(f"ERROR: unable to get workflows (status code: {r.status_code})")
         workflows = r.json()['data']
-        return workflows if not details \
+        result = workflows if not details \
             else [self.get_workflow_metadata(user, w['id']) for w in workflows]
+        user_id = self.registry.get_registry_user_id(user)
+        return [w for w in result if not user_as_submitter
+                or w['relationships']['submitter']['data'][0]['id'] == user_id]
 
     def get_workflow_metadata(self, user, w: Union[models.WorkflowVersion, str]):
         _id = w.workflow.external_id if isinstance(w, models.WorkflowVersion) else w
@@ -118,6 +121,20 @@ class SeekWorkflowRegistryClient(WorkflowRegistryClient):
 
     def get_projects(self, user) -> List[object]:
         return self._get(user, f"{self.registry.uri}/projects")
+
+    def find_workflow_versions_by_remote_url(self, user, url: str, user_as_submitter: bool = True) -> List[object]:
+        result = []
+        workflows = self.get_workflows_metadata(user, details=True, user_as_submitter=user_as_submitter)
+        for w in workflows:
+            versions = w['attributes']['versions']
+            for v in versions:
+                if v.get('remote') == url:
+                    result.append({
+                        'external_id': w['id'],
+                        'versions': versions
+                    })
+                    break
+        return result
 
     def register_workflow(self, user, crate_path, external_id: str = None, project_id: str = None, *args, **kwargs):
         url = f"{self.registry.uri}/workflows"

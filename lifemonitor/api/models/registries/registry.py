@@ -196,6 +196,10 @@ class WorkflowRegistryClient(ABC):
         pass
 
     @abstractmethod
+    def find_workflow_versions_by_remote_url(self, user, url: str) -> List[object]:
+        pass
+
+    @abstractmethod
     def register_workflow(self, user, crate_path, external_id: str = None, *args, **kwargs):
         pass
 
@@ -248,6 +252,13 @@ class WorkflowRegistry(auth_models.HostingService):
 
     def download_url(self, url, user, target_path=None):
         return self.client.download_url(url, user, target_path=target_path)
+
+    def get_registry_user_id(self, user) -> str:
+        try:
+            return user.oauth_identity[self.name].provider_user_id
+        except Exception as e:
+            logger.warning("Unable to find an identity for user %r on registry %r", user, self)
+            return None
 
     def get_registry_user_info(self, user) -> object:
         return self.client.get_user_info(user)
@@ -313,6 +324,9 @@ class WorkflowRegistry(auth_models.HostingService):
 
     def get_index_workflow(self, user: auth_models.User, workflow_identifier: str) -> RegistryWorkflow:
         return self.client.get_index_workflow(user, workflow_identifier)
+
+    def find_workflow_versions_by_remote_url(self, user, url: str, user_as_submitter: bool = True) -> List[object]:
+        return self.client.find_workflow_versions_by_remote_url(user, url)
 
     @property
     def client(self) -> WorkflowRegistryClient:
