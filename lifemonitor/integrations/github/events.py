@@ -26,6 +26,7 @@ import logging
 from flask import Request
 from flask import request as current_request
 from lifemonitor.auth.models import HostingService
+from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 from lifemonitor.integrations.github.app import (LifeMonitorGithubApp,
                                                  LifeMonitorInstallation)
 from lifemonitor.api.models.repositories.github import (
@@ -40,6 +41,7 @@ class GithubEvent():
     def __init__(self, headers: dict, payload: dict) -> None:
         self._headers = headers
         self._repository_reference = None
+        self._sender = None
         assert isinstance(payload, dict), payload
         try:
             self._raw_data = payload['payload']
@@ -94,6 +96,10 @@ class GithubEvent():
         return self._headers.get("X-Hub-Signature-256").replace("256=", "")
 
     @property
+    def hosting_service(self) -> HostingService:
+        return HostingService.from_url('https://github.com')
+
+    @property
     def application(self) -> LifeMonitorGithubApp:
         app = LifeMonitorGithubApp.get_instance()
         logger.debug("Comparing: %r - %r", self.application_id, app.id)
@@ -129,10 +135,10 @@ class GithubRepositoryReference(object):
 
     @property
     def hosting_service(self) -> HostingService:
-        return HostingService.from_url('https://github.com')
+        return self.event.hosting_service
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}: {self.full_name} (id: {self.id})"
+        return f"{self.__class__.__name__}: {self.full_name} (id: {self.id}, ref: {self.ref})"
 
     @property
     def id(self) -> int:
