@@ -239,7 +239,7 @@ class RepoCloneContextManager():
         if not self.local_path or not os.path.exists(self.local_path):
             self._current_path = tempfile.TemporaryDirectory(dir=BaseConfig.BASE_TEMP_FOLDER).name
             logger.debug(f"Creating clone of repo {self.repo_url}<{self.repo_branch} @ {self._current_path}...")
-            clone_repo(self.repo_url, branch=self.repo_branch,
+            clone_repo(self.repo_url, ref=self.repo_branch,
                        target_path=self._current_path, auth_token=self.auth_token)
         if not os.path.isdir(self._current_path):
             raise ValueError(f"The local path '{self._current_path}' should be a folder")
