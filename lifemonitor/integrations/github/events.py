@@ -77,6 +77,15 @@ class GithubEvent():
         return self._headers
 
     @property
+    def sender(self) -> OAuthIdentity:
+        if not self._sender:
+            # search user identity
+            identity: OAuthIdentity = self.hosting_service.server_credentials\
+                .find_identity_by_provider_user_id(str(self._raw_data['sender']['id']))
+            self._sender = identity
+        return self._sender
+
+    @property
     def payload(self) -> dict:
         return self._raw_data
 
