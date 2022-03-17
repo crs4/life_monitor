@@ -33,7 +33,7 @@ class GithubUserSettings():
         "check_issues": True,
         "all_branches": True,
         "all_tags": True,
-        "branches": ["main", "xxx"],
+        "branches": ["main"],
         "tags": ["v*.*.*"]
     }
 
