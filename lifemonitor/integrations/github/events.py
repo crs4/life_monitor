@@ -138,7 +138,7 @@ class GithubRepositoryReference(object):
         return self.event.hosting_service
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}: {self.full_name} (id: {self.id}, ref: {self.ref})"
+        return f"{self.__class__.__name__}: {self.full_name} (id: {self.id}, ref: {self.ref}, rev. {self.rev})"
 
     @property
     def id(self) -> int:
@@ -181,6 +181,14 @@ class GithubRepositoryReference(object):
         return ref
 
     @property
+    def rev(self) -> str:
+        try:
+            key = 'before' if self.deleted else 'after'
+            return self._raw_data.get(key, None)
+        except KeyError:
+            return None
+
+    @property
     def branch(self) -> str:
         ref = self.ref
         ref_type = self._raw_data.get('ref_type', None)
@@ -212,6 +220,7 @@ class GithubRepositoryReference(object):
     def repository(self) -> GithubWorkflowRepository:
         repo = self.event.installation.get_repo(self.full_name)
         repo.ref = self.ref
+        repo.rev = self.rev
         return repo
 
     def clone(self, local_path: str = None) -> RepoCloneContextManager:
