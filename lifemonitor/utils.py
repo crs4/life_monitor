@@ -334,19 +334,20 @@ def _make_git_credentials_callback(token: str = None):
     return pygit2.RemoteCallbacks(pygit2.UserPass('x-access-token', token)) if token else None
 
 
-def clone_repo(url: str, branch: str = None, target_path: str = None, auth_token: str = None,
+def clone_repo(url: str, ref: str = None, target_path: str = None, auth_token: str = None,
                remote_url: str = None, remote_branch: str = None, remote_user_token: str = None):
     try:
+        logger.warning("Local CLONE: %r - %r", url, ref)
         local_path = target_path
         if not local_path:
             local_path = tempfile.TemporaryDirectory(dir=config.BaseConfig.BASE_TEMP_FOLDER).name
         user_credentials = _make_git_credentials_callback(auth_token)
-        clone = pygit2.clone_repository(url, local_path,
-                                        checkout_branch=branch, callbacks=user_credentials)
+        clone = pygit2.clone_repository(url, local_path, callbacks=user_credentials)
+        clone.checkout(ref)
         if remote_url:
             user_credentials = _make_git_credentials_callback(remote_user_token)
             remote = clone.create_remote("remote", url=remote_url)
-            remote.push([f'+refs/heads/{branch}:refs/heads/{remote_branch}'], callbacks=user_credentials)
+            remote.push([f'+{ref}:refs/heads/{remote_branch}'], callbacks=user_credentials)
         return local_path
     except pygit2.errors.GitError as e:
         if logger.isEnabledFor(logging.DEBUG):
