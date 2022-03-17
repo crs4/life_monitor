@@ -31,7 +31,7 @@ from lifemonitor.utils import (NextRouteRegistry, next_route_aware,
 from .. import exceptions
 from ..utils import OpenApiSpecs
 from . import serializers
-from .forms import (EmailForm, GithubSettingsForm, LoginForm,
+from .forms import (EmailForm, LoginForm,
                     NotificationsForm, Oauth2ClientForm, RegisterForm,
                     SetPasswordForm)
 from .models import db
@@ -176,6 +176,7 @@ def profile(form=None, passwordForm=None, currentView=None,
         logger.debug("Getting back param from session")
         back_param = back_param or session.get('lm_back_param', False)
         logger.debug("detected back param: %s", back_param)
+    from lifemonitor.integrations.github.forms import GithubSettingsForm
     return render_template("auth/profile.j2",
                            passwordForm=passwordForm or SetPasswordForm(),
                            emailForm=emailForm or EmailForm(),
@@ -344,6 +345,7 @@ def update_github_settings():
     logger.debug("Updating Github Settings")
     if request.method == "GET":
         return redirect(url_for('auth.profile', currentView='githubSettingsTab'))
+    from lifemonitor.integrations.github.forms import GithubSettingsForm
     form = GithubSettingsForm()
     if not form.validate_on_submit():
         return redirect(url_for('auth.profile', githubSettingsForm=form, currentView='githubSettingsTab'))
