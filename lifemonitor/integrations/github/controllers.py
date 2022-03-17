@@ -28,7 +28,10 @@ from lifemonitor.api.models.repositories.github import GithubWorkflowRepository
 from lifemonitor.api.models.testsuites.testinstance import TestInstance
 from lifemonitor.integrations.github.app import LifeMonitorGithubApp
 from lifemonitor.integrations.github.events import GithubEvent
-from lifemonitor.integrations.github.services import check_repository_issues, delete_repository_workflow_version, register_repository_workflow
+from lifemonitor.integrations.github.services import (
+    check_repository_issues, delete_repository_workflow_version,
+    register_repository_workflow)
+from lifemonitor.integrations.github.settings import GithubUserSettings
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
@@ -91,15 +94,24 @@ def push(event: GithubEvent):
         repo: GithubWorkflowRepository = repo_info.repository
         logger.debug("Repository: %r", repo)
 
-        watched_branches = ('main')
-        if repo_info.tag and repo_info.created or\
-                repo_info.branch and repo_info.branch in watched_branches:
-            check_result = check_repository_issues(repo_info)
-            if not check_result.found_issues():
+        settings: GithubUserSettings = event.sender.user.github_settings
+        if repo_info.tag and (settings.all_tags or settings.is_valid_tag(repo_info.tag)) or\
+                repo_info.branch and (settings.all_branches or settings.is_valid_branch(repo_info.branch)):
+            register = not repo_info.deleted
+            if register:
+                if settings.check_issues:
+                    check_result = check_repository_issues(repo_info)
+                    if check_result.found_issues():
+                        register = False
+                        logger.warning("Found issue on repo: %r", repo_info)
+                else:
+                    logger.warning("Check for issues on '%s' ... SKIPPED", repo_info)
+            if register:
                 register_repository_workflow(repo_info)
-
-        if repo_info.ref and repo_info.deleted:
-            delete_repository_workflow_version(repo_info)
+            if repo_info.ref and repo_info.deleted:
+                delete_repository_workflow_version(repo_info)
+        else:
+            logger.info(f"Repo branch or tag {repo_info.ref} skipped!")
 
         return "No content", 204
     except Exception as e:
