@@ -28,10 +28,9 @@ from lifemonitor.api.models.repositories.github import GithubWorkflowRepository
 from lifemonitor.api.models.testsuites.testinstance import TestInstance
 from lifemonitor.integrations.github.app import LifeMonitorGithubApp
 from lifemonitor.integrations.github.events import GithubEvent
-from lifemonitor.integrations.github.services import (
-    check_repository_issues, delete_repository_workflow_version,
-    register_repository_workflow)
 from lifemonitor.integrations.github.settings import GithubUserSettings
+
+from . import services
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
@@ -89,7 +88,7 @@ def push(event: GithubEvent):
         logger.debug("Repositories: %r", repositories)
 
         repo_info = event.repository_reference
-        logger.debug(repo_info)
+        logger.debug("Repo reference: %r", repo_info)
 
         repo: GithubWorkflowRepository = repo_info.repository
         logger.debug("Repository: %r", repo)
@@ -100,16 +99,21 @@ def push(event: GithubEvent):
             register = not repo_info.deleted
             if register:
                 if settings.check_issues:
-                    check_result = check_repository_issues(repo_info)
+                    check_result = services.check_repository_issues(repo_info)
                     if check_result.found_issues():
                         register = False
                         logger.warning("Found issue on repo: %r", repo_info)
                 else:
                     logger.warning("Check for issues on '%s' ... SKIPPED", repo_info)
             if register:
-                register_repository_workflow(repo_info)
+                # register or update workflow on LifeMonitor
+                services.register_repository_workflow(repo_info)
+
+                # register or update workflow on WorkflowHub
+                # services.register_workflow_on_registries(event.sender.user, repo_info, ('wfhubdev'))
+
             if repo_info.ref and repo_info.deleted:
-                delete_repository_workflow_version(repo_info)
+                services.delete_repository_workflow_version(repo_info)
         else:
             logger.info(f"Repo branch or tag {repo_info.ref} skipped!")
 
@@ -163,16 +167,16 @@ def handle_event():
 
 def init_integration(app: Flask):
     try:
-    # Initialize GitHub App Integration
-    app_identifier = app.config.get('GITHUB_INTEGRATION_APP_ID')
-    webhook_secret = app.config.get('GITHUB_INTEGRATION_WEB_SECRET')
-    service_token = app.config.get('GITHUB_INTEGRATION_SERVICE_TOKEN')
-    service_repository = app.config.get('GITHUB_INTEGRATION_SERVICE_REPOSITORY')
-    private_key_path = app.config.get('GITHUB_INTEGRATION_PRIVATE_KEY_PATH')
-    LifeMonitorGithubApp.init(app_identifier, private_key_path, webhook_secret, service_token,
-                              service_repository_full_name=service_repository)
-    app.register_blueprint(blueprint)
-    logger.info("Integration registered for GitHub App: %r", app_identifier)
+        # Initialize GitHub App Integration
+        app_identifier = app.config.get('GITHUB_INTEGRATION_APP_ID')
+        webhook_secret = app.config.get('GITHUB_INTEGRATION_WEB_SECRET')
+        service_token = app.config.get('GITHUB_INTEGRATION_SERVICE_TOKEN')
+        service_repository = app.config.get('GITHUB_INTEGRATION_SERVICE_REPOSITORY')
+        private_key_path = app.config.get('GITHUB_INTEGRATION_PRIVATE_KEY_PATH')
+        LifeMonitorGithubApp.init(app_identifier, private_key_path, webhook_secret, service_token,
+                                  service_repository_full_name=service_repository)
+        app.register_blueprint(blueprint)
+        logger.info("Integration registered for GitHub App: %r", app_identifier)
     except Exception as e:
         if logger.isEnabledFor(logging.DEBUG):
             logger.exception(e)

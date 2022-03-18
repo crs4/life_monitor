@@ -21,14 +21,18 @@
 from __future__ import annotations
 
 import logging
+import tempfile
+from typing import List
 
+from lifemonitor.api.models.registries.registry import WorkflowRegistry
 from lifemonitor.api.models.repositories.base import IssueCheckResult
 from lifemonitor.api.models.repositories.github import GithubWorkflowRepository
 from lifemonitor.api.models.workflows import Workflow
 from lifemonitor.api.services import LifeMonitor
-from lifemonitor.auth.models import HostingService
+from lifemonitor.auth.models import HostingService, User
 from lifemonitor.auth.oauth2.client.models import (
     OAuthIdentity, OAuthIdentityNotFoundException)
+from lifemonitor.config import BaseConfig
 from lifemonitor.integrations.github.events import GithubRepositoryReference
 
 from . import issues, pull_requests
@@ -144,3 +148,48 @@ def delete_repository_workflow_version(repository_reference: GithubRepositoryRef
         logger.warning("Github identity '%r' doesn't match with any LifeMonitor user identity", repository_reference.owner_id)
         if logger.isEnabledFor(logging.DEBUG):
             logger.exception(e)
+
+
+def register_workflow_on_registries(submitter: User,
+                                    repository_reference: GithubRepositoryReference, registries: List[str]):
+    result = []
+    for registry_name in registries:
+        result.append(register_workflow_on_registry(submitter, repository_reference, registry_name))
+    return result
+
+
+def register_workflow_on_registry(submitter: User,
+                                  repository_reference: GithubRepositoryReference, registry_name: str):
+
+    repo = repository_reference.repository
+    registry = WorkflowRegistry.find_by_name(registry_name)
+    logger.debug("Registry: %r", registry)
+
+    registry_workflow_versions = registry.find_workflow_versions_by_remote_url(
+        submitter, repository_reference.clone_url, user_as_submitter=True)
+    logger.warning(registry_workflow_versions)
+
+    # TODO: replace with a dynamic/configurable value
+    project_id = "14"
+
+    for w in registry_workflow_versions:
+        found_version = None
+        for v in w['versions']:
+            if v['ref'] == repository_reference.ref:
+                found_version = v
+                break
+        if not found_version:
+            logger.warning("Version not found: %r", repository_reference.ref)
+            logger.warning("Workflow found: %r", w)
+            with tempfile.NamedTemporaryFile(dir=BaseConfig.BASE_TEMP_FOLDER) as tmp_archive:
+                repo.write_zip(tmp_archive.name)
+                return registry.client.register_workflow(
+                    submitter, repo.write_zip(tmp_archive.name),
+                    project_id=project_id, external_id=w['external_id'])
+        else:
+            logger.warning("Found: %r", found_version)
+            with tempfile.NamedTemporaryFile(dir=BaseConfig.BASE_TEMP_FOLDER) as tmp_archive:
+                repo.write_zip(tmp_archive.name)
+                return registry.client.register_workflow(
+                    submitter, repo.write_zip(tmp_archive.name),
+                    project_id=project_id)
