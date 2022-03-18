@@ -28,7 +28,7 @@ The project's main goals are to:
 
 ## Road map
 
-LifeMonitor is still in early development.  Here is our planned development road map.
+Here is our planned development road map.
 
 #### End of 2020
 - [x] Support for receiving workflow POSTs as Workflow RO-crate
@@ -50,11 +50,28 @@ LifeMonitor is still in early development.  Here is our planned development road
       - [x] Github Actions
   - [x] Workflow submission from the Web interface
 
-#### Later
-  - [ ] WorkflowHub integration
-  - [ ] Automatic configuration of GitHub Actions for workflow testing
-  - [ ] Support workflow test creation
+#### Winter 2022
+  - [x] WorkflowHub integration
+  - [x] Email notifications
+
+
+#### Spring 2022
+  - [ ] GitHub app
+  - [ ] Semi-automated workflow registration with GH app
+  - [ ] Automated workflow update with GH app
+  - [ ] Semi-automated configuration of GitHub Actions for workflow testing
+
+
+#### Summer 2022
   - [ ] Programmable periodic test execution
+
+
+#### Fall 2022
+  - [ ] LS-AAI support
+
+
+#### Later
+  - [ ] Support workflow test creation
   - [ ] Workflow maintenance plugins (e.g., Docker image linting)
 
 
