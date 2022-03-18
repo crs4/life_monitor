@@ -258,6 +258,7 @@ class WorkflowRegistry(auth_models.HostingService):
             return user.oauth_identity[self.name].provider_user_id
         except Exception as e:
             logger.warning("Unable to find an identity for user %r on registry %r", user, self)
+            logger.debug(str(e))
             return None
 
     def get_registry_user_info(self, user) -> object:

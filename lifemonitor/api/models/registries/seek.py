@@ -63,8 +63,7 @@ class SeekWorkflowRegistryClient(WorkflowRegistryClient):
         result = workflows if not details \
             else [self.get_workflow_metadata(user, w['id']) for w in workflows]
         user_id = self.registry.get_registry_user_id(user)
-        return [w for w in result if not user_as_submitter
-                or w['relationships']['submitter']['data'][0]['id'] == user_id]
+        return [w for w in result if not user_as_submitter or w['relationships']['submitter']['data'][0]['id'] == user_id]
 
     def get_workflow_metadata(self, user, w: Union[models.WorkflowVersion, str]):
         _id = w.workflow.external_id if isinstance(w, models.WorkflowVersion) else w
