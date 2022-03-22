@@ -180,3 +180,8 @@ p img {
     text-align: center;
     font-weight: bold;
 }
+
+.signin-button:hover,
+.signin-button:focus {
+    background: hsl(180, 63%, 33%);
+}
