@@ -93,10 +93,15 @@
             </div>
         </div>
         <div class="section col-sm-12 ml-auto col-md-9">
+            <div class="float-right">
+                <button class="btn btn-lg signin-button" role="button" onclick="location.href='https://app.lifemonitor.eu/login'">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Sign In
+                </button>
+            </div>
             {% if page.category != "index"%}
             {% endif %}
-            {{ content }}
-            
+            {{ content }}            
         </div>
     </div>
     <!-- <script src="{{ " /assets/js/scale.fix.js" | relative_url }}"></script> -->
