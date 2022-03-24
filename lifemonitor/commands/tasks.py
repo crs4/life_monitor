@@ -29,6 +29,9 @@ logger = logging.getLogger()
 # define the blueprint for DB commands
 blueprint = Blueprint('task-queue', __name__)
 
+# set CLI help
+blueprint.cli.help = "Manage task queue"
+
 
 @blueprint.cli.command('reset')
 @with_appcontext

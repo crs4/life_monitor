@@ -29,6 +29,8 @@ logger = logging.getLogger()
 # define the blueprint for DB commands
 blueprint = Blueprint('cache', __name__)
 
+# set help for the CLI command
+blueprint.cli.help = "Manage cache"
 
 @blueprint.cli.command('clear')
 @with_appcontext

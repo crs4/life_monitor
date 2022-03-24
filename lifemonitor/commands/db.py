@@ -31,8 +31,8 @@ from lifemonitor.auth.models import User
 # set module level logger
 logger = logging.getLogger()
 
-# define the blueprint for DB commands
-blueprint = Blueprint('init', __name__)
+# update help for the DB command
+cli.db.help = "Manage database"
 
 # set initial revision number
 initial_revision = '8b2e530dc029'
