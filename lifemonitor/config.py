@@ -18,6 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import configparser
 import logging
 import os
 from logging.config import dictConfig
@@ -163,6 +164,32 @@ def get_config_by_name(name, settings=None):
         return ProductionConfig
 
 
+class LogFilter(logging.Filter):
+    def __init__(self, param=None):
+        self.param = param
+        try:
+            config = configparser.ConfigParser()
+            config.read('setup.cfg')
+            self.filters = [_.strip() for _ in config.get('logging', 'filters').split(',')]
+        except Exception:
+            self.filters = []
+
+    def filter(self, record):
+        try:
+            filtered = False
+            for k in self.filters:
+                if k in record.name:
+                    filtered = True
+            if not filtered:
+                if 'Requester' in record.name:
+                    record.msg = "Request to Github API"
+                    logger.debug("Request args: %r %r %r %r", record.args[0], record.args[1], record.args[2], record.args[3])
+                    record.args = None
+        except Exception as e:
+            logger.exception(e)
+        return not filtered
+
+
 def configure_logging(app):
     level_str = app.config.get('LOG_LEVEL', 'INFO')
     error = False
@@ -177,10 +204,17 @@ def configure_logging(app):
         'formatters': {'default': {
             'format': '[%(asctime)s] %(levelname)s in %(module)s: %(message)s',
         }},
+        'filters': {
+            'myfilter': {
+                '()': LogFilter,
+                # 'param': '',
+            }
+        },
         'handlers': {'wsgi': {
             'class': 'logging.StreamHandler',
             'stream': 'ext://flask.logging.wsgi_errors_stream',
-            'formatter': 'default'
+            'formatter': 'default',
+            'filters': ['myfilter']
         }},
         'response': {
             'level': logging.INFO,
