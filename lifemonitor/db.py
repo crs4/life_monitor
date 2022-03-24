@@ -168,7 +168,7 @@ def rename_db(old_name: str, new_name: str, settings=None):
     logger.debug('DB %s renamed to %s.', old_name, new_name)
 
 
-def drop_db(db_name: str=None, settings=None):
+def drop_db(db_name: str = None, settings=None):
     """Clear existing data and create new tables."""
     actual_db_name = db_name or get_db_connection_param("POSTGRESQL_DATABASE", settings)
     logger.debug("Actual DB name: %r", actual_db_name)
