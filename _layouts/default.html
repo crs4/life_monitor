@@ -93,10 +93,15 @@
             </div>
         </div>
         <div class="section col-sm-12 ml-auto col-md-9">
+            <div class="float-right">
+                <button class="btn btn-lg signin-button" role="button" onclick="location.href=getWebAppURL()">
+                    <img class="mr-2" src="images/signin.svg" height="25px">
+                    Go to LM
+                </button>
+            </div>
             {% if page.category != "index"%}
             {% endif %}
-            {{ content }}
-            
+            {{ content }}            
         </div>
     </div>
     <!-- <script src="{{ " /assets/js/scale.fix.js" | relative_url }}"></script> -->
@@ -110,5 +115,15 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
         integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
         crossorigin="anonymous"></script>
+    <script>
+        function getWebAppURL(){
+            var base_url = location.hostname.includes("github.io") ? 'lifemonitor.eu' : location.hostname;
+            return "https://app." + base_url + (location.port ? (":" + location.port) : "");
+        }
+        function getSignURL(){
+            var base_url = getWebAppURL();
+            return base_url + "/login";
+        }
+    </script>    
 </body>
 </html>

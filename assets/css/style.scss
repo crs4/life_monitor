@@ -173,3 +173,18 @@ p img {
 .toc a:hover {
     color: hsl(180, 63%, 33%);
 }
+
+.signin-button {
+    background: #003333;
+    color: whitesmoke;
+    text-align: center;
+    font-weight: bold;
+}
+
+.signin-button:hover,
+.signin-button:focus {
+    background: hsl(180, 63%, 33%);
+    color: whitesmoke;
+    text-align: center;
+    font-weight: bold;
+}
