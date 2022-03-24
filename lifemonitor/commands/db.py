@@ -102,9 +102,10 @@ def wait_for_db():
 
 
 @cli.db.command()
-@click.option("-f", "--file", default=None, help="Filename (default hhmmss_yyyymmdd.tar")
+@click.option("-f", "--file", default=None, help="Backup filename (default 'hhmmss_yyyymmdd.tar')")
+@click.option("-d", "--directory", default="./", help="Directory path for the backup file (default '.')")
 @with_appcontext
-def backup(file):
+def backup(file, directory):
     """
     Make a backup of the current app database
     """
@@ -112,9 +113,10 @@ def backup(file):
     params = db_connection_params()
     if not file:
         file = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}.tar"
-    cmd = f"PGPASSWORD={params['password']} pg_dump -h {params['host']} -U {params['user']} -F t {params['dbname']} > {file}"
+    target_path = os.path.join(directory, file)
+    cmd = f"PGPASSWORD={params['password']} pg_dump -h {params['host']} -U {params['user']} -F t {params['dbname']} > {target_path}"
     os.system(cmd)
-    msg = f"Created backup of database {params['dbname']} on {file}"
+    msg = f"Created backup of database {params['dbname']} on {target_path}"
     logger.debug(msg)
     print(msg)
 
