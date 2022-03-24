@@ -20,16 +20,21 @@
 
 
 import logging
+import os
+import sys
+from datetime import datetime
 
 import click
 from flask import current_app
-from flask.blueprints import Blueprint
 from flask.cli import with_appcontext
-from flask_migrate import current, stamp, upgrade
+from flask_migrate import cli, current, stamp, upgrade
 from lifemonitor.auth.models import User
 
 # set module level logger
 logger = logging.getLogger()
+
+# export from this module
+commands = [cli.db]
 
 # update help for the DB command
 cli.db.help = "Manage database"
@@ -38,12 +43,12 @@ cli.db.help = "Manage database"
 initial_revision = '8b2e530dc029'
 
 
-@blueprint.cli.command('db')
+@cli.db.command()
 @click.option("-r", "--revision", default="head")
 @with_appcontext
-def init_db(revision):
+def init(revision):
     """
-    Initialize LifeMonitor App
+    Initialize app database
     """
     from lifemonitor.db import create_db, db, db_initialized, db_revision
 
@@ -77,11 +82,11 @@ def init_db(revision):
             db.session.commit()
 
 
-@blueprint.cli.command('wait-for-db')
+@cli.db.command()
 @with_appcontext
 def wait_for_db():
     """
-    Wait until that DB is initialized
+    Wait until that DBMS service is up and running
     """
     from lifemonitor.db import db_initialized, db_revision
 
