@@ -154,11 +154,25 @@ def create_db(settings=None, drop=False):
     logger.debug('DB %s created.', new_db_name.string)
 
 
-def drop_db(settings=None):
-    """Clear existing data and create new tables."""
-    actual_db_name = get_db_connection_param("POSTGRESQL_DATABASE", settings)
-    logger.debug("Actual DB name: %r", actual_db_name)
+def rename_db(old_name: str, new_name: str, settings=None):
 
+    db.engine.dispose()
+    con = db_connect(settings=settings, override_db_name='postgres')
+    try:
+        con.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+        with con.cursor() as cur:
+            cur.execute(f'ALTER DATABASE {old_name} RENAME TO {new_name}')
+    finally:
+        con.close()
+
+    logger.debug('DB %s renamed to %s.', old_name, new_name)
+
+
+def drop_db(db_name: str=None, settings=None):
+    """Clear existing data and create new tables."""
+    actual_db_name = db_name or get_db_connection_param("POSTGRESQL_DATABASE", settings)
+    logger.debug("Actual DB name: %r", actual_db_name)
+    db.engine.dispose()
     con = db_connect(settings=settings, override_db_name='postgres')
     try:
         con.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)

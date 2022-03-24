@@ -99,3 +99,85 @@ def wait_for_db():
     while current_revision is None:
         current_revision = db_revision()
     logger.info(f"Current revision: {current_revision}")
+
+
+@cli.db.command()
+@click.option("-f", "--file", default=None, help="Filename (default hhmmss_yyyymmdd.tar")
+@with_appcontext
+def backup(file):
+    """
+    Make a backup of the current app database
+    """
+    from lifemonitor.db import db_connection_params
+    params = db_connection_params()
+    if not file:
+        file = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}.tar"
+    cmd = f"PGPASSWORD={params['password']} pg_dump -h {params['host']} -U {params['user']} -F t {params['dbname']} > {file}"
+    os.system(cmd)
+    msg = f"Created backup of database {params['dbname']} on {file}"
+    logger.debug(msg)
+    print(msg)
+
+
+@cli.db.command()
+@click.argument("file")
+@click.option("-s", "--safe", default=False, is_flag=True,
+              help="Preserve the current database renaming it as '<dbname>_yyyymmdd_hhmmss'")
+@with_appcontext
+def restore(file, safe=False):
+    """
+    Restore a backup of the app database
+    """
+    from lifemonitor.db import (create_db, db_connection_params, db_exists,
+                                drop_db, rename_db)
+    params = db_connection_params()
+    db_copied = False
+    if db_exists(params['dbname']):
+        if safe:
+            answer = input(f"The database '{params['dbname']}' will be renamed. Continue? (y/n): ")
+            if not answer.lower() in ('y', 'yes'):
+                sys.exit(0)
+            new_db_name = f"{params['dbname']}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+            rename_db(params['dbname'], new_db_name)
+            db_copied = True
+            logger.debug(f"Current database '{params['dbname']}' renamed as '{new_db_name}'")
+        else:
+            answer = input(f"The database '{params['dbname']}' will be delete. Continue? (y/n): ")
+            if not answer.lower() in ('y', 'yes'):
+                sys.exit(0)
+            drop_db()
+            logger.debug(f"Current database '{params['dbname']}' deleted")
+    create_db(current_app.config)
+    cmd = f"PGPASSWORD={params['password']} pg_restore -h {params['host']} -U {params['user']} -d {params['dbname']} -v {file}"
+    os.system(cmd)
+    if db_copied:
+        print(f"Existing database '{params['dbname']}' renamed as '{new_db_name}'")
+    msg = f"Backup {file} restored to database '{params['dbname']}'"
+    logger.debug(msg)
+    print(msg)
+
+
+@cli.db.command()
+@click.argument("snapshot", default="current")
+@with_appcontext
+def drop(snapshot):
+    """
+    Drop (a snapshot of) the app database.
+
+    A snapshot is specified by a datetime formatted as yyyymmdd_hhmmss: e.g., 20220324_100137.
+
+    If no snaphot is provided the current app database will be removed.
+    """
+    from lifemonitor.db import db_connection_params, drop_db
+    db_name = db_connection_params()['dbname']
+    if snapshot and snapshot != "current":
+        if not snapshot.startswith(db_name):
+            db_name = f"{db_name}_{snapshot}"
+        else:
+            db_name = snapshot
+    answer = input(f"The database '{db_name}' will be removed. Are you sure? (y/n): ")
+    if answer.lower() in ('y', 'yes'):
+        drop_db(db_name=db_name)
+        print(f"Database '{db_name}' removed")
+    else:
+        print("Database deletion aborted")
