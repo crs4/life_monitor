@@ -1,0 +1,58 @@
+{{- if .Values.backup.enabled -}}
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: {{ include "chart.fullname" . }}-backup
+  labels:
+    app.kubernetes.io/name: {{ include "chart.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}  
+spec:
+  schedule: "{{ .Values.backup.schedule }}"
+  successfulJobsHistoryLimit: {{ .Values.backup.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .Values.backup.failedJobsHistoryLimit }}
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: lifemonitor-backup
+            image: {{ include "chart.lifemonitor.image" . }}
+            imagePullPolicy: {{ .Values.lifemonitor.imagePullPolicy }}
+            command: ["/bin/sh","-c"]
+            args:        
+              - base_path="/var/data/backup" ;
+                db_backups_path="${base_path}/db" ;
+                crate_backups_path="${base_path}/crates" ;
+                mkdir -p ${db_backups_path} ;
+                mkdir -p ${crate_backups_path} ;
+                ./manage.py db backup -d ${db_backups_path} ;
+                find ${db_backups_path} -type f -mtime +60 -name '*.tar' -execdir rm -- '{}' \; ;
+                cp -urv /var/data/lm ${crate_backups_path} ;
+                {{ include "backup.remote.command" . }}
+            env:
+            {{- include "lifemonitor.common-env" . | nindent 12 }}
+            volumeMounts:
+            {{- include "lifemonitor.common-volume-mounts" . | nindent 12 }}
+            - name: lifemonitor-backup
+              mountPath: "/var/data/backup"
+          restartPolicy: OnFailure
+          volumes:
+            {{- include "lifemonitor.common-volume" . | nindent 10 }}
+          - name: lifemonitor-backup
+            persistentVolumeClaim:
+              claimName: {{ .Values.backup.existingClaim }}
+          {{- with .Values.lifemonitor.nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 10 }}
+          {{- end }}
+          {{- with .Values.lifemonitor.affinity }}
+          affinity:
+            {{- toYaml . | nindent 10 }}
+          {{- end }}
+          {{- with .Values.lifemonitor.tolerations }}
+          tolerations:
+            {{- toYaml . | nindent 10 }}        
+          {{- end }}
+      backoffLimit: 4
+{{- end }}

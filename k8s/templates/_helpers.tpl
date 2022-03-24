@@ -132,3 +132,16 @@ Define mount points shared by some pods.
 - name: lifemonitor-data
   mountPath: "/var/data/lm"
 {{- end -}}
+
+
+{{/*
+Define command to mirror (cluster) local backup to a remote site via SFTP
+*/}}
+{{- define "backup.remote.command" -}}
+{{- if and .Values.backup.remote .Values.backup.remote.enabled }}
+{{- printf "lftp -c \"open -u %s,%s sftp://%s; mirror -e /var/data/backup %s \"" 
+    .Values.backup.remote.user .Values.backup.remote.password 
+    .Values.backup.remote.host .Values.backup.remote.path
+}}
+{{- end }}
+{{- end }}
