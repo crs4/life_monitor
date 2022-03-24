@@ -36,6 +36,7 @@ blueprint = Blueprint('oauth', __name__)
 # set CLI help
 blueprint.cli.help = "Manage credentials for OAuth2 clients"
 
+
 def invalidate_token(token):
     invalid_token = token.copy()
     invalid_token["expires_in"] = 10
