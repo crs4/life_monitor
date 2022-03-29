@@ -21,6 +21,7 @@
 
 import logging
 import os
+import re
 import subprocess
 import sys
 from datetime import datetime
@@ -105,8 +106,9 @@ def wait_for_db():
 @cli.db.command()
 @click.option("-f", "--file", default=None, help="Backup filename (default 'hhmmss_yyyymmdd.tar')")
 @click.option("-d", "--directory", default="./", help="Directory path for the backup file (default '.')")
+@click.option("-v", "--verbose", default=False, is_flag=True, help="Enable verbose mode")
 @with_appcontext
-def backup(file, directory):
+def backup(file, directory, verbose):
     """
     Make a backup of the current app database
     """
@@ -116,12 +118,15 @@ def backup(file, directory):
         file = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}.tar"
     target_path = os.path.join(directory, file)
     cmd = f"PGPASSWORD={params['password']} pg_dump -h {params['host']} -U {params['user']} -F t {params['dbname']} > {target_path}"
+    if verbose:
+        print("Output file: %s" % target_path)
+        print("Backup command: %s" % re.sub("PGPASSWORD=(\S+)", "PGPASSWORD=****", cmd))
     result = subprocess.run(cmd, shell=True, capture_output=True)
     logger.debug("Backup result: %r", result)
     if result.returncode == 0:
-    msg = f"Created backup of database {params['dbname']} on {target_path}"
-    logger.debug(msg)
-    print(msg)
+        msg = f"Created backup of database {params['dbname']} on {target_path}"
+        logger.debug(msg)
+        print(msg)
     else:
         print("ERROR: Unable to backup the database")
         if verbose and result.stderr:
@@ -134,8 +139,9 @@ def backup(file, directory):
 @click.argument("file")
 @click.option("-s", "--safe", default=False, is_flag=True,
               help="Preserve the current database renaming it as '<dbname>_yyyymmdd_hhmmss'")
+@click.option("-v", "--verbose", default=False, is_flag=True, help="Enable verbose mode")
 @with_appcontext
-def restore(file, safe=False):
+def restore(file, safe, verbose):
     """
     Restore a backup of the app database
     """
@@ -165,16 +171,22 @@ def restore(file, safe=False):
         db_copied = True
         msg = f"Created a DB snapshot: data '{params['dbname']}' temporarily renamed as '{new_db_name}'"
         logger.debug(msg)
+        if verbose:
+            print(msg)
+    # restore database
     create_db(current_app.config)
     cmd = f"PGPASSWORD={params['password']} pg_restore -h {params['host']} -U {params['user']} -d {params['dbname']} -v {file}"
+    if verbose:
+        print("Dabaset file: %s" % file)
+        print("Backup command: %s" % re.sub("PGPASSWORD=(\S+)", "PGPASSWORD=****", cmd))
     result = subprocess.run(cmd, shell=True)
     logger.debug("Restore result: %r", result)
     if result.returncode == 0:
         if db_copied and safe:
-        print(f"Existing database '{params['dbname']}' renamed as '{new_db_name}'")
-    msg = f"Backup {file} restored to database '{params['dbname']}'"
-    logger.debug(msg)
-    print(msg)
+            print(f"Existing database '{params['dbname']}' renamed as '{new_db_name}'")
+        msg = f"Backup {file} restored to database '{params['dbname']}'"
+        logger.debug(msg)
+        print(msg)
         # if mode is set to 'not safe'
         # delete the temp snapshot of the current database
         if not safe:            
