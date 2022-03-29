@@ -45,6 +45,11 @@ cli.db.help = "Manage database"
 initial_revision = '8b2e530dc029'
 
 
+def hide_pgpasswd(cmd) -> str:
+    assert cmd, cmd
+    return re.sub(r"PGPASSWORD=(\S+)", "PGPASSWORD=****", str(cmd))
+
+
 @cli.db.command()
 @click.option("-r", "--revision", default="head")
 @with_appcontext
@@ -120,9 +125,9 @@ def backup(file, directory, verbose):
     cmd = f"PGPASSWORD={params['password']} pg_dump -h {params['host']} -U {params['user']} -F t {params['dbname']} > {target_path}"
     if verbose:
         print("Output file: %s" % target_path)
-        print("Backup command: %s" % re.sub(r"PGPASSWORD=(\S+)", "PGPASSWORD=****", cmd))
+        print("Backup command: %s" % hide_pgpasswd(cmd))
     result = subprocess.run(cmd, shell=True, capture_output=True)
-    logger.debug("Backup result: %r", result)
+    logger.debug("Backup result: %r", hide_pgpasswd(result))
     if result.returncode == 0:
         msg = f"Created backup of database {params['dbname']} on {target_path}"
         logger.debug(msg)
@@ -178,9 +183,9 @@ def restore(file, safe, verbose):
     cmd = f"PGPASSWORD={params['password']} pg_restore -h {params['host']} -U {params['user']} -d {params['dbname']} -v {file}"
     if verbose:
         print("Dabaset file: %s" % file)
-        print("Backup command: %s" % re.sub(r"PGPASSWORD=(\S+)", "PGPASSWORD=****", cmd))
+        print("Backup command: %s" % hide_pgpasswd(cmd))
     result = subprocess.run(cmd, shell=True)
-    logger.debug("Restore result: %r", result)
+    logger.debug("Restore result: %r", hide_pgpasswd(result))
     if result.returncode == 0:
         if db_copied and safe:
             print(f"Existing database '{params['dbname']}' renamed as '{new_db_name}'")
