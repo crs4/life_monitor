@@ -27,7 +27,7 @@ spec:
                 crate_backups_path="${base_path}/crates" ;
                 mkdir -p ${db_backups_path} ;
                 mkdir -p ${crate_backups_path} ;
-                ./manage.py db backup -d ${db_backups_path} 2>&1 ;
+                ./lm-admin.py db backup -d ${db_backups_path} 2>&1 ;
                 exit_code = $?;
                 if [[ ${exit_code} == 0 ]]; then 
                   find ${db_backups_path} -type f -mtime +{{ .Values.backup.retain_days }} -name '*.tar' -execdir rm -- '{}' \; ;

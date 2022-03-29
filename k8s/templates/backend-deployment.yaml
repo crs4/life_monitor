@@ -38,7 +38,7 @@ spec:
           image: {{ include "chart.lifemonitor.image" . }}
           imagePullPolicy: {{ .Values.lifemonitor.imagePullPolicy }}
           command: ["/bin/sh","-c"]
-          args: ["wait-for-redis.sh && wait-for-postgres.sh && ./manage.py db wait-for-db"]
+          args: ["wait-for-redis.sh && wait-for-postgres.sh && ./lm-admin.py db wait-for-db"]
           env:
           {{- include "lifemonitor.common-env" . | nindent 12 }}
           volumeMounts:
