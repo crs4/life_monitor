@@ -89,8 +89,10 @@ backup:
   failedJobsHistoryLimit: 30
   existingClaim: data-api-backup
   # Settings to mirror the (cluster) local backup 
-  # to a remote site via SFTP
+  # to a remote site via FTPS or SFTP
   remote:
+    # supported protocols ftps | sftp
+    protocol: ftps
     enabled: false
     user: username
     password: password
