@@ -120,7 +120,7 @@ def backup(file, directory, verbose):
     cmd = f"PGPASSWORD={params['password']} pg_dump -h {params['host']} -U {params['user']} -F t {params['dbname']} > {target_path}"
     if verbose:
         print("Output file: %s" % target_path)
-        print("Backup command: %s" % re.sub("PGPASSWORD=(\S+)", "PGPASSWORD=****", cmd))
+        print("Backup command: %s" % re.sub(r"PGPASSWORD=(\S+)", "PGPASSWORD=****", cmd))
     result = subprocess.run(cmd, shell=True, capture_output=True)
     logger.debug("Backup result: %r", result)
     if result.returncode == 0:
@@ -178,7 +178,7 @@ def restore(file, safe, verbose):
     cmd = f"PGPASSWORD={params['password']} pg_restore -h {params['host']} -U {params['user']} -d {params['dbname']} -v {file}"
     if verbose:
         print("Dabaset file: %s" % file)
-        print("Backup command: %s" % re.sub("PGPASSWORD=(\S+)", "PGPASSWORD=****", cmd))
+        print("Backup command: %s" % re.sub(r"PGPASSWORD=(\S+)", "PGPASSWORD=****", cmd))
     result = subprocess.run(cmd, shell=True)
     logger.debug("Restore result: %r", result)
     if result.returncode == 0:
@@ -189,7 +189,7 @@ def restore(file, safe, verbose):
         print(msg)
         # if mode is set to 'not safe'
         # delete the temp snapshot of the current database
-        if not safe:            
+        if not safe:
             drop_db(db_name=new_db_name)
             msg = f"Current database '{params['dbname']}' deleted"
             logger.debug(msg)
