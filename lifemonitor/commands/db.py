@@ -21,6 +21,7 @@
 
 import logging
 import os
+import subprocess
 import sys
 from datetime import datetime
 
@@ -115,10 +116,18 @@ def backup(file, directory):
         file = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}.tar"
     target_path = os.path.join(directory, file)
     cmd = f"PGPASSWORD={params['password']} pg_dump -h {params['host']} -U {params['user']} -F t {params['dbname']} > {target_path}"
-    os.system(cmd)
+    result = subprocess.run(cmd, shell=True, capture_output=True)
+    logger.debug("Backup result: %r", result)
+    if result.returncode == 0:
     msg = f"Created backup of database {params['dbname']} on {target_path}"
     logger.debug(msg)
     print(msg)
+    else:
+        print("ERROR: Unable to backup the database")
+        if verbose and result.stderr:
+            print("ERROR [stderr]: %s" % result.stderr.decode())
+    # report exit code to the main process
+    sys.exit(result.returncode)
 
 
 @cli.db.command()
@@ -132,6 +141,13 @@ def restore(file, safe=False):
     """
     from lifemonitor.db import (create_db, db_connection_params, db_exists,
                                 drop_db, rename_db)
+
+    # check if DB file exists
+    if not os.path.isfile(file):
+        print("File '%s' not found!" % file)
+        sys.exit(128)
+    # check if delete or preserve the current app database (if exists)
+    new_db_name = None
     params = db_connection_params()
     db_copied = False
     if db_exists(params['dbname']):
@@ -139,24 +155,53 @@ def restore(file, safe=False):
             answer = input(f"The database '{params['dbname']}' will be renamed. Continue? (y/n): ")
             if not answer.lower() in ('y', 'yes'):
                 sys.exit(0)
-            new_db_name = f"{params['dbname']}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-            rename_db(params['dbname'], new_db_name)
-            db_copied = True
-            logger.debug(f"Current database '{params['dbname']}' renamed as '{new_db_name}'")
         else:
             answer = input(f"The database '{params['dbname']}' will be delete. Continue? (y/n): ")
             if not answer.lower() in ('y', 'yes'):
                 sys.exit(0)
-            drop_db()
-            logger.debug(f"Current database '{params['dbname']}' deleted")
+        # create a snapshot of the current database
+        new_db_name = f"{params['dbname']}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        rename_db(params['dbname'], new_db_name)
+        db_copied = True
+        msg = f"Created a DB snapshot: data '{params['dbname']}' temporarily renamed as '{new_db_name}'"
+        logger.debug(msg)
     create_db(current_app.config)
     cmd = f"PGPASSWORD={params['password']} pg_restore -h {params['host']} -U {params['user']} -d {params['dbname']} -v {file}"
-    os.system(cmd)
-    if db_copied:
+    result = subprocess.run(cmd, shell=True)
+    logger.debug("Restore result: %r", result)
+    if result.returncode == 0:
+        if db_copied and safe:
         print(f"Existing database '{params['dbname']}' renamed as '{new_db_name}'")
     msg = f"Backup {file} restored to database '{params['dbname']}'"
     logger.debug(msg)
     print(msg)
+        # if mode is set to 'not safe'
+        # delete the temp snapshot of the current database
+        if not safe:            
+            drop_db(db_name=new_db_name)
+            msg = f"Current database '{params['dbname']}' deleted"
+            logger.debug(msg)
+            if verbose:
+                print(msg)
+    else:
+        # if any error occurs
+        # restore the previous latest version of the DB
+        # previously saved as temp snapshot
+        if new_db_name:
+            # delete the db just created
+            drop_db()
+            # restore the old database snapshot
+            rename_db(new_db_name, params['dbname'])
+            db_copied = True
+            msg = f"Database restored '{params['dbname']}' renamed as '{new_db_name}'"
+            logger.debug(msg)
+            if verbose:
+                print(msg)
+        print("ERROR: Unable to restore the database backup")
+        if verbose and result.stderr:
+            print("ERROR [stderr]: %s" % result.stderr.decode())
+    # report exit code to the main process
+    sys.exit(result.returncode)
 
 
 @cli.db.command()

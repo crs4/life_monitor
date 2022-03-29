@@ -20,13 +20,21 @@ spec:
             image: {{ include "chart.lifemonitor.image" . }}
             imagePullPolicy: {{ .Values.lifemonitor.imagePullPolicy }}
             command: ["/bin/sh","-c"]
-            args:        
-              - base_path="/var/data/backup" ;
+            args:
+              - wait-for-redis.sh && wait-for-postgres.sh ;
+                base_path="/var/data/backup" ;
                 db_backups_path="${base_path}/db" ;
                 crate_backups_path="${base_path}/crates" ;
                 mkdir -p ${db_backups_path} ;
                 mkdir -p ${crate_backups_path} ;
+                ./manage.py db backup -d ${db_backups_path} 2>&1 ;
+                exit_code = $?;
+                if [[ ${exit_code} == 0 ]]; then 
                   find ${db_backups_path} -type f -mtime +{{ .Values.backup.retain_days }} -name '*.tar' -execdir rm -- '{}' \; ;
+                  cp -urv /var/data/lm/* ${crate_backups_path}/ ;
+                  {{ include "backup.remote.command" . }} ;
+                else echo "Unable to complete the backup" ; exit ${exit_code} ; 
+                fi ;
             env:
             {{- include "lifemonitor.common-env" . | nindent 12 }}
             volumeMounts:
