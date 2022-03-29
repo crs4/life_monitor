@@ -19,7 +19,7 @@ spec:
           - name: lifemonitor-backup
             image: {{ include "chart.lifemonitor.image" . }}
             imagePullPolicy: {{ .Values.lifemonitor.imagePullPolicy }}
-            command: ["/bin/sh","-c"]
+            command: ["/bin/bash","-c"]
             args:
               - wait-for-redis.sh && wait-for-postgres.sh ;
                 base_path="/var/data/backup" ;
@@ -28,7 +28,7 @@ spec:
                 mkdir -p ${db_backups_path} ;
                 mkdir -p ${crate_backups_path} ;
                 ./lm-admin.py db backup -d ${db_backups_path} 2>&1 ;
-                exit_code = $?;
+                exit_code=$? ;
                 if [[ ${exit_code} == 0 ]]; then 
                   find ${db_backups_path} -type f -mtime +{{ .Values.backup.retain_days }} -name '*.tar' -execdir rm -- '{}' \; ;
                   cp -urv /var/data/lm/* ${crate_backups_path}/ ;
