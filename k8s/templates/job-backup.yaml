@@ -26,10 +26,7 @@ spec:
                 crate_backups_path="${base_path}/crates" ;
                 mkdir -p ${db_backups_path} ;
                 mkdir -p ${crate_backups_path} ;
-                ./manage.py db backup -d ${db_backups_path} ;
-                find ${db_backups_path} -type f -mtime +60 -name '*.tar' -execdir rm -- '{}' \; ;
-                cp -urv /var/data/lm ${crate_backups_path} ;
-                {{ include "backup.remote.command" . }}
+                  find ${db_backups_path} -type f -mtime +{{ .Values.backup.retain_days }} -name '*.tar' -execdir rm -- '{}' \; ;
             env:
             {{- include "lifemonitor.common-env" . | nindent 12 }}
             volumeMounts:

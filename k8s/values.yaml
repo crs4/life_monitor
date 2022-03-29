@@ -85,6 +85,7 @@ mail:
 backup:
   enabled: false
   schedule: "* 3 * * *"
+  retain_days: 30
   successfulJobsHistoryLimit: 30
   failedJobsHistoryLimit: 30
   existingClaim: data-api-backup
