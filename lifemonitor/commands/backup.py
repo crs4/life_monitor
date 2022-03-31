@@ -93,6 +93,7 @@ def __remote_synch__(source: str, target: str,
     try:
         ftp_utils = FtpUtils(host, user, password, enable_tls)
         ftp_utils.sync(source, target)
+        print("Synch of local '%s' with remote '%s' completed!" % (source, target))
         return 0
     except Exception as e:
         logger.debug(e)
@@ -149,7 +150,7 @@ def backup_crates(config, directory, *args, **kwargs):
     os.makedirs(directory, exist_ok=True)
     result = subprocess.run(f'rsync -avh --delete {rocrate_source_path}/ {directory} ', shell=True, capture_output=True)
     if result.returncode == 0:
-        print("Created backup of workflow RO-Crate @ '%s'" % rocrate_source_path)
+        print("Created backup of workflow RO-Crates @ '%s'" % directory)
         synch = kwargs.pop('synch', False)
         if synch:
             logger.debug("Remaining args: %r", kwargs)
@@ -191,6 +192,7 @@ def auto(config: Config):
                 if os.path.getmtime(file) < now - int(retain_days) * 86400:
                     logger.debug("Removing %s", file.absolute())
                     os.remove(file.absolute())
+                    logger.info("File %s removed from remote site", file.absolute())
     # synch with a remote site
     if config.get("BACKUP_REMOTE_PATH", None):
         # check REMOTE_* params

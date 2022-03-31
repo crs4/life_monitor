@@ -578,14 +578,13 @@ class FtpUtils():
                     logger.debug("Checking: %r - %r", remote_time, local_time)
                     if local_time <= remote_time:
                         upload_file = False
+                            logger.debug("File %s not changed... skip upload", remote_file_path)
                     else:
-                        logger.debug("Not changed %s", remote_file_path)
-                except Exception:
-                    logger.debug("File %s doesn't exist @ remote path %s", name, remote_file_path)
+                            logger.debug("File %s changed... it requires to be reuploaded", remote_file_path)
                 if upload_file:
                     with open(local_path, 'rb') as fh:
                         self.ftp.storbinary('STOR %s' % remote_file_path, fh)
-                    logger.debug("Local file '%s' uploaded on remote @ %s", local_path, remote_file_path)
+                    logger.info("Local file '%s' uploaded on remote @ %s", local_path, remote_file_path)
         # remove obsolete files on the remote target
         self.remove_obsolete_remote_files(source, target)
 
