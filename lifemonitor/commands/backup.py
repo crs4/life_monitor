@@ -189,7 +189,7 @@ def auto(config: Config):
                 logger.debug("Check st_mtime of file %s: %r < %r",
                              file.absolute(), os.path.getmtime(file), now - int(retain_days) * 86400)
                 if os.path.getmtime(file) < now - int(retain_days) * 86400:
-                    logger.warning("Removing %s", file.absolute())
+                    logger.debug("Removing %s", file.absolute())
                     os.remove(file.absolute())
     # synch with a remote site
     if config.get("BACKUP_REMOTE_PATH", None):

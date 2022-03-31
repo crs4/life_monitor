@@ -526,9 +526,9 @@ class FtpUtils():
     def __del__(self):
         if self._ftp:
             try:
-                logger.warning("Closing remote connection...")
+                logger.debug("Closing remote connection...")
                 self._ftp.close()
-                logger.warning("Closing remote connection... DONE")
+                logger.debug("Closing remote connection... DONE")
             except Exception as e:
                 logger.debug(e)
 
@@ -579,7 +579,7 @@ class FtpUtils():
                     if local_time <= remote_time:
                         upload_file = False
                     else:
-                        logger.warning("Not changed %s", remote_file_path)
+                        logger.debug("Not changed %s", remote_file_path)
                 except Exception:
                     logger.debug("File %s doesn't exist @ remote path %s", name, remote_file_path)
                 if upload_file:
@@ -596,7 +596,7 @@ class FtpUtils():
             local_path = path.replace(target, source)
             logger.debug("Local path corresponding to remote %s is: %s", path, local_path)
             if self.is_dir(path):
-                logger.warning("Is dir: %s", path)
+                logger.debug("Is dir: %s", path)
                 self.remove_obsolete_remote_files(local_path, path)
                 # remove remote folder if empty
                 if len(self.ftp.nlst(path)) == 0:
