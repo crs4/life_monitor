@@ -145,7 +145,7 @@ def crates_cmd(directory, *args, **kwargs):
 
 def backup_crates(config, directory, *args, **kwargs):
     assert config.get("DATA_WORKFLOWS", None), "DATA_WORKFLOWS not configured"
-    rocrate_source_path = config.get("DATA_WORKFLOWS").strip('/')
+    rocrate_source_path = config.get("DATA_WORKFLOWS").removesuffix('/')
     os.makedirs(directory, exist_ok=True)
     result = subprocess.run(f'rsync -avh --delete {rocrate_source_path}/ {directory} ', shell=True, capture_output=True)
     if result.returncode == 0:
@@ -167,7 +167,7 @@ def auto(config: Config):
         sys.exit(0)
 
     # set paths
-    base_path = base_path.strip('/')  # remove trailing '/'
+    base_path = base_path.removesuffix('/')  # remove trailing '/'
     db_backups = f"{base_path}/db"
     rc_backups = f"{base_path}/crates"
     logger.debug("Backup paths: %r - %r - %r", base_path, db_backups, rc_backups)
