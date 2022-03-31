@@ -50,9 +50,8 @@ class RequiredIf(GroupedOption):
     def __init__(self, *args, **kwargs):
         self.required_if = kwargs.pop('required_if')
         assert self.required_if, "'required_if' parameter required"
-        kwargs['help'] = (kwargs.get('help', '') +
-                          " (NOTE: This argument is required if '%s' is True)" %
-                          self.required_if).strip()
+        kwargs['help'] = ("%s (NOTE: This argument is required if '%s' is True)" %
+                          (kwargs.get('help', ''), self.required_if)).strip()
         super(RequiredIf, self).__init__(*args, **kwargs)
 
     def handle_parse_result(self, ctx, opts, args):

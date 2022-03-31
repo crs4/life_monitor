@@ -546,7 +546,7 @@ class FtpUtils():
         try:
             self.ftp.cwd(path)
             return True
-        except:
+        except Exception:
             return False
         finally:
             self.ftp.cwd(cwd)
@@ -580,7 +580,7 @@ class FtpUtils():
                         upload_file = False
                     else:
                         logger.warning("Not changed %s", remote_file_path)
-                except:
+                except Exception:
                     logger.debug("File %s doesn't exist @ remote path %s", name, remote_file_path)
                 if upload_file:
                     with open(local_path, 'rb') as fh:
