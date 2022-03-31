@@ -22,29 +22,7 @@ spec:
             command: ["/bin/bash","-c"]
             args:
               - wait-for-redis.sh && wait-for-postgres.sh ;
-                base_path="/var/data/backup" ;
-                db_backups_path="${base_path}/db" ;
-                crate_backups_path="${base_path}/crates" ;
-                mkdir -p ${db_backups_path} ;
-                mkdir -p ${crate_backups_path} ;
-                ./lm-admin.py db backup -d ${db_backups_path} 2>&1 ;
-                exit_code=$? ;
-                if [[ ${exit_code} == 0 ]]; then 
-                  find ${db_backups_path} -type f -mtime +{{ .Values.backup.retain_days }} -name '*.tar' -execdir rm -- '{}' \; ;
-                  cp -urv /var/data/lm/* ${crate_backups_path}/ ;
-                  exit_code=$? ;
-                  if [[ ${exit_code} == 0 ]]; then 
-                    echo "RO-Crates locally synched @ ${crate_backups_path}" ;
-                  else echo "Error when copying RO-Crates (code ${exit_code})" ;
-                  fi ;
-                  {{ include "backup.remote.command" . }} ;
-                  exit_code=$? ;
-                  if [[ ${exit_code} == 0 ]]; then 
-                    echo "Backup folder synched with the remote site '{{ .Values.backup.remote.host }}' (path {{.Values.backup.remote.path}})" ;
-                  else echo "Unable to synch backup folder with the remote site '{{ .Values.backup.remote.host }}'" ; exit ${exit_code} ;
-                  fi ;
-                else echo "Unable to complete the backup" ; exit ${exit_code} ; 
-                fi ;
+                ./lm-admin backup ;
             env:
             {{- include "lifemonitor.common-env" . | nindent 12 }}
             volumeMounts:
