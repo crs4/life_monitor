@@ -21,7 +21,6 @@
 
 import logging
 import os
-import re
 import subprocess
 import sys
 from datetime import datetime
@@ -31,6 +30,7 @@ from flask import current_app
 from flask.cli import with_appcontext
 from flask_migrate import cli, current, stamp, upgrade
 from lifemonitor.auth.models import User
+from lifemonitor.utils import hide_secret
 
 # set module level logger
 logger = logging.getLogger()
@@ -43,11 +43,6 @@ cli.db.help = "Manage database"
 
 # set initial revision number
 initial_revision = '8b2e530dc029'
-
-
-def hide_pgpasswd(cmd) -> str:
-    assert cmd, cmd
-    return re.sub(r"PGPASSWORD=(\S+)", "PGPASSWORD=****", str(cmd))
 
 
 @cli.db.command()
@@ -108,43 +103,63 @@ def wait_for_db():
     logger.info(f"Current revision: {current_revision}")
 
 
-@cli.db.command()
-@click.option("-f", "--file", default=None, help="Backup filename (default 'hhmmss_yyyymmdd.tar')")
-@click.option("-d", "--directory", default="./", help="Directory path for the backup file (default '.')")
-@click.option("-v", "--verbose", default=False, is_flag=True, help="Enable verbose mode")
+# define common options
+verbose_option = click.option("-v", "--verbose", default=False, is_flag=True, help="Enable verbose mode")
+
+
+def backup_options(func):
+    # backup command options (evaluated in reverse order!)
+    func = verbose_option(func)
+    func = click.option("-f", "--file", default=None, help="Backup filename (default 'hhmmss_yyyymmdd.tar')")(func)
+    func = click.option("-d", "--directory", default="./", help="Directory path for the backup file (default '.')")(func)
+    return func
+
+
+@cli.db.command("backup")
+@backup_options
 @with_appcontext
-def backup(file, directory, verbose):
+def backup_cmd(directory, file, verbose):
     """
     Make a backup of the current app database
     """
+    result = backup(directory, file, verbose)
+    # report exit code to the main process
+    sys.exit(result.returncode)
+
+
+def backup(directory, file=None, verbose=False) -> subprocess.CompletedProcess:
+    """
+    Make a backup of the current app database
+    """
+    logger.debug("%r - %r - %r", file, directory, verbose)
     from lifemonitor.db import db_connection_params
     params = db_connection_params()
     if not file:
         file = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}.tar"
+    os.makedirs(directory, exist_ok=True)
     target_path = os.path.join(directory, file)
     cmd = f"PGPASSWORD={params['password']} pg_dump -h {params['host']} -U {params['user']} -F t {params['dbname']} > {target_path}"
     if verbose:
         print("Output file: %s" % target_path)
-        print("Backup command: %s" % hide_pgpasswd(cmd))
+        print("Backup command: %s" % hide_secret(cmd, params['password']))
     result = subprocess.run(cmd, shell=True, capture_output=True)
-    logger.debug("Backup result: %r", hide_pgpasswd(result))
+    logger.debug("Backup result: %r", hide_secret(result, params['password']))
     if result.returncode == 0:
-        msg = f"Created backup of database {params['dbname']} on {target_path}"
+        msg = f"Created backup of database {params['dbname']} @ {target_path}"
         logger.debug(msg)
         print(msg)
     else:
-        print("ERROR: Unable to backup the database")
+        click.echo("\nERROR Unable to backup the database: %s" % result.stderr.decode())
         if verbose and result.stderr:
             print("ERROR [stderr]: %s" % result.stderr.decode())
-    # report exit code to the main process
-    sys.exit(result.returncode)
+    return result
 
 
 @cli.db.command()
 @click.argument("file")
 @click.option("-s", "--safe", default=False, is_flag=True,
               help="Preserve the current database renaming it as '<dbname>_yyyymmdd_hhmmss'")
-@click.option("-v", "--verbose", default=False, is_flag=True, help="Enable verbose mode")
+@verbose_option
 @with_appcontext
 def restore(file, safe, verbose):
     """
@@ -183,9 +198,9 @@ def restore(file, safe, verbose):
     cmd = f"PGPASSWORD={params['password']} pg_restore -h {params['host']} -U {params['user']} -d {params['dbname']} -v {file}"
     if verbose:
         print("Dabaset file: %s" % file)
-        print("Backup command: %s" % hide_pgpasswd(cmd))
+        print("Backup command: %s" % hide_secret(cmd, params['password']))
     result = subprocess.run(cmd, shell=True)
-    logger.debug("Restore result: %r", hide_pgpasswd(result))
+    logger.debug("Restore result: %r", hide_secret(cmd, params['password']))
     if result.returncode == 0:
         if db_copied and safe:
             print(f"Existing database '{params['dbname']}' renamed as '{new_db_name}'")
