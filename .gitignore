@@ -19,6 +19,7 @@ instance
 *.pyc
 ./certs
 **/node_modules
+backups
 data
 lifemonitor/static/dist
 lifemonitor/static/src/node_modules
