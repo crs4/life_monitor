@@ -91,14 +91,13 @@ backup:
   existingClaim: data-api-backup
   # Settings to mirror the (cluster) local backup 
   # to a remote site via FTPS or SFTP
-  remote:
-    # supported protocols ftps | sftp
-    protocol: ftps
+  remote:    
     enabled: false
     user: username
     password: password
     host: 10.0.1.135
     path: /user/home/lm-backups
+    tls: true
 
 lifemonitor:
   replicaCount: 1
