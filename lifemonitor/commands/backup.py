@@ -76,12 +76,12 @@ def synch_otptions(func):
     func = optgroup.option('-t', '--target', default="/", show_default=True,
                            help="Remote target path")(func)
     func = optgroup.option('-p', '--password', cls=RequiredIf, required_if='synch',
-                           help="Password fot the FTPS account")(func)
+                           help="Password of the FTP account")(func)
     func = optgroup.option('-u', '--user', cls=RequiredIf, required_if='synch',
-                           help="Username of the FTPS account")(func)
+                           help="Username of the FTP account")(func)
     func = optgroup.option('-h', '--host', cls=RequiredIf, required_if='synch',
-                           help="Hostame of the FTPS server")(func)
-    func = optgroup.group('\nSettings to connect with a remote site via FTPS')(func)
+                           help="Hostame of the FTP server")(func)
+    func = optgroup.group('\nSettings to connect with a remote site via FTP or FTPS')(func)
     func = click.option('-s', '--synch', default=False, show_default=True,
                         is_flag=True, help="Enable sync with a remote FTPS server")(func)
     return func
