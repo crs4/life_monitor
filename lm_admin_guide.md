@@ -371,7 +371,7 @@ docker-compose exec lm /bin/bash -c "flask db current"
 
 ## How to backup and restore
 
-The esiest way to manage backups of LifeMonitor data (database and worlflow RO-Crates) is to use the CLI command `lm-admin.py backup` which automatically performs a dump of the LifeMonitor database and copy all its workflow RO-Crates according to the backup settings configured on the `settings.conf` file. Such a configuration file allows to configure the local path where to store the backups and optionally set  a remote site which the local backups can be synched to via FTP (or FTP over TLS).
+The easiest way to manage backups of LifeMonitor data (database and worlflow RO-Crates) is to use the CLI command `lm-admin.py backup` which automatically performs a dump of the LifeMonitor database and copy all its workflow RO-Crates according to the backup settings configured on the `settings.conf` file. Such a configuration file allows to configure the local path where to store the backups and optionally set  a remote site which the local backups can be synched to via FTP (or FTP over TLS).
 
 ```bash
 # Backup settings
