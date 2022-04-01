@@ -35,6 +35,7 @@ import tempfile
 import urllib
 import uuid
 import zipfile
+from datetime import datetime
 from importlib import import_module
 from os.path import basename, dirname, isfile, join
 from typing import List
@@ -522,6 +523,7 @@ class FtpUtils():
         self.user = user
         self.passwd = password
         self.tls_enabled = enable_tls
+        self._metadata_remote_files = {}
 
     def __del__(self):
         if self._ftp:
@@ -551,6 +553,18 @@ class FtpUtils():
         finally:
             self.ftp.cwd(cwd)
 
+    def get_file_metadata(self, directory, filename, use_cache=False):
+        metadata = self._metadata_remote_files.get(directory, False) if use_cache else None
+        if not metadata:
+            metadata = [_ for _ in self.ftp.mlsd(directory)]
+            self._metadata_remote_files[directory] = metadata
+        for f in metadata:
+            if f[0] == filename:
+                fmeta = f[1]
+                logger.debug("File metadata: %r", fmeta)
+                return fmeta
+        return None
+
     def sync(self, source, target):
         for root, dirs, files in os.walk(source, topdown=True):
             for name in dirs:
@@ -572,15 +586,24 @@ class FtpUtils():
                 logger.debug("Remote filepath: %s", remote_file_path)
                 upload_file = True
                 try:
-                    timestamp = self.ftp.voidcmd(f"MDTM {remote_file_path}")[4:].strip()
-                    remote_time = parser.parse(timestamp).timestamp()
-                    local_time = os.path.getmtime(local_path)
-                    logger.debug("Checking: %r - %r", remote_time, local_time)
-                    if local_time <= remote_time:
-                        upload_file = False
+                    metadata = self.get_file_metadata(
+                        os.path.dirname(remote_file_path), name, use_cache=True)
+                    if metadata:
+                        timestamp = metadata['modify']
+                        remote_time = parser.parse(timestamp).isoformat(' ', 'seconds')
+                        local_time = datetime.utcfromtimestamp(os.path.getmtime(local_path)).isoformat(' ', 'seconds')
+                        logger.debug("Checking: %r - %r", remote_time, local_time)
+                        if local_time <= remote_time:
+                            upload_file = False
                             logger.debug("File %s not changed... skip upload", remote_file_path)
-                    else:
+                        else:
+                            self.ftp.delete(remote_file_path)
                             logger.debug("File %s changed... it requires to be reuploaded", remote_file_path)
+                    else:
+                        logger.debug("File %s doesn't exist @ remote path %s", name, remote_file_path)
+                except Exception as e:
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.exception(e)
                 if upload_file:
                     with open(local_path, 'rb') as fh:
                         self.ftp.storbinary('STOR %s' % remote_file_path, fh)
