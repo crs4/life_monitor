@@ -371,9 +371,56 @@ docker-compose exec lm /bin/bash -c "flask db current"
 
 ## How to backup and restore
 
+The esiest way to manage backups of LifeMonitor data (database and worlflow RO-Crates) is to use the CLI command `lm-admin.py backup` which automatically performs a dump of the LifeMonitor database and copy all its workflow RO-Crates according to the backup settings configured on the `settings.conf` file. Such a configuration file allows to configure the local path where to store the backups and optionally set  a remote site which the local backups can be synched to via FTP (or FTP over TLS).
+
+```bash
+# Backup settings
+BACKUP_LOCAL_PATH="./backups"
+BACKUP_RETAIN_DAYS=30
+BACKUP_REMOTE_PATH="/home/lm/lm-backups"
+BACKUP_REMOTE_HOST="ftp-site.domain.it"
+BACKUP_REMOTE_USER="lm"
+BACKUP_REMOTE_PASSWORD="foobar"
+BACKUP_REMOTE_ENABLE_TLS=True
+```
+
+Alternatively, you can backup the database and workflow RO-Crates separately, using the `lm-admin.py backup` subcommands `db` and `crates` respectively:
+
+
+```bash
+Usage: lm-admin.py backup db [OPTIONS]
+
+  Make a backup of the database
+
+Options:
+  -d, --directory TEXT            Directory path for the backup file (default
+                                  '.')
+
+  -f, --file TEXT                 Backup filename (default
+                                  'hhmmss_yyyymmdd.tar')
+
+  -v, --verbose                   Enable verbose mode
+  -s, --synch                     Enable sync with a remote FTPS server
+                                  [default: False]
+
+
+Settings to connect with a remote site via FTP or FTPS:
+    -h, --host TEXT               Hostame of the FTP server
+    -u, --user TEXT               Username of the FTP account
+    -p, --password TEXT           Password of the FTP account
+    -t, --target TEXT             Remote target path  [default: /]
+    --enable-tls                  Enable FTP over TLS  [default: False]
+```
+
+#### Restore
+
+A database dump can be restored through the CLI command `lm-admin.py db restore [BACKUP_FILE_PATH]`. To restore a backup of workflow RO-Crates you can simply replace the `DATA_WORKFLOWS` folder (configured on the `settings.conf` file) with the backup folder.
+
+### Database backup using PostgreSQL tools
 The current implementation of LifeMonitor relies on **PostgreSQL** database management system. Thus, you can use the common `pg_dump` and `psql` tools provided with Postgres to respectively backup and restore the LifeMonitor database (see [PostgreSQL docs](https://www.postgresql.org/docs/11/backup.html) for more details).
 
-### Backup
+
+#### Backup
 
 To make a backup to file (e.g., `lifemonitor.sql`) type:
 ```bash
@@ -395,7 +442,7 @@ docker-compose exec db /bin/bash -c "PGPASSWORD=\${POSTGRESQL_PASSWORD} pg_dump 
    ```
 
 
-### Restore
+#### Restore
 
 To restore LifeMonitor database from a backup file (e.g., `lifemonitor.sql`) type:
 
