@@ -52,7 +52,7 @@ services:
     entrypoint: /bin/bash
     restart: "no"
     command: |
-      -c "wait-for-postgres.sh && flask init db"
+      -c "wait-for-postgres.sh && ./lm-admin.py db init"
     depends_on:
       - "db"
     env_file: *env_file

@@ -33,18 +33,21 @@ logger = logging.getLogger(__name__)
 # define the blueprint for DB commands
 blueprint = Blueprint('api-key', __name__)
 
+# set CLI help
+blueprint.cli.help = "Manage admin API keys"
+
 
 @blueprint.cli.command('create')
-@click.argument("username")
-@click.option("--scope", "scope",  # type=click.Choice(ApiKey.SCOPES),
+@click.option("--scope", "scope",
               default="read", show_default=True)
 @click.option("--length", "length", default=40, type=int, show_default=True)
 @with_appcontext
-def api_key_create(username, scope="read", length=40):
+def api_key_create(scope="read", length=40):
     """
-    Create an API Key for a given user (identified by username)
+    Create an API Key for the 'admin' user
     """
-    logger.debug("Finding User '%s'...", username)
+    username = "admin"
+    logger.debug("Finding user '%s'...", username)
     user = User.find_by_username(username)
     if not user:
         print("User not found", file=sys.stderr)
@@ -52,25 +55,25 @@ def api_key_create(username, scope="read", length=40):
     logger.debug("User found: %r", user)
     api_key = generate_new_api_key(user, scope, length)
     print("%r" % api_key)
-    logger.debug("ApiKey created")
+    logger.debug("Api key created")
 
 
 @blueprint.cli.command('list')
-@click.argument("username")
 @with_appcontext
-def api_key_list(username):
+def api_key_list():
     """
-    Create an API Key for a given user (identified by username)
+    Create an API Key for the 'admin' user
     """
-    logger.debug("Finding User '%s'...", username)
+    username = "admin"
+    logger.debug("Finding user '%s'...", username)
     user = User.find_by_username(username)
     if not user:
         print("User not found", file=sys.stderr)
         sys.exit(99)
     logger.debug("User found: %r", user)
-    logger.info('-' * 82)
-    logger.info("User '%s' ApiKeys", user.username)
-    logger.info('-' * 82)
+    print('-' * 82)
+    print("Api keys of user '%s'" % user.username)
+    print('-' * 82)
     for key in user.api_keys:
         print(key)
 
@@ -80,27 +83,27 @@ def api_key_list(username):
 @with_appcontext
 def api_key_delete(api_key):
     """
-    Create an API Key for a given user (identified by username)
+    Create an API Key for the 'admin' user
     """
-    logger.debug("Finding ApiKey '%s'...", api_key)
+    logger.debug("Finding Api key '%s'...", api_key)
     key = ApiKey.find(api_key)
     if not key:
-        print("ApiKey not found", file=sys.stderr)
+        print("Api key not found", file=sys.stderr)
         sys.exit(99)
-    logger.debug("ApiKey found: %r", key)
+    logger.debug("Api key found: %r", key)
     key.delete()
-    print("ApiKey '%s' deleted!" % api_key)
-    logger.debug("ApiKey created")
+    print("Api key '%s' deleted!" % api_key)
+    logger.debug("Api key created")
 
 
 @blueprint.cli.command('clean')
-@click.argument("username")
 @with_appcontext
-def api_key_clean(username):
+def api_key_clean():
     """
-    Create an API Key for a given user (identified by username)
+    Create an API Key for the 'admin' user
     """
-    logger.debug("Finding User '%s'...", username)
+    username = "admin"
+    logger.debug("Finding user '%s'...", username)
     user = User.find_by_username(username)
     if not user:
         print("User not found", file=sys.stderr)
@@ -109,7 +112,7 @@ def api_key_clean(username):
     count = 0
     for key in user.api_keys:
         key.delete()
-        print("ApiKey '%s' deleted!" % key.key)
+        print("Api key '%s' deleted!" % key.key)
         count += 1
     print("%d ApiKeys deleted!" % count, file=sys.stderr)
-    logger.debug("ApiKeys of User '%s' deleted!", user.username)
+    logger.debug("ApiKeys of user '%s' deleted!", user.username)

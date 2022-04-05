@@ -3,7 +3,7 @@ FROM python:3.9-buster as base
 # Install base requirements
 RUN apt-get update -q \
  && apt-get install -y --no-install-recommends \
-        bash \
+        bash lftp rsync \
         redis-tools \
         postgresql-client-11 \
  && apt-get clean -y && rm -rf /var/lib/apt/lists
@@ -60,7 +60,7 @@ RUN mkdir -p /var/data/lm \
 USER lm
 
 # Copy lifemonitor app
-COPY --chown=lm:lm app.py gunicorn.conf.py /lm/
+COPY --chown=lm:lm app.py lm-admin.py gunicorn.conf.py /lm/
 COPY --chown=lm:lm specs /lm/specs
 COPY --chown=lm:lm lifemonitor /lm/lifemonitor
 COPY --chown=lm:lm migrations /lm/migrations

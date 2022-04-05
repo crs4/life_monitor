@@ -1,7 +1,7 @@
 {
     "name": "lifemonitor",
     "description": "Workflow Testing Service",
-    "version": "0.7.1",
+    "version": "0.7.2",
     "license": "MIT",
     "author": "CRS4",
     "main": "../dist/js/lifemonitor.min.js",
