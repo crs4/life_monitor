@@ -20,6 +20,7 @@
 
 
 import base64
+import ftplib
 import functools
 import glob
 import json
@@ -34,6 +35,7 @@ import tempfile
 import urllib
 import uuid
 import zipfile
+from datetime import datetime
 from importlib import import_module
 from os.path import basename, dirname, isfile, join
 from typing import List
@@ -41,6 +43,7 @@ from typing import List
 import flask
 import requests
 import yaml
+from dateutil import parser
 
 from . import exceptions as lm_exceptions
 
@@ -129,6 +132,11 @@ def sizeof_fmt(num, suffix='B'):
             return "%3.1f%s%s" % (num, unit, suffix)
         num /= 1024.0
     return "%.1f%s%s" % (num, 'Yi', suffix)
+
+
+def hide_secret(text: str, secret: str, replace_with="*****") -> str:
+    text = str(text) if not isinstance(text, str) else text
+    return text if not text else text.replace(secret, replace_with)
 
 
 def decodeBase64(str, as_object=False, encoding='utf-8'):
@@ -505,3 +513,145 @@ class Base64Encoder(object):
     @classmethod
     def decode(cls, data: str) -> object:
         return base64.b64decode(data.encode())
+
+
+class FtpUtils():
+
+    def __init__(self, host, user, password, enable_tls) -> None:
+        self._ftp = None
+        self.host = host
+        self.user = user
+        self.passwd = password
+        self.tls_enabled = enable_tls
+        self._metadata_remote_files = {}
+
+    def __del__(self):
+        if self._ftp:
+            try:
+                logger.debug("Closing remote connection...")
+                self._ftp.close()
+                logger.debug("Closing remote connection... DONE")
+            except Exception as e:
+                logger.debug(e)
+
+    @property
+    def ftp(self) -> ftplib.FTP_TLS:
+        if not self._ftp:
+            cls = ftplib.FTP_TLS if self.tls_enabled else ftplib.FTP
+            self._ftp = cls(self.host)
+            self._ftp.login(self.user, self.passwd)
+        return self._ftp
+
+    def is_dir(self, path) -> bool:
+        """ Check whether a remote path is a directory """
+        cwd = self.ftp.pwd()
+        try:
+            self.ftp.cwd(path)
+            return True
+        except Exception:
+            return False
+        finally:
+            self.ftp.cwd(cwd)
+
+    def get_file_metadata(self, directory, filename, use_cache=False):
+        metadata = self._metadata_remote_files.get(directory, False) if use_cache else None
+        if not metadata:
+            metadata = [_ for _ in self.ftp.mlsd(directory)]
+            self._metadata_remote_files[directory] = metadata
+        for f in metadata:
+            if f[0] == filename:
+                fmeta = f[1]
+                logger.debug("File metadata: %r", fmeta)
+                return fmeta
+        return None
+
+    def sync(self, source, target):
+        for root, dirs, files in os.walk(source, topdown=True):
+            for name in dirs:
+                local_path = os.path.join(root, name)
+                logger.debug("Local directory path: %s", local_path)
+                remote_file_path = local_path.replace(source, target)
+                logger.debug("Remote directory path: %s", remote_file_path)
+                try:
+                    self.ftp.mkd(remote_file_path)
+                    logger.debug("Created remote directory: %s", remote_file_path)
+                except Exception as e:
+                    logger.debug("Unable to create remote directory: %s", remote_file_path)
+                    logger.debug(str(e))
+
+            for name in files:
+                local_path = os.path.join(root, name)
+                remote_file_path = f"{target}/{local_path.replace(source + '/', '')}"
+                logger.debug("Local filepath: %s", local_path)
+                logger.debug("Remote filepath: %s", remote_file_path)
+                upload_file = True
+                try:
+                    metadata = self.get_file_metadata(
+                        os.path.dirname(remote_file_path), name, use_cache=True)
+                    if metadata:
+                        timestamp = metadata['modify']
+                        remote_time = parser.parse(timestamp).isoformat(' ', 'seconds')
+                        local_time = datetime.utcfromtimestamp(os.path.getmtime(local_path)).isoformat(' ', 'seconds')
+                        logger.debug("Checking: %r - %r", remote_time, local_time)
+                        if local_time <= remote_time:
+                            upload_file = False
+                            logger.debug("File %s not changed... skip upload", remote_file_path)
+                        else:
+                            self.ftp.delete(remote_file_path)
+                            logger.debug("File %s changed... it requires to be reuploaded", remote_file_path)
+                    else:
+                        logger.debug("File %s doesn't exist @ remote path %s", name, remote_file_path)
+                except Exception as e:
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.exception(e)
+                if upload_file:
+                    with open(local_path, 'rb') as fh:
+                        self.ftp.storbinary('STOR %s' % remote_file_path, fh)
+                    logger.info("Local file '%s' uploaded on remote @ %s", local_path, remote_file_path)
+        # remove obsolete files on the remote target
+        self.remove_obsolete_remote_files(source, target)
+
+    def remove_obsolete_remote_files(self, source, target):
+        """ Remove obsolete files on the remote target """
+        for path in self.ftp.nlst(target):
+            logger.debug("Checking remote path: %r", path)
+            local_path = path.replace(target, source)
+            logger.debug("Local path corresponding to remote %s is: %s", path, local_path)
+            if self.is_dir(path):
+                logger.debug("Is dir: %s", path)
+                self.remove_obsolete_remote_files(local_path, path)
+                # remove remote folder if empty
+                if len(self.ftp.nlst(path)) == 0:
+                    self.ftp.rmd(path)
+                    logger.debug("Removed remote folder '%s'", path)
+            else:
+                if not os.path.isfile(local_path):
+                    logger.debug("Removing remote file '%s'...", path)
+                    try:
+                        self.ftp.delete(path)
+                        logger.debug("Removed remote file '%s'", path)
+                    except Exception as e:
+                        logger.debug(e)
+                else:
+                    logger.debug("File %s exists @ %s", path, local_path)
+
+    def rm_tree(self, path):
+        """Recursively delete a directory tree on a remote server."""
+        try:
+            names = self.ftp.nlst(path)
+        except ftplib.all_errors as e:
+            logger.debug('Could not remove {0}: {1}'.format(path, e))
+            return
+
+        for name in names:
+            if os.path.split(name)[1] in ('.', '..'):
+                continue
+            logger.debug('Checking {0}'.format(name))
+            if self.is_dir(name):
+                self.rm_tree(name)
+            else:
+                self.ftp.delete(name)
+        try:
+            self.ftp.rmd(path)
+        except ftplib.all_errors as e:
+            logger.debug('Could not remove {0}: {1}'.format(path, e))

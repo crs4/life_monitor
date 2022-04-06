@@ -1,0 +1,51 @@
+{{- if .Values.backup.enabled -}}
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: {{ include "chart.fullname" . }}-backup
+  labels:
+    app.kubernetes.io/name: {{ include "chart.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}  
+spec:
+  schedule: "{{ .Values.backup.schedule }}"
+  successfulJobsHistoryLimit: {{ .Values.backup.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .Values.backup.failedJobsHistoryLimit }}
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: lifemonitor-backup
+            image: {{ include "chart.lifemonitor.image" . }}
+            imagePullPolicy: {{ .Values.lifemonitor.imagePullPolicy }}
+            command: ["/bin/bash","-c"]
+            args:
+              - wait-for-redis.sh && wait-for-postgres.sh ;
+                ./lm-admin.py backup ;
+            env:
+            {{- include "lifemonitor.common-env" . | nindent 12 }}
+            volumeMounts:
+            {{- include "lifemonitor.common-volume-mounts" . | nindent 12 }}
+            - name: lifemonitor-backup
+              mountPath: "/var/data/backup"
+          restartPolicy: OnFailure
+          volumes:
+            {{- include "lifemonitor.common-volume" . | nindent 10 }}
+          - name: lifemonitor-backup
+            persistentVolumeClaim:
+              claimName: {{ .Values.backup.existingClaim }}
+          {{- with .Values.lifemonitor.nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 10 }}
+          {{- end }}
+          {{- with .Values.lifemonitor.affinity }}
+          affinity:
+            {{- toYaml . | nindent 10 }}
+          {{- end }}
+          {{- with .Values.lifemonitor.tolerations }}
+          tolerations:
+            {{- toYaml . | nindent 10 }}        
+          {{- end }}
+      backoffLimit: 4
+{{- end }}

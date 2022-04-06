@@ -18,6 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import configparser
 import logging
 import os
 from logging.config import dictConfig
@@ -130,6 +131,17 @@ _EXPORT_CONFIGS: List[Type[BaseConfig]] = [
 _config_by_name = {cfg.CONFIG_NAME: cfg for cfg in _EXPORT_CONFIGS}
 
 
+def get_config(settings=None):
+    # set app env
+    app_env = os.environ.get("FLASK_ENV", "production")
+    if app_env != 'production':
+        # Set the DEBUG_METRICS env var to also enable the
+        # prometheus metrics exporter when running in development mode
+        os.environ['DEBUG_METRICS'] = 'true'
+    # load app config
+    return get_config_by_name(app_env, settings=settings)
+
+
 def get_config_by_name(name, settings=None):
     try:
         config = type(f"AppConfigInstance{name}".title(), (_config_by_name[name],), {})
@@ -152,6 +164,70 @@ def get_config_by_name(name, settings=None):
         return ProductionConfig
 
 
+class LogFilter(logging.Filter):
+    def __init__(self, param=None):
+        self.param = param
+        try:
+            config = configparser.ConfigParser()
+            config.read('setup.cfg')
+            self.filters = [_.strip() for _ in config.get('logging', 'filters').split(',')]
+        except Exception:
+            self.filters = []
+
+    def filter(self, record):
+        try:
+            filtered = False
+            for k in self.filters:
+                if k in record.name:
+                    filtered = True
+            if not filtered:
+                if 'Requester' in record.name:
+                    record.msg = "Request to Github API"
+                    logger.debug("Request args: %r %r %r %r", record.args[0], record.args[1], record.args[2], record.args[3])
+                    record.args = None
+        except Exception as e:
+            logger.exception(e)
+        return not filtered
+
+
+BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)
+
+# These are the sequences need to get colored ouput
+RESET_SEQ = "\033[0m"
+COLOR_SEQ = "\033[1;%dm"
+BOLD_SEQ = "\033[1m"
+
+
+def formatter_message(message, use_color=True):
+    if use_color:
+        message = message.replace("$RESET", RESET_SEQ).replace("$BOLD", BOLD_SEQ)
+    else:
+        message = message.replace("$RESET", "").replace("$BOLD", "")
+    return message
+
+
+COLORS = {
+    'WARNING': YELLOW,
+    'INFO': WHITE,
+    'DEBUG': BLUE,
+    'CRITICAL': YELLOW,
+    'ERROR': RED
+}
+
+
+class ColorFormatter(logging.Formatter):
+    def __init__(self, format, use_color=True):
+        logging.Formatter.__init__(self, format)
+        self.use_color = use_color
+
+    def format(self, record):
+        levelname = record.levelname
+        if self.use_color and levelname in COLORS:
+            record.levelname = f"{COLOR_SEQ % (30 + COLORS[levelname])}{levelname}{RESET_SEQ}"
+            record.module = f"{COLOR_SEQ % (30 + COLORS[levelname])}{record.module}{RESET_SEQ}"
+        return logging.Formatter.format(self, record)
+
+
 def configure_logging(app):
     level_str = app.config.get('LOG_LEVEL', 'INFO')
     error = False
@@ -164,12 +240,21 @@ def configure_logging(app):
     dictConfig({
         'version': 1,
         'formatters': {'default': {
-            'format': '[%(asctime)s] %(levelname)s in %(module)s: %(message)s',
+            '()': ColorFormatter,
+            'format':
+                f'[{COLOR_SEQ % (90)}%(asctime)s{RESET_SEQ}] %(levelname)s in %(module)s: {COLOR_SEQ % (90)}%(message)s{RESET_SEQ}',
         }},
+        'filters': {
+            'myfilter': {
+                '()': LogFilter,
+                # 'param': '',
+            }
+        },
         'handlers': {'wsgi': {
             'class': 'logging.StreamHandler',
             'stream': 'ext://flask.logging.wsgi_errors_stream',
-            'formatter': 'default'
+            'formatter': 'default',
+            'filters': ['myfilter']
         }},
         'response': {
             'level': logging.INFO,
