@@ -42,27 +42,37 @@ logger = logging.getLogger(__name__)
 
 class RegistryWorkflow(object):
     _registry: WorkflowRegistry
+    _uuid: str
     _identifier: str
     _name: str
     _latest_version: str
     _versions: List[str] = None
+    _metadata: dict = None
 
     def __init__(self,
                  registry: WorkflowRegistry,
+                 uuid: str,
                  identifier: str,
                  name: str,
                  latest_version: str = None,
-                 versions: List[str] = None) -> None:
+                 versions: List[str] = None,
+                 metadata: dict = None) -> None:
         self._registry = registry
+        self._uuid = uuid
         self._identifier = identifier
         self._name = name
         self._latest_version = latest_version
         if versions:
             self._versions = versions.copy()
+        self._metadata = metadata
 
     @property
     def registry(self) -> WorkflowRegistry:
         return self._registry
+
+    @property
+    def uuid(self) -> str:
+        return self._uuid
 
     @property
     def identifier(self) -> str:
@@ -83,6 +93,10 @@ class RegistryWorkflow(object):
     @property
     def external_link(self) -> str:
         return self._registry.get_external_link(self._identifier, self._latest_version)
+
+    @property
+    def metadata(self):
+        return self._metadata
 
 
 class WorkflowRegistryClient(ABC):
