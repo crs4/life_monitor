@@ -21,7 +21,7 @@
 from __future__ import annotations
 
 import logging
-from typing import List, Union
+from typing import List, Set, Union
 
 import lifemonitor.api.models as models
 import lifemonitor.exceptions as lm_exceptions
@@ -227,6 +227,10 @@ class WorkflowVersion(ROCrate):
                     health["issues"].append(str(e))
                     health["healthy"] = "Unknown"
         return health
+
+    @property
+    def registries(self) -> Set[WorkflowRegistry]:
+        return {_.registry for _ in self.registry_workflow_versions.values()} if self.registry_workflow_versions else None
 
     def get_registry_identifier(self, registry: WorkflowRegistry) -> str:
         if self.registry_workflow_versions:
