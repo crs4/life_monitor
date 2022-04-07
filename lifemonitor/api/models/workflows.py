@@ -80,7 +80,7 @@ class Workflow(Resource):
 
     @hybrid_property
     def latest_version(self) -> WorkflowVersion:
-        return max(self.versions.values(), key=lambda v: v.version)
+        return max(self.versions.values(), key=lambda v: v.modified)
 
     def add_version(self, version, uri, submitter: User, uuid=None, name=None,
                     registry: models.WorkflowRegistry = None):
