@@ -21,13 +21,14 @@
 from __future__ import annotations
 
 import logging
-from pathlib import Path
 import shutil
 import tempfile
+from pathlib import Path
 from typing import List, Union
 
 import requests
 from lifemonitor.api import models
+from lifemonitor.api.models.repositories.base import WorkflowRepository
 from lifemonitor.auth.models import User
 from lifemonitor.config import BaseConfig
 from lifemonitor.exceptions import (EntityNotFoundException,
@@ -107,13 +108,14 @@ class SeekWorkflowRegistryClient(WorkflowRegistryClient):
     def get_index(self, user: User) -> List[RegistryWorkflow]:
         result = []
         for w in self.get_workflows_metadata(user):
-            result.append(RegistryWorkflow(self.registry, w['id'], w['attributes']['title']))
+            # TODO: add UUID
+            result.append(RegistryWorkflow(self.registry, None, w['id'], w['attributes']['title']))
         return result
 
     def get_index_workflow(self, user: User, workflow_identifier: str) -> RegistryWorkflow:
         try:
             w = self.get_workflow_metadata(user, workflow_identifier)
-            return RegistryWorkflow(self.registry, w['id'], w['attributes']['title'],
+            return RegistryWorkflow(self.registry, w['meta']['uuid'], w['id'], w['attributes']['title'],
                                     latest_version=w['attributes']['version'],
                                     versions=[_['version'] for _ in w['attributes']['versions']]) if w else None
         except requests.exceptions.HTTPError as e:
