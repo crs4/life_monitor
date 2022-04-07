@@ -185,6 +185,7 @@ class SeekWorkflowRegistryClient(WorkflowRegistryClient):
                     wf_data = r.json()["data"]
                     logger.debug("Workflow RO-Crate @ %r registered: %r", crate_path, wf_data)
                     if not external_id:
+                        # TODO: allow to configure visibility
                         wf_data = self.update_workflow_visibility(user, wf_data['id'], project_id)
                     return wf_data
             except Exception as e:
@@ -192,14 +193,14 @@ class SeekWorkflowRegistryClient(WorkflowRegistryClient):
                     logger.exception(e)
                 raise LifeMonitorException(detail=str(e))
 
-    def update_workflow_visibility(self, user, external_id: str, project_id: str = None):
+    def update_workflow_visibility(self, user, external_id: str, project_id: str, public: bool = False):
         payload = {
             "data": {
                 "id": external_id,
                 "type": "workflows",
                 "attributes": {
                     "policy": {
-                        "access": "download",
+                        "access": "no_access" if not public else "download",
                         "permissions": [
                             {
                                 "resource": {"id": project_id, "type": "projects"},
