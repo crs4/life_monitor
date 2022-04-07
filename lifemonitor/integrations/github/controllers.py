@@ -93,6 +93,14 @@ def push(event: GithubEvent):
         repo: GithubWorkflowRepository = repo_info.repository
         logger.debug("Repository: %r", repo)
 
+        logger.debug("Ref: %r", repo.ref)
+        logger.debug("Tree: %r", repo.trees_url)
+        logger.debug("Commit: %r", repo.rev)
+        logger.warning("REFS: %r", repo.git_refs_url)
+
+        # TODO: allow to dynamically configure the list of registries
+        registries = ["wfhubdev"]
+
         settings: GithubUserSettings = event.sender.user.github_settings
         if repo_info.tag and (settings.all_tags or settings.is_valid_tag(repo_info.tag)) or\
                 repo_info.branch and (settings.all_branches or settings.is_valid_branch(repo_info.branch)):
@@ -106,14 +114,13 @@ def push(event: GithubEvent):
                 else:
                     logger.warning("Check for issues on '%s' ... SKIPPED", repo_info)
             if register:
-                # register or update workflow on LifeMonitor
-                services.register_repository_workflow(repo_info)
+                # register or update workflow on LifeMonitor and optionally on registries
+                registered_workflow = services.register_repository_workflow(repo_info, registries=registries)
+                logger.debug("Registered workflow: %r", registered_workflow)
 
-                # register or update workflow on WorkflowHub
-                # services.register_workflow_on_registries(event.sender.user, repo_info, ('wfhubdev'))
-
+            # delete the workflow version on LifeMonitor and optionally on registries
             if repo_info.ref and repo_info.deleted:
-                services.delete_repository_workflow_version(repo_info)
+                services.delete_repository_workflow_version(repo_info, registries=registries)
         else:
             logger.info(f"Repo branch or tag {repo_info.ref} skipped!")
 
