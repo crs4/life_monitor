@@ -78,6 +78,13 @@ class Workflow(Resource):
     def external_id(self, value):
         self.uri = f"{self.external_ns}{value}"
 
+    def get_registry_identifier(self, registry: WorkflowRegistry) -> str:
+        for version in self.versions.values():
+            identifier = version.get_registry_identifier(registry)
+            if identifier:
+                return identifier
+        return None
+
     @hybrid_property
     def latest_version(self) -> WorkflowVersion:
         return max(self.versions.values(), key=lambda v: v.modified)
@@ -220,6 +227,13 @@ class WorkflowVersion(ROCrate):
                     health["issues"].append(str(e))
                     health["healthy"] = "Unknown"
         return health
+
+    def get_registry_identifier(self, registry: WorkflowRegistry) -> str:
+        if self.registries:
+            registry_workflow = self.registries.get(registry.name, None)
+            if registry_workflow:
+                return registry_workflow.identifier
+        return None
 
     @property
     def external_link(self) -> str:
