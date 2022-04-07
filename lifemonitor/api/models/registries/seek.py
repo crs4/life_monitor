@@ -52,6 +52,38 @@ class SeekWorkflowRegistry(WorkflowRegistry):
     def __init__(self, client_credentials, server_credentials):
         super().__init__('seek_registry', client_credentials, server_credentials)
 
+    def register_workflow_version(self, submitter, repository: WorkflowRepository,
+                                  external_id: str = None):
+        logger.debug("Registering with registry identifier: %s", external_id)
+
+        # TODO: allow to override this using a configuration file
+        registry_user = self.get_registry_user_info(submitter)
+        project_id = registry_user['relationships']['projects']['data'][0]['id']
+
+        # get metadata of the workflow identified by 'external_id'
+        w = self.client.get_workflow_metadata(submitter, external_id) if external_id else None
+        logger.warning("Workflow metadata: %r", w)
+
+        # try to find a registered workflow version
+        if w:
+            for v in w['attributes']['versions']:
+                if v.get('commit', None) == repository.rev:
+                    return w
+        # register workflow version if it doesn't exist
+        logger.warning("Version not found: %r", repository.ref)
+        logger.warning("Workflow found: %r", w)
+        with tempfile.NamedTemporaryFile(dir=BaseConfig.BASE_TEMP_FOLDER) as tmp_archive:
+            repository.write_zip(tmp_archive.name)
+            metadata = self.client.register_workflow(
+                submitter, repository.write_zip(tmp_archive.name),
+                project_id=project_id, external_id=w['id'] if w else None)
+            return RegistryWorkflow(self, metadata['meta']['uuid'], metadata['id'],
+                                    metadata['attributes']['title'], metadata['attributes']['latest_version'],
+                                    [_['version'] for _ in metadata['attributes']['versions']])
+
+    def delete_workflow_version(self, submitter: User, external_id: str) -> bool:
+        return self.client.delete_workflow(submitter, external_id)
+
 
 class SeekWorkflowRegistryClient(WorkflowRegistryClient):
 
@@ -151,6 +183,7 @@ class SeekWorkflowRegistryClient(WorkflowRegistryClient):
                     r = self._requester(user, 'post', url, files=payload)
                     r.raise_for_status()
                     wf_data = r.json()["data"]
+                    logger.debug("Workflow RO-Crate @ %r registered: %r", crate_path, wf_data)
                     if not external_id:
                         wf_data = self.update_workflow_visibility(user, wf_data['id'], project_id)
                     return wf_data
@@ -186,4 +219,4 @@ class SeekWorkflowRegistryClient(WorkflowRegistryClient):
         response = self._delete(user, f"{self.registry.uri}/workflows/{external_id}")
         logger.debug(response.content)
         response.raise_for_status()
-        return response.json()['data']
+        return response.json()['status'] == 'ok'
