@@ -107,7 +107,7 @@ class RegistryWorkflowVersion(Resource):
     id = db.Column(db.Integer, db.ForeignKey(Resource.id), primary_key=True)
     workflow_version_id = db.Column(db.Integer, db.ForeignKey("workflow_version.id"), nullable=True)
     workflow_version: models.WorkflowVersion = db.relationship("WorkflowVersion", uselist=False,
-                                                               backref=db.backref("registries", cascade="all, delete-orphan",
+                                                               backref=db.backref("registry_workflow_versions", cascade="all, delete-orphan",
                                                                                   collection_class=attribute_mapped_collection('registry.name')),
                                                                foreign_keys=[workflow_version_id])
 
