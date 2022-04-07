@@ -67,4 +67,4 @@ def downgrade():
         logger.info("%r %r", wv[0], wv[1])
         bind.execute(f"UPDATE workflow_version SET registry_id = {wv[3]} WHERE id = {wv[4]}")
         bind.execute(f"UPDATE resource SET modified = now() WHERE id = {wv[4]}")
-    bind.execute(f"DELETE FROM resource WHERE type = 'registry_workflow_version'")
+    bind.execute("DELETE FROM resource WHERE type = 'registry_workflow_version'")
