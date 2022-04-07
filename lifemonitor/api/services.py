@@ -103,7 +103,7 @@ class LifeMonitor:
             for registry in w.registries:
                 if w.workflow not in registry.get_user_workflows(user):
                     return w
-                raise lm_exceptions.NotAuthorizedException(f"User {user.username} is not allowed to access workflow")
+            raise lm_exceptions.NotAuthorizedException(f"User {user.username} is not allowed to access workflow")
         return w
 
     @classmethod
@@ -462,7 +462,7 @@ class LifeMonitor:
 
     @staticmethod
     def get_registry_workflow(registry: models.WorkflowRegistry) -> models.Workflow:
-        return registry.registered_workflow_versions
+        return registry.workflow_versions
 
     @staticmethod
     def get_registry_workflow_versions(registry: models.WorkflowRegistry, uuid) -> List[models.WorkflowVersion]:
