@@ -139,6 +139,8 @@ class LifeMonitor:
                     roc_link = workflow_registry.get_rocrate_external_link(w.external_id, workflow_version)
 
             wv = w.add_version(workflow_version, roc_link, workflow_submitter, name=name)
+            if workflow_registry:
+                workflow_registry.add_workflow_version(wv, workflow_identifier, workflow_version)
 
             if workflow_submitter:
                 wv.permissions.append(Permission(user=workflow_submitter, roles=[RoleType.owner]))
@@ -189,14 +191,14 @@ class LifeMonitor:
         # get reference to the current workflow version
         wv: models.WorkflowVersion = cls.get_user_workflow_version(workflow_submitter, workflow_uuid, workflow_version)
         w: models.Workflow = wv.workflow
-        workflow_registry: models.WorkflowRegistry = wv.registry
+        registry_workflow_version = list(wv.registry_workflow_versions.values())[0] if len(wv.registry_workflow_versions) > 0 else None
+        workflow_registry: models.WorkflowRegistry = registry_workflow_version.registry if registry_workflow_version else None
         # compute the roc_link
-        if workflow_registry is not None:
-            # if the workflow comes from a hosting service
-            # always reuse the original roc_link pointing to the workflow on the service
-            rocrate_or_link = workflow_registry.get_rocrate_external_link(w.external_id, workflow_version)
+        if rocrate_or_link is None:
+            # reuse the original roc_link used to submit the workflow
+            rocrate_or_link = workflow_version.uri
             logger.debug("Reusing original ROC link: %r", rocrate_or_link)
-        elif rocrate_or_link is not None:
+        else:
             # if an rocrate or link is provided, the workflow version will be replaced
             logger.debug("New roc_link or RO-crate detected: %r", rocrate_or_link)
 
