@@ -30,6 +30,7 @@ import requests
 from authlib.integrations.base_client import RemoteApp
 from lifemonitor import utils as lm_utils
 from lifemonitor.api.models import db
+from lifemonitor.api.models.repositories.base import WorkflowRepository
 from lifemonitor.auth import models as auth_models
 from lifemonitor.auth.models import Resource
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
@@ -404,6 +405,13 @@ class WorkflowRegistry(auth_models.HostingService):
 
     def find_workflow_versions_by_remote_url(self, user, url: str, user_as_submitter: bool = True) -> List[object]:
         return self.client.find_workflow_versions_by_remote_url(user, url)
+
+    def register_workflow_version(self, submitter: auth_models.User,
+                                  repository: WorkflowRepository, external_id: str = None):
+        pass
+
+    def delete_workflow(self, submitter: auth_models.User, external_id: str) -> bool:
+        pass
 
     @property
     def client(self) -> WorkflowRegistryClient:
