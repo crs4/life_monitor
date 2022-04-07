@@ -8,7 +8,9 @@
 **/__pycache__
 **/.npm
 *.pyc
+backups
 data
 docker/Dockerfile
+docker*.yml
 package-lock.json
 **/node_modules

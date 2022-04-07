@@ -1,4 +1,6 @@
-# Copyright (c) 2020-2021 CRS4
+#!/usr/bin/env python3
+
+# Copyright (c) 2022 CRS4
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -18,31 +20,12 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-
-import logging
-from flask.blueprints import Blueprint
-from flask.cli import with_appcontext
-
-# set module level logger
-logger = logging.getLogger()
-
-# define the blueprint for DB commands
-blueprint = Blueprint('cache', __name__)
-
-# set help for the CLI command
-blueprint.cli.help = "Manage cache"
+from app import application
 
 
-@blueprint.cli.command('clear')
-@with_appcontext
-def clear():
-    """
-    Delete API cache
-    """
-    from lifemonitor.cache import cache
-    try:
-        cache.clear()
-    except Exception as e:
-        print("Error when deleting cache: %s" % (str(e)))
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.exception(e)
+def main():
+    application.cli.main()
+
+
+if __name__ == '__main__':
+    main()

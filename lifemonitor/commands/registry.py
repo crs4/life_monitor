@@ -33,6 +33,9 @@ logger = logging.getLogger(__name__)
 # define the blueprint for DB commands
 blueprint = Blueprint('registry', __name__)
 
+# set CLI help
+blueprint.cli.help = "Manage workflow registries"
+
 # instance of LifeMonitor service
 lm = LifeMonitor.get_instance()
 

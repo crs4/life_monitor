@@ -93,6 +93,24 @@ mail:
   ssl: true
   default_sender: ""
 
+# Backup settings
+backup:
+  enabled: false
+  schedule: "* 3 * * *"
+  retain_days: 30
+  successfulJobsHistoryLimit: 30
+  failedJobsHistoryLimit: 30
+  existingClaim: data-api-backup
+  # Settings to mirror the (cluster) local backup 
+  # to a remote site via FTPS or SFTP
+  remote:    
+    enabled: false
+    user: username
+    password: password
+    host: 10.0.1.135
+    path: /user/home/lm-backups
+    tls: true
+
 lifemonitor:
   replicaCount: 1
 
