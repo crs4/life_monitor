@@ -229,8 +229,8 @@ class WorkflowVersion(ROCrate):
         return health
 
     def get_registry_identifier(self, registry: WorkflowRegistry) -> str:
-        if self.registries:
-            registry_workflow = self.registries.get(registry.name, None)
+        if self.registry_workflow_versions:
+            registry_workflow = self.registry_workflow_versions.get(registry.name, None)
             if registry_workflow:
                 return registry_workflow.identifier
         return None
@@ -245,22 +245,24 @@ class WorkflowVersion(ROCrate):
 
     @cached(Timeout.WORKFLOW, client_scope=False)
     def get_external_link(self) -> str:
-        if self.registry:
-            return self.registry.get_external_link(self.workflow.external_id, self.version)
+        # TODO: replace single link with multiple links
+        if self.registry_workflow_versions:
+            return list(self.registry_workflow_versions.values())[0].link
         return self.based_on if self.based_on else self.uri if 'tmp://' not in self.uri else ''
 
     @cached(Timeout.WORKFLOW, client_scope=False)
     def get_registry_link(self) -> str:
-        if self.registry:
-            return self.registry.get_external_link(self.workflow.external_id, self.version)
+        if self.registry_workflow_versions:
+            return list(self.registry_workflow_versions.values())[0].link
         return None
 
     @hybrid_property
     def authorizations(self):
         auths = [a for a in self._authorizations]
-        if self.registry and self.submitter:
-            for auth in self.submitter.get_authorization(self.registry):
-                auths.append(auth)
+        if self.registry_workflow_versions and self.submitter:
+            for registry in self.registry_workflow_versions.values():
+                for auth in self.submitter.get_authorization(registry.registry):
+                    auths.append(auth)
         if self.hosting_service and self.submitter:
             for auth in self.submitter.get_authorization(self.hosting_service):
                 auths.append(auth)
