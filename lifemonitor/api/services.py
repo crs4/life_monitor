@@ -135,8 +135,7 @@ class LifeMonitor:
                 else:
                     roc_link = workflow_registry.get_rocrate_external_link(w.external_id, workflow_version)
 
-            wv = w.add_version(workflow_version, roc_link, workflow_submitter,
-                               name=name, registry=workflow_registry)
+            wv = w.add_version(workflow_version, roc_link, workflow_submitter, name=name)
 
             if workflow_submitter:
                 wv.permissions.append(Permission(user=workflow_submitter, roles=[RoleType.owner]))
@@ -210,8 +209,7 @@ class LifeMonitor:
                 # remove old workflow version
                 w.remove_version(wv)
                 # create a new workflow version to replace the old one
-                wv = w.add_version(workflow_version, roc_link, workflow_submitter,
-                                   name=name, registry=workflow_registry)
+                wv = w.add_version(workflow_version, roc_link, workflow_submitter, name=name)
                 if workflow_submitter:
                     wv.permissions.append(Permission(user=workflow_submitter, roles=[RoleType.owner]))
                     # automatically register submitter's subscription to workflow events
