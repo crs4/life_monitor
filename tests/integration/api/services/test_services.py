@@ -96,8 +96,8 @@ def test_workflow_registration_same_workflow_by_different_users(app_client, user
         logger.debug("Registry: %r", r)
         registry_workflows = lm.get_registry_workflows(r)
         assert len(registry_workflows) == 1, "Unexpected number of workflows"
-        assert len(r.registered_workflow_versions) == (count - 1), "Unexpected number of workflows versions"
-        logger.debug(r.registered_workflow_versions)
+        assert len(r.workflow_versions) == (count - 1), "Unexpected number of workflows versions"
+        logger.debug(r.workflow_versions)
 
     workflows_user1 = lm.get_user_workflows(user1['user'])
     workflows_user2 = lm.get_user_workflows(user2['user'])
@@ -219,7 +219,7 @@ def test_workflow_registration_not_allowed_user(app_client, user1, user2):
     assert workflow['name'] not in [_['name'] for _ in user2['workflows']], \
         f"The workflow '{workflow['name']}' should not be visible to user2"
     # user2 should not be allowed to register the workflow
-    with pytest.raises(lm_exceptions.NotAuthorizedException):
+    with pytest.raises(lm_exceptions.EntityNotFoundException):
         w, workflow = utils.register_workflow(user2, workflow)
 
 
