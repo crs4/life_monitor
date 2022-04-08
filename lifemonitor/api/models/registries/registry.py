@@ -385,7 +385,7 @@ class WorkflowRegistry(auth_models.HostingService):
             w = next((w for w in self.workflow_versions if w.workflow_version.workflow.uuid == lm_utils.uuid_param(uuid_or_identifier)), None)
             if not w:
                 w = next((w for w in self.workflow_versions if w.identifier == uuid_or_identifier), None)
-            return w.workflow_version if w is not None else None
+            return w.workflow_version.workflow if w is not None else None
         except ValueError:
             w = next((w for w in self.workflow_versions if w.workflow_version.get_registry_identifier(self) == uuid_or_identifier), None)
             return w.workflow if w is not None else None
