@@ -95,7 +95,7 @@ class SeekWorkflowRegistryClient(WorkflowRegistryClient):
         return [w for w in result if not user_as_submitter or w['relationships']['submitter']['data'][0]['id'] == user_id]
 
     def get_workflow_metadata(self, user, w: Union[models.WorkflowVersion, str]):
-        _id = w.workflow.external_id if isinstance(w, models.WorkflowVersion) else w
+        _id = w.get_registry_identifier(self.registry) if isinstance(w, models.WorkflowVersion) else w
         r = self._get(user, f"{self.registry.uri}/workflows/{_id}?format=json")
         if r.status_code != 200:
             raise RuntimeError(f"ERROR: unable to get workflow (status code: {r.status_code})")
