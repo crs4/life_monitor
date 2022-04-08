@@ -487,7 +487,7 @@ class LifeMonitor:
         w = registry.get_workflow(uuid)
         if w is None:
             raise lm_exceptions.EntityNotFoundException(models.WorkflowVersion, f"{uuid}_{version}")
-        return w.latest_version if version is None or version == "latest" else w.workflow.versions[version]
+        return w.latest_version if version is None or version == "latest" else w.versions[version]
 
     @staticmethod
     def get_public_workflows() -> List[models.Workflow]:
