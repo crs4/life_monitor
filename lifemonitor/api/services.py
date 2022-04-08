@@ -112,22 +112,26 @@ class LifeMonitor:
                           workflow_registry: Optional[models.WorkflowRegistry] = None,
                           authorization=None, name=None, public=False):
 
-        # if clients do not provide identifier or uuid and
-        # the workflow is associated with a workflow registry,
-        # the reuse the identifier and uuid provided by the workflow registry
-        if workflow_registry:
-            if not workflow_identifier:
-                workflow_identifier = workflow_registry.get_external_id(workflow_uuid, workflow_version, workflow_submitter)
-            if not workflow_uuid:
-                workflow_uuid = workflow_registry.get_external_uuid(workflow_identifier, workflow_version, workflow_submitter)
-
-        # find or create a user workflow
+        # reference to the workflow
         w = None
+        # find or create a user workflow
         if workflow_registry:
+            # if clients do not provide identifier or uuid and
+            # the workflow is associated with a workflow registry,
+            # the reuse the identifier and uuid provided by the workflow registry
+            if not workflow_uuid and workflow_identifier:
+                workflow_uuid = workflow_registry.get_external_uuid(workflow_identifier, workflow_version, workflow_submitter)
+            if not workflow_identifier and workflow_uuid:
+                workflow_identifier = workflow_registry.get_external_id(workflow_uuid, workflow_version, workflow_submitter)
+            # find or create a user workflow
             if workflow_uuid:
                 w = workflow_registry.get_workflow(workflow_uuid)
             else:
                 w = workflow_registry.get_workflow(workflow_identifier)
+            # check user permissions
+            if workflow_submitter and w and \
+                    w not in workflow_registry.get_user_workflows(workflow_submitter):
+                raise lm_exceptions.NotAuthorizedException()
         else:
             w = models.Workflow.get_user_workflow(workflow_submitter, workflow_uuid)
         if not w:
