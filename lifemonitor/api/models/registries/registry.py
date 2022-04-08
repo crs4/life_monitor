@@ -374,7 +374,7 @@ class WorkflowRegistry(auth_models.HostingService):
 
     def get_workflow_by_external_id(self, identifier) -> models.Workflow:
         try:
-            w = next((w for w in self.workflow_versions if w.get_registry_identifier(self) == identifier), None)
+            w = next((w for w in self.workflow_versions if w.identifier == identifier), None)
             return w.workflow if w is not None else None
         except Exception:
             if models.Workflow.find_by_uuid(identifier) is not None:
@@ -382,10 +382,12 @@ class WorkflowRegistry(auth_models.HostingService):
 
     def get_workflow(self, uuid_or_identifier) -> models.Workflow:
         try:
-            w = next((w for w in self.workflow_versions if w.workflow.uuid == lm_utils.uuid_param(uuid_or_identifier)), None)
-            return w.workflow if w is not None else None
+            w = next((w for w in self.workflow_versions if w.workflow_version.workflow.uuid == lm_utils.uuid_param(uuid_or_identifier)), None)
+            if not w:
+                w = next((w for w in self.workflow_versions if w.identifier == uuid_or_identifier), None)
+            return w.workflow_version if w is not None else None
         except ValueError:
-            w = next((w for w in self.workflow_versions if w.get_registry_identifier(self) == uuid_or_identifier), None)
+            w = next((w for w in self.workflow_versions if w.workflow_version.get_registry_identifier(self) == uuid_or_identifier), None)
             return w.workflow if w is not None else None
         except Exception:
             if models.Workflow.find_by_uuid(uuid_or_identifier) is not None:
