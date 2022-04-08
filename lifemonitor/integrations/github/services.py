@@ -89,9 +89,10 @@ def register_repository_workflow(repository_reference: GithubRepositoryReference
         identity: OAuthIdentity = hosting_service.server_credentials\
             .find_identity_by_provider_user_id(str(repository_reference.owner_id))
         repo_owner = identity.user
+        logger.debug("Workflow Submitter: %r", repo_owner)
         # set the repo link
         repo_link = f"{hosting_service.uri}/{repo.full_name}.git"
-        logger.debug("RepoLink: %s", repo_link)
+        logger.debug("Workflow RepoLink: %s", repo_link)
         # found and update the existing workflows associated with
         workflows = Workflow.get_hosted_workflows_by_uri(hosting_service, repo_link, submitter=repo_owner)
         for w in workflows:
@@ -105,24 +106,24 @@ def register_repository_workflow(repository_reference: GithubRepositoryReference
                 wv = lm.update_workflow(wv.submitter, w.uuid, workflow_version, rocrate_or_link=repo_link)
 
             # register workflow on registries
+            logger.debug("(old,new) workflows: (%r, %r)", current_wv, wv)
             if current_wv != wv:
-                register_workflow_on_registries(repo_owner, wv, repository_reference, registries)
+                register_workflow_on_registries(repo_owner, wv, registries)
             else:
                 # register workflow on new registries if any
                 registries_list = [r for r in registries if r not in wv.registry_workflow_versions] if registries else None
                 if registries_list and current_wv != wv or len(registries_list) > 0:
-                    register_workflow_on_registries(repo_owner, wv, repository_reference, registries_list)
+                    register_workflow_on_registries(repo_owner, wv, registries_list)
                 else:
                     logger.warning("Skipped registration of workflow %r on registries %r", wv, registries_list)
             # append to the list of registered workflows
             registered_workflows.append(wv)
         # if no matches found, register a new workflow
         if len(workflows) == 0:
-            logger.debug("Submitter: %r", repo_owner)
             # register workflow version on LifeMonitor
             wv = lm.register_workflow(repo_link, repo_owner, workflow_version)
             # register workflow on registries
-            register_workflow_on_registries(repo_owner, wv, repository_reference, registries)
+            register_workflow_on_registries(repo_owner, wv, registries)
             # append to the list of registered workflows
             registered_workflows.append(wv)
     except OAuthIdentityNotFoundException as e:
@@ -175,8 +176,7 @@ def delete_repository_workflow_version(repository_reference: GithubRepositoryRef
             logger.exception(e)
 
 
-def register_workflow_on_registries(submitter: User, workflow: WorkflowVersion,
-                                    repository_reference: GithubRepositoryReference, registries: List[str]):
+def register_workflow_on_registries(submitter: User, workflow: WorkflowVersion, registries: List[str]):
     result = []
     logger.debug("Registries: %r", registries)
     for registry_name in registries:
@@ -184,19 +184,18 @@ def register_workflow_on_registries(submitter: User, workflow: WorkflowVersion,
         registry: WorkflowRegistry = WorkflowRegistry.find_by_name(registry_name)
         logger.debug("Registry: %r", registry)
         if registry:
-            result.append(register_workflow_on_registry(submitter, workflow, repository_reference, registry))
+            result.append(register_workflow_on_registry(submitter, workflow, registry))
     return result
 
 
-def register_workflow_on_registry(submitter: User, workflow_version: WorkflowVersion,
-                                  repository_reference: GithubRepositoryReference, registry: Optional[str | WorkflowRegistry]):
+def register_workflow_on_registry(submitter: User, workflow_version: WorkflowVersion, registry: Optional[str | WorkflowRegistry]):
     assert isinstance(registry, str) or isinstance(registry, WorkflowRegistry), registry
     registry: WorkflowRegistry = WorkflowRegistry.find_by_name(registry) if isinstance(registry, str) else registry
-    logger.warning("Registry: %r", registry)
+    logger.debug("Registry: %r", registry)
     if registry:
         registered_workflow = registry.register_workflow_version(
-            submitter, repository_reference.repository, external_id=workflow_version.workflow.get_registry_identifier(registry))
-        logger.warning("Registered workflows: %r", registered_workflow)
+            submitter, workflow_version.repository, external_id=workflow_version.workflow.get_registry_identifier(registry))
+        logger.debug("Registered workflows: %r", registered_workflow)
         workflow_version.workflow.external_id = registered_workflow.identifier
         registry.add_workflow_version(workflow_version, registered_workflow.identifier, registered_workflow.latest_version)
         workflow_version.save()

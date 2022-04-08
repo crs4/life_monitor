@@ -53,31 +53,27 @@ class SeekWorkflowRegistry(WorkflowRegistry):
     def __init__(self, client_credentials, server_credentials):
         super().__init__('seek_registry', client_credentials, server_credentials)
 
-    def register_workflow_version(self, submitter, repository: WorkflowRepository,
-                                  external_id: str = None):
+    def register_workflow_version(self, submitter, repository: WorkflowRepository, external_id: str = None):
         logger.debug("Registering with registry identifier: %s", external_id)
 
         # TODO: allow to override this using a configuration file
         registry_user = self.get_registry_user_info(submitter)
         project_id = registry_user['relationships']['projects']['data'][0]['id']
+        logger.debug("Detected Project ID for workflow repo %r: %r", repository, project_id)
 
         # get metadata of the workflow identified by 'external_id'
         w = self.client.get_workflow_metadata(submitter, external_id) if external_id else None
-        logger.warning("Workflow metadata: %r", w)
+        logger.debug("Workflow metadata: %r", w)
 
-        # try to find a registered workflow version
-        if w:
-            for v in w['attributes']['versions']:
-                if v.get('commit', None) == repository.rev:
-                    return w
-        # register workflow version if it doesn't exist
-        logger.warning("Version not found: %r", repository.ref)
-        logger.warning("Workflow found: %r", w)
+        # register new workflow version
         with tempfile.NamedTemporaryFile(dir=BaseConfig.BASE_TEMP_FOLDER) as tmp_archive:
+            logger.debug("Writing to %r", tmp_archive.name)
             repository.write_zip(tmp_archive.name)
+            logger.debug("Repository written @ %r", tmp_archive)
             metadata = self.client.register_workflow(
                 submitter, repository.write_zip(tmp_archive.name),
                 project_id=project_id, external_id=w['id'] if w else None)
+            logger.debug("Workflow metadata: %r", metadata)
             return RegistryWorkflow(self, metadata['meta']['uuid'], metadata['id'],
                                     metadata['attributes']['title'], metadata['attributes']['latest_version'],
                                     [_['version'] for _ in metadata['attributes']['versions']])
@@ -169,10 +165,12 @@ class SeekWorkflowRegistryClient(WorkflowRegistryClient):
                     break
         return result
 
-    def register_workflow(self, user, crate_path, external_id: str = None, project_id: str = None, *args, **kwargs):
+    def register_workflow(self, user, crate_path, external_id: str = None,
+                          project_id: str = None, public: bool = False, *args, **kwargs):
         url = f"{self.registry.uri}/workflows"
         if external_id:
             url = f"{url}/{external_id}/create_version"
+        logger.debug("Posting workflow version @ %r, url")
         with tempfile.NamedTemporaryFile(dir=BaseConfig.BASE_TEMP_FOLDER, suffix='.crate.zip') as out:
             try:
                 shutil.copy2(crate_path, out.name)
@@ -186,9 +184,8 @@ class SeekWorkflowRegistryClient(WorkflowRegistryClient):
                     r.raise_for_status()
                     wf_data = r.json()["data"]
                     logger.debug("Workflow RO-Crate @ %r registered: %r", crate_path, wf_data)
-                    if not external_id:
-                        # TODO: allow to configure visibility
-                        wf_data = self.update_workflow_visibility(user, wf_data['id'], project_id)
+                    # TODO: allow to configure visibility
+                    wf_data = self.update_workflow_visibility(user, wf_data['id'], project_id, public=public)
                     return wf_data
             except Exception as e:
                 if logger.isEnabledFor(logging.DEBUG):
