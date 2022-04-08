@@ -149,7 +149,7 @@ class LifeMonitor:
             # associate workflow version to the workflow registry
             if workflow_registry:
                 workflow_registry.add_workflow_version(wv, workflow_identifier, workflow_version)
-            
+
             # set permissions
             if workflow_submitter:
                 wv.permissions.append(Permission(user=workflow_submitter, roles=[RoleType.owner]))
