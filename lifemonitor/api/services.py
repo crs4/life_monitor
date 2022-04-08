@@ -111,6 +111,16 @@ class LifeMonitor:
                           workflow_uuid=None, workflow_identifier=None,
                           workflow_registry: Optional[models.WorkflowRegistry] = None,
                           authorization=None, name=None, public=False):
+
+        # if clients do not provid identifier and uuid and 
+        # the workflow is associated with a workflow registry,
+        # the reuse the identifier and uuid provided by the workflow registry
+        if workflow_registry:
+            if not workflow_identifier:
+                workflow_identifier = workflow_registry.get_external_id(workflow_uuid, workflow_version, workflow_submitter)
+            if not workflow_uuid:
+                workflow_uuid = workflow_registry.get_external_uuid(workflow_identifier, workflow_version, workflow_submitter)
+
         # find or create a user workflow
         w = None
         if workflow_registry:
@@ -131,17 +141,12 @@ class LifeMonitor:
         if str(workflow_version) in w.versions:
             raise lm_exceptions.WorkflowVersionConflictException(workflow_uuid, workflow_version)
 
-        # if not set, detect registry identifier from uuid
-        if workflow_registry:
-            if not workflow_identifier:
-                workflow_identifier = workflow_registry.get_external_id(workflow_uuid, workflow_version, workflow_submitter)
-
         with ROCrateLinkContext(rocrate_or_link) as roc_link:
             if not roc_link:
                 if not workflow_registry:
                     raise ValueError("Missing ROC link")
                 else:
-                    roc_link = workflow_registry.get_rocrate_external_link(w.get_registry_identifier(workflow_registry), workflow_version)
+                    roc_link = workflow_registry.get_rocrate_external_link(workflow_identifier, workflow_version)
 
             # register workflow version
             wv = w.add_version(workflow_version, roc_link, workflow_submitter, name=name)
