@@ -210,7 +210,7 @@ class LifeMonitor:
         # compute the roc_link
         if rocrate_or_link is None:
             # reuse the original roc_link used to submit the workflow
-            rocrate_or_link = workflow_version.uri
+            rocrate_or_link = wv.uri
             logger.debug("Reusing original ROC link: %r", rocrate_or_link)
         else:
             # if an rocrate or link is provided, the workflow version will be replaced
