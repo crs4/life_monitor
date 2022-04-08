@@ -112,7 +112,7 @@ class LifeMonitor:
                           workflow_registry: Optional[models.WorkflowRegistry] = None,
                           authorization=None, name=None, public=False):
 
-        # if clients do not provid identifier and uuid and 
+        # if clients do not provid identifier and uuid and
         # the workflow is associated with a workflow registry,
         # the reuse the identifier and uuid provided by the workflow registry
         if workflow_registry:
