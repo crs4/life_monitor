@@ -230,7 +230,7 @@ class WorkflowVersion(ROCrate):
 
     @property
     def registries(self) -> Set[WorkflowRegistry]:
-        return {_.registry for _ in self.registry_workflow_versions.values()} if self.registry_workflow_versions else None
+        return {_.registry for _ in self.registry_workflow_versions.values()} if self.registry_workflow_versions else {}
 
     def get_registry_identifier(self, registry: WorkflowRegistry) -> str:
         if self.registry_workflow_versions:
