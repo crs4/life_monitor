@@ -117,7 +117,7 @@
         crossorigin="anonymous"></script>
     <script>
         function getWebAppURL(){
-            var base_url = location.hostname.includes("github.io") ? 'lifemonitor.eu' : location.hostname;
+            var base_url = location.hostname.includes("github.io") ? 'lifemonitor.eu' : location.hostname.replace('www.','');
             return "https://app." + base_url + (location.port ? (":" + location.port) : "");
         }
         function getSignURL(){
