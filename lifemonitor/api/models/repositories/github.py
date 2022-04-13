@@ -101,7 +101,7 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
                  attributes: Dict[str, Any], completed: bool,
                  ref: str = None, rev: str = None, auto_cleanup: bool = True) -> None:
         super().__init__(requester, headers, attributes, completed)
-        self.ref = ref or self.default_branch
+        self.ref = ref if ref is not None else self.default_branch
         self.rev = rev
         self.auto_cleanup = auto_cleanup
         self._metadata = None
@@ -109,6 +109,14 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__} bound to {self.url} (ref: {self.ref}, rev: {self.rev})"
+
+    @property
+    def files(self):
+        files = []
+        for e in self.get_contents('.', ref=self.ref or self.default_branch):
+            if e.type == 'file':
+                files.append(GitRepositoryFile(e))
+        return files
 
     @property
     def remote_metadata(self) -> WorkflowRepositoryMetadata:
