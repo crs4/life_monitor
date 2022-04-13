@@ -56,6 +56,9 @@ class RepositoryFile():
         self._type = type
         self._content = content
 
+    def __repr__(self) -> str:
+        return f"File {self.name} (dir: {self.dir})"
+
     @property
     def type(self) -> str:
         if not self._type and self.name:
