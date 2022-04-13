@@ -27,6 +27,7 @@ from lifemonitor.api.models import issues
 from lifemonitor.integrations.github.app import LifeMonitorGithubApp
 
 from github.Issue import Issue
+from github.IssueComment import IssueComment
 from github.Repository import Repository
 
 from . import pull_requests
@@ -35,6 +36,26 @@ from .utils import delete_branch, get_labels_from_strings
 # Config a module level logger
 logger = logging.getLogger(__name__)
 
+
+class GithubIssue(Issue):
+
+    def __init__(self, requester, headers, attributes, completed):
+        super().__init__(requester, headers, attributes, completed)
+
+    def as_repository_issue(self) -> issues.WorkflowRepositoryIssue:
+        issue = None
+        issue_type = issues.WorkflowRepositoryIssue.from_string(self.title)
+        if issue_type:
+            issue: issues.WorkflowRepositoryIssue = issue_type()
+            issue.io_handler = GithubIOHandler(self)
+        return issue
+
+
+class GithubIssueComment(IssueComment):
+
+    def __init__(self, issue: GithubIssue, requester, headers, attributes, completed):
+        super().__init__(requester, headers, attributes, completed)
+        self.issue = issue
 
 def process_issues(repo: Repository, issues: List[issues.WorkflowRepositoryIssue]):
     for issue in issues:
