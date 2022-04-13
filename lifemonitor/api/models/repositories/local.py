@@ -79,14 +79,14 @@ class LocalWorkflowRepository(WorkflowRepository):
         for root, _, files in os.walk(self.local_path):
             for name in files:
                 if re.search(search, name):
-                    return RepositoryFile(name, dir=root)
+                    return RepositoryFile(self.local_path, name, dir=root)
         return None
 
     def find_file_by_name(self, name: str) -> RepositoryFile:
         for root, _, files in os.walk(self.local_path):
             for fn in files:
                 if name == fn:
-                    return RepositoryFile(name, dir=root)
+                    return RepositoryFile(self.local_path, name, dir=root)
         return None
 
     def find_workflow(self) -> WorkflowFile:
@@ -94,7 +94,7 @@ class LocalWorkflowRepository(WorkflowRepository):
             for name in files:
                 for ext, wf_type in WorkflowFile.extension_map.items():
                     if re.search(rf"\.{ext}$", name):
-                        return RepositoryFile(name, type=wf_type, dir=root)
+                        return RepositoryFile(self.local_path, name, type=wf_type, dir=root)
         return None
 
     def make_crate(self):
