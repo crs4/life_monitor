@@ -20,18 +20,20 @@
 
 from __future__ import annotations
 
+import filecmp
+import io
 import json
 import logging
 import os
 from abc import abstractclassmethod
 from datetime import datetime
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 import lifemonitor.api.models.issues as issues
 from lifemonitor.api.models.repositories.files import (RepositoryFile,
+                                                       TemplateRepositoryFile,
                                                        WorkflowFile)
 from lifemonitor.test_metadata import get_roc_suites
-from lifemonitor.utils import compare_json
 from rocrate.rocrate import Metadata, ROCrate
 
 # set module level logger
@@ -99,14 +101,50 @@ class WorkflowRepository():
             if f == file or (f.name == file.name and f.dir == file.dir):
                 return f
         return None
-                return True
-        return False
 
-        assert repo and isinstance(repo, WorkflowRepository), repo
+    @classmethod
+    def __file_pointer__(cls, f: RepositoryFile):
+        fp = None
+        if isinstance(f, TemplateRepositoryFile):
+            logger.debug("Checking content: %r", f.get_content(binary_mode=False).encode())
+            fp = io.BytesIO(f.get_content(binary_mode=False).encode())
+        else:
+            fp = open(f.path, 'rb')
+        return fp
+
+    @classmethod
+    def __compare_files__(cls, f1: RepositoryFile, f2: RepositoryFile):
+        bufsize = filecmp.BUFSIZE
+        with cls.__file_pointer__(f1) as fp1, cls.__file_pointer__(f2) as fp2:
+            while True:
+                b1 = fp1.read(bufsize)
+                b2 = fp2.read(bufsize)
+                if b1 != b2:
+                    return False
+                if not b1:
+                    return True
+
+    @classmethod
+    def __compare__(cls, left_files, right_files):
+        missing_left = [_ for _ in right_files if not cls.__contains__(left_files, _)]
+        logger.debug("Missing Left: %r", missing_left)
+        to_check = [(l, cls.__find_file__(right_files, l)) for l in left_files]
+        logger.debug("To Check: %r", to_check)
+        missing_right = [_ for _ in left_files if not cls.__contains__(right_files, _)]
+        logger.debug("Missing Right: %r", missing_right)
         differences = []
-        if not compare_json(self.metadata.to_json(), repo.metadata.to_json()):
-            differences.append(repo.find_file_by_name(self.metadata.DEFAULT_METADATA_FILENAME))
-        return differences
+        for l, r in to_check:
+            logger.debug("Path: %r", l.path)
+            if l and r and not cls.__compare_files__(l, r):
+                differences.append((l, r))
+        logger.debug("Differences: %r", differences)
+        return missing_left, missing_right, differences
+
+    def compare(self, repo: WorkflowRepository) -> Tuple[List[RepositoryFile],
+                                                         List[RepositoryFile],
+                                                         List[Tuple[RepositoryFile, RepositoryFile]]]:
+        assert repo and isinstance(repo, WorkflowRepository), repo
+        return self.__compare__(self.files, repo.files)
 
     def make_crate(self):
         self._metadata = WorkflowRepositoryMetadata(self, init=True)
