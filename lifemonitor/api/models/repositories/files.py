@@ -23,6 +23,9 @@ from __future__ import annotations
 
 import logging
 import os
+from typing import Dict, Optional
+
+from flask import render_template_string
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -82,3 +85,40 @@ class RepositoryFile():
     def get_type(filename: str) -> str:
         parts = os.path.splitext(filename) if filename else None
         return parts[1].replace('.', '') if parts and len(parts) > 0 else None
+
+
+class TemplateRepositoryFile(RepositoryFile):
+
+    def __init__(self, repository_path: str, name: str, type: str = None,
+                 dir: str = ".", data: Dict = None) -> None:
+        super().__init__(repository_path, name.replace('.j2', ''), type, dir, None)
+        self.template_filename = name
+        self._data = data
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}: {self.name} (dir: {self.dir})"
+
+    @property
+    def path(self) -> str:
+        return self.template_file_path
+
+    @property
+    def data(self) -> Optional[Dict]:
+        return self._data
+
+    @property
+    def template_file_path(self) -> str:
+        return os.path.join(
+            os.path.abspath(os.path.join(self.repository_path, self.dir)),
+            self.template_filename)
+
+    def get_content(self, binary_mode: bool = False, **kwargs):
+        data = self.data.copy() or {}
+        data.update(kwargs)
+        if not self._content and self.dir:
+            with open(self.template_file_path, 'rb' if binary_mode else 'r') as f:
+                template = f.read()
+                if self.template_file_path.endswith('.j2'):
+                    template = render_template_string(template, **data)
+                return template
+        return self._content
