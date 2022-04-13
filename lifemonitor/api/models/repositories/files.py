@@ -48,7 +48,9 @@ class WorkflowFile():
 
 class RepositoryFile():
 
-    def __init__(self, name: str, type: str = None, dir: str = ".", content=None) -> None:
+    def __init__(self, repository_path: str, name: str,
+                 type: str = None, dir: str = ".", content=None) -> None:
+        self.repository_path = repository_path
         self.name = name
         self.dir = dir
         self._type = type
