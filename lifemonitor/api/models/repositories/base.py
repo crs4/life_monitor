@@ -73,6 +73,9 @@ class WorkflowRepository():
     def find_workflow(self) -> WorkflowFile:
         pass
 
+    def contains(self, file: RepositoryFile) -> bool:
+        return self.__contains__(self.files, file)
+
     def check(self, fail_fast: bool = True) -> IssueCheckResult:
         found_issues = []
         checked = []
@@ -86,7 +89,19 @@ class WorkflowRepository():
                     break
         return IssueCheckResult(self, checked, found_issues)
 
-    def compare(self, repo: WorkflowRepository) -> List[RepositoryFile]:
+    @classmethod
+    def __contains__(cls, files, file) -> bool:
+        return cls.__find_file__(files, file) is not None
+
+    @classmethod
+    def __find_file__(cls, files, file) -> RepositoryFile:
+        for f in files:
+            if f == file or (f.name == file.name and f.dir == file.dir):
+                return f
+        return None
+                return True
+        return False
+
         assert repo and isinstance(repo, WorkflowRepository), repo
         differences = []
         if not compare_json(self.metadata.to_json(), repo.metadata.to_json()):
