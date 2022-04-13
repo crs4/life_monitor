@@ -27,6 +27,7 @@ import os
 import re
 import shutil
 import tempfile
+from typing import List
 import zipfile
 from io import BytesIO
 
@@ -55,6 +56,15 @@ class LocalWorkflowRepository(WorkflowRepository):
     @property
     def local_path(self) -> str:
         return self._local_path
+
+    @property
+    def files(self) -> List[RepositoryFile]:
+        result = []
+        for root, _, files in os.walk(self.local_path):
+            dirname = root.replace(self.local_path, '.')
+            for name in files:
+                result.append(RepositoryFile(self.local_path, name, dir=dirname))
+        return result
 
     @property
     def metadata(self) -> WorkflowRepositoryMetadata:

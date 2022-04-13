@@ -49,6 +49,10 @@ class WorkflowRepository():
         return self._local_path
 
     @property
+    def files(self) -> List[RepositoryFile]:
+        pass
+
+    @property
     def metadata(self) -> WorkflowRepositoryMetadata:
         if not self._metadata:
             try:
