@@ -59,6 +59,11 @@ class GitRepositoryFile(RepositoryFile):
     def __repr__(self) -> str:
         return f"{super().__repr__()} (sha: {self.sha})"
 
+    @property
+    def path(self) -> str:
+
+        return self._content.path
+
     def get_content(self, binary_mode: bool = False):
         result = self._content.decoded_content
         return result if binary_mode else result.decode()

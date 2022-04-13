@@ -64,7 +64,10 @@ class RepositoryFile():
 
     @property
     def path(self) -> str:
-        return f"{self.dir}/{self.name}"
+        dir_path = self.dir
+        if self.repository_path:
+            dir_path = os.path.abspath(os.path.join(self.repository_path, dir_path))
+        return os.path.join(dir_path, self.name)
 
     def get_content(self, binary_mode: bool = False):
         if not self._content and self.dir:
