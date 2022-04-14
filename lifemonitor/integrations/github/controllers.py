@@ -132,12 +132,61 @@ def push(event: GithubEvent):
         return "Internal Error", 500
 
 
+def issues(event: GithubEvent):
+    logger.debug("Event: %r", event)
+
+    # detect Github issue
+    issue: GithubIssue = event.issue
+    logger.warning("The current github issue: %r", event.issue)
+    if not issue:
+        logger.debug("No issue on this Github event")
+        return "No issue", 204
+
+    # check the author of the current issue
+    if issue.user.login != event.application.bot:
+        logger.debug("Nothing to do: issue not created by LifeMonitor[Bot]")
+        return f"Issue not created by {event.application.bot}", 204
+
+
+    return "No action", 204
+
+
+def issue_comment(event: GithubEvent):
+
+    logger.debug("Event: %r", event)
+
+    # detect Github issue
+    issue: GithubIssue = event.issue
+    logger.warning("The current github issue: %r", event.issue)
+    if not issue:
+        logger.debug("No issue associated with the current Github event: %r", event)
+        return "No issue found", 204
+
+    # check the author of the current issue
+    if issue.user.login != event.application.bot:
+        logger.debug("Nothing to do: issue not created by LifeMonitor[Bot]")
+        return f"Issue not created by {event.application.bot}", 204
+
+    if event.comment is None:
+        logger.debug("No issue comment associated with the current Github event: %r", event)
+        return "No issue comment", 204
+
+    # check the author of the current issue comment
+    if event.comment.user.login == event.application.bot:
+        logger.debug("Nothing to do: comment crated by the LifeMonitor Bot")
+        return f"Issue comment not created by {event.application.bot}", 204
+
+    return "No action", 204
+
+
 # Register Handlers
 __event_handlers__ = {
     "ping": ping,
     "workflow_run": refresh_workflow_builds,
     "installation": installation,
-    "push": push
+    "push": push,
+    "issues": issues,
+    "issue_comment": issue_comment
 }
 
 
