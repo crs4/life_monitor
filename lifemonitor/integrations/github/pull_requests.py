@@ -21,9 +21,11 @@
 from __future__ import annotations
 
 import logging
-from typing import Union
+import os
+from typing import List, Union
 
 from lifemonitor.api.models.issues import WorkflowRepositoryIssue
+from lifemonitor.api.models.repositories.files import RepositoryFile
 from lifemonitor.api.models.repositories.github import \
     InstallationGithubWorkflowRepository
 from lifemonitor.exceptions import IllegalStateException
@@ -39,34 +41,48 @@ from .utils import crate_branch, delete_branch
 logger = logging.getLogger(__name__)
 
 
-def find_pull_request(repo: Repository, issue: Union[str, WorkflowRepositoryIssue]) -> PullRequest:
+def find_pull_request_by_issue(repo: Repository, issue: Union[str, WorkflowRepositoryIssue]) -> PullRequest:
     if isinstance(issue, str):
         issue = WorkflowRepositoryIssue.from_string(issue)
     if not issue:
         raise ValueError(f"Issue '{issue}' not found")
+    logger.debug("Searching for PR associated with issue: %r", issue.name)
+    return find_pull_request_by_title(repo, issue.name)
+
+
+def find_pull_request_by_title(repo: Repository, title: str) -> PullRequest:
     lm = LifeMonitorGithubApp.get_instance()
     for i in repo.get_pulls():
-        logger.debug("Checking issue: %r - %r - %r", issue.name, i.user.login, lm.bot)
-        if i.user.login == lm.bot and i.title == issue.name:
+        logger.debug("Checking if PR %r matches %r", i, title)
+        if i.user.login == lm.bot and i.title == title:
             return i
     return None
 
 
-def create_pull_request(repo: InstallationGithubWorkflowRepository,
-                        issue: Union[str, WorkflowRepositoryIssue],
-                        allow_update: bool = True):
+def create_pull_request_from_issue(repo: InstallationGithubWorkflowRepository,
+                                   issue: Union[str, WorkflowRepositoryIssue],
+                                   allow_update: bool = True):
     assert isinstance(repo, Repository)
     if isinstance(issue, str):
         issue = WorkflowRepositoryIssue.from_string(issue)
     if not issue:
         raise ValueError(f"Issue '{issue}' not found")
+    return create_pull_request(repo, issue.id, issue.name, issue.description, issue.get_changes(repo), allow_update=allow_update)
+
+
+def create_pull_request(repo: InstallationGithubWorkflowRepository,
+                        identifier: str, title: str, description: str, files: List[RepositoryFile],
+                        allow_update: bool = True):
+    assert isinstance(repo, Repository)
+
     try:
-        head = issue.id
+        head = identifier
+        logger.debug("PR head: %r", head)
         branch = None
         try:
             branch = repo.get_branch(head)
             if branch and not allow_update:
-                return "Nothing to do", 204
+                return None
         except Exception as e:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.exception(e)
@@ -76,24 +92,40 @@ def create_pull_request(repo: InstallationGithubWorkflowRepository,
         except Exception as e:
             logger.debug(str(e))
             raise IllegalStateException("Unable to prepare support branch for PR %r" % head)
-        for change in issue.get_changes():
+        for change in files:
             current_file_version = repo.find_remote_file_by_name(change.name, ref=head)
             if current_file_version:
                 logger.debug("Found a previous version of the file: %r", current_file_version)
-                repo.update_file(change.path, f"{issue.name} [update]", change.get_content(), sha=current_file_version.sha, branch=head)
+                if allow_update:
+                    repo.update_file(os.path.join(change.dir, change.name),
+                                     f"Update {change.name}", change.get_content(),
+                                     sha=current_file_version.sha, branch=head)
             else:
-                repo.create_file(change.path, issue.name, change.get_content(), branch=head)
-                repo.create_pull(title=issue.name, body=issue.description, base=repo.ref, head=head)
+                repo.create_file(os.path.join(change.dir, change.name),
+                                 f"Add {change.name}", change.get_content(), branch=head)
+        pr = find_pull_request_by_title(repo, identifier)
+        if not pr:
+            logger.debug("HEAD: %r -> %r", head, repo)
+            pr = repo.create_pull(title=title, body=description,
+                                  base=repo.ref or repo.default_branch, head=head)
+        return pr
     except KeyError as e:
         raise ValueError(f"Issue not valid: {str(e)}")
+    except Exception as e:
+        logger.exception(e)
+        raise RuntimeError(e)
 
 
-def delete_pull_request(repo: Repository,
-                        issue: issues.LifeMonitorIssue):
+def delete_pull_request_by_issue(repo: Repository,
+                                 issue: issues.LifeMonitorIssue):
+    return delete_pull_request(repo, issue.id, issue.title)
+
+
+def delete_pull_request(repo: Repository, identifier: str, title: str):
     lm = LifeMonitorGithubApp.get_instance()
     # delete PR
     for pr in repo.get_pulls():
-        if pr.user.login == lm.bot and pr.title == issue.title:
+        if pr.user.login == lm.bot and pr.title == title:
             pr.edit(state='closed')
     # delete PR branch
-    delete_branch(repo, issue.id)
+    delete_branch(repo, identifier)

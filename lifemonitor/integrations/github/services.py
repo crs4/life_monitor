@@ -52,8 +52,7 @@ def map_issues(check_result: IssueCheckResult):
                 if not issues.find_issue(repo, issue):
                     issues.create_issue(repo, issue)
             else:
-                if not pull_requests.find_pull_request(repo, issue):
-                    pull_requests.create_pull_request(repo, issue)
+                pull_requests.create_pull_request_from_issue(repo, issue)
         else:
             issues.close_issue(repo, issue)
 
