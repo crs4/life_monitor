@@ -128,15 +128,15 @@ class WorkflowRepository():
     def __compare__(cls, left_files, right_files):
         missing_left = [_ for _ in right_files if not cls.__contains__(left_files, _)]
         logger.debug("Missing Left: %r", missing_left)
-        to_check = [(l, cls.__find_file__(right_files, l)) for l in left_files]
+        to_check = [(f, cls.__find_file__(right_files, f)) for f in left_files]
         logger.debug("To Check: %r", to_check)
         missing_right = [_ for _ in left_files if not cls.__contains__(right_files, _)]
         logger.debug("Missing Right: %r", missing_right)
         differences = []
-        for l, r in to_check:
-            logger.debug("Path: %r", l.path)
-            if l and r and not cls.__compare_files__(l, r):
-                differences.append((l, r))
+        for lf, rf in to_check:
+            logger.debug("Path: %r", lf.path)
+            if lf and rf and not cls.__compare_files__(lf, rf):
+                differences.append((lf, rf))
         logger.debug("Differences: %r", differences)
         return missing_left, missing_right, differences
 

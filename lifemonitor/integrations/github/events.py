@@ -125,14 +125,14 @@ class GithubEvent():
 
     @property
     def issue(self) -> Optional[GithubIssue]:
-        return None if not 'issue' in self.payload else \
+        return None if 'issue' not in self.payload else \
             GithubIssue(self.installation._requester, {}, self.payload['issue'], True)
 
     @property
     def comment(self) -> Optional[GithubIssue]:
         issue = self.issue
         if issue:
-            return None if not 'comment' in self.payload else \
+            return None if 'comment' not in self.payload else \
                 GithubIssueComment(issue, self.installation._requester, {}, self.payload['comment'], True)
         return None
 
