@@ -228,7 +228,8 @@ class LifeMonitor:
             # check for changes
             rocrate_changes = wv.check_for_changes(roc_link, extra_auth=auth)
             logger.debug(f"Detected changes wrt '{roc_link}': {rocrate_changes}")
-            if len(rocrate_changes) > 0:
+            missing_left, missing_right, differences = rocrate_changes
+            if len(missing_left) > 0 or len(missing_right) > 0 or len(differences) > 0:
                 # remove old workflow version
                 w.remove_version(wv)
                 # create a new workflow version to replace the old one
