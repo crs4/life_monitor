@@ -47,7 +47,6 @@ class GithubIssue(Issue):
         issue_type = issues.WorkflowRepositoryIssue.from_string(self.title)
         if issue_type:
             issue: issues.WorkflowRepositoryIssue = issue_type()
-            issue.io_handler = GithubIOHandler(self)
         return issue
 
 
@@ -56,6 +55,7 @@ class GithubIssueComment(IssueComment):
     def __init__(self, issue: GithubIssue, requester, headers, attributes, completed):
         super().__init__(requester, headers, attributes, completed)
         self.issue = issue
+
 
 def process_issues(repo: Repository, issues: List[issues.WorkflowRepositoryIssue]):
     for issue in issues:
