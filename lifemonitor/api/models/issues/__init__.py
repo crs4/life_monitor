@@ -72,7 +72,7 @@ class WorkflowRepositoryIssue():
     def remove_change(self, file: repositories.RepositoryFile):
         self._changes.remove(file)
 
-    def get_changes(self) -> List[repositories.RepositoryFile]:
+    def get_changes(self, repo: repositories.WorkflowRepository) -> List[repositories.RepositoryFile]:
         return self._changes
 
     def has_changes(self) -> bool:
