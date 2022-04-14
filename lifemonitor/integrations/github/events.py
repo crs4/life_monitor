@@ -56,6 +56,10 @@ class GithubEvent():
         return self._headers.get("X-Github-Event", None)
 
     @property
+    def action(self) -> str:
+        return self._raw_data.get('action', None)
+
+    @property
     def delivery(self) -> str:
         return self._headers.get("X-Github-Delivery", None)
 
