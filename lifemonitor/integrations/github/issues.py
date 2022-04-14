@@ -64,7 +64,7 @@ def process_issues(repo: Repository, issues: List[issues.WorkflowRepositoryIssue
                 create_issue(repo, issue)
         else:
             if not pull_requests.find_pull_request(repo, issue):
-                pull_requests.create_pull_request(repo, issue)
+                pull_requests.create_pull_request_from_issue(repo, issue)
 
 
 def create_issue(repo: Repository, issue: Union[str, issues.WorkflowRepositoryIssue]):
