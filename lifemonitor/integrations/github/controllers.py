@@ -24,11 +24,16 @@ import logging
 
 from flask import Blueprint, Flask, request
 from lifemonitor import cache
+from lifemonitor.api.models.issues.common import MissingWorkflowFile
 from lifemonitor.api.models.repositories.github import GithubWorkflowRepository
 from lifemonitor.api.models.testsuites.testinstance import TestInstance
+from lifemonitor.api.models.wizards import QuestionStep, UpdateStep
+from lifemonitor.integrations.github import pull_requests
 from lifemonitor.integrations.github.app import LifeMonitorGithubApp
 from lifemonitor.integrations.github.events import GithubEvent
+from lifemonitor.integrations.github.issues import GithubIssue
 from lifemonitor.integrations.github.settings import GithubUserSettings
+from lifemonitor.integrations.github.wizards import GithubWizard
 
 from . import services
 
@@ -94,9 +99,9 @@ def push(event: GithubEvent):
         logger.debug("Repository: %r", repo)
 
         logger.debug("Ref: %r", repo.ref)
+        logger.debug("Refs: %r", repo.git_refs_url)
         logger.debug("Tree: %r", repo.trees_url)
         logger.debug("Commit: %r", repo.rev)
-        logger.warning("REFS: %r", repo.git_refs_url)
 
         # TODO: allow to dynamically configure the list of registries
         registries = ["wfhubdev"]
@@ -105,6 +110,7 @@ def push(event: GithubEvent):
         if repo_info.tag and (settings.all_tags or settings.is_valid_tag(repo_info.tag)) or\
                 repo_info.branch and (settings.all_branches or settings.is_valid_branch(repo_info.branch)):
             register = not repo_info.deleted
+            logger.debug("Repo to register: %r", register)
             if register:
                 if settings.check_issues:
                     check_result = services.check_repository_issues(repo_info)
@@ -112,7 +118,7 @@ def push(event: GithubEvent):
                         register = False
                         logger.warning("Found issue on repo: %r", repo_info)
                 else:
-                    logger.warning("Check for issues on '%s' ... SKIPPED", repo_info)
+                    logger.debug("Check for issues on '%s' ... SKIPPED", repo_info)
             if register:
                 # register or update workflow on LifeMonitor and optionally on registries
                 registered_workflow = services.register_repository_workflow(repo_info, registries=registries)
@@ -137,7 +143,7 @@ def issues(event: GithubEvent):
 
     # detect Github issue
     issue: GithubIssue = event.issue
-    logger.warning("The current github issue: %r", event.issue)
+    logger.debug("The current github issue: %r", event.issue)
     if not issue:
         logger.debug("No issue on this Github event")
         return "No issue", 204
@@ -147,6 +153,22 @@ def issues(event: GithubEvent):
         logger.debug("Nothing to do: issue not created by LifeMonitor[Bot]")
         return f"Issue not created by {event.application.bot}", 204
 
+    # react only when the issue is opened
+    if event.action == "opened":
+        repository_issue = issue.as_repository_issue()
+        logger.debug("LifeMonitor issue: %r", repository_issue)
+        if repository_issue:
+            logger.debug("Entering: %r", isinstance(repository_issue, MissingWorkflowFile))
+            if isinstance(repository_issue, MissingWorkflowFile):
+                logger.debug("Missing workflow file issue")
+
+                wizard = GithubWizard.from_event(event)
+                logger.debug("Current wizard: %r", wizard)
+                if wizard:
+                    if not wizard.current_step:
+                        next_step = wizard.get_next_step()
+                        logger.debug("Next step: %r", next_step)
+                        wizard.io_handler.write(next_step)
 
     return "No action", 204
 
@@ -157,7 +179,7 @@ def issue_comment(event: GithubEvent):
 
     # detect Github issue
     issue: GithubIssue = event.issue
-    logger.warning("The current github issue: %r", event.issue)
+    logger.debug("The current github issue: %r", event.issue)
     if not issue:
         logger.debug("No issue associated with the current Github event: %r", event)
         return "No issue found", 204
@@ -175,6 +197,45 @@ def issue_comment(event: GithubEvent):
     if event.comment.user.login == event.application.bot:
         logger.debug("Nothing to do: comment crated by the LifeMonitor Bot")
         return f"Issue comment not created by {event.application.bot}", 204
+
+    # check if there exists a candidate wizard for the current github event
+    wizard = GithubWizard.from_event(event)
+    logger.debug("Detected wizard: %r", wizard)
+    if wizard:
+        step = wizard.current_step
+        logger.debug("The current step: %r %r", step, step.wizard)
+
+        if isinstance(step, QuestionStep):
+            answer = step.get_answer()
+            logger.debug("The answer: %r", answer)
+            if answer:
+                logger.debug("The answer: %r", answer.body)
+                answer.create_reaction("+1")
+                next_step = step.next
+                logger.debug("Next step: %r", next_step)
+                if next_step:
+                    if isinstance(next_step, UpdateStep):
+                        repo = event.repository_reference.repository
+                        logger.debug("REF: %r", repo.ref)
+                        logger.debug("REV: %r", repo.rev)
+                        logger.debug("DEFAULT BRANCH: %r", repo.default_branch)
+                        if not pull_requests.find_pull_request_by_title(repo, next_step.title):
+                            pr = pull_requests.create_pull_request(
+                                repo, next_step.id, next_step.title, next_step.description, next_step.get_files(repo), allow_update=True)
+                            logger.debug("PR created or updated: %r", pr)
+                            if not pr:
+                                return "Nothing to do", 204
+                            else:
+                                issue.create_comment(next_step.as_string() + f"<br>See PR {pr.html_url}")
+                    else:
+                        wizard.io_handler.write(next_step)
+            else:
+                # Unable to understand user answer
+                logger.debug("Unable to understand user answer")
+                event.comment.create_reaction("confused")
+                wizard.io_handler.write(step)
+
+        return f"Processed step {step.title} of wizard {wizard.title}", 204
 
     return "No action", 204
 
