@@ -25,7 +25,7 @@ import os
 import tempfile
 import uuid as _uuid
 from pathlib import Path
-from typing import List
+from typing import Tuple
 
 import lifemonitor.exceptions as lm_exceptions
 from flask import current_app
@@ -133,7 +133,7 @@ class ROCrate(Resource):
         authorizations.append(None)
         return authorizations
 
-    def check_for_changes(self, roc_link: str, extra_auth: ExternalServiceAuthorizationHeader = None) -> List:
+    def check_for_changes(self, roc_link: str, extra_auth: ExternalServiceAuthorizationHeader = None) -> Tuple:
         # try either with authorization header and without authorization
         with tempfile.NamedTemporaryFile(dir=BaseConfig.BASE_TEMP_FOLDER) as target_path:
             local_path = self.download_from_source(target_path.name, uri=roc_link, extra_auth=extra_auth)
