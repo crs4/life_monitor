@@ -53,7 +53,7 @@ logger = logging.getLogger(__name__)
 class GitRepositoryFile(RepositoryFile):
 
     def __init__(self, content: ContentFile, type: str = None) -> None:
-        super().__init__(content.name, type or content.type, content.path, None)
+        super().__init__(None, content.name, type or content.type, content.path, None)
         self._content = content
 
     def __repr__(self) -> str:
