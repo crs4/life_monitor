@@ -24,8 +24,12 @@ import logging
 from typing import List
 
 from github.GithubException import GithubException
+from github.Issue import Issue
 from github.Label import Label
 from github.Repository import Repository
+
+from ...api.models.wizards import (IOHandler, QuestionStep, Step, UpdateStep,
+                                   Wizard)
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
@@ -57,3 +61,56 @@ def get_labels_from_strings(repo: Repository, labels: List[str]) -> List[Label]:
                 label = repo.create_label(name, 'orange')
             result.append(label)
     return result
+
+
+class GithubIOHandler(IOHandler):
+
+    def __init__(self, issue: Issue) -> None:
+        super().__init__()
+        self.issue = issue
+
+    def get_input(self, question: QuestionStep) -> object:
+        assert isinstance(question, QuestionStep), question
+        found = False
+        candidates = []
+        helper: Wizard = question.wizard
+        next_step = helper.get_next_step(question, ignore_skip=True)
+        logger.debug("Next step: %r", next_step)
+        for c in self.issue.get_comments():
+            logger.debug("Checking comment: %r", c.body)
+            step = question.wizard.find_step(c.body)
+            logger.debug("Current step: %r", step)
+            if step and step.title == question.title:
+                found = True
+            elif found:
+                logger.debug("Found")
+                if not next_step or step != next_step:
+                    logger.debug("Adding... %r", c)
+                    candidates.append(c)
+                else:
+                    break
+        logger.debug("Candidates: %r", candidates)
+        for ca in reversed(candidates):
+            logger.debug("Checking candidate: %r -- options: %r", ca.body, question.options)
+            logger.debug("Check condition: %r", ca.body in question.options)
+            if question.options is None or len(question.options) == 0 or ca.body in question.options:
+                return ca
+        return None
+
+    def get_input_as_text(self, question: QuestionStep) -> object:
+        value = self.get_input(question)
+        return value.body if value else None
+
+    def as_string(self, step: Step) -> str:
+        result = f"<b>{step.title}</b><br/>"
+        if step.description:
+            result += f"{step.description}<br/>"
+        if isinstance(step, QuestionStep) and step.options:
+            result += "<br>> Choose among the following options: <b><code>{}</code></b>".format(', '.join(step.options))
+        if isinstance(step, UpdateStep):
+            logger.debug("Preparing PR... %r", step)
+        return result
+
+    def write(self, step: Step):
+        assert isinstance(step, Step), step
+        self.issue.create_comment(step.as_string())
