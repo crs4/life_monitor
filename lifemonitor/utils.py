@@ -356,8 +356,11 @@ def clone_repo(url: str, ref: str = None, target_path: str = None, auth_token: s
             raise lm_exceptions.NotAuthorizedException("Token authorization not valid")
         raise lm_exceptions.DownloadException(detail=str(e))
     finally:
+        logger.debug("Clean up clone local path: %r %r .....", target_path, local_path)
         if target_path is None:
+            logger.debug("Deleting clone local path: %r %r", target_path, local_path)
             shutil.rmtree(local_path, ignore_errors=True)
+        logger.debug("Clean up clone local path: %r %r ..... DONE", target_path, local_path)
 
 
 def load_test_definition_filename(filename):
