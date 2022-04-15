@@ -37,7 +37,6 @@ from lifemonitor.api.models.repositories.files import (RepositoryFile,
                                                        WorkflowFile)
 from lifemonitor.config import BaseConfig
 from lifemonitor.exceptions import (DecodeROCrateException,
-                                    IllegalStateException,
                                     NotValidROCrateException)
 from lifemonitor.utils import extract_zip, walk
 
