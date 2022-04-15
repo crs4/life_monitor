@@ -43,6 +43,10 @@ logger = logging.getLogger(__name__)
 
 class Wizard():
 
+    # map issue -> wizard
+    __wizards__: Dict = None
+
+    # main wizard attributes
     title: str = "Wizard"
     description: str = ""
     steps: List[Step] = []
@@ -132,14 +136,19 @@ class Wizard():
         return None
 
     @classmethod
-    def all(cls) -> List[Wizard]:
+    def __wizard_issue_map__(cls) -> Dict:
         if not cls.__wizards__:
             cls.__wizards__ = find_wizards()
-        return cls.__wizards__.values()
+        return cls.__wizards__
+
+    @classmethod
+    def all(cls) -> List[Wizard]:
+        return list(cls.__wizard_issue_map__().values())
 
     @classmethod
     def find_by_issue(cls, issue) -> Wizard:
-        return cls.all().get(issue, None)
+        return cls.__wizard_issue_map__().get(
+            issue.__class__ if isinstance(issue, WorkflowRepositoryIssue) else issue, None)
 
 
 def find_wizards() -> Dict[object, Wizard]:
