@@ -363,7 +363,8 @@ class WorkflowRegistry(auth_models.HostingService):
         except Exception as e:
             raise lm_exceptions.EntityNotFoundException(e)
 
-    def add_workflow_version(self, workflow_version: models.WorkflowVersion, identifier: str, version: str, registry_workflow: RegistryWorkflow) -> RegistryWorkflowVersion:
+    def add_workflow_version(self, workflow_version: models.WorkflowVersion, identifier: str, version: str,
+                             registry_workflow: RegistryWorkflow = None) -> RegistryWorkflowVersion:
         return RegistryWorkflowVersion(self, workflow_version, identifier=identifier, version=version, registry_workflow=registry_workflow)
 
     def remove_workflow_version(self, workflow_version: models.WorkflowVersion):
