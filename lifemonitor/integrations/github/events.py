@@ -52,6 +52,10 @@ class GithubEvent():
             self._raw_data = payload
 
     @property
+    def id(self) -> str:
+        return self.delivery
+
+    @property
     def type(self) -> str:
         return self._headers.get("X-Github-Event", None)
 
