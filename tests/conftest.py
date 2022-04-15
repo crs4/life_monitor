@@ -23,7 +23,9 @@ import logging
 import os
 import random
 import re
+import shutil
 import string
+import tempfile
 import uuid
 from collections.abc import Iterable
 from unittest.mock import MagicMock
@@ -35,7 +37,7 @@ from lifemonitor.api.models import (TestingService, TestingServiceTokenManager,
                                     TestSuite, User)
 from lifemonitor.api.services import LifeMonitor
 from lifemonitor.cache import cache, clear_cache
-from lifemonitor.utils import ClassManager
+from lifemonitor.utils import ClassManager, extract_zip
 
 from tests.utils import register_workflow
 
@@ -286,6 +288,18 @@ def valid_workflow(request):
 @pytest.fixture
 def random_valid_workflow():
     return helpers.get_valid_workflow()
+
+
+@pytest.fixture
+def rocrate_archive_path():
+    return os.getcwd() + '/tests/config/data/ro-crate-galaxy-sortchangecase.crate.zip'
+
+
+@pytest.fixture
+def rocrate_repository_path(rocrate_archive_path):
+    tmp_path = extract_zip(archive_path=rocrate_archive_path)
+    yield tmp_path
+    shutil.rmtree(tmp_path, ignore_errors=True)
 
 
 @pytest.fixture
