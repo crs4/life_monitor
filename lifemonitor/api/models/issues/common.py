@@ -52,7 +52,7 @@ class MissingMetadataFile(WorkflowRepositoryIssue):
     def check(self, repo: WorkflowRepository) -> bool:
         if repo.metadata is None:
             repo.make_crate()
-            self.add_change(RepositoryFile(repo.metadata.metadata.id,
+            self.add_change(RepositoryFile(repo.metadata.metadata.id, "ro-crate-metadata.json",
                                            content=json.dumps(repo.metadata.to_json(), indent=4) + '\n'))
             return True
         return False
