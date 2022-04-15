@@ -130,14 +130,14 @@ def initialize_app(app: Flask, app_context, prom_registry=None):
     ma.init_app(app)
     # configure app routes
     register_routes(app)
-    # register commands
-    commands.register_commands(app)
     # init scheduler/worker for async tasks
     init_task_queue(app)
     # init mail system
     init_mail(app)
     # initialize integrations
     init_integrations(app)
+    # register commands
+    commands.register_commands(app)
 
     # configure prometheus exporter
     # must be configured after the routes are registered
