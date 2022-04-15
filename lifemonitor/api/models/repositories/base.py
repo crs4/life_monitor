@@ -33,6 +33,7 @@ import lifemonitor.api.models.issues as issues
 from lifemonitor.api.models.repositories.files import (RepositoryFile,
                                                        TemplateRepositoryFile,
                                                        WorkflowFile)
+from lifemonitor.exceptions import IllegalStateException
 from lifemonitor.test_metadata import get_roc_suites
 from rocrate.rocrate import Metadata, ROCrate
 
@@ -154,7 +155,9 @@ class WorkflowRepository():
         self._metadata.write(self._local_path)
 
     def write_zip(self, target_path: str):
-        self.metadata.write_zip(target_path)
+        if not self.metadata:
+            raise IllegalStateException(detail="Missing RO Crate metadata")
+        return self.metadata.write_zip(target_path)
 
 
 class IssueCheckResult:

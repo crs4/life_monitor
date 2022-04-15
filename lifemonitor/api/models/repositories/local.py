@@ -47,16 +47,6 @@ logger = logging.getLogger(__name__)
 
 class LocalWorkflowRepository(WorkflowRepository):
 
-    _local_path = None
-
-    def __init__(self, local_path: str = None) -> None:
-        self._local_path = local_path
-        self._metadata = None
-
-    @property
-    def local_path(self) -> str:
-        return self._local_path
-
     @property
     def files(self) -> List[RepositoryFile]:
         result = []
@@ -96,15 +86,6 @@ class LocalWorkflowRepository(WorkflowRepository):
                     if re.search(rf"\.{ext}$", name):
                         return RepositoryFile(self.local_path, name, type=wf_type, dir=root)
         return None
-
-    def make_crate(self):
-        self._metadata = WorkflowRepositoryMetadata(self, init=True)
-        self._metadata.write(self._local_path)
-
-    def write_zip(self, target_path: str):
-        if not self.metadata:
-            raise IllegalStateException(detail="Missing RO Crate metadata")
-        return self.metadata.write_zip(target_path)
 
 
 class ZippedWorkflowRepository(LocalWorkflowRepository):
