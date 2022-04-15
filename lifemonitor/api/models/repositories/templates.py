@@ -34,8 +34,8 @@ logger = logging.getLogger(__name__)
 
 class WorkflowRepositoryTemplate(WorkflowRepository):
 
-    def __init__(self, name: str, local_path: str = ".", data: dict = None) -> None:
-        super().__init__(local_path)
+    def __init__(self, name: str, local_path: str = ".", data: dict = None, exclude: List[str] = None) -> None:
+        super().__init__(local_path, exclude=exclude)
         self.name = name
         self._files = None
         self._data = data or {}
