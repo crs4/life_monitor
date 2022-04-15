@@ -22,7 +22,8 @@ from __future__ import annotations
 
 import logging
 
-from flask import Blueprint, Flask, request
+from flask import Blueprint, Flask, current_app, request
+from flask_apscheduler import APScheduler
 from lifemonitor import cache
 from lifemonitor.api.models.issues.common import MissingWorkflowFile
 from lifemonitor.api.models.repositories.github import GithubWorkflowRepository
@@ -257,6 +258,14 @@ blueprint = Blueprint("github_integration", __name__,
                       static_folder="static", static_url_path='/static')
 
 
+def event_handler_wrapper(app, handler, event):
+    logger.debug("Current app: %r", app)
+    logger.debug("Current handler: %r", handler)
+    logger.debug("Current event: %r", event)
+    with app.app_context():
+        return handler(event)
+
+
 @blueprint.route("/integrations/github", methods=("POST",))
 def handle_event():
     logger.debug("Request header keys: %r", [k for k in request.headers.keys()])
@@ -279,7 +288,12 @@ def handle_event():
         logger.warning(f"No event handler registered for the event GitHub event '{event.type}' {action}")
         return f"No handler registered for the '{event.type}' event", 204
     else:
-        return event_handler(event)
+        app = current_app
+        logger.debug("Current app: %r", app)
+        scheduler: APScheduler = app.scheduler
+        logger.debug("Current app scheduler: %r", scheduler)
+        scheduler.add_job(event.id, event_handler_wrapper, args=[scheduler.app, event_handler, event], replace_existing=True)
+        return "Event handler scheduled", 200
 
 
 def init_integration(app: Flask):
