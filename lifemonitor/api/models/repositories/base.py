@@ -39,12 +39,15 @@ from rocrate.rocrate import Metadata, ROCrate
 # set module level logger
 logger = logging.getLogger(__name__)
 
+DEFAULT_IGNORED_FILES = ['.git']
+
 
 class WorkflowRepository():
 
-    def __init__(self, local_path: str = None) -> None:
+    def __init__(self, local_path: str = None, exclude: List[str] = None) -> None:
         self._local_path = local_path
         self._metadata = None
+        self.exclude = exclude or DEFAULT_IGNORED_FILES
 
     @property
     def local_path(self) -> str:
@@ -58,7 +61,7 @@ class WorkflowRepository():
     def metadata(self) -> WorkflowRepositoryMetadata:
         if not self._metadata:
             try:
-                self._metadata = WorkflowRepositoryMetadata(self, init=False)
+                self._metadata = WorkflowRepositoryMetadata(self, init=False, exclude=self.exclude)
             except ValueError:
                 return None
         return self._metadata
@@ -147,7 +150,7 @@ class WorkflowRepository():
         return self.__compare__(self.files, repo.files)
 
     def make_crate(self):
-        self._metadata = WorkflowRepositoryMetadata(self, init=True)
+        self._metadata = WorkflowRepositoryMetadata(self, init=True, exclude=self.exclude)
         self._metadata.write(self._local_path)
 
     def write_zip(self, target_path: str):
@@ -184,8 +187,8 @@ class WorkflowRepositoryMetadata(ROCrate):
     DEFAULT_METADATA_FILENAME = Metadata.BASENAME
 
     def __init__(self, repo: WorkflowRepository,
-                 local_path: str = None, gen_preview=False, init=False):
-        super().__init__(source=local_path or repo.local_path, gen_preview=gen_preview, init=init)
+                 local_path: str = None, gen_preview=False, init=False, exclude=None):
+        super().__init__(source=local_path or repo.local_path, gen_preview=gen_preview, init=init, exclude=exclude)
         self.repository = repo
 
     def get_workflow(self):
