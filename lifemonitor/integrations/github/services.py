@@ -196,9 +196,7 @@ def register_workflow_on_registry(submitter: User, workflow_version: WorkflowVer
             submitter, workflow_version.repository, external_id=workflow_version.workflow.get_registry_identifier(registry))
         logger.debug("Registered workflows: %r", registered_workflow)
         workflow_version.workflow.external_id = registered_workflow.identifier
-        registry.add_workflow_version(workflow_version, registered_workflow.identifier, registered_workflow.latest_version)
-        workflow_version.save()
-        return registered_workflow
+            registry.add_workflow_version(workflow_version, registered_workflow.identifier, registered_workflow.latest_version, registry_workflow=registered_workflow)
     return None
 
 
