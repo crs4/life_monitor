@@ -35,7 +35,7 @@ PyYAML~=5.4.1
 pika~=1.2.0
 redis~=4.1.4
 requests~=2.27.1
-rocrate==0.5.5
+rocrate==0.6.0
 SQLAlchemy~=1.3.24
 wheel~=0.37.1
 Werkzeug~=2.0.0
