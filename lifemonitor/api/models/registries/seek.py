@@ -170,7 +170,7 @@ class SeekWorkflowRegistryClient(WorkflowRegistryClient):
         url = f"{self.registry.uri}/workflows"
         if external_id:
             url = f"{url}/{external_id}/create_version"
-        logger.debug("Posting workflow version @ %r, url")
+        logger.debug("Posting workflow version @ %r", url)
         with tempfile.NamedTemporaryFile(dir=BaseConfig.BASE_TEMP_FOLDER, suffix='.crate.zip') as out:
             try:
                 shutil.copy2(crate_path, out.name)
@@ -181,6 +181,7 @@ class SeekWorkflowRegistryClient(WorkflowRegistryClient):
                     }
                     logger.debug("Payload: %r", payload)
                     r = self._requester(user, 'post', url, files=payload)
+                    logger.error("Response: %r", r.content)
                     r.raise_for_status()
                     wf_data = r.json()["data"]
                     logger.debug("Workflow RO-Crate @ %r registered: %r", crate_path, wf_data)
