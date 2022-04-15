@@ -27,9 +27,9 @@ import os
 import re
 import shutil
 import tempfile
-from typing import List
 import zipfile
 from io import BytesIO
+from typing import List
 
 from lifemonitor.api.models.repositories.base import (
     WorkflowRepository, WorkflowRepositoryMetadata)
@@ -39,7 +39,7 @@ from lifemonitor.config import BaseConfig
 from lifemonitor.exceptions import (DecodeROCrateException,
                                     IllegalStateException,
                                     NotValidROCrateException)
-from lifemonitor.utils import extract_zip
+from lifemonitor.utils import extract_zip, walk
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -60,7 +60,7 @@ class LocalWorkflowRepository(WorkflowRepository):
     @property
     def files(self) -> List[RepositoryFile]:
         result = []
-        for root, _, files in os.walk(self.local_path):
+        for root, _, files in walk(self.local_path, exclude=self.exclude):
             dirname = root.replace(self.local_path, '.')
             for name in files:
                 result.append(RepositoryFile(self.local_path, name, dir=dirname))
@@ -109,10 +109,10 @@ class LocalWorkflowRepository(WorkflowRepository):
 
 class ZippedWorkflowRepository(LocalWorkflowRepository):
 
-    def __init__(self, archive_path: str) -> None:
+    def __init__(self, archive_path: str, exclude: List[str] = None) -> None:
         local_path = tempfile.mkdtemp(dir=BaseConfig.BASE_TEMP_FOLDER)
         extract_zip(archive_path, local_path)
-        super().__init__(local_path=local_path)
+        super().__init__(local_path=local_path, exclude=exclude)
 
     def __del__(self):
         logger.debug(f"Cleaning temp extraction folder of zipped repository @ {self.local_path} .... ")
