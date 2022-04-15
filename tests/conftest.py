@@ -26,7 +26,6 @@ import random
 import re
 import shutil
 import string
-import tempfile
 import uuid
 from collections.abc import Iterable
 from unittest.mock import MagicMock
