@@ -69,6 +69,9 @@ class RegistryWorkflow(object):
             self._versions = versions.copy()
         self._metadata = metadata
 
+    def __repr__(self) -> str:
+        return f"RegistryWorkflow: {self.name} (id: {self.identifier}, uuid: {self.uuid})"
+
     @property
     def registry(self) -> WorkflowRegistry:
         return self._registry
