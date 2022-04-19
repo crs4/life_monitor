@@ -52,6 +52,7 @@ class WorkflowRepository():
         self._local_path = local_path
         self._metadata = None
         self.exclude = exclude or DEFAULT_IGNORED_FILES
+        self._config = None
 
     @property
     def local_path(self) -> str:
@@ -92,13 +93,13 @@ class WorkflowRepository():
         for issue_type in issues.WorkflowRepositoryIssue.all():
             if (issue_type.__name__ not in [to_camel_case(_) for _ in exclude]) or \
                     (issue_type.__name__ in [to_camel_case(_) for _ in include]):
-            issue = issue_type()
-            to_be_solved = issue.check(self)
-            checked.append(issue)
-            if to_be_solved:
-                found_issues.append(issue)
-                if fail_fast:
-                    break
+                issue = issue_type()
+                to_be_solved = issue.check(self)
+                checked.append(issue)
+                if to_be_solved:
+                    found_issues.append(issue)
+                    if fail_fast:
+                        break
         return IssueCheckResult(self, checked, found_issues)
 
     @classmethod

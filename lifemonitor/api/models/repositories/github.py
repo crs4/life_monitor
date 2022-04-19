@@ -111,6 +111,7 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
         self.auto_cleanup = auto_cleanup
         self._metadata = None
         self._local_repo: LocalWorkflowRepository = None
+        self._config = None
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__} bound to {self.url} (ref: {self.ref}, rev: {self.rev})"
