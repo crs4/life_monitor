@@ -30,12 +30,15 @@ from datetime import datetime
 from typing import Dict, List, Tuple
 
 import lifemonitor.api.models.issues as issues
+from lifemonitor.api.models.repositories.config import WorkflowRepositoryConfig
 from lifemonitor.api.models.repositories.files import (RepositoryFile,
                                                        TemplateRepositoryFile,
                                                        WorkflowFile)
 from lifemonitor.exceptions import IllegalStateException
 from lifemonitor.test_metadata import get_roc_suites
 from rocrate.rocrate import Metadata, ROCrate
+
+from lifemonitor.utils import to_camel_case
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -82,10 +85,13 @@ class WorkflowRepository():
     def contains(self, file: RepositoryFile) -> bool:
         return self.__contains__(self.files, file)
 
-    def check(self, fail_fast: bool = True) -> IssueCheckResult:
+    def check(self, fail_fast: bool = True,
+              include=None, exclude=None) -> IssueCheckResult:
         found_issues = []
         checked = []
         for issue_type in issues.WorkflowRepositoryIssue.all():
+            if (issue_type.__name__ not in [to_camel_case(_) for _ in exclude]) or \
+                    (issue_type.__name__ in [to_camel_case(_) for _ in include]):
             issue = issue_type()
             to_be_solved = issue.check(self)
             checked.append(issue)

@@ -61,7 +61,9 @@ def check_repository_issues(repository_reference: GithubRepositoryReference) -> 
     logger.debug("Repository ref: %r", repository_reference)
     repo: GithubWorkflowRepository = repository_reference.repository
     logger.debug("Repository: %r", repo)
-    check_result = repo.check(fail_fast=True)
+    check_result = repo.check(fail_fast=True,
+                              include=repo.config.include_issues,
+                              exclude=repo.config.exclude_issues)
     logger.debug("Issue check result: %r", check_result)
     map_issues(check_result)
     return check_result

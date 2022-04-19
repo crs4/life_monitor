@@ -25,6 +25,7 @@ import logging
 from flask import Blueprint, Flask, current_app, request
 from flask_apscheduler import APScheduler
 from lifemonitor import cache
+from lifemonitor.api.models import WorkflowRegistry
 from lifemonitor.api.models.issues.common import MissingWorkflowFile
 from lifemonitor.api.models.repositories.github import GithubWorkflowRepository
 from lifemonitor.api.models.testsuites.testinstance import TestInstance
@@ -104,16 +105,28 @@ def push(event: GithubEvent):
         logger.debug("Tree: %r", repo.trees_url)
         logger.debug("Commit: %r", repo.rev)
 
-        # TODO: allow to dynamically configure the list of registries
-        registries = ["wfhubdev"]
+        # Configure registries
+        registries = []
+        if repo.config:
+            logger.debug("Configuring registries from repository config: %r", repo.config)
+            if repo_info.branch and repo_info.branch in repo.config.branches:
+                registries.extend(repo.config.branches[repo_info.branch].get('update_registries', []))
+            elif repo_info.tag and repo_info.tag in repo.config.tags:
+                registries.extend(repo.config.tags[repo_info.tag].get('update_registries', []))
+        else:
+            logger.debug("Using all available registries")
+            registries.extend([_.name for _ in WorkflowRegistry.all()])
+        logger.debug("Registries: %r", registries)
 
+        # filter branches and tags according to global and current repo settings
         settings: GithubUserSettings = event.sender.user.github_settings
-        if repo_info.tag and (settings.all_tags or settings.is_valid_tag(repo_info.tag)) or\
-                repo_info.branch and (settings.all_branches or settings.is_valid_branch(repo_info.branch)):
+        if not repo.config and (repo_info.tag and (settings.all_tags or settings.is_valid_tag(repo_info.tag)) or
+                                repo_info.branch and (settings.all_branches or settings.is_valid_branch(repo_info.branch))) or\
+                repo.config and (repo_info.tag in repo.config.tags or repo_info.branch in repo.config.branches):
             register = not repo_info.deleted
             logger.debug("Repo to register: %r", register)
             if register:
-                if settings.check_issues:
+                if settings.check_issues and (not repo.config or repo.config.checker_enabled):
                     check_result = services.check_repository_issues(repo_info)
                     if check_result.found_issues():
                         register = False
