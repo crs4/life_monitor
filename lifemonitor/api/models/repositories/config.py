@@ -58,21 +58,21 @@ class WorkflowRepositoryConfig(RepositoryFile):
     def checker_enabled(self) -> bool:
         try:
             return self._raw_data['issues']['check']
-        except KeyError:
+        except (AttributeError, KeyError):
             return True
 
     @property
     def include_issues(self) -> List[str]:
         try:
             return self._raw_data['issues']['include'].split(',')
-        except KeyError:
+        except (AttributeError, KeyError):
             return []
 
     @property
     def exclude_issues(self) -> List[str]:
         try:
             return self._raw_data['issues']['exclude'].split(',')
-        except KeyError:
+        except (AttributeError, KeyError):
             return []
 
     def _get_refs_list(self, refs="branches,tags") -> List:
