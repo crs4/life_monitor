@@ -24,6 +24,6 @@ from lifemonitor.utils import ClassManager
 from .registry import RegistryWorkflow, WorkflowRegistry, WorkflowRegistryClient
 
 
-__all__ = [RegistryWorkflow, WorkflowRegistry, WorkflowRegistryClient] + \
-    ClassManager('lifemonitor.api.models.registries',
-                 class_suffix="WorkflowRegistry", skip=["registry"], lazy=False).get_classes()
+__all__ = ["RegistryWorkflow", "WorkflowRegistry", "WorkflowRegistryClient"] + \
+    [_.__name__ for _ in ClassManager('lifemonitor.api.models.registries',
+                                      class_suffix="WorkflowRegistry", skip=["registry"], lazy=False).get_classes()]
