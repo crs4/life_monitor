@@ -23,7 +23,11 @@ from __future__ import annotations
 from lifemonitor.utils import ClassManager
 from .registry import RegistryWorkflow, WorkflowRegistry, WorkflowRegistryClient
 
+# load registry classes
+__loaded_registries__ = [
+    RegistryWorkflow, WorkflowRegistry, WorkflowRegistryClient,
+] + [_ for _ in ClassManager('lifemonitor.api.models.registries',
+                             class_suffix="WorkflowRegistry",
+                             skip=["registry"], lazy=False).get_classes()]
 
-__all__ = ["RegistryWorkflow", "WorkflowRegistry", "WorkflowRegistryClient"] + \
-    [_.__name__ for _ in ClassManager('lifemonitor.api.models.registries',
-                                      class_suffix="WorkflowRegistry", skip=["registry"], lazy=False).get_classes()]
+__all__ = [_.__name__ for _ in __loaded_registries__]

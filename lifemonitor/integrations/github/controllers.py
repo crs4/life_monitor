@@ -120,8 +120,10 @@ def push(event: GithubEvent):
 
         # filter branches and tags according to global and current repo settings
         settings: GithubUserSettings = event.sender.user.github_settings
-        if not repo.config and (repo_info.tag and (settings.all_tags or settings.is_valid_tag(repo_info.tag)) or
-                                repo_info.branch and (settings.all_branches or settings.is_valid_branch(repo_info.branch))) or\
+        if not repo.config and \
+            (repo_info.tag and (
+                settings.all_tags or settings.is_valid_tag(repo_info.tag)) or repo_info.branch and (
+                    settings.all_branches or settings.is_valid_branch(repo_info.branch))) or\
                 repo.config and (repo_info.tag in repo.config.tags or repo_info.branch in repo.config.branches):
             register = not repo_info.deleted
             logger.debug("Repo to register: %r", register)
