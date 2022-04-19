@@ -77,7 +77,7 @@ class RepositoryFile():
 
     def get_content(self, binary_mode: bool = False):
         if not self._content and self.dir:
-            with open(f"{self.dir}/{self.name}", 'rb' if binary_mode else 'r') as f:
+            with open(f"{self.path}", 'rb' if binary_mode else 'r') as f:
                 return f.read()
         return self._content
 
