@@ -1,0 +1,34 @@
+# worfklow name (override name defined on the RO-Crate metadata)
+# name: {{ workflow_title | default("Workflow RO-Crate", true) }}
+
+# Issue Checker Settings
+issues:
+    # Enable/Disable issue checker
+    check: true
+    # csv of issues to check (all included by default)
+    # include: "missing_workflow_file,missing_rocrate_metadata"
+    # csv of issues to ignore (none ignored by default)
+    # exclude: "missing_workflow_file,missing_rocrate_metadata"
+    
+
+# Github Integration Settings
+on_push:
+    branches:
+        # Define the list of branches to watch
+        # - name: feature/XXX               # wildcards can be used to specify branches (e.g., feature/*)
+        #   update_registries: ["wfhubdev"] # available registries are listed
+        #                                   # by the endpoint `<lifemonitor_url>/registries`
+        #                                   # (e.g., https://api.lifemontor.eu/registries)
+        - name: "main"
+          update_registries: [{{registries_csv}}]
+        - name: "develop"
+          update_registries: [{{registries_csv}}]
+
+    tags:
+        # Define the list of tags to watch
+        # - name: v*.*.*                    # wildcards can be used to specify tags (e.g., feature/*)
+        #   update_registries: ["wfhub"]    # available registries are listed
+        #                                   # by the endpoint `<lifemonitor_url>/registries`
+        #                                   # (e.g., https://api.lifemontor.eu/registries)
+        - name: "v*.*.*"
+          update_registries: [{{registries_csv}}]
