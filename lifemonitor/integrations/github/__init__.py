@@ -26,10 +26,10 @@ from .events import GithubEvent, GithubRepositoryReference
 from .settings import GithubUserSettings
 
 __all__ = [
-    init_integration,
-    LifeMonitorGithubApp,
-    LifeMonitorInstallation,
-    GithubEvent,
-    GithubRepositoryReference,
-    GithubUserSettings
+    "init_integration",
+    "LifeMonitorGithubApp",
+    "LifeMonitorInstallation",
+    "GithubEvent",
+    "GithubRepositoryReference",
+    "GithubUserSettings"
 ]
