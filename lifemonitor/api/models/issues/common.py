@@ -32,6 +32,20 @@ from . import WorkflowRepositoryIssue
 logger = logging.getLogger(__name__)
 
 
+class MissingConfigFile(WorkflowRepositoryIssue):
+    name = "Missing config file"
+    description = "No <code>lifemonitor.yaml</code> configuration file found on this repository.<br>"\
+        "The <code>lifemonitor.yaml</code> should be placed on the root of this repository."
+    labels = ['config', 'enhancement']
+
+    def check(self, repo: WorkflowRepository) -> bool:
+        if repo.config is None:
+            config = repo.make_config()
+            self.add_change(config)
+            return True
+        return False
+
+
 class MissingWorkflowFile(WorkflowRepositoryIssue):
     name = "Missing workflow file"
     description = "No workflow found on this repository.<br>"\
