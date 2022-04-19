@@ -112,8 +112,14 @@ class TemplateRepositoryFile(RepositoryFile):
             os.path.abspath(os.path.join(self.repository_path, self.dir)),
             self.template_filename)
 
+    @property
+    def _output_file_path(self) -> str:
+        return os.path.join(
+            os.path.abspath(os.path.join(self.repository_path, self.dir)),
+            self.name)
+
     def get_content(self, binary_mode: bool = False, **kwargs):
-        data = self.data.copy() or {}
+        data = self.data.copy() if self.data else {}
         data.update(kwargs)
         if not self._content and self.dir:
             with open(self.template_file_path, 'rb' if binary_mode else 'r') as f:
@@ -122,3 +128,8 @@ class TemplateRepositoryFile(RepositoryFile):
                     template = render_template_string(template, **data)
                 return template
         return self._content
+
+    def write(self, binary_mode: bool = False, output_file_path: str = None, **kwargs):
+        content = self.get_content(binary_mode=binary_mode, **kwargs)
+        with open(output_file_path or self._output_file_path, 'wb' if binary_mode else 'w') as f:
+            f.write(content)
