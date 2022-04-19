@@ -154,6 +154,22 @@ class WorkflowRepository():
         self._metadata = WorkflowRepositoryMetadata(self, init=True, exclude=self.exclude)
         self._metadata.write(self._local_path)
 
+    @property
+    def config(self) -> WorkflowRepositoryConfig:
+        if not self._config:
+            if not os.path.exists(os.path.join(self.local_path, WorkflowRepositoryConfig.FILENAME)):
+                return None
+            else:
+                self._config = WorkflowRepositoryConfig(self.local_path)
+        return self._config
+
+    def make_config(self, ignore_existing=False) -> WorkflowFile:
+        current_config = self.config
+        if current_config and not ignore_existing:
+            raise IllegalStateException("Config exists")
+        self._config = WorkflowRepositoryConfig.new(self.local_path, workflow_title=self.metadata.main_entity_name if self.metadata else None)
+        return self._config
+
     def write_zip(self, target_path: str):
         if not self.metadata:
             raise IllegalStateException(detail="Missing RO Crate metadata")
