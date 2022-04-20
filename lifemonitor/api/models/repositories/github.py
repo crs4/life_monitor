@@ -176,14 +176,14 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
             return self.find_remote_workflow(ref=ref)
         return self.local_repo.find_workflow()
 
-    def make_crate(self):
+    def generate_metadata(self):
         if self._local_repo:
             if not self.auto_cleanup:
                 logger.warning("'auto cleanup' disabled: local temp folder "
                                f"'{self.local_repo._local_path}' will not be deleted")
             else:
                 self.cleanup()
-        return self.local_repo.make_crate()
+        return self.local_repo.generate_metadata()
 
     def clone(self, branch: str, local_path: str = None) -> RepoCloneContextManager:
         assert isinstance(branch, str), branch

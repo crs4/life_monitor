@@ -157,9 +157,10 @@ class WorkflowRepository():
         assert repo and isinstance(repo, WorkflowRepository), repo
         return self.__compare__(self.files, repo.files)
 
-    def make_crate(self):
+    def generate_metadata(self) -> WorkflowRepositoryMetadata:
         self._metadata = WorkflowRepositoryMetadata(self, init=True, exclude=self.exclude)
         self._metadata.write(self._local_path)
+        return self._metadata
 
     @property
     def config(self) -> WorkflowRepositoryConfig:
