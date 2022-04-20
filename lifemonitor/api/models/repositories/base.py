@@ -171,7 +171,7 @@ class WorkflowRepository():
                 self._config = WorkflowRepositoryConfig(self.local_path)
         return self._config
 
-    def make_config(self, ignore_existing=False) -> WorkflowFile:
+    def generate_config(self, ignore_existing=False) -> WorkflowFile:
         current_config = self.config
         if current_config and not ignore_existing:
             raise IllegalStateException("Config exists")
