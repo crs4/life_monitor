@@ -75,6 +75,8 @@ class LocalWorkflowRepository(WorkflowRepository):
         assert isinstance(file, RepositoryFile), file
         self._transient_files['remove'][self._file_key_(file)] = file
         self._transient_files['add'].pop(self._file_key_(file), None)
+        if file.name == WorkflowRepositoryMetadata.DEFAULT_METADATA_FILENAME:
+            self._metadata = None
 
     def save(self):
         for f in self._transient_files['remove'].values():
@@ -97,6 +99,9 @@ class LocalWorkflowRepository(WorkflowRepository):
                 self._metadata = WorkflowRepositoryMetadata(self, init=False)
             except ValueError:
                 return None
+        return self._metadata \
+            if self._file_key_(self._metadata.repository_file) not in self._transient_files['remove'] \
+            else None
 
     def generate_metadata(self) -> WorkflowRepositoryMetadata:
         metadata = super().generate_metadata()
