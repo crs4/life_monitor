@@ -20,11 +20,9 @@
 
 from __future__ import annotations
 
-import json
 import logging
 
-from lifemonitor.api.models.repositories import (RepositoryFile, WorkflowRepositoryMetadata,
-                                                 WorkflowRepository)
+from lifemonitor.api.models.repositories import WorkflowRepository
 
 from . import WorkflowRepositoryIssue
 
