@@ -23,7 +23,7 @@ from __future__ import annotations
 import json
 import logging
 
-from lifemonitor.api.models.repositories import (RepositoryFile,
+from lifemonitor.api.models.repositories import (RepositoryFile, WorkflowRepositoryMetadata,
                                                  WorkflowRepository)
 
 from . import WorkflowRepositoryIssue
@@ -65,8 +65,8 @@ class MissingMetadataFile(WorkflowRepositoryIssue):
 
     def check(self, repo: WorkflowRepository) -> bool:
         if repo.metadata is None:
-            repo.generate_metadata()
-                                           content=json.dumps(repo.metadata.to_json(), indent=4) + '\n'))
+            metadata = repo.generate_metadata()
+            self.add_change(metadata.repository_file)
             return True
         return False
 
