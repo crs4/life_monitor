@@ -64,7 +64,7 @@ class BaseConfig:
     # Initialize LOG_LEVEL from env
     LOG_LEVEL = os.environ.get('LOG_LEVEL', 'DEBUG' if DEBUG else 'INFO')
     # Add a random secret (required to enable HTTP sessions)
-    SECRET_KEY = os.urandom(24)
+    SECRET_KEY = os.getenv("SECRET_KEY", os.urandom(24))
     # FSADeprecationWarning: SQLALCHEMY_TRACK_MODIFICATIONS adds significant
     # overhead and will be disabled by default in the future.  Set it to True
     # or False to suppress this warning.
