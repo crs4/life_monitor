@@ -21,6 +21,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from typing import List
 
 from github.GithubException import GithubException
@@ -33,6 +34,13 @@ from ...api.models.wizards import (IOHandler, QuestionStep, Step, UpdateStep,
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
+
+
+def match_ref(ref: str, refs: List[str]) -> bool:
+    pattern = r"^{0}$".format('|'.join([f"({v})".replace('*', "[a-zA-Z0-9.-_/]+") for v in refs]))
+    if not ref or not pattern:
+        return None
+    return re.match(pattern, ref) is not None
 
 
 def crate_branch(repo: Repository, branch_name: str):

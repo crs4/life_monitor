@@ -35,6 +35,7 @@ from lifemonitor.integrations.github.app import LifeMonitorGithubApp
 from lifemonitor.integrations.github.events import GithubEvent
 from lifemonitor.integrations.github.issues import GithubIssue
 from lifemonitor.integrations.github.settings import GithubUserSettings
+from lifemonitor.integrations.github.utils import match_ref
 from lifemonitor.integrations.github.wizards import GithubWizard
 
 from . import services
@@ -124,7 +125,7 @@ def push(event: GithubEvent):
             (repo_info.tag and (
                 settings.all_tags or settings.is_valid_tag(repo_info.tag)) or repo_info.branch and (
                     settings.all_branches or settings.is_valid_branch(repo_info.branch))) or\
-                repo.config and (repo_info.tag in repo.config.tags or repo_info.branch in repo.config.branches):
+                repo.config and (match_ref(repo_info.tag, repo.config.tags) or match_ref(repo_info.branch, repo.config.branches)):
             register = not repo_info.deleted
             logger.debug("Repo to register: %r", register)
             if register:
