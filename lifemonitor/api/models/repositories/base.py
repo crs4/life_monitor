@@ -251,6 +251,10 @@ class WorkflowRepositoryMetadata(ROCrate):
         logger.debug("SOURCE: %r - ID: %r", self.source, self.metadata.id)
         return os.path.join(self.source, self.metadata.id)
 
+    @property
+    def repository_file(self) -> RepositoryFile:
+        return RepositoryFile(self.repository.local_path, self.DEFAULT_METADATA_FILENAME, 'json', dir='.')
+
     def to_json(self) -> Dict:
         file = self.repository.find_file_by_name(self.metadata.id)
         return json.loads(file.get_content(binary_mode=False)) if file else None
