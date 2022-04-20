@@ -38,7 +38,7 @@ class MissingConfigFile(WorkflowRepositoryIssue):
 
     def check(self, repo: WorkflowRepository) -> bool:
         if repo.config is None:
-            config = repo.make_config()
+            config = repo.generate_config()
             self.add_change(config)
             return True
         return False
