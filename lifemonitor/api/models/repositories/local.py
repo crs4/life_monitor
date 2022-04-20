@@ -97,7 +97,11 @@ class LocalWorkflowRepository(WorkflowRepository):
                 self._metadata = WorkflowRepositoryMetadata(self, init=False)
             except ValueError:
                 return None
-        return self._metadata
+
+    def generate_metadata(self) -> WorkflowRepositoryMetadata:
+        metadata = super().generate_metadata()
+        self.add_file(metadata.repository_file)
+        return metadata
 
     def find_file_by_pattern(self, search: str) -> RepositoryFile:
         return next((f for f in self.files if re.search(search, f.name)), None)
