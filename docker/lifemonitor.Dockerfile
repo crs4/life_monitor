@@ -34,7 +34,8 @@ WORKDIR /lm
 COPY --chown=root:root \
     docker/wait-for-postgres.sh \
     docker/wait-for-redis.sh \
-    docker/lm_entrypoint.sh docker/worker_entrypoint.sh \
+    docker/lm_entrypoint.sh \
+    docker/worker_entrypoint.sh \
     /usr/local/bin/
 
 # Update permissions and install optional certificates
