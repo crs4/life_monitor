@@ -46,14 +46,49 @@ logger = logging.getLogger(__name__)
 
 class LocalWorkflowRepository(WorkflowRepository):
 
+    def __init__(self, local_path: str = None, exclude: List[str] = None) -> None:
+        super().__init__(local_path, exclude)
+        self._transient_files = {'add': {}, 'remove': {}}
+
+    @classmethod
+    def _file_key_(cls, f: RepositoryFile) -> str:
+        return f"{f.dir}/{f.name}"
+
     @property
     def files(self) -> List[RepositoryFile]:
         result = []
+        skip = self._transient_files['remove'].keys()
         for root, _, files in walk(self.local_path, exclude=self.exclude):
             dirname = root.replace(self.local_path, '.')
             for name in files:
-                result.append(RepositoryFile(self.local_path, name, dir=dirname))
+                if f"{dirname}/{name}" not in skip:
+                    result.append(RepositoryFile(self.local_path, name, dir=dirname))
+        result.extend([v for k, v in self._transient_files['add'].items() if k not in skip])
         return result
+
+    def add_file(self, file: RepositoryFile):
+        assert isinstance(file, RepositoryFile), file
+        self._transient_files['add'][self._file_key_(file)] = file
+        self._transient_files['remove'].pop(self._file_key_(file), None)
+
+    def remove_file(self, file: RepositoryFile):
+        assert isinstance(file, RepositoryFile), file
+        self._transient_files['remove'][self._file_key_(file)] = file
+        self._transient_files['add'].pop(self._file_key_(file), None)
+
+    def save(self):
+        for f in self._transient_files['remove'].values():
+            if f.repository_path == self.local_path:
+                logger.debug("Removing file: %r", f)
+                os.remove(f.path)
+        for f in self._transient_files['add'].values():
+            logger.debug("Removing file: %r", f)
+            shutil.copy(f.path, RepositoryFile(self.local_path, f.name, f.type, f.dir))
+        self.reset()
+
+    def reset(self):
+        self._transient_files['add'].clear()
+        self._transient_files['remove'].clear()
 
     @property
     def metadata(self) -> WorkflowRepositoryMetadata:
@@ -65,39 +100,36 @@ class LocalWorkflowRepository(WorkflowRepository):
         return self._metadata
 
     def find_file_by_pattern(self, search: str) -> RepositoryFile:
-        for root, _, files in os.walk(self.local_path):
-            for name in files:
-                if re.search(search, name):
-                    return RepositoryFile(self.local_path, name, dir=root)
-        return None
+        return next((f for f in self.files if re.search(search, f.name)), None)
 
     def find_file_by_name(self, name: str) -> RepositoryFile:
-        for root, _, files in os.walk(self.local_path):
-            for fn in files:
-                if name == fn:
-                    return RepositoryFile(self.local_path, name, dir=root)
-        return None
+        return next((f for f in self.files if f.name == name), None)
 
     def find_workflow(self) -> WorkflowFile:
-        for root, _, files in os.walk(self.local_path):
-            for name in files:
-                for ext, wf_type in WorkflowFile.extension_map.items():
-                    if re.search(rf"\.{ext}$", name):
-                        return RepositoryFile(self.local_path, name, type=wf_type, dir=root)
+        for file in self.files:
+            for ext, wf_type in WorkflowFile.extension_map.items():
+                if re.search(rf"\.{ext}$", file.name):
+                    return file
         return None
 
 
 class ZippedWorkflowRepository(LocalWorkflowRepository):
 
-    def __init__(self, archive_path: str, exclude: List[str] = None) -> None:
+    def __init__(self, archive_path: str, exclude: List[str] = None, auto_cleanup: bool = True) -> None:
         local_path = tempfile.mkdtemp(dir=BaseConfig.BASE_TEMP_FOLDER)
         extract_zip(archive_path, local_path)
         super().__init__(local_path=local_path, exclude=exclude)
+        self.archive_path = archive_path
+        self.auto_cleanup = auto_cleanup
+        logger.error("Local path: %r", self.local_path)
 
     def __del__(self):
-        logger.debug(f"Cleaning temp extraction folder of zipped repository @ {self.local_path} .... ")
-        shutil.rmtree(self.local_path, ignore_errors=True)
-        logger.debug(f"Cleaning temp extraction folder of zipped repository @ {self.local_path} .... ")
+        if self.auto_cleanup:
+            logger.debug(f"Cleaning temp extraction folder of zipped repository @ {self.local_path} .... ")
+            shutil.rmtree(self.local_path, ignore_errors=True)
+            logger.debug(f"Cleaning temp extraction folder of zipped repository @ {self.local_path} .... ")
+        else:
+            logger.warning("Auto clean up disabled for repo: %r", self)
 
 
 class Base64WorkflowRepository(LocalWorkflowRepository):
