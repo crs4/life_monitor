@@ -217,6 +217,7 @@ class WorkflowRepositoryMetadata(ROCrate):
                  local_path: str = None, gen_preview=False, init=False, exclude=None):
         super().__init__(source=local_path or repo.local_path, gen_preview=gen_preview, init=init, exclude=exclude)
         self.repository = repo
+        self._file = None
 
     def get_workflow(self):
         if self.mainEntity and self.mainEntity.id:
@@ -252,9 +253,22 @@ class WorkflowRepositoryMetadata(ROCrate):
         return os.path.join(self.source, self.metadata.id)
 
     @property
-    def repository_file(self) -> RepositoryFile:
-        return RepositoryFile(self.repository.local_path, self.DEFAULT_METADATA_FILENAME, 'json', dir='.')
+    def repository_file(self) -> MetadataRepositoryFile:
+        if not self._file:
+            self._file = MetadataRepositoryFile(self)
+        return self._file
 
     def to_json(self) -> Dict:
         file = self.repository.find_file_by_name(self.metadata.id)
         return json.loads(file.get_content(binary_mode=False)) if file else None
+
+
+class MetadataRepositoryFile(RepositoryFile):
+
+    def __init__(self, metadata: WorkflowRepositoryMetadata) -> None:
+        super().__init__(metadata.repository.local_path,
+                         WorkflowRepositoryMetadata.DEFAULT_METADATA_FILENAME, 'json', '.')
+        self.metadata = metadata
+
+    def get_content(self, binary_mode: bool = False):
+        return self.metadata.to_json()
