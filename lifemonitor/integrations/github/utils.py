@@ -52,7 +52,7 @@ def crate_branch(repo: Repository, branch_name: str):
 
 def delete_branch(repo: Repository, branch_name: str) -> bool:
     try:
-        ref = repo.get_git_ref(f"heads/{branch_name}")
+        ref = repo.get_git_ref(f"heads/{branch_name}".format(**locals()))
         ref.delete()
         return True
     except GithubException as e:
