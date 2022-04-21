@@ -34,6 +34,7 @@ from lifemonitor.integrations.github.app import LifeMonitorGithubApp
 from github.Issue import Issue
 from github.PullRequest import PullRequest
 from github.Repository import Repository
+from github.GithubException import GithubException
 
 from . import issues
 from .utils import crate_branch, delete_branch
@@ -72,15 +73,13 @@ def __prepare_pr_head__(repo: InstallationGithubWorkflowRepository,
             branch = repo.get_branch(head)
             if branch and not allow_update:
                 return None
-        except Exception as e:
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.exception(e)
+        except GithubException as e:
+            logger.debug("Branch not found: %r", str(e))
         try:
             if not branch:
                 branch = crate_branch(repo, head)
         except Exception as e:
-            logger.debug(str(e))
-            raise IllegalStateException("Unable to prepare support branch for PR %r" % head)
+            raise IllegalStateException("Unable to prepare support branch for PR %r: %r" % (head, str(e)))
         for change in files:
             current_file_version = repo.find_remote_file_by_name(change.name, ref=head)
             if current_file_version:
