@@ -49,6 +49,7 @@ class MissingWorkflowFile(WorkflowRepositoryIssue):
     description = "No workflow found on this repository.<br>"\
         "You should place the workflow file (e.g., <code>.ga</code> file) on the root of this repository."
     labels = ['invalid', 'enhancement']
+    depends_on = [MissingConfigFile]
 
     def check(self, repo: WorkflowRepository) -> bool:
         return repo.find_workflow() is None
