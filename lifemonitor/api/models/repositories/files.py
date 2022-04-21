@@ -125,7 +125,7 @@ class TemplateRepositoryFile(RepositoryFile):
             with open(self.template_file_path, 'rb' if binary_mode else 'r') as f:
                 template = f.read()
                 if self.template_file_path.endswith('.j2'):
-                    template = render_template_string(template, **data)
+                    template = render_template_string(template, **data) + '\n'
                 return template
         return self._content
 
