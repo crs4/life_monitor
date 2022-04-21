@@ -64,10 +64,19 @@ def get_labels_from_strings(repo: Repository, labels: List[str]) -> List[Label]:
     result = []
     if labels:
         for name in labels:
-            label = repo.get_label(name)
-            if not label:
-                label = repo.create_label(name, 'orange')
-            result.append(label)
+            label = None
+            try:
+                label = repo.get_label(name)
+            except GithubException:
+                logger.debug("Label %s not found...", name)
+                try:
+                    label = repo.create_label(name, '1f8787')
+                except GithubException as e:
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.exception(e)
+                    logger.error(f"Unable to create label: {name}: {str(e)}")
+            if label:
+                result.append(label)
     return result
 
 
