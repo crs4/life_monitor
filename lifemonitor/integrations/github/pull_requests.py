@@ -31,6 +31,7 @@ from lifemonitor.api.models.repositories.github import \
 from lifemonitor.exceptions import IllegalStateException
 from lifemonitor.integrations.github.app import LifeMonitorGithubApp
 
+from github.Issue import Issue
 from github.PullRequest import PullRequest
 from github.Repository import Repository
 
@@ -59,20 +60,8 @@ def find_pull_request_by_title(repo: Repository, title: str) -> PullRequest:
     return None
 
 
-def create_pull_request_from_issue(repo: InstallationGithubWorkflowRepository,
-                                   issue: Union[str, WorkflowRepositoryIssue],
-                                   allow_update: bool = True):
-    assert isinstance(repo, Repository)
-    if isinstance(issue, str):
-        issue = WorkflowRepositoryIssue.from_string(issue)
-    if not issue:
-        raise ValueError(f"Issue '{issue}' not found")
-    return create_pull_request(repo, issue.id, issue.name, issue.description, issue.get_changes(repo), allow_update=allow_update)
-
-
-def create_pull_request(repo: InstallationGithubWorkflowRepository,
-                        identifier: str, title: str, description: str, files: List[RepositoryFile],
-                        allow_update: bool = True):
+def __prepare_pr_head__(repo: InstallationGithubWorkflowRepository,
+                        identifier: str, files: List[RepositoryFile], allow_update: bool = True):
     assert isinstance(repo, Repository)
 
     try:
@@ -103,14 +92,57 @@ def create_pull_request(repo: InstallationGithubWorkflowRepository,
             else:
                 repo.create_file(os.path.join(change.dir, change.name),
                                  f"Add {change.name}", change.get_content(), branch=head)
+        return head
+    except KeyError as e:
+        raise ValueError(f"Issue not valid: {str(e)}")
+    except Exception as e:
+        logger.exception(e)
+        raise RuntimeError(e)
+
+
+def create_pull_request_from_github_issue(repo: InstallationGithubWorkflowRepository,
+                                          identifier: str,
+                                          issue: Issue, files: List[RepositoryFile],
+                                          allow_update: bool = True):
+    assert isinstance(repo, Repository), repo
+    assert isinstance(issue, Issue), issue
+    try:
+        head = __prepare_pr_head__(repo, identifier, files, allow_update=allow_update)
+        pr = find_pull_request_by_title(repo, issue.id)
+        if not pr:
+            logger.debug("HEAD: %r -> %r", head, repo)
+            pr = repo.create_pull(issue=issue,
+                                  base=repo.ref or repo.default_branch, head=head)
+        return pr
+    except Exception as e:
+        logger.exception(e)
+        raise RuntimeError(str(e))
+
+
+def create_pull_request_from_lm_issue(repo: InstallationGithubWorkflowRepository,
+                                      issue: Union[str, WorkflowRepositoryIssue],
+                                      allow_update: bool = True):
+    assert isinstance(repo, Repository)
+    if isinstance(issue, str):
+        issue = WorkflowRepositoryIssue.from_string(issue)
+    if not issue:
+        raise ValueError(f"Issue '{issue}' not found")
+    return create_pull_request(repo, issue.id, issue.name, issue.description, issue.get_changes(repo), allow_update=allow_update)
+
+
+def create_pull_request(repo: InstallationGithubWorkflowRepository,
+                        identifier: str, title: str, description: str, files: List[RepositoryFile],
+                        allow_update: bool = True):
+    assert isinstance(repo, Repository)
+
+    try:
+        head = __prepare_pr_head__(repo, identifier, files, allow_update=allow_update)
         pr = find_pull_request_by_title(repo, identifier)
         if not pr:
             logger.debug("HEAD: %r -> %r", head, repo)
             pr = repo.create_pull(title=title, body=description,
                                   base=repo.ref or repo.default_branch, head=head)
         return pr
-    except KeyError as e:
-        raise ValueError(f"Issue not valid: {str(e)}")
     except Exception as e:
         logger.exception(e)
         raise RuntimeError(e)

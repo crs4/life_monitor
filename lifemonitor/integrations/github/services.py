@@ -48,11 +48,10 @@ def map_issues(check_result: IssueCheckResult):
     repo = check_result.repo
     for issue in check_result.checked:
         if issue in check_result.issues:
-            if not issue.has_changes():
-                if not issues.find_issue(repo, issue):
-                    issues.create_issue(repo, issue)
-            else:
-                pull_requests.create_pull_request_from_issue(repo, issue)
+            if not issues.find_issue(repo, issue):
+                gh_issue = issues.create_issue(repo, issue)
+                if issue.has_changes():
+                    pull_requests.create_pull_request_from_github_issue(repo, issue.id, gh_issue, issue.get_changes(repo))
         else:
             issues.close_issue(repo, issue)
 
