@@ -131,7 +131,7 @@ def register_repository_workflow(repository_reference: GithubRepositoryReference
             # register workflow version on LifeMonitor
             wv = lm.register_workflow(repo_link, repo_owner, workflow_version)
             # register workflow on registries
-            register_workflow_on_registries(repo_owner, wv, registries_map)
+            register_workflow_on_registries(repo_owner, wv, registries_map=[(_, None) for _ in registries])
             # append to the list of registered workflows
             registered_workflows.append(wv)
     except OAuthIdentityNotFoundException as e:
