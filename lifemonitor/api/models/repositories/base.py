@@ -271,4 +271,4 @@ class MetadataRepositoryFile(RepositoryFile):
         self.metadata = metadata
 
     def get_content(self, binary_mode: bool = False):
-        return self.metadata.to_json()
+        return json.dumps(self.metadata.to_json(), indent=4, sort_keys=True)
