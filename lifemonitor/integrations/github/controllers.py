@@ -35,7 +35,7 @@ from lifemonitor.integrations.github.app import LifeMonitorGithubApp
 from lifemonitor.integrations.github.events import GithubEvent
 from lifemonitor.integrations.github.issues import GithubIssue
 from lifemonitor.integrations.github.settings import GithubUserSettings
-from lifemonitor.integrations.github.utils import match_ref
+from lifemonitor.integrations.github.utils import delete_branch, match_ref
 from lifemonitor.integrations.github.wizards import GithubWizard
 
 from . import services
@@ -164,6 +164,10 @@ def issues(event: GithubEvent):
     if not issue:
         logger.debug("No issue on this Github event")
         return "No issue", 204
+
+    # delete support branch of closed issues
+    if event.action == "closed":
+        delete_branch(event.repository_reference.repository, issue)
 
     # check the author of the current issue
     if issue.user.login != event.application.bot:
