@@ -74,7 +74,7 @@ def create_issue(repo: Repository, issue: Union[str, issues.WorkflowRepositoryIs
     if not issue:
         raise ValueError(f"Issue '{issue}' not found")
     try:
-        repo.create_issue(
+        return repo.create_issue(
             title=issue.name,
             body=issue.description,
             labels=get_labels_from_strings(repo, issue.labels)
