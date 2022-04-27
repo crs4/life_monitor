@@ -104,13 +104,13 @@ def register_repository_workflow(repository_reference: GithubRepositoryReference
                 registries_map = [(_, None) for _ in registries]
                 logger.debug("Created registries map: %r", registries_map)
                 logger.debug("Registering workflow version on worlflow: %r ....", w)
-                wv = lm.register_workflow(repo_link, repo_owner, workflow_version, w.uuid)
+                wv = lm.register_workflow(repo_link, repo_owner, workflow_version, w.uuid, public=repo.config.public)
                 logger.debug("Registering workflow version on worlflow: %r .... DONE", w)
             else:
                 registries_map = [(_, (lambda w: w.identifier if w else None)(wv.registry_workflow_versions.get(_, None))) for _ in registries]
                 logger.debug("Created registries map: %r", registries_map)
                 logger.debug("Updating workflow version: %r...", wv)
-                wv = lm.update_workflow(wv.submitter, w.uuid, workflow_version, rocrate_or_link=repo_link)
+                wv = lm.update_workflow(wv.submitter, w.uuid, workflow_version, rocrate_or_link=repo_link, public=repo.config.public)
                 logger.debug("Updating workflow version: %r... DONE", wv)
 
             # register workflow on registries
