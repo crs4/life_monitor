@@ -31,6 +31,7 @@ class GithubUserSettings():
 
     DEFAULTS = {
         "check_issues": True,
+        "public": True,
         "all_branches": True,
         "all_tags": True,
         "branches": ["main"],
@@ -43,6 +44,10 @@ class GithubUserSettings():
         if not self._raw_settings:
             self._raw_settings = self.DEFAULTS.copy()
             self.user.settings['github_settings'] = self._raw_settings
+
+    @property
+    def public(self) -> bool:
+        return self._raw_settings.get('public', self.DEFAULTS['public'])
 
     @property
     def check_issues(self) -> bool:
