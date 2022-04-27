@@ -130,7 +130,7 @@ class ZippedWorkflowRepository(LocalWorkflowRepository):
         super().__init__(local_path=local_path, exclude=exclude)
         self.archive_path = archive_path
         self.auto_cleanup = auto_cleanup
-        logger.error("Local path: %r", self.local_path)
+        logger.debug("Local path: %r", self.local_path)
 
     def __del__(self):
         if self.auto_cleanup:
