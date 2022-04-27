@@ -21,6 +21,7 @@
 from __future__ import annotations
 
 import logging
+from typing import List
 
 from flask import Blueprint, Flask, current_app, request
 from flask_apscheduler import APScheduler
@@ -32,7 +33,7 @@ from lifemonitor.api.models.testsuites.testinstance import TestInstance
 from lifemonitor.api.models.wizards import QuestionStep, UpdateStep
 from lifemonitor.integrations.github import pull_requests
 from lifemonitor.integrations.github.app import LifeMonitorGithubApp
-from lifemonitor.integrations.github.events import GithubEvent
+from lifemonitor.integrations.github.events import GithubEvent, GithubRepositoryReference
 from lifemonitor.integrations.github.issues import GithubIssue
 from lifemonitor.integrations.github.settings import GithubUserSettings
 from lifemonitor.integrations.github.utils import delete_branch, match_ref
@@ -84,6 +85,134 @@ def installation(event: GithubEvent):
         return "Internal Error", 500
 
 
+def __config_registry_list__(repo_info: GithubRepositoryReference) -> List[str]:
+    # Configure registries
+    registries = []
+    repo: GithubWorkflowRepository = repo_info.repository
+    if repo.config:
+        logger.debug("Configuring registries from repository config: %r", repo.config)
+        if repo_info.branch and match_ref(repo_info.branch, repo.config.branches):
+            registries.extend(repo.config.branches[repo_info.branch].get('update_registries', []))
+        elif repo_info.tag:
+            tag, pattern = match_ref(repo_info.tag, repo.config.tags)
+            if tag:
+                registries.extend(repo.config.tags[pattern].get('update_registries', []))
+    else:
+        logger.debug("Using all available registries")
+        registries.extend([_.name for _ in WorkflowRegistry.all()])
+    logger.warning("Registries: %r", registries)
+    return registries
+
+
+def __skip_branch_or_tag__(repo_info: GithubRepositoryReference,
+                           user_settings: GithubUserSettings):
+    repo: GithubWorkflowRepository = repo_info.repository
+    if repo.config:
+        if match_ref(repo_info.tag, repo.config.tags):
+            return False
+        if match_ref(repo_info.branch, repo.config.branches):
+            return False
+    elif repo_info.tag:
+        if user_settings.all_tags or user_settings.is_valid_tag(repo_info.tag):
+            return False
+    elif repo_info.branch:
+        if user_settings.all_branches or user_settings.is_valid_branch(repo_info.branch):
+            return False
+    return True
+
+
+def __check_for_issues_and_register__(repo_info: GithubRepositoryReference,
+                                      user_settings: GithubUserSettings, check_issues: bool = True):
+    register = True
+    repo: GithubWorkflowRepository = repo_info.repository
+    logger.debug("Repo to register: %r", repo)
+    # filter branches and tags according to global and current repo settings
+    if __skip_branch_or_tag__(repo_info, user_settings):
+        logger.info(f"Repo branch or tag {repo_info.ref} skipped!")
+        return
+    # check for issues (if enabled)
+    if check_issues:
+        if user_settings.check_issues and (not repo.config or repo.config.checker_enabled):
+            check_result = services.check_repository_issues(repo_info)
+            if check_result.found_issues():
+                register = False
+                logger.warning("Found issue on repo: %r", repo_info)
+        else:
+            logger.debug("Check for issues on '%s' ... SKIPPED", repo_info)
+    # register workflow
+    logger.debug("Process workflow registration: %r", register)
+    if register:
+        # Configure registries
+        registries = __config_registry_list__(repo_info)
+        # register or update workflow on LifeMonitor and optionally on registries
+        registered_workflow = services.register_repository_workflow(repo_info, registries=registries)
+        logger.debug("Registered workflow: %r", registered_workflow)
+
+
+def create(event: GithubEvent):
+    logger.debug("Create event: %r", event)
+
+    installation = event.installation
+
+    logger.debug("Installation: %r", installation)
+
+    repositories = installation.get_repos()
+    logger.debug("Repositories: %r", repositories)
+
+    repo_info = event.repository_reference
+    logger.debug("Repo reference: %r", repo_info)
+
+    repo: GithubWorkflowRepository = repo_info.repository
+    logger.debug("Repository: %r", repo)
+
+    logger.debug("Ref: %r", repo.ref)
+    logger.debug("Refs: %r", repo.git_refs_url)
+    logger.debug("Tree: %r", repo.trees_url)
+    logger.debug("Commit: %r", repo.rev)
+
+    logger.warning("Is Tag: %r", repo_info.tag)
+    logger.warning("Is Branch: %r", repo_info.branch)
+
+    if repo_info.tag:
+        try:
+            __check_for_issues_and_register__(repo_info,
+                                              event.sender.user.github_settings, False)
+        except Exception as e:
+            logger.exception(e)
+
+
+def delete(event: GithubEvent):
+    logger.debug("Delete event: %r", event)
+
+    installation = event.installation
+
+    logger.debug("Installation: %r", installation)
+
+    repositories = installation.get_repos()
+    logger.debug("Repositories: %r", repositories)
+
+    repo_info = event.repository_reference
+    logger.debug("Repo reference: %r", repo_info)
+
+    repo: GithubWorkflowRepository = repo_info.repository
+    logger.debug("Repository: %r", repo)
+
+    logger.debug("Ref: %r", repo.ref)
+    logger.debug("Refs: %r", repo.git_refs_url)
+    logger.debug("Tree: %r", repo.trees_url)
+    logger.debug("Commit: %r", repo.rev)
+
+    logger.warning("Is Tag: %s", repo_info.tag)
+    logger.warning("Is Branch: %s", repo_info.branch)
+
+    if repo_info.tag or repo_info.branch:
+        try:
+            services.delete_repository_workflow_version(repo_info)
+        except Exception as e:
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.exception(e)
+
+
 def push(event: GithubEvent):
     try:
         logger.debug("Push event: %r", event)
@@ -106,46 +235,11 @@ def push(event: GithubEvent):
         logger.debug("Tree: %r", repo.trees_url)
         logger.debug("Commit: %r", repo.rev)
 
-        # Configure registries
-        registries = []
-        if repo.config:
-            logger.debug("Configuring registries from repository config: %r", repo.config)
-            if repo_info.branch and repo_info.branch in repo.config.branches:
-                registries.extend(repo.config.branches[repo_info.branch].get('update_registries', []))
-            elif repo_info.tag and repo_info.tag in repo.config.tags:
-                registries.extend(repo.config.tags[repo_info.tag].get('update_registries', []))
+        if not repo_info.ref or repo_info.deleted:
+            logger.debug("Repo ref not defined or branch/tag deleted: %r", repo)
         else:
-            logger.debug("Using all available registries")
-            registries.extend([_.name for _ in WorkflowRegistry.all()])
-        logger.debug("Registries: %r", registries)
-
-        # filter branches and tags according to global and current repo settings
-        settings: GithubUserSettings = event.sender.user.github_settings
-        if not repo.config and \
-            (repo_info.tag and (
-                settings.all_tags or settings.is_valid_tag(repo_info.tag)) or repo_info.branch and (
-                    settings.all_branches or settings.is_valid_branch(repo_info.branch))) or\
-                repo.config and (match_ref(repo_info.tag, repo.config.tags) or match_ref(repo_info.branch, repo.config.branches)):
-            register = not repo_info.deleted
-            logger.debug("Repo to register: %r", register)
-            if register:
-                if settings.check_issues and (not repo.config or repo.config.checker_enabled):
-                    check_result = services.check_repository_issues(repo_info)
-                    if check_result.found_issues():
-                        register = False
-                        logger.warning("Found issue on repo: %r", repo_info)
-                else:
-                    logger.debug("Check for issues on '%s' ... SKIPPED", repo_info)
-            if register:
-                # register or update workflow on LifeMonitor and optionally on registries
-                registered_workflow = services.register_repository_workflow(repo_info, registries=registries)
-                logger.debug("Registered workflow: %r", registered_workflow)
-
-            # delete the workflow version on LifeMonitor and optionally on registries
-            if repo_info.ref and repo_info.deleted:
-                services.delete_repository_workflow_version(repo_info, registries=registries)
-        else:
-            logger.info(f"Repo branch or tag {repo_info.ref} skipped!")
+            settings: GithubUserSettings = event.sender.user.github_settings
+            __check_for_issues_and_register__(repo_info, settings, True)
 
         return "No content", 204
     except Exception as e:
@@ -268,7 +362,8 @@ __event_handlers__ = {
     "installation": installation,
     "push": push,
     "issues": issues,
-    "issue_comment": issue_comment
+    "issue_comment": issue_comment,
+    "delete": delete
 }
 
 
