@@ -72,7 +72,7 @@ class SeekWorkflowRegistry(WorkflowRegistry):
             logger.debug("Repository written @ %r", tmp_archive)
             metadata = self.client.register_workflow(
                 submitter, repository.write_zip(tmp_archive.name),
-                project_id=project_id, external_id=w['id'] if w else None)
+                project_id=project_id, external_id=w['id'] if w else None, public=repository.config.public)
             logger.debug("Workflow metadata: %r", metadata)
             return RegistryWorkflow(self, metadata['meta']['uuid'], metadata['id'],
                                     metadata['attributes']['title'], metadata['attributes']['latest_version'],
