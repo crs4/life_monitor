@@ -136,12 +136,14 @@ class WorkflowRepository():
                     return True
 
     @classmethod
-    def __compare__(cls, left_files, right_files):
-        missing_left = [_ for _ in right_files if not cls.__contains__(left_files, _)]
+    def __compare__(cls, left_files, right_files, exclude: List[str] = None):
+        missing_left = [_ for _ in right_files
+                        if not cls.__contains__(left_files, _) and (not exclude or _.name not in exclude)]
         logger.debug("Missing Left: %r", missing_left)
-        to_check = [(f, cls.__find_file__(right_files, f)) for f in left_files]
+        to_check = [(f, cls.__find_file__(right_files, f)) for f in left_files if not exclude or f.name not in exclude]
         logger.debug("To Check: %r", to_check)
-        missing_right = [_ for _ in left_files if not cls.__contains__(right_files, _)]
+        missing_right = [_ for _ in left_files
+                         if not cls.__contains__(right_files, _) and (not exclude or _.name not in exclude)]
         logger.debug("Missing Right: %r", missing_right)
         differences = []
         for lf, rf in to_check:
@@ -151,11 +153,11 @@ class WorkflowRepository():
         logger.debug("Differences: %r", differences)
         return missing_left, missing_right, differences
 
-    def compare(self, repo: WorkflowRepository) -> Tuple[List[RepositoryFile],
-                                                         List[RepositoryFile],
-                                                         List[Tuple[RepositoryFile, RepositoryFile]]]:
+    def compare(self, repo: WorkflowRepository, exclude: List[str] = None) -> Tuple[List[RepositoryFile],
+                                                                                    List[RepositoryFile],
+                                                                                    List[Tuple[RepositoryFile, RepositoryFile]]]:
         assert repo and isinstance(repo, WorkflowRepository), repo
-        return self.__compare__(self.files, repo.files)
+        return self.__compare__(self.files, repo.files, exclude=exclude)
 
     def generate_metadata(self) -> WorkflowRepositoryMetadata:
         self._metadata = WorkflowRepositoryMetadata(self, init=True, exclude=self.exclude)
