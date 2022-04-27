@@ -36,11 +36,12 @@ from ...api.models.wizards import (IOHandler, QuestionStep, Step, UpdateStep,
 logger = logging.getLogger(__name__)
 
 
-def match_ref(ref: str, refs: List[str]) -> bool:
+def match_ref(ref: str, refs: List[str]) -> str:
     pattern = r"^{0}$".format('|'.join([f"({v})".replace('*', "[a-zA-Z0-9.-_/]+") for v in refs]))
     if not ref or not pattern:
         return None
-    return re.match(pattern, ref) is not None
+    match = re.match(pattern, ref)
+    return (match.group(0), match.re.pattern.replace('[a-zA-Z0-9.-_/]+', '*').strip('^$()')) if match else (None, None)
 
 
 def crate_branch(repo: Repository, branch_name: str):
