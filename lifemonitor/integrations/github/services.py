@@ -166,9 +166,10 @@ def delete_repository_workflow_version(repository_reference: GithubRepositoryRef
         # found and update the existing workflows associated with
         workflows = Workflow.get_hosted_workflows_by_uri(hosting_service, repo_link, submitter=repo_owner)
         for w in workflows:
-            logger.warning("Updating workflow: %r", w)
+            logger.warning("Seaching for workflow versions to delete: %r", w)
             wv = w.versions.get(workflow_version, None)
             if wv:
+                registries = registries or [r.name for r in wv.registries]
                 # delete workflow version from registries if there are not other versions
                 if len(wv.workflow.versions) <= 1:
                     delete_workflow_from_registries(repo_owner, wv, registries)
@@ -176,7 +177,7 @@ def delete_repository_workflow_version(repository_reference: GithubRepositoryRef
                 logger.debug("Removing version '%r' of worlflow: %r", workflow_version, w)
                 lm.deregister_user_workflow(w.uuid, workflow_version, repo_owner)
             else:
-                logger.debug("No version '%r' of workflow '%r' found", workflow_version, w)
+                logger.debug("No version '%s' of workflow '%r' found", workflow_version, w)
 
     except OAuthIdentityNotFoundException as e:
         logger.warning("Github identity '%r' doesn't match with any LifeMonitor user identity", repository_reference.owner_id)
