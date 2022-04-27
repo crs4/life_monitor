@@ -26,7 +26,7 @@ import re
 import shutil
 import tempfile
 from datetime import timedelta
-from typing import Any, Dict, Union
+from typing import Any, Dict, List, Union
 
 from lifemonitor.api.models.repositories.base import (
     WorkflowRepository, WorkflowRepositoryMetadata)
@@ -52,17 +52,12 @@ logger = logging.getLogger(__name__)
 
 class GitRepositoryFile(RepositoryFile):
 
-    def __init__(self, content: ContentFile, type: str = None) -> None:
-        super().__init__(None, content.name, type or content.type, content.path, None)
+    def __init__(self, content: ContentFile, type: str = None, dir: str = '.') -> None:
+        super().__init__(None, content.name, type or content.type, dir, None)
         self._content = content
 
     def __repr__(self) -> str:
         return f"{super().__repr__()} (sha: {self.sha})"
-
-    @property
-    def path(self) -> str:
-
-        return self._content.path
 
     def get_content(self, binary_mode: bool = False):
         result = self._content.decoded_content
@@ -116,13 +111,18 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
     def __repr__(self) -> str:
         return f"{self.__class__.__name__} bound to {self.url} (ref: {self.ref}, rev: {self.rev})"
 
+    def __get_files__(self, path: str, ref: str) -> List[GitRepositoryFile]:
+        files = []
+        for e in self.get_contents(path, ref=ref):
+            if e.type == 'file':
+                files.append(GitRepositoryFile(e, dir=path))
+            elif e.type == 'dir':
+                files.extend(self.__get_files__(e.path, ref=ref))
+        return files
+
     @property
     def files(self):
-        files = []
-        for e in self.get_contents('.', ref=self.ref or self.default_branch):
-            if e.type == 'file':
-                files.append(GitRepositoryFile(e))
-        return files
+        return self.__get_files__('.', ref=self.ref or self.default_branch)
 
     @property
     def remote_metadata(self) -> WorkflowRepositoryMetadata:
