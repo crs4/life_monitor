@@ -32,13 +32,11 @@ from typing import Dict, List, Tuple
 import lifemonitor.api.models.issues as issues
 from lifemonitor.api.models.repositories.config import WorkflowRepositoryConfig
 from lifemonitor.api.models.repositories.files import (RepositoryFile,
-                                                       TemplateRepositoryFile,
                                                        WorkflowFile)
 from lifemonitor.exceptions import IllegalStateException
 from lifemonitor.test_metadata import get_roc_suites
-from rocrate.rocrate import Metadata, ROCrate
-
 from lifemonitor.utils import to_camel_case
+from rocrate.rocrate import Metadata, ROCrate
 
 # set module level logger
 logger = logging.getLogger(__name__)
