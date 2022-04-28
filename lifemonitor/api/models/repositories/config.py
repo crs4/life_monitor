@@ -55,6 +55,10 @@ class WorkflowRepositoryConfig(RepositoryFile):
         return self._raw_data.get('name', None)
 
     @property
+    def public(self) -> bool:
+        return self._raw_data.get('public', False)
+
+    @property
     def checker_enabled(self) -> bool:
         try:
             return self._raw_data['issues']['check']
@@ -106,10 +110,10 @@ class WorkflowRepositoryConfig(RepositoryFile):
         return self._get_refs('tags')
 
     @classmethod
-    def new(cls, repository_path: str, workflow_title: str = "Workflow RO-Crate") -> WorkflowRepositoryConfig:
+    def new(cls, repository_path: str, workflow_title: str = "Workflow RO-Crate", public: bool = False) -> WorkflowRepositoryConfig:
         tmpl = TemplateRepositoryFile(repository_path="lifemonitor/templates/repositories/base", name=f"{cls.FILENAME}.j2")
         registries = models.WorkflowRegistry.all()
-        tmpl.write(workflow_title=workflow_title,
+        tmpl.write(workflow_title=workflow_title, public=public,
                    registries=registries, registries_csv=",".join([r.name for r in registries]),
                    output_file_path=os.path.join(repository_path, cls.FILENAME))
         return cls(path=repository_path)
