@@ -71,7 +71,7 @@ class RepositoryTemplateWizard(Wizard):
     #                          when=lambda _: _.questionA.answer == 'C')
 
     workflow_template = UpdateStep("Workflow RO-Crate Repository Template",
-                                   description="Add missing wrt the recommended repository layout for workflow RO-Crates",
+                                   description="Add missing files according to the recommended layout of workflow RO-Crates",
                                    callback=get_files)
 
     steps = [workflow_title, workflow_description, workflow_type, workflow_template]
