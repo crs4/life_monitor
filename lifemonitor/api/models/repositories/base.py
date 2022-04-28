@@ -116,11 +116,11 @@ class WorkflowRepository():
     @classmethod
     def __file_pointer__(cls, f: RepositoryFile):
         fp = None
-        if isinstance(f, TemplateRepositoryFile):
-            logger.debug("Checking content: %r", f.get_content(binary_mode=False).encode())
-            fp = io.BytesIO(f.get_content(binary_mode=False).encode())
-        else:
+        if os.path.exists(f.path):
             fp = open(f.path, 'rb')
+        else:
+            logger.debug("Reading file content: %r", f.get_content(binary_mode=False).encode())
+            fp = io.BytesIO(f.get_content(binary_mode=False).encode())
         return fp
 
     @classmethod
@@ -147,7 +147,7 @@ class WorkflowRepository():
         logger.debug("Missing Right: %r", missing_right)
         differences = []
         for lf, rf in to_check:
-            logger.debug("Path: %r", lf.path)
+            logger.warning("Comparing: %r %r", lf, rf)
             if lf and rf and not cls.__compare_files__(lf, rf):
                 differences.append((lf, rf))
         logger.debug("Differences: %r", differences)
