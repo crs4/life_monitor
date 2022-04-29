@@ -197,19 +197,32 @@ class LifeMonitorGithubApp(GithubApp):
 
 class GithubIntegration(GithubIntegrationBase):
 
-    def create_jwt(self, expiration=timedelta(seconds=20)) -> str:
-        now = datetime.now(timezone.utc)
-        message = {
+    _current_jwt = threading.local()
+
+    @property
+    def current_jwt(self) -> Dict:
+        try:
+            return self._current_jwt.token
+        except AttributeError:
+            return None
+
+    def create_jwt(self, expiration=DEFAULT_TOKEN_EXPIRATION, encoded: bool = True) -> str:
+        now = datetime.now()
+        expires_at = now + expiration
+        token = {
             # The time that this JWT was issued, _i.e._ now.
             "iat": jwt.utils.get_int_from_datetime(now),
             # JWT expiration time (10 minute maximum)
-            "exp": jwt.utils.get_int_from_datetime(now + expiration),
+            "exp": jwt.utils.get_int_from_datetime(expires_at),
             # Your GitHub App's identifier number
             "iss": self.integration_id
         }
-        logger.debug("Token message: %r", message)
-        # Cryptographically sign the JWT
-        return jwt.JWT().encode(message, self.private_key, alg='RS256')
+        # Save the current thread-local JWT
+        self._current_jwt.token = token
+        # Cryptographically sign the JWT if required
+        if encoded:
+            return jwt.JWT().encode(token, key=self.private_key, alg='RS256')
+        return token
 
 
 class LifeMonitorInstallation(Installation.Installation):
@@ -228,14 +241,22 @@ class LifeMonitorInstallation(Installation.Installation):
 
     @property
     def auth(self) -> InstallationAuthorization:
-        generate_token = False
-        if not self._auth:
-            generate_token = True
-        elif jwt.utils.get_int_from_datetime(self._auth.expires_at) < jwt.utils.get_int_from_datetime(datetime.now()):
-            generate_token = True
+        generate_token = self._auth is None
+        if self._auth:
+            now = datetime.now(timezone.utc)
+            expires_at = jwt.utils.get_time_from_int(self.app.integration.current_jwt['exp'])
+            logger.warning("Checking token expiration: now=%r, expires_at=%r, expired: %r",
+                           now, expires_at, expires_at <= now)
+            if expires_at <= now:
+                generate_token = True
         if generate_token:
+            logger.debug("Generating a new access token...")
             self._auth = self.app.integration.get_access_token(self.id)
+            logger.warning("Created auth: %r - %r", self._auth, self._auth.raw_data)
             assert isinstance(self._auth, InstallationAuthorization), "Invalid authorization"
+            logger.debug("Generating a new access token... DONE")
+        else:
+            logger.warning("Reusing existing token: %r", self._auth)
         return self._auth
 
     @property
