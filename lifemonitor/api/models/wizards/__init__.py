@@ -111,7 +111,6 @@ class Wizard():
             step_index = self.get_step_index(value)
             if step_index >= 0:
                 value = self._steps[step_index]
-        logger.debug("Getting attribute: %r -> %r", name, value)
         return value
 
     def get_next_step(self, current_step: Step = None, ignore_skip=False) -> Optional[Step]:
