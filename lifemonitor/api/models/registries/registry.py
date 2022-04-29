@@ -390,9 +390,6 @@ class WorkflowRegistry(auth_models.HostingService):
             if not w:
                 w = next((w for w in self.workflow_versions if w.identifier == uuid_or_identifier), None)
             return w.workflow_version.workflow if w is not None else None
-        except ValueError:
-            w = next((w for w in self.workflow_versions if w.workflow_version.get_registry_identifier(self) == uuid_or_identifier), None)
-            return w.workflow if w is not None else None
         except Exception:
             if models.Workflow.find_by_uuid(uuid_or_identifier) is not None:
                 raise lm_exceptions.NotAuthorizedException()
