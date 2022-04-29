@@ -171,9 +171,14 @@ def delete_repository_workflow_version(repository_reference: GithubRepositoryRef
             if wv:
                 registries = registries or [r.name for r in wv.registries]
                 # delete workflow version from registries if there are not other versions
-                if len(wv.workflow.versions) <= 1:
-                    delete_workflow_from_registries(repo_owner, wv, registries)
-                # delete workflow version from LifeMontiro
+                registry_workflows_map = {r: [] for r in registries}
+                for v in w.versions.values():
+                    for r in v.registries:
+                        if r.name in registries:
+                            registry_workflows_map[r.name].append(v)
+                registries_list = [r for r in registries if len(registry_workflows_map[r]) == 1]
+                delete_workflow_from_registries(repo_owner, wv, registries_list)
+                # delete workflow version from LifeMonitor
                 logger.debug("Removing version '%r' of worlflow: %r", workflow_version, w)
                 lm.deregister_user_workflow(w.uuid, workflow_version, repo_owner)
             else:
