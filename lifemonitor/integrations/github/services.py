@@ -97,18 +97,18 @@ def register_repository_workflow(repository_reference: GithubRepositoryReference
         workflows = Workflow.get_hosted_workflows_by_uri(hosting_service, repo_link, submitter=repo_owner)
         for w in workflows:
             logger.debug("Updating workflow: %r", w)
+            latest_version = w.latest_version
             current_wv = wv = w.versions.get(workflow_version, None)
 
-            registries_map = None
+            # initialize registries map
+            registries_map = [(_, (lambda w: w.identifier if w else None)(latest_version.registry_workflow_versions.get(_, None))) for _ in registries]
+            logger.debug("Created registries map: %r", registries_map)
+            # register or update the workflow version
             if not wv:
-                registries_map = [(_, None) for _ in registries]
-                logger.debug("Created registries map: %r", registries_map)
                 logger.debug("Registering workflow version on worlflow: %r ....", w)
                 wv = lm.register_workflow(repo_link, repo_owner, workflow_version, w.uuid, public=repo.config.public)
                 logger.debug("Registering workflow version on worlflow: %r .... DONE", w)
             else:
-                registries_map = [(_, (lambda w: w.identifier if w else None)(wv.registry_workflow_versions.get(_, None))) for _ in registries]
-                logger.debug("Created registries map: %r", registries_map)
                 logger.debug("Updating workflow version: %r...", wv)
                 wv = lm.update_workflow(wv.submitter, w.uuid, workflow_version, rocrate_or_link=repo_link, public=repo.config.public)
                 logger.debug("Updating workflow version: %r... DONE", wv)
