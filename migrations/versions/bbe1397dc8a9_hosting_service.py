@@ -36,7 +36,18 @@ def upgrade():
         logger.info(r[0])
         bind.execute(f"INSERT INTO hosting_service (id) VALUES ({r[0]})")
 
+    # set foreign key workflow_registry -> hosting_service
     op.create_foreign_key(None, 'workflow_registry', 'hosting_service', ['id'], ['id'])
+
+    # insert github hosting service
+    r = bind.execute("SELECT * from oauth2_identity_provider WHERE name = 'github'")
+    data = r.fetchall()
+    if len(data) == 1:
+        github_data = data[0]
+        r = bind.execute("select nextval('resource_id_seq')")
+        r_id = r.fetchall()[0][0]
+        bind.execute(f"INSERT INTO resource (id,uuid,type,name,uri) VALUES ({r_id},gen_random_uuid(),'hosting_service','github','https://github.com')")
+        bind.execute(f"INSERT INTO hosting_service (id,server_id) VALUES ({r_id},{github_data[0]})")
 
     # Fix relationship RO-Crate->HostingService
     op.drop_constraint("ro_crate_hosting_service_id_fkey", 'ro_crate', type_='foreignkey')
