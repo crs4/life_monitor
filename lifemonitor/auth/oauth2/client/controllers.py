@@ -86,7 +86,7 @@ def create_blueprint(merge_identity_view):
 
     @blueprint.route('/login/<name>')
     @next_route_aware
-    def login(name):
+    def login(name, scope: str = None):
         # we allow dynamic reconfiguration of the oauth2registry
         # when app is configured in dev or testing mode
         if current_app.config['ENV'] in ("testing", "testingSupport", "development"):
@@ -97,6 +97,9 @@ def create_blueprint(merge_identity_view):
         redirect_uri = url_for('.authorize', name=name, _external=True)
         conf_key = '{}_AUTHORIZE_PARAMS'.format(name.upper())
         params = current_app.config.get(conf_key, {})
+        scope = scope or request.args.get('scope')
+        if scope:
+            params.update({'scope': scope})
         return remote.authorize_redirect(redirect_uri, **params)
 
     return blueprint
