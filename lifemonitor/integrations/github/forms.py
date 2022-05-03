@@ -25,8 +25,9 @@ import logging
 
 from flask_wtf import FlaskForm
 from lifemonitor.auth.models import User
-from wtforms import BooleanField, StringField
+from wtforms import BooleanField, StringField, HiddenField
 from wtforms.validators import AnyOf
+from lifemonitor.api import models
 
 from .settings import GithubUserSettings
 
@@ -54,6 +55,12 @@ class GithubSettingsForm(FlaskForm):
         validators=[AnyOf([True, False])]
     )
 
+    registries = HiddenField(
+        "registries",
+        description="")
+
+    available_registries = models.WorkflowRegistry.all()
+
     def update_model(self, user: User) -> GithubUserSettings:
         assert user and not user.is_anonymous, user
         settings = GithubUserSettings(user) \
@@ -63,6 +70,7 @@ class GithubSettingsForm(FlaskForm):
         settings.check_issues = self.check_issues.data
         settings.branches = [_.strip() for _ in self.branches.data.split(',')] if self.branches.data else []
         settings.tags = [_.strip() for _ in self.tags.data.split(',')] if self.tags.data else []
+        settings.registries = [_.strip() for _ in self.registries.data.split(',')] if self.registries.data else []
         return settings
 
     @classmethod
@@ -76,5 +84,6 @@ class GithubSettingsForm(FlaskForm):
         form.all_tags.data = settings.all_tags
         form.branches.data = ', '.join(settings.branches)
         form.tags.data = ', '.join(settings.tags)
+        form.registries.data = ','.join(settings.registries)
         form.check_issues.data = settings.check_issues
         return form
