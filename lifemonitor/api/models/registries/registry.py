@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
-from typing import List, Union
+from typing import List, Tuple, Union
 
 import lifemonitor.api.models as models
 import lifemonitor.exceptions as lm_exceptions
@@ -307,6 +307,10 @@ class WorkflowRegistry(auth_models.HostingService):
     @property
     def api(self) -> auth_models.Resource:
         return self.server_credentials.api_resource
+
+    @property
+    def read_write_scopes(self) -> Tuple[str]:
+        return None
 
     def get_external_uuid(self, external_id, version, user: auth_models.User) -> str:
         return self.client.get_external_uuid(external_id, version, user)

@@ -109,7 +109,7 @@
                 <div class="checkbox">
                     <input type="checkbox" name="registry-{{ registry.name }}"
                         value="{{'true' if registry.name in githubSettingsForm.registries.data else 'false'}}"
-                        onchange="toggleRegistry('{{registry.name}}')" data-toggle="toggle" {% if
+                        onchange="toggleRegistry('{{registry.name}}', '{{'+'.join(registry.read_write_scopes)}}')" data-toggle="toggle" {% if
                             registry.name in githubSettingsForm.registries.data %}checked{% endif%} 
                             data-on='<i class="fas fa-sync-alt"></i>'
                         data-off='<i class="fas fa-power-off"></i>'>
@@ -143,7 +143,7 @@
         }
     }
 
-    function toggleRegistry(registry_name, checked=false) {
+    function toggleRegistry(registry_name, scopes="read+write", checked=false) {
         const fieldName = 'registry-' + registry_name;
         const el = $("input[name=" + fieldName + "]");
         if (!el) return;
@@ -178,7 +178,8 @@
                     }
                 );
             }else{
-                window.location.replace('/oauth2/login/' + registry_name + '?scope=read+write&next=/update_github_settings?addRegistry=' + registry_name);
+                window.location.replace('/oauth2/login/' + registry_name + '?scope=' 
+                    + scopes + '&next=/update_github_settings?addRegistry=' + registry_name);
             }
         }       
     }
