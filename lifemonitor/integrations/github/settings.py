@@ -35,7 +35,8 @@ class GithubUserSettings():
         "all_branches": True,
         "all_tags": True,
         "branches": ["main"],
-        "tags": ["v*.*.*"]
+        "tags": ["v*.*.*"],
+        "registries": []
     }
 
     def __init__(self, user: User) -> None:
@@ -115,6 +116,26 @@ class GithubUserSettings():
 
     def is_valid_tag(self, tag: str) -> bool:
         return match_ref(tag, self.tags)
+
+    @property
+    def registries(self) -> List[str]:
+        return self._raw_settings.get('registries', self.DEFAULTS['registries']).copy()
+
+    @registries.setter
+    def registries(self, registries: List[str]) -> List[str]:
+        self._raw_settings['registries'] = registries.copy()
+        flag_modified(self.user, 'settings')
+
+    def add_registry(self, registry: str):
+        self._raw_settings['registries'].append(registry)
+        flag_modified(self.user, 'settings')
+
+    def remove_registry(self, registry: str):
+        self._raw_settings['registries'].remove(registry)
+        flag_modified(self.user, 'settings')
+
+    def is_registry_enabled(self, registry: str) -> bool:
+        return registry in self.registries
 
 
 def __get_github_settings(self) -> GithubUserSettings:
