@@ -25,7 +25,6 @@ import flask
 from flask import flash, redirect, render_template, request, session, url_for
 from flask_login import login_required, login_user, logout_user
 from lifemonitor.cache import Timeout, cached, clear_cache
-from lifemonitor.integrations.github.settings import GithubUserSettings
 from lifemonitor.utils import (NextRouteRegistry, next_route_aware,
                                split_by_crlf)
 
@@ -345,7 +344,9 @@ def update_notifications_switch():
 @login_required
 def update_github_settings():
     logger.debug("Updating Github Settings")
+    from lifemonitor.integrations.github.settings import GithubUserSettings
     if request.method == "GET":
+
         settings = GithubUserSettings(current_user) \
             if not current_user.github_settings else current_user.github_settings
         if "addRegistry" in request.args:
@@ -376,6 +377,7 @@ def update_github_registry_settings():
     registry_name = request.form.get("registry", None)
     logger.debug("Action: %r - Registry: %r", action, registry_name)
     logger.debug("Current user: %r", current_user)
+    from lifemonitor.integrations.github.settings import GithubUserSettings
     settings = GithubUserSettings(current_user)
     if action == "add":
         settings.add_registry(registry_name)
