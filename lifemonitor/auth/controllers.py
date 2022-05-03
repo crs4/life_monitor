@@ -25,6 +25,7 @@ import flask
 from flask import flash, redirect, render_template, request, session, url_for
 from flask_login import login_required, login_user, logout_user
 from lifemonitor.cache import Timeout, cached, clear_cache
+from lifemonitor.integrations.github.settings import GithubUserSettings
 from lifemonitor.utils import (NextRouteRegistry, next_route_aware,
                                split_by_crlf)
 
@@ -177,6 +178,7 @@ def profile(form=None, passwordForm=None, currentView=None,
         back_param = back_param or session.get('lm_back_param', False)
         logger.debug("detected back param: %s", back_param)
     from lifemonitor.integrations.github.forms import GithubSettingsForm
+    logger.warning("Request args: %r", request.args)
     return render_template("auth/profile.j2",
                            passwordForm=passwordForm or SetPasswordForm(),
                            emailForm=emailForm or EmailForm(),
@@ -344,6 +346,18 @@ def update_notifications_switch():
 def update_github_settings():
     logger.debug("Updating Github Settings")
     if request.method == "GET":
+        settings = GithubUserSettings(current_user) \
+            if not current_user.github_settings else current_user.github_settings
+        if "addRegistry" in request.args:
+            registry_name = request.args["addRegistry"]
+            logger.error("Registry name: %r", registry_name)
+            settings.add_registry(registry_name)
+            current_user.save()
+        if "removeRegistry" in request.args:
+            registry_name = request.args["removeRegistry"]
+            logger.error("Registry name: %r", registry_name)
+            settings.remove_registry(registry_name)
+            current_user.save()
         return redirect(url_for('auth.profile', currentView='githubSettingsTab'))
     from lifemonitor.integrations.github.forms import GithubSettingsForm
     form = GithubSettingsForm()
@@ -352,6 +366,26 @@ def update_github_settings():
     form.update_model(current_user)
     current_user.save()
     return redirect(url_for('auth.profile', currentView='githubSettingsTab'))
+
+
+@blueprint.route("/update_github_registry_settings", methods=("POST",))
+@login_required
+def update_github_registry_settings():
+    logger.debug("Updating Github Settings")
+    action = request.form.get("action", None)
+    registry_name = request.form.get("registry", None)
+    logger.debug("Action: %r - Registry: %r", action, registry_name)
+    logger.debug("Current user: %r", current_user)
+    settings = GithubUserSettings(current_user)
+    if action == "add":
+        settings.add_registry(registry_name)
+        current_user.save()
+        return "registry added", 200
+    elif action == 'remove':
+        settings.remove_registry(registry_name)
+        current_user.save()
+        return "registry removed", 200
+    return "unsupported method", 400
 
 
 @blueprint.route("/merge", methods=("GET", "POST"))
