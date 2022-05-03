@@ -85,7 +85,7 @@ def installation(event: GithubEvent):
         return "Internal Error", 500
 
 
-def __config_registry_list__(repo_info: GithubRepositoryReference) -> List[str]:
+def __config_registry_list__(repo_info: GithubRepositoryReference, user_settings: GithubUserSettings) -> List[str]:
     # Configure registries
     registries = []
     repo: GithubWorkflowRepository = repo_info.repository
@@ -100,8 +100,11 @@ def __config_registry_list__(repo_info: GithubRepositoryReference) -> List[str]:
     else:
         logger.debug("Using all available registries")
         registries.extend([_.name for _ in WorkflowRegistry.all()])
-    logger.warning("Registries: %r", registries)
-    return registries
+    # use only registries globally enabled on Github Integration Settings
+    enabled_registries = [_ for _ in registries if _ in user_settings.registries]
+    logger.warning("The following registries will be ignored because globally disabled: %r", [_ for _ in registries if _ not in enabled_registries])
+    logger.debug("Filtered registries: %r", enabled_registries)
+    return enabled_registries
 
 
 def __skip_branch_or_tag__(repo_info: GithubRepositoryReference,
@@ -143,7 +146,7 @@ def __check_for_issues_and_register__(repo_info: GithubRepositoryReference,
     logger.debug("Process workflow registration: %r", register)
     if register:
         # Configure registries
-        registries = __config_registry_list__(repo_info)
+        registries = __config_registry_list__(repo_info, user_settings)
         # register or update workflow on LifeMonitor and optionally on registries
         registered_workflow = services.register_repository_workflow(repo_info, registries=registries)
         logger.debug("Registered workflow: %r", registered_workflow)
