@@ -24,7 +24,7 @@ import logging
 import shutil
 import tempfile
 from pathlib import Path
-from typing import List, Union
+from typing import List, Tuple, Union
 
 import requests
 from lifemonitor.api import models
@@ -52,6 +52,10 @@ class SeekWorkflowRegistry(WorkflowRegistry):
 
     def __init__(self, client_credentials, server_credentials):
         super().__init__('seek_registry', client_credentials, server_credentials)
+
+    @property
+    def read_write_scopes(self) -> Tuple[str]:
+        return ("read", "write")
 
     def register_workflow_version(self, submitter, repository: WorkflowRepository, external_id: str = None):
         logger.debug("Registering with registry identifier: %s", external_id)
