@@ -2154,10 +2154,12 @@ components:
             version:
               $ref: "#/components/schemas/WorkflowVersion"
               readOnly: true
-            registry:
-              $ref: "#/components/schemas/Registry"
-              readOnly: true
+            registries:
               nullable: true
+              readOnly: true
+              type: array
+              items:
+                $ref: "#/components/schemas/Registry"
           required:
             - version
 
