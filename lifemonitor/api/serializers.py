@@ -133,18 +133,19 @@ class VersionDetailsSchema(BaseSchema):
 
     def get_links(self, obj: models.WorkflowVersion):
         links = {
-            'origin': obj.external_link
+            'origin': "local file uploaded" if obj.uri.startswith("tmp://") else obj.uri,
         }
         if obj.based_on:
             links['based_on'] = obj.based_on
-        if obj.registry_link:
-            links['registry'] = obj.registry_link
+        links['registries'] = {}
+        for r_name, rv in obj.registry_workflow_versions.items():
+            links['registries'][r_name] = rv.link
         return links
 
     def get_rocrate(self, obj: models.WorkflowVersion):
         rocrate = {
             'links': {
-                'origin': obj.external_link,
+                'origin': "local file uploaded" if obj.uri.startswith("tmp://") else obj.uri,
                 'metadata': urljoin(lm_utils.get_external_server_url(),
                                     f"workflows/{obj.workflow.uuid}/rocrate/{obj.version}/metadata"),
                 'download': urljoin(lm_utils.get_external_server_url(),
@@ -153,8 +154,9 @@ class VersionDetailsSchema(BaseSchema):
         }
         if obj.based_on:
             rocrate['links']['based_on'] = obj.based_on
-        if obj.registry_link:
-            rocrate['links']['registry'] = obj.registry_link
+        rocrate['links']['registries'] = {}
+        for r_name, rv in obj.registry_workflow_versions.items():
+            rocrate['links']['registries'][r_name] = rv.link
         rocrate['metadata'] = obj.crate_metadata
         if 'rocrate_metadata' in self.exclude or \
                 self.only and 'rocrate_metadata' not in self.only:
@@ -181,8 +183,7 @@ class WorkflowVersionSchema(ResourceSchema):
     name = ma.auto_field(attribute="workflow.name")
     version = fields.Method("get_version")
     public = fields.Boolean(attribute="workflow.public")
-    registry = ma.Nested(WorkflowRegistrySchema(exclude=('meta', 'links')),
-                         attribute="registry")
+    registries = fields.Method("get_registries")
     subscriptions = fields.Method("get_subscriptions")
 
     rocrate_metadata = False
@@ -207,6 +208,12 @@ class WorkflowVersionSchema(ResourceSchema):
                 s = user.get_subscription(wv.workflow)
                 if s:
                     result.append(SubscriptionSchema(exclude=('meta', 'links'), self_link=False).dump(s))
+        return result
+
+    def get_registries(self, obj):
+        result = []
+        for r in obj.registries:
+            result.append(WorkflowRegistrySchema(exclude=('meta', 'links'), self_link=False).dump(r))
         return result
 
     @post_dump
