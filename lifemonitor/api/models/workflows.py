@@ -32,7 +32,6 @@ from lifemonitor.api.models.rocrate import ROCrate
 from lifemonitor.auth.models import (HostingService, Permission, Resource,
                                      Subscription, User)
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
-from lifemonitor.cache import Timeout, cached
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm.collections import (MappedCollection,
