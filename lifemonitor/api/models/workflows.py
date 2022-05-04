@@ -239,27 +239,6 @@ class WorkflowVersion(ROCrate):
                 return registry_workflow.identifier
         return None
 
-    @property
-    def external_link(self) -> str:
-        return self.get_external_link()
-
-    @property
-    def registry_link(self) -> str:
-        return self.get_registry_link()
-
-    @cached(Timeout.WORKFLOW, client_scope=False)
-    def get_external_link(self) -> str:
-        # TODO: replace single link with multiple links
-        if self.registry_workflow_versions:
-            return list(self.registry_workflow_versions.values())[0].link
-        return self.based_on if self.based_on else self.uri if 'tmp://' not in self.uri else ''
-
-    @cached(Timeout.WORKFLOW, client_scope=False)
-    def get_registry_link(self) -> str:
-        if self.registry_workflow_versions:
-            return list(self.registry_workflow_versions.values())[0].link
-        return None
-
     @hybrid_property
     def authorizations(self):
         auths = [a for a in self._authorizations]
