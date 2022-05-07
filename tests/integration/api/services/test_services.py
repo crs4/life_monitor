@@ -239,24 +239,37 @@ def test_workflow_serialization_no_instances(app_client, user1):
     logger.debug(data)
 
 
-def test_workflow_deregistration(app_client, user1, valid_workflow):
+def test_workflow_version_deregistration(app_client, user1, valid_workflow):
     lm = LifeMonitor.get_instance()
     # pick and register one workflow
     wf_data, workflow = utils.pick_and_register_workflow(user1, valid_workflow)
     # current number of workflows
     number_of_workflows = len(models.WorkflowVersion.all())
-    lm.deregister_user_workflow(wf_data['uuid'], wf_data['version'], user1["user"])
+    lm.deregister_user_workflow_version(wf_data['uuid'], wf_data['version'], user1["user"])
     assert len(models.WorkflowVersion.all()) == number_of_workflows - 1, "Unexpected number of workflows"
     # try to find
     w = models.WorkflowVersion.get_user_workflow_version(user1["user"], wf_data['uuid'], wf_data['version'])
     assert w is None, "Workflow must not be in the DB"
 
 
-def test_workflow_deregistration_exception(app_client, user1, random_workflow_id):
+def test_workflow_version_deregistration_exception(app_client, user1, random_workflow_id):
     with pytest.raises(lm_exceptions.EntityNotFoundException):
-        LifeMonitor.get_instance().deregister_user_workflow(random_workflow_id['uuid'],
-                                                            random_workflow_id['version'],
-                                                            user1['user'])
+        LifeMonitor.get_instance().deregister_user_workflow_version(random_workflow_id['uuid'],
+                                                                    random_workflow_id['version'],
+                                                                    user1['user'])
+
+
+def test_workflow_deregistration(app_client, user1, valid_workflow):
+    lm = LifeMonitor.get_instance()
+    # pick and register one workflow
+    wf_data, workflow = utils.pick_and_register_workflow(user1, valid_workflow)
+    # current number of workflows
+    number_of_workflows = len(models.WorkflowVersion.all())
+    lm.deregister_user_workflow(wf_data['uuid'], user1["user"])
+    assert len(models.WorkflowVersion.all()) == number_of_workflows - 1, "Unexpected number of workflows"
+    # try to find
+    w = models.WorkflowVersion.get_user_workflow_version(user1["user"], wf_data['uuid'], wf_data['version'])
+    assert w is None, "Workflow must not be in the DB"
 
 
 def test_suite_registration(app_client, user1, test_suite_metadata, valid_workflow):
