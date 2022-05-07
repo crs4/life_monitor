@@ -704,6 +704,31 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+    
+    delete:
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "workflows_delete"
+      summary: "Delete a workflow"
+      description: "Delete the specified workflow and all its versions"
+      tags: ["Workflows"]
+      security:
+        - apiKey: ["workflow.write"]
+        - RegistryClientCredentials: ["workflow.write"]
+        - RegistryCodeFlow: ["workflow.write"]
+        - AuthorizationCodeFlow: ["workflow.write"]
+      parameters:
+        - $ref: "#/components/parameters/wf_uuid"
+      responses:
+        "204":
+          description: Deleted
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /workflows/{wf_uuid}/subscribe:
     post:
@@ -921,7 +946,7 @@ paths:
 
     delete:
       x-openapi-router-controller: lifemonitor.api.controllers
-      operationId: "workflows_delete"
+      operationId: "workflows_delete_version"
       summary: "Delete a workflow version"
       description: "Delete the specified version of the specified workflow"
       tags: ["Workflows"]
