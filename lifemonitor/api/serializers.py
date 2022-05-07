@@ -399,10 +399,13 @@ class WorkflowVersionListItem(WorkflowSchema):
     latest_version = fields.String(attribute="latest_version.version")
     status = fields.Method("get_status")
     subscriptions = fields.Method("get_subscriptions")
+    versions = fields.Method("get_versions")
 
-    def __init__(self, *args, self_link: bool = True, subscriptionsOf: List[auth_models.User] = None, **kwargs):
+    def __init__(self, *args, self_link: bool = True,
+                 workflow_versions: bool = False, subscriptionsOf: List[auth_models.User] = None, **kwargs):
         super().__init__(*args, self_link=self_link, **kwargs)
         self.subscriptionsOf = subscriptionsOf
+        self.workflow_versions = workflow_versions
 
     def get_status(self, workflow):
         try:
@@ -429,6 +432,16 @@ class WorkflowVersionListItem(WorkflowSchema):
                 "reason": str(e)
             }
 
+    def get_versions(self, workflow):
+        try:
+            if self.workflow_versions:
+                schema = VersionDetailsSchema(only=("uuid", "version", "ro_crate", "is_latest"))
+                return [schema.dump(v) for v in workflow.versions.values()]
+            return None
+        except Exception as e:
+            logger.debug(e)
+            return None
+
     def get_latest_build(self, workflow):
         try:
             latest_builds = workflow.latest_version.status.latest_builds
@@ -448,15 +461,25 @@ class WorkflowVersionListItem(WorkflowSchema):
                     result.append(SubscriptionSchema(exclude=('meta', 'links'), self_link=False).dump(s))
         return result
 
+    @post_dump
+    def remove_skip_values(self, data, **kwargs):
+        return {
+            key: value for key, value in data.items()
+            if value is not None
+        }
+
 
 class ListOfWorkflows(ListOfItems):
     __item_scheme__ = WorkflowVersionListItem
 
     subscriptionsOf: List[auth_models.User] = None
 
-    def __init__(self, *args, workflow_status: bool = False, subscriptionsOf: List[auth_models.User] = None, **kwargs):
+    def __init__(self, *args,
+                 workflow_status: bool = False, workflow_versions: bool = False,
+                 subscriptionsOf: List[auth_models.User] = None, **kwargs):
         super().__init__(*args, **kwargs)
         self.workflow_status = workflow_status
+        self.workflow_versions = workflow_versions
         self.subscriptionsOf = subscriptionsOf
 
     def get_items(self, obj):
@@ -466,7 +489,8 @@ class ListOfWorkflows(ListOfItems):
         if not self.subscriptionsOf or len(self.subscriptionsOf) == 0:
             exclude.append('subscriptions')
         return [self.__item_scheme__(exclude=tuple(exclude), many=False,
-                                     subscriptionsOf=self.subscriptionsOf).dump(_) for _ in obj] \
+                                     subscriptionsOf=self.subscriptionsOf,
+                                     workflow_versions=self.workflow_versions).dump(_) for _ in obj] \
             if self.__item_scheme__ else None
 
 
