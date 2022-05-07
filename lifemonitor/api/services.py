@@ -332,7 +332,7 @@ class LifeMonitor:
             logger.debug("Deleted workflow wf_uuid: %r", workflow_uuid)
             return workflow_uuid
         except KeyError:
-            raise lm_exceptions.EntityNotFoundException(models.WorkflowVersion, (workflow_uuid, workflow_version))
+            raise lm_exceptions.EntityNotFoundException(models.WorkflowVersion, workflow_uuid)
 
     @staticmethod
     def _init_test_suite_from_json(wv: models.WorkflowVersion, submitter: models.User, raw_suite):

@@ -180,7 +180,7 @@ def delete_repository_workflow_version(repository_reference: GithubRepositoryRef
                 delete_workflow_from_registries(repo_owner, wv, registries_list)
                 # delete workflow version from LifeMonitor
                 logger.debug("Removing version '%r' of worlflow: %r", workflow_version, w)
-                lm.deregister_user_workflow(w.uuid, workflow_version, repo_owner)
+                lm.deregister_user_workflow_version(w.uuid, workflow_version, repo_owner)
             else:
                 logger.debug("No version '%s' of workflow '%r' found", workflow_version, w)
 
