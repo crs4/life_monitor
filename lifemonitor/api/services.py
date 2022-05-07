@@ -280,7 +280,7 @@ class LifeMonitor:
         return wv
 
     @classmethod
-    def deregister_user_workflow(cls, workflow_uuid, workflow_version, user: User):
+    def deregister_user_workflow_version(cls, workflow_uuid, workflow_version, user: User):
         workflow = cls._find_and_check_workflow_version(user, workflow_uuid, workflow_version)
         logger.debug("WorkflowVersion to delete: %r", workflow)
         if not workflow:
@@ -291,17 +291,46 @@ class LifeMonitor:
         logger.debug("Deleted workflow wf_uuid: %r - version: %r", workflow_uuid, workflow_version)
         return workflow_uuid, workflow_version
 
+    @classmethod
+    def deregister_user_workflow(cls, workflow_uuid, user: User):
+        workflow_version = cls._find_and_check_workflow_version(user, workflow_uuid)
+        logger.debug("Latest WorkflowVersion %r", workflow_version)
+        if not workflow_version:
+            raise lm_exceptions.EntityNotFoundException(models.WorkflowVersion, entity_id=(workflow_uuid, workflow_version))
+        workflow = workflow_version.workflow
+        if len(workflow.get_user_versions(user)) == 0:
+            raise lm_exceptions.NotAuthorizedException("Only the workflow submitter can delete the workflow")
+        workflow.delete()
+        logger.debug("Deleted workflow: %r", workflow)
+        return workflow_uuid
+
     @staticmethod
-    def deregister_registry_workflow(workflow_uuid, workflow_version, registry: models.WorkflowRegistry):
+    def deregister_registry_workflow_version(workflow_uuid, workflow_version, registry: models.WorkflowRegistry):
         workflow = registry.get_workflow(workflow_uuid)
         if not workflow:
-            raise lm_exceptions.EntityNotFoundException(models.WorkflowVersion, (workflow_uuid, workflow_version))
-        logger.debug("WorkflowVersion to delete: %r", workflow)
+            raise lm_exceptions.EntityNotFoundException(models.Workflow, (workflow_uuid, workflow_version))
+        logger.debug("Found workflow: %r", workflow)
         try:
             workflow_version = workflow.versions[workflow_version]
-            workflow.delete()
+            logger.debug("WorkflowVersion to delete: %r", workflow)
+            if not workflow_version:
+                raise lm_exceptions.EntityNotFoundException(models.WorkflowVersion, (workflow_uuid, workflow_version))
+            workflow_version.delete()
             logger.debug("Deleted workflow wf_uuid: %r - version: %r", workflow_uuid, workflow_version)
             return workflow_uuid, workflow_version
+        except KeyError:
+            raise lm_exceptions.EntityNotFoundException(models.WorkflowVersion, (workflow_uuid, workflow_version))
+
+    @staticmethod
+    def deregister_registry_workflow(workflow_uuid, registry: models.WorkflowRegistry):
+        workflow = registry.get_workflow(workflow_uuid)
+        if not workflow:
+            raise lm_exceptions.EntityNotFoundException(models.WorkflowVersion, workflow_uuid)
+        try:
+            logger.debug("Workflow to delete: %r", workflow)
+            workflow.delete()
+            logger.debug("Deleted workflow wf_uuid: %r", workflow_uuid)
+            return workflow_uuid
         except KeyError:
             raise lm_exceptions.EntityNotFoundException(models.WorkflowVersion, (workflow_uuid, workflow_version))
 

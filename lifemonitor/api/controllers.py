@@ -526,12 +526,35 @@ def workflows_version_put(wf_uuid, wf_version, body):
 
 
 @authorized
-def workflows_delete(wf_uuid, wf_version):
+def workflows_delete_version(wf_uuid, wf_version):
     try:
         if current_user and not current_user.is_anonymous:
-            lm.deregister_user_workflow(wf_uuid, wf_version, current_user)
+            lm.deregister_user_workflow_version(wf_uuid, wf_version, current_user)
         elif current_registry:
-            lm.deregister_registry_workflow(wf_uuid, wf_version, current_registry)
+            lm.deregister_registry_workflow_version(wf_uuid, wf_version, current_registry)
+        else:
+            return lm_exceptions.report_problem(403, "Forbidden",
+                                                detail=messages.no_user_in_session)
+        clear_cache()
+        return connexion.NoContent, 204
+    except OAuthIdentityNotFoundException as e:
+        return lm_exceptions.report_problem(401, "Unauthorized", extra_info={"exception": str(e)})
+    except lm_exceptions.EntityNotFoundException as e:
+        return lm_exceptions.report_problem(404, "Not Found", extra_info={"exception": str(e.detail)},
+                                            detail=messages.workflow_not_found.format(wf_uuid, wf_version))
+    except lm_exceptions.NotAuthorizedException as e:
+        return lm_exceptions.report_problem(403, "Forbidden", extra_info={"exception": str(e)})
+    except Exception as e:
+        raise lm_exceptions.LifeMonitorException(title="Internal Error", detail=str(e))
+
+
+@authorized
+def workflows_delete(wf_uuid):
+    try:
+        if current_user and not current_user.is_anonymous:
+            lm.deregister_user_workflow(wf_uuid, current_user)
+        elif current_registry:
+            lm.deregister_registry_workflow(wf_uuid, current_registry)
         else:
             return lm_exceptions.report_problem(403, "Forbidden",
                                                 detail=messages.no_user_in_session)
