@@ -423,6 +423,7 @@ paths:
         - AuthorizationCodeFlow: ["user.workflow.read"]
       parameters:
         - $ref: "#/components/parameters/registry_uuid"
+        - $ref: "#/components/parameters/wf_versions"
         - $ref: "#/components/parameters/wf_status"
       responses:
         "200":
@@ -481,6 +482,7 @@ paths:
         - RegistryClientCredentials: ["registry.user.workflow.read"]
       parameters:
         - $ref: "#/components/parameters/user_id"
+        - $ref: "#/components/parameters/wf_versions"
         - $ref: "#/components/parameters/wf_status"
       responses:
         "200":
@@ -542,6 +544,7 @@ paths:
         - AuthorizationCodeFlow: ["user.workflow.read"]
       parameters:
         - $ref: "#/components/parameters/wf_status"
+        - $ref: "#/components/parameters/wf_versions"
         - $ref: "#/components/parameters/wf_subscriptions"
       responses:
         "200":
@@ -623,6 +626,7 @@ paths:
         - {}
       parameters:
         - $ref: "#/components/parameters/wf_status"
+        - $ref: "#/components/parameters/wf_versions"
       responses:
         "200":
           description: List of Workflows
@@ -1454,6 +1458,14 @@ components:
       description: |
         `true` to include a summary of the workflow status
       example: "false"
+    wf_versions:
+      name: "versions"
+      in: query
+      schema:
+        type: boolean
+      description: |
+        `true` to include the list of versions of each workflow
+      example: "false"
     wf_subscriptions:
       name: "subscriptions"
       in: query
@@ -2216,6 +2228,29 @@ components:
                         description: "The most recent build on some test instance"
                         $ref: "#/components/schemas/BuildSummary"
                         nullable: true
+                  versions:
+                    nullable: true
+                    readOnly: true
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/WorkflowVersion"
+                    example:
+                      [
+                        {
+                          uuid: "21ac72ec-b9a5-49e0-b5a6-1322b8b54552",
+                          version: "1.0",
+                          ro_crate:
+                            {
+                              links:
+                                {
+                                  origin: "https://dev.workflowhub.eu/workflows/142/content_blobs/240/download",
+                                  download: "https://api.lifemonitor.eu/ro_crates/10/download",
+                                },
+                            },
+                          is_latest: false,
+                          submitter: { id: 501, username: "lm" },
+                        },
+                      ]
           required:
             - items
 
