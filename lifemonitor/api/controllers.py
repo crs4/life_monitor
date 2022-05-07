@@ -89,7 +89,7 @@ def registry_index_workflow(registry_uuid, registry_workflow_identifier):
     workflow = registry.get_index_workflow(current_user, registry_workflow_identifier)
     if not workflow:
         return lm_exceptions.report_problem(404, "Not Found",
-                                            detail=messages.workflow_not_found.format(registry_workflow_identifier, 'latest'))
+                                            detail=messages.workflow_version_not_found.format(registry_workflow_identifier, 'latest'))
     return serializers.RegistryIndexItemSchema().dump(workflow)
 
 
@@ -133,12 +133,12 @@ def __get_workflow_version__(wf_uuid, wf_version=None) -> models.WorkflowVersion
         if wf is None:
             raise lm_exceptions.EntityNotFoundException(
                 models.WorkflowVersion,
-                detail=messages.workflow_not_found.format(wf_uuid, wf_version))
+                detail=messages.workflow_version_not_found.format(wf_uuid, wf_version))
         return wf
     except lm_exceptions.EntityNotFoundException as e:
         raise lm_exceptions.EntityNotFoundException(models.WorkflowVersion,
                                                     extra_info={"exception": str(e)},
-                                                    detail=messages.workflow_not_found.format(wf_uuid, wf_version))
+                                                    detail=messages.workflow_version_not_found.format(wf_uuid, wf_version))
     except lm_exceptions.NotAuthorizedException as e:
         raise lm_exceptions.Forbidden(extra_info={"exception": str(e)},
                                       detail=messages.unauthorized_workflow_access.format(wf_uuid))
@@ -541,7 +541,7 @@ def workflows_delete_version(wf_uuid, wf_version):
         return lm_exceptions.report_problem(401, "Unauthorized", extra_info={"exception": str(e)})
     except lm_exceptions.EntityNotFoundException as e:
         return lm_exceptions.report_problem(404, "Not Found", extra_info={"exception": str(e.detail)},
-                                            detail=messages.workflow_not_found.format(wf_uuid, wf_version))
+                                            detail=messages.workflow_version_not_found.format(wf_uuid, wf_version))
     except lm_exceptions.NotAuthorizedException as e:
         return lm_exceptions.report_problem(403, "Forbidden", extra_info={"exception": str(e)})
     except Exception as e:
@@ -564,7 +564,7 @@ def workflows_delete(wf_uuid):
         return lm_exceptions.report_problem(401, "Unauthorized", extra_info={"exception": str(e)})
     except lm_exceptions.EntityNotFoundException as e:
         return lm_exceptions.report_problem(404, "Not Found", extra_info={"exception": str(e.detail)},
-                                            detail=messages.workflow_not_found.format(wf_uuid, wf_version))
+                                            detail=messages.workflow_version_not_found.format(wf_uuid))
     except lm_exceptions.NotAuthorizedException as e:
         return lm_exceptions.report_problem(403, "Forbidden", extra_info={"exception": str(e)})
     except Exception as e:
