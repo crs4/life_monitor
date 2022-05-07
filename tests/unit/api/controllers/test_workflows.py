@@ -316,13 +316,13 @@ def test_get_workflow_by_id_error_not_found(m, request_context, mock_registry):
     m.get_registry_workflow_version.side_effect = lm_exceptions.EntityNotFoundException(models.WorkflowVersion)
     with pytest.raises(lm_exceptions.EntityNotFoundException) as ex:
         controllers.workflows_get_by_id(wf_uuid="12345", wf_version="1")
-    assert messages.workflow_not_found\
+    assert messages.workflow_version_not_found\
         .format("12345", "1") in ex.exconly(True)
     # test when the service return None
     m.get_registry_workflow_version.return_value = None
     with pytest.raises(lm_exceptions.EntityNotFoundException) as ex:
         controllers.workflows_get_by_id(wf_uuid="12345", wf_version="1")
-    assert messages.workflow_not_found\
+    assert messages.workflow_version_not_found\
         .format("12345", "1") in ex.exconly(True)
 
 
