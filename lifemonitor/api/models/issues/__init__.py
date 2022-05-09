@@ -24,10 +24,10 @@ import abc
 import glob
 import inspect
 import logging
+import os
 from functools import cmp_to_key
 from hashlib import sha1
 from importlib import import_module
-from os.path import basename, dirname, isfile, join
 from typing import List
 
 import lifemonitor.api.models.repositories as repositories
@@ -101,22 +101,29 @@ def _compare_issues(issue1: WorkflowRepositoryIssue, issue2: WorkflowRepositoryI
 
 
 def find_issues() -> List[WorkflowRepositoryIssue]:
-    modules_files = glob.glob(join(dirname(__file__), "*.py"))
-    modules = ['{}.{}'.format(__name__, basename(f)[:-3])
-               for f in modules_files if isfile(f) and not f.endswith('__init__.py')]
-    errors = []
-    issues = []
-    for m in modules:
-        try:
-            mod = import_module(m)
-            for _, obj in inspect.getmembers(mod):
-                if inspect.isclass(obj) \
-                    and obj != WorkflowRepositoryIssue \
-                        and issubclass(obj, WorkflowRepositoryIssue):
-                    issues.append(obj)
-        except ModuleNotFoundError:
-            logger.error("ModuleNotFoundError: Unable to load module %s", m)
-            errors.append(m)
+    current_path = os.path.dirname(__file__)
+    for dirpath, dirnames, filenames in os.walk(current_path):
+        base_path = dirpath.replace(f"{current_path}/", '')
+        for dirname in [d for d in dirnames if d not in ['__pycache__']]:
+            base_module = '{}.{}'.format(__name__, os.path.join(base_path, dirname).replace('/', '.'))
+            modules_files = glob.glob(os.path.join(dirpath, dirname, "*.py"))
+            logger.debug(modules_files)
+            modules = ['{}.{}'.format(base_module, os.path.basename(f)[:-3])
+                       for f in modules_files if os.path.isfile(f) and not f.endswith('__init__.py')]
+            errors = []
+            issues = []
+            for m in modules:
+                try:
+                    mod = import_module(m)
+                    for _, obj in inspect.getmembers(mod):
+                        if inspect.isclass(obj) \
+                            and obj != WorkflowRepositoryIssue \
+                                and issubclass(obj, WorkflowRepositoryIssue):
+                            issues.append(obj)
+                except ModuleNotFoundError as e:
+                    logger.exception(e)
+                    logger.error("ModuleNotFoundError: Unable to load module %s", m)
+                    errors.append(m)
     if len(errors) > 0:
         logger.error("** There were some errors loading application modules.**")
         if logger.isEnabledFor(logging.DEBUG):
