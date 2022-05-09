@@ -22,7 +22,8 @@ import logging
 import os
 
 import pytest
-from lifemonitor.api.models.issues.common import MissingWorkflowFile
+from lifemonitor.api.models.issues.common.files.missing import \
+    MissingWorkflowFile
 from lifemonitor.api.models.repositories import ZippedWorkflowRepository
 from lifemonitor.api.models.repositories.local import LocalWorkflowRepository
 
