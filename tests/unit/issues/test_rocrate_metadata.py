@@ -21,7 +21,8 @@
 import logging
 
 import pytest
-from lifemonitor.api.models.issues.common import MissingMetadataFile
+from lifemonitor.api.models.issues.common.files.missing import \
+    MissingMetadataFile
 from lifemonitor.api.models.repositories import GithubWorkflowRepository
 
 logger = logging.getLogger(__name__)

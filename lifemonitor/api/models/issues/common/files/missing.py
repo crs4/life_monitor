@@ -22,9 +22,8 @@ from __future__ import annotations
 
 import logging
 
+from lifemonitor.api.models.issues import WorkflowRepositoryIssue
 from lifemonitor.api.models.repositories import WorkflowRepository
-
-from . import WorkflowRepositoryIssue
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -67,14 +66,4 @@ class MissingMetadataFile(WorkflowRepositoryIssue):
             metadata = repo.generate_metadata()
             self.add_change(metadata.repository_file)
             return True
-        return False
-
-
-class OutdatedMetadataFile(WorkflowRepositoryIssue):
-    name = "RO-Crate metadata outdated"
-    description = "The <code>ro-crate-metadata.json</code> needs to be updated."
-    labels = ['invalid', 'bug']
-    depends_on = [MissingMetadataFile]
-
-    def check(self, repo: WorkflowRepository) -> bool:
         return False

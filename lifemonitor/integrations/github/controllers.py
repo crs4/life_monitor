@@ -27,13 +27,15 @@ from flask import Blueprint, Flask, current_app, request
 from flask_apscheduler import APScheduler
 from lifemonitor import cache
 from lifemonitor.api.models import WorkflowRegistry
-from lifemonitor.api.models.issues.common import MissingWorkflowFile
+from lifemonitor.api.models.issues.common.files.missing import \
+    MissingWorkflowFile
 from lifemonitor.api.models.repositories.github import GithubWorkflowRepository
 from lifemonitor.api.models.testsuites.testinstance import TestInstance
 from lifemonitor.api.models.wizards import QuestionStep, UpdateStep
 from lifemonitor.integrations.github import pull_requests
 from lifemonitor.integrations.github.app import LifeMonitorGithubApp
-from lifemonitor.integrations.github.events import GithubEvent, GithubRepositoryReference
+from lifemonitor.integrations.github.events import (GithubEvent,
+                                                    GithubRepositoryReference)
 from lifemonitor.integrations.github.issues import GithubIssue
 from lifemonitor.integrations.github.settings import GithubUserSettings
 from lifemonitor.integrations.github.utils import delete_branch, match_ref

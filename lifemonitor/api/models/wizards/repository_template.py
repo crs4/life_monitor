@@ -20,10 +20,10 @@
 
 from __future__ import annotations
 
-
 import logging
-from lifemonitor.api.models.issues.common import MissingWorkflowFile
 
+from lifemonitor.api.models.issues.common.files.missing import \
+    MissingWorkflowFile
 from lifemonitor.api.models.repositories import WorkflowRepository
 from lifemonitor.api.models.repositories.templates import \
     WorkflowRepositoryTemplate
