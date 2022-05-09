@@ -101,6 +101,8 @@ def _compare_issues(issue1: WorkflowRepositoryIssue, issue2: WorkflowRepositoryI
 
 
 def find_issues() -> List[WorkflowRepositoryIssue]:
+    errors = []
+    issues = {}
     current_path = os.path.dirname(__file__)
     for dirpath, dirnames, filenames in os.walk(current_path):
         base_path = dirpath.replace(f"{current_path}/", '')
@@ -110,8 +112,6 @@ def find_issues() -> List[WorkflowRepositoryIssue]:
             logger.debug(modules_files)
             modules = ['{}.{}'.format(base_module, os.path.basename(f)[:-3])
                        for f in modules_files if os.path.isfile(f) and not f.endswith('__init__.py')]
-            errors = []
-            issues = []
             for m in modules:
                 try:
                     mod = import_module(m)
@@ -119,7 +119,7 @@ def find_issues() -> List[WorkflowRepositoryIssue]:
                         if inspect.isclass(obj) \
                             and obj != WorkflowRepositoryIssue \
                                 and issubclass(obj, WorkflowRepositoryIssue):
-                            issues.append(obj)
+                            issues[obj.name] = obj
                 except ModuleNotFoundError as e:
                     logger.exception(e)
                     logger.error("ModuleNotFoundError: Unable to load module %s", m)
@@ -128,7 +128,7 @@ def find_issues() -> List[WorkflowRepositoryIssue]:
         logger.error("** There were some errors loading application modules.**")
         if logger.isEnabledFor(logging.DEBUG):
             logger.error("** Unable to load issues from %s", ", ".join(errors))
-    return [i for i in sorted(issues, key=cmp_to_key(_compare_issues))]
+    return [i for i in sorted(issues.values(), key=cmp_to_key(_compare_issues))]
 
 
 __all__ = ["WorkflowRepositoryIssue"]
