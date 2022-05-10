@@ -52,13 +52,19 @@ def get_repository(repository: str, local_path: str = None):
 
 
 def init_output_path(output_path):
-    logger.debug("Changes path: %r", output_path)
-    if os.path.exists(output_path):
-        answer = Prompt.ask(f"The folder '{output_path}' already exists. "
-                            "Would like to delete it?", choices=["y", "n"], default="y")
+    logger.debug("Output path: %r", output_path)
+    files = os.listdir(output_path)
+    logger.debug("File: %r", files)
+    if len(files) > 0:
+        answer = Prompt.ask(f"The folder '{output_path}' is not empty. "
+                            "Would like to delete its content?", choices=["y", "n"], default="y")
         logger.debug("Answer: %r", answer)
         if answer == 'y':
-            shutil.rmtree(output_path)
+            for root, dirs, files in os.walk(output_path):
+                for f in files:
+                    os.unlink(os.path.join(root, f))
+                for d in dirs:
+                    shutil.rmtree(os.path.join(root, d))
         else:
             sys.exit(0)
     if not os.path.exists(output_path):
