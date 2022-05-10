@@ -99,13 +99,15 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
     def __init__(self, requester: Requester,
                  headers: Dict[str, Union[str, int]],
                  attributes: Dict[str, Any], completed: bool,
-                 ref: str = None, rev: str = None, auto_cleanup: bool = True) -> None:
+                 ref: str = None, rev: str = None,
+                 local_path: str = None, auto_cleanup: bool = True) -> None:
         super().__init__(requester, headers, attributes, completed)
         self.ref = ref if ref is not None else f"refs/heads/{self.default_branch}"
         self.rev = rev
         self.auto_cleanup = auto_cleanup
         self._metadata = None
         self._local_repo: LocalWorkflowRepository = None
+        self._local_path = local_path
         self._config = None
 
     def __repr__(self) -> str:
@@ -196,7 +198,7 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
     @property
     def local_repo(self) -> LocalWorkflowRepository:
         if not self._local_repo:
-            local_path = tempfile.mkdtemp(dir=BaseConfig.BASE_TEMP_FOLDER)
+            local_path = self._local_path or tempfile.mkdtemp(dir=BaseConfig.BASE_TEMP_FOLDER)
             logger.debug("Cloning %r", self)
             clone_repo(self.clone_url, ref=self.ref, target_path=local_path)
             self._local_repo = LocalWorkflowRepository(local_path=local_path)
@@ -221,13 +223,24 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
 class GithubWorkflowRepository(InstallationGithubWorkflowRepository):
 
     def __init__(self, full_name_or_id: str, token: str = None,
-                 ref: str = None, auto_cleanup: bool = True) -> None:
+                 ref: str = None, local_path: str = None, auto_cleanup: bool = True) -> None:
         assert isinstance(full_name_or_id, (str, int)), full_name_or_id
         url_base = "/repositories/" if isinstance(full_name_or_id, int) else "/repos/"
         url = f"{url_base}{full_name_or_id}"
         super().__init__(
             __make_requester__(token=token), headers={}, attributes={'url': url}, completed=False,
-            ref=ref, auto_cleanup=auto_cleanup)
+            ref=ref, local_path=local_path, auto_cleanup=auto_cleanup)
+
+    @classmethod
+    def from_url(cls, url: str, token: str = None, ref: str = None,
+                 local_path: str = None, auto_cleanup: bool = True) -> GithubWorkflowRepository:
+        repo_url = url.replace('.git', '')
+        if repo_url.startswith('https://github.com'):
+            return cls(repo_url.replace('https://github.com/', ''),
+                       token=token, ref=ref, local_path=local_path, auto_cleanup=auto_cleanup)
+        elif repo_url.startswith('git@github.com'):
+            return cls(repo_url.replace('git@github.com:', ''),
+                       token=token, ref=ref, local_path=local_path, auto_cleanup=auto_cleanup)
 
 
 class RepoCloneContextManager():
