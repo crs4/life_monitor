@@ -23,7 +23,6 @@ import logging
 import click
 
 from rich.console import Console
-from rich.markdown import Markdown
 from rich.text import Text
 
 from issues import issues_group
@@ -48,6 +47,7 @@ def cli(ctx: click.Context, debug):
 def version():
     console = Console()
     console.print(Text.assemble("Version: ", Text(__version__, style="white bold")))
+
 
 if __name__ == '__main__':
     cli.add_command(issues_group)
