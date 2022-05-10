@@ -101,7 +101,7 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
                  attributes: Dict[str, Any], completed: bool,
                  ref: str = None, rev: str = None, auto_cleanup: bool = True) -> None:
         super().__init__(requester, headers, attributes, completed)
-        self.ref = ref if ref is not None else self.default_branch
+        self.ref = ref if ref is not None else f"refs/heads/{self.default_branch}"
         self.rev = rev
         self.auto_cleanup = auto_cleanup
         self._metadata = None
