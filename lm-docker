@@ -78,6 +78,7 @@ while [ -n "${1:-}" ]; do
             LOCAL_PATH="$2"
             docker_volume_opt="-v ${LOCAL_PATH}:${LOCAL_PATH}"
             docker_volume_arg="--output-path ${LOCAL_PATH}"
+            mkdir -p ${LOCAL_PATH}
             shift
             ;;
         -*=* | --*=*) # unsupported option format
