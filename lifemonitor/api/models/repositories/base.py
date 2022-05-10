@@ -199,6 +199,9 @@ class IssueCheckResult:
         return f"Check repo {self.repo.local_path} @ {self.created} " \
             f"=> checks: {len(self.checked)}, issues: {len(self.issues)}"
 
+    def get_issue(self, issue_name: str) -> issues.WorkflowRepositoryIssue:
+        return next((_ for _ in self.issues if _.name == issue_name), None)
+
     def found_issues(self) -> bool:
         return len(self.issues) > 0
 
