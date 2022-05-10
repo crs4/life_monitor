@@ -18,7 +18,18 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import logging
+import os
+import shutil
+import sys
 from urllib.parse import urlparse
+
+from lifemonitor.api.models.repositories.github import GithubWorkflowRepository
+from lifemonitor.api.models.repositories.local import LocalWorkflowRepository
+from rich.prompt import Prompt
+
+# Set module logger
+logger = logging.getLogger(__name__)
 
 
 def is_url(value):
@@ -27,3 +38,28 @@ def is_url(value):
         return all([result.scheme, result.netloc])
     except Exception:
         return False
+
+
+def get_repository(repository: str, local_path: str = None):
+    assert repository, repository
+    if is_url(repository):
+        remote_repo_url = repository
+        if remote_repo_url.endswith('.git'):
+            return GithubWorkflowRepository.from_url(remote_repo_url, auto_cleanup=False, local_path=local_path)
+    else:
+        return LocalWorkflowRepository(repository)
+    return ValueError("Repository type not supported")
+
+
+def init_output_path(output_path):
+    logger.debug("Changes path: %r", output_path)
+    if os.path.exists(output_path):
+        answer = Prompt.ask(f"The folder '{output_path}' already exists. "
+                            "Would like to delete it?", choices=["y", "n"], default="y")
+        logger.debug("Answer: %r", answer)
+        if answer == 'y':
+            shutil.rmtree(output_path)
+        else:
+            sys.exit(0)
+    if not os.path.exists(output_path):
+        os.makedirs(output_path, exist_ok=True)

@@ -21,15 +21,12 @@
 import inspect
 import logging
 import os
-import shutil
 import sys
 
 import click
-from cli.client.utils import is_url
+from cli.client.utils import get_repository, init_output_path
 from lifemonitor.api.models.issues import (WorkflowRepositoryIssue,
                                            find_issues, load_issue)
-from lifemonitor.api.models.repositories.github import GithubWorkflowRepository
-from lifemonitor.api.models.repositories.local import LocalWorkflowRepository
 from lifemonitor.utils import to_snake_case
 from rich.console import Console
 from rich.panel import Panel
@@ -46,18 +43,7 @@ console = Console()
 error_console = Console(stderr=True, style="bold red")
 
 repository_arg = click.argument('repository', type=str, default=".")
-changes_path_arg = click.option('--changes-path', type=click.Path(file_okay=False), default=None)
-
-
-def _get_repository(repository: str, local_path: str = None):
-    assert repository, repository
-    if is_url(repository):
-        remote_repo_url = repository
-        if remote_repo_url.endswith('.git'):
-            return GithubWorkflowRepository.from_url(remote_repo_url, auto_cleanup=False, local_path=local_path)
-    else:
-        return LocalWorkflowRepository(repository)
-    return ValueError("Repository type not supported")
+output_path_arg = click.option('-o', '--output-path', type=click.Path(file_okay=False), default=None)
 
 
 @click.group(name="issues", help="Tools to develop and check issue types")
@@ -108,28 +94,14 @@ def get(config, issue_number):
     console.print(p)
 
 
-def _check_changes_path(changes_path):
-    logger.debug("Changes path: %r", changes_path)
-    if not os.path.exists(changes_path):
-        os.makedirs(changes_path, exist_ok=True)
-    else:
-        answer = Prompt.ask(f"The folder '{changes_path}' already exists. "
-                            "Would like to delete it?", choices=["y", "n"], default="y")
-        logger.debug("Answer: %r", answer)
-        if answer == 'y':
-            shutil.rmtree(changes_path)
-        else:
-            sys.exit(0)
-
-
 @issues_group.command(help="Check for issues on a Workflow RO-Crate repository")
 @repository_arg
-@changes_path_arg
+@output_path_arg
 @click.pass_obj
-def check(config, repository, changes_path=None):
+def check(config, repository, output_path=None):
     try:
-        _check_changes_path(changes_path=changes_path)
-        repo = _get_repository(repository, local_path=changes_path)
+        init_output_path(output_path=output_path)
+        repo = get_repository(repository, local_path=output_path)
         result = repo.check(repository)
         # Configure Table
         table = Table(title=f"Check Issue Report of Repo [bold]{repository}[/bold]",
@@ -161,13 +133,13 @@ def check(config, repository, changes_path=None):
 @issues_group.command(help="Test an issue type")
 @click.argument('issue_file', type=click.Path(exists=True))
 @repository_arg
-@changes_path_arg
+@output_path_arg
 @click.pass_obj
-def test(config, issue_file, repository, changes_path=None):
+def test(config, issue_file, repository, output_path=None):
     try:
-        _check_changes_path(changes_path=changes_path)
+        init_output_path(output_path=output_path)
         logger.debug(issue_file)
-        repo = _get_repository(repository, local_path=changes_path)
+        repo = get_repository(repository, local_path=output_path)
         issues_list = [_() for _ in load_issue(issue_file)]
         logger.debug("Issue: %r", issues_list)
         logger.debug("Repository: %r", repo)
@@ -203,10 +175,11 @@ def test(config, issue_file, repository, changes_path=None):
 
 
 @issues_group.command(help="Generate a skeleton class for an issue type")
-@click.argument('path', type=click.Path(exists=True, file_okay=False), default=".")
+@output_path_arg
 @click.pass_obj
-def generate(config, path):
-    logger.debug("Path: %r", path)
+def generate(config, output_path):
+    init_output_path(output_path=output_path)
+    logger.debug("Path: %r", output_path)
     name = Prompt.ask(Text.assemble(Text("Choose a name ", style="bold"), "(e.g., ", Text("'Missing Important RO-Crate File'", style="dark_orange"), ")"))
     logger.debug("Name: %r", name)
     class_name = Prompt.ask(Text.assemble(Text("Choose a class name ", style="bold"), "(e.g., ", Text('MissingFileIssue', style="dark_orange"), ")"))
@@ -217,7 +190,7 @@ def generate(config, path):
     logger.debug("labels: %r", labels)
     template = WorkflowRepositoryIssue.generate_template(class_name=class_name, name=name, description=description, labels=labels)
     logger.debug("Template: %r", template)
-    output_file = os.path.join(path, f"{to_snake_case(class_name)}.py")
+    output_file = os.path.join(output_path, f"{to_snake_case(class_name)}.py")
     with open(output_file, "w") as out:
         out.write(template)
         console.print(f"Issue class written @ {output_file}")
