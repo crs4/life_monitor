@@ -31,6 +31,7 @@ from importlib import import_module
 from typing import List
 
 import lifemonitor.api.models.repositories as repositories
+from lifemonitor.utils import to_snake_case
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -51,6 +52,14 @@ class WorkflowRepositoryIssue():
     @property
     def id(self) -> str:
         return f'lifemonitor-issue-{sha1(self.name.encode()).hexdigest()}'
+
+    @property
+    def identifier(self) -> str:
+        return self.get_identifier()
+
+    @classmethod
+    def get_group(cls) -> str:
+        return cls.__module__
 
     @abc.abstractmethod
     def check(self, repo: repositories.WorkflowRepository) -> bool:
@@ -77,6 +86,22 @@ class WorkflowRepositoryIssue():
 
     def has_changes(self) -> bool:
         return self._changes and len(self._changes) > 0
+
+    @classmethod
+    def get_identifier(cls) -> str:
+        return cls.to_string(cls)
+
+    @classmethod
+    def to_string(cls, issue_type) -> str:
+        class_name = None
+        if isinstance(issue_type, WorkflowRepositoryIssue):
+            class_name = issue_type.__class__.__name__
+        elif inspect.isclass(issue_type):
+            if not issubclass(issue_type, WorkflowRepositoryIssue):
+                raise ValueError("Invalid issue type")
+            class_name = issue_type.__name__
+        logger.debug("Class Name: %r", class_name)
+        return to_snake_case(class_name)
 
     @classmethod
     def from_string(cls, issue_name: str) -> WorkflowRepositoryIssue:
