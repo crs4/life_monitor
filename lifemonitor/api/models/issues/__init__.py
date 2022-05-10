@@ -28,9 +28,9 @@ import os
 from functools import cmp_to_key
 from hashlib import sha1
 from importlib import import_module
-from typing import List
+from typing import List, Type
 
-import lifemonitor.api.models.repositories as repositories
+from lifemonitor.api.models import repositories
 from lifemonitor.utils import to_snake_case
 
 # set module level logger
@@ -115,6 +115,14 @@ class WorkflowRepositoryIssue():
         if not cls.__issues__:
             cls.__issues__ = find_issues()
         return cls.__issues__
+
+    @staticmethod
+    def generate_template(class_name: str, name: str, description: str = "", depends_on: str = "", labels: str = "") -> Type[WorkflowRepositoryIssue]:
+        from jinja2 import BaseLoader, Environment
+        with open(os.path.join(os.path.dirname(__file__), "issue.j2")) as f:
+            rtemplate = Environment(loader=BaseLoader()).from_string(f.read())
+            return rtemplate.render(class_name=class_name, name=name,
+                                    description=description, depends_on=depends_on, labels=labels)
 
 
 def _compare_issues(issue1: WorkflowRepositoryIssue, issue2: WorkflowRepositoryIssue):
