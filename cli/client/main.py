@@ -21,16 +21,11 @@
 import logging
 
 import click
-
+from cli.client import __version__
 from rich.console import Console
 from rich.text import Text
 
 from issues import issues_group
-
-
-from lifemonitor import get_version
-__version__ = get_version()
-del get_version
 
 
 @click.group(help=f"LifeMonitor CLI (ver {__version__})")
