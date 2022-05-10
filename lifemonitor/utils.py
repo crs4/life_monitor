@@ -468,6 +468,10 @@ class OpenApiSpecs(object):
         return self.specs['info']['version']
 
     @property
+    def description(self):
+        return self.specs['info']['description']
+
+    @property
     def components(self):
         return self.specs['components']
 
