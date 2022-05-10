@@ -100,10 +100,24 @@ def _compare_issues(issue1: WorkflowRepositoryIssue, issue2: WorkflowRepositoryI
     return 0
 
 
-def find_issues() -> List[WorkflowRepositoryIssue]:
+def load_issue(issue_file) -> List[WorkflowRepositoryIssue]:
+    issues = {}
+    base_module = '{}'.format(os.path.join(os.path.dirname(issue_file)).replace('/', '.'))
+    m = '{}.{}'.format(base_module, os.path.basename(issue_file)[:-3])
+    mod = import_module(m)
+    for _, obj in inspect.getmembers(mod):
+        if inspect.isclass(obj) \
+            and inspect.getmodule(obj) == mod \
+            and obj != WorkflowRepositoryIssue \
+                and issubclass(obj, WorkflowRepositoryIssue):
+            issues[obj.name] = obj
+    return issues.values()
+
+
+def find_issues(path: str = None) -> List[WorkflowRepositoryIssue]:
     errors = []
     issues = {}
-    current_path = os.path.dirname(__file__)
+    current_path = path or os.path.dirname(__file__)
     for dirpath, dirnames, filenames in os.walk(current_path):
         base_path = dirpath.replace(f"{current_path}/", '')
         for dirname in [d for d in dirnames if d not in ['__pycache__']]:
@@ -117,6 +131,7 @@ def find_issues() -> List[WorkflowRepositoryIssue]:
                     mod = import_module(m)
                     for _, obj in inspect.getmembers(mod):
                         if inspect.isclass(obj) \
+                            and inspect.getmodule(obj) == mod \
                             and obj != WorkflowRepositoryIssue \
                                 and issubclass(obj, WorkflowRepositoryIssue):
                             issues[obj.name] = obj
