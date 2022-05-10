@@ -61,7 +61,7 @@ RUN mkdir -p /var/data/lm \
 USER lm
 
 # Copy lifemonitor app
-COPY --chown=lm:lm app.py lm-admin gunicorn.conf.py /lm/
+COPY --chown=lm:lm app.py lm-admin lm gunicorn.conf.py /lm/
 COPY --chown=lm:lm specs /lm/specs
 COPY --chown=lm:lm lifemonitor /lm/lifemonitor
 COPY --chown=lm:lm migrations /lm/migrations
