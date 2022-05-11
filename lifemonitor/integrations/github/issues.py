@@ -21,6 +21,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from typing import List, Union
 
 from lifemonitor.api.models import issues
@@ -55,6 +56,45 @@ class GithubIssueComment(IssueComment):
     def __init__(self, issue: GithubIssue, requester, headers, attributes, completed):
         super().__init__(requester, headers, attributes, completed)
         self.issue = issue
+        self._addressed_to_bot = None
+        self.__body = None
+        app = LifeMonitorGithubApp.get_instance()
+        self.__bot_id = app.bot
+        self._pattern = re.compile(r'^@(lm|{0})(\[bot\])?(\s(.*))?'.format(app.bot.strip('[bot]')))
+
+    def __process_comment__(self):
+        self.__body = super().body
+        if self.user.login == self.__bot_id:
+            logger.debug("Comment crated by LifeMonitor Bot")
+            self._addressed_to_bot = False
+        else:
+            m = self._pattern.match(self.body)
+            if not m:
+                logger.debug(f"Generic message not addressed to LifeMonitor[bot]")
+                self._addressed_to_bot = False
+                self.__body = ""
+            elif len(m.groups()) < 4:
+                logger.debug("Message empty: %r", m.lastgroup)
+                self._addressed_to_bot = True
+                self.__body = ""
+            else:
+                logger.debug("Message to LifeMonitor[bot]: %r", m.lastgroup)
+                self.__body = m.lastgroup
+                self._addressed_to_bot = True
+
+    def is_generated_by_bot(self) -> bool:
+        return self.user.login == self.__bot_id
+
+    def is_addressed_to_bot(self) -> bool:
+        if self._addressed_to_bot is None:
+            self.__process_comment__()
+        return self._addressed_to_bot
+
+    @property
+    def body(self) -> str:
+        if self.__body is None:
+            self.__process_comment__()
+        return self.__body
 
 
 def process_issues(repo: Repository, issues: List[issues.WorkflowRepositoryIssue]):
