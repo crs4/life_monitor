@@ -34,7 +34,6 @@ from typing import Callable, List, Optional
 from genericpath import isfile
 from lifemonitor.api.models.repositories.base import WorkflowRepository
 from lifemonitor.api.models.repositories.files import RepositoryFile
-from lifemonitor.utils import remove_html_tags
 
 from ..issues import WorkflowRepositoryIssue
 
@@ -130,8 +129,8 @@ class Wizard():
 
     def find_step(self, text: str) -> Optional[Step]:
         for s in self._steps:
-            logger.debug("Checking matching of text '%r' with step '%r' (wizard: %r)", text, s.title, s.wizard)
-            if (s.title and remove_html_tags(text) == s.title) or (text == s.as_string()):
+            logger.debug("Checking match between text '%s' with step '%s' (wizard: %r)", text, s.title, s.wizard)
+            if s.match(text):
                 return s
         return None
 
@@ -183,10 +182,13 @@ class IOHandler():
     def get_input_as_text(self, question: QuestionStep) -> str:
         pass
 
-    def as_string(self, step: Step) -> str:
+    def get_help(self):
         pass
 
-    def write(self, step: Step):
+    def as_string(self, step: Step, append_help: bool = False) -> str:
+        pass
+
+    def write(self, step: Step, append_help: bool = False):
         pass
 
 
@@ -240,8 +242,11 @@ class Step():
     def to_skip(self) -> bool:
         return self._when and not self._when(self.wizard)
 
-    def as_string(self) -> str:
-        return self.wizard.io_handler.as_string(self) if self.wizard else self.title
+    def as_string(self, append_help: bool = False) -> str:
+        return self.wizard.io_handler.as_string(self, append_help=append_help) if self.wizard else self.title
+
+    def match(self, text: str) -> bool:
+        return (self.title and self.title in text) or text.strip(self.wizard.io_handler.get_help()) == self.as_string()
 
 
 class QuestionStep(Step):

@@ -288,7 +288,7 @@ def issues(event: GithubEvent):
                     if not wizard.current_step:
                         next_step = wizard.get_next_step()
                         logger.debug("Next step: %r", next_step)
-                        wizard.io_handler.write(next_step)
+                        wizard.io_handler.write(next_step, append_help=True)
 
     return "No action", 204
 
@@ -370,12 +370,12 @@ def issue_comment(event: GithubEvent):
                             else:
                                 issue.create_comment(next_step.as_string() + f"<br>See PR {pr.html_url}")
                     else:
-                        wizard.io_handler.write(next_step)
+                        wizard.io_handler.write(next_step, append_help=True)
             else:
                 # Unable to understand user answer
                 logger.debug("Unable to understand user answer")
                 event.comment.create_reaction("confused")
-                wizard.io_handler.write(step)
+                wizard.io_handler.write(step, append_help=True)
 
         return f"Processed step {step.title} of wizard {wizard.title}", 204
 

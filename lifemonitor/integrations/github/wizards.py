@@ -49,7 +49,7 @@ class GithubWizard(Wizard):
             return None
 
         # instantiate wizard
-        wizard: Wizard = wizard_type(repo_issue, io_handler=GithubIOHandler(issue))
+        wizard: Wizard = wizard_type(repo_issue, io_handler=GithubIOHandler(event.application, issue))
         logger.debug("Detected wizard: %r", wizard)
         # try to find the step for this event
         comments = [c for c in issue.get_comments() if c.user.login == event.application.bot]

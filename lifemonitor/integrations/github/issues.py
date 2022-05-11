@@ -27,6 +27,7 @@ from typing import List, Union
 from lifemonitor.api.models import issues
 from lifemonitor.integrations.github.app import LifeMonitorGithubApp
 
+from github.GithubObject import NotSet
 from github.Issue import Issue
 from github.IssueComment import IssueComment
 from github.Repository import Repository
@@ -50,10 +51,16 @@ class GithubIssue(Issue):
             issue: issues.WorkflowRepositoryIssue = issue_type()
         return issue
 
+    def get_comments(self, since=NotSet):
+        def map_comment_item(c: GithubIssueComment):
+            c.issue = self
+            return c
+        return map(map_comment_item, super().get_comments(since))
+
 
 class GithubIssueComment(IssueComment):
 
-    def __init__(self, issue: GithubIssue, requester, headers, attributes, completed):
+    def __init__(self, requester, headers, attributes, completed, issue: GithubIssue = None):
         super().__init__(requester, headers, attributes, completed)
         self.issue = issue
         self._addressed_to_bot = None
@@ -70,7 +77,7 @@ class GithubIssueComment(IssueComment):
         else:
             m = self._pattern.match(self.__body)
             if not m:
-                logger.debug(f"Generic message not addressed to LifeMonitor[bot]")
+                logger.debug("Generic message not addressed to LifeMonitor[bot]")
                 self._addressed_to_bot = False
                 self.__body = ""
             elif len(m.groups()) < 4:
