@@ -34,6 +34,7 @@ from typing import Callable, List, Optional
 from genericpath import isfile
 from lifemonitor.api.models.repositories.base import WorkflowRepository
 from lifemonitor.api.models.repositories.files import RepositoryFile
+from lifemonitor.utils import remove_html_tags
 
 from ..issues import WorkflowRepositoryIssue
 
@@ -130,7 +131,7 @@ class Wizard():
     def find_step(self, text: str) -> Optional[Step]:
         for s in self._steps:
             logger.debug("Checking matching of text '%r' with step '%r' (wizard: %r)", text, s.title, s.wizard)
-            if (s.title and text == s.title) or (text == s.as_string()):
+            if (s.title and remove_html_tags(text) == s.title) or (text == s.as_string()):
                 return s
         return None
 

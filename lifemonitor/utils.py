@@ -51,6 +51,8 @@ from . import exceptions as lm_exceptions
 
 logger = logging.getLogger()
 
+__clean_html_pattern__ = re.compile('<.*?>')
+
 
 def split_by_crlf(s):
     return [v for v in s.splitlines() if v]
@@ -162,6 +164,10 @@ def sizeof_fmt(num, suffix='B'):
 def hide_secret(text: str, secret: str, replace_with="*****") -> str:
     text = str(text) if not isinstance(text, str) else text
     return text if not text else text.replace(secret, replace_with)
+
+
+def remove_html_tags(text):
+    return re.sub(__clean_html_pattern__, '', text)
 
 
 def decodeBase64(str, as_object=False, encoding='utf-8'):
