@@ -68,7 +68,7 @@ class GithubIssueComment(IssueComment):
             logger.debug("Comment crated by LifeMonitor Bot")
             self._addressed_to_bot = False
         else:
-            m = self._pattern.match(self.body)
+            m = self._pattern.match(self.__body)
             if not m:
                 logger.debug(f"Generic message not addressed to LifeMonitor[bot]")
                 self._addressed_to_bot = False
@@ -79,7 +79,7 @@ class GithubIssueComment(IssueComment):
                 self.__body = ""
             else:
                 logger.debug("Message to LifeMonitor[bot]: %r", m.lastgroup)
-                self.__body = m.lastgroup
+                self.__body = m.group(4)
                 self._addressed_to_bot = True
 
     def is_generated_by_bot(self) -> bool:
