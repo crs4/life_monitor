@@ -83,9 +83,10 @@ def get_labels_from_strings(repo: Repository, labels: List[str]) -> List[Label]:
 
 class GithubIOHandler(IOHandler):
 
-    def __init__(self, issue: Issue) -> None:
+    def __init__(self, app, issue: Issue) -> None:
         super().__init__()
         self.issue = issue
+        self.app = app
 
     def get_input(self, question: QuestionStep) -> object:
         assert isinstance(question, QuestionStep), question
@@ -109,9 +110,10 @@ class GithubIOHandler(IOHandler):
                     break
         logger.debug("Candidates: %r", candidates)
         for ca in reversed(candidates):
+            cbody = ca.body.strip(self.get_help())
             logger.debug("Checking candidate: %r -- options: %r", ca.body, question.options)
-            logger.debug("Check condition: %r", ca.body in question.options)
-            if question.options is None or len(question.options) == 0 or ca.body in question.options:
+            logger.debug("Check condition: %r", cbody in question.options)
+            if question.options is None or len(question.options) == 0 or cbody in question.options:
                 return ca
         return None
 
@@ -119,16 +121,21 @@ class GithubIOHandler(IOHandler):
         value = self.get_input(question)
         return value.body if value else None
 
-    def as_string(self, step: Step) -> str:
+    def as_string(self, step: Step, append_help: bool = False) -> str:
         result = f"<b>{step.title}</b><br/>"
         if step.description:
             result += f"{step.description}<br/>"
         if isinstance(step, QuestionStep) and step.options:
-            result += "<br>> Choose among the following options: <b><code>{}</code></b>".format(', '.join(step.options))
+            result += "<br>> Choose among the following options: <b><code>{}</code></b><br>".format(', '.join(step.options))
         if isinstance(step, UpdateStep):
             logger.debug("Preparing PR... %r", step)
+        if append_help:
+            result += self.get_help()
         return result
 
-    def write(self, step: Step):
+    def get_help(self):
+        return f'<br>\n> **?** mention **@lm** or **@{self.app.bot.strip("[bot]")}** to answer'
+
+    def write(self, step: Step, append_help: bool = False):
         assert isinstance(step, Step), step
-        self.issue.create_comment(step.as_string())
+        self.issue.create_comment(step.as_string(append_help=append_help))

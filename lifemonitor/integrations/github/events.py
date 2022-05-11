@@ -137,7 +137,7 @@ class GithubEvent():
         issue = self.issue
         if issue:
             return None if 'comment' not in self.payload else \
-                GithubIssueComment(issue, self.installation._requester, {}, self.payload['comment'], True)
+                GithubIssueComment(self.installation._requester, {}, self.payload['comment'], True, issue=issue)
         return None
 
     @staticmethod
