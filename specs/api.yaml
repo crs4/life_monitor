@@ -636,6 +636,33 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
 
+  /workflows/issues:
+    get:
+      summary: List issue types
+      description: "Get information about the specified workflow"
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "workflows_get_issue_types"
+      tags: ["Workflows"]
+      security:
+        - {}
+      responses:
+        "200":
+          description: >
+            List of issue types.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListOfIssues"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  
+  
   /workflows/{wf_uuid}:
     get:
       summary: Get a workflow
@@ -1751,6 +1778,50 @@ components:
         - created
         - modified
         - events
+
+    Issue:
+      type: object
+      description: A user subscription for a given resource (e.g., workflow).
+      properties:
+        name:
+          type: string
+          nullable: false
+          description: "Name of the issue type"
+          example: Missing workflow file
+        identifier:
+          type: string
+          nullable: false
+          description: "Identifier of the issue type in 'snake case' format"
+          example: "missing_workflow_file"
+        depends_on:
+          type: array
+          nullable: true
+          description: "List of identifiers of issues which the issue depends on"
+          items:
+            type: string
+          example: ["missing_configuration_file"]
+        labels:
+          type: array
+          nullable: true
+          description: "List of labels for the issue type"
+          items:
+            type: string
+          example: ["bug", "enhancement"]
+      required:
+        - identifier
+        - name
+
+    ListOfIssues:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Issue"        
+      description: |
+        List of issue types
+      required:
+        - items
 
     EventType:
       type: string
