@@ -393,8 +393,8 @@ class Resource(db.Model, ModelMixin):
         self.uuid = uuid
 
     def __repr__(self):
-        return '<Resource {}: {} -> {} (type={}))>'.format(
-            self.id, self.uuid, self.uri, self.type)
+        return '<{} {}: {} -> uri={} (type={}))>'.format(
+            self.__class__.__name__, self.id, self.uuid, self.uri, self.type)
 
     @hybrid_property
     def authorizations(self):
