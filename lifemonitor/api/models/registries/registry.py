@@ -293,16 +293,16 @@ class WorkflowRegistry(auth_models.HostingService):
         'polymorphic_identity': 'workflow_registry'
     }
 
-    def __init__(self, registry_type, client_credentials, server_credentials):
-        super().__init__(server_credentials.api_base_url, name=server_credentials.name)
+    def __init__(self, registry_type, client_credentials, server_credentials, name: str = None):
+        super().__init__(server_credentials.api_base_url, name=name or server_credentials.name)
         self.registry_type = registry_type
         self.client_credentials = client_credentials
         self.server_credentials = server_credentials
         self._client = None
 
     def __repr__(self):
-        return '<WorkflowRegistry ({}) -- name {}, url {}>'.format(
-            self.uuid, self.name, self.uri)
+        return '<WorkflowRegistry ({}) -- name {}, client_name: {}, url {}>'.format(
+            self.uuid, self.name, self.client_name, self.uri)
 
     @property
     def api(self) -> auth_models.Resource:
@@ -460,6 +460,6 @@ class WorkflowRegistry(auth_models.HostingService):
         return cls.registry_types.get_class(registry_type)
 
     @classmethod
-    def new_instance(cls, registry_type, client_credentials, server_credentials):
+    def new_instance(cls, registry_type, client_credentials, server_credentials, name: str = None):
         return cls.get_registry_class(registry_type)(client_credentials,
-                                                     server_credentials)
+                                                     server_credentials, name=name)

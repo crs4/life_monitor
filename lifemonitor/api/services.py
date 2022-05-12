@@ -33,7 +33,7 @@ from lifemonitor.auth.models import (EventType,
 from lifemonitor.auth.oauth2.client import providers
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 from lifemonitor.auth.oauth2.server import server
-from lifemonitor.utils import OpenApiSpecs, ROCrateLinkContext
+from lifemonitor.utils import OpenApiSpecs, ROCrateLinkContext, to_snake_case
 
 logger = logging.getLogger()
 
@@ -589,7 +589,8 @@ class LifeMonitor:
 
     @staticmethod
     def add_workflow_registry(type, name,
-                              client_id, client_secret, client_auth_method="client_secret_post",
+                              client_id, client_secret, client_name: str = None,
+                              client_auth_method="client_secret_post",
                               api_base_url=None, redirect_uris=None) -> models.WorkflowRegistry:
         try:
             # At the moment client_credentials of registries
@@ -597,11 +598,13 @@ class LifeMonitor:
             user = User.find_by_username("admin")
             if not user:
                 raise lm_exceptions.EntityNotFoundException(User, entity_id="admin")
+            client_name = client_name or to_snake_case(name)
             registry_scopes = " ".join(OpenApiSpecs.get_instance().registry_scopes.keys())
             server_credentials = providers.new_instance(provider_type=type,
                                                         name=name,
                                                         client_id=client_id,
                                                         client_secret=client_secret,
+                                                        client_name=client_name,
                                                         api_base_url=api_base_url)
             client_credentials = \
                 server.create_client(user, name, server_credentials.api_base_url,
@@ -612,16 +615,17 @@ class LifeMonitor:
                                      if isinstance(redirect_uris, str)
                                      else redirect_uris,
                                      client_auth_method, commit=False)
-            registry = models.WorkflowRegistry.new_instance(type, client_credentials, server_credentials)
+            registry = models.WorkflowRegistry.new_instance(type, client_credentials, server_credentials, name=name)
             registry.save()
-            logger.debug(f"WorkflowRegistry '{name}' (type: {type})' created: {registry}")
+            logger.debug(f"WorkflowRegistry '{name}' (type: {type}, client_name: {client_name})' created: {registry}")
             return registry
         except providers.OAuth2ProviderNotSupportedException as e:
             raise lm_exceptions.WorkflowRegistryNotSupportedException(exception=e)
 
     @staticmethod
     def update_workflow_registry(uuid, name=None,
-                                 client_id=None, client_secret=None, client_auth_method=None,
+                                 client_id=None, client_secret=None,
+                                 client_name=None, client_auth_method=None,
                                  api_base_url=None, redirect_uris=None) -> models.WorkflowRegistry:
         try:
             registry = models.WorkflowRegistry.find_by_uuid(uuid)
@@ -629,6 +633,8 @@ class LifeMonitor:
                 raise lm_exceptions.EntityNotFoundException(models.WorkflowRegistry, entity_id=uuid)
             if name:
                 registry.set_name(name)
+            if client_name:
+                registry.set_client_name(client_name)
             if api_base_url is not None:
                 registry.set_uri(api_base_url)
             registry.update_client(client_id=client_id, client_secret=client_secret,

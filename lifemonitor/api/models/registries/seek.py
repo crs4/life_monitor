@@ -50,8 +50,8 @@ class SeekWorkflowRegistry(WorkflowRegistry):
         'polymorphic_identity': 'seek_registry'
     }
 
-    def __init__(self, client_credentials, server_credentials):
-        super().__init__('seek_registry', client_credentials, server_credentials)
+    def __init__(self, client_credentials, server_credentials, name: str = None):
+        super().__init__('seek_registry', client_credentials, server_credentials, name=name)
 
     @property
     def read_write_scopes(self) -> Tuple[str]:
