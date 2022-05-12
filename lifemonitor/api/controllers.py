@@ -572,6 +572,11 @@ def workflows_delete(wf_uuid):
 
 
 @cached(timeout=Timeout.REQUEST)
+def workflows_get_issue_types():
+    return serializers.ListOfWorkflowIssueTypesSchema().dump(models.WorkflowRepositoryIssue.all())
+
+
+@cached(timeout=Timeout.REQUEST)
 def workflows_get_suites(wf_uuid, version='latest'):
     workflow_version = __get_workflow_version__(wf_uuid, version)
     logger.debug("GET suites of workflow version: %r", workflow_version)

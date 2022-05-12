@@ -26,6 +26,7 @@ from urllib.parse import urljoin
 
 from lifemonitor import exceptions as lm_exceptions
 from lifemonitor import utils as lm_utils
+from lifemonitor.api.models.issues import WorkflowRepositoryIssue
 from lifemonitor.auth import models as auth_models
 from lifemonitor.auth.serializers import SubscriptionSchema, UserSchema
 from lifemonitor.serializers import (BaseSchema, ListOfItems,
@@ -99,6 +100,26 @@ class RegistryIndexItemSchema(ResourceMetadataSchema):
 
 class ListOfRegistryIndexItemsSchema(ListOfItems):
     __item_scheme__ = RegistryIndexItemSchema
+
+
+class WorkflowIssueTypeSchema(ResourceMetadataSchema):
+    __envelope__ = {"single": None, "many": "items"}
+
+    identifier = fields.String(attribute="identifier")
+    name = fields.String(attribute="name")
+    labels = fields.Method("get_labels")
+    depends_on = fields.String(attribute="get_depends_on")
+
+    def get_labels(self, issue: WorkflowRepositoryIssue):
+        return issue.labels
+
+    def get_depends_on(self, issue: WorkflowRepositoryIssue):
+        return [_.identifier for _ in issue.depends_on] if issue.depends_on else []
+
+
+class ListOfWorkflowIssueTypesSchema(ListOfItems):
+    __item_scheme__ = WorkflowIssueTypeSchema
+    __exclude__ = ('meta', 'links')
 
 
 class WorkflowSchema(ResourceMetadataSchema):
