@@ -26,7 +26,7 @@ import sys
 import click
 from cli.client.utils import get_repository, init_output_path
 from lifemonitor.api.models.issues import (WorkflowRepositoryIssue,
-                                           find_issues, load_issue)
+                                           find_issue_types, load_issue)
 from lifemonitor.utils import to_snake_case
 from rich.console import Console
 from rich.panel import Panel
@@ -37,7 +37,7 @@ from rich.text import Text
 
 logger = logging.getLogger(__name__)
 
-issues_list = find_issues()
+issues_list = find_issue_types()
 
 console = Console()
 error_console = Console(stderr=True, style="bold red")

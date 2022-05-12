@@ -1,35 +1,41 @@
 # worfklow name (override name defined on the RO-Crate metadata)
-# name: {{ workflow_title | default("Workflow RO-Crate", true) }}
+{% if workflow_title %}
+name: {{ workflow_title }}
+{% else %}
+# name: MyWorkflow
+{%endif %}
 public: {{ public }}
 
 # Issue Checker Settings
 issues:
-    # Enable/Disable issue checker
-    check: true
-    # csv of issues to check (all included by default)
-    # include: "missing_workflow_file,missing_rocrate_metadata"
-    # csv of issues to ignore (none ignored by default)
-    # exclude: "missing_workflow_file,missing_rocrate_metadata"
+  # Enable/Disable issue checker
+  check: true
+  # csv of issues to check (all included by default)
+  # include: [{{issues|join(', ', attribute="identifier")}}]
+  # csv of issues to ignore (none ignored by default)
+  # exclude: [{{issues|join(', ', attribute="identifier")}}]
     
 
 # Github Integration Settings
-on_push:
-    branches:
-        # Define the list of branches to watch
-        # - name: feature/XXX               # wildcards can be used to specify branches (e.g., feature/*)
-        #   update_registries: ["wfhubdev"] # available registries are listed
-        #                                   # by the endpoint `<lifemonitor_url>/registries`
-        #                                   # (e.g., https://api.lifemontor.eu/registries)
-        - name: "main"
-          update_registries: [{{registries_csv}}]
-        - name: "develop"
-          update_registries: [{{registries_csv}}]
+push:
+  branches:
+    # Define the list of branches to watch
+    # - name: feature/XXX               # wildcards can be used to specify branches (e.g., feature/*)
+    #   update_registries: ["wfhubdev"] # available registries are listed
+    #                                   # by the endpoint `<lifemonitor_url>/registries`
+    #                                   # (e.g., https://api.lifemontor.eu/registries)
+    - name: "main"
+      update_registries: []
+    - name: "develop"
+      update_registries: []
 
-    tags:
-        # Define the list of tags to watch
-        # - name: v*.*.*                    # wildcards can be used to specify tags (e.g., feature/*)
-        #   update_registries: ["wfhub"]    # available registries are listed
-        #                                   # by the endpoint `<lifemonitor_url>/registries`
-        #                                   # (e.g., https://api.lifemontor.eu/registries)
-        - name: "v*.*.*"
-          update_registries: [{{registries_csv}}]
+  tags:
+    # Define the list of tags to watch
+    # - name: v*.*.*                    # wildcards can be used to specify tags (e.g., feature/*)
+    #   update_registries: ["wfhub"]    # available registries are listed
+    #                                   # by the endpoint `<lifemonitor_url>/registries`
+    #                                   # (e.g., https://api.lifemontor.eu/registries)
+    - name: "v*.*.*"
+      update_registries: [{{registries|join(', ', attribute="name")}}]
+    - name: "*.*.*"
+      update_registries: [{{registries|join(', ', attribute="name")}}]
