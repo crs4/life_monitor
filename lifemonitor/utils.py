@@ -146,7 +146,7 @@ def to_snake_case(camel_str) -> str:
     :return:
     """
     pattern = re.compile(r'(?<!^)(?=[A-Z])')
-    return pattern.sub('_', camel_str).lower()
+    return pattern.sub('_', "".join(camel_str.split())).lower()
 
 
 def sizeof_fmt(num, suffix='B'):
