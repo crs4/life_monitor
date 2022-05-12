@@ -51,15 +51,16 @@ OAuth2 settings to connect to LifeMonitor:
 {'-'*100}
 REGISTRY NAME: {registry.name}
 REGISTRY API URL: {registry.uri}
+REGISTRY CLIENT NAME: {registry.client_name}
 REGISTRY CLIENT ID: {registry.client_credentials.client_id}
 REGISTRY CLIENT SECRET: {registry.client_credentials.client_secret}
 REGISTRY CLIENT ALLOWED SCOPES: {registry.client_credentials.client_metadata['scope']}
 REGISTRY CLIENT ALLOWED FLOWS: {registry.client_credentials.client_metadata['grant_types']}
 REGISTRY CLIENT REDIRECT URIs: {registry.client_credentials.redirect_uris}
 REGISTRY CLIENT AUTH METHOD: {registry.client_credentials.auth_method}
-AUTHORIZE URL: <LIFE_MONITOR_BASE_URL>/oauth2/authorize/{registry.name}
+AUTHORIZE URL: <LIFE_MONITOR_BASE_URL>/oauth2/authorize/{registry.client_name}
 ACCESS TOKEN URL: <LIFE_MONITOR_BASE_URL>/oauth2/token
-CALLBACK URL: <LIFE_MONITOR_BASE_URL>/oauth2/authorized/{registry.name}[?next=<URL>]
+CALLBACK URL: <LIFE_MONITOR_BASE_URL>/oauth2/authorized/{registry.client_name}[?next=<URL>]
 """
     print(output)
 
@@ -70,6 +71,8 @@ CALLBACK URL: <LIFE_MONITOR_BASE_URL>/oauth2/authorized/{registry.name}[?next=<U
 @click.argument("client-id")
 @click.argument("client-secret")
 @click.argument("api-url")
+@click.option("--client-name", default=None,
+              help="Short name which identifies the registry on LifeMonitor")
 @click.option("--redirect-uris", default=None,
               help="Redirect URIs (comma separated) to be used with authorization code flow")
 @click.option("--client-auth-method",
@@ -77,7 +80,7 @@ CALLBACK URL: <LIFE_MONITOR_BASE_URL>/oauth2/authorized/{registry.name}[?next=<U
               type=click.Choice(['client_secret_basic', 'client_secret_post']),
               default='client_secret_post')
 @with_appcontext
-def add_registry(name, type, client_id, client_secret, client_auth_method, api_url, redirect_uris):
+def add_registry(name, type, client_id, client_secret, client_auth_method, api_url, client_name, redirect_uris):
     """
     Add a new workflow registry and generate its OAuth2 credentials
     """
@@ -86,6 +89,7 @@ def add_registry(name, type, client_id, client_secret, client_auth_method, api_u
         # are associated with the admin account
         registry = lm.add_workflow_registry(type, name,
                                             client_id, client_secret,
+                                            client_name=client_name,
                                             client_auth_method=client_auth_method,
                                             api_base_url=api_url,
                                             redirect_uris=redirect_uris)
@@ -107,6 +111,8 @@ def add_registry(name, type, client_id, client_secret, client_auth_method, api_u
               help="OAuth2 Client ID to access to the registry")
 @click.option("--client-secret", default=None,
               help="OAuth2 Client Secret to access to the registry")
+@click.option("--client-name", default=None,
+              help="Short name which identifies the registry on LifeMonitor")
 @click.option("--api-url", default=None, help="Base URL of the registry")
 @click.option("--redirect-uris", default=None,
               help="Redirect URIs (comma separated) to be used with authorization code flow")
@@ -116,8 +122,8 @@ def add_registry(name, type, client_id, client_secret, client_auth_method, api_u
               default=None)
 @with_appcontext
 def update_registry(uuid, name,
-                    client_id, client_secret, client_auth_method,
-                    api_url, redirect_uris):
+                    client_id, client_secret, client_name,
+                    client_auth_method, api_url, redirect_uris):
     """
     Update a workflow registry
     """
