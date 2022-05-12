@@ -56,7 +56,7 @@ def test_workflow_registry_registration_error_invalid_type(app_client,
     with pytest.raises(WorkflowRegistryNotSupportedException):
         LifeMonitor.get_instance().add_workflow_registry(
             "jenkins", random_string,
-            random_string, random_string, fake_uri)
+            random_string, random_string, api_base_url=fake_uri)
 
 
 def test_workflow_registry_registration_error_exists(app_client, provider_type,

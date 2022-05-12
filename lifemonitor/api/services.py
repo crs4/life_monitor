@@ -489,7 +489,7 @@ class LifeMonitor:
     @staticmethod
     def get_workflow_registry_by_name(registry_name) -> models.WorkflowRegistry:
         try:
-            r = models.WorkflowRegistry.find_by_name(registry_name)
+            r = models.WorkflowRegistry.find_by_client_name(registry_name)
             if not r:
                 raise lm_exceptions.EntityNotFoundException(models.WorkflowRegistry, registry_name)
             return r

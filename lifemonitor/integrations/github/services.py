@@ -195,7 +195,7 @@ def register_workflow_on_registries(submitter: User, workflow: WorkflowVersion, 
     logger.debug("Registries map: %r", registries_map)
     for registry_name, workflow_identifier in registries_map:
         logger.debug("Registry: %r", registry_name)
-        registry: WorkflowRegistry = WorkflowRegistry.find_by_name(registry_name)
+        registry: WorkflowRegistry = WorkflowRegistry.find_by_client_name(registry_name)
         logger.debug("Registry: %r", registry)
         if registry:
             result.append(register_workflow_on_registry(submitter, workflow, workflow_identifier, registry))
@@ -206,7 +206,7 @@ def register_workflow_on_registry(submitter: User,
                                   workflow_version: WorkflowVersion, workflow_identifier: str,
                                   registry: Optional[str | WorkflowRegistry]):
     assert isinstance(registry, str) or isinstance(registry, WorkflowRegistry), registry
-    registry: WorkflowRegistry = WorkflowRegistry.find_by_name(registry) if isinstance(registry, str) else registry
+    registry: WorkflowRegistry = WorkflowRegistry.find_by_client_name(registry) if isinstance(registry, str) else registry
     logger.warning("Registry: %r", registry)
     if registry:
         try:
@@ -228,7 +228,7 @@ def delete_workflow_from_registries(submitter: User, workflow: WorkflowVersion, 
     logger.debug("Registries: %r", registries)
     for registry_name in registries:
         logger.debug("Registry: %r", registry_name)
-        registry: WorkflowRegistry = WorkflowRegistry.find_by_name(registry_name)
+        registry: WorkflowRegistry = WorkflowRegistry.find_by_client_name(registry_name)
         logger.debug("Registry: %r", registry)
         if registry:
             workflow_registry = workflow.registry_workflow_versions.get(registry.name, None)

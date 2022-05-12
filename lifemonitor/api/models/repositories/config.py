@@ -102,7 +102,7 @@ class WorkflowRepositoryConfig(RepositoryFile):
         for rfs in self._get_refs_list():
             for r in rfs.get("update_registries", []):
                 if not registries.get(r, None):
-                    registries[r] = models.WorkflowRegistry.find_by_name(r)
+                    registries[r] = models.WorkflowRegistry.find_by_client_name(r)
         return list(registries.values())
 
     def get_ref_registries(self, ref_type: str, tag: str) -> List[models.WorkflowRegistry]:
@@ -113,10 +113,10 @@ class WorkflowRepositoryConfig(RepositoryFile):
             registries = {}
             for r in tag_data.get("update_registries", []):
                 if not registries.get(r, None):
-                    registry = models.WorkflowRegistry.find_by_name(r)
+                    registry = models.WorkflowRegistry.find_by_client_name(r)
                     if not registry:
                         logger.warning("Unable to find registry: %r", r)
-                    registries[r] = models.WorkflowRegistry.find_by_name(r)
+                    registries[r] = models.WorkflowRegistry.find_by_client_name(r)
             return list(registries.values())
         except KeyError as e:
             logger.debug("KeyError: %r", str(e))
