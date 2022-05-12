@@ -88,7 +88,7 @@ class WorkflowRepository():
               include=None, exclude=None) -> IssueCheckResult:
         found_issues = []
         checked = []
-        for issue_type in issues.WorkflowRepositoryIssue.all():
+        for issue_type in issues.find_issue_types():
             if (not exclude or issue_type.__name__ not in [to_camel_case(_) for _ in exclude]) or \
                     (not include or issue_type.__name__ in [to_camel_case(_) for _ in include]):
                 issue = issue_type()

@@ -105,7 +105,7 @@ class WorkflowRepositoryIssue():
 
     @classmethod
     def from_string(cls, issue_name: str) -> WorkflowRepositoryIssue:
-        for issue in cls.all():
+        for issue in cls.types():
             if issue.name == issue_name:
                 return issue
         return None
@@ -113,7 +113,13 @@ class WorkflowRepositoryIssue():
     @classmethod
     def all(cls) -> List[WorkflowRepositoryIssue]:
         if not cls.__issues__:
-            cls.__issues__ = find_issues()
+            cls.__issues__ = find_issue_types()
+        return [_() for _ in cls.__issues__]
+
+    @classmethod
+    def types(cls) -> Type[WorkflowRepositoryIssue]:
+        if not cls.__issues__:
+            cls.__issues__ = find_issue_types()
         return cls.__issues__
 
     @staticmethod
@@ -147,7 +153,7 @@ def load_issue(issue_file) -> List[WorkflowRepositoryIssue]:
     return issues.values()
 
 
-def find_issues(path: str = None) -> List[WorkflowRepositoryIssue]:
+def find_issue_types(path: str = None) -> List[WorkflowRepositoryIssue]:
     errors = []
     issues = {}
     current_path = path or os.path.dirname(__file__)

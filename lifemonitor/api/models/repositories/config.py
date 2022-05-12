@@ -23,7 +23,7 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import List
+from typing import Dict, List
 
 import yaml
 import lifemonitor.api.models as models
@@ -47,7 +47,10 @@ class WorkflowRepositoryConfig(RepositoryFile):
     @property
     def _raw_data(self) -> dict:
         if not self.__raw_data:
-            self.__raw_data = self.load()
+            try:
+                self.__raw_data = self.load()
+            except Exception:
+                self.__raw_data = {}
         return self.__raw_data
 
     @property
@@ -65,22 +68,30 @@ class WorkflowRepositoryConfig(RepositoryFile):
         except (AttributeError, KeyError):
             return True
 
-    @property
-    def include_issues(self) -> List[str]:
+    def __parse_list__(self, property) -> List[str]:
         try:
-            return self._raw_data['issues']['include'].split(',')
+            raw_data = self._raw_data['issues'][property]
+            if isinstance(raw_data, str):
+                return self._raw_data['issues'][property].split(',')
+            elif isinstance(raw_data, list):
+                return raw_data
+            raise ValueError(f"Invalid format for '{property}' property")
         except (AttributeError, KeyError):
             return []
+
+    @property
+    def include_issues(self) -> List[str]:
+        return self.__parse_list__('include')
 
     @property
     def exclude_issues(self) -> List[str]:
-        try:
-            return self._raw_data['issues']['exclude'].split(',')
-        except (AttributeError, KeyError):
-            return []
+        return self.__parse_list__('exclude')
+
+    def _get_push_data(self) -> Dict:
+        return self._raw_data.get('push', None)
 
     def _get_refs_list(self, refs="branches,tags") -> List:
-        on_push = self._raw_data.get('on_push', None)
+        on_push = self._raw_data.get('push', None)
         if on_push and refs:
             return [_ for ref in refs.split(",") for _ in on_push.get(ref, [])]
         return None
@@ -93,6 +104,29 @@ class WorkflowRepositoryConfig(RepositoryFile):
                 if not registries.get(r, None):
                     registries[r] = models.WorkflowRegistry.find_by_name(r)
         return list(registries.values())
+
+    def get_ref_registries(self, ref_type: str, tag: str) -> List[models.WorkflowRegistry]:
+        try:
+            tag_data = next((r for r in self._raw_data['push'][ref_type] if r["name"] == tag), None)
+            if not tag_data:
+                return []
+            registries = {}
+            for r in tag_data.get("update_registries", []):
+                if not registries.get(r, None):
+                    registry = models.WorkflowRegistry.find_by_name(r)
+                    if not registry:
+                        logger.warning("Unable to find registry: %r", r)
+                    registries[r] = models.WorkflowRegistry.find_by_name(r)
+            return list(registries.values())
+        except KeyError as e:
+            logger.debug("KeyError: %r", str(e))
+            return []
+
+    def get_tag_registries(self, tag: str) -> List[models.WorkflowRegistry]:
+        return self.get_ref_registries('tags', tag)
+
+    def get_branch_registries(self, branch: str) -> List[models.WorkflowRegistry]:
+        return self.get_ref_registries('branches', branch)
 
     def _get_refs(self, type: str) -> List[str]:
         result = {}
@@ -113,7 +147,9 @@ class WorkflowRepositoryConfig(RepositoryFile):
     def new(cls, repository_path: str, workflow_title: str = "Workflow RO-Crate", public: bool = False) -> WorkflowRepositoryConfig:
         tmpl = TemplateRepositoryFile(repository_path="lifemonitor/templates/repositories/base", name=f"{cls.FILENAME}.j2")
         registries = models.WorkflowRegistry.all()
+        issue_types = models.WorkflowRepositoryIssue.all()
+        os.makedirs(repository_path, exist_ok=True)
         tmpl.write(workflow_title=workflow_title, public=public,
-                   registries=registries, registries_csv=",".join([r.name for r in registries]),
+                   issues=issue_types, registries=registries,
                    output_file_path=os.path.join(repository_path, cls.FILENAME))
         return cls(path=repository_path)
