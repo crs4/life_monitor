@@ -441,7 +441,7 @@ class OAuth2IdentityProvider(db.Model, ModelMixin):
             raise OAuthIdentityNotFoundException(f"{provider_user_id}@{self}")
 
     @classmethod
-    def find(cls, name) -> OAuth2IdentityProvider:
+    def find_by_name(cls, name) -> OAuth2IdentityProvider:
         try:
             return cls.query.filter(cls.name == name).one()
         except NoResultFound:
@@ -453,6 +453,13 @@ class OAuth2IdentityProvider(db.Model, ModelMixin):
             return cls.query.filter(cls.client_name == client_name).one()
         except NoResultFound:
             raise EntityNotFoundException(cls, entity_id=client_name)
+
+    @classmethod
+    def find_by_client_id(cls, client_id) -> List[OAuth2IdentityProvider]:
+        try:
+            return cls.query.filter(cls.client_id == client_id).all()
+        except NoResultFound:
+            raise EntityNotFoundException(cls, entity_id=client_id)
 
     @classmethod
     def find_by_uri(cls, uri) -> OAuth2IdentityProvider:
