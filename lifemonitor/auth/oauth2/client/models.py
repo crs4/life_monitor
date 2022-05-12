@@ -265,11 +265,18 @@ class OAuth2Registry(OAuth):
         return self._clients.values()
 
     def register_client(self, client_config):
-        class OAuth2Client(FlaskRemoteApp):
-            NAME = client_config.name
-            OAUTH_APP_CONFIG = client_config.oauth_config
+        client_name = None
+        try:
+            client_name = client_config.client_name
+        except AttributeError:
+            client_name = client_config.name
 
-        super().register(client_config.name, overwrite=True, client_cls=OAuth2Client)
+        class OAuth2Client(FlaskRemoteApp):
+            NAME = client_name
+            OAUTH_APP_CONFIG = client_config.oauth_config
+        if not client_name:
+            raise RuntimeWarning(f"Unable to configure {client_config}: missing 'name' or 'client_name'")
+        super().register(client_name, overwrite=True, client_cls=OAuth2Client)
 
     def is_initialized(self) -> bool:
         return self._initialized
