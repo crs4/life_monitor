@@ -45,6 +45,8 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy.orm.exc import NoResultFound
 
+from lifemonitor.utils import to_snake_case
+
 logger = logging.getLogger(__name__)
 
 
@@ -213,7 +215,7 @@ class OAuthIdentity(models.ExternalServiceAccessAuthorization, ModelMixin):
     def find_by_user_id(user_id, provider_name) -> OAuthIdentity:
         try:
             return OAuthIdentity.query\
-                .filter(OAuthIdentity.provider.has(name=provider_name))\
+                .filter(OAuthIdentity.provider.has(client_name=provider_name))\
                 .filter_by(user_id=user_id).one()
         except NoResultFound:
             raise OAuthIdentityNotFoundException(f"{user_id}_{provider_name}")
@@ -222,7 +224,7 @@ class OAuthIdentity(models.ExternalServiceAccessAuthorization, ModelMixin):
     def find_by_provider_user_id(provider_user_id, provider_name) -> OAuthIdentity:
         try:
             return OAuthIdentity.query\
-                .filter(OAuthIdentity.provider.has(name=provider_name))\
+                .filter(OAuthIdentity.provider.has(client_name=provider_name))\
                 .filter_by(provider_user_id=provider_user_id).one()
         except NoResultFound:
             raise OAuthIdentityNotFoundException(f"{provider_name}_{provider_user_id}")
@@ -308,6 +310,7 @@ class OAuth2IdentityProvider(db.Model, ModelMixin):
     _type = db.Column("type", db.String, nullable=False)
     uri = db.Column(db.String, nullable=False, unique=True)
     name = db.Column(db.String, nullable=False, unique=True)
+    client_name = db.Column(db.String, nullable=False, unique=True)
     client_id = db.Column(db.String, nullable=False)
     client_secret = db.Column(db.String, nullable=False)
     client_kwargs = db.Column(JSON, nullable=True)
@@ -331,6 +334,7 @@ class OAuth2IdentityProvider(db.Model, ModelMixin):
                  client_id, client_secret,
                  api_base_url, authorize_url, access_token_url, userinfo_endpoint,
                  uri=None,
+                 client_name=None,
                  client_kwargs=None,
                  authorize_params=None,
                  access_token_params=None,
@@ -339,9 +343,11 @@ class OAuth2IdentityProvider(db.Model, ModelMixin):
         self.uri = uri or api_base_url
         self.client_id = client_id
         self.client_secret = client_secret
+        self.client_name = client_name or to_snake_case(name)
         self.api_resource = models.Resource(api_base_url, name=self.name)
         self.client_kwargs = client_kwargs
         self.authorize_url = authorize_url
+        self.authorize_params = authorize_params
         self.access_token_url = access_token_url
         self.access_token_params = access_token_params
         self.userinfo_endpoint = urljoin(api_base_url, userinfo_endpoint)
@@ -440,6 +446,13 @@ class OAuth2IdentityProvider(db.Model, ModelMixin):
             return cls.query.filter(cls.name == name).one()
         except NoResultFound:
             raise EntityNotFoundException(cls, entity_id=name)
+
+    @classmethod
+    def find_by_client_name(cls, client_name) -> OAuth2IdentityProvider:
+        try:
+            return cls.query.filter(cls.client_name == client_name).one()
+        except NoResultFound:
+            raise EntityNotFoundException(cls, entity_id=client_name)
 
     @classmethod
     def find_by_uri(cls, uri) -> OAuth2IdentityProvider:
