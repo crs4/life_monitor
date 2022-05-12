@@ -104,7 +104,7 @@ def get_current_user_identity():
         provider_name = session.get("oauth2_provider_name")
         user_info = session.get("oauth2_user_info")
         token = session.get("oauth2_user_token")
-        p = OAuth2IdentityProvider.find(provider_name)
+        p = OAuth2IdentityProvider.find_by_client_name(provider_name)
         logger.debug("Provider found: %r", p)
         identity = OAuthIdentity(
             provider=p,

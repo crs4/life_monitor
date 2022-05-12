@@ -117,7 +117,7 @@ class AuthorizatonHandler:
         # avoid autoflush in this session
         with db.session.no_autoflush:
             try:
-                p = OAuth2IdentityProvider.find(provider.name)
+                p = OAuth2IdentityProvider.find_by_client_name(provider.name)
                 logger.debug("Provider found: %r", p)
             except exceptions.EntityNotFoundException:
                 try:

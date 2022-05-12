@@ -442,14 +442,18 @@ class WorkflowRegistry(auth_models.HostingService):
             raise lm_exceptions.LifeMonitorException(detail=str(e), stack=str(e))
 
     @classmethod
-    def find_by_name(cls, name):
+    def find_by_client_name(cls, name) -> WorkflowRegistry:
+        return cls.find_by_provider_client_name(name)
+
+    @classmethod
+    def find_by_name(cls, name) -> List[WorkflowRegistry]:
         try:
-            return cls.query.filter(WorkflowRegistry.name == name).one()
+            return cls.query.filter(WorkflowRegistry.name == name).all()
         except Exception as e:
             raise lm_exceptions.EntityNotFoundException(WorkflowRegistry, entity_id=name, exception=e)
 
     @classmethod
-    def find_by_uri(cls, uri):
+    def find_by_uri(cls, uri) -> WorkflowRegistry:
         try:
             return cls.query.filter(WorkflowRegistry.uri == uri).one()
         except Exception as e:

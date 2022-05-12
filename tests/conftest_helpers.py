@@ -439,7 +439,7 @@ def create_client_credentials_registry(_app_settings, _admin_user, name='seek'):
 
 
 def get_registry(_app_settings, _admin_user) -> WorkflowRegistry:
-    registry = WorkflowRegistry.find_by_name("seek")
+    registry = WorkflowRegistry.find_by_client_name("seek")
     if registry is None:
         registry = create_client_credentials_registry(_app_settings, _admin_user)
     return registry
