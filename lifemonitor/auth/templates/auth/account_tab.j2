@@ -15,7 +15,7 @@
         <th style="width: 5px"></th>
         <th>Provider</th>
         <th style="width: 100px">User ID</th>
-        <th style="width: 40px"></th>
+        <th style="width: 120px"></th>
         </tr>
     </thead>
     <tbody>
@@ -27,12 +27,23 @@
             {{ current_user.oauth_identity[p.client_name].provider_user_id }}
             {% endif %}</td>
         {% if p.client_name in current_user.oauth_identity %}
-        <td><span class="badge bg-success">CONNECTED</span></td>
-        {% else %}
         <td>
-            <span class="badge bg-primary">
-            <a class="" href="/oauth2/login/{{p.client_name}}">CONNECT</a>
-            </span>
+            {% if current_user.oauth_identity|length > 1 or current_user.has_password %}
+            <a href="/oauth2/logout/{{p.client_name}}" title="Click to unlink your '{{p.client_name}}' identity">
+                <span class="badge bg-success" style="width: 75px; margin-right: 5px;">CONNECTED</span>
+                <i class="fas fa-link fa-xs" style="color: black;"></i>
+            </a>
+            {% else %}
+            <span class="badge bg-success" style="width: 75px; margin-right: 5px;">CONNECTED</span>
+            {% endif %}
+
+        </td>
+        {% else %}
+        <td>            
+            <a href="/oauth2/login/{{p.client_name}}" title="Click to link your '{{p.client_name}}' identity">
+                <span class="badge bg-primary" style="width: 75px; margin-right: 5px;">CONNECT</span>
+                <i class="fas fa-unlink fa-xs" style="color: black;"></i>                
+            </a>
         </td>
         {% endif %}
         </tr>
