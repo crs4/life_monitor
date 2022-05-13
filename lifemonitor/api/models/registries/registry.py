@@ -162,7 +162,7 @@ class WorkflowRegistryClient(ABC):
     def __init__(self, registry: WorkflowRegistry):
         self._registry = registry
         try:
-            self._oauth2client: RemoteApp = getattr(oauth2_registry, self.registry.name)
+            self._oauth2client: RemoteApp = getattr(oauth2_registry, self.registry.client_name)
         except AttributeError:
             raise RuntimeError(f"Unable to find a OAuth2 client for the {self.registry.name} service")
 
