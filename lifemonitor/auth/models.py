@@ -259,6 +259,14 @@ class User(db.Model, UserMixin):
         db.session.add(self)
         db.session.commit()
 
+    def delete(self):
+        for wf in self.workflows.values():
+            for w in wf:
+                if w.submitter.id == self.id:
+                    w.delete()
+        db.session.delete(self)
+        db.session.commit()
+
     def to_dict(self):
         return {
             "id": self.id,
@@ -645,10 +653,21 @@ class HostingService(Resource):
     def get_rocrate_external_link(self, external_id: str, version: str) -> str:
         pass
 
+    @property
+    def client_name(self) -> str:
+        return self.get_client_name()
+
     def set_name(self, name):
         self.name = name
         if self.server_credentials:
             self.server_credentials.name = name
+
+    def set_client_name(self, client_name: str):
+        if self.server_credentials:
+            self.server_credentials.client_name = client_name
+
+    def get_client_name(self) -> str:
+        return self.server_credentials.client_name if self.server_credentials else None
 
     def set_uri(self, uri):
         self.uri = uri
@@ -687,7 +706,7 @@ class HostingService(Resource):
             raise lm_exceptions.LifeMonitorException(detail=str(e), stack=str(e))
 
     @classmethod
-    def find_by_provider_id(cls, server_id):
+    def find_by_provider_id(cls, server_id) -> HostingService:
         try:
             return cls.query.filter(server_id == server_id).one()
         except NoResultFound as e:
@@ -697,11 +716,11 @@ class HostingService(Resource):
             raise lm_exceptions.LifeMonitorException(detail=str(e), stack=str(e))
 
     @classmethod
-    def find_by_provider_name(cls, name: str):
+    def find_by_provider_name(cls, name: str) -> List[HostingService]:
         try:
             from lifemonitor.auth.oauth2.client.models import OAuth2IdentityProvider
             return cls.query.join(OAuth2IdentityProvider, OAuth2IdentityProvider.id == cls._server_id)\
-                .filter(OAuth2IdentityProvider.name == name).one()
+                .filter(OAuth2IdentityProvider.name == name).all()
         except NoResultFound as e:
             logger.debug(e)
             return None
@@ -709,7 +728,19 @@ class HostingService(Resource):
             raise lm_exceptions.LifeMonitorException(detail=str(e), stack=str(e))
 
     @classmethod
-    def find_by_client_id(cls, client_id):
+    def find_by_provider_client_name(cls, name: str) -> HostingService:
+        try:
+            from lifemonitor.auth.oauth2.client.models import OAuth2IdentityProvider
+            return cls.query.join(OAuth2IdentityProvider, OAuth2IdentityProvider.id == cls._server_id)\
+                .filter(OAuth2IdentityProvider.client_name == name).one()
+        except NoResultFound as e:
+            logger.debug(e)
+            return None
+        except Exception as e:
+            raise lm_exceptions.LifeMonitorException(detail=str(e), stack=str(e))
+
+    @classmethod
+    def find_by_client_id(cls, client_id) -> HostingService:
         try:
             return cls.query.filter(cls.client_id == client_id).one()
         except NoResultFound as e:
