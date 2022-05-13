@@ -102,6 +102,30 @@ def create_blueprint(merge_identity_view):
             params.update({'scope': scope})
         return remote.authorize_redirect(redirect_uri, **params)
 
+    @blueprint.route('/logout/<name>')
+    @next_route_aware
+    def logout(name: str):
+        try:
+            # we allow dynamic reconfiguration of the oauth2registry
+            # when app is configured in dev or testing mode
+            provider = OAuth2IdentityProvider.find_by_client_name(name)
+            if provider is None:
+                abort(404)
+            # unlink identity
+            del current_user.oauth_identity[provider.client_name]
+            current_user.save()
+            flash(f"\"{provider.name}\" identity unlinked from you account.", category="success")
+        except Exception as e:
+            message = f"Unable to unlink identity '{provider.name}' of user {current_user}"
+            logger.error(message)
+            flash(message, category="error")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.exception(e)
+
+        # Determine the right next hop
+        next_url = NextRouteRegistry.pop()
+        return redirect(next_url, code=307) if next_url \
+            else RequestHelper.response() or redirect('/', code=302)
     return blueprint
 
 
