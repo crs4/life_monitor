@@ -131,7 +131,7 @@ class OAuthIdentity(models.ExternalServiceAccessAuthorization, ModelMixin):
         # where the dictionary key is the OAuth provider name.
         backref=db.backref(
             "oauth_identity",
-            collection_class=attribute_mapped_collection("provider.name"),
+            collection_class=attribute_mapped_collection("provider.client_name"),
             cascade="all, delete-orphan",
         ),
     )

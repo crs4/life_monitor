@@ -93,7 +93,7 @@ def merge_users(merge_from: User, merge_into: User, provider: str):
 
 def save_current_user_identity(identity: OAuthIdentity):
     session["oauth2_username"] = identity.user.username if identity else None
-    session["oauth2_provider_name"] = identity.provider.name if identity else None
+    session["oauth2_provider_name"] = identity.provider.client_name if identity else None
     session["oauth2_user_info"] = identity.user_info if identity else None
     session["oauth2_user_token"] = identity.token if identity else None
     logger.debug("User identity temporary save: %r", identity)
