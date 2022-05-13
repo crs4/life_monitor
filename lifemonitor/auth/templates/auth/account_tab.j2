@@ -22,16 +22,16 @@
     {% for p in providers %}
         <tr>
         <td>{{ macros.render_provider_fa_icon(p, color="black") }}</td>
-        <td>{{p.name.capitalize()}}</td>
-        <td>{% if p.name in current_user.oauth_identity %}
-            {{ current_user.oauth_identity[p.name].provider_user_id }}
+        <td>{{p.name}}</td>
+        <td>{% if p.client_name in current_user.oauth_identity %}
+            {{ current_user.oauth_identity[p.client_name].provider_user_id }}
             {% endif %}</td>
-        {% if p.name in current_user.oauth_identity %}
+        {% if p.client_name in current_user.oauth_identity %}
         <td><span class="badge bg-success">CONNECTED</span></td>
         {% else %}
         <td>
             <span class="badge bg-primary">
-            <a class="" href="/oauth2/login/{{p.name}}">CONNECT</a>
+            <a class="" href="/oauth2/login/{{p.client_name}}">CONNECT</a>
             </span>
         </td>
         {% endif %}
