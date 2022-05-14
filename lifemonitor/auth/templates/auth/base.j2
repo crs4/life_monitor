@@ -52,6 +52,9 @@
       style="{% block body_style %}{% endblock body_style %}">
   {% block body %}{% endblock %}
 
+  <!-- Include input pane dialog -->
+  {% include 'auth/input_dialog.j2' %}
+
   <!-- JS dependencies  -->
   {% block javascripts_libraries %}
     <!-- jQuery -->
