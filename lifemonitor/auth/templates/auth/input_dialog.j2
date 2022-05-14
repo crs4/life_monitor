@@ -42,7 +42,6 @@
 
     function showInputDialog(options) {
         options = options || {};
-        console.log(options.title);
         $('#inputDialogTitle').html(options.title || '');
         if (!options.title) { $('#inputDialogTitleContainer').hide(); }
 
@@ -65,7 +64,9 @@
         $('#inputDialogClosePane').hide();
         $('#inputDialogConfirm').html(options.confirmText);
         if (!options.confirmText) $('#inputDialogConfirm').hide();
+        $('#inputDialogConfirm').attr("class", `btn ${options.confirmButtonClass || 'btn-primary'} btn-lg m-1`);
         $('#inputDialogCancel').html(options.cancelText || "Close");
+        $('#inputDialogCancel').attr("class", `btn ${options.cancelButtonClass || 'btn-secondary'} btn-lg m-1`);
 
         // set onConfirm callback
         if (options.onConfirm) {
