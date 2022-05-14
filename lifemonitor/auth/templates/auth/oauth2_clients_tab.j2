@@ -91,11 +91,11 @@
               </span>
             </button>
           </form>
-          <form method="POST"
+          <form id="deleteOAuth2Client_{{client.client_id}}" method="POST"
                 action="{{ url_for('auth.delete_generic_code_flow_client') }}">
             <input type="hidden" name="clientId" value="{{client.client_id}}" />
-            <button class="btn btn-link" type="submit" style="padding: 0"
-                    title="click to delete">
+            <button class="btn btn-link" type="button" style="padding: 0"
+                    title="click to delete" onclick="deleteClient('{{client.client_id}}','{{client.client_name}}')">
               <span class="badge bg-danger">
               DELETE
               </span>
@@ -108,3 +108,25 @@
   </table>
 </div>
 
+
+<script>
+  function deleteClient(clientId, clientName){
+      showInputDialog({
+          //image: 'logo',
+          iconClass: "fas fa-laptop-code",
+          question: `Delete OAuth2 Client?`,
+          description: `Your OAuth2 Client <b>'${clientName}'</b> will be deleted from your account. <br>Are you sure you want to continue?`,
+          confirmText: "Delete",
+          confirmButtonClass: 'btn-danger',
+          cancelText: "Cancel",
+          onConfirm: function(){
+              const form = $(`#deleteOAuth2Client_${clientId}`);
+              if(form){
+                  form.submit();
+              }else{
+                  console.warning("Unable to find oauth2Client form");
+              }
+          }
+      });
+  }
+</script>
