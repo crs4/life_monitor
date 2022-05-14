@@ -29,7 +29,7 @@
         {% if p.client_name in current_user.oauth_identity %}
         <td>
             {% if current_user.oauth_identity|length > 1 or current_user.has_password %}
-            <a href="/oauth2/logout/{{p.client_name}}" title="Click to unlink your '{{p.client_name}}' identity">
+            <a title="Click to unlink your '{{p.client_name}}' identity" onclick="disconnect('{{p.name}}', '{{p.client_name}}')">
                 <span class="badge bg-success" style="width: 75px; margin-right: 5px;">CONNECTED</span>
                 <i class="fas fa-link fa-xs" style="color: black;"></i>
             </a>
@@ -83,4 +83,19 @@
 </div>
 {% endif %}
 
-
+<script>
+    function disconnect(providerName, providerClientName){
+        showInputDialog({
+            //image: 'logo',
+            iconClass: "fas fa-unlink",
+            question: `Disconnect <br> '${providerName}' identity?`,
+            description: `Your <b>'${providerName}'</b> identity will disconnected <br>from your account. Are you sure you want to continue?`,
+            confirmText: "Disconnect",
+            cancelText: "Cancel",
+            onConfirm: function(){
+                alert("ok");
+                document.location.href = `/oauth2/logout/${providerClientName}`;
+            }
+        });
+    }
+</script>
