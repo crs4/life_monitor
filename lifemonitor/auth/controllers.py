@@ -393,23 +393,29 @@ def update_github_registry_settings():
 @blueprint.route("/merge", methods=("GET", "POST"))
 @login_required
 def merge():
-    form = LoginForm(data={
-        "username": request.args.get("username"),
-        "provider": request.args.get("provider")})
-    if form.validate_on_submit():
-        user = form.get_user()
-        if user:
-            if user != current_user:
-                merge_users(current_user, user, request.args.get("provider"))
-                flash(
-                    "User {username} has been merged into your account".format(
-                        username=user.username
-                    )
-                )
-                return redirect(url_for("auth.index"))
-            else:
-                form.username.errors.append("Cannot merge with yourself")
-    return render_template("auth/merge.j2", form=form)
+    username = request.args.get("username")
+    provider = request.args.get("provider")
+    flash(f"Your <b>{provider}</b> identity is already linked to the username "
+          f"<b>{username}</b> and cannot be merged to <b>{current_user.username}</b>",
+          category="warning")
+    return redirect(url_for('auth.profile'))
+    # form = LoginForm(data={
+    #     "username": username,
+    #     "provider": provider})
+    # if form.validate_on_submit():
+    #     user = form.get_user()
+    #     if user:
+    #         if user != current_user:
+    #             merge_users(current_user, user, request.args.get("provider"))
+    #             flash(
+    #                 "User {username} has been merged into your account".format(
+    #                     username=user.username
+    #                 )
+    #             )
+    #             return redirect(url_for("auth.index"))
+    #         else:
+    #             form.username.errors.append("Cannot merge with yourself")
+    # return render_template("auth/merge.j2", form=form)
 
 
 @blueprint.route("/create_apikey", methods=("POST",))
