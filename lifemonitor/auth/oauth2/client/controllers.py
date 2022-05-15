@@ -216,11 +216,11 @@ class AuthorizatonHandler:
                 # link the token to the current user
                 identity.user = current_user
                 identity.save()
-                flash(f"Your account has successfully been linked to the identity {identity}.")
+                flash(f"Your account has successfully been linked to your <b>{identity.provider.name}</b> identity.")
 
             # Determine the right next hop
             next_url = NextRouteRegistry.pop()
-            flash(f"Logged with your \"{provider.name.capitalize()}\" identity.", category="success")
+            flash(f"Logged with your <b>\"{identity.provider.name}\"</b> identity.", category="success")
             return redirect(next_url, code=307) if next_url \
                 else RequestHelper.response() or redirect('/', code=302)
 
