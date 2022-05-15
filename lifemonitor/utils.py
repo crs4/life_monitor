@@ -120,13 +120,10 @@ def uuid_param(uuid_value) -> uuid.UUID:
 def walk(path, topdown=True, onerror=None, followlinks=False, exclude=None):
     exclude = frozenset(exclude or [])
     for root, dirs, files in os.walk(path, topdown=topdown, onerror=onerror, followlinks=followlinks):
-        logger.warning("Original dir list: %r", dirs)
-        logger.warning("Original files list: %r", dirs)
         if exclude:
             dirs[:] = [_ for _ in dirs if _ not in exclude]
             files[:] = [_ for _ in files if _ not in exclude]
-            logger.warning("Filtered dir list: %r", dirs)
-            logger.warning("Filtered files list: %r", dirs)
+
         yield root, dirs, files
 
 
