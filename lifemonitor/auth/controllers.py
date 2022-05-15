@@ -256,6 +256,17 @@ def logout():
     return redirect(url_for("auth.index"))
 
 
+@blueprint.route("/delete_account", methods=("POST",))
+@login_required
+def delete_account():
+    current_user.delete()
+    session.pop('_flashes', None)
+    flash("Your account has been deleted", category="success")
+    logout_user()
+    NextRouteRegistry.clear()
+    return redirect(url_for("auth.index"))
+
+
 @blueprint.route("/set_password", methods=("GET", "POST"))
 @login_required
 def set_password():

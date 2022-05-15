@@ -77,11 +77,37 @@
         {{ macros.render_custom_field(passwordForm.repeat_password) }}
     </div>
     <div class="form-group pt-5 text-center">
-        <button type="submit" class="btn btn-primary text-bold" style="width: 120px">Update</button>
+        <button type="submit" class="btn btn-primary text-bold" style="width: 175px">Update</button>
     </div>
     </form>
 </div>
 {% endif %}
+
+<div class="card-header">
+    <h3 class="card-title"><b>Delete Account</b></h3>
+</div>
+
+<div class="card-body">
+    <div class="text-muted pt-2 pb-2">
+        {%if current_user.workflows|length == 0%}
+        No workflow associated with your account.
+        {%else%}
+        Your account is associated with {{current_user.workflows|length}} 
+        workflow{%if current_user.workflows|length>1%}s{%endif%}.<br>
+        If you delete your account, all your workflows will be deleted 
+        and you will not be able to recover them.
+        {%endif%}
+    </div>
+    <form id="deleteAccount" method="POST" action="{{ url_for('auth.delete_account') }}" >
+    {{ passwordForm.hidden_tag() }}
+    <div class="form-group pt-5 text-center">
+        <button type="button" onclick="deleteAccount()"
+                class="btn btn-danger text-bold" style="width: 175px">
+                Delete your account
+        </button>
+    </div>
+    </form>
+</div>
 
 <script>
     function disconnect(providerName, providerClientName){
@@ -94,6 +120,24 @@
             cancelText: "Cancel",
             onConfirm: function(){
                 document.location.href = `/oauth2/logout/${providerClientName}`;
+            }
+        });
+    }
+    
+    function deleteAccount(){
+        showInputDialog({
+            //image: 'logo',
+            iconClass: "fas fa-user-alt-slash",
+            question: `Delete your account?`,
+            description: `Your <b>'{{current_user.username}}'</b> account and 
+            {%if current_user.workflows|length == 1%} your workflow
+            {%elif current_user.workflows|length > 1 %} your <em>{{current_user.workflows|length}} workflows</em>
+            {%endif%} will be deleted. <br>Are you sure you want to continue?`,
+            confirmText: "Delete",
+            confirmButtonClass: "btn-danger",
+            cancelText: "Cancel",
+            onConfirm: function(){
+                $("#deleteAccount").submit();
             }
         });
     }
