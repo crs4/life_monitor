@@ -31,12 +31,11 @@ from lifemonitor.utils import (NextRouteRegistry, next_route_aware,
 from .. import exceptions
 from ..utils import OpenApiSpecs
 from . import serializers
-from .forms import (EmailForm, LoginForm,
-                    NotificationsForm, Oauth2ClientForm, RegisterForm,
-                    SetPasswordForm)
+from .forms import (EmailForm, LoginForm, NotificationsForm, Oauth2ClientForm,
+                    RegisterForm, SetPasswordForm)
 from .models import db
 from .oauth2.client.services import (get_current_user_identity, get_providers,
-                                     merge_users, save_current_user_identity)
+                                     save_current_user_identity)
 from .oauth2.server.services import server
 from .services import (authorized, current_registry, current_user,
                        delete_api_key, generate_new_api_key, login_manager)
