@@ -102,7 +102,7 @@
   {{ macros.render_logo(style="width: 50%") }}
 
   {{ macros.render_warning(
-      config.get("WARNING_MESSAGE", "None"),
+      config.get("WARNING_MESSAGE", None),
       classes="mt-5" if config.get('ENV') == 'production' else "")
   }}
 
