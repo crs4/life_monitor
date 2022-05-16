@@ -157,7 +157,9 @@ class RegistryWorkflowVersion(Resource):
 
 class WorkflowRegistryClient(ABC):
 
-    client_types = ClassManager('lifemonitor.api.models.registries', class_suffix="WorkflowRegistryClient", skip=["registry"])
+    client_types = ClassManager('lifemonitor.api.models.registries',
+                                skip=["registry", "forms", "settings"],
+                                class_suffix="WorkflowRegistryClient")
 
     def __init__(self, registry: WorkflowRegistry):
         self._registry = registry
@@ -287,7 +289,9 @@ class WorkflowRegistry(auth_models.HostingService):
     id = db.Column(db.Integer, db.ForeignKey(auth_models.HostingService.id), primary_key=True)
     registry_type = db.Column(db.String, nullable=False)
 
-    registry_types = ClassManager('lifemonitor.api.models.registries', class_suffix="WorkflowRegistry", skip=["registry"])
+    registry_types = ClassManager('lifemonitor.api.models.registries',
+                                  skip=["registry", "forms", "settings"],
+                                  class_suffix="WorkflowRegistry")
 
     __mapper_args__ = {
         'polymorphic_identity': 'workflow_registry'
