@@ -24,6 +24,7 @@ from .app import LifeMonitorGithubApp, LifeMonitorInstallation
 from .controllers import init_integration
 from .events import GithubEvent, GithubRepositoryReference
 from .settings import GithubUserSettings
+from .registry import GithubWorkflowRegistry
 
 __all__ = [
     "init_integration",
@@ -31,5 +32,6 @@ __all__ = [
     "LifeMonitorInstallation",
     "GithubEvent",
     "GithubRepositoryReference",
-    "GithubUserSettings"
+    "GithubUserSettings",
+    "GithubWorkflowRegistry"
 ]
