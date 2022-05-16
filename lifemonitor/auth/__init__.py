@@ -22,8 +22,8 @@ import logging
 
 import lifemonitor.auth.oauth2 as oauth2
 
-from .models import User, UserNotification, Notification, EventType
 from .controllers import blueprint as auth_blueprint
+from .models import EventType, Notification, User, UserNotification
 from .services import (NotAuthorizedException, authorized, current_registry,
                        current_user, login_manager, login_registry, login_user,
                        logout_registry, logout_user)
