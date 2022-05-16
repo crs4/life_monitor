@@ -48,6 +48,7 @@ class WorkflowRegistrySchema(ResourceMetadataSchema):
         model = models.WorkflowRegistry
 
     uuid = ma.auto_field()
+    identifier = fields.String(attribute="client_name")
     uri = ma.auto_field()
     type = fields.Method("get_type")
     name = fields.String(attribute="server_credentials.name")
