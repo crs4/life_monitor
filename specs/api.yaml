@@ -1946,12 +1946,16 @@ components:
           type: string
           description: Universal unique identifier of the workflow registry
           example: aa16c6a9-571f-4a62-976f-60ea514ad2c1
-        name:
+        identifier:
           type: string
           description: |
             An alphanumeric string used to denote the registry.
             Only `_` and `-` are allowed, no spaces or other special characters.
           example: workflowhub_dev
+        name:
+          type: string
+          description: The name of the registry
+          example: WorkflowHub Dev
         type:
           description: "Registry type"
           $ref: "#/components/schemas/RegistryType"
