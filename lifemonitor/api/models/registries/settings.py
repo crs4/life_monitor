@@ -45,7 +45,7 @@ class RegistrySettings():
         flag_modified(self.user, 'settings')
 
     def add_registry(self, registry: str):
-        if not registry in self.registries:
+        if registry not in self.registries:
             self._raw_settings.append(registry)
             flag_modified(self.user, 'settings')
 
