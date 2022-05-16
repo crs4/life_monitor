@@ -101,7 +101,17 @@ def register_repository_workflow(repository_reference: GithubRepositoryReference
             current_wv = wv = w.versions.get(workflow_version, None)
 
             # initialize registries map
-            registries_map = [(_, (lambda w: w.identifier if w else None)(latest_version.registry_workflow_versions.get(_, None))) for _ in registries]
+            registries_map = []
+            for r_id in registries:
+                rwv = latest_version.registry_workflow_versions.get(r_id, None)
+                if not rwv:
+                    rwv = next((_ for _ in latest_version.registry_workflow_versions.values()
+                                if _.registry.name == r_id or _.registry.client_name == r_id), None)
+                if rwv:
+                    map_item = (rwv.registry.client_name, rwv.identifier)
+                    if map_item not in registries_map:
+                        registries_map.append(map_item)
+
             logger.debug("Created registries map: %r", registries_map)
             # register or update the workflow version
             if not wv:
@@ -120,8 +130,9 @@ def register_repository_workflow(repository_reference: GithubRepositoryReference
             else:
                 # register workflow on new registries if any
                 registries_list = [r for r in registries_map if r[0] not in wv.registry_workflow_versions] if registries_map else None
-                if registries_list and current_wv != wv or len(registries_list) > 0:
-                    register_workflow_on_registries(repo_owner, wv, registries_list)
+                if registries_list:
+                    if current_wv != wv or len(registries_list) > 0:
+                        register_workflow_on_registries(repo_owner, wv, registries_list)
                 else:
                     logger.warning("Skipped registration of workflow %r on registries %r", wv, registries_list)
             # append to the list of registered workflows

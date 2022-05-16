@@ -153,6 +153,7 @@ def __check_for_issues_and_register__(repo_info: GithubRepositoryReference,
     if register:
         # Configure registries
         registries = __config_registry_list__(repo_info, registry_settings)
+        logger.debug("Registries to update: %r", registries)
         # register or update workflow on LifeMonitor and optionally on registries
         registered_workflow = services.register_repository_workflow(repo_info, registries=registries)
         logger.debug("Registered workflow: %r", registered_workflow)
