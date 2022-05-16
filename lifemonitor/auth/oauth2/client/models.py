@@ -126,8 +126,8 @@ class OAuthIdentity(models.ExternalServiceAccessAuthorization, ModelMixin):
     created_at = db.Column(DateTime, default=datetime.utcnow, nullable=False)
     _token = db.Column("token", JSON, nullable=True)
     _user_info = None
-    provider = db.relationship("OAuth2IdentityProvider", uselist=False, back_populates="identities")
-    user = db.relationship(
+    provider: OAuth2IdentityProvider = db.relationship("OAuth2IdentityProvider", uselist=False, back_populates="identities")
+    user: models.User = db.relationship(
         models.User,
         # This `backref` thing sets up an `oauth` property on the User model,
         # which is a dictionary of OAuth models associated with that user,
