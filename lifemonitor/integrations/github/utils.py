@@ -37,13 +37,18 @@ logger = logging.getLogger(__name__)
 
 
 def match_ref(ref: str, refs: List[str]) -> str:
+    if not ref:
+        return None
     for v in refs:
         pattern = rf"^({v})$".replace('*', "[a-zA-Z0-9.-_/]")
-        logger.debug("Pattern: %r", pattern)
-        match = re.match(pattern, ref)
-        logger.error("Math: %r", match)
-        logger.error("pattern: %r", pattern)
-        return (match.group(0), pattern.replace("[a-zA-Z0-9.-_/]", '*').strip('^()$'))
+        try:
+            logger.debug("Searching match for %s (pattern: %s)", ref, pattern)
+            match = re.match(pattern, ref)
+            if match:
+                logger.debug("Match found: %r", match)
+                return (match.group(0), pattern.replace("[a-zA-Z0-9.-_/]", '*').strip('^()$'))
+        except Exception:
+            logger.debug("Unable to find a match for %s (pattern: %s)", ref, pattern)
     return None
 
 
