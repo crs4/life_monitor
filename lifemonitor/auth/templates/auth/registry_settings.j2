@@ -1,0 +1,60 @@
+{% import 'auth/macros.j2' as macros %}
+
+<!--
+<div class="card-header">
+    <h3 class="card-title"><b>Registry Synchronization</b></h3>
+</div>
+-->
+<div class="card-body">
+    <!-- Workflow Registries -->
+    <div class="">
+        <label for="{{registrySettingsForm.registries.name}}">Workflow Registries:</label>
+    </div>
+    <div class="form-text text-muted my-1">
+        LifeMonitor will automatically sync workflows with the registries enabled below:
+    </div>
+
+    <div class="row my-5">
+        <div class="col-4 text-bold offset-1">Registry Name</div>        
+        <div class="col-5 text-bold">Registry URL</div>
+        <div class="col-2 text-bold"> Registry Type</div>
+        
+    </div>
+    {% for registry in registrySettingsForm.available_registries %}
+    <div class="form-group row">
+        <div class="col-1">
+            <div class="checkbox">
+                {% set registry_enabled = registry.client_name in registrySettingsForm.registries.data %}          
+                <form method="POST" id="form-{{registry.client_name}}" 
+                    action="{{ url_for('auth.disable_registry_sync') if registry_enabled else url_for('auth.enable_registry_sync') }}">
+                    {{ registrySettingsForm.csrf_token() }}                        
+                    <input type="hidden" name="{{registrySettingsForm.action.name}}" 
+                            value="{{'remove' if registry_enabled else 'false'}}" />
+                    <input type="hidden" name="{{registrySettingsForm.registry.name}}" value="{{ registry.client_name }}" />
+                    <input type="checkbox" name="registry-{{ registry.client_name }}"
+                        value="{{'true' if registry_enabled else 'false'}}"                
+                        data-toggle="toggle" {% if registry_enabled %}checked{% endif%} onclick="alert()"
+                        data-off='<i class="fas fa-power-off"></i>' onchange="$('#form-{{registry.client_name}}').submit();">
+                </form>
+            </div>
+        </div>
+        
+        <div class="col-4">
+            <div class="mt-1">
+                {{ registry.name }}
+            </div>
+        </div>
+        <div class="col-5">
+            <div class="mt-1">
+                {{ registry.uri }}
+            </div>
+        </div>        
+        <div class="col-2">
+            <div class="mt-1">
+                {{ registry.registry_type.replace("_registry", "") }}
+            </div>
+        </div>
+    </div>
+    {% endfor %}        
+</div>
+
