@@ -20,10 +20,12 @@
 
 from __future__ import annotations
 
-from typing import List
+from typing import Dict, List
 
 from lifemonitor.auth import User
 from sqlalchemy.orm.attributes import flag_modified
+
+from lifemonitor.auth.oauth2.client.models import OAuth2Token
 
 
 class RegistrySettings():
@@ -32,26 +34,36 @@ class RegistrySettings():
         self.user = user
         self._raw_settings = self.user.settings.get('registry_settings', None)
         if not self._raw_settings:
-            self._raw_settings = []
+            self._raw_settings = {}
             self.user.settings['registry_settings'] = self._raw_settings
+
+    def get_token(self, registry: str) -> OAuth2Token:
+        token = self._raw_settings[registry].get('token', None) if registry in self._raw_settings else None
+        return OAuth2Token(token) if token else None
+
+    def set_token(self, registry: str, token: Dict):
+        if registry not in self._raw_settings:
+            raise ValueError(f"Registry {registry} not found")
+        self._raw_settings[registry]['token'] = token
+        flag_modified(self.user, 'settings')
 
     @property
     def registries(self) -> List[str]:
-        return self._raw_settings
+        return self._raw_settings.keys()
 
     @registries.setter
     def registries(self, registries: List[str]) -> List[str]:
-        self._raw_settings = registries.copy()
+        self._raw_settings = {r: {} for r in registries}
         flag_modified(self.user, 'settings')
 
     def add_registry(self, registry: str):
         if registry not in self.registries:
-            self._raw_settings.append(registry)
+            self._raw_settings[registry] = {}
             flag_modified(self.user, 'settings')
 
     def remove_registry(self, registry: str):
         if registry in self.registries:
-            self._raw_settings.remove(registry)
+            del self._raw_settings[registry]
             flag_modified(self.user, 'settings')
 
     def is_registry_enabled(self, registry: str) -> bool:
