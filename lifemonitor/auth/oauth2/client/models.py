@@ -80,13 +80,16 @@ class OAuth2Token(OAuth2TokenBase):
             logger.debug("Unable to get a configured OAUTH2_REFRESH_TOKEN_BEFORE_EXPIRATION property: %r", e)
             return 0
 
-    def to_be_refreshed(self):
+    def to_be_refreshed(self) -> bool:
         # the token should be refreshed
         # if it is expired or close to expire (i.e., n secs before expiration)
         expires_at = self.get('expires_at')
         if not expires_at:
             return None
         return (expires_at - self.threshold) < time.time()
+
+    def can_be_refreshed(self) -> bool:
+        return self.get('refresh_token', None) is not None
 
 
 class OAuthUserProfile:
@@ -176,19 +179,18 @@ class OAuthIdentity(models.ExternalServiceAccessAuthorization, ModelMixin):
             # the token should be refreshed
             # if it is expired or close to expire (i.e., n secs before expiration)
             if token.to_be_refreshed():
-                if 'refresh_token' not in token:
+                if not token.can_be_refreshed():
                     logger.debug("The token should be refreshed but no refresh token is associated with the token")
                 else:
-                    logger.debug("Trying to refresh the token...")
-                    oauth2session = OAuth2Session(
-                        self.provider.client_id, self.provider.client_secret, token=self.token)
-                    new_token = oauth2session.refresh_token(
-                        self.provider.access_token_url, refresh_token=token['refresh_token'])
-                    self.token = new_token
-                    self.save()
-                    logger.debug("User token updated")
-                    logger.debug("Using token %r", self.token)
+                    self.refresh_token()
         return self.token
+
+    def refresh_token(self):
+        logger.debug("Trying to refresh the token...")
+        self.token = self.provider.refresh_token(self.token)
+        self.save()
+        logger.debug("User token updated")
+        logger.debug("Using token %r", self.token)
 
     @property
     def user_info(self):
@@ -446,6 +448,16 @@ class OAuth2IdentityProvider(db.Model, ModelMixin):
                 .filter_by(provider_user_id=provider_user_id).one()
         except NoResultFound:
             raise OAuthIdentityNotFoundException(f"{provider_user_id}@{self}")
+
+    def refresh_token(self, token: OAuth2Token) -> OAuth2Token:
+        logger.debug(f"Trying to refresh the token: {token}...")
+        # reference to the token associated with the identity instance
+        oauth2session = OAuth2Session(
+            self.client_id, self.client_secret, token=token)
+        new_token = oauth2session.refresh_token(
+            self.access_token_url, refresh_token=token['refresh_token'], scope=token.get('scope'))
+        logger.debug("Refreshed token: %r", new_token)
+        return new_token
 
     @classmethod
     def find_by_name(cls, name) -> OAuth2IdentityProvider:
