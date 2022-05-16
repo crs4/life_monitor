@@ -395,8 +395,7 @@ def enable_registry_sync():
         form = RegistrySettingsForm()
         if form.validate_on_submit():
             registry_name = request.values.get("registry", None)
-            return redirect('/oauth2/login/' + registry_name +
-                            f'?scope=read+write&next=/enable_registry_sync?s={registry_name}')
+            return redirect(f'/oauth2/login/{registry_name}?scope=read+write&next=/enable_registry_sync?s={registry_name}')
         else:
             logger.debug("Form validation failed")
             flash("Invalid request", category="error")
