@@ -68,6 +68,11 @@ def check_repository_issues(repository_reference: GithubRepositoryReference) -> 
     return check_result
 
 
+def __normalize_registry_identitiers__(registries: List[str]):
+    return [] if not registries else \
+        [r.client_name for r in WorkflowRegistry.all() if r.client_name in registries or r.name in registries]
+
+
 def register_repository_workflow(repository_reference: GithubRepositoryReference, registries: List[str] = None):
     logger.debug("Repository ref: %r", repository_reference)
     # set a reference to LifeMonitorService
@@ -75,6 +80,9 @@ def register_repository_workflow(repository_reference: GithubRepositoryReference
     # set a reference to the github repo
     repo: GithubWorkflowRepository = repository_reference.repository
     logger.debug("Repository: %r", repo)
+
+    # normalized list of registries
+    registries = __normalize_registry_identitiers__(registries)
 
     #
     registered_workflows = []
@@ -102,13 +110,14 @@ def register_repository_workflow(repository_reference: GithubRepositoryReference
             # initialize registries map
             registries_map = []
             for r_id in registries:
+                r_wv = None
                 for v in w.versions.values():
-                    rwv = v.registry_workflow_versions.get(r_id, None)
-                    if rwv:
-                        map_item = (rwv.registry.client_name, rwv.identifier)
-                        if map_item not in registries_map:
-                            registries_map.append(map_item)
+                    r_wv = v.registry_workflow_versions.get(r_id, None)
+                    if r_wv:
                         break
+                map_item = (r_id, r_wv.identifier if r_wv else None)
+                if map_item not in registries_map:
+                    registries_map.append(map_item)
 
             logger.debug("Created registries map: %r", registries_map)
             # register or update the workflow version
