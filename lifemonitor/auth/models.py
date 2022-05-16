@@ -718,7 +718,8 @@ class HostingService(Resource):
     @classmethod
     def find_by_provider_name(cls, name: str) -> List[HostingService]:
         try:
-            from lifemonitor.auth.oauth2.client.models import OAuth2IdentityProvider
+            from lifemonitor.auth.oauth2.client.models import \
+                OAuth2IdentityProvider
             return cls.query.join(OAuth2IdentityProvider, OAuth2IdentityProvider.id == cls._server_id)\
                 .filter(OAuth2IdentityProvider.name == name).all()
         except NoResultFound as e:
@@ -730,7 +731,8 @@ class HostingService(Resource):
     @classmethod
     def find_by_provider_client_name(cls, name: str) -> HostingService:
         try:
-            from lifemonitor.auth.oauth2.client.models import OAuth2IdentityProvider
+            from lifemonitor.auth.oauth2.client.models import \
+                OAuth2IdentityProvider
             return cls.query.join(OAuth2IdentityProvider, OAuth2IdentityProvider.id == cls._server_id)\
                 .filter(OAuth2IdentityProvider.client_name == name).one()
         except NoResultFound as e:
@@ -753,7 +755,8 @@ class HostingService(Resource):
     def from_url(cls, url: str) -> HostingService:
         instance = None
         try:
-            from lifemonitor.auth.oauth2.client.models import OAuth2IdentityProvider
+            from lifemonitor.auth.oauth2.client.models import \
+                OAuth2IdentityProvider
             p_url = urllib.parse.urlparse(url)
             uri = f"{p_url.scheme}://{p_url.netloc}"  # it doesn't discriminate between subdomains
             instance = HostingService.find_by_uri(uri)
