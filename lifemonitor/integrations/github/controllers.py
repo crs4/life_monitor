@@ -29,6 +29,7 @@ from lifemonitor import cache
 from lifemonitor.api.models import WorkflowRegistry
 from lifemonitor.api.models.issues.common.files.missing import \
     MissingWorkflowFile
+from lifemonitor.api.models.registries.settings import RegistrySettings
 from lifemonitor.api.models.repositories.github import GithubWorkflowRepository
 from lifemonitor.api.models.testsuites.testinstance import TestInstance
 from lifemonitor.api.models.wizards import QuestionStep, UpdateStep
@@ -87,7 +88,8 @@ def installation(event: GithubEvent):
         return "Internal Error", 500
 
 
-def __config_registry_list__(repo_info: GithubRepositoryReference, user_settings: GithubUserSettings) -> List[str]:
+def __config_registry_list__(repo_info: GithubRepositoryReference,
+                             registry_settings: RegistrySettings) -> List[str]:
     # Configure registries
     registries = []
     repo: GithubWorkflowRepository = repo_info.repository
@@ -103,7 +105,7 @@ def __config_registry_list__(repo_info: GithubRepositoryReference, user_settings
         logger.debug("Using all available registries")
         registries.extend([_.name for _ in WorkflowRegistry.all()])
     # use only registries globally enabled on Github Integration Settings
-    enabled_registries = [_ for _ in registries if _ in user_settings.registries]
+    enabled_registries = [_ for _ in registries if _ in registry_settings.registries]
     logger.warning("The following registries will be ignored because globally disabled: %r", [_ for _ in registries if _ not in enabled_registries])
     logger.debug("Filtered registries: %r", enabled_registries)
     return enabled_registries
@@ -127,17 +129,19 @@ def __skip_branch_or_tag__(repo_info: GithubRepositoryReference,
 
 
 def __check_for_issues_and_register__(repo_info: GithubRepositoryReference,
-                                      user_settings: GithubUserSettings, check_issues: bool = True):
+                                      github_settings: GithubUserSettings,
+                                      registry_settings: RegistrySettings,
+                                      check_issues: bool = True):
     register = True
     repo: GithubWorkflowRepository = repo_info.repository
     logger.debug("Repo to register: %r", repo)
     # filter branches and tags according to global and current repo settings
-    if __skip_branch_or_tag__(repo_info, user_settings):
+    if __skip_branch_or_tag__(repo_info, github_settings):
         logger.info(f"Repo branch or tag {repo_info.ref} skipped!")
         return
     # check for issues (if enabled)
     if check_issues:
-        if user_settings.check_issues and (not repo.config or repo.config.checker_enabled):
+        if github_settings.check_issues and (not repo.config or repo.config.checker_enabled):
             check_result = services.check_repository_issues(repo_info)
             if check_result.found_issues():
                 register = False
@@ -148,7 +152,7 @@ def __check_for_issues_and_register__(repo_info: GithubRepositoryReference,
     logger.debug("Process workflow registration: %r", register)
     if register:
         # Configure registries
-        registries = __config_registry_list__(repo_info, user_settings)
+        registries = __config_registry_list__(repo_info, registry_settings)
         # register or update workflow on LifeMonitor and optionally on registries
         registered_workflow = services.register_repository_workflow(repo_info, registries=registries)
         logger.debug("Registered workflow: %r", registered_workflow)
@@ -181,7 +185,9 @@ def create(event: GithubEvent):
     if repo_info.tag:
         try:
             __check_for_issues_and_register__(repo_info,
-                                              event.sender.user.github_settings, False)
+                                              event.sender.user.github_settings,
+                                              event.sender.user.registry_setting,
+                                              False)
         except Exception as e:
             logger.exception(e)
 
@@ -244,7 +250,8 @@ def push(event: GithubEvent):
             logger.debug("Repo ref not defined or branch/tag deleted: %r", repo)
         else:
             settings: GithubUserSettings = event.sender.user.github_settings
-            __check_for_issues_and_register__(repo_info, settings, True)
+            __check_for_issues_and_register__(repo_info, settings,
+                                              event.sender.user.registry_settings, True)
 
         return "No content", 204
     except Exception as e:
@@ -320,8 +327,14 @@ def issue_comment(event: GithubEvent):
         logger.debug("Message empty: %r", event.comment.body)
         return
 
+    logger.warning("Message: %r", event.comment.body)
     # detected a message for this LifeMonitor[bot]
-    logger.debug("Message to bot: %r", event.comment.body)
+    logger.error("Message to bot: %r - %r", event.comment.body, event.comment._body.value)
+    wizard = GithubWizard.from_event(event)
+    logger.warning("Wizard: %r", wizard)
+    logger.warning("Step: %r", wizard.current_step)
+
+    # return
 
     # detect Github issue
     issue: GithubIssue = event.issue
