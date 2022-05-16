@@ -163,7 +163,7 @@ def index():
 
 @blueprint.route("/profile", methods=("GET",))
 def profile(form=None, passwordForm=None, currentView=None,
-            emailForm=None, notificationsForm=None, githubSettingsForm=None):
+            emailForm=None, notificationsForm=None, githubSettingsForm=None, registrySettingsForm=None):
     currentView = currentView or request.args.get("currentView", 'accountsTab')
     logger.debug(OpenApiSpecs.get_instance().authorization_code_scopes)
     back_param = request.args.get('back', None)
@@ -175,6 +175,7 @@ def profile(form=None, passwordForm=None, currentView=None,
         logger.debug("Getting back param from session")
         back_param = back_param or session.get('lm_back_param', False)
         logger.debug("detected back param: %s", back_param)
+    from lifemonitor.api.models.registries.forms import RegistrySettingsForm
     from lifemonitor.integrations.github.forms import GithubSettingsForm
     logger.warning("Request args: %r", request.args)
     return render_template("auth/profile.j2",
@@ -183,6 +184,7 @@ def profile(form=None, passwordForm=None, currentView=None,
                            notificationsForm=notificationsForm or NotificationsForm(),
                            oauth2ClientForm=form or Oauth2ClientForm(),
                            githubSettingsForm=githubSettingsForm or GithubSettingsForm.from_model(current_user),
+                           registrySettingsForm=registrySettingsForm or RegistrySettingsForm.from_model(current_user),
                            providers=get_providers(), currentView=currentView,
                            oauth2_generic_client_scopes=OpenApiSpecs.get_instance().authorization_code_scopes,
                            back_param=back_param)
@@ -354,22 +356,6 @@ def update_notifications_switch():
 @login_required
 def update_github_settings():
     logger.debug("Updating Github Settings")
-    from lifemonitor.integrations.github.settings import GithubUserSettings
-    if request.method == "GET":
-
-        settings = GithubUserSettings(current_user) \
-            if not current_user.github_settings else current_user.github_settings
-        if "addRegistry" in request.args:
-            registry_name = request.args["addRegistry"]
-            logger.error("Registry name: %r", registry_name)
-            settings.add_registry(registry_name)
-            current_user.save()
-        if "removeRegistry" in request.args:
-            registry_name = request.args["removeRegistry"]
-            logger.error("Registry name: %r", registry_name)
-            settings.remove_registry(registry_name)
-            current_user.save()
-        return redirect(url_for('auth.profile', currentView='githubSettingsTab'))
     from lifemonitor.integrations.github.forms import GithubSettingsForm
     form = GithubSettingsForm()
     if not form.validate_on_submit():
@@ -379,25 +365,63 @@ def update_github_settings():
     return redirect(url_for('auth.profile', currentView='githubSettingsTab'))
 
 
-@blueprint.route("/update_github_registry_settings", methods=("POST",))
+@blueprint.route("/enable_registry_sync", methods=("GET", "POST",))
 @login_required
-def update_github_registry_settings():
-    logger.debug("Updating Github Settings")
-    action = request.form.get("action", None)
-    registry_name = request.form.get("registry", None)
-    logger.debug("Action: %r - Registry: %r", action, registry_name)
-    logger.debug("Current user: %r", current_user)
-    from lifemonitor.integrations.github.settings import GithubUserSettings
-    settings = GithubUserSettings(current_user)
-    if action == "add":
-        settings.add_registry(registry_name)
-        current_user.save()
-        return "registry added", 200
-    elif action == 'remove':
+def enable_registry_sync():
+    logger.debug("Enabling Registry Sync")
+    if request.method == "GET":
+        registry_name = request.values.get("s", None)
+        logger.debug("Enabling Registry Sync: %r", registry_name)
+        if not registry_name:  # or not current_user.check_secret(registry_name, secret_hash):
+            flash("Invalid request: registry cannot be enabled", category="error")
+            return redirect(url_for('auth.profile', currentView='registrySettingsTab'))
+        else:
+            logger.debug("Registry to add: %r", registry_name)
+            logger.debug(request.remote_addr)
+            from lifemonitor.api.models import WorkflowRegistry
+            registry = WorkflowRegistry.find_by_client_name(registry_name)
+            if not registry:
+                flash("Invalid request: registry not found", category="error")
+                return redirect(url_for('auth.profile', currentView='registrySettingsTab'))
+            settings = current_user.registry_settings
+            settings.add_registry(registry_name)
+            current_user.save()
+            flash(f"Integration with registry \"{registry.name}\" enabled", category="success")
+            return redirect(url_for('auth.profile', currentView='registrySettingsTab'))
+
+    elif request.method == "POST":
+        from lifemonitor.api.models.registries.forms import \
+            RegistrySettingsForm
+        form = RegistrySettingsForm()
+        if form.validate_on_submit():
+            registry_name = request.values.get("registry", None)
+            return redirect('/oauth2/login/' + registry_name +
+                            f'?scope=read+write&next=/enable_registry_sync?s={registry_name}')
+        else:
+            logger.debug("Form validation failed")
+            flash("Invalid request", category="error")
+    # set a fallback redirect
+    return redirect(url_for('auth.profile', currentView='registrySettingsTab'))
+
+
+@blueprint.route("/disable_registry_sync", methods=("POST",))
+@login_required
+def disable_registry_sync():
+    from lifemonitor.api.models.registries.forms import RegistrySettingsForm
+    registry_name = request.values.get("registry", None)
+    logger.debug("Disabling sync for registry: %r", registry_name)
+    form = RegistrySettingsForm()
+    settings = current_user.registry_settings
+    if form.validate_on_submit():
+        from lifemonitor.api.models import WorkflowRegistry
+        registry = WorkflowRegistry.find_by_client_name(registry_name)
+        if not registry:
+            flash("Invalid request: registry not found", category="error")
+            return redirect(url_for('auth.profile', currentView='registrySettingsTab'))
         settings.remove_registry(registry_name)
         current_user.save()
-        return "registry removed", 200
-    return "unsupported method", 400
+        flash(f"Integration with registry \"{registry.name}\" disabled", category="success")
+    return redirect(url_for('auth.profile', currentView='registrySettingsTab'))
 
 
 @blueprint.route("/merge", methods=("GET", "POST"))

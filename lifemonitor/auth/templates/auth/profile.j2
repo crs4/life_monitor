@@ -61,6 +61,10 @@
                 <a class="nav-link font-weight-bold" tab="githubSettingsTab"
                     href="#githubsettings" data-toggle="tab">Github Integration</a>
               </li>
+              <li class="nav-item">
+                <a class="nav-link font-weight-bold" tab="registrySettingsTab"
+                    href="#registrysettings" data-toggle="tab">Registry Integration</a>
+              </li>
           </div><!-- /.card-header -->
           <div class="card-body">
             <div class="tab-content">
@@ -84,6 +88,9 @@
               </div>
               <div class="tab-pane" id="githubsettings">
                 {% include 'auth/github_settings.j2' %}
+              </div>
+              <div class="tab-pane" id="registrysettings">
+                {% include 'auth/registry_settings.j2' %}
               </div>
               <!-- /.tab-pane -->
             </div>

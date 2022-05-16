@@ -86,53 +86,6 @@
 
     {{ githubSettingsForm.hidden_tag() }}
 
-    <div class="card-header">
-        <h3 class="card-title"><b>Registry Synchronization</b></h3>
-    </div>
-    <div class="card-body">
-        <!-- Workflow Registries -->
-        <div class="mt-2">
-            <label for="{{githubSettingsForm.registries.name}}">Workflow Registries:</label>
-        </div>
-        <small class="form-text text-muted my-2">
-            LifeMonitor will automatically sync workflows with the registries enabled below:
-        </small>
-
-        <div class="row my-4">
-            <div class="col-5 offset-1 text-bold">Registry URL</div>
-            <div class="col-4 text-bold">Registry Name</div>
-            <div class="col-2 text-bold"> Registry Type</div>
-        </div>
-        {% for registry in githubSettingsForm.available_registries %}
-        <div class="form-group row">
-            <div class="col-1">
-                <div class="checkbox">
-                    <input type="checkbox" name="registry-{{ registry.name }}"
-                        value="{{'true' if registry.name in githubSettingsForm.registries.data else 'false'}}"
-                        onchange="toggleRegistry('{{registry.name}}', '{{'+'.join(registry.read_write_scopes)}}')" data-toggle="toggle" {% if
-                            registry.name in githubSettingsForm.registries.data %}checked{% endif%} 
-                            data-on='<i class="fas fa-sync-alt"></i>'
-                        data-off='<i class="fas fa-power-off"></i>'>
-                </div>
-            </div>
-            <div class="col-5">
-                <div class="">
-                    {{ registry.uri }}
-                </div>
-            </div>
-            <div class="col-4">
-                <div class="">
-                    {{ registry.name }}
-                </div>
-            </div>
-            <div class="col-2">
-                <div class="">
-                    {{ registry.registry_type.replace("_registry", "") }}
-                </div>
-            </div>
-        </div>
-        {% endfor %}        
-    </div>
 </form>
 
 <script>
@@ -142,46 +95,4 @@
             el.prop("disabled", !el.prop('disabled'));
         }
     }
-
-    function toggleRegistry(registry_name, scopes="read+write", checked=false) {
-        const fieldName = 'registry-' + registry_name;
-        const el = $("input[name=" + fieldName + "]");
-        if (!el) return;
-        const registries_el = $("input[name={{githubSettingsForm.registries.name}}]");
-        console.log(registries_el);
-        var registries = registries_el.val() && registries_el.val().length > 0 ? registries_el.val().split(',') : [];
-        if (el.val() === "true"){            
-            $.post(
-                '/update_github_registry_settings',
-                {"action": "remove", "registry": registry_name},
-                (result) => {                    
-                    registries = registries.filter(x => x !== registry_name);
-                    console.log(result);
-                    registries_el.val(registries.join(','));
-                    el.val("false"); 
-                }
-            );
-        }else {
-            if(checked){                
-                $.post(
-                    '/update_github_registry_settings',
-                    {"action": "add", "registry": registry_name},
-                    (result) => {                    
-                        registries.push(registry_name);
-                        el.val("true");
-                        el.attr("checked", true);
-                        registries_el.val(registries.join(','));
-                        if ('URLSearchParams' in window) {
-                            var newRelativePathQuery = "/profile?currentView=githubSettingsTab";
-                            history.pushState(null, '', newRelativePathQuery);
-                        }
-                    }
-                );
-            }else{
-                window.location.replace('/oauth2/login/' + registry_name + '?scope=' 
-                    + scopes + '&next=/update_github_settings?addRegistry=' + registry_name);
-            }
-        }       
-    }
-
 </script>
