@@ -97,20 +97,18 @@ def register_repository_workflow(repository_reference: GithubRepositoryReference
         workflows = Workflow.get_hosted_workflows_by_uri(hosting_service, repo_link, submitter=repo_owner)
         for w in workflows:
             logger.debug("Updating workflow: %r", w)
-            latest_version = w.latest_version
             current_wv = wv = w.versions.get(workflow_version, None)
 
             # initialize registries map
             registries_map = []
             for r_id in registries:
-                rwv = latest_version.registry_workflow_versions.get(r_id, None)
-                if not rwv:
-                    rwv = next((_ for _ in latest_version.registry_workflow_versions.values()
-                                if _.registry.name == r_id or _.registry.client_name == r_id), None)
-                if rwv:
-                    map_item = (rwv.registry.client_name, rwv.identifier)
-                    if map_item not in registries_map:
-                        registries_map.append(map_item)
+                for v in w.versions.values():
+                    rwv = v.registry_workflow_versions.get(r_id, None)
+                    if rwv:
+                        map_item = (rwv.registry.client_name, rwv.identifier)
+                        if map_item not in registries_map:
+                            registries_map.append(map_item)
+                        break
 
             logger.debug("Created registries map: %r", registries_map)
             # register or update the workflow version
