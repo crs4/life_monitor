@@ -178,12 +178,12 @@ def delete_repository_workflow_version(repository_reference: GithubRepositoryRef
             logger.warning("Seaching for workflow versions to delete: %r", w)
             wv = w.versions.get(workflow_version, None)
             if wv:
-                registries = registries or [r.name for r in wv.registries]
+                registries = registries or wv.registries
                 # delete workflow version from registries if there are not other versions
                 registry_workflows_map = {r: [] for r in registries}
                 for v in w.versions.values():
                     for r in v.registries:
-                        if r.name in registries:
+                        if r.name in registries or r.client_name in registries:
                             registry_workflows_map[r.name].append(v)
                 registries_list = [r for r in registries if len(registry_workflows_map[r]) == 1]
                 delete_workflow_from_registries(repo_owner, wv, registries_list)
