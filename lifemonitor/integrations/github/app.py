@@ -31,7 +31,10 @@ import jwt
 import requests
 from lifemonitor.api.models.repositories.github import (
     GithubWorkflowRepository, InstallationGithubWorkflowRepository)
+from lifemonitor.auth.oauth2.client.models import (
+    OAuthIdentity, OAuthIdentityNotFoundException)
 from lifemonitor.exceptions import IllegalStateException, LifeMonitorException
+from lifemonitor.integrations.github.registry import GithubWorkflowRegistry
 
 from github import Github
 from github import GithubIntegration as GithubIntegrationBase
@@ -232,6 +235,22 @@ class LifeMonitorInstallation(Installation.Installation):
         self.app = app
         self._auth: InstallationAuthorization = None
         self._gh_client = None
+        self._registry = None
+
+    @property
+    def github_registry(self) -> GithubWorkflowRegistry:
+        if not self._registry:
+            try:
+                identity: OAuthIdentity = OAuthIdentity.find_by_provider_user_id(str(self.app.owner.id), "github")
+                registry = GithubWorkflowRegistry.find(identity.user, self.app.id, self.id)
+                if not registry:
+                    registry = GithubWorkflowRegistry(identity.user, self.app.id, self.id)
+                self._registry = registry
+            except OAuthIdentityNotFoundException as e:
+                logger.warning("Github identity '%r' doesn't match with any LifeMonitor user identity", self.app.owner.id)
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.exception(e)
+        return self._registry
 
     @property
     def github_client(self) -> Github:
