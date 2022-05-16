@@ -385,6 +385,11 @@ def enable_registry_sync():
                 return redirect(url_for('auth.profile', currentView='registrySettingsTab'))
             settings = current_user.registry_settings
             settings.add_registry(registry_name)
+            registry_user_identity = current_user.oauth_identity[registry.client_name]
+            logger.debug("Updated token: %r", registry_user_identity.token)
+            assert registry_user_identity, f"No identity found for user of registry {registry.name}"
+            assert registry_user_identity.token, f"No token found for user of registry {registry.name}"
+            settings.set_token(registry.client_name, registry_user_identity.token)
             current_user.save()
             flash(f"Integration with registry \"{registry.name}\" enabled", category="success")
             return redirect(url_for('auth.profile', currentView='registrySettingsTab'))
