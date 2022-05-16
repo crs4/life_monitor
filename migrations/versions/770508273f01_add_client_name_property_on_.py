@@ -16,7 +16,6 @@ branch_labels = None
 depends_on = None
 
 
-
 def upgrade():
     bind = op.get_bind()
     providers = bind.execute("SELECT id, name FROM oauth2_identity_provider")
