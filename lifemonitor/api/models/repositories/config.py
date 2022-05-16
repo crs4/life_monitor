@@ -94,7 +94,7 @@ class WorkflowRepositoryConfig(RepositoryFile):
         on_push = self._raw_data.get('push', None)
         if on_push and refs:
             return [_ for ref in refs.split(",") for _ in on_push.get(ref, [])]
-        return None
+        return []
 
     @property
     def registries(self) -> List[models.WorkflowRegistry]:
