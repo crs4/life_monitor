@@ -195,7 +195,7 @@ def delete_repository_workflow_version(repository_reference: GithubRepositoryRef
         # set the repo link
         repo_link = f"{hosting_service.uri}/{repo.full_name}.git"
         logger.debug("RepoLink: %s", repo_link)
-        
+
         # Try to delete the workflow from registries only if it has only one version.
         # Deletion of a single workflow version is not supported at the moment
         # due to the limitation of the supported registry API (i.e., Seek)
