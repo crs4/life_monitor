@@ -219,7 +219,8 @@ def delete(event: GithubEvent):
 
     if repo_info.tag or repo_info.branch:
         try:
-            services.delete_repository_workflow_version(repo_info)
+            services.delete_repository_workflow_version(repo_info,
+                                                        registries=event.sender.user.registry_settings.registries)
         except Exception as e:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.exception(e)
