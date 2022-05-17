@@ -32,7 +32,7 @@ from lifemonitor.api.models.issues.common.files.missing import \
 from lifemonitor.api.models.registries.settings import RegistrySettings
 from lifemonitor.api.models.repositories.github import GithubWorkflowRepository
 from lifemonitor.api.models.testsuites.testinstance import TestInstance
-from lifemonitor.api.models.wizards import QuestionStep, UpdateStep
+from lifemonitor.api.models.wizards import QuestionStep, UpdateStep, Wizard
 from lifemonitor.integrations.github import pull_requests
 from lifemonitor.integrations.github.app import LifeMonitorGithubApp
 from lifemonitor.integrations.github.events import (GithubEvent,
@@ -41,6 +41,8 @@ from lifemonitor.integrations.github.issues import GithubIssue
 from lifemonitor.integrations.github.settings import GithubUserSettings
 from lifemonitor.integrations.github.utils import delete_branch, match_ref
 from lifemonitor.integrations.github.wizards import GithubWizard
+
+from github.PullRequest import PullRequest
 
 from . import services
 
@@ -263,6 +265,43 @@ def push(event: GithubEvent):
         return "Internal Error", 500
 
 
+def pull_request(event: GithubEvent):
+    logger.debug("Event: %r", event)
+
+    # detect Github issue
+    pull_request: PullRequest = event.pull_request
+    logger.debug("The current github pull_request: %r", pull_request)
+    if not pull_request:
+        logger.debug("No pull_request on this Github event")
+        return "No issue", 204
+
+    # check the author of the current pull_request
+    if pull_request.user.login != event.application.bot:
+        logger.debug("Nothing to do: pull request not created by LifeMonitor[Bot]")
+        return f"Issue not created by {event.application.bot}", 204
+
+    # set reference to PR HEAD
+    ref = pull_request.head.ref
+    logger.debug("HEAD of this PR: %s", ref)
+
+    # delete support branch of closed issues
+    if event.action == "closed":
+        #delete_branch(event.repository_reference.repository, issue)
+        for wizard in Wizard.all():
+            for step in wizard.steps:
+                if isinstance(step, UpdateStep):
+                    logger.debug("Checking %r %r %r %r", ref, step.id, step.title, step.wizard)
+                    if step.id == ref:
+                        try:
+                            logger.debug("Trying to delete support branch for wizard step: %r ...", step)
+                            delete_branch(event.repository_reference.repository, step.id)
+                            logger.debug("Support branch for wizard step: %r deleted", step)
+                        except Exception as e:
+                            if logger.isEnabledFor(logging.DEBUG):
+                                logger.exception(e)
+                            logger.warn("Unable to delete support branch of wizard step %r", step)
+
+
 def issues(event: GithubEvent):
     logger.debug("Event: %r", event)
 
@@ -377,13 +416,18 @@ def issue_comment(event: GithubEvent):
                         logger.debug("REV: %r", repo.rev)
                         logger.debug("DEFAULT BRANCH: %r", repo.default_branch)
                         if not pull_requests.find_pull_request_by_title(repo, next_step.title):
-                            pr = pull_requests.create_pull_request(
-                                repo, next_step.id, next_step.title, next_step.description, next_step.get_files(repo), allow_update=True)
-                            logger.debug("PR created or updated: %r", pr)
+                            issue.create_comment(next_step.as_string())
+                            pr = pull_requests.create_pull_request_from_github_issue(repo, next_step.id, issue, next_step.get_files(repo), True)
                             if not pr:
-                                return "Nothing to do", 204
-                            else:
-                                issue.create_comment(next_step.as_string() + f"<br>See PR {pr.html_url}")
+                                logger.warning("Unable to create PR for issue: %r", issue)
+                            # Uncomment to create a separate PR to propose changes
+                            # pr = pull_requests.create_pull_request(
+                            #     repo, next_step.id, next_step.title, next_step.description, next_step.get_files(repo), allow_update=True)
+                            # logger.debug("PR created or updated: %r", pr)
+                            # if not pr:
+                            #     return "Nothing to do", 204
+                            # else:
+                            #     issue.create_comment(next_step.as_string() + f"<br>See PR {pr.html_url}")
                     else:
                         wizard.io_handler.write(next_step, append_help=True)
             else:
@@ -405,6 +449,7 @@ __event_handlers__ = {
     "push": push,
     "issues": issues,
     "issue_comment": issue_comment,
+    "pull_request": pull_request,
     "delete": delete
 }
 
