@@ -7,14 +7,15 @@
 -->
 <div class="card-body">
     <!-- Workflow Registries -->
-    <div class="">
-        <label for="{{registrySettingsForm.registries.name}}">Workflow Registries:</label>
-    </div>
-    <div class="form-text text-muted my-1">
-        LifeMonitor will automatically sync workflows with the registries enabled below:
+    <div class="form-text" style="margin: 15px 0;">
+        Allow LifeMonitor to interact with workflow registries on your behalf:
     </div>
 
-    <div class="row my-5">
+    <div class="mt-5">
+        <label for="{{registrySettingsForm.registries.name}}">Workflow Registries:</label>
+    </div>    
+
+    <div class="row my-4">
         <div class="col-4 text-bold offset-1">Registry Name</div>        
         <div class="col-5 text-bold">Registry URL</div>
         <div class="col-2 text-bold"> Registry Type</div>
