@@ -122,9 +122,9 @@ def register_repository_workflow(repository_reference: GithubRepositoryReference
         repo_link = f"{hosting_service.uri}/{repo.full_name}.git"
         logger.debug("Workflow RepoLink: %s", repo_link)
         # found and update the existing workflows associated with
-        workflows = Workflow.get_hosted_workflows_by_uri(hosting_service, repo_link, submitter=repo_owner)
-        for w in workflows:
-            logger.debug("Updating workflow: %r", w)
+        workflow = github_registry.find_workflow(repo.full_name)
+        if workflow:
+            logger.debug("Updating workflow: %r", workflow)
             current_wv = wv = w.versions.get(workflow_version, None)
 
             # initialize registries map
