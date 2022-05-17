@@ -66,7 +66,7 @@ class GithubWorkflowRegistry(db.Model, ModelMixin):
 
     user: User = db.relationship("User", uselist=False, backref=db.backref("github_workflows"))
     _workflow_versions: List[GithubWorkflowVersion] = db.relationship(
-        "GithubWorkflowVersion", back_populates="registry", cascade="all, delete-orphan")
+        "GithubWorkflowVersion", back_populates="registry")
 
     __table_args__ = (
         db.UniqueConstraint('application_id', 'installation_id', 'user_id'),
@@ -87,16 +87,17 @@ class GithubWorkflowRegistry(db.Model, ModelMixin):
         return self._workflow_versions
 
     def add_workflow_version(self, v: WorkflowVersion, repo: str, ref: str) -> GithubWorkflowVersion:
-        # if v and v not in self._workflow_versions:
-        # TODO: FIX check to avoid duplicates
-        return GithubWorkflowVersion(self, v, repo, ref)
+        version = self.get_workflow_version(v)
+        if not version:
+            return GithubWorkflowVersion(self, v, repo, ref)
+        return version
 
     def remove_workflow_version(self, v: GithubWorkflowVersion):
         if v and v in self._workflow_versions:
             self._workflow_versions.remove(v)
 
     def contains(self, v: WorkflowVersion) -> bool:
-        return v and v in [_.version for _ in self._workflow_versions]
+        return v and v in [_.workflow_version for _ in self._workflow_versions]
 
     def get_workflow_version(self, v: WorkflowVersion) -> GithubWorkflowVersion:
         return next((_ for _ in self.workflow_versions if _.workflow_version == v), None)
