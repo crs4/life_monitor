@@ -118,16 +118,19 @@ class GithubIOHandler(IOHandler):
                     break
         logger.debug("Candidates: %r", candidates)
         for ca in reversed(candidates):
-            cbody = ca.body.strip(self.get_help())
-            logger.debug("Checking candidate: %r -- options: %r", ca.body, question.options)
+            cbody = self.parse_answer(ca)
+            logger.debug("Checking candidate: %r -- options: %r", cbody, question.options)
             logger.debug("Check condition: %r", cbody in question.options)
             if question.options is None or len(question.options) == 0 or cbody in question.options:
                 return ca
         return None
 
+    def parse_answer(self, answer: object) -> str:
+        return re.sub(r'(@lm|%s)\s+' % self.app.bot.strip("[bot]"), '',
+                      answer.body) if answer else None
+
     def get_input_as_text(self, question: QuestionStep) -> object:
-        value = self.get_input(question)
-        return value.body if value else None
+        return self.parse_answer(self.get_input(question))
 
     def as_string(self, step: Step, append_help: bool = False) -> str:
         result = f"<b>{step.title}</b><br/>"
