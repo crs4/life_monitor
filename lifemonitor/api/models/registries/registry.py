@@ -196,7 +196,7 @@ class WorkflowRegistryClient(ABC):
         authorizations = []
         if user:
             authorizations.extend([
-                auth.as_http_header() for auth in self.registry.get_authorization(user)])
+                auth.as_http_header() for auth in self.registry.get_authorization(user, method)])
         authorizations.append(None)
         response = None
         for auth in authorizations:
@@ -346,14 +346,17 @@ class WorkflowRegistry(auth_models.HostingService):
     def users(self) -> List[auth_models.User]:
         return self.get_users()
 
-    def get_authorization(self, user: auth_models.User):
-        auths = auth_models.ExternalServiceAccessAuthorization.find_by_user_and_resource(user, self)
+    def get_authorization(self, user: auth_models.User, method: str = 'get'):
+        auths = []
         # add write authorization specific if it exists
-        registry_token = user.registry_settings.get_token(self.client_name)
-        if registry_token:
-            if registry_token.to_be_refreshed() and registry_token.can_be_refreshed():
-                self.server_credentials.refresh_token(registry_token)
-            auths.append(auth_models.ExternalServiceAuthorizationHeader(user, f"{registry_token['token_type']} {registry_token['access_token']}"))
+        if method != 'get':
+            registry_token = user.registry_settings.get_token(self.client_name)
+            if registry_token:
+                if registry_token.to_be_refreshed() and registry_token.can_be_refreshed():
+                    self.server_credentials.refresh_token(registry_token)
+                auths.append(auth_models.ExternalServiceAuthorizationHeader(user, f"{registry_token['token_type']} {registry_token['access_token']}"))
+        # add authorizations associated to the resource
+        auths.extend(auth_models.ExternalServiceAccessAuthorization.find_by_user_and_resource(user, self))
         # add user authorization related with the registry as Identity provider
         identity = user.oauth_identity.get(self.server_credentials.client_name, None)
         if identity:
