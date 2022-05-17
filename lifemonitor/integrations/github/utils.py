@@ -145,7 +145,7 @@ class GithubIOHandler(IOHandler):
         return result
 
     def get_help(self):
-        return f'<br>\n> **?** mention **@lm** or **@{self.app.bot.strip("[bot]")}** to answer'
+        return f'<br>\n> **?** type **@lm** or **@{self.app.bot.strip("[bot]")}** to answer'
 
     def write(self, step: Step, append_help: bool = False):
         assert isinstance(step, Step), step
