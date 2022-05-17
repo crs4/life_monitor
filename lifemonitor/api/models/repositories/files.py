@@ -48,6 +48,13 @@ class WorkflowFile():
     def __repr__(self) -> str:
         return f"Workflow \"{self.name}\" (type: {self.type}, path: {self.path})"
 
+    @classmethod
+    def get_workflow_extension(cls, workflow_type: str) -> str:
+        for ext, wtype in cls.extension_map.items():
+            if wtype == workflow_type:
+                return ext
+        return None
+
 
 class RepositoryFile():
 

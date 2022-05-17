@@ -21,6 +21,7 @@
 from __future__ import annotations
 
 import logging
+from tempfile import TemporaryDirectory
 from typing import List
 
 from flask import Blueprint, Flask, current_app, request
@@ -417,17 +418,20 @@ def issue_comment(event: GithubEvent):
                         logger.debug("DEFAULT BRANCH: %r", repo.default_branch)
                         if not pull_requests.find_pull_request_by_title(repo, next_step.title):
                             issue.create_comment(next_step.as_string())
-                            pr = pull_requests.create_pull_request_from_github_issue(repo, next_step.id, issue, next_step.get_files(repo), True)
-                            if not pr:
-                                logger.warning("Unable to create PR for issue: %r", issue)
-                            # Uncomment to create a separate PR to propose changes
-                            # pr = pull_requests.create_pull_request(
-                            #     repo, next_step.id, next_step.title, next_step.description, next_step.get_files(repo), allow_update=True)
-                            # logger.debug("PR created or updated: %r", pr)
-                            # if not pr:
-                            #     return "Nothing to do", 204
-                            # else:
-                            #     issue.create_comment(next_step.as_string() + f"<br>See PR {pr.html_url}")
+                            with TemporaryDirectory(dir='/tmp') as target_path:
+                                pr = pull_requests.create_pull_request_from_github_issue(
+                                    repo, next_step.id, issue,
+                                    next_step.get_files(repo, target_path=target_path), True)
+                                if not pr:
+                                    logger.warning("Unable to create PR for issue: %r", issue)
+                                # Uncomment to create a separate PR to propose changes
+                                # pr = pull_requests.create_pull_request(
+                                #     repo, next_step.id, next_step.title, next_step.description, next_step.get_files(repo), allow_update=True)
+                                # logger.debug("PR created or updated: %r", pr)
+                                # if not pr:
+                                #     return "Nothing to do", 204
+                                # else:
+                                #     issue.create_comment(next_step.as_string() + f"<br>See PR {pr.html_url}")
                     else:
                         wizard.io_handler.write(next_step, append_help=True)
             else:

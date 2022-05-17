@@ -280,10 +280,10 @@ class UpdateStep(Step):
         self._files = files if files else []
         self.callback = callback
 
-    def get_files(self, repo: WorkflowRepository) -> List[RepositoryFile]:
+    def get_files(self, repo: WorkflowRepository, target_path: str = None) -> List[RepositoryFile]:
         result = self._files.copy()
         if self.callback:
-            result.extend(self.callback(self.wizard, repo))
+            result.extend(self.callback(self.wizard, repo, target_path))
         return result
 
 
