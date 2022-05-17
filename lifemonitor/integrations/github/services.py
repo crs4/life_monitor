@@ -84,7 +84,7 @@ def __get_registries_map__(w: Workflow, registries: List[str]):
             r_wv = v.registry_workflow_versions.get(r_id, None)
             if r_wv:
                 versions.append(r_wv)
-        map_item = (r_id, r_wv.identifier if r_wv else None, versions)
+        map_item = (r_id, versions[0].identifier if len(versions) > 0 else None, versions)
         if map_item not in registries_map:
             registries_map.append(map_item)
     return registries_map
@@ -160,7 +160,7 @@ def register_repository_workflow(repository_reference: GithubRepositoryReference
             # register workflow version on LifeMonitor
             wv = lm.register_workflow(repo_link, repo_owner, workflow_version)
             # register workflow on registries
-            register_workflow_on_registries(github_registry, repo_owner, repo, wv, registries_map=[(_, None) for _ in registries])
+            register_workflow_on_registries(github_registry, repo_owner, repo, wv, registries_map=[(_, None, []) for _ in registries])
             # append to the list of registered workflows
             registered_workflows.append(wv)
     except OAuthIdentityNotFoundException as e:
@@ -206,19 +206,19 @@ def delete_repository_workflow_version(repository_reference: GithubRepositoryRef
             # normalize the list of registries
             registries = __normalize_registry_identitiers__(registries, as_strings=True)
             logger.debug("Normalized list of registries: %r", registries)
-
-            # filter workflows with only one version
-            registries = [_ for _ in registries if len(_[2]) == 1]
-            logger.debug("Filtered registry workflows: %r", registries)
-
+            
             # initialize registries map
             registry_workflows_map = __get_registries_map__(w, registries=registries)
             logger.debug("List of registries for wf %r: %r", w, registry_workflows_map)
 
+            # filter workflows with only one version
+            filtered_registries = [_ for _ in registry_workflows_map if len(_[2]) == 1]
+            logger.debug("Filtered registry workflows: %r", filtered_registries)
+
             # delete workflow from registries
-            logger.debug("Removing version '%r' of worlflow %r from registries %r....", workflow_version, w, registry_workflows_map)
-            delete_workflow_from_registries(github_registry, repo_owner, w, registry_workflows_map)
-            logger.debug("Removing version '%r' of worlflow %r from registries %r.... DONE", workflow_version, w, registry_workflows_map)
+            logger.debug("Removing version '%r' of worlflow %r from registries %r....", workflow_version, w, filtered_registries)
+            delete_workflow_from_registries(github_registry, repo_owner, w, filtered_registries)
+            logger.debug("Removing version '%r' of worlflow %r from registries %r.... DONE", workflow_version, w, filtered_registries)
 
             # delete workflow version from LifeMonitor
             logger.debug("Removing version '%r' of worlflow %r from LifeMonitor....", workflow_version, w)

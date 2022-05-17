@@ -38,11 +38,12 @@ class GithubWorkflowVersion(db.Model, ModelMixin):
     workflow_version_id = db.Column(db.ForeignKey('workflow_version.id'), nullable=False)
     repo_identifier = db.Column(db.String, nullable=False)
     repo_ref = db.Column(db.String, nullable=True)
-    workflow_version: WorkflowVersion = db.relationship("WorkflowVersion", uselist=False, cascade="all",
-                                                        backref=db.backref("github_versions", cascade="all, delete-orphan"))
+    workflow_version: WorkflowVersion = db.relationship(
+        "WorkflowVersion", uselist=False,
+        backref=db.backref("github_versions", cascade="all, delete-orphan"))
 
     registry: GithubWorkflowRegistry = db.relationship("GithubWorkflowRegistry", uselist=False,
-                                                       back_populates="_workflow_versions", cascade="all")
+                                                       back_populates="_workflow_versions")
 
     __table_args__ = (
         db.UniqueConstraint('registry_id', 'repo_identifier', 'workflow_version_id'),
@@ -63,9 +64,9 @@ class GithubWorkflowRegistry(db.Model, ModelMixin):
     installation_id = db.Column(db.Integer, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey(User.id), nullable=False)
 
-    user: User = db.relationship("User", uselist=False,
-                                 backref=db.backref("github_workflows", cascade="all, delete-orphan"))
-    _workflow_versions: List[GithubWorkflowVersion] = db.relationship("GithubWorkflowVersion", back_populates="registry", cascade="all, delete-orphan")
+    user: User = db.relationship("User", uselist=False, backref=db.backref("github_workflows"))
+    _workflow_versions: List[GithubWorkflowVersion] = db.relationship(
+        "GithubWorkflowVersion", back_populates="registry", cascade="save-update, delete-orphan")
 
     __table_args__ = (
         db.UniqueConstraint('application_id', 'installation_id', 'user_id'),
@@ -96,6 +97,9 @@ class GithubWorkflowRegistry(db.Model, ModelMixin):
 
     def contains(self, v: WorkflowVersion) -> bool:
         return v and v in [_.version for _ in self._workflow_versions]
+
+    def get_workflow_version(self, v: WorkflowVersion) -> GithubWorkflowVersion:
+        return next((_ for _ in self.workflow_versions if _.workflow_version == v), None)
 
     def find_workflow(self, repo: str) -> Workflow:
         logger.debug("Searning repository: %r", repo)
