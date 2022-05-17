@@ -258,6 +258,8 @@ def register_workflow_on_registry(github_registry: GithubWorkflowRegistry, submi
             workflow_version.workflow.external_id = registered_workflow.identifier
             logger.debug("Adding workflow version %r to registry %r", workflow_version, registry)
             registry.add_workflow_version(workflow_version, registered_workflow.identifier, registered_workflow.latest_version, registry_workflow=registered_workflow)
+            for auth in submitter.get_authorization(registry):
+                auth.resources.append(workflow_version.workflow)
             github_registry.add_workflow_version(workflow_version, repo.full_name, repo.ref)
             workflow_version.save()
             return registered_workflow
