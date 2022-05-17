@@ -35,6 +35,8 @@ from lifemonitor.integrations.github.app import (LifeMonitorGithubApp,
 from lifemonitor.integrations.github.issues import (GithubIssue,
                                                     GithubIssueComment)
 
+from github.PullRequest import PullRequest
+
 # Config a module level logger
 logger = logging.getLogger(__name__)
 
@@ -131,6 +133,11 @@ class GithubEvent():
     def issue(self) -> Optional[GithubIssue]:
         return None if 'issue' not in self.payload else \
             GithubIssue(self.installation._requester, {}, self.payload['issue'], True)
+
+    @property
+    def pull_request(self) -> Optional[PullRequest]:
+        return None if 'pull_request' not in self.payload else \
+            PullRequest(self.installation._requester, {}, self.payload['pull_request'], True)
 
     @property
     def comment(self) -> Optional[GithubIssueComment]:
