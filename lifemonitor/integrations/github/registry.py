@@ -66,7 +66,7 @@ class GithubWorkflowRegistry(db.Model, ModelMixin):
 
     user: User = db.relationship("User", uselist=False, backref=db.backref("github_workflows"))
     _workflow_versions: List[GithubWorkflowVersion] = db.relationship(
-        "GithubWorkflowVersion", back_populates="registry", cascade="save-update, delete-orphan")
+        "GithubWorkflowVersion", back_populates="registry", cascade="all, delete-orphan")
 
     __table_args__ = (
         db.UniqueConstraint('application_id', 'installation_id', 'user_id'),
