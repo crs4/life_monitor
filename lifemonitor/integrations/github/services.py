@@ -125,20 +125,24 @@ def register_repository_workflow(repository_reference: GithubRepositoryReference
         workflow = github_registry.find_workflow(repo.full_name)
         if workflow:
             logger.debug("Updating workflow: %r", workflow)
-            current_wv = wv = w.versions.get(workflow_version, None)
+            current_wv = wv = workflow.versions.get(workflow_version, None)
 
             # initialize registries map
-            registries_map = __get_registries_map__(w, registries=registries)
+            registries_map = __get_registries_map__(workflow, registries=registries)
 
             logger.debug("Created registries map: %r", registries_map)
             # register or update the workflow version
             if not wv:
-                logger.debug("Registering workflow version on worlflow: %r ....", w)
-                wv = lm.register_workflow(repo_link, repo_owner, workflow_version, w.uuid, public=repo.config.public)
-                logger.debug("Registering workflow version on worlflow: %r .... DONE", w)
+                logger.debug("Registering workflow version on worlflow: %r ....", workflow)
+                wv = lm.register_workflow(repo_link, repo_owner, workflow_version,
+                                          workflow_uuid=workflow.uuid,
+                                          name=repo.config.workflow_name, public=repo.config.public)
+                logger.debug("Registering workflow version on worlflow: %r .... DONE", workflow)
             else:
                 logger.debug("Updating workflow version: %r...", wv)
-                wv = lm.update_workflow(wv.submitter, w.uuid, workflow_version, rocrate_or_link=repo_link, public=repo.config.public)
+                wv = lm.update_workflow(wv.submitter, workflow.uuid, workflow_version,
+                                        name=repo.config.workflow_name,
+                                        rocrate_or_link=repo_link, public=repo.config.public)
                 logger.debug("Updating workflow version: %r... DONE", wv)
 
             # register workflow on registries
@@ -156,9 +160,10 @@ def register_repository_workflow(repository_reference: GithubRepositoryReference
             # append to the list of registered workflows
             registered_workflows.append(wv)
         # if no matches found, register a new workflow
-        if len(workflows) == 0:
+        else:
             # register workflow version on LifeMonitor
-            wv = lm.register_workflow(repo_link, repo_owner, workflow_version)
+            wv = lm.register_workflow(repo_link, repo_owner, workflow_version,
+                                      name=repo.config.workflow_name, public=repo.config.public)
             # register workflow on registries
             register_workflow_on_registries(github_registry, repo_owner, repo, wv, registries_map=[(_, None, []) for _ in registries])
             # append to the list of registered workflows
