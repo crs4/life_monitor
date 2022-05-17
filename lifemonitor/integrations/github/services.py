@@ -163,6 +163,12 @@ def register_repository_workflow(repository_reference: GithubRepositoryReference
             register_workflow_on_registries(github_registry, repo_owner, repo, wv, registries_map=[(_, None, []) for _ in registries])
             # append to the list of registered workflows
             registered_workflows.append(wv)
+
+        # register workflow version on github registry
+        if wv:
+            github_registry.add_workflow_version(wv, repo.full_name, repo.ref)
+            github_registry.save()
+
     except OAuthIdentityNotFoundException as e:
         logger.warning("Github identity '%r' doesn't match with any LifeMonitor user identity", repository_reference.owner_id)
         if logger.isEnabledFor(logging.DEBUG):
@@ -260,7 +266,6 @@ def register_workflow_on_registry(github_registry: GithubWorkflowRegistry, submi
             registry.add_workflow_version(workflow_version, registered_workflow.identifier, registered_workflow.latest_version, registry_workflow=registered_workflow)
             for auth in submitter.get_authorization(registry):
                 auth.resources.append(workflow_version.workflow)
-            github_registry.add_workflow_version(workflow_version, repo.full_name, repo.ref)
             workflow_version.save()
             return registered_workflow
         except Exception as e:
