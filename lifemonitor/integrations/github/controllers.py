@@ -286,7 +286,7 @@ def pull_request(event: GithubEvent):
 
     # delete support branch of closed issues
     if event.action == "closed":
-        #delete_branch(event.repository_reference.repository, issue)
+        # delete_branch(event.repository_reference.repository, issue)
         for wizard in Wizard.all():
             for step in wizard.steps:
                 if isinstance(step, UpdateStep):
