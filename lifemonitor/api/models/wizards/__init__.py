@@ -62,6 +62,10 @@ class Wizard():
         self.__steps: List[Step] = None
 
     @property
+    def id(self) -> str:
+        return f'lifemonitor-wizard-{sha1(self.title.encode()).hexdigest()}'
+
+    @property
     def _steps(self) -> List[Step]:
         if self.__steps is None:
             self.__steps = []
@@ -205,9 +209,9 @@ class Step():
 
     @property
     def id(self) -> str:
-        result = f'wizard-step-{self.title}'
-        if self.wizard is not None:
-            result += self.wizard.title
+        result = self.title
+        # if self.wizard is not None:
+        #     result += self.wizard.title
         return f'wizard-step-{sha1(result.encode()).hexdigest()}'
 
     def __eq__(self, __o: object) -> bool:
