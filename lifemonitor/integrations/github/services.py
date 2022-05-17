@@ -206,7 +206,7 @@ def delete_repository_workflow_version(repository_reference: GithubRepositoryRef
             # normalize the list of registries
             registries = __normalize_registry_identitiers__(registries, as_strings=True)
             logger.debug("Normalized list of registries: %r", registries)
-            
+
             # initialize registries map
             registry_workflows_map = __get_registries_map__(w, registries=registries)
             logger.debug("List of registries for wf %r: %r", w, registry_workflows_map)
