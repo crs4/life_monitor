@@ -34,7 +34,7 @@ from . import QuestionStep, UpdateStep, Wizard
 logger = logging.getLogger(__name__)
 
 
-def get_files(wizard: RepositoryTemplateWizard, repo: WorkflowRepository):
+def get_files(wizard: RepositoryTemplateWizard, repo: WorkflowRepository, target_path: str):
 
     workflow_title = wizard.workflow_title.answer
     workflow_description = wizard.workflow_description.answer
@@ -42,7 +42,7 @@ def get_files(wizard: RepositoryTemplateWizard, repo: WorkflowRepository):
 
     logger.debug("Preparing template for workflow: %r (type: %r)", workflow_title, workflow_type)
 
-    repo_template = WorkflowRepositoryTemplate("galaxy", data={
+    repo_template = WorkflowRepositoryTemplate("galaxy", local_path=target_path, data={
         'workflow_title': workflow_title, 'workflow_description': workflow_description}
     )
     logger.debug("Template files: %r --> %r", repo_template, repo_template.files)
