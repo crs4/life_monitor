@@ -36,7 +36,7 @@ def workflow():
     # uuid=None, name=None,
     # hosting_service: models.WorkflowRegistry = None
     return models.WorkflowVersion(MagicMock(), "https://link", "1", MagicMock(),
-                                  uuid.uuid4(), "Mock workflow version", MagicMock())
+                                  uuid.uuid4(), "Mock workflow version")
 
 
 @pytest.fixture

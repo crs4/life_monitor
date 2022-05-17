@@ -26,7 +26,7 @@ import re
 import shutil
 import tempfile
 from datetime import timedelta
-from typing import Any, Dict, Union
+from typing import Any, Dict, List, Union
 
 from lifemonitor.api.models.repositories.base import (
     WorkflowRepository, WorkflowRepositoryMetadata)
@@ -52,8 +52,8 @@ logger = logging.getLogger(__name__)
 
 class GitRepositoryFile(RepositoryFile):
 
-    def __init__(self, content: ContentFile, type: str = None) -> None:
-        super().__init__(content.name, type or content.type, content.path, None)
+    def __init__(self, content: ContentFile, type: str = None, dir: str = '.') -> None:
+        super().__init__(None, content.name, type or content.type, dir, None)
         self._content = content
 
     def __repr__(self) -> str:
@@ -99,16 +99,32 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
     def __init__(self, requester: Requester,
                  headers: Dict[str, Union[str, int]],
                  attributes: Dict[str, Any], completed: bool,
-                 ref: str = None, rev: str = None, auto_cleanup: bool = True) -> None:
+                 ref: str = None, rev: str = None,
+                 local_path: str = None, auto_cleanup: bool = True) -> None:
         super().__init__(requester, headers, attributes, completed)
-        self.ref = ref or self.default_branch
+        self.ref = ref if ref is not None else f"refs/heads/{self.default_branch}"
         self.rev = rev
         self.auto_cleanup = auto_cleanup
         self._metadata = None
         self._local_repo: LocalWorkflowRepository = None
+        self._local_path = local_path
+        self._config = None
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__} bound to {self.url} (ref: {self.ref}, rev: {self.rev})"
+
+    def __get_files__(self, path: str, ref: str) -> List[GitRepositoryFile]:
+        files = []
+        for e in self.get_contents(path, ref=ref):
+            if e.type == 'file':
+                files.append(GitRepositoryFile(e, dir=path))
+            elif e.type == 'dir':
+                files.extend(self.__get_files__(e.path, ref=ref))
+        return files
+
+    @property
+    def files(self):
+        return self.__get_files__('.', ref=self.ref or self.default_branch)
 
     @property
     def remote_metadata(self) -> WorkflowRepositoryMetadata:
@@ -162,14 +178,14 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
             return self.find_remote_workflow(ref=ref)
         return self.local_repo.find_workflow()
 
-    def make_crate(self):
+    def generate_metadata(self):
         if self._local_repo:
             if not self.auto_cleanup:
                 logger.warning("'auto cleanup' disabled: local temp folder "
                                f"'{self.local_repo._local_path}' will not be deleted")
             else:
                 self.cleanup()
-        return self.local_repo.make_crate()
+        return self.local_repo.generate_metadata()
 
     def clone(self, branch: str, local_path: str = None) -> RepoCloneContextManager:
         assert isinstance(branch, str), branch
@@ -182,7 +198,7 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
     @property
     def local_repo(self) -> LocalWorkflowRepository:
         if not self._local_repo:
-            local_path = tempfile.mkdtemp(dir=BaseConfig.BASE_TEMP_FOLDER)
+            local_path = self._local_path or tempfile.mkdtemp(dir=BaseConfig.BASE_TEMP_FOLDER)
             logger.debug("Cloning %r", self)
             clone_repo(self.clone_url, ref=self.ref, target_path=local_path)
             self._local_repo = LocalWorkflowRepository(local_path=local_path)
@@ -207,13 +223,24 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
 class GithubWorkflowRepository(InstallationGithubWorkflowRepository):
 
     def __init__(self, full_name_or_id: str, token: str = None,
-                 ref: str = None, auto_cleanup: bool = True) -> None:
+                 ref: str = None, local_path: str = None, auto_cleanup: bool = True) -> None:
         assert isinstance(full_name_or_id, (str, int)), full_name_or_id
         url_base = "/repositories/" if isinstance(full_name_or_id, int) else "/repos/"
         url = f"{url_base}{full_name_or_id}"
         super().__init__(
             __make_requester__(token=token), headers={}, attributes={'url': url}, completed=False,
-            ref=ref, auto_cleanup=auto_cleanup)
+            ref=ref, local_path=local_path, auto_cleanup=auto_cleanup)
+
+    @classmethod
+    def from_url(cls, url: str, token: str = None, ref: str = None,
+                 local_path: str = None, auto_cleanup: bool = True) -> GithubWorkflowRepository:
+        repo_url = url.replace('.git', '')
+        if repo_url.startswith('https://github.com'):
+            return cls(repo_url.replace('https://github.com/', ''),
+                       token=token, ref=ref, local_path=local_path, auto_cleanup=auto_cleanup)
+        elif repo_url.startswith('git@github.com'):
+            return cls(repo_url.replace('git@github.com:', ''),
+                       token=token, ref=ref, local_path=local_path, auto_cleanup=auto_cleanup)
 
 
 class RepoCloneContextManager():

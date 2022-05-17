@@ -21,14 +21,27 @@
 from __future__ import annotations
 
 import logging
+import re
 from typing import List
 
 from github.GithubException import GithubException
+from github.Issue import Issue
 from github.Label import Label
 from github.Repository import Repository
 
+from ...api.models.wizards import (IOHandler, QuestionStep, Step, UpdateStep,
+                                   Wizard)
+
 # Config a module level logger
 logger = logging.getLogger(__name__)
+
+
+def match_ref(ref: str, refs: List[str]) -> str:
+    pattern = r"^{0}$".format('|'.join([f"({v})".replace('*', "[a-zA-Z0-9.-_/]+") for v in refs]))
+    if not ref or not pattern:
+        return None
+    match = re.match(pattern, ref)
+    return (match.group(0), match.re.pattern.replace('[a-zA-Z0-9.-_/]+', '*').strip('^$()')) if match else (None, None)
 
 
 def crate_branch(repo: Repository, branch_name: str):
@@ -40,7 +53,7 @@ def crate_branch(repo: Repository, branch_name: str):
 
 def delete_branch(repo: Repository, branch_name: str) -> bool:
     try:
-        ref = repo.get_git_ref(f"heads/{branch_name}")
+        ref = repo.get_git_ref(f"heads/{branch_name}".format(**locals()))
         ref.delete()
         return True
     except GithubException as e:
@@ -52,8 +65,77 @@ def get_labels_from_strings(repo: Repository, labels: List[str]) -> List[Label]:
     result = []
     if labels:
         for name in labels:
-            label = repo.get_label(name)
-            if not label:
-                label = repo.create_label(name, 'orange')
-            result.append(label)
+            label = None
+            try:
+                label = repo.get_label(name)
+            except GithubException:
+                logger.debug("Label %s not found...", name)
+                try:
+                    label = repo.create_label(name, '1f8787')
+                except GithubException as e:
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.exception(e)
+                    logger.error(f"Unable to create label: {name}: {str(e)}")
+            if label:
+                result.append(label)
     return result
+
+
+class GithubIOHandler(IOHandler):
+
+    def __init__(self, app, issue: Issue) -> None:
+        super().__init__()
+        self.issue = issue
+        self.app = app
+
+    def get_input(self, question: QuestionStep) -> object:
+        assert isinstance(question, QuestionStep), question
+        found = False
+        candidates = []
+        helper: Wizard = question.wizard
+        next_step = helper.get_next_step(question, ignore_skip=True)
+        logger.debug("Next step: %r", next_step)
+        for c in self.issue.get_comments():
+            logger.debug("Checking comment: %r", c.body)
+            step = question.wizard.find_step(c.body)
+            logger.debug("Current step: %r", step)
+            if step and step.title == question.title:
+                found = True
+            elif found:
+                logger.debug("Found")
+                if not next_step or step != next_step:
+                    logger.debug("Adding... %r", c)
+                    candidates.append(c)
+                else:
+                    break
+        logger.debug("Candidates: %r", candidates)
+        for ca in reversed(candidates):
+            cbody = ca.body.strip(self.get_help())
+            logger.debug("Checking candidate: %r -- options: %r", ca.body, question.options)
+            logger.debug("Check condition: %r", cbody in question.options)
+            if question.options is None or len(question.options) == 0 or cbody in question.options:
+                return ca
+        return None
+
+    def get_input_as_text(self, question: QuestionStep) -> object:
+        value = self.get_input(question)
+        return value.body if value else None
+
+    def as_string(self, step: Step, append_help: bool = False) -> str:
+        result = f"<b>{step.title}</b><br/>"
+        if step.description:
+            result += f"{step.description}<br/>"
+        if isinstance(step, QuestionStep) and step.options:
+            result += "<br>> Choose among the following options: <b><code>{}</code></b><br>".format(', '.join(step.options))
+        if isinstance(step, UpdateStep):
+            logger.debug("Preparing PR... %r", step)
+        if append_help:
+            result += self.get_help()
+        return result
+
+    def get_help(self):
+        return f'<br>\n> **?** mention **@lm** or **@{self.app.bot.strip("[bot]")}** to answer'
+
+    def write(self, step: Step, append_help: bool = False):
+        assert isinstance(step, Step), step
+        self.issue.create_comment(step.as_string(append_help=append_help))

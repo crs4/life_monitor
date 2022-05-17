@@ -23,8 +23,9 @@ from __future__ import annotations
 import hashlib
 import hmac
 import logging
+import threading
 from datetime import datetime, timedelta, timezone
-from typing import List
+from typing import Dict, List
 
 import jwt
 import requests
@@ -121,6 +122,8 @@ class LifeMonitorGithubApp(GithubApp):
         self._requester = __make_requester__(
             jwt=self.integration.create_jwt(expiration=self.token_expiration),
             base_url=self.base_url)
+        self.__installations__ = threading.local()
+        self.__installations__.loaded = False
         super().__init__(self._requester, session.headers, app, True)
 
     def _get_app_info(self, session: requests.Session = None):
@@ -156,38 +159,70 @@ class LifeMonitorGithubApp(GithubApp):
         return gh_client.get_repo(self.service_repository_full_name)
 
     @property
-    def installations(self) -> List[LifeMonitorInstallation]:
+    def _installations(self) -> Dict[str, LifeMonitorInstallation]:
+        if not hasattr(self.__installations__, "loaded") or not self.__installations__.loaded:
+            self._load_installations()
+        return self.__installations__.map
+
+    def _load_installations(self):
+        logger.warning("Loading installations...")
+        self.__installations__.map = {}
         app_client = self.app_client_session()
         response = app_client.get(f"{self.base_url}/app/installations")
         if response.status_code == 200:
-            return [LifeMonitorInstallation(self, i, requester=self._requester) for i in response.json()]
-        logger.error(response.content)
-        return "Internal Error", 500
+            for i in response.json():
+                if i['id'] not in self.__installations__.map:
+                    self.__installations__.map[i['id']] = LifeMonitorInstallation(self, i, requester=self._requester)
+        self.__installations__.loaded = True
+        logger.warning("Loading installations... DONE")
 
-    def get_installation(self, installation_id: str) -> LifeMonitorInstallation:
+    @property
+    def installations(self) -> List[LifeMonitorInstallation]:
+        logger.warning("Searching installation: %r", self._installations)
+        return list(self._installations.values())
+
+    def get_installation(self, installation_id: int) -> LifeMonitorInstallation:
         logger.debug("Searching installation_id %r", installation_id)
-        for i in self.installations:
-            logger.debug("Installation: %r %r %r", i, i.id, i.app)
-            if str(i.id) == str(installation_id):
-                return i
-        return None
+        # Try to reload installations if the installation_id is not loaded
+        if installation_id not in self._installations:
+            logger.debug("Trying reloading installations...")
+            self._load_installations()
+            logger.debug("Trying reloading installations... DONE")
+        try:
+            return self._installations[installation_id]
+        except KeyError:
+            logger.debug("Installation '%s' not found", installation_id)
+            return None
 
 
 class GithubIntegration(GithubIntegrationBase):
 
-    def create_jwt(self, expiration=timedelta(seconds=20)) -> str:
-        now = datetime.now(timezone.utc)
-        message = {
+    _current_jwt = threading.local()
+
+    @property
+    def current_jwt(self) -> Dict:
+        try:
+            return self._current_jwt.token
+        except AttributeError:
+            return None
+
+    def create_jwt(self, expiration=DEFAULT_TOKEN_EXPIRATION, encoded: bool = True) -> str:
+        now = datetime.now()
+        expires_at = now + expiration
+        token = {
             # The time that this JWT was issued, _i.e._ now.
             "iat": jwt.utils.get_int_from_datetime(now),
             # JWT expiration time (10 minute maximum)
-            "exp": jwt.utils.get_int_from_datetime(now + expiration),
+            "exp": jwt.utils.get_int_from_datetime(expires_at),
             # Your GitHub App's identifier number
             "iss": self.integration_id
         }
-        logger.debug("Token message: %r", message)
-        # Cryptographically sign the JWT
-        return jwt.JWT().encode(message, self.private_key, alg='RS256')
+        # Save the current thread-local JWT
+        self._current_jwt.token = token
+        # Cryptographically sign the JWT if required
+        if encoded:
+            return jwt.JWT().encode(token, key=self.private_key, alg='RS256')
+        return token
 
 
 class LifeMonitorInstallation(Installation.Installation):
@@ -206,14 +241,22 @@ class LifeMonitorInstallation(Installation.Installation):
 
     @property
     def auth(self) -> InstallationAuthorization:
-        generate_token = False
-        if not self._auth:
-            generate_token = True
-        elif jwt.utils.get_int_from_datetime(self._auth.expires_at) < jwt.utils.get_int_from_datetime(datetime.now()):
-            generate_token = True
+        generate_token = self._auth is None
+        if self._auth:
+            now = datetime.now(timezone.utc)
+            expires_at = jwt.utils.get_time_from_int(self.app.integration.current_jwt['exp'])
+            logger.warning("Checking token expiration: now=%r, expires_at=%r, expired: %r",
+                           now, expires_at, expires_at <= now)
+            if expires_at <= now:
+                generate_token = True
         if generate_token:
+            logger.debug("Generating a new access token...")
             self._auth = self.app.integration.get_access_token(self.id)
+            logger.warning("Created auth: %r - %r", self._auth, self._auth.raw_data)
             assert isinstance(self._auth, InstallationAuthorization), "Invalid authorization"
+            logger.debug("Generating a new access token... DONE")
+        else:
+            logger.warning("Reusing existing token: %r", self._auth)
         return self._auth
 
     @property

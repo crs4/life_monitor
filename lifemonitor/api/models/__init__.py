@@ -41,6 +41,9 @@ from .testsuites import TestSuite, TestInstance, ManagedTestInstance, BuildStatu
 # notifications
 from .notifications import WorkflowStatusNotification
 
+# issues
+from .issues import WorkflowRepositoryIssue
+
 # 'testing_services'
 from .services import TestingService, \
     GithubTestingService, GithubTestBuild, \
@@ -76,6 +79,7 @@ __all__ = [
     "WorkflowStatus",
     "WorkflowStatusNotification",
     "WorkflowVersion",
+    "WorkflowRepositoryIssue",
     "RegistryWorkflow",
 ]
 

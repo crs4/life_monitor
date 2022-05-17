@@ -438,7 +438,7 @@ def create_client_credentials_registry(_app_settings, _admin_user, name='seek'):
             redirect_uris=_fake_callback_uri())
 
 
-def get_registry(_app_settings, _admin_user):
+def get_registry(_app_settings, _admin_user) -> WorkflowRegistry:
     registry = WorkflowRegistry.find_by_name("seek")
     if registry is None:
         registry = create_client_credentials_registry(_app_settings, _admin_user)

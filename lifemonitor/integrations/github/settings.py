@@ -20,10 +20,10 @@
 
 from __future__ import annotations
 
-import re
 from typing import List
 
 from lifemonitor.auth.models import User
+from lifemonitor.integrations.github.utils import match_ref
 from sqlalchemy.orm.attributes import flag_modified
 
 
@@ -31,10 +31,12 @@ class GithubUserSettings():
 
     DEFAULTS = {
         "check_issues": True,
+        "public": True,
         "all_branches": True,
         "all_tags": True,
         "branches": ["main"],
-        "tags": ["v*.*.*"]
+        "tags": ["v*.*.*"],
+        "registries": []
     }
 
     def __init__(self, user: User) -> None:
@@ -43,6 +45,10 @@ class GithubUserSettings():
         if not self._raw_settings:
             self._raw_settings = self.DEFAULTS.copy()
             self.user.settings['github_settings'] = self._raw_settings
+
+    @property
+    def public(self) -> bool:
+        return self._raw_settings.get('public', self.DEFAULTS['public'])
 
     @property
     def check_issues(self) -> bool:
@@ -89,7 +95,7 @@ class GithubUserSettings():
         flag_modified(self.user, 'settings')
 
     def is_valid_branch(self, branch: str) -> bool:
-        return re.match(self._get_pattern_(self.branches), branch) is not None
+        return match_ref(branch, self.branches)
 
     @property
     def tags(self) -> List[str]:
@@ -109,11 +115,27 @@ class GithubUserSettings():
         flag_modified(self.user, 'settings')
 
     def is_valid_tag(self, tag: str) -> bool:
-        return re.match(self._get_pattern_(self.tags), tag) is not None
+        return match_ref(tag, self.tags)
 
-    @staticmethod
-    def _get_pattern_(values: List[str]) -> str:
-        return "^{0}$".format('|'.join([f"({v})".replace('*', "[a-zA-Z0-9.-_/]+") for v in values]))
+    @property
+    def registries(self) -> List[str]:
+        return self._raw_settings.get('registries', self.DEFAULTS['registries']).copy()
+
+    @registries.setter
+    def registries(self, registries: List[str]) -> List[str]:
+        self._raw_settings['registries'] = registries.copy()
+        flag_modified(self.user, 'settings')
+
+    def add_registry(self, registry: str):
+        self._raw_settings['registries'].append(registry)
+        flag_modified(self.user, 'settings')
+
+    def remove_registry(self, registry: str):
+        self._raw_settings['registries'].remove(registry)
+        flag_modified(self.user, 'settings')
+
+    def is_registry_enabled(self, registry: str) -> bool:
+        return registry in self.registries
 
 
 def __get_github_settings(self) -> GithubUserSettings:

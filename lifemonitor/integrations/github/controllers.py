@@ -21,14 +21,25 @@
 from __future__ import annotations
 
 import logging
+from typing import List
 
-from flask import Blueprint, Flask, request
+from flask import Blueprint, Flask, current_app, request
+from flask_apscheduler import APScheduler
 from lifemonitor import cache
+from lifemonitor.api.models import WorkflowRegistry
+from lifemonitor.api.models.issues.common.files.missing import \
+    MissingWorkflowFile
 from lifemonitor.api.models.repositories.github import GithubWorkflowRepository
 from lifemonitor.api.models.testsuites.testinstance import TestInstance
+from lifemonitor.api.models.wizards import QuestionStep, UpdateStep
+from lifemonitor.integrations.github import pull_requests
 from lifemonitor.integrations.github.app import LifeMonitorGithubApp
-from lifemonitor.integrations.github.events import GithubEvent
+from lifemonitor.integrations.github.events import (GithubEvent,
+                                                    GithubRepositoryReference)
+from lifemonitor.integrations.github.issues import GithubIssue
 from lifemonitor.integrations.github.settings import GithubUserSettings
+from lifemonitor.integrations.github.utils import delete_branch, match_ref
+from lifemonitor.integrations.github.wizards import GithubWizard
 
 from . import services
 
@@ -76,6 +87,137 @@ def installation(event: GithubEvent):
         return "Internal Error", 500
 
 
+def __config_registry_list__(repo_info: GithubRepositoryReference, user_settings: GithubUserSettings) -> List[str]:
+    # Configure registries
+    registries = []
+    repo: GithubWorkflowRepository = repo_info.repository
+    if repo.config:
+        logger.debug("Configuring registries from repository config: %r", repo.config)
+        if repo_info.branch and match_ref(repo_info.branch, repo.config.branches):
+            registries.extend(repo.config.branches[repo_info.branch].get('update_registries', []))
+        elif repo_info.tag:
+            tag, pattern = match_ref(repo_info.tag, repo.config.tags)
+            if tag:
+                registries.extend(repo.config.tags[pattern].get('update_registries', []))
+    else:
+        logger.debug("Using all available registries")
+        registries.extend([_.name for _ in WorkflowRegistry.all()])
+    # use only registries globally enabled on Github Integration Settings
+    enabled_registries = [_ for _ in registries if _ in user_settings.registries]
+    logger.warning("The following registries will be ignored because globally disabled: %r", [_ for _ in registries if _ not in enabled_registries])
+    logger.debug("Filtered registries: %r", enabled_registries)
+    return enabled_registries
+
+
+def __skip_branch_or_tag__(repo_info: GithubRepositoryReference,
+                           user_settings: GithubUserSettings):
+    repo: GithubWorkflowRepository = repo_info.repository
+    if repo.config:
+        if match_ref(repo_info.tag, repo.config.tags):
+            return False
+        if match_ref(repo_info.branch, repo.config.branches):
+            return False
+    elif repo_info.tag:
+        if user_settings.all_tags or user_settings.is_valid_tag(repo_info.tag):
+            return False
+    elif repo_info.branch:
+        if user_settings.all_branches or user_settings.is_valid_branch(repo_info.branch):
+            return False
+    return True
+
+
+def __check_for_issues_and_register__(repo_info: GithubRepositoryReference,
+                                      user_settings: GithubUserSettings, check_issues: bool = True):
+    register = True
+    repo: GithubWorkflowRepository = repo_info.repository
+    logger.debug("Repo to register: %r", repo)
+    # filter branches and tags according to global and current repo settings
+    if __skip_branch_or_tag__(repo_info, user_settings):
+        logger.info(f"Repo branch or tag {repo_info.ref} skipped!")
+        return
+    # check for issues (if enabled)
+    if check_issues:
+        if user_settings.check_issues and (not repo.config or repo.config.checker_enabled):
+            check_result = services.check_repository_issues(repo_info)
+            if check_result.found_issues():
+                register = False
+                logger.warning("Found issue on repo: %r", repo_info)
+        else:
+            logger.debug("Check for issues on '%s' ... SKIPPED", repo_info)
+    # register workflow
+    logger.debug("Process workflow registration: %r", register)
+    if register:
+        # Configure registries
+        registries = __config_registry_list__(repo_info, user_settings)
+        # register or update workflow on LifeMonitor and optionally on registries
+        registered_workflow = services.register_repository_workflow(repo_info, registries=registries)
+        logger.debug("Registered workflow: %r", registered_workflow)
+
+
+def create(event: GithubEvent):
+    logger.debug("Create event: %r", event)
+
+    installation = event.installation
+
+    logger.debug("Installation: %r", installation)
+
+    repositories = installation.get_repos()
+    logger.debug("Repositories: %r", repositories)
+
+    repo_info = event.repository_reference
+    logger.debug("Repo reference: %r", repo_info)
+
+    repo: GithubWorkflowRepository = repo_info.repository
+    logger.debug("Repository: %r", repo)
+
+    logger.debug("Ref: %r", repo.ref)
+    logger.debug("Refs: %r", repo.git_refs_url)
+    logger.debug("Tree: %r", repo.trees_url)
+    logger.debug("Commit: %r", repo.rev)
+
+    logger.warning("Is Tag: %r", repo_info.tag)
+    logger.warning("Is Branch: %r", repo_info.branch)
+
+    if repo_info.tag:
+        try:
+            __check_for_issues_and_register__(repo_info,
+                                              event.sender.user.github_settings, False)
+        except Exception as e:
+            logger.exception(e)
+
+
+def delete(event: GithubEvent):
+    logger.debug("Delete event: %r", event)
+
+    installation = event.installation
+
+    logger.debug("Installation: %r", installation)
+
+    repositories = installation.get_repos()
+    logger.debug("Repositories: %r", repositories)
+
+    repo_info = event.repository_reference
+    logger.debug("Repo reference: %r", repo_info)
+
+    repo: GithubWorkflowRepository = repo_info.repository
+    logger.debug("Repository: %r", repo)
+
+    logger.debug("Ref: %r", repo.ref)
+    logger.debug("Refs: %r", repo.git_refs_url)
+    logger.debug("Tree: %r", repo.trees_url)
+    logger.debug("Commit: %r", repo.rev)
+
+    logger.warning("Is Tag: %s", repo_info.tag)
+    logger.warning("Is Branch: %s", repo_info.branch)
+
+    if repo_info.tag or repo_info.branch:
+        try:
+            services.delete_repository_workflow_version(repo_info)
+        except Exception as e:
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.exception(e)
+
+
 def push(event: GithubEvent):
     try:
         logger.debug("Push event: %r", event)
@@ -93,29 +235,16 @@ def push(event: GithubEvent):
         repo: GithubWorkflowRepository = repo_info.repository
         logger.debug("Repository: %r", repo)
 
-        settings: GithubUserSettings = event.sender.user.github_settings
-        if repo_info.tag and (settings.all_tags or settings.is_valid_tag(repo_info.tag)) or\
-                repo_info.branch and (settings.all_branches or settings.is_valid_branch(repo_info.branch)):
-            register = not repo_info.deleted
-            if register:
-                if settings.check_issues:
-                    check_result = services.check_repository_issues(repo_info)
-                    if check_result.found_issues():
-                        register = False
-                        logger.warning("Found issue on repo: %r", repo_info)
-                else:
-                    logger.warning("Check for issues on '%s' ... SKIPPED", repo_info)
-            if register:
-                # register or update workflow on LifeMonitor
-                services.register_repository_workflow(repo_info)
+        logger.debug("Ref: %r", repo.ref)
+        logger.debug("Refs: %r", repo.git_refs_url)
+        logger.debug("Tree: %r", repo.trees_url)
+        logger.debug("Commit: %r", repo.rev)
 
-                # register or update workflow on WorkflowHub
-                # services.register_workflow_on_registries(event.sender.user, repo_info, ('wfhubdev'))
-
-            if repo_info.ref and repo_info.deleted:
-                services.delete_repository_workflow_version(repo_info)
+        if not repo_info.ref or repo_info.deleted:
+            logger.debug("Repo ref not defined or branch/tag deleted: %r", repo)
         else:
-            logger.info(f"Repo branch or tag {repo_info.ref} skipped!")
+            settings: GithubUserSettings = event.sender.user.github_settings
+            __check_for_issues_and_register__(repo_info, settings, True)
 
         return "No content", 204
     except Exception as e:
@@ -125,12 +254,143 @@ def push(event: GithubEvent):
         return "Internal Error", 500
 
 
+def issues(event: GithubEvent):
+    logger.debug("Event: %r", event)
+
+    # detect Github issue
+    issue: GithubIssue = event.issue
+    logger.debug("The current github issue: %r", event.issue)
+    if not issue:
+        logger.debug("No issue on this Github event")
+        return "No issue", 204
+
+    # delete support branch of closed issues
+    if event.action == "closed":
+        delete_branch(event.repository_reference.repository, issue)
+
+    # check the author of the current issue
+    if issue.user.login != event.application.bot:
+        logger.debug("Nothing to do: issue not created by LifeMonitor[Bot]")
+        return f"Issue not created by {event.application.bot}", 204
+
+    # react only when the issue is opened
+    if event.action == "opened":
+        repository_issue = issue.as_repository_issue()
+        logger.debug("LifeMonitor issue: %r", repository_issue)
+        if repository_issue:
+            logger.debug("Entering: %r", isinstance(repository_issue, MissingWorkflowFile))
+            if isinstance(repository_issue, MissingWorkflowFile):
+                logger.debug("Missing workflow file issue")
+
+                wizard = GithubWizard.from_event(event)
+                logger.debug("Current wizard: %r", wizard)
+                if wizard:
+                    if not wizard.current_step:
+                        next_step = wizard.get_next_step()
+                        logger.debug("Next step: %r", next_step)
+                        wizard.io_handler.write(next_step, append_help=True)
+
+    return "No action", 204
+
+
+def issue_comment(event: GithubEvent):
+
+    logger.debug("Event: %r", event)
+
+    # check if an issue comment has been detected
+    if event.comment is None:
+        logger.debug("No issue comment associated with the current Github event: %r", event)
+        return "No issue comment", 204
+
+    # check the author of the current issue comment
+    # skip comment if generated by the LifeMonitor[bot]
+    if event.comment.is_generated_by_bot():
+        logger.debug("Nothing to do: issue not created by LifeMonitor[Bot]")
+        return f"Comment created by {event.application.bot}", 204
+
+    # check the recipient of the issue comment:
+    # skip comment if not addressed to the LifeMonitor[bot]
+    if not event.comment.is_addressed_to_bot():
+        logger.debug(f"Generic message not addressed to {event.application.bot}")
+        return
+
+    # check the body of the issue comment:
+    # skip comment if it is empty
+    if not event.comment.body:
+        logger.debug("Message empty: %r", event.comment.body)
+        return
+
+    # detected a message for this LifeMonitor[bot]
+    logger.debug("Message to bot: %r", event.comment.body)
+
+    # detect Github issue
+    issue: GithubIssue = event.issue
+    logger.debug("The current github issue: %r", event.issue)
+    if not issue:
+        logger.debug("No issue associated with the current Github event: %r", event)
+        return "No issue found", 204
+
+    # check the author of the current issue
+    if issue.user.login != event.application.bot:
+        logger.debug("Nothing to do: issue not created by LifeMonitor[Bot]")
+        return f"Issue not created by {event.application.bot}", 204
+
+    # check the author of the current issue comment
+    if event.comment.user.login == event.application.bot:
+        logger.debug("Nothing to do: comment crated by the LifeMonitor Bot")
+        return f"Issue comment not created by {event.application.bot}", 204
+
+    # check if there exists a candidate wizard for the current github event
+    wizard = GithubWizard.from_event(event)
+    logger.debug("Detected wizard: %r", wizard)
+    if wizard:
+        step = wizard.current_step
+        logger.debug("The current step: %r %r", step, step.wizard)
+
+        if isinstance(step, QuestionStep):
+            answer = step.get_answer()
+            logger.debug("The answer: %r", answer)
+            if answer:
+                logger.debug("The answer: %r", answer.body)
+                answer.create_reaction("+1")
+                next_step = step.next
+                logger.debug("Next step: %r", next_step)
+                if next_step:
+                    if isinstance(next_step, UpdateStep):
+                        repo = event.repository_reference.repository
+                        logger.debug("REF: %r", repo.ref)
+                        logger.debug("REV: %r", repo.rev)
+                        logger.debug("DEFAULT BRANCH: %r", repo.default_branch)
+                        if not pull_requests.find_pull_request_by_title(repo, next_step.title):
+                            pr = pull_requests.create_pull_request(
+                                repo, next_step.id, next_step.title, next_step.description, next_step.get_files(repo), allow_update=True)
+                            logger.debug("PR created or updated: %r", pr)
+                            if not pr:
+                                return "Nothing to do", 204
+                            else:
+                                issue.create_comment(next_step.as_string() + f"<br>See PR {pr.html_url}")
+                    else:
+                        wizard.io_handler.write(next_step, append_help=True)
+            else:
+                # Unable to understand user answer
+                logger.debug("Unable to understand user answer")
+                event.comment.create_reaction("confused")
+                wizard.io_handler.write(step, append_help=True)
+
+        return f"Processed step {step.title} of wizard {wizard.title}", 204
+
+    return "No action", 204
+
+
 # Register Handlers
 __event_handlers__ = {
     "ping": ping,
     "workflow_run": refresh_workflow_builds,
     "installation": installation,
-    "push": push
+    "push": push,
+    "issues": issues,
+    "issue_comment": issue_comment,
+    "delete": delete
 }
 
 
@@ -138,6 +398,14 @@ __event_handlers__ = {
 blueprint = Blueprint("github_integration", __name__,
                       template_folder='templates',
                       static_folder="static", static_url_path='/static')
+
+
+def event_handler_wrapper(app, handler, event):
+    logger.debug("Current app: %r", app)
+    logger.debug("Current handler: %r", handler)
+    logger.debug("Current event: %r", event)
+    with app.app_context():
+        return handler(event)
 
 
 @blueprint.route("/integrations/github", methods=("POST",))
@@ -162,7 +430,12 @@ def handle_event():
         logger.warning(f"No event handler registered for the event GitHub event '{event.type}' {action}")
         return f"No handler registered for the '{event.type}' event", 204
     else:
-        return event_handler(event)
+        app = current_app
+        logger.debug("Current app: %r", app)
+        scheduler: APScheduler = app.scheduler
+        logger.debug("Current app scheduler: %r", scheduler)
+        scheduler.add_job(event.id, event_handler_wrapper, args=[scheduler.app, event_handler, event], replace_existing=True)
+        return "Event handler scheduled", 200
 
 
 def init_integration(app: Flask):

@@ -26,6 +26,7 @@ from urllib.parse import urljoin
 
 from lifemonitor import exceptions as lm_exceptions
 from lifemonitor import utils as lm_utils
+from lifemonitor.api.models.issues import WorkflowRepositoryIssue
 from lifemonitor.auth import models as auth_models
 from lifemonitor.auth.serializers import SubscriptionSchema, UserSchema
 from lifemonitor.serializers import (BaseSchema, ListOfItems,
@@ -101,6 +102,26 @@ class ListOfRegistryIndexItemsSchema(ListOfItems):
     __item_scheme__ = RegistryIndexItemSchema
 
 
+class WorkflowIssueTypeSchema(ResourceMetadataSchema):
+    __envelope__ = {"single": None, "many": "items"}
+
+    identifier = fields.String(attribute="identifier")
+    name = fields.String(attribute="name")
+    labels = fields.Method("get_labels")
+    depends_on = fields.String(attribute="get_depends_on")
+
+    def get_labels(self, issue: WorkflowRepositoryIssue):
+        return issue.labels
+
+    def get_depends_on(self, issue: WorkflowRepositoryIssue):
+        return [_.identifier for _ in issue.depends_on] if issue.depends_on else []
+
+
+class ListOfWorkflowIssueTypesSchema(ListOfItems):
+    __item_scheme__ = WorkflowIssueTypeSchema
+    __exclude__ = ('meta', 'links')
+
+
 class WorkflowSchema(ResourceMetadataSchema):
     __envelope__ = {"single": None, "many": "items"}
     __model__ = models.WorkflowVersion
@@ -133,18 +154,19 @@ class VersionDetailsSchema(BaseSchema):
 
     def get_links(self, obj: models.WorkflowVersion):
         links = {
-            'origin': obj.external_link
+            'origin': "local file uploaded" if obj.uri.startswith("tmp://") else obj.uri,
         }
         if obj.based_on:
             links['based_on'] = obj.based_on
-        if obj.registry_link:
-            links['registry'] = obj.registry_link
+        links['registries'] = {}
+        for r_name, rv in obj.registry_workflow_versions.items():
+            links['registries'][r_name] = rv.link
         return links
 
     def get_rocrate(self, obj: models.WorkflowVersion):
         rocrate = {
             'links': {
-                'origin': obj.external_link,
+                'origin': "local file uploaded" if obj.uri.startswith("tmp://") else obj.uri,
                 'metadata': urljoin(lm_utils.get_external_server_url(),
                                     f"workflows/{obj.workflow.uuid}/rocrate/{obj.version}/metadata"),
                 'download': urljoin(lm_utils.get_external_server_url(),
@@ -153,8 +175,9 @@ class VersionDetailsSchema(BaseSchema):
         }
         if obj.based_on:
             rocrate['links']['based_on'] = obj.based_on
-        if obj.registry_link:
-            rocrate['links']['registry'] = obj.registry_link
+        rocrate['links']['registries'] = {}
+        for r_name, rv in obj.registry_workflow_versions.items():
+            rocrate['links']['registries'][r_name] = rv.link
         rocrate['metadata'] = obj.crate_metadata
         if 'rocrate_metadata' in self.exclude or \
                 self.only and 'rocrate_metadata' not in self.only:
@@ -181,8 +204,7 @@ class WorkflowVersionSchema(ResourceSchema):
     name = ma.auto_field(attribute="workflow.name")
     version = fields.Method("get_version")
     public = fields.Boolean(attribute="workflow.public")
-    registry = ma.Nested(WorkflowRegistrySchema(exclude=('meta', 'links')),
-                         attribute="registry")
+    registries = fields.Method("get_registries")
     subscriptions = fields.Method("get_subscriptions")
 
     rocrate_metadata = False
@@ -207,6 +229,12 @@ class WorkflowVersionSchema(ResourceSchema):
                 s = user.get_subscription(wv.workflow)
                 if s:
                     result.append(SubscriptionSchema(exclude=('meta', 'links'), self_link=False).dump(s))
+        return result
+
+    def get_registries(self, obj):
+        result = []
+        for r in obj.registries:
+            result.append(WorkflowRegistrySchema(exclude=('meta', 'links'), self_link=False).dump(r))
         return result
 
     @post_dump
@@ -392,10 +420,13 @@ class WorkflowVersionListItem(WorkflowSchema):
     latest_version = fields.String(attribute="latest_version.version")
     status = fields.Method("get_status")
     subscriptions = fields.Method("get_subscriptions")
+    versions = fields.Method("get_versions")
 
-    def __init__(self, *args, self_link: bool = True, subscriptionsOf: List[auth_models.User] = None, **kwargs):
+    def __init__(self, *args, self_link: bool = True,
+                 workflow_versions: bool = False, subscriptionsOf: List[auth_models.User] = None, **kwargs):
         super().__init__(*args, self_link=self_link, **kwargs)
         self.subscriptionsOf = subscriptionsOf
+        self.workflow_versions = workflow_versions
 
     def get_status(self, workflow):
         try:
@@ -422,6 +453,16 @@ class WorkflowVersionListItem(WorkflowSchema):
                 "reason": str(e)
             }
 
+    def get_versions(self, workflow):
+        try:
+            if self.workflow_versions:
+                schema = VersionDetailsSchema(only=("uuid", "version", "ro_crate", "is_latest"))
+                return [schema.dump(v) for v in workflow.versions.values()]
+            return None
+        except Exception as e:
+            logger.debug(e)
+            return None
+
     def get_latest_build(self, workflow):
         try:
             latest_builds = workflow.latest_version.status.latest_builds
@@ -441,15 +482,25 @@ class WorkflowVersionListItem(WorkflowSchema):
                     result.append(SubscriptionSchema(exclude=('meta', 'links'), self_link=False).dump(s))
         return result
 
+    @post_dump
+    def remove_skip_values(self, data, **kwargs):
+        return {
+            key: value for key, value in data.items()
+            if value is not None
+        }
+
 
 class ListOfWorkflows(ListOfItems):
     __item_scheme__ = WorkflowVersionListItem
 
     subscriptionsOf: List[auth_models.User] = None
 
-    def __init__(self, *args, workflow_status: bool = False, subscriptionsOf: List[auth_models.User] = None, **kwargs):
+    def __init__(self, *args,
+                 workflow_status: bool = False, workflow_versions: bool = False,
+                 subscriptionsOf: List[auth_models.User] = None, **kwargs):
         super().__init__(*args, **kwargs)
         self.workflow_status = workflow_status
+        self.workflow_versions = workflow_versions
         self.subscriptionsOf = subscriptionsOf
 
     def get_items(self, obj):
@@ -459,7 +510,8 @@ class ListOfWorkflows(ListOfItems):
         if not self.subscriptionsOf or len(self.subscriptionsOf) == 0:
             exclude.append('subscriptions')
         return [self.__item_scheme__(exclude=tuple(exclude), many=False,
-                                     subscriptionsOf=self.subscriptionsOf).dump(_) for _ in obj] \
+                                     subscriptionsOf=self.subscriptionsOf,
+                                     workflow_versions=self.workflow_versions).dump(_) for _ in obj] \
             if self.__item_scheme__ else None
 
 

@@ -1,4 +1,4 @@
-FROM python:3.9-buster as base
+FROM python:3.9-slim-buster as base
 
 # Install base requirements
 RUN apt-get update -q \
@@ -34,7 +34,8 @@ WORKDIR /lm
 COPY --chown=root:root \
     docker/wait-for-postgres.sh \
     docker/wait-for-redis.sh \
-    docker/lm_entrypoint.sh docker/worker_entrypoint.sh \
+    docker/lm_entrypoint.sh \
+    docker/worker_entrypoint.sh \
     /usr/local/bin/
 
 # Update permissions and install optional certificates
@@ -60,11 +61,17 @@ RUN mkdir -p /var/data/lm \
 USER lm
 
 # Copy lifemonitor app
-COPY --chown=lm:lm app.py lm-admin.py gunicorn.conf.py /lm/
+COPY --chown=lm:lm app.py lm-admin lm gunicorn.conf.py /lm/
 COPY --chown=lm:lm specs /lm/specs
 COPY --chown=lm:lm lifemonitor /lm/lifemonitor
 COPY --chown=lm:lm migrations /lm/migrations
+COPY --chown=lm:lm cli /lm/cli
 
+# Set software and build number
+ARG SW_VERSION
+ARG BUILD_NUMBER
+ENV LM_SW_VERSION=${SW_VERSION}
+ENV LM_BUILD_NUMBER=${BUILD_NUMBER}
 
 ##################################################################
 ## Node Stage
@@ -88,9 +95,3 @@ RUN npm run production
 FROM base as target
 
 COPY --from=node --chown=lm:lm /static/dist /lm/lifemonitor/static/dist
-
-# Set the build number
-ARG SW_VERSION
-ARG BUILD_NUMBER
-ENV LM_SW_VERSION=${SW_VERSION}
-ENV LM_BUILD_NUMBER=${BUILD_NUMBER}

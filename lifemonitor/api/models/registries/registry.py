@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
-from typing import List, Union
+from typing import List, Tuple, Union
 
 import lifemonitor.api.models as models
 import lifemonitor.exceptions as lm_exceptions
@@ -30,10 +30,13 @@ import requests
 from authlib.integrations.base_client import RemoteApp
 from lifemonitor import utils as lm_utils
 from lifemonitor.api.models import db
+from lifemonitor.api.models.repositories.base import WorkflowRepository
 from lifemonitor.auth import models as auth_models
+from lifemonitor.auth.models import Resource
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 from lifemonitor.auth.oauth2.client.services import oauth2_registry
 from lifemonitor.utils import ClassManager, download_url
+from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy.orm.exc import NoResultFound
 
 # set module level logger
@@ -42,27 +45,40 @@ logger = logging.getLogger(__name__)
 
 class RegistryWorkflow(object):
     _registry: WorkflowRegistry
+    _uuid: str
     _identifier: str
     _name: str
     _latest_version: str
     _versions: List[str] = None
+    _metadata: dict = None
 
     def __init__(self,
                  registry: WorkflowRegistry,
+                 uuid: str,
                  identifier: str,
                  name: str,
                  latest_version: str = None,
-                 versions: List[str] = None) -> None:
+                 versions: List[str] = None,
+                 metadata: dict = None) -> None:
         self._registry = registry
+        self._uuid = uuid
         self._identifier = identifier
         self._name = name
         self._latest_version = latest_version
         if versions:
             self._versions = versions.copy()
+        self._metadata = metadata
+
+    def __repr__(self) -> str:
+        return f"RegistryWorkflow: {self.name} (id: {self.identifier}, uuid: {self.uuid})"
 
     @property
     def registry(self) -> WorkflowRegistry:
         return self._registry
+
+    @property
+    def uuid(self) -> str:
+        return self._uuid
 
     @property
     def identifier(self) -> str:
@@ -83,6 +99,60 @@ class RegistryWorkflow(object):
     @property
     def external_link(self) -> str:
         return self._registry.get_external_link(self._identifier, self._latest_version)
+
+    @property
+    def metadata(self):
+        return self._metadata
+
+
+class RegistryWorkflowVersion(Resource):
+
+    id = db.Column(db.Integer, db.ForeignKey(Resource.id), primary_key=True)
+    workflow_version_id = db.Column(db.Integer, db.ForeignKey("workflow_version.id"), nullable=True)
+    workflow_version: models.WorkflowVersion = db.relationship("WorkflowVersion", uselist=False,
+                                                               backref=db.backref("registry_workflow_versions", cascade="all, delete-orphan",
+                                                                                  collection_class=attribute_mapped_collection('registry.name')),
+                                                               foreign_keys=[workflow_version_id])
+
+    registry_id = db.Column(db.Integer, db.ForeignKey("workflow_registry.id"), nullable=True)
+    registry: WorkflowRegistry = db.relationship("WorkflowRegistry", uselist=False,
+                                                 backref=db.backref("workflow_versions",
+                                                                    cascade="all, delete-orphan"),
+                                                 foreign_keys=[registry_id])
+    external_ns = "external-id:"
+    _registry_workflow = None
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'registry_workflow_version'
+    }
+
+    def __init__(self, registry: WorkflowRegistry, workflow_version: models.WorkflowVersion, identifier: str, version: str = None,
+                 registry_workflow: RegistryWorkflow = None) -> None:
+        super().__init__(self.external_ns, version=version or workflow_version.version)
+        self.registry = registry
+        self.identifier = identifier
+        self.workflow_version = workflow_version
+        self._registry_workflow = registry_workflow
+        self.uuid = self.registry_workflow.uuid
+
+    @property
+    def identifier(self):
+        r = self.uri.replace(self.external_ns, "")
+        return r if len(r) > 0 else None
+
+    @identifier.setter
+    def identifier(self, value):
+        self.uri = f"{self.external_ns}{value}"
+
+    @property
+    def registry_workflow(self) -> RegistryWorkflow:
+        if not self._registry_workflow:
+            self._registry_workflow = self.registry.get_index_workflow(self.workflow_version.submitter, self.identifier)
+        return self._registry_workflow
+
+    @property
+    def link(self) -> str:
+        return self.registry.get_external_link(self.identifier, self.version)
 
 
 class WorkflowRegistryClient(ABC):
@@ -238,6 +308,10 @@ class WorkflowRegistry(auth_models.HostingService):
     def api(self) -> auth_models.Resource:
         return self.server_credentials.api_resource
 
+    @property
+    def read_write_scopes(self) -> Tuple[str]:
+        return None
+
     def get_external_uuid(self, external_id, version, user: auth_models.User) -> str:
         return self.client.get_external_uuid(external_id, version, user)
 
@@ -273,7 +347,8 @@ class WorkflowRegistry(auth_models.HostingService):
         # add user authorization related with the registry as Identity provider
         identity = user.oauth_identity.get(self.server_credentials.name, None)
         if identity:
-            auths.append(auth_models.ExternalServiceAuthorizationHeader(user, f"{identity.token['token_type']} {identity.token['access_token']}"))
+            token = identity.fetch_token()
+            auths.append(auth_models.ExternalServiceAuthorizationHeader(user, f"{token['token_type']} {identity.token['access_token']}"))
         else:
             logger.warning(f"No '{self.server_credentials.name}' identity for the user {user}")
         return auths
@@ -292,12 +367,22 @@ class WorkflowRegistry(auth_models.HostingService):
         except Exception as e:
             raise lm_exceptions.EntityNotFoundException(e)
 
+    def add_workflow_version(self, workflow_version: models.WorkflowVersion, identifier: str, version: str,
+                             registry_workflow: RegistryWorkflow = None) -> RegistryWorkflowVersion:
+        return RegistryWorkflowVersion(self, workflow_version, identifier=identifier, version=version, registry_workflow=registry_workflow)
+
+    def remove_workflow_version(self, workflow_version: models.WorkflowVersion):
+        assert isinstance(workflow_version, models.WorkflowVersion), workflow_version
+        registry_workflow = workflow_version.registries.get(self.name, None)
+        if registry_workflow:
+            self.workflow_versions.remove(registry_workflow)
+
     def get_workflows(self) -> List[models.Workflow]:
-        return list({w.workflow for w in self.registered_workflow_versions})
+        return list({w.workflow_version.workflow for w in self.workflow_versions})
 
     def get_workflow_by_external_id(self, identifier) -> models.Workflow:
         try:
-            w = next((w for w in self.registered_workflow_versions if w.workflow.external_id == identifier), None)
+            w = next((w for w in self.workflow_versions if w.identifier == identifier), None)
             return w.workflow if w is not None else None
         except Exception:
             if models.Workflow.find_by_uuid(identifier) is not None:
@@ -305,11 +390,10 @@ class WorkflowRegistry(auth_models.HostingService):
 
     def get_workflow(self, uuid_or_identifier) -> models.Workflow:
         try:
-            w = next((w for w in self.registered_workflow_versions if w.workflow.uuid == lm_utils.uuid_param(uuid_or_identifier)), None)
-            return w.workflow if w is not None else None
-        except ValueError:
-            w = next((w for w in self.registered_workflow_versions if w.workflow.external_id == uuid_or_identifier), None)
-            return w.workflow if w is not None else None
+            w = next((w for w in self.workflow_versions if w.workflow_version.workflow.uuid == lm_utils.uuid_param(uuid_or_identifier)), None)
+            if not w:
+                w = next((w for w in self.workflow_versions if w.identifier == uuid_or_identifier), None)
+            return w.workflow_version.workflow if w is not None else None
         except Exception:
             if models.Workflow.find_by_uuid(uuid_or_identifier) is not None:
                 raise lm_exceptions.NotAuthorizedException()
@@ -318,7 +402,7 @@ class WorkflowRegistry(auth_models.HostingService):
         return self.client.filter_by_user(self.get_workflows(), user)
 
     def get_user_workflow_versions(self, user: auth_models.User) -> List[models.WorkflowVersion]:
-        return self.client.filter_by_user(self.registered_workflow_versions, user)
+        return self.client.filter_by_user(self.workflow_versions, user)
 
     def get_index(self, user: auth_models.User) -> List[RegistryWorkflow]:
         return self.client.get_index(user)
@@ -328,6 +412,13 @@ class WorkflowRegistry(auth_models.HostingService):
 
     def find_workflow_versions_by_remote_url(self, user, url: str, user_as_submitter: bool = True) -> List[object]:
         return self.client.find_workflow_versions_by_remote_url(user, url)
+
+    def register_workflow_version(self, submitter: auth_models.User,
+                                  repository: WorkflowRepository, external_id: str = None):
+        pass
+
+    def delete_workflow(self, submitter: auth_models.User, external_id: str) -> bool:
+        pass
 
     @property
     def client(self) -> WorkflowRegistryClient:

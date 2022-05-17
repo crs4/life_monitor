@@ -23,13 +23,15 @@ from __future__ import annotations
 
 from .base import (IssueCheckResult, WorkflowRepository,
                    WorkflowRepositoryMetadata)
+from .config import WorkflowRepositoryConfig
 from .files import RepositoryFile, WorkflowFile
-from .github import (GithubWorkflowRepository, RepoCloneContextManager,
-                     InstallationGithubWorkflowRepository)
+from .github import (GithubWorkflowRepository,
+                     InstallationGithubWorkflowRepository,
+                     RepoCloneContextManager)
 from .local import LocalWorkflowRepository, ZippedWorkflowRepository
 
 __all__ = [
-    "RepositoryFile", "WorkflowFile",
+    "RepositoryFile", "WorkflowFile", "WorkflowRepositoryConfig",
     "WorkflowRepository", "WorkflowRepositoryMetadata", "IssueCheckResult",
     "LocalWorkflowRepository", "ZippedWorkflowRepository",
     "InstallationGithubWorkflowRepository", "GithubWorkflowRepository", "RepoCloneContextManager"

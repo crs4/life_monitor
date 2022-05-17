@@ -47,9 +47,14 @@ def get_providers(skip_registration: bool = False):
         providers.append(GitHub)
     # set workflow registries as oauth providers
     if db_initialized():
-        logger.debug("Getting dynamic providers...")
-        providers.extend(Seek.all())
-        logger.debug("Getting providers: %r ... DONE", providers)
+        try:
+            logger.debug("Getting dynamic providers...")
+            providers.extend(Seek.all())
+            logger.debug("Getting providers: %r ... DONE", providers)
+        except Exception as e:
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.exception(e)
+            logger.warning("Unable to dynamically load oauth providers")
     # The current implementation doesn't support dynamic registration of WorkflowRegistries
     # The following a simple workaround to detect and reconfigure the oauth2registry
     # when the number of workflow registries changes

@@ -11,9 +11,9 @@ data:
     server-block.conf: |-
         # set upstream server
         upstream lm_app {
-        # fail_timeout=0 means we always retry an upstream even if it failed
-        # to return a good HTTP response
-        server {{ include "chart.fullname" . }}-backend:8000 fail_timeout=0;
+            # fail_timeout=0 means we always retry an upstream even if it failed
+            # to return a good HTTP response
+            server {{ include "chart.fullname" . }}-backend:8000 fail_timeout=0;
         }
 
         server {

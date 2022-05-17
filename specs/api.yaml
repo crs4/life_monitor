@@ -422,6 +422,7 @@ paths:
         - AuthorizationCodeFlow: ["user.workflow.read"]
       parameters:
         - $ref: "#/components/parameters/registry_uuid"
+        - $ref: "#/components/parameters/wf_versions"
         - $ref: "#/components/parameters/wf_status"
       responses:
         "200":
@@ -480,6 +481,7 @@ paths:
         - RegistryClientCredentials: ["registry.user.workflow.read"]
       parameters:
         - $ref: "#/components/parameters/user_id"
+        - $ref: "#/components/parameters/wf_versions"
         - $ref: "#/components/parameters/wf_status"
       responses:
         "200":
@@ -541,6 +543,7 @@ paths:
         - AuthorizationCodeFlow: ["user.workflow.read"]
       parameters:
         - $ref: "#/components/parameters/wf_status"
+        - $ref: "#/components/parameters/wf_versions"
         - $ref: "#/components/parameters/wf_subscriptions"
       responses:
         "200":
@@ -622,6 +625,7 @@ paths:
         - {}
       parameters:
         - $ref: "#/components/parameters/wf_status"
+        - $ref: "#/components/parameters/wf_versions"
       responses:
         "200":
           description: List of Workflows
@@ -632,6 +636,33 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
 
+  /workflows/issues:
+    get:
+      summary: List issue types
+      description: "Get information about the specified workflow"
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "workflows_get_issue_types"
+      tags: ["Workflows"]
+      security:
+        - {}
+      responses:
+        "200":
+          description: >
+            List of issue types.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListOfIssues"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  
+  
   /workflows/{wf_uuid}:
     get:
       summary: Get a workflow
@@ -691,6 +722,31 @@ paths:
       responses:
         "204":
           description: "Workflow updated"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    
+    delete:
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "workflows_delete"
+      summary: "Delete a workflow"
+      description: "Delete the specified workflow and all its versions"
+      tags: ["Workflows"]
+      security:
+        - apiKey: ["workflow.write"]
+        - RegistryClientCredentials: ["workflow.write"]
+        - RegistryCodeFlow: ["workflow.write"]
+        - AuthorizationCodeFlow: ["workflow.write"]
+      parameters:
+        - $ref: "#/components/parameters/wf_uuid"
+      responses:
+        "204":
+          description: Deleted
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -916,7 +972,7 @@ paths:
 
     delete:
       x-openapi-router-controller: lifemonitor.api.controllers
-      operationId: "workflows_delete"
+      operationId: "workflows_delete_version"
       summary: "Delete a workflow version"
       description: "Delete the specified version of the specified workflow"
       tags: ["Workflows"]
@@ -1453,6 +1509,14 @@ components:
       description: |
         `true` to include a summary of the workflow status
       example: "false"
+    wf_versions:
+      name: "versions"
+      in: query
+      schema:
+        type: boolean
+      description: |
+        `true` to include the list of versions of each workflow
+      example: "false"
     wf_subscriptions:
       name: "subscriptions"
       in: query
@@ -1714,6 +1778,50 @@ components:
         - created
         - modified
         - events
+
+    Issue:
+      type: object
+      description: A user subscription for a given resource (e.g., workflow).
+      properties:
+        name:
+          type: string
+          nullable: false
+          description: "Name of the issue type"
+          example: Missing workflow file
+        identifier:
+          type: string
+          nullable: false
+          description: "Identifier of the issue type in 'snake case' format"
+          example: "missing_workflow_file"
+        depends_on:
+          type: array
+          nullable: true
+          description: "List of identifiers of issues which the issue depends on"
+          items:
+            type: string
+          example: ["missing_configuration_file"]
+        labels:
+          type: array
+          nullable: true
+          description: "List of labels for the issue type"
+          items:
+            type: string
+          example: ["bug", "enhancement"]
+      required:
+        - identifier
+        - name
+
+    ListOfIssues:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Issue"        
+      description: |
+        List of issue types
+      required:
+        - items
 
     EventType:
       type: string
@@ -2153,10 +2261,12 @@ components:
             version:
               $ref: "#/components/schemas/WorkflowVersion"
               readOnly: true
-            registry:
-              $ref: "#/components/schemas/Registry"
-              readOnly: true
+            registries:
               nullable: true
+              readOnly: true
+              type: array
+              items:
+                $ref: "#/components/schemas/Registry"
           required:
             - version
 
@@ -2213,6 +2323,29 @@ components:
                         description: "The most recent build on some test instance"
                         $ref: "#/components/schemas/BuildSummary"
                         nullable: true
+                  versions:
+                    nullable: true
+                    readOnly: true
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/WorkflowVersion"
+                    example:
+                      [
+                        {
+                          uuid: "21ac72ec-b9a5-49e0-b5a6-1322b8b54552",
+                          version: "1.0",
+                          ro_crate:
+                            {
+                              links:
+                                {
+                                  origin: "https://dev.workflowhub.eu/workflows/142/content_blobs/240/download",
+                                  download: "https://api.lifemonitor.eu/ro_crates/10/download",
+                                },
+                            },
+                          is_latest: false,
+                          submitter: { id: 501, username: "lm" },
+                        },
+                      ]
           required:
             - items
 

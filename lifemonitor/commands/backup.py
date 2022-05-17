@@ -101,7 +101,7 @@ def __remote_synch__(source: str, target: str,
         return 1
 
 
-@_blueprint.cli.group(name="backup", invoke_without_command=True)
+@_blueprint.cli.group(name="backup", help="Manage backups", invoke_without_command=True)
 @with_appcontext
 @click.pass_context
 def bck(ctx):

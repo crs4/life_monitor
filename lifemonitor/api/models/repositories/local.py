@@ -29,6 +29,7 @@ import shutil
 import tempfile
 import zipfile
 from io import BytesIO
+from typing import List
 
 from lifemonitor.api.models.repositories.base import (
     WorkflowRepository, WorkflowRepositoryMetadata)
@@ -36,9 +37,8 @@ from lifemonitor.api.models.repositories.files import (RepositoryFile,
                                                        WorkflowFile)
 from lifemonitor.config import BaseConfig
 from lifemonitor.exceptions import (DecodeROCrateException,
-                                    IllegalStateException,
                                     NotValidROCrateException)
-from lifemonitor.utils import extract_zip
+from lifemonitor.utils import extract_zip, walk
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -46,15 +46,51 @@ logger = logging.getLogger(__name__)
 
 class LocalWorkflowRepository(WorkflowRepository):
 
-    _local_path = None
+    def __init__(self, local_path: str = None, exclude: List[str] = None) -> None:
+        super().__init__(local_path, exclude)
+        self._transient_files = {'add': {}, 'remove': {}}
 
-    def __init__(self, local_path: str = None) -> None:
-        self._local_path = local_path
-        self._metadata = None
+    @classmethod
+    def _file_key_(cls, f: RepositoryFile) -> str:
+        return f"{f.dir}/{f.name}"
 
     @property
-    def local_path(self) -> str:
-        return self._local_path
+    def files(self) -> List[RepositoryFile]:
+        result = []
+        skip = self._transient_files['remove'].keys()
+        for root, _, files in walk(self.local_path, exclude=self.exclude):
+            dirname = root.replace(self.local_path, '.')
+            for name in files:
+                if f"{dirname}/{name}" not in skip:
+                    result.append(RepositoryFile(self.local_path, name, dir=dirname))
+        result.extend([v for k, v in self._transient_files['add'].items() if k not in skip])
+        return result
+
+    def add_file(self, file: RepositoryFile):
+        assert isinstance(file, RepositoryFile), file
+        self._transient_files['add'][self._file_key_(file)] = file
+        self._transient_files['remove'].pop(self._file_key_(file), None)
+
+    def remove_file(self, file: RepositoryFile):
+        assert isinstance(file, RepositoryFile), file
+        self._transient_files['remove'][self._file_key_(file)] = file
+        self._transient_files['add'].pop(self._file_key_(file), None)
+        if file.name == WorkflowRepositoryMetadata.DEFAULT_METADATA_FILENAME:
+            self._metadata = None
+
+    def save(self):
+        for f in self._transient_files['remove'].values():
+            if f.repository_path == self.local_path:
+                logger.debug("Removing file: %r", f)
+                os.remove(f.path)
+        for f in self._transient_files['add'].values():
+            logger.debug("Removing file: %r", f)
+            shutil.copy(f.path, RepositoryFile(self.local_path, f.name, f.type, f.dir))
+        self.reset()
+
+    def reset(self):
+        self._transient_files['add'].clear()
+        self._transient_files['remove'].clear()
 
     @property
     def metadata(self) -> WorkflowRepositoryMetadata:
@@ -63,51 +99,46 @@ class LocalWorkflowRepository(WorkflowRepository):
                 self._metadata = WorkflowRepositoryMetadata(self, init=False)
             except ValueError:
                 return None
-        return self._metadata
+        return self._metadata \
+            if self._file_key_(self._metadata.repository_file) not in self._transient_files['remove'] \
+            else None
+
+    def generate_metadata(self) -> WorkflowRepositoryMetadata:
+        metadata = super().generate_metadata()
+        self.add_file(metadata.repository_file)
+        return metadata
 
     def find_file_by_pattern(self, search: str) -> RepositoryFile:
-        for root, _, files in os.walk(self.local_path):
-            for name in files:
-                if re.search(search, name):
-                    return RepositoryFile(name, dir=root)
-        return None
+        return next((f for f in self.files if re.search(search, f.name)), None)
 
     def find_file_by_name(self, name: str) -> RepositoryFile:
-        for root, _, files in os.walk(self.local_path):
-            for fn in files:
-                if name == fn:
-                    return RepositoryFile(name, dir=root)
-        return None
+        return next((f for f in self.files if f.name == name), None)
 
     def find_workflow(self) -> WorkflowFile:
-        for root, _, files in os.walk(self.local_path):
-            for name in files:
-                for ext, wf_type in WorkflowFile.extension_map.items():
-                    if re.search(rf"\.{ext}$", name):
-                        return RepositoryFile(name, type=wf_type, dir=root)
+        for file in self.files:
+            for ext, wf_type in WorkflowFile.extension_map.items():
+                if re.search(rf"\.{ext}$", file.name):
+                    return file
         return None
-
-    def make_crate(self):
-        self._metadata = WorkflowRepositoryMetadata(self, init=True)
-        self._metadata.write(self._local_path)
-
-    def write_zip(self, target_path: str):
-        if not self.metadata:
-            raise IllegalStateException(detail="Missing RO Crate metadata")
-        return self.metadata.write_zip(target_path)
 
 
 class ZippedWorkflowRepository(LocalWorkflowRepository):
 
-    def __init__(self, archive_path: str) -> None:
+    def __init__(self, archive_path: str, exclude: List[str] = None, auto_cleanup: bool = True) -> None:
         local_path = tempfile.mkdtemp(dir=BaseConfig.BASE_TEMP_FOLDER)
         extract_zip(archive_path, local_path)
-        super().__init__(local_path=local_path)
+        super().__init__(local_path=local_path, exclude=exclude)
+        self.archive_path = archive_path
+        self.auto_cleanup = auto_cleanup
+        logger.debug("Local path: %r", self.local_path)
 
     def __del__(self):
-        logger.debug(f"Cleaning temp extraction folder of zipped repository @ {self.local_path} .... ")
-        shutil.rmtree(self.local_path, ignore_errors=True)
-        logger.debug(f"Cleaning temp extraction folder of zipped repository @ {self.local_path} .... ")
+        if self.auto_cleanup:
+            logger.debug(f"Cleaning temp extraction folder of zipped repository @ {self.local_path} .... ")
+            shutil.rmtree(self.local_path, ignore_errors=True)
+            logger.debug(f"Cleaning temp extraction folder of zipped repository @ {self.local_path} .... ")
+        else:
+            logger.warning("Auto clean up disabled for repo: %r", self)
 
 
 class Base64WorkflowRepository(LocalWorkflowRepository):

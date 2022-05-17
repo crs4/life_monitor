@@ -21,12 +21,15 @@
 from __future__ import annotations
 
 import logging
+import re
 from typing import List, Union
 
 from lifemonitor.api.models import issues
 from lifemonitor.integrations.github.app import LifeMonitorGithubApp
 
+from github.GithubObject import NotSet
 from github.Issue import Issue
+from github.IssueComment import IssueComment
 from github.Repository import Repository
 
 from . import pull_requests
@@ -36,6 +39,71 @@ from .utils import delete_branch, get_labels_from_strings
 logger = logging.getLogger(__name__)
 
 
+class GithubIssue(Issue):
+
+    def __init__(self, requester, headers, attributes, completed):
+        super().__init__(requester, headers, attributes, completed)
+
+    def as_repository_issue(self) -> issues.WorkflowRepositoryIssue:
+        issue = None
+        issue_type = issues.WorkflowRepositoryIssue.from_string(self.title)
+        if issue_type:
+            issue: issues.WorkflowRepositoryIssue = issue_type()
+        return issue
+
+    def get_comments(self, since=NotSet):
+        def map_comment_item(c: GithubIssueComment):
+            c.issue = self
+            return c
+        return map(map_comment_item, super().get_comments(since))
+
+
+class GithubIssueComment(IssueComment):
+
+    def __init__(self, requester, headers, attributes, completed, issue: GithubIssue = None):
+        super().__init__(requester, headers, attributes, completed)
+        self.issue = issue
+        self._addressed_to_bot = None
+        self.__body = None
+        app = LifeMonitorGithubApp.get_instance()
+        self.__bot_id = app.bot
+        self._pattern = re.compile(r'^@(lm|{0})(\[bot\])?(\s(.*))?'.format(app.bot.strip('[bot]')))
+
+    def __process_comment__(self):
+        self.__body = super().body
+        if self.user.login == self.__bot_id:
+            logger.debug("Comment crated by LifeMonitor Bot")
+            self._addressed_to_bot = False
+        else:
+            m = self._pattern.match(self.__body)
+            if not m:
+                logger.debug("Generic message not addressed to LifeMonitor[bot]")
+                self._addressed_to_bot = False
+                self.__body = ""
+            elif len(m.groups()) < 4:
+                logger.debug("Message empty: %r", m.lastgroup)
+                self._addressed_to_bot = True
+                self.__body = ""
+            else:
+                logger.debug("Message to LifeMonitor[bot]: %r", m.lastgroup)
+                self.__body = m.group(4)
+                self._addressed_to_bot = True
+
+    def is_generated_by_bot(self) -> bool:
+        return self.user.login == self.__bot_id
+
+    def is_addressed_to_bot(self) -> bool:
+        if self._addressed_to_bot is None:
+            self.__process_comment__()
+        return self._addressed_to_bot
+
+    @property
+    def body(self) -> str:
+        if self.__body is None:
+            self.__process_comment__()
+        return self.__body
+
+
 def process_issues(repo: Repository, issues: List[issues.WorkflowRepositoryIssue]):
     for issue in issues:
         if not issue.has_changes():
@@ -43,7 +111,7 @@ def process_issues(repo: Repository, issues: List[issues.WorkflowRepositoryIssue
                 create_issue(repo, issue)
         else:
             if not pull_requests.find_pull_request(repo, issue):
-                pull_requests.create_pull_request(repo, issue)
+                pull_requests.create_pull_request_from_issue(repo, issue)
 
 
 def create_issue(repo: Repository, issue: Union[str, issues.WorkflowRepositoryIssue]):
@@ -53,7 +121,7 @@ def create_issue(repo: Repository, issue: Union[str, issues.WorkflowRepositoryIs
     if not issue:
         raise ValueError(f"Issue '{issue}' not found")
     try:
-        repo.create_issue(
+        return repo.create_issue(
             title=issue.name,
             body=issue.description,
             labels=get_labels_from_strings(repo, issue.labels)

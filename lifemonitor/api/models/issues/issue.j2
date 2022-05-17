@@ -1,0 +1,23 @@
+from lifemonitor.api.models import repositories
+from lifemonitor.api.models.issues import WorkflowRepositoryIssue
+
+
+class {{class_name}}(WorkflowRepositoryIssue):
+
+    name: str = "{{name}}"
+    description: str = "{{description}}"
+    labels = [{{labels}}]
+    depends_on = [{{depends_on}}]
+
+    def check(self, repo: repositories.WorkflowRepository) -> bool:
+        """
+        Check if the repo is affected by this issue.
+
+        Args:
+            repo (WorkflowRepository): a workflow repository instance
+
+        Returns:
+            bool: <code>true</code> if the repo is affected by this issue;
+        <code>false</code> otherwise.
+        """
+        pass

@@ -22,7 +22,7 @@ spec:
             command: ["/bin/bash","-c"]
             args:
               - wait-for-redis.sh && wait-for-postgres.sh ;
-                ./lm-admin.py backup ;
+                ./lm-admin backup ;
             env:
             {{- include "lifemonitor.common-env" . | nindent 12 }}
             volumeMounts:

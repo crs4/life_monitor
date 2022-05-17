@@ -117,6 +117,16 @@ def uuid_param(uuid_value) -> uuid.UUID:
     return uuid_value
 
 
+def walk(path, topdown=True, onerror=None, followlinks=False, exclude=None):
+    exclude = frozenset(exclude or [])
+    for root, dirs, files in os.walk(path, topdown=topdown, onerror=onerror, followlinks=followlinks):
+        if exclude:
+            dirs[:] = [_ for _ in dirs if _ not in exclude]
+            files[:] = [_ for _ in files if _ not in exclude]
+
+        yield root, dirs, files
+
+
 def to_camel_case(snake_str) -> str:
     """
     Convert snake_case string to a camel_case string
@@ -124,6 +134,16 @@ def to_camel_case(snake_str) -> str:
     :return:
     """
     return ''.join(x.title() for x in snake_str.split('_'))
+
+
+def to_snake_case(camel_str) -> str:
+    """
+    Convert camel_case string to a snake_case string
+    :param camel_str:
+    :return:
+    """
+    pattern = re.compile(r'(?<!^)(?=[A-Z])')
+    return pattern.sub('_', "".join(camel_str.split())).lower()
 
 
 def sizeof_fmt(num, suffix='B'):
@@ -356,8 +376,11 @@ def clone_repo(url: str, ref: str = None, target_path: str = None, auth_token: s
             raise lm_exceptions.NotAuthorizedException("Token authorization not valid")
         raise lm_exceptions.DownloadException(detail=str(e))
     finally:
+        logger.debug("Clean up clone local path: %r %r .....", target_path, local_path)
         if target_path is None:
+            logger.debug("Deleting clone local path: %r %r", target_path, local_path)
             shutil.rmtree(local_path, ignore_errors=True)
+        logger.debug("Clean up clone local path: %r %r ..... DONE", target_path, local_path)
 
 
 def load_test_definition_filename(filename):
@@ -440,6 +463,10 @@ class OpenApiSpecs(object):
     @property
     def version(self):
         return self.specs['info']['version']
+
+    @property
+    def description(self):
+        return self.specs['info']['description']
 
     @property
     def components(self):

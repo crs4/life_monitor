@@ -23,6 +23,9 @@ from __future__ import annotations
 
 import logging
 import os
+from typing import Dict, Optional
+
+from flask import render_template_string
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -48,11 +51,16 @@ class WorkflowFile():
 
 class RepositoryFile():
 
-    def __init__(self, name: str, type: str = None, dir: str = ".", content=None) -> None:
+    def __init__(self, repository_path: str, name: str,
+                 type: str = None, dir: str = ".", content=None) -> None:
+        self.repository_path = repository_path
         self.name = name
         self.dir = dir
         self._type = type
         self._content = content
+
+    def __repr__(self) -> str:
+        return f"File {self.name} (dir: {self.dir})"
 
     @property
     def type(self) -> str:
@@ -62,11 +70,14 @@ class RepositoryFile():
 
     @property
     def path(self) -> str:
-        return f"{self.dir}/{self.name}"
+        dir_path = self.dir
+        if self.repository_path:
+            dir_path = os.path.abspath(os.path.join(self.repository_path, dir_path))
+        return os.path.join(dir_path, self.name)
 
     def get_content(self, binary_mode: bool = False):
         if not self._content and self.dir:
-            with open(f"{self.dir}/{self.name}", 'rb' if binary_mode else 'r') as f:
+            with open(f"{self.path}", 'rb' if binary_mode else 'r') as f:
                 return f.read()
         return self._content
 
@@ -74,3 +85,51 @@ class RepositoryFile():
     def get_type(filename: str) -> str:
         parts = os.path.splitext(filename) if filename else None
         return parts[1].replace('.', '') if parts and len(parts) > 0 else None
+
+
+class TemplateRepositoryFile(RepositoryFile):
+
+    def __init__(self, repository_path: str, name: str, type: str = None,
+                 dir: str = ".", data: Dict = None) -> None:
+        super().__init__(repository_path, name.replace('.j2', ''), type, dir, None)
+        self.template_filename = name
+        self._data = data
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}: {self.name} (dir: {self.dir})"
+
+    @property
+    def path(self) -> str:
+        return self.template_file_path
+
+    @property
+    def data(self) -> Optional[Dict]:
+        return self._data
+
+    @property
+    def template_file_path(self) -> str:
+        return os.path.join(
+            os.path.abspath(os.path.join(self.repository_path, self.dir)),
+            self.template_filename)
+
+    @property
+    def _output_file_path(self) -> str:
+        return os.path.join(
+            os.path.abspath(os.path.join(self.repository_path, self.dir)),
+            self.name)
+
+    def get_content(self, binary_mode: bool = False, **kwargs):
+        data = self.data.copy() if self.data else {}
+        data.update(kwargs)
+        if not self._content and self.dir:
+            with open(self.template_file_path, 'rb' if binary_mode else 'r') as f:
+                template = f.read()
+                if self.template_file_path.endswith('.j2'):
+                    template = render_template_string(template, **data) + '\n'
+                return template
+        return self._content
+
+    def write(self, binary_mode: bool = False, output_file_path: str = None, **kwargs):
+        content = self.get_content(binary_mode=binary_mode, **kwargs)
+        with open(output_file_path or self._output_file_path, 'wb' if binary_mode else 'w') as f:
+            f.write(content)

@@ -142,6 +142,8 @@ lifemonitor:
   environment: production
   log_level: INFO
 
+  # secret_key: "<SECRET_KEY>"
+
   warning_message:
 
   service:

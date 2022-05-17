@@ -19,17 +19,28 @@
 # SOFTWARE.
 
 from __future__ import annotations
-import json
 
 import logging
 
-from lifemonitor.api.models.repositories import (RepositoryFile,
-                                                 WorkflowRepository)
-
-from . import WorkflowRepositoryIssue
+from lifemonitor.api.models.issues import WorkflowRepositoryIssue
+from lifemonitor.api.models.repositories import WorkflowRepository
 
 # set module level logger
 logger = logging.getLogger(__name__)
+
+
+class MissingConfigFile(WorkflowRepositoryIssue):
+    name = "Missing config file"
+    description = "No <code>lifemonitor.yaml</code> configuration file found on this repository.<br>"\
+        "The <code>lifemonitor.yaml</code> should be placed on the root of this repository."
+    labels = ['config', 'enhancement']
+
+    def check(self, repo: WorkflowRepository) -> bool:
+        if repo.config is None:
+            config = repo.generate_config()
+            self.add_change(config)
+            return True
+        return False
 
 
 class MissingWorkflowFile(WorkflowRepositoryIssue):
@@ -37,6 +48,7 @@ class MissingWorkflowFile(WorkflowRepositoryIssue):
     description = "No workflow found on this repository.<br>"\
         "You should place the workflow file (e.g., <code>.ga</code> file) on the root of this repository."
     labels = ['invalid', 'enhancement']
+    depends_on = [MissingConfigFile]
 
     def check(self, repo: WorkflowRepository) -> bool:
         return repo.find_workflow() is None
@@ -51,18 +63,7 @@ class MissingMetadataFile(WorkflowRepositoryIssue):
 
     def check(self, repo: WorkflowRepository) -> bool:
         if repo.metadata is None:
-            repo.make_crate()
-            self.add_change(RepositoryFile(repo.metadata.metadata.id,
-                                           content=json.dumps(repo.metadata.to_json(), indent=4) + '\n'))
+            metadata = repo.generate_metadata()
+            self.add_change(metadata.repository_file)
             return True
-        return False
-
-
-class OutdatedMetadataFile(WorkflowRepositoryIssue):
-    name = "RO-Crate metadata outdated"
-    description = "The <code>ro-crate-metadata.json</code> needs to be updated."
-    labels = ['invalid', 'bug']
-    depends_on = [MissingMetadataFile]
-
-    def check(self, repo: WorkflowRepository) -> bool:
         return False

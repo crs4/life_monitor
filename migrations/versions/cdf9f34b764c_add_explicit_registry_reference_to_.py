@@ -25,7 +25,8 @@ def upgrade():
     op.create_foreign_key(None, 'workflow_version', 'workflow_registry', ['registry_id'], ['id'])
     # copy hosting_service to workflow_version as registry
     for c in ro_crates:
-        bind.execute(f"UPDATE workflow_version SET registry_id = {c[1]} WHERE id = {c[0]}")
+        if c[1]:
+            bind.execute(f"UPDATE workflow_version SET registry_id = {c[1]} WHERE id = {c[0]}")
 
 
 def downgrade():

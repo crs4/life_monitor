@@ -22,15 +22,18 @@
 from __future__ import annotations
 
 import logging
+from typing import Optional
 
 from flask import Request
 from flask import request as current_request
+from lifemonitor.api.models.repositories.github import (
+    GithubWorkflowRepository, RepoCloneContextManager)
 from lifemonitor.auth.models import HostingService
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 from lifemonitor.integrations.github.app import (LifeMonitorGithubApp,
                                                  LifeMonitorInstallation)
-from lifemonitor.api.models.repositories.github import (
-    RepoCloneContextManager, GithubWorkflowRepository)
+from lifemonitor.integrations.github.issues import (GithubIssue,
+                                                    GithubIssueComment)
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
@@ -49,8 +52,16 @@ class GithubEvent():
             self._raw_data = payload
 
     @property
+    def id(self) -> str:
+        return self.delivery
+
+    @property
     def type(self) -> str:
         return self._headers.get("X-Github-Event", None)
+
+    @property
+    def action(self) -> str:
+        return self._raw_data.get('action', None)
 
     @property
     def delivery(self) -> str:
@@ -115,6 +126,19 @@ class GithubEvent():
         if not self._repository_reference:
             self._repository_reference = GithubRepositoryReference(event=self)
         return self._repository_reference
+
+    @property
+    def issue(self) -> Optional[GithubIssue]:
+        return None if 'issue' not in self.payload else \
+            GithubIssue(self.installation._requester, {}, self.payload['issue'], True)
+
+    @property
+    def comment(self) -> Optional[GithubIssueComment]:
+        issue = self.issue
+        if issue:
+            return None if 'comment' not in self.payload else \
+                GithubIssueComment(self.installation._requester, {}, self.payload['comment'], True, issue=issue)
+        return None
 
     @staticmethod
     def from_request(request: Request = None) -> GithubEvent:
