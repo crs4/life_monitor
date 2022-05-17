@@ -57,7 +57,7 @@ def get_files(wizard: RepositoryTemplateWizard, repo: WorkflowRepository):
 
 
 class RepositoryTemplateWizard(Wizard):
-    name = "Repository Template"
+    title = "Repository Template"
     description = ""
     labels = ['enhancement']
     issue = MissingWorkflowFile
@@ -70,8 +70,8 @@ class RepositoryTemplateWizard(Wizard):
     #                          description="This is an optional description for the question C",
     #                          when=lambda _: _.questionA.answer == 'C')
 
-    workflow_template = UpdateStep("Workflow RO-Crate Repository Template",
-                                   description="Add missing files according to the recommended layout of workflow RO-Crates",
+    workflow_template = UpdateStep("Update you Workflow RO-Crate repository",
+                                   description="According to the recommended layout for workflow RO-Crates, you should add the following files",
                                    callback=get_files)
 
     steps = [workflow_title, workflow_description, workflow_type, workflow_template]
