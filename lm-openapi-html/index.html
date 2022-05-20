@@ -428,7 +428,7 @@ LifeMonitor by the current (authenticated) user.</div>
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
     <pre class="example"><code>{
-  "items" : [ "", "" ]
+  "items" : [ null, null ]
 }</code></pre>
 
     <h3 class="field-label">Produces</h3>
@@ -745,7 +745,7 @@ OAuth2 clients can use this endpoint.</p>
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
     <pre class="example"><code>{
-  "items" : [ "", "" ]
+  "items" : [ null, null ]
 }</code></pre>
 
     <h3 class="field-label">Produces</h3>
@@ -789,7 +789,7 @@ OAuth2 clients can use this endpoint.</p>
 
     <h3 class="field-label">Request body</h3>
     <div class="field-items">
-      <div class="param">UNKNOWN_BASE_TYPE <a href="#UNKNOWN_BASE_TYPE">UNKNOWN_BASE_TYPE</a> (required)</div>
+      <div class="param">registry_workflows_post_request <a href="#registry_workflows_post_request">registry_workflows_post_request</a> (required)</div>
 
       <div class="param-desc"><span class="param-type">Body Parameter</span> &mdash;  </div>
 
@@ -871,7 +871,7 @@ OAuth2 clients can use this endpoint.</p>
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
     <pre class="example"><code>{
-  "items" : [ "", "" ]
+  "items" : [ null, null ]
 }</code></pre>
 
     <h3 class="field-label">Produces</h3>
@@ -909,7 +909,7 @@ OAuth2 clients can use this endpoint.</p>
 
     <h3 class="field-label">Request body</h3>
     <div class="field-items">
-      <div class="param">UNKNOWN_BASE_TYPE <a href="#UNKNOWN_BASE_TYPE">UNKNOWN_BASE_TYPE</a> (required)</div>
+      <div class="param">registry_workflows_post_request <a href="#registry_workflows_post_request">registry_workflows_post_request</a> (required)</div>
 
       <div class="param-desc"><span class="param-type">Body Parameter</span> &mdash;  </div>
 
@@ -1323,7 +1323,7 @@ OAuth2 clients can use this endpoint.</p>
 
     <h3 class="field-label">Request body</h3>
     <div class="field-items">
-      <div class="param">inline_object_3 <a href="#inline_object_3">inline_object_3</a> (required)</div>
+      <div class="param">instances_put_request <a href="#instances_put_request">instances_put_request</a> (required)</div>
 
       <div class="param-desc"><span class="param-type">Body Parameter</span> &mdash;  </div>
 
@@ -1648,7 +1648,7 @@ through the service's API).</li>
 
     <h3 class="field-label">Return type</h3>
     <div class="return-type">
-      <a href="#inline_response_201">inline_response_201</a>
+      <a href="#suites_post_instance_201_response">suites_post_instance_201_response</a>
       
     </div>
 
@@ -1670,7 +1670,7 @@ through the service's API).</li>
     <h3 class="field-label">Responses</h3>
     <h4 class="field-label">201</h4>
     A new test instance has been registered.
-        <a href="#inline_response_201">inline_response_201</a>
+        <a href="#suites_post_instance_201_response">suites_post_instance_201_response</a>
     <h4 class="field-label">400</h4>
     The request is malformed
         <a href="#Error">Error</a>
@@ -1710,7 +1710,7 @@ through the service's API).</li>
 
     <h3 class="field-label">Request body</h3>
     <div class="field-items">
-      <div class="param">inline_object_2 <a href="#inline_object_2">inline_object_2</a> (required)</div>
+      <div class="param">suites_put_request <a href="#suites_put_request">suites_put_request</a> (required)</div>
 
       <div class="param-desc"><span class="param-type">Body Parameter</span> &mdash;  </div>
 
@@ -2317,7 +2317,7 @@ through the service's API).</li>
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
     <pre class="example"><code>{
-  "items" : [ "", "" ]
+  "items" : [ null, null ]
 }</code></pre>
 
     <h3 class="field-label">Produces</h3>
@@ -2352,7 +2352,7 @@ through the service's API).</li>
 
     <h3 class="field-label">Request body</h3>
     <div class="field-items">
-      <div class="param">UNKNOWN_BASE_TYPE <a href="#UNKNOWN_BASE_TYPE">UNKNOWN_BASE_TYPE</a> (required)</div>
+      <div class="param">user_workflows_post_request <a href="#user_workflows_post_request">user_workflows_post_request</a> (required)</div>
 
       <div class="param-desc"><span class="param-type">Body Parameter</span> &mdash;  </div>
 
@@ -2482,7 +2482,7 @@ through the service's API).</li>
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
     <pre class="example"><code>{
-  "items" : [ "", "" ]
+  "items" : [ null, null ]
 }</code></pre>
 
     <h3 class="field-label">Produces</h3>
@@ -2766,12 +2766,15 @@ through the service's API).</li>
 
     <h3 class="field-label">Return type</h3>
     <div class="return-type">
+      <a href="#workflows_get_versions_by_id_200_response">workflows_get_versions_by_id_200_response</a>
       
-      Object
     </div>
 
     <!--Todo: process Response Object and its headers, schema, examples -->
 
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>null</code></pre>
 
     <h3 class="field-label">Produces</h3>
     This API call produces the following media types according to the <span class="header">Accept</span> request header;
@@ -2783,7 +2786,7 @@ through the service's API).</li>
     <h3 class="field-label">Responses</h3>
     <h4 class="field-label">200</h4>
     A WorkflowVersion object
-        <a href="#Object">Object</a>
+        <a href="#workflows_get_versions_by_id_200_response">workflows_get_versions_by_id_200_response</a>
     <h4 class="field-label">400</h4>
     The request is malformed
         <a href="#Error">Error</a>
@@ -2820,7 +2823,7 @@ through the service's API).</li>
 
     <h3 class="field-label">Request body</h3>
     <div class="field-items">
-      <div class="param">inline_object <a href="#inline_object">inline_object</a> (required)</div>
+      <div class="param">workflows_put_request <a href="#workflows_put_request">workflows_put_request</a> (required)</div>
 
       <div class="param-desc"><span class="param-type">Body Parameter</span> &mdash;  </div>
 
@@ -2986,7 +2989,7 @@ RO-Crate specifcation is available at https://www.researchobject.org/ro-crate/.
 
     <h3 class="field-label">Request body</h3>
     <div class="field-items">
-      <div class="param">inline_object_1 <a href="#inline_object_1">inline_object_1</a> (required)</div>
+      <div class="param">workflows_version_put_request <a href="#workflows_version_put_request">workflows_version_put_request</a> (required)</div>
 
       <div class="param-desc"><span class="param-type">Body Parameter</span> &mdash;  </div>
 
@@ -3050,6 +3053,9 @@ RO-Crate specifcation is available at https://www.researchobject.org/ro-crate/.
     <li><a href="#ListOfTestSuite"><code>ListOfTestSuite</code> - </a></li>
     <li><a href="#ListOfUsers"><code>ListOfUsers</code> - </a></li>
     <li><a href="#ListOfWorkflow"><code>ListOfWorkflow</code> - </a></li>
+    <li><a href="#ListOfWorkflow_items_inner"><code>ListOfWorkflow_items_inner</code> - </a></li>
+    <li><a href="#ListOfWorkflow_items_inner_allOf"><code>ListOfWorkflow_items_inner_allOf</code> - </a></li>
+    <li><a href="#ListOfWorkflow_items_inner_allOf_status"><code>ListOfWorkflow_items_inner_allOf_status</code> - </a></li>
     <li><a href="#ManagedTestInstanceCreationData"><code>ManagedTestInstanceCreationData</code> - </a></li>
     <li><a href="#Notification"><code>Notification</code> - </a></li>
     <li><a href="#ROCrate"><code>ROCrate</code> - </a></li>
@@ -3098,11 +3104,15 @@ RO-Crate specifcation is available at https://www.researchobject.org/ro-crate/.
     <li><a href="#WorkflowVersionStatus_allOf"><code>WorkflowVersionStatus_allOf</code> - </a></li>
     <li><a href="#WorkflowVersion_allOf"><code>WorkflowVersion_allOf</code> - </a></li>
     <li><a href="#Workflow_allOf"><code>Workflow_allOf</code> - </a></li>
-    <li><a href="#inline_object"><code>inline_object</code> - </a></li>
-    <li><a href="#inline_object_1"><code>inline_object_1</code> - </a></li>
-    <li><a href="#inline_object_2"><code>inline_object_2</code> - </a></li>
-    <li><a href="#inline_object_3"><code>inline_object_3</code> - </a></li>
-    <li><a href="#inline_response_201"><code>inline_response_201</code> - </a></li>
+    <li><a href="#instances_put_request"><code>instances_put_request</code> - </a></li>
+    <li><a href="#registry_workflows_post_request"><code>registry_workflows_post_request</code> - </a></li>
+    <li><a href="#suites_post_instance_201_response"><code>suites_post_instance_201_response</code> - </a></li>
+    <li><a href="#suites_put_request"><code>suites_put_request</code> - </a></li>
+    <li><a href="#user_workflows_post_request"><code>user_workflows_post_request</code> - </a></li>
+    <li><a href="#workflows_get_versions_by_id_200_response"><code>workflows_get_versions_by_id_200_response</code> - </a></li>
+    <li><a href="#workflows_get_versions_by_id_200_response_allOf"><code>workflows_get_versions_by_id_200_response_allOf</code> - </a></li>
+    <li><a href="#workflows_put_request"><code>workflows_put_request</code> - </a></li>
+    <li><a href="#workflows_version_put_request"><code>workflows_version_put_request</code> - </a></li>
   </ol>
 
   <div class="model">
@@ -3274,7 +3284,33 @@ information if dereferenced. </div>
     <h3><a name="ListOfWorkflow"><code>ListOfWorkflow</code> - </a> <a class="up" href="#__Models">Up</a></h3>
     <div class='model-description'>List of workflows</div>
     <div class="field-items">
-      <div class="param">items (optional)</div><div class="param-desc"><span class="param-type"><a href="#Workflow">array[Workflow]</a></span>  </div>
+      <div class="param">items (optional)</div><div class="param-desc"><span class="param-type"><a href="#ListOfWorkflow_items_inner">array[ListOfWorkflow_items_inner]</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="ListOfWorkflow_items_inner"><code>ListOfWorkflow_items_inner</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">uuid </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Universal unique identifier of the workflow.
+If not provided, it will be auto-generated by the system. </div>
+<div class="param">public (optional)</div><div class="param-desc"><span class="param-type"><a href="#boolean">Boolean</a></span> <code>true</code> if the workflow is <b>public</b>; false otherwise (default <code>false</code>). </div>
+<div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A name for the workflow. If not provided, the RO-Crate dataset name is used as default. </div>
+<div class="param">status (optional)</div><div class="param-desc"><span class="param-type"><a href="#ListOfWorkflow_items_inner_allOf_status">ListOfWorkflow_items_inner_allOf_status</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="ListOfWorkflow_items_inner_allOf"><code>ListOfWorkflow_items_inner_allOf</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">status (optional)</div><div class="param-desc"><span class="param-type"><a href="#ListOfWorkflow_items_inner_allOf_status">ListOfWorkflow_items_inner_allOf_status</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="ListOfWorkflow_items_inner_allOf_status"><code>ListOfWorkflow_items_inner_allOf_status</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'>Summary of the workflow status</div>
+    <div class="field-items">
+      <div class="param">aggregate_test_status (optional)</div><div class="param-desc"><span class="param-type"><a href="#AggregateTestStatus">AggregateTestStatus</a></span>  </div>
+<div class="param">latest_build (optional)</div><div class="param-desc"><span class="param-type"><a href="#BuildSummary">BuildSummary</a></span>  </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
@@ -3744,7 +3780,81 @@ If not provided, it will be auto-generated by the system. </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
-    <h3><a name="inline_object"><code>inline_object</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <h3><a name="instances_put_request"><code>instances_put_request</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A name for the test instance. </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="registry_workflows_post_request"><code>registry_workflows_post_request</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">rocrate </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Base64 encoding of the RO-Crate archive format: base64</div>
+<div class="param">uuid (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Universal unique identifier of the workflow. </div>
+<div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A name for the workflow. If not provided, the RO-Crate dataset name is used as default. </div>
+<div class="param">version </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A string identifying the workflow version (e.g., 1.0) </div>
+<div class="param">public (optional)</div><div class="param-desc"><span class="param-type"><a href="#boolean">Boolean</a></span> <code>true</code> if the workflow is <b>public</b>; false otherwise (default <code>false</code>). </div>
+<div class="param">roc_link </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Link to the workflow RO-Crate </div>
+<div class="param">authorization (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> <p>An optional authorization header.</p>
+<p>The <code>authorization</code> parameter might be required to download
+the RO-Crate containing the workflow if it is not directly
+accessible to the user for download
+(e.g., <code>authorization: &quot;ApiKey 1234567890&quot;</code>).</p>
+ </div>
+<div class="param">identifier </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> The identifier of the workflow on the registry </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="suites_post_instance_201_response"><code>suites_post_instance_201_response</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">uuid (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Universal unique identifier of the test instance </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="suites_put_request"><code>suites_put_request</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A name for the test suite. </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="user_workflows_post_request"><code>user_workflows_post_request</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">roc_link </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Link to the workflow RO-Crate </div>
+<div class="param">uuid (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Universal unique identifier of the workflow. </div>
+<div class="param">authorization (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> <p>An optional authorization header.</p>
+<p>The <code>authorization</code> parameter might be required to download
+the RO-Crate containing the workflow if it is not directly
+accessible to the user for download
+(e.g., <code>authorization: &quot;ApiKey 1234567890&quot;</code>).</p>
+ </div>
+<div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A name for the workflow. If not provided, the RO-Crate dataset name is used as default. </div>
+<div class="param">version </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A string identifying the workflow version (e.g., 1.0) </div>
+<div class="param">public (optional)</div><div class="param-desc"><span class="param-type"><a href="#boolean">Boolean</a></span> <code>true</code> if the workflow is <b>public</b>; false otherwise (default <code>false</code>). </div>
+<div class="param">rocrate </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Base64 encoding of the RO-Crate archive format: base64</div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="workflows_get_versions_by_id_200_response"><code>workflows_get_versions_by_id_200_response</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">versions (optional)</div><div class="param-desc"><span class="param-type"><a href="#WorkflowVersion">array[WorkflowVersion]</a></span>  </div>
+<div class="param">workflow (optional)</div><div class="param-desc"><span class="param-type"><a href="#Workflow">Workflow</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="workflows_get_versions_by_id_200_response_allOf"><code>workflows_get_versions_by_id_200_response_allOf</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">versions (optional)</div><div class="param-desc"><span class="param-type"><a href="#WorkflowVersion">array[WorkflowVersion]</a></span>  </div>
+<div class="param">workflow (optional)</div><div class="param-desc"><span class="param-type"><a href="#Workflow">Workflow</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="workflows_put_request"><code>workflows_put_request</code> - </a> <a class="up" href="#__Models">Up</a></h3>
     <div class='model-description'></div>
     <div class="field-items">
       <div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A name for the workflow. If not provided, the RO-Crate dataset name is used as default. </div>
@@ -3752,32 +3862,11 @@ If not provided, it will be auto-generated by the system. </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
-    <h3><a name="inline_object_1"><code>inline_object_1</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <h3><a name="workflows_version_put_request"><code>workflows_version_put_request</code> - </a> <a class="up" href="#__Models">Up</a></h3>
     <div class='model-description'></div>
     <div class="field-items">
       <div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A name for the workflow version. If not provided, the RO-Crate dataset name is used as default. </div>
 <div class="param">version (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Workflow version </div>
-    </div>  <!-- field-items -->
-  </div>
-  <div class="model">
-    <h3><a name="inline_object_2"><code>inline_object_2</code> - </a> <a class="up" href="#__Models">Up</a></h3>
-    <div class='model-description'></div>
-    <div class="field-items">
-      <div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A name for the test suite. </div>
-    </div>  <!-- field-items -->
-  </div>
-  <div class="model">
-    <h3><a name="inline_object_3"><code>inline_object_3</code> - </a> <a class="up" href="#__Models">Up</a></h3>
-    <div class='model-description'></div>
-    <div class="field-items">
-      <div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A name for the test instance. </div>
-    </div>  <!-- field-items -->
-  </div>
-  <div class="model">
-    <h3><a name="inline_response_201"><code>inline_response_201</code> - </a> <a class="up" href="#__Models">Up</a></h3>
-    <div class='model-description'></div>
-    <div class="field-items">
-      <div class="param">uuid (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Universal unique identifier of the test instance </div>
     </div>  <!-- field-items -->
   </div>
   </body>
