@@ -223,7 +223,9 @@ def get_roc_suites(crate):
         instance = suite.instance
         suite_data["instances"] = []
         if instance:
-            for inst in suite.instance:
+            if not isinstance(instance, list):
+                instance = [instance]
+            for inst in instance:
                 t = _TO_OLD_TYPES.get(inst.service.id, "unknown")
                 suite_data["instances"].append({
                     "roc_instance": inst.id,
