@@ -21,6 +21,7 @@
 
 import logging
 import os
+import pathlib
 import random
 import re
 import string
@@ -452,3 +453,9 @@ def mock_registry():
     auth.login_registry(r)
     yield r
     auth.logout_registry()
+
+
+# pytest's default tmpdir returns a py.path object
+@pytest.fixture
+def tmpdir(tmpdir):
+    return pathlib.Path(tmpdir)
