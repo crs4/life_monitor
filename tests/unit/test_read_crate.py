@@ -22,7 +22,7 @@ from copy import deepcopy
 import json
 
 from rocrate.rocrate import ROCrate
-from lifemonitor.test_metadata import get_roc_suites
+from lifemonitor.test_metadata import get_roc_suites, get_workflow_author
 
 
 ENTITIES = {_["@id"]: _ for _ in [
@@ -46,7 +46,13 @@ ENTITIES = {_["@id"]: _ for _ in [
         "@id": "sort-and-change-case.ga",
         "@type": ["File", "SoftwareSourceCode", "ComputationalWorkflow"],
         "programmingLanguage": {"@id": "https://galaxyproject.org/"},
+        "author": {"@id": "https://orcid.org/0000-0001-8271-5429"},
         "name": "sort-and-change-case"
+    },
+    {
+        "@id": "https://orcid.org/0000-0001-8271-5429",
+        "@type": "Person",
+        "name": "Simone Leo"
     },
     {
         "@id": "#test1",
@@ -133,3 +139,72 @@ def test_get_roc_suites(tmpdir):
     crate = ROCrate(crate_dir)
     roc_suites = get_roc_suites(crate)
     assert roc_suites == EXPECTED_ROC_SUITES
+
+
+def test_get_workflow_author(tmpdir):
+    crate_dir = tmpdir / "lm_test_crate"
+    _write_crate(crate_dir, ENTITIES)
+    crate = ROCrate(crate_dir)
+    assert get_workflow_author(crate) == {
+        "id": "https://orcid.org/0000-0001-8271-5429",
+        "name": "Simone Leo",
+        "url": "https://orcid.org/0000-0001-8271-5429",
+    }
+    # author as string
+    entities = deepcopy(ENTITIES)
+    entities["sort-and-change-case.ga"]["author"] = "https://orcid.org/0000-0001-8271-5429"
+    _write_crate(crate_dir, entities)
+    crate = ROCrate(crate_dir)
+    assert get_workflow_author(crate) == {
+        "id": "https://orcid.org/0000-0001-8271-5429",
+        "name": None,
+        "url": "https://orcid.org/0000-0001-8271-5429",
+    }
+    # workflow from suite
+    entities = deepcopy(ENTITIES)
+    entities["foo.ga"] = {
+        "@id": "foo.ga",
+        "@type": ["File", "SoftwareSourceCode", "ComputationalWorkflow"],
+        "programmingLanguage": {"@id": "https://galaxyproject.org/"},
+        "author": "Mickey Mouse"
+    }
+    entities["#test1"]["mainEntity"] = {"@id": "foo.ga"}
+    entities["./"]["hasPart"].append({"@id": "foo.ga"})
+    _write_crate(crate_dir, entities)
+    crate = ROCrate(crate_dir)
+    assert get_workflow_author(crate, suite_id="#test1") == {
+        "id": "Mickey Mouse",
+        "name": None,
+        "url": None,
+    }
+    # no workflow
+    entities = deepcopy(ENTITIES)
+    for id_ in "./", "#test1":
+        del entities[id_]["mainEntity"]
+    _write_crate(crate_dir, entities)
+    crate = ROCrate(crate_dir)
+    for suite_id in None, "#test1":
+        assert get_workflow_author(crate, suite_id=suite_id) is None
+    # no author
+    entities = deepcopy(ENTITIES)
+    del entities["sort-and-change-case.ga"]["author"]
+    _write_crate(crate_dir, entities)
+    crate = ROCrate(crate_dir)
+    assert get_workflow_author(crate) is None
+    # URL from url
+    entities = deepcopy(ENTITIES)
+    del entities["https://orcid.org/0000-0001-8271-5429"]
+    entities["#sl"] = {
+        "@id": "#sl",
+        "@type": "Person",
+        "name": "Simone Leo",
+        "url": "https://orcid.org/0000-0001-8271-5429"
+    }
+    entities["sort-and-change-case.ga"]["author"] = {"@id": "#sl"}
+    _write_crate(crate_dir, entities)
+    crate = ROCrate(crate_dir)
+    assert get_workflow_author(crate) == {
+        "id": "#sl",
+        "name": "Simone Leo",
+        "url": "https://orcid.org/0000-0001-8271-5429",
+    }

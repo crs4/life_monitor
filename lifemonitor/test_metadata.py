@@ -141,3 +141,32 @@ def get_roc_suites(crate):
         else:
             suite_data["definition"] = {}
     return rval
+
+
+def get_workflow_author(crate, suite_id=None):
+    """\
+    Get the author of the main workflow.
+
+    If suite_id is not None, try retrieving the author from that suite's
+    mainEntity (in principle, this might be different from the crate's
+    mainEntity).
+
+    Return a dictionary with keys "id_", "name" and "url", or None if no
+    author can be found. Note that the "name" and "url" fields can have a
+    value of None.
+    """
+    suite = None if suite_id is None else crate.get(suite_id)
+    workflow = suite.get("mainEntity") if suite else crate.mainEntity
+    if not workflow:
+        # not a valid Workflow RO-Crate
+        return None
+    author = workflow.get("author", workflow.get("creator"))
+    if not author:
+        return None
+    id_ = author if isinstance(author, str) else author.id
+    name = None if isinstance(author, str) else author.get("name")
+    if id_.startswith("http://") or id_.startswith("https://"):
+        url = id_
+    else:
+        url = None if isinstance(author, str) else author.get("url")
+    return {"id": id_, "name": name, "url": url}
