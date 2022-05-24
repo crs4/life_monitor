@@ -143,30 +143,48 @@ def get_roc_suites(crate):
     return rval
 
 
-def get_workflow_author(crate, suite_id=None):
+def get_workflow_authors(crate, suite_id=None):
     """\
-    Get the author of the main workflow.
+    Get the authors of the main workflow.
 
-    If suite_id is not None, try retrieving the author from that suite's
+    If suite_id is not None, try retrieving the authors from that suite's
     mainEntity (in principle, this might be different from the crate's
     mainEntity).
 
-    Return a dictionary with keys "id_", "name" and "url", or None if no
-    author can be found. Note that the "name" and "url" fields can have a
-    value of None.
+    Return a list of dictionaries with keys "id_", "name" and "url" (Note that
+    the "name" and "url" fields can have a value of None). If no author is
+    found, the returned list will be empty. Example:
+
+      [
+        {
+          "id": "https://orcid.org/0000-0002-1825-0097",
+           "name": "Josiah Carberry",
+           "url": "https://orcid.org/0000-0002-1825-0097"
+        },
+        {
+          "id": "#sl",
+          "name": "Simone Leo",
+          "url": None
+        }
+      ]
     """
     suite = None if suite_id is None else crate.get(suite_id)
     workflow = suite.get("mainEntity") if suite else crate.mainEntity
     if not workflow:
         # not a valid Workflow RO-Crate
-        return None
+        return []
     author = workflow.get("author", workflow.get("creator"))
     if not author:
-        return None
-    id_ = author if isinstance(author, str) else author.id
-    name = None if isinstance(author, str) else author.get("name")
-    if id_.startswith("http://") or id_.startswith("https://"):
-        url = id_
-    else:
-        url = None if isinstance(author, str) else author.get("url")
-    return {"id": id_, "name": name, "url": url}
+        return []
+    if not isinstance(author, list):
+        author = [author]
+    rval = []
+    for a in author:
+        id_ = a if isinstance(a, str) else a.id
+        name = None if isinstance(a, str) else a.get("name")
+        if id_.startswith("http://") or id_.startswith("https://"):
+            url = id_
+        else:
+            url = None if isinstance(a, str) else a.get("url")
+        rval.append({"id": id_, "name": name, "url": url})
+    return rval
