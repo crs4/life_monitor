@@ -151,7 +151,6 @@ def test_get_workflow_authors(tmpdir):
     _write_crate(crate_dir, ENTITIES)
     crate = ROCrate(crate_dir)
     assert get_workflow_authors(crate) == [{
-        "id": SL_ID,
         "name": "Simone Leo",
         "url": SL_ID,
     }]
@@ -161,8 +160,7 @@ def test_get_workflow_authors(tmpdir):
     _write_crate(crate_dir, entities)
     crate = ROCrate(crate_dir)
     assert get_workflow_authors(crate) == [{
-        "id": SL_ID,
-        "name": None,
+        "name": SL_ID,
         "url": SL_ID,
     }]
     # workflow from suite
@@ -178,8 +176,7 @@ def test_get_workflow_authors(tmpdir):
     _write_crate(crate_dir, entities)
     crate = ROCrate(crate_dir)
     assert get_workflow_authors(crate, suite_id="#test1") == [{
-        "id": "Mickey Mouse",
-        "name": None,
+        "name": "Mickey Mouse",
         "url": None,
     }]
     # no workflow
@@ -209,9 +206,23 @@ def test_get_workflow_authors(tmpdir):
     _write_crate(crate_dir, entities)
     crate = ROCrate(crate_dir)
     assert get_workflow_authors(crate) == [{
-        "id": "#sl",
         "name": "Simone Leo",
         "url": SL_ID,
+    }]
+
+    # id only
+    entities = deepcopy(ENTITIES)
+    del entities[SL_ID]
+    entities["#sl"] = {
+        "@id": "#sl",
+        "@type": "Person",
+    }
+    entities["sort-and-change-case.ga"]["author"] = {"@id": "#sl"}
+    _write_crate(crate_dir, entities)
+    crate = ROCrate(crate_dir)
+    assert get_workflow_authors(crate) == [{
+        "name": "sl",
+        "url": None,
     }]
     # multiple authors
     entities = deepcopy(ENTITIES)
@@ -224,6 +235,6 @@ def test_get_workflow_authors(tmpdir):
     _write_crate(crate_dir, entities)
     crate = ROCrate(crate_dir)
     assert sorted(get_workflow_authors(crate), key=itemgetter("name")) == [
-        {"id": JC_ID, "name": "Josiah Carberry", "url": JC_ID},
-        {"id": SL_ID, "name": "Simone Leo", "url": SL_ID},
+        {"name": "Josiah Carberry", "url": JC_ID},
+        {"name": "Simone Leo", "url": SL_ID},
     ]

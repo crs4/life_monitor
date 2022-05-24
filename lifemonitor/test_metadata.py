@@ -151,19 +151,17 @@ def get_workflow_authors(crate, suite_id=None):
     mainEntity (in principle, this might be different from the crate's
     mainEntity).
 
-    Return a list of dictionaries with keys "id_", "name" and "url" (Note that
-    the "name" and "url" fields can have a value of None). If no author is
-    found, the returned list will be empty. Example:
+    Return a list of dictionaries with keys "name" and "url" (note that the
+    "url" field can have a value of None). If no author is found, the returned
+    list will be empty. Example output:
 
       [
         {
-          "id": "https://orcid.org/0000-0002-1825-0097",
            "name": "Josiah Carberry",
            "url": "https://orcid.org/0000-0002-1825-0097"
         },
         {
-          "id": "#sl",
-          "name": "Simone Leo",
+          "name": "mickeymouse",
           "url": None
         }
       ]
@@ -182,9 +180,11 @@ def get_workflow_authors(crate, suite_id=None):
     for a in author:
         id_ = a if isinstance(a, str) else a.id
         name = None if isinstance(a, str) else a.get("name")
+        if name is None:
+            name = id_.lstrip("#")
         if id_.startswith("http://") or id_.startswith("https://"):
             url = id_
         else:
             url = None if isinstance(a, str) else a.get("url")
-        rval.append({"id": id_, "name": name, "url": url})
+        rval.append({"name": name, "url": url})
     return rval
