@@ -19,10 +19,15 @@
 # SOFTWARE.
 
 from copy import deepcopy
+from operator import itemgetter
 import json
 
 from rocrate.rocrate import ROCrate
-from lifemonitor.test_metadata import get_roc_suites
+from lifemonitor.test_metadata import get_roc_suites, get_workflow_authors
+
+
+SL_ID = "https://orcid.org/0000-0001-8271-5429"
+JC_ID = "https://orcid.org/0000-0002-1825-0097"
 
 
 ENTITIES = {_["@id"]: _ for _ in [
@@ -46,7 +51,13 @@ ENTITIES = {_["@id"]: _ for _ in [
         "@id": "sort-and-change-case.ga",
         "@type": ["File", "SoftwareSourceCode", "ComputationalWorkflow"],
         "programmingLanguage": {"@id": "https://galaxyproject.org/"},
+        "author": {"@id": SL_ID},
         "name": "sort-and-change-case"
+    },
+    {
+        "@id": SL_ID,
+        "@type": "Person",
+        "name": "Simone Leo"
     },
     {
         "@id": "#test1",
@@ -133,3 +144,97 @@ def test_get_roc_suites(tmpdir):
     crate = ROCrate(crate_dir)
     roc_suites = get_roc_suites(crate)
     assert roc_suites == EXPECTED_ROC_SUITES
+
+
+def test_get_workflow_authors(tmpdir):
+    crate_dir = tmpdir / "lm_test_crate"
+    _write_crate(crate_dir, ENTITIES)
+    crate = ROCrate(crate_dir)
+    assert get_workflow_authors(crate) == [{
+        "name": "Simone Leo",
+        "url": SL_ID,
+    }]
+    # author as string
+    entities = deepcopy(ENTITIES)
+    entities["sort-and-change-case.ga"]["author"] = SL_ID
+    _write_crate(crate_dir, entities)
+    crate = ROCrate(crate_dir)
+    assert get_workflow_authors(crate) == [{
+        "name": SL_ID,
+        "url": SL_ID,
+    }]
+    # workflow from suite
+    entities = deepcopy(ENTITIES)
+    entities["foo.ga"] = {
+        "@id": "foo.ga",
+        "@type": ["File", "SoftwareSourceCode", "ComputationalWorkflow"],
+        "programmingLanguage": {"@id": "https://galaxyproject.org/"},
+        "author": "Mickey Mouse"
+    }
+    entities["#test1"]["mainEntity"] = {"@id": "foo.ga"}
+    entities["./"]["hasPart"].append({"@id": "foo.ga"})
+    _write_crate(crate_dir, entities)
+    crate = ROCrate(crate_dir)
+    assert get_workflow_authors(crate, suite_id="#test1") == [{
+        "name": "Mickey Mouse",
+        "url": None,
+    }]
+    # no workflow
+    entities = deepcopy(ENTITIES)
+    for id_ in "./", "#test1":
+        del entities[id_]["mainEntity"]
+    _write_crate(crate_dir, entities)
+    crate = ROCrate(crate_dir)
+    for suite_id in None, "#test1":
+        assert get_workflow_authors(crate, suite_id=suite_id) == []
+    # no author
+    entities = deepcopy(ENTITIES)
+    del entities["sort-and-change-case.ga"]["author"]
+    _write_crate(crate_dir, entities)
+    crate = ROCrate(crate_dir)
+    assert get_workflow_authors(crate) == []
+    # URL from url
+    entities = deepcopy(ENTITIES)
+    del entities[SL_ID]
+    entities["#sl"] = {
+        "@id": "#sl",
+        "@type": "Person",
+        "name": "Simone Leo",
+        "url": SL_ID
+    }
+    entities["sort-and-change-case.ga"]["author"] = {"@id": "#sl"}
+    _write_crate(crate_dir, entities)
+    crate = ROCrate(crate_dir)
+    assert get_workflow_authors(crate) == [{
+        "name": "Simone Leo",
+        "url": SL_ID,
+    }]
+
+    # id only
+    entities = deepcopy(ENTITIES)
+    del entities[SL_ID]
+    entities["#sl"] = {
+        "@id": "#sl",
+        "@type": "Person",
+    }
+    entities["sort-and-change-case.ga"]["author"] = {"@id": "#sl"}
+    _write_crate(crate_dir, entities)
+    crate = ROCrate(crate_dir)
+    assert get_workflow_authors(crate) == [{
+        "name": "sl",
+        "url": None,
+    }]
+    # multiple authors
+    entities = deepcopy(ENTITIES)
+    entities[JC_ID] = {
+        "@id": JC_ID,
+        "@type": "Person",
+        "name": "Josiah Carberry",
+    }
+    entities["sort-and-change-case.ga"]["author"] = [{"@id": SL_ID}, {"@id": JC_ID}]
+    _write_crate(crate_dir, entities)
+    crate = ROCrate(crate_dir)
+    assert sorted(get_workflow_authors(crate), key=itemgetter("name")) == [
+        {"name": "Josiah Carberry", "url": JC_ID},
+        {"name": "Simone Leo", "url": SL_ID},
+    ]

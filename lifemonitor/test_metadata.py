@@ -21,10 +21,9 @@
 """\
 Test metadata support.
 
-Specs: https://github.com/crs4/life_monitor/wiki/Test-Metadata-Draft-Spec
+https://crs4.github.io/life_monitor/workflow_testing_ro_crate
 """
 
-import json
 from collections.abc import Mapping
 from pathlib import Path
 
@@ -54,113 +53,6 @@ def norm_abs_path(path, ref_path):
     path, ref_path = Path(path), Path(ref_path).absolute()
     ref_dir = ref_path if ref_path.is_dir() else ref_path.parent
     return ref_dir / path
-
-
-def paths_to_abs(data, ref_path):
-    if isinstance(data, dict):
-        for k, v in data.items():
-            if k == "path":
-                data[k] = str(norm_abs_path(v, ref_path))
-            else:
-                paths_to_abs(v, ref_path)
-    if isinstance(data, list):
-        for d in data:
-            paths_to_abs(d, ref_path)
-
-
-class Service:
-
-    @classmethod
-    def from_json(cls, data):
-        return cls(data["type"], data["url"], data["resource"])
-
-    def __init__(self, type, url, resource):
-        self.type = type
-        self.url = url
-        self.resource = resource
-
-    def __repr__(self):
-        return f"{self.__class__.__name__}{self.type, self.url, self.resource}"
-
-
-class Instance:
-
-    @classmethod
-    def from_json(cls, data):
-        if not data:
-            return None
-        return cls(data["name"], Service.from_json(data["service"]))
-
-    def __init__(self, name, service):
-        self.name = name
-        self.service = service
-
-    def __repr__(self):
-        return f"{self.__class__.__name__}{self.name, self.service}"
-
-
-class TestEngine:
-
-    @classmethod
-    def from_json(cls, data):
-        return cls(data["type"], data["version"])
-
-    # TODO: handle version requirement
-    def __init__(self, type, version):
-        self.type = type
-        self.version = version
-
-    def __repr__(self):
-        return f"{self.__class__.__name__}{self.type, self.version}"
-
-
-class TestDefinition:
-
-    @classmethod
-    def from_json(cls, data):
-        if not data:
-            return None
-        return cls(TestEngine.from_json(data["test_engine"]), data["path"])
-
-    # TODO: add support for payload
-    def __init__(self, engine, path):
-        self.engine = engine
-        self.path = path
-
-    def __repr__(self):
-        return f"{self.__class__.__name__}{self.engine, self.path}"
-
-
-class Test:
-
-    @classmethod
-    def from_json(cls, data):
-        return cls(
-            data["name"],
-            [Instance.from_json(_) for _ in data.get("instance", [])],
-            TestDefinition.from_json(data.get("definition", {}))
-        )
-
-    def __init__(self, name, instance, definition):
-        self.name = name
-        self.instance = instance
-        self.definition = definition
-
-    def __repr__(self):
-        return f"{self.__class__.__name__}{self.name, self.instance, self.definition}"
-
-
-def read_tests(fname, abs_paths=True):
-    tests = []
-    with open(fname, "rt") as f:
-        json_data = json.load(f)
-    # TODO: handle id and format
-    for t in json_data["test"]:
-        t = Test.from_json(t)
-        if abs_paths:
-            t.definition.path = str(norm_abs_path(t.definition.path, fname))
-        tests.append(t)
-    return tests
 
 
 def read_planemo(fname):
@@ -248,4 +140,51 @@ def get_roc_suites(crate):
             }
         else:
             suite_data["definition"] = {}
+    return rval
+
+
+def get_workflow_authors(crate, suite_id=None):
+    """\
+    Get the authors of the main workflow.
+
+    If suite_id is not None, try retrieving the authors from that suite's
+    mainEntity (in principle, this might be different from the crate's
+    mainEntity).
+
+    Return a list of dictionaries with keys "name" and "url" (note that the
+    "url" field can have a value of None). If no author is found, the returned
+    list will be empty. Example output:
+
+      [
+        {
+           "name": "Josiah Carberry",
+           "url": "https://orcid.org/0000-0002-1825-0097"
+        },
+        {
+          "name": "mickeymouse",
+          "url": None
+        }
+      ]
+    """
+    suite = None if suite_id is None else crate.get(suite_id)
+    workflow = suite.get("mainEntity") if suite else crate.mainEntity
+    if not workflow:
+        # not a valid Workflow RO-Crate
+        return []
+    author = workflow.get("author", workflow.get("creator"))
+    if not author:
+        return []
+    if not isinstance(author, list):
+        author = [author]
+    rval = []
+    for a in author:
+        id_ = a if isinstance(a, str) else a.id
+        name = None if isinstance(a, str) else a.get("name")
+        if name is None:
+            name = id_.lstrip("#")
+        if id_.startswith("http://") or id_.startswith("https://"):
+            url = id_
+        else:
+            url = None if isinstance(a, str) else a.get("url")
+        rval.append({"name": name, "url": url})
     return rval
