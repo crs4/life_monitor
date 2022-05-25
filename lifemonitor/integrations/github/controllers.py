@@ -82,13 +82,46 @@ def refresh_workflow_builds(event: GithubEvent):
         return "Internal Error", 500
 
 
-def installation(event: GithubEvent):
+def installation_repositories(event: GithubEvent):
     try:
-        logger.debug("Installation event: %r", event)
-        return "No content", 204
+        if event.action in ['created', 'added']:
+
+            installation = event.installation
+            logger.debug("App Installation: %r", installation)
+
+            repositories = event.repositories_added
+            logger.debug("App installed on Repositories: %r", repositories)
+
+            for repo_info in repositories:
+                logger.debug("Repo reference: %r", repo_info)
+                logger.debug("Repo ref: %r", repo_info.branch or repo_info.tag)
+
+                repo: GithubWorkflowRepository = repo_info.repository
+                logger.debug("Repository: %r", repo)
+
+                logger.debug("Ref: %r", repo.ref)
+                logger.debug("Refs: %r", repo.git_refs_url)
+                logger.debug("Tree: %r", repo.trees_url)
+                logger.debug("Commit: %r", repo.rev)
+
+                logger.warning("Is Tag: %r", repo_info.tag)
+                logger.warning("Is Branch: %r", repo_info.branch)
+
+                if event.action in ['created', 'added']:
+                    if not repo_info.ref or repo_info.deleted:
+                        logger.debug("Repo ref not defined or branch/tag deleted: %r", repo)
+                    else:
+                        settings: GithubUserSettings = event.sender.user.github_settings
+                        __check_for_issues_and_register__(repo_info, settings,
+                                                          event.sender.user.registry_settings, True)
+
+        elif event.action == 'removed':
+            logger.debug("App uninstalled from repositories: %r", event.repositories_removed)
+
     except Exception as e:
-        logger.error(e)
-        return "Internal Error", 500
+        logger.error(str(e))
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.exception(e)
 
 
 def __config_registry_list__(repo_info: GithubRepositoryReference,
@@ -449,7 +482,8 @@ def issue_comment(event: GithubEvent):
 __event_handlers__ = {
     "ping": ping,
     "workflow_run": refresh_workflow_builds,
-    "installation": installation,
+    "installation": installation_repositories,
+    "installation_repositories": installation_repositories,
     "push": push,
     "issues": issues,
     "issue_comment": issue_comment,
