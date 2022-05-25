@@ -363,7 +363,14 @@ def clone_repo(url: str, ref: str = None, target_path: str = None, auth_token: s
             local_path = tempfile.TemporaryDirectory(dir=config.BaseConfig.BASE_TEMP_FOLDER).name
         user_credentials = _make_git_credentials_callback(auth_token)
         clone = pygit2.clone_repository(url, local_path, callbacks=user_credentials)
-        clone.checkout(ref)
+        if ref is not None:
+            for ref_name in [ref, ref.replace('refs/heads', 'refs/remotes/origin')]:
+                try:
+                    ref_obj = clone.lookup_reference(ref_name)
+                    clone.checkout(ref_obj)
+                    break
+                except KeyError:
+                    logger.debug(f"Invalid repo reference: unable to find the reference {ref} on the repo {url}")
         if remote_url:
             user_credentials = _make_git_credentials_callback(remote_user_token)
             remote = clone.create_remote("remote", url=remote_url)
