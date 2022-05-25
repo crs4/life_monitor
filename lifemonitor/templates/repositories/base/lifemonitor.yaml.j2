@@ -24,10 +24,10 @@ push:
     #   update_registries: ["wfhubdev"] # available registries are listed
     #                                   # by the endpoint `<lifemonitor_url>/registries`
     #                                   # (e.g., https://api.lifemontor.eu/registries)
-    - name: "main"
+    - name: "{{main_branch}}"
       update_registries: []
-    - name: "develop"
-      update_registries: []
+    # - name: "develop"
+    #   update_registries: []
 
   tags:
     # Define the list of tags to watch

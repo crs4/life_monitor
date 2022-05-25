@@ -30,6 +30,7 @@ from typing import Any, Dict, List, Union
 
 from lifemonitor.api.models.repositories.base import (
     WorkflowRepository, WorkflowRepositoryMetadata)
+from lifemonitor.api.models.repositories.config import WorkflowRepositoryConfig
 from lifemonitor.api.models.repositories.files import (RepositoryFile,
                                                        WorkflowFile)
 from lifemonitor.api.models.repositories.local import LocalWorkflowRepository
@@ -186,6 +187,15 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
             else:
                 self.cleanup()
         return self.local_repo.generate_metadata()
+
+    def generate_config(self, ignore_existing=False) -> WorkflowFile:
+        current_config = self.config
+        if current_config and not ignore_existing:
+            raise IllegalStateException("Config exists")
+        self._config = WorkflowRepositoryConfig.new(self.local_path,
+                                                    workflow_title=self.metadata.main_entity_name if self.metadata else None,
+                                                    main_branch=self.default_branch)
+        return self._config
 
     def clone(self, branch: str, local_path: str = None) -> RepoCloneContextManager:
         assert isinstance(branch, str), branch

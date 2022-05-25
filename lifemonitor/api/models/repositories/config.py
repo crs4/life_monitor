@@ -144,12 +144,12 @@ class WorkflowRepositoryConfig(RepositoryFile):
         return self._get_refs('tags')
 
     @classmethod
-    def new(cls, repository_path: str, workflow_title: str = "Workflow RO-Crate", public: bool = False) -> WorkflowRepositoryConfig:
+    def new(cls, repository_path: str, workflow_title: str = "Workflow RO-Crate", public: bool = False, main_branch: str = "main") -> WorkflowRepositoryConfig:
         tmpl = TemplateRepositoryFile(repository_path="lifemonitor/templates/repositories/base", name=f"{cls.FILENAME}.j2")
         registries = models.WorkflowRegistry.all()
         issue_types = models.WorkflowRepositoryIssue.all()
         os.makedirs(repository_path, exist_ok=True)
-        tmpl.write(workflow_title=workflow_title, public=public,
+        tmpl.write(workflow_title=workflow_title, main_branch=main_branch, public=public,
                    issues=issue_types, registries=registries,
                    output_file_path=os.path.join(repository_path, cls.FILENAME))
         return cls(path=repository_path)
