@@ -219,12 +219,12 @@ def create(event: GithubEvent):
     logger.warning("Is Tag: %r", repo_info.tag)
     logger.warning("Is Branch: %r", repo_info.branch)
 
-    if repo_info.tag:
+    if repo_info.branch:
         try:
             __check_for_issues_and_register__(repo_info,
                                               event.sender.user.github_settings,
-                                              event.sender.user.registry_setting,
-                                              False)
+                                              event.sender.user.registry_settings,
+                                              True)
         except Exception as e:
             logger.exception(e)
 
@@ -488,6 +488,7 @@ __event_handlers__ = {
     "issues": issues,
     "issue_comment": issue_comment,
     "pull_request": pull_request,
+    "create": create,
     "delete": delete
 }
 
