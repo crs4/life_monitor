@@ -21,10 +21,11 @@
 from __future__ import annotations
 
 from .registry import RegistryWorkflow, WorkflowRegistry, WorkflowRegistryClient
+from .settings import RegistrySettings
 
 # load registry classes
 __loaded_registries__ = [
     RegistryWorkflow, WorkflowRegistry, WorkflowRegistryClient
 ] + WorkflowRegistry.registry_types.get_classes()
 
-__all__ = [_.__name__ for _ in __loaded_registries__]
+__all__ = [RegistrySettings.__name__].extend([_.__name__ for _ in __loaded_registries__])
