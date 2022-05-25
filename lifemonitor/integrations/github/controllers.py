@@ -28,6 +28,7 @@ from flask import Blueprint, Flask, current_app, request
 from flask_apscheduler import APScheduler
 from lifemonitor import cache
 from lifemonitor.api.models import WorkflowRegistry
+from lifemonitor.api.models.issues import WorkflowRepositoryIssue
 from lifemonitor.api.models.issues.common.files.missing import \
     MissingWorkflowFile
 from lifemonitor.api.models.registries.settings import RegistrySettings
@@ -319,21 +320,20 @@ def pull_request(event: GithubEvent):
     logger.debug("HEAD of this PR: %s", ref)
 
     # delete support branch of closed issues
+    support_branch = ref
     if event.action == "closed":
-        # delete_branch(event.repository_reference.repository, issue)
-        for wizard in Wizard.all():
-            for step in wizard.steps:
-                if isinstance(step, UpdateStep):
-                    logger.debug("Checking %r %r %r %r", ref, step.id, step.title, step.wizard)
-                    if step.id == ref:
-                        try:
-                            logger.debug("Trying to delete support branch for wizard step: %r ...", step)
-                            delete_branch(event.repository_reference.repository, step.id)
-                            logger.debug("Support branch for wizard step: %r deleted", step)
-                        except Exception as e:
-                            if logger.isEnabledFor(logging.DEBUG):
-                                logger.exception(e)
-                            logger.warn("Unable to delete support branch of wizard step %r", step)
+        support_branches = []
+        support_branches.extend([b.id for b in WorkflowRepositoryIssue.all()])
+        support_branches.extend([s.id for s in w.steps if isinstance(s, UpdateStep)] for w in Wizard.all())
+        if support_branch in support_branches:
+            try:
+                logger.debug("Trying to delete support branch: %s ...", support_branch)
+                delete_branch(event.repository_reference.repository, support_branch)
+                logger.debug("Support branch %s deleted", support_branch)
+            except Exception as e:
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.exception(e)
+                logger.warn("Unable to delete support branch %s", support_branch)
 
 
 def issues(event: GithubEvent):
