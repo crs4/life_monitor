@@ -22,7 +22,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Optional
+from typing import List, Optional
 
 from flask import Request
 from flask import request as current_request
@@ -126,8 +126,36 @@ class GithubEvent():
     @property
     def repository_reference(self) -> GithubRepositoryReference:
         if not self._repository_reference:
+            if 'repositories' in self._raw_data or 'repositories_added' in self._raw_data:
+                raise ValueError("Multiple repositories associated to this event")
             self._repository_reference = GithubRepositoryReference(event=self)
         return self._repository_reference
+
+    @property
+    def repositories_added(self) -> List[GithubRepositoryReference]:
+        result = []
+        repos = self._raw_data.get('repositories', None) or self._raw_data.get('repositories_added', None)
+        for repo_info in repos:
+            try:
+                repo: GithubWorkflowRepository = self.installation.get_repo(repo_info['full_name'])
+                logger.debug("Got repo: %r", repo)
+                result.append(GithubRepositoryReference(self, repo))
+            except Exception as e:
+                logger.warning("Unable to load data of repo: %r", repo)
+        return result
+
+    @property
+    def repositories_removed(self) -> List[GithubRepositoryReference]:
+        result = []
+        repos = self._raw_data.get('repositories', None) or self._raw_data.get('repositories_removed', None)
+        for repo_info in repos:
+            try:
+                repo: GithubWorkflowRepository = self.installation.get_repo(repo_info['full_name'])
+                logger.debug("Got repo: %r", repo)
+                result.append(GithubRepositoryReference(self, repo))
+            except Exception as e:
+                logger.warning("Unable to load data of repo: %r", repo)
+        return result
 
     @property
     def issue(self) -> Optional[GithubIssue]:
@@ -156,9 +184,10 @@ class GithubEvent():
 
 class GithubRepositoryReference(object):
 
-    def __init__(self, event: GithubEvent) -> None:
+    def __init__(self, event: GithubEvent, repo: GithubWorkflowRepository = None) -> None:
         self._event = event
-        self._raw_data = self._event._raw_data
+        self._raw_data = {'repository': repo.raw_data} if repo else self._event._raw_data
+        self._repo: GithubWorkflowRepository = repo
 
     @property
     def event(self) -> GithubEvent:
@@ -205,9 +234,9 @@ class GithubRepositoryReference(object):
 
     @property
     def ref(self) -> str:
-        ref = self._raw_data.get('ref', None)
+        ref = self._repo.ref if self._repo else self._raw_data.get('ref', None)
         ref_type = self._raw_data.get('ref_type', None)
-        if ref and ref_type == 'tag' and not ref.startswith('ref/'):
+        if ref and ref_type == 'tag' and not ref.startswith('refs/'):
             return f"refs/tags/{ref}"
         return ref
 
@@ -249,10 +278,12 @@ class GithubRepositoryReference(object):
 
     @property
     def repository(self) -> GithubWorkflowRepository:
-        repo = self.event.installation.get_repo(self.full_name)
-        repo.ref = self.ref
-        repo.rev = self.rev
-        return repo
+        if not self._repo:
+            repo = self.event.installation.get_repo(self.full_name)
+            repo.ref = self.ref
+            repo.rev = self.rev
+            self._repo = repo
+        return self._repo
 
     def clone(self, local_path: str = None) -> RepoCloneContextManager:
         assert local_path is None or isinstance(str, local_path), local_path
