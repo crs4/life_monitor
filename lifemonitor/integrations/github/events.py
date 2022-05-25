@@ -142,6 +142,8 @@ class GithubEvent():
                 result.append(GithubRepositoryReference(self, repo))
             except Exception as e:
                 logger.warning("Unable to load data of repo: %r", repo)
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.exception(e)
         return result
 
     @property
@@ -155,6 +157,8 @@ class GithubEvent():
                 result.append(GithubRepositoryReference(self, repo))
             except Exception as e:
                 logger.warning("Unable to load data of repo: %r", repo)
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.exception(e)
         return result
 
     @property
