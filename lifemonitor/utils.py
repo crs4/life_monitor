@@ -366,8 +366,11 @@ def clone_repo(url: str, ref: str = None, target_path: str = None, auth_token: s
         if ref is not None:
             for ref_name in [ref, ref.replace('refs/heads', 'refs/remotes/origin')]:
                 try:
-                    ref_obj = clone.lookup_reference(ref_name)
-                    clone.checkout(ref_obj)
+                    if ref == "HEAD" or ref == 'refs/remotes/origin/HEAD':
+                        clone.checkout_head()
+                    else:
+                        ref_obj = clone.lookup_reference(ref_name)
+                        clone.checkout(ref_obj)
                     break
                 except KeyError:
                     logger.debug(f"Invalid repo reference: unable to find the reference {ref} on the repo {url}")
