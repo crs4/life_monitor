@@ -353,7 +353,9 @@ class WorkflowRegistry(auth_models.HostingService):
             registry_token = user.registry_settings.get_token(self.client_name)
             if registry_token:
                 if registry_token.to_be_refreshed() and registry_token.can_be_refreshed():
-                    self.server_credentials.refresh_token(registry_token)
+                    registry_token = self.server_credentials.refresh_token(registry_token)
+                    user.registry_settings.set_token(self.client_name, registry_token)
+                    user.save()
                 auths.append(auth_models.ExternalServiceAuthorizationHeader(user, f"{registry_token['token_type']} {registry_token['access_token']}"))
         # add authorizations associated to the resource
         auths.extend(auth_models.ExternalServiceAccessAuthorization.find_by_user_and_resource(user, self))
