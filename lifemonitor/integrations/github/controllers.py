@@ -44,7 +44,7 @@ from lifemonitor.integrations.github.app import LifeMonitorGithubApp
 from lifemonitor.integrations.github.events import (GithubEvent,
                                                     GithubRepositoryReference)
 from lifemonitor.integrations.github.issues import GithubIssue
-from lifemonitor.integrations.github.registry import GithubWorkflowRegistry
+from lifemonitor.integrations.github.notifications import GithubWorkflowVersionNotification
 from lifemonitor.integrations.github.settings import GithubUserSettings
 from lifemonitor.integrations.github.utils import delete_branch, match_ref
 from lifemonitor.integrations.github.wizards import GithubWizard
@@ -137,14 +137,9 @@ def __notify_workflow_version_event__(repo: GithubWorkflowRepository,
         identity = OAuthIdentity.find_by_provider_user_id(str(repo.owner.id), "github")
         if identity:
             version = workflow_version if isinstance(workflow_version, dict) else serializers.WorkflowVersionSchema(exclude=('meta', 'links')).dump(workflow_version)
-            n = Notification(EventType.GITHUB_WORKFLOW_VERSION,
-                             f"workflow {version['uuid']} version {version['version']['version']} {action} "
-                             f"(source: {repo.full_name}, ref: {repo.ref})",
-                             data={
-                                 'action': action,
-                                 'repository': repo.raw_data,
-                                 'workflow_version': version
-                             }, users=[identity.user])
+            repo_data = repo.raw_data
+            repo_data['ref'] = repo.ref
+            n = GithubWorkflowVersionNotification(workflow_version=version, repository=repo_data, action=action, users=[identity.user])
             n.save()
     except Exception as e:
         logger.error(f"Unable to notify workflow version event: {str(e)}")
