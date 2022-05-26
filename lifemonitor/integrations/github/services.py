@@ -105,7 +105,7 @@ def register_repository_workflow(repository_reference: GithubRepositoryReference
     registries = __normalize_registry_identitiers__(registries)
 
     #
-    registered_workflows = []
+    registered_workflow = None
 
     try:
         # set a reference to the Gihub hosting service instance
@@ -158,7 +158,7 @@ def register_repository_workflow(repository_reference: GithubRepositoryReference
                 else:
                     logger.warning("Skipped registration of workflow %r on registries %r", wv, registries_list)
             # append to the list of registered workflows
-            registered_workflows.append(wv)
+            registered_workflow = wv
         # if no matches found, register a new workflow
         else:
             # register workflow version on LifeMonitor
@@ -167,11 +167,11 @@ def register_repository_workflow(repository_reference: GithubRepositoryReference
             # register workflow on registries
             register_workflow_on_registries(github_registry, repo_owner, repo, wv, registries_map=[(_, None, []) for _ in registries])
             # append to the list of registered workflows
-            registered_workflows.append(wv)
+            registered_workflow = wv
 
         # register workflow version on github registry
-        if wv:
-            github_registry.add_workflow_version(wv, repo.full_name, repo.ref)
+        if registered_workflow:
+            github_registry.add_workflow_version(registered_workflow, repo.full_name, repo.ref)
             github_registry.save()
 
     except OAuthIdentityNotFoundException as e:
@@ -179,11 +179,11 @@ def register_repository_workflow(repository_reference: GithubRepositoryReference
         if logger.isEnabledFor(logging.DEBUG):
             logger.exception(e)
 
-    return registered_workflows
+    return registered_workflow
 
 
 def delete_repository_workflow_version(repository_reference: GithubRepositoryReference,
-                                       registries: List[str] = None):
+                                       registries: List[str] = None) -> Dict:
     logger.error("Deleting Repository ref: %r", repository_reference)
     # set a reference to LifeMonitorService
     lm = LifeMonitor.get_instance()
@@ -214,6 +214,15 @@ def delete_repository_workflow_version(repository_reference: GithubRepositoryRef
         if not w:
             logger.warning(f"No workflow associated with '{repo.full_name}' found")
         else:
+            # try to find the workflow version
+            wv = lm.get_user_workflow_version(repo_owner, w.uuid, workflow_version)
+            if not wv:
+                logger.warning(f"Unable to find the version {workflow_version} of workflow {w.uuid}")
+                return None
+            else:
+                # serialize the workflow version object before deletion
+                wv = serializers.WorkflowVersionSchema(exclude=('meta', 'links')).dump(wv)
+
             # normalize the list of registries
             registries = __normalize_registry_identitiers__(registries, as_strings=True)
             logger.debug("Normalized list of registries: %r", registries)
@@ -233,13 +242,19 @@ def delete_repository_workflow_version(repository_reference: GithubRepositoryRef
 
             # delete workflow version from LifeMonitor
             logger.debug("Removing version '%r' of worlflow %r from LifeMonitor....", workflow_version, w)
+
             lm.deregister_user_workflow_version(w.uuid, workflow_version, repo_owner)
             logger.debug("Removing version '%r' of worlflow %r from LifeMonitor.... DONE", workflow_version, w)
+
+            # return the deleted workflow version (serialized)
+            return wv
 
     except OAuthIdentityNotFoundException as e:
         logger.warning("Github identity '%r' doesn't match with any LifeMonitor user identity", repository_reference.owner_id)
         if logger.isEnabledFor(logging.DEBUG):
             logger.exception(e)
+
+    return None
 
 
 def register_workflow_on_registries(github_registry: GithubWorkflowRegistry, submitter: User, repo: GithubWorkflowRepository,
