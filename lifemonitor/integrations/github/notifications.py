@@ -38,7 +38,7 @@ class GithubWorkflowVersionNotification(Notification):
     __mapper_args__ = {
         'polymorphic_identity': 'github_workflow_version_notification'
     }
-    
+
     @property
     def get_icon_path(self) -> str:
         return 'lifemonitor/static/img/logo/providers/github.png'
