@@ -21,8 +21,9 @@
 from __future__ import annotations
 
 import logging
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
+from lifemonitor.api import serializers
 from lifemonitor.api.models.registries.registry import WorkflowRegistry
 from lifemonitor.api.models.repositories.base import IssueCheckResult
 from lifemonitor.api.models.repositories.github import GithubWorkflowRepository
