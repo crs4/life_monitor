@@ -81,8 +81,14 @@ def send_notification(n: Notification, recipients: List[str] = None) -> Optional
                 ]
             if len(recipients) > 0:
                 try:
-                    conn.send(n.to_mail_message(recipients))
-                    return datetime.utcnow()
+                    msg = n.to_mail_message(recipients)
+                    if msg:
+                        conn.send(msg)
+                        return datetime.utcnow()
+                    else:
+                        logger.warning("Notification %r cannot be sent by email", n)                    
                 except Exception as e:
-                    logger.debug(e)
+                    logger.error(str(e))
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.exception(e)
     return None
