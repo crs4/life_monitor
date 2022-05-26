@@ -90,7 +90,18 @@ def __get_registries_map__(w: Workflow, registries: List[str]):
     return registries_map
 
 
-def register_repository_workflow(repository_reference: GithubRepositoryReference, registries: List[str] = None):
+def find_workflow_version(repository_reference: GithubRepositoryReference) -> Tuple[Workflow, WorkflowVersion]:
+    # found the existing workflow associated with repo
+    github_registry: GithubWorkflowRegistry = repository_reference.event.installation.github_registry
+    workflow_version = None
+    workflow = github_registry.find_workflow(repository_reference.repository.full_name)
+    if workflow:
+        workflow_version = workflow.versions.get(repository_reference.branch or repository_reference.tag, None)
+        logger.debug("Found workflow version: %r", workflow_version)
+    return workflow, workflow_version
+
+
+def register_repository_workflow(repository_reference: GithubRepositoryReference, registries: List[str] = None) -> WorkflowVersion:
     logger.debug("Repository ref: %r", repository_reference)
     # set a reference to LifeMonitorService
     lm = LifeMonitor.get_instance()
