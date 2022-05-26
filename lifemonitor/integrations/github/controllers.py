@@ -130,17 +130,42 @@ def installation_repositories(event: GithubEvent):
             logger.exception(e)
 
 
-def __notify_workflow_version_event__(repo: GithubWorkflowRepository,
+def __notify_workflow_version_event__(repo_reference: GithubRepositoryReference,
                                       workflow_version: Union[WorkflowVersion, Dict],
                                       action: str):
     try:
-        identity = OAuthIdentity.find_by_provider_user_id(str(repo.owner.id), "github")
-        if identity:
-            version = workflow_version if isinstance(workflow_version, dict) else serializers.WorkflowVersionSchema(exclude=('meta', 'links')).dump(workflow_version)
-            repo_data = repo.raw_data
-            repo_data['ref'] = repo.ref
-            n = GithubWorkflowVersionNotification(workflow_version=version, repository=repo_data, action=action, users=[identity.user])
-            n.save()
+        notification_enabled = True
+        repo: GithubWorkflowRepository = repo_reference.repository
+        pattern = None
+        ref_type = 'branches' if repo_reference.branch else 'tags'
+        try:
+            if hasattr(repo.config, ref_type):
+                ref_list = getattr(repo.config, ref_type)
+                ref = repo_reference.branch or repo_reference.tag
+                _, pattern = match_ref(ref, ref_list)
+                if pattern:
+                    notification_enabled = ref_list[pattern].get('enable_notifications', True)
+                    logger.debug("Notifications enabled for '%s': %r", pattern, notification_enabled)
+                else:
+                    logger.debug("No notification setting found for repo %s (ref: %s)", repo.full_name, ref)
+        except AttributeError as e:
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.exception(e)
+        logger.debug("Notifications enabled: %r", notification_enabled)
+        if notification_enabled:
+            logger.debug(f"Setting notification for action '{action}' on repo '{repo.full_name}' (ref: {repo.ref})")
+            identity = OAuthIdentity.find_by_provider_user_id(str(repo.owner.id), "github")
+            if identity:
+                version = workflow_version if isinstance(workflow_version, dict) else serializers.WorkflowVersionSchema(exclude=('meta', 'links')).dump(workflow_version)
+                repo_data = repo.raw_data
+                repo_data['ref'] = repo.ref
+                n = GithubWorkflowVersionNotification(workflow_version=version, repository=repo_data, action=action, users=[identity.user])
+                n.save()
+                logger.debug(f"Setting notification for action '{action}' on repo '{repo.full_name}' (ref: {repo.ref})")
+            else:
+                logger.warning("Unable to find user identity associated to repo: %r", repo)
+        else:
+            logger.warning("Notification disabled for %r (ref %r)", repo_reference.full_name, pattern)
     except Exception as e:
         logger.error(f"Unable to notify workflow version event: {str(e)}")
         if logger.isEnabledFor(logging.DEBUG):
@@ -219,7 +244,7 @@ def __check_for_issues_and_register__(repo_info: GithubRepositoryReference,
         registered_workflow = services.register_repository_workflow(repo_info, registries=registries)
         logger.debug("Registered workflow: %r", registered_workflow)
         if registered_workflow:
-            __notify_workflow_version_event__(repo, registered_workflow, action='updated' if workflow_version else 'created')
+            __notify_workflow_version_event__(repo_info, registered_workflow, action='updated' if workflow_version else 'created')
 
 
 def create(event: GithubEvent):
@@ -285,7 +310,7 @@ def delete(event: GithubEvent):
             workflow_version = services.delete_repository_workflow_version(repo_info,
                                                                            registries=event.sender.user.registry_settings.registries)
             if workflow_version:
-                __notify_workflow_version_event__(repo, workflow_version, action='deleted')
+                __notify_workflow_version_event__(repo_info, workflow_version, action='deleted')
         except Exception as e:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.exception(e)
