@@ -166,6 +166,10 @@ class OAuthIdentity(models.ExternalServiceAccessAuthorization, ModelMixin):
 
     @token.setter
     def token(self, token: dict):
+        if self.user:
+            registry_token = self.user.registry_settings.get_token(self.provider.client_name)
+            if registry_token and registry_token['scope'] == token['scope'] and registry_token['access_token'] == self._token['access_token']:
+                self.user.registry_settings.set_token(self.provider.client_name, token)
         self._token = token
 
     def fetch_token(self):
