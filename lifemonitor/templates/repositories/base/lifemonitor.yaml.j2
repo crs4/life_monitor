@@ -26,8 +26,10 @@ push:
     #                                   # (e.g., https://api.lifemontor.eu/registries)
     - name: "{{main_branch}}"
       update_registries: []
+      enable_notifications: true
     # - name: "develop"
     #   update_registries: []
+    #   enable_notifications: true
 
   tags:
     # Define the list of tags to watch
@@ -37,5 +39,7 @@ push:
     #                                   # (e.g., https://api.lifemontor.eu/registries)
     - name: "v*.*.*"
       update_registries: [{{registries|join(', ', attribute="name")}}]
+      enable_notifications: true
     - name: "*.*.*"
       update_registries: [{{registries|join(', ', attribute="name")}}]
+      enable_notifications: true
