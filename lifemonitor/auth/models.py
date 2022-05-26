@@ -337,6 +337,8 @@ class EventType(Enum):
     BUILD_FAILED = 1
     BUILD_RECOVERED = 2
     UNCONFIGURED_EMAIL = 3
+    GITHUB_WORKFLOW_VERSION = 4
+    GITHUB_WORKFLOW_ISSUE = 5
 
     @classmethod
     def all(cls):
