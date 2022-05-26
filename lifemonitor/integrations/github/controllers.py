@@ -22,11 +22,12 @@ from __future__ import annotations
 
 import logging
 from tempfile import TemporaryDirectory
-from typing import List
+from typing import Dict, List, Union
 
 from flask import Blueprint, Flask, current_app, request
 from flask_apscheduler import APScheduler
 from lifemonitor import cache
+from lifemonitor.api import serializers
 from lifemonitor.api.models import WorkflowRegistry
 from lifemonitor.api.models.issues import WorkflowRepositoryIssue
 from lifemonitor.api.models.issues.common.files.missing import \
@@ -35,11 +36,15 @@ from lifemonitor.api.models.registries.settings import RegistrySettings
 from lifemonitor.api.models.repositories.github import GithubWorkflowRepository
 from lifemonitor.api.models.testsuites.testinstance import TestInstance
 from lifemonitor.api.models.wizards import QuestionStep, UpdateStep, Wizard
+from lifemonitor.api.models.workflows import WorkflowVersion
+from lifemonitor.auth.models import EventType, Notification
+from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 from lifemonitor.integrations.github import pull_requests
 from lifemonitor.integrations.github.app import LifeMonitorGithubApp
 from lifemonitor.integrations.github.events import (GithubEvent,
                                                     GithubRepositoryReference)
 from lifemonitor.integrations.github.issues import GithubIssue
+from lifemonitor.integrations.github.registry import GithubWorkflowRegistry
 from lifemonitor.integrations.github.settings import GithubUserSettings
 from lifemonitor.integrations.github.utils import delete_branch, match_ref
 from lifemonitor.integrations.github.wizards import GithubWizard
@@ -125,6 +130,28 @@ def installation_repositories(event: GithubEvent):
             logger.exception(e)
 
 
+def __notify_workflow_version_event__(repo: GithubWorkflowRepository,
+                                      workflow_version: Union[WorkflowVersion, Dict],
+                                      action: str):
+    try:
+        identity = OAuthIdentity.find_by_provider_user_id(str(repo.owner.id), "github")
+        if identity:
+            version = workflow_version if isinstance(workflow_version, dict) else serializers.WorkflowVersionSchema(exclude=('meta', 'links')).dump(workflow_version)
+            n = Notification(EventType.GITHUB_WORKFLOW_VERSION,
+                             f"workflow {version['uuid']} version {version['version']['version']} {action} "
+                             f"(source: {repo.full_name}, ref: {repo.ref})",
+                             data={
+                                 'action': action,
+                                 'repository': repo.raw_data,
+                                 'workflow_version': version
+                             }, users=[identity.user])
+            n.save()
+    except Exception as e:
+        logger.error(f"Unable to notify workflow version event: {str(e)}")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.exception(e)
+
+
 def __config_registry_list__(repo_info: GithubRepositoryReference,
                              registry_settings: RegistrySettings) -> List[str]:
     # Configure registries
@@ -191,9 +218,13 @@ def __check_for_issues_and_register__(repo_info: GithubRepositoryReference,
         # Configure registries
         registries = __config_registry_list__(repo_info, registry_settings)
         logger.debug("Registries to update: %r", registries)
+        # found the existing workflow associated with repo
+        _, workflow_version = services.find_workflow_version(repo_info)
         # register or update workflow on LifeMonitor and optionally on registries
         registered_workflow = services.register_repository_workflow(repo_info, registries=registries)
         logger.debug("Registered workflow: %r", registered_workflow)
+        if registered_workflow:
+            __notify_workflow_version_event__(repo, registered_workflow, action='updated' if workflow_version else 'created')
 
 
 def create(event: GithubEvent):
@@ -256,8 +287,10 @@ def delete(event: GithubEvent):
 
     if repo_info.tag or repo_info.branch:
         try:
-            services.delete_repository_workflow_version(repo_info,
-                                                        registries=event.sender.user.registry_settings.registries)
+            workflow_version = services.delete_repository_workflow_version(repo_info,
+                                                                           registries=event.sender.user.registry_settings.registries)
+            if workflow_version:
+                __notify_workflow_version_event__(repo, workflow_version, action='deleted')
         except Exception as e:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.exception(e)
@@ -518,10 +551,13 @@ def handle_event():
     if not valid:
         return "Signature Invalid", 401
     event = GithubEvent.from_request()
-    if event.repository_reference.branch and event.repository_reference.branch.startswith('lifemonitor-issue'):
-        msg = f"Nothing to do for the event '{event.type}' on branch {event.repository_reference.branch}"
-        logger.debug(msg)
-        return msg, 204
+    try:
+        if event.repository_reference.branch and event.repository_reference.branch.startswith('lifemonitor-issue'):
+            msg = f"Nothing to do for the event '{event.type}' on branch {event.repository_reference.branch}"
+            logger.debug(msg)
+            return msg, 204
+    except ValueError as e:
+        logger.debug(str(e))
     event_handler = __event_handlers__.get(event.type, None)
     logger.debug("Event: %r", event)
     if not event_handler:
