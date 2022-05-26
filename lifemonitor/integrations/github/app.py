@@ -121,20 +121,27 @@ class LifeMonitorGithubApp(GithubApp):
         self.base_url = base_url
         self.service_repository_full_name = service_repository_full_name
         session = self.app_client_session()
-        app = self._get_app_info(session=session)
-        self._requester = __make_requester__(
-            jwt=self.integration.create_jwt(expiration=self.token_expiration),
-            base_url=self.base_url)
-        self.__installations__ = threading.local()
-        self.__installations__.loaded = False
-        super().__init__(self._requester, session.headers, app, True)
+        try:
+            app = self._get_app_info(session=session)
+            self._requester = __make_requester__(
+                jwt=self.integration.create_jwt(expiration=self.token_expiration),
+                base_url=self.base_url)
+            self.__installations__ = threading.local()
+            self.__installations__.loaded = False
+            super().__init__(self._requester, session.headers, app, True)
+        finally:
+            session.close()
 
     def _get_app_info(self, session: requests.Session = None):
-        session = session or self.app_client_session()
-        response = session.get(f"{self.base_url}/app")
-        if response.status_code == 200:
-            return response.json()
-        raise LifeMonitorException(detail=response.content, status=response.status_code)
+        s = session or self.app_client_session()
+        try:
+            response = s.get(f"{self.base_url}/app")
+            if response.status_code == 200:
+                return response.json()
+            raise LifeMonitorException(detail=response.content, status=response.status_code)
+        finally:
+            if s and not session:
+                s.close()
 
     def app_client(self, expiration=None) -> Github:
         return Github(jwt=self.integration.create_jwt(expiration=expiration or self.token_expiration))
@@ -171,13 +178,16 @@ class LifeMonitorGithubApp(GithubApp):
         logger.warning("Loading installations...")
         self.__installations__.map = {}
         app_client = self.app_client_session()
-        response = app_client.get(f"{self.base_url}/app/installations")
-        if response.status_code == 200:
-            for i in response.json():
-                if i['id'] not in self.__installations__.map:
-                    self.__installations__.map[i['id']] = LifeMonitorInstallation(self, i, requester=self._requester)
-        self.__installations__.loaded = True
-        logger.warning("Loading installations... DONE")
+        try:
+            response = app_client.get(f"{self.base_url}/app/installations")
+            if response.status_code == 200:
+                for i in response.json():
+                    if i['id'] not in self.__installations__.map:
+                        self.__installations__.map[i['id']] = LifeMonitorInstallation(self, i, requester=self._requester)
+            self.__installations__.loaded = True
+            logger.warning("Loading installations... DONE")
+        finally:
+            app_client.close()
 
     @property
     def installations(self) -> List[LifeMonitorInstallation]:
