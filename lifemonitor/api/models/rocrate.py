@@ -25,7 +25,7 @@ import os
 import tempfile
 import uuid as _uuid
 from pathlib import Path
-from typing import Tuple
+from typing import Dict, List, Tuple
 
 import lifemonitor.exceptions as lm_exceptions
 from flask import current_app
@@ -101,6 +101,13 @@ class ROCrate(Resource):
             self._metadata = self.repository.metadata.to_json()
             self._metadata_loaded = True
         return self._repository
+
+    @property
+    def authors(self) -> List[Dict]:
+        return self.repository.metadata.get_authors()
+
+    def get_authors(self, suite_id: str = None) -> List[Dict]:
+        return self.repository.metadata.get_authors(suite_id=suite_id)
 
     @hybrid_property
     def roc_suites(self):
