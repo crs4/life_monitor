@@ -1741,6 +1741,23 @@ components:
         - sub
         - provider
 
+    Author:
+      type: object
+      description: A creator/author of the workflow
+      properties:
+        name:
+          type: string
+          nullable: false
+          description: "Author's first and family name, if available"
+          example: "Josiah Carberry"
+        url:
+          type: string
+          nullable: true
+          description: "A link to the author's page"
+          example: https://orcid.org/0000-0002-1825-0097
+      required:
+        - name
+
     Subscription:
       type: object
       description: A user subscription for a given resource (e.g., workflow).
@@ -2256,6 +2273,13 @@ components:
               $ref: "#/components/schemas/User"
               readOnly: true
               nullable: true
+            authors:
+              description: |
+                List of authors/creators of the workflow
+              type: array
+              readOnly: true
+              items:
+                $ref: "#/components/schemas/Author"
 
     WorkflowVersionDetails:
       allOf:
