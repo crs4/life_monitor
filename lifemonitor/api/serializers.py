@@ -147,6 +147,7 @@ class VersionDetailsSchema(BaseSchema):
     is_latest = fields.Boolean(attribute="is_latest")
     ro_crate = fields.Method("get_rocrate")
     submitter = ma.Nested(UserSchema(only=('id', 'username')), attribute="submitter")
+    authors = fields.List(attribute="authors", cls_or_instance=fields.Dict())
     links = fields.Method('get_links')
 
     class Meta:
@@ -270,7 +271,7 @@ class ListOfWorkflowVersions(ResourceMetadataSchema):
 
     def get_versions(self, obj: models.Workflow):
         return [VersionDetailsSchema(only=("uuid", "version", "ro_crate",
-                                           "submitter", "is_latest")).dump(v)
+                                           "is_latest", "submitter", "authors")).dump(v)
                 for v in obj.versions.values()]
 
 

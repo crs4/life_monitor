@@ -34,7 +34,7 @@ from lifemonitor.api.models.repositories.config import WorkflowRepositoryConfig
 from lifemonitor.api.models.repositories.files import (RepositoryFile,
                                                        WorkflowFile)
 from lifemonitor.exceptions import IllegalStateException
-from lifemonitor.test_metadata import get_roc_suites
+from lifemonitor.test_metadata import get_roc_suites, get_workflow_authors
 from lifemonitor.utils import to_camel_case
 from rocrate.rocrate import Metadata, ROCrate
 
@@ -242,6 +242,9 @@ class WorkflowRepositoryMetadata(ROCrate):
 
     def get_roc_suites(self):
         return get_roc_suites(self)
+
+    def get_authors(self, suite_id: str = None) -> List[Dict]:
+        return get_workflow_authors(self, suite_id=suite_id)
 
     def get_get_roc_suite(self, roc_suite_identifier):
         try:
