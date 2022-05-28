@@ -36,7 +36,7 @@ from lifemonitor.api.models.repositories.base import (
 from lifemonitor.api.models.repositories.files import (RepositoryFile,
                                                        WorkflowFile)
 from lifemonitor.config import BaseConfig
-from lifemonitor.exceptions import (DecodeROCrateException,
+from lifemonitor.exceptions import (DecodeROCrateException, IllegalStateException,
                                     NotValidROCrateException)
 from lifemonitor.utils import extract_zip, walk
 
@@ -103,10 +103,24 @@ class LocalWorkflowRepository(WorkflowRepository):
             if self._file_key_(self._metadata.repository_file) not in self._transient_files['remove'] \
             else None
 
-    def generate_metadata(self) -> WorkflowRepositoryMetadata:
-        metadata = super().generate_metadata()
-        self.add_file(metadata.repository_file)
-        return metadata
+    def generate_metadata(self, workflow_version: str, license: str = "MIT", **kwargs) -> WorkflowRepositoryMetadata:
+        workflow = self.find_workflow()
+        if not workflow:
+            raise IllegalStateException("No workflow found", instance=self)
+        workflow_type = workflow.type
+        logger.debug("Detected workflow type: %r", workflow_type)
+        try:
+            from ..rocrate import generators
+            generators.generate_crate(workflow_type, workflow_version=workflow_version,
+                                      local_repo_path=self.local_path, license=license, **kwargs)
+            self._metadata = WorkflowRepositoryMetadata(self, init=False, exclude=self.exclude,
+                                                        local_path=self._local_path)
+            self.add_file(self._metadata.repository_file)
+            return self._metadata
+        except Exception as e:
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.exception(e)
+            return super().generate_metadata()
 
     def find_file_by_pattern(self, search: str) -> RepositoryFile:
         return next((f for f in self.files if re.search(search, f.name)), None)
