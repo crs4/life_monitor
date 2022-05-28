@@ -103,7 +103,7 @@ class LocalWorkflowRepository(WorkflowRepository):
             if self._file_key_(self._metadata.repository_file) not in self._transient_files['remove'] \
             else None
 
-    def generate_metadata(self, workflow_version: str, license: str = "MIT", **kwargs) -> WorkflowRepositoryMetadata:
+    def generate_metadata(self, workflow_version: str = "main", license: str = "MIT", **kwargs) -> WorkflowRepositoryMetadata:
         workflow = self.find_workflow()
         if not workflow:
             raise IllegalStateException("No workflow found", instance=self)
