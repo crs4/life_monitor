@@ -49,7 +49,7 @@ def get_supported_workflow_types() -> List[str]:
 
 def generate_crate(workflow_type: str, workflow_version: str,
                    local_repo_path: str,
-                   repo_url: str, license: str = "MIT", **kwargs):
+                   repo_url: str = None, license: str = "MIT", **kwargs):
 
     make_crate = get_crate_generator(workflow_type)
     if not make_crate:

@@ -115,12 +115,12 @@ class LocalWorkflowRepository(WorkflowRepository):
                                       local_repo_path=self.local_path, license=license, **kwargs)
             self._metadata = WorkflowRepositoryMetadata(self, init=False, exclude=self.exclude,
                                                         local_path=self._local_path)
-            self.add_file(self._metadata.repository_file)
-            return self._metadata
         except Exception as e:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.exception(e)
-            return super().generate_metadata()
+            self._metadata = super().generate_metadata()
+        self.add_file(self._metadata.repository_file)
+        return self._metadata
 
     def find_file_by_pattern(self, search: str) -> RepositoryFile:
         return next((f for f in self.files if re.search(search, f.name)), None)
