@@ -111,7 +111,13 @@ certs:
 	  echo "$(yellow)WARNING: Using existing JWT keys $(reset)" ; \
 	fi
 
-lifemonitor: docker/lifemonitor.Dockerfile certs app.py gunicorn.conf.py
+lifemonitor_dependencies: ## Download LifeMonitor dependencies
+	@printf "\n$(bold)Downloading RO-Crate generators...$(reset)\n" ; \
+	curl https://raw.githubusercontent.com/crs4/snakemake-crate/main/gen_crate.py \
+		-o lifemonitor/api/models/rocrate/generators/snakemake.py ;\
+	printf "$(done)\n"
+
+lifemonitor: docker/lifemonitor.Dockerfile certs app.py gunicorn.conf.py lifemonitor_dependencies ## Build LifeMonitor Docker image
 	@printf "\n$(bold)Building LifeMonitor Docker image...$(reset)\n" ; \
 	$(build_kit) docker $(build_cmd) $(cache_from_opt) $(cache_to_opt) \
 		  ${sw_version_arg} ${build_number_arg} \
@@ -321,7 +327,7 @@ clean: ## Clean up the working environment (i.e., running services, network, vol
 help: ## Show help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-.PHONY: all images aux_images certs lifemonitor smeeio ro_crates webserver \
+.PHONY: all images aux_images certs lifemonitor lifemonitor_dependencies smeeio ro_crates webserver \
 		start start-dev start-testing start-nginx start-aux-services \
 		run-tests tests \
 		stop-aux-services stop-nginx stop-testing \
