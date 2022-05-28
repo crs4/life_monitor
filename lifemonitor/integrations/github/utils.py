@@ -52,8 +52,8 @@ def match_ref(ref: str, refs: List[str]) -> str:
     return None
 
 
-def crate_branch(repo: Repository, branch_name: str):
-    head = repo.get_commit('HEAD')
+def crate_branch(repo: Repository, branch_name: str, rev: str = None):
+    head = repo.get_commit(rev or repo.rev or 'HEAD')
     logger.debug("HEAD commit: %r", head.sha)
     logger.debug("New target branch ref: %r", f'refs/heads/{branch_name}'.format(**locals()))
     return repo.create_git_ref(ref=f'refs/heads/{branch_name}'.format(**locals()), sha=head.sha)
