@@ -1,0 +1,20 @@
+#### Workflow Configuration ####
+
+# Define the configuration of your workflow. 
+# A configuration is provided as a JSON or YAML file and can be loaded with:
+# ``` configfile: "path/to/config.yaml" ```
+
+# The config file can be used to define a dictionary of configuration parameters and their values. 
+# In the workflow, the configuration is accessible via the global variable config, e.g.
+# ```
+#   rule all:
+#       input:
+#           expand("{sample}.{param}.output.pdf", sample=config["samples"], param=config["yourparam"])
+# ````
+
+# If the configfile statement is not used, the config variable provides an empty array. In addition to the configfile statement, config values can be overwritten via the command line or the api_reference_snakemake, e.g.:
+# ``` 
+#     $ snakemake --config yourparam=1.5
+# ```
+
+# See https://snakemake.readthedocs.io/en/stable/snakefiles/configuration.html for more details.
