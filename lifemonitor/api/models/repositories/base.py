@@ -223,7 +223,7 @@ class WorkflowRepositoryMetadata(ROCrate):
         self.repository = repo
         self._file = None
 
-    def get_workflow(self):
+    def get_workflow(self) -> WorkflowFile:
         if self.mainEntity and self.mainEntity.id:
             lang = self.mainEntity.get("programmingLanguage", None)
             return WorkflowFile(

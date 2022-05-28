@@ -166,7 +166,7 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
             return self.find_remote_file_by_name(name, ref=ref)
         return self.local_repo.find_file_by_name(name)
 
-    def find_remote_workflow(self, ref: str = None) -> WorkflowFile:
+    def find_remote_workflow(self, ref: str = None) -> GitRepositoryFile:
         for e in self.get_contents('.', ref=ref or self.ref):
             for ext, wf_type in WorkflowFile.extension_map.items():
                 if re.search(rf"\.{ext}$", e.name):
@@ -188,7 +188,7 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
                 self.cleanup()
         return self.local_repo.generate_metadata()
 
-    def generate_config(self, ignore_existing=False) -> WorkflowFile:
+    def generate_config(self, ignore_existing=False) -> WorkflowRepositoryConfig:
         current_config = self.config
         if current_config and not ignore_existing:
             raise IllegalStateException("Config exists")

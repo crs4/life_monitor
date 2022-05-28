@@ -69,7 +69,7 @@ class WorkflowRepositoryTemplate(WorkflowRepository):
             self._dirty = False
         return self._files
 
-    def get_workflow_name(self) -> WorkflowFile:
+    def get_workflow_name(self) -> str:
         wext = WorkflowFile.get_workflow_extension(self.name)
         if wext:
             return f"workflow.{WorkflowFile.get_workflow_extension(self.name)}"
