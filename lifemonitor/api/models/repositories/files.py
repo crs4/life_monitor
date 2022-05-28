@@ -31,31 +31,6 @@ from flask import render_template_string
 logger = logging.getLogger(__name__)
 
 
-class WorkflowFile():
-
-    extension_map = {
-        'ga': 'galaxy',
-        'smk': 'snakemake',
-        'ipynb': 'jupyter',
-        'sh': 'bash',
-    }
-
-    def __init__(self, path: str, type_: str, name: str = None) -> None:
-        self.path = path
-        self.type = type_
-        self.name = name
-
-    def __repr__(self) -> str:
-        return f"Workflow \"{self.name}\" (type: {self.type}, path: {self.path})"
-
-    @classmethod
-    def get_workflow_extension(cls, workflow_type: str) -> str:
-        for ext, wtype in cls.extension_map.items():
-            if wtype == workflow_type:
-                return ext
-        return None
-
-
 class RepositoryFile():
 
     def __init__(self, repository_path: str, name: str,
@@ -92,6 +67,26 @@ class RepositoryFile():
     def get_type(filename: str) -> str:
         parts = os.path.splitext(filename) if filename else None
         return parts[1].replace('.', '') if parts and len(parts) > 0 else None
+
+
+class WorkflowFile(RepositoryFile):
+
+    extension_map = {
+        'ga': 'galaxy',
+        'smk': 'snakemake',
+        'ipynb': 'jupyter',
+        'sh': 'bash',
+    }
+
+    def __repr__(self) -> str:
+        return f"Workflow \"{self.name}\" (type: {self.type}, path: {self.path})"
+
+    @classmethod
+    def get_workflow_extension(cls, workflow_type: str) -> str:
+        for ext, wtype in cls.extension_map.items():
+            if wtype == workflow_type:
+                return ext
+        return None
 
 
 class TemplateRepositoryFile(RepositoryFile):
