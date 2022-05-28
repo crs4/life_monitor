@@ -184,6 +184,15 @@ class WorkflowRepository():
             raise IllegalStateException(detail="Missing RO Crate metadata")
         return self.metadata.write_zip(target_path)
 
+    def write(self, target_path: str):
+        for f in self.files:
+            base_path = os.path.join(target_path, f.dir)
+            file_path = os.path.join(base_path, f.name)
+            logger.debug("Writing file: %r", file_path)
+            os.makedirs(base_path, exist_ok=True)
+            with open(file_path, "w") as out:
+                out.write(f.get_content())
+
 
 class IssueCheckResult:
 
