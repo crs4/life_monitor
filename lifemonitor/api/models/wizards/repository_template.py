@@ -40,7 +40,7 @@ def get_files(wizard: RepositoryTemplateWizard, repo: WorkflowRepository, target
     workflow_description = wizard.workflow_description.answer
     workflow_type = wizard.workflow_type.answer
 
-    logger.debug("Preparing template for workflow: %r (type: %r)", workflow_title, workflow_type)
+        'workflow_name': workflow_name, 'workflow_description': workflow_description,
 
     repo_template = WorkflowRepositoryTemplate("galaxy", local_path=target_path, data={
         'workflow_title': workflow_title, 'workflow_description': workflow_description}
