@@ -158,7 +158,8 @@ class WorkflowRepository():
         return self.__compare__(self.files, repo.files, exclude=exclude)
 
     def generate_metadata(self) -> WorkflowRepositoryMetadata:
-        self._metadata = WorkflowRepositoryMetadata(self, init=True, exclude=self.exclude)
+        self._metadata = WorkflowRepositoryMetadata(self, init=True, exclude=self.exclude,
+                                                    local_path=self._local_path)
         self._metadata.write(self._local_path)
         return self._metadata
 
