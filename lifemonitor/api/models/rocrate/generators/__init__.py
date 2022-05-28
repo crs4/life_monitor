@@ -77,7 +77,7 @@ def generate_crate(workflow_type: str, workflow_version: str,
 def get_crate_generator(workflow_type: str):
     mod_name = __modules__.get(workflow_type, None)
     if not mod_name:
-        raise NotImplemented('No RO-Crate generator for workflow type "%s"', workflow_type)
+        raise NotImplementedError('No RO-Crate generator for workflow type "%s"', workflow_type)
     try:
         mod = import_module(mod_name)
         make_crate = getattr(mod, "make_crate")
