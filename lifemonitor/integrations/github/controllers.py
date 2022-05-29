@@ -64,26 +64,41 @@ def ping(event: GithubEvent):
 
 def refresh_workflow_builds(event: GithubEvent):
     try:
+
         logger.debug("Workflow run event: %r", event)
-        repository = event['payload']['repository']
-        logger.debug("Workflow repository: %r", repository)
-        workflow = event['payload']['workflow']
-        logger.debug("Workflow: %r", workflow)
-        workflow_run = event['payload']['workflow_run']
-        logger.debug("Workflow run: %r", workflow_run)
-        workflow_name = workflow['path'].replace('.github/workflows/', '')
+
+        installation = event.installation
+        logger.debug("Installation: %r", installation)
+
+        repo_info = event.repository_reference
+        logger.debug("Repo reference: %r", repo_info)
+
+        repo: GithubWorkflowRepository = repo_info.repository
+        logger.debug("Repository: %r", repo)
+
+        github_workflow = event.workflow
+        logger.debug("Github Workflow: %r (name: %s, path: %s)",
+                     github_workflow, github_workflow.name, github_workflow.path)
+
+        github_workflow_run = event.workflow_run
+        logger.debug("Github Workflow: %r", github_workflow_run)
+
+        workflow_name = github_workflow.path.replace('.github/workflows/', '')
         logger.debug("Workflow NAME: %r", workflow_name)
-        workflow_resource = f"repos/{repository['full_name']}/actions/workflows/{workflow_name}"
+
+        workflow_resource = f"repos/{repo.full_name}/actions/workflows/{workflow_name}"
         logger.debug("Workflow Resource: %r", workflow_resource)
         instances = TestInstance.find_by_resource(workflow_resource)
         logger.debug("Instances: %r", instances)
-        with cache.transaction():
+        with cache.cache.transaction():
             for i in instances:
                 i.get_test_builds(limit=10)
-                i.get_test_build(workflow_run['id'])
+                i.get_test_build(github_workflow_run.id)
                 i.last_test_build
         return f"Test instance related with resource '{workflow_resource}' updated", 200
     except Exception as e:
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.exception(e)
         logger.error(e)
         return "Internal Error", 500
 
