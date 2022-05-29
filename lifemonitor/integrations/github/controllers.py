@@ -29,13 +29,12 @@ from flask_apscheduler import APScheduler
 from lifemonitor import cache
 from lifemonitor.api import serializers
 from lifemonitor.api.models import WorkflowRegistry
-from lifemonitor.api.models.issues import WorkflowRepositoryIssue
 from lifemonitor.api.models.issues.common.files.missing import \
     MissingWorkflowFile
 from lifemonitor.api.models.registries.settings import RegistrySettings
 from lifemonitor.api.models.repositories.github import GithubWorkflowRepository
 from lifemonitor.api.models.testsuites.testinstance import TestInstance
-from lifemonitor.api.models.wizards import QuestionStep, UpdateStep, Wizard
+from lifemonitor.api.models.wizards import QuestionStep, UpdateStep
 from lifemonitor.api.models.workflows import WorkflowVersion
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 from lifemonitor.integrations.github import pull_requests
