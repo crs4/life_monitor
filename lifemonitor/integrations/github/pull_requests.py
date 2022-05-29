@@ -31,16 +31,32 @@ from lifemonitor.api.models.repositories.github import \
 from lifemonitor.exceptions import IllegalStateException
 from lifemonitor.integrations.github.app import LifeMonitorGithubApp
 
+from github.GithubException import GithubException
 from github.Issue import Issue
 from github.PullRequest import PullRequest
 from github.Repository import Repository
-from github.GithubException import GithubException
 
 from . import issues
 from .utils import crate_branch, delete_branch
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
+
+
+class GithubPullRequest(PullRequest):
+
+    def __init__(self, requester, headers, attributes, completed):
+        super().__init__(requester, headers, attributes, completed)
+
+    def as_repository_issue(self) -> issues.WorkflowRepositoryIssue:
+        issue = None
+        issue_type = WorkflowRepositoryIssue.from_string(self.title)
+        if issue_type:
+            issue: issues.WorkflowRepositoryIssue = issue_type()
+        return issue
+
+    def as_issue(self) -> issues.GithubIssue:
+        return issues.GithubIssue(self._requester, self.raw_headers, super().as_issue().raw_data, True)
 
 
 def find_pull_request_by_issue(repo: Repository, issue: Union[str, WorkflowRepositoryIssue]) -> PullRequest:

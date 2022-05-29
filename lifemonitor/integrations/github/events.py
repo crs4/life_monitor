@@ -34,6 +34,7 @@ from lifemonitor.integrations.github.app import (LifeMonitorGithubApp,
                                                  LifeMonitorInstallation)
 from lifemonitor.integrations.github.issues import (GithubIssue,
                                                     GithubIssueComment)
+from lifemonitor.integrations.github.pull_requests import GithubPullRequest
 
 from github.PullRequest import PullRequest
 
@@ -167,9 +168,9 @@ class GithubEvent():
             GithubIssue(self.installation._requester, {}, self.payload['issue'], True)
 
     @property
-    def pull_request(self) -> Optional[PullRequest]:
+    def pull_request(self) -> Optional[GithubPullRequest]:
         return None if 'pull_request' not in self.payload else \
-            PullRequest(self.installation._requester, {}, self.payload['pull_request'], True)
+            GithubPullRequest(self.installation._requester, {}, self.payload['pull_request'], True)
 
     @property
     def comment(self) -> Optional[GithubIssueComment]:
