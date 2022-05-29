@@ -35,11 +35,17 @@ class GithubWizard(Wizard):
 
     @classmethod
     def from_event(cls, event) -> Wizard:
-        issue: GithubIssue = event.issue
+        # detect the current issue from the Github event
+        issue: GithubIssue = event.issue or event.pull_request.as_issue() if event.pull_request else None
+        if not issue:
+            logger.debug("Unable to find an issue associated to the event: %r", event)
+            return None
+
+        # map the Github issue to a LifeMonitor issue
         repo_issue = issue.as_repository_issue()
-        logger.warning("The current github issue: %r", event.issue)
+        logger.warning("The current github issue: %r", issue)
         logger.warning("Issues comments: %r", issue.comments)
-        logger.warning("LifeMonitor issue: %r", event.issue.as_repository_issue())
+        logger.warning("LifeMonitor issue: %r", issue.as_repository_issue())
         logger.warning("Issue comment: %r --> %r", event.comment, event.comment.body if event.comment else None)
 
         # detect wizard type
