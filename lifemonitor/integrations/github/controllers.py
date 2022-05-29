@@ -610,11 +610,14 @@ def handle_event():
         return "Signature Invalid", 401
     event = GithubEvent.from_request()
     try:
-        if event.repository_reference.branch and event.repository_reference.branch.startswith('lifemonitor-issue'):
+        branch = event.repository_reference.branch
+        if branch and (branch.startswith('lifemonitor-issue') or branch.startswith('wizard-step')):
             msg = f"Nothing to do for the event '{event.type}' on branch {event.repository_reference.branch}"
             logger.debug(msg)
             return msg, 204
     except ValueError as e:
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.exception(e)
         logger.debug(str(e))
     event_handler = __event_handlers__.get(event.type, None)
     logger.debug("Event: %r", event)
