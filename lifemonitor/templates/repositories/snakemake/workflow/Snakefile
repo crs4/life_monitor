@@ -19,4 +19,4 @@ rule all:
     log:
         "logs/hello.log"
     script:
-	    "scripts/hello.py"
+        "scripts/hello.py"
