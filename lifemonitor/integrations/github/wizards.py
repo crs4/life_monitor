@@ -36,7 +36,7 @@ class GithubWizard(Wizard):
     @classmethod
     def from_event(cls, event) -> Wizard:
         # detect the current issue from the Github event
-        issue: GithubIssue = event.issue or event.pull_request.as_issue() if event.pull_request else None
+        issue: GithubIssue = event.issue or (event.pull_request.as_issue() if event.pull_request else None)
         if not issue:
             logger.debug("Unable to find an issue associated to the event: %r", event)
             return None
