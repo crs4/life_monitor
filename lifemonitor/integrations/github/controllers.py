@@ -353,6 +353,42 @@ def push(event: GithubEvent):
         return "Internal Error", 500
 
 
+def __delete_support_branches__(event: GithubEvent):
+    repo = event.repository_reference
+    logger.debug("Repo reference: %r", repo)
+
+    # detect the current LifeMonitor issue
+    issue_or_pullrequest = event.issue or event.pull_request
+    issue = issue_or_pullrequest.as_repository_issue() if issue_or_pullrequest else None
+    if not issue:
+        logger.warning("No support branch to delete since no LifeMonitor issue has been detected")
+        return
+
+    # initialize support branches to delete
+    support_branches = [issue.id]
+
+    # check if the current issue is associated to a wizard
+    wizard = GithubWizard.from_event(event)
+    logger.debug("Detected wizard: %r", wizard)
+    if wizard:
+        current_step = wizard.current_step
+        logger.debug("Detected wizard step: %r", current_step)
+        if current_step:
+            support_branches.append(current_step.id)
+
+    # delete support branches
+    logger.warning("Support branches to delete: %r", support_branches)
+    for support_branch in support_branches:
+        try:
+            logger.debug("Trying to delete support branch: %s ...", support_branch)
+            delete_branch(event.repository_reference.repository, support_branch)
+            logger.debug("Support branch %s deleted", support_branch)
+        except Exception as e:
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.exception(e)
+            logger.warn("Unable to delete support branch %s", support_branch)
+
+
 def pull_request(event: GithubEvent):
     logger.debug("Event: %r", event)
 
@@ -373,20 +409,8 @@ def pull_request(event: GithubEvent):
     logger.debug("HEAD of this PR: %s", ref)
 
     # delete support branch of closed issues
-    support_branch = ref
     if event.action == "closed":
-        support_branches = []
-        support_branches.extend([b.id for b in WorkflowRepositoryIssue.all()])
-        support_branches.extend([s.id for s in w.steps if isinstance(s, UpdateStep)] for w in Wizard.all())
-        if support_branch in support_branches:
-            try:
-                logger.debug("Trying to delete support branch: %s ...", support_branch)
-                delete_branch(event.repository_reference.repository, support_branch)
-                logger.debug("Support branch %s deleted", support_branch)
-            except Exception as e:
-                if logger.isEnabledFor(logging.DEBUG):
-                    logger.exception(e)
-                logger.warn("Unable to delete support branch %s", support_branch)
+        __delete_support_branches__(event)
 
 
 def issues(event: GithubEvent):
@@ -401,7 +425,7 @@ def issues(event: GithubEvent):
 
     # delete support branch of closed issues
     if event.action == "closed":
-        delete_branch(event.repository_reference.repository, issue)
+        __delete_support_branches__(event)
 
     # check the author of the current issue
     if issue.user.login != event.application.bot:
