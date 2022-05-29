@@ -36,7 +36,8 @@ from lifemonitor.integrations.github.issues import (GithubIssue,
                                                     GithubIssueComment)
 from lifemonitor.integrations.github.pull_requests import GithubPullRequest
 
-from github.PullRequest import PullRequest
+from github.Workflow import Workflow
+from github.WorkflowRun import WorkflowRun
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
@@ -179,6 +180,16 @@ class GithubEvent():
             return None if 'comment' not in self.payload else \
                 GithubIssueComment(self.installation._requester, {}, self.payload['comment'], True, issue=issue)
         return None
+
+    @property
+    def workflow(self) -> Optional[Workflow]:
+        return None if 'workflow' not in self.payload else \
+            Workflow(self.installation._requester, {}, self.payload['workflow'], True)
+
+    @property
+    def workflow_run(self) -> Optional[WorkflowRun]:
+        return None if 'workflow_run' not in self.payload else \
+            WorkflowRun(self.installation._requester, {}, self.payload['workflow_run'], True)
 
     @staticmethod
     def from_request(request: Request = None) -> GithubEvent:
