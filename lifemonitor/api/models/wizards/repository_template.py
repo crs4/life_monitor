@@ -80,8 +80,8 @@ class RepositoryTemplateWizard(Wizard):
     workflow_title = QuestionStep("Choose a name for your workflow?")
     workflow_description = QuestionStep("Type a description for your workflow?")
     workflow_type = QuestionStep("Which type of workflow are going to host on this repository?", options=["galaxy", "snakemake"])
-    workflow_template = UpdateStep("Update you Workflow RO-Crate repository",
-                                   description="According to the recommended layout for workflow RO-Crates, you should add the following files",
+    workflow_template = UpdateStep("Repository initialisation",
+                                   description="Merge this PR to initialiase your Workflow Testing RO-Crate repository",
                                    callback=get_files)
 
     steps = [workflow_title, workflow_description, workflow_type, workflow_template]
