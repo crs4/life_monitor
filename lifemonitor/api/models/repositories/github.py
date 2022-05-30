@@ -142,13 +142,14 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
             return self.remote_metadata
         return self.local_repo.metadata
 
-    def find_remote_file_by_pattern(self, search: str, ref: str = None, path: str = ".") -> GitRepositoryFile:
+    def find_remote_file_by_pattern(self, search: str, ref: str = None,
+                                    path: str = ".", include_subdirs: bool = False) -> GitRepositoryFile:
         for e in self.get_contents(path, ref=ref or self.ref):
             logger.debug("Name: %r -- type: %r", e.name, e.type)
             c_file = None
-            if e.type == "dir":
+            if include_subdirs and e.type == "dir":
                 c_file = self.find_remote_file_by_pattern(search, ref=ref, path=f"{path}/{e.name}")
-            elif re.search(search, e.name):
+            if re.search(search, e.name):
                 c_file = e
             if c_file:
                 return GitRepositoryFile(c_file)
@@ -159,13 +160,14 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
             return self.find_remote_file_by_pattern(search, ref=ref)
         return self.local_repo.find_file_by_pattern(search)
 
-    def find_remote_file_by_name(self, name: str, ref: str = None, path: str = '.') -> GitRepositoryFile:
+    def find_remote_file_by_name(self, name: str, ref: str = None,
+                                 path: str = '.', include_subdirs: bool = False) -> GitRepositoryFile:
         for e in self.get_contents(path, ref=ref or self.ref):
             logger.debug("Name: %r -- type: %r", e.name, e.type)
             c_file = None
-            if e.type == "dir":
+            if include_subdirs and e.type == "dir":
                 c_file = self.find_remote_file_by_name(name, ref=ref, path=f"{path}/{e.name}")
-            elif e.name == name:
+            if e.name == name:
                 c_file = e
             if c_file:
                 return GitRepositoryFile(c_file)
