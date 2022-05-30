@@ -1,4 +1,3 @@
-
 # Copyright (c) 2020-2021 CRS4
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,18 +20,19 @@
 
 from __future__ import annotations
 
-from .base import (IssueCheckResult, WorkflowRepository,
-                   WorkflowRepositoryMetadata)
-from .config import WorkflowRepositoryConfig
-from .files import RepositoryFile, TemplateRepositoryFile, WorkflowFile
-from .github import (GithubWorkflowRepository,
-                     InstallationGithubWorkflowRepository,
-                     RepoCloneContextManager)
-from .local import LocalWorkflowRepository, ZippedWorkflowRepository
+import logging
 
-__all__ = [
-    "RepositoryFile", "WorkflowRepositoryConfig", "WorkflowFile", "TemplateRepositoryFile",
-    "WorkflowRepository", "WorkflowRepositoryMetadata", "IssueCheckResult",
-    "LocalWorkflowRepository", "ZippedWorkflowRepository",
-    "InstallationGithubWorkflowRepository", "GithubWorkflowRepository", "RepoCloneContextManager"
-]
+from lifemonitor.api.models.repositories.files.workflows import WorkflowFile
+
+
+# set module level logger
+logger = logging.getLogger(__name__)
+
+
+class SnakemakeWorkflowFile(WorkflowFile):
+
+    FILE_PATTERNS = (
+        ("Snakefile", "", ""),
+        ("Snakefile", "", "workflow"),
+        ("Snakefile", "", "workflows")
+    )
