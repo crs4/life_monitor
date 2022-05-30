@@ -29,8 +29,6 @@ from flask_apscheduler import APScheduler
 from lifemonitor import cache
 from lifemonitor.api import serializers
 from lifemonitor.api.models import WorkflowRegistry
-from lifemonitor.api.models.issues.common.files.missing import \
-    MissingWorkflowFile
 from lifemonitor.api.models.registries.settings import RegistrySettings
 from lifemonitor.api.models.repositories.github import GithubWorkflowRepository
 from lifemonitor.api.models.testsuites.testinstance import TestInstance
