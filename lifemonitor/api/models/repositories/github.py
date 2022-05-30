@@ -142,11 +142,16 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
             return self.remote_metadata
         return self.local_repo.metadata
 
-    def find_remote_file_by_pattern(self, search: str, ref: str = None) -> GitRepositoryFile:
-        for e in self.get_contents('.', ref=ref or self.ref):
+    def find_remote_file_by_pattern(self, search: str, ref: str = None, path: str = ".") -> GitRepositoryFile:
+        for e in self.get_contents(path, ref=ref or self.ref):
             logger.debug("Name: %r -- type: %r", e.name, e.type)
-            if re.search(search, e.name):
-                return GitRepositoryFile(e)
+            c_file = None
+            if e.type == "dir":
+                c_file = self.find_remote_file_by_pattern(search, ref=ref, path=f"{path}/{e.name}")
+            elif re.search(search, e.name):
+                c_file = e
+            if c_file:
+                return GitRepositoryFile(c_file)
         return None
 
     def find_file_by_pattern(self, search: str, ref: str = None) -> GitRepositoryFile:
@@ -154,11 +159,16 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
             return self.find_remote_file_by_pattern(search, ref=ref)
         return self.local_repo.find_file_by_pattern(search)
 
-    def find_remote_file_by_name(self, name: str, ref: str = None) -> GitRepositoryFile:
-        for e in self.get_contents('.', ref=ref or self.ref):
+    def find_remote_file_by_name(self, name: str, ref: str = None, path: str = '.') -> GitRepositoryFile:
+        for e in self.get_contents(path, ref=ref or self.ref):
             logger.debug("Name: %r -- type: %r", e.name, e.type)
-            if e.name == name:
-                return GitRepositoryFile(e)
+            c_file = None
+            if e.type == "dir":
+                c_file = self.find_remote_file_by_name(name, ref=ref, path=f"{path}/{e.name}")
+            elif e.name == name:
+                c_file = e
+            if c_file:
+                return GitRepositoryFile(c_file)
         return None
 
     def find_file_by_name(self, name: str, ref: str = None) -> GitRepositoryFile:
@@ -166,7 +176,16 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
             return self.find_remote_file_by_name(name, ref=ref)
         return self.local_repo.find_file_by_name(name)
 
+    def find_remote_workflow(self, ref: str = None, path: str = '.') -> GitRepositoryFile:
+        for e in self.get_contents(path, ref=ref or self.ref):
+            logger.debug("Checking: %r (type: %s)", e.name, e.type)
+            if e.type == 'dir':
+                wf = self.find_remote_workflow(ref=ref, path=f"{path}/{e.name}")
+            else:
                 wf = WorkflowFile.is_workflow(GitRepositoryFile(e))
+            logger.debug("Is workflow: %r", wf)
+            if wf:
+                return wf
         return None
 
     def find_workflow(self, ref: str = None) -> WorkflowFile:
