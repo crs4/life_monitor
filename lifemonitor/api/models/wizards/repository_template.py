@@ -21,6 +21,7 @@
 from __future__ import annotations
 
 import logging
+import os
 
 from lifemonitor.api.models.issues.common.files.missing import \
     MissingWorkflowFile
@@ -42,7 +43,18 @@ def get_files(wizard: RepositoryTemplateWizard, repo: GithubWorkflowRepository, 
 
     logger.debug("Preparing template for workflow: %r (type: %r)", workflow_name, workflow_type)
 
-    repo_template = WorkflowRepositoryTemplate(workflow_type, local_path=target_path, data={
+    # Temporary workaround to assign the proper name
+    # to the workflow and its related entities. Generators do not support
+    # the workflow name as input: they use the root name as workflow name.
+    # TODO: remove this fix when generators support
+    # the workflow_name as input
+    try:
+        workflow_path = os.path.join(target_path, workflow_name)
+        os.makedirs(workflow_path)
+    except Exception:
+        workflow_path = target_path
+
+    repo_template = WorkflowRepositoryTemplate(workflow_type, local_path=workflow_path, data={
         'workflow_name': workflow_name, 'workflow_description': workflow_description,
         'workflow_version': repo.default_branch,
         'repo_url': repo.html_url, 'repo_full_name': repo.full_name, 'repo_branch': repo.default_branch
