@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 from typing import Tuple
 
 # set module level logger
@@ -60,6 +61,12 @@ class RepositoryFile():
         if self.repository_path:
             dir_path = os.path.abspath(os.path.join(self.repository_path, dir_path))
         return os.path.join(dir_path, self.name)
+
+    def match(self, name: str, path: str = '.') -> bool:
+        return self.name == name and self.has_path(path)
+
+    def has_path(self, path) -> bool:
+        return re.sub('\./?', '', self.dir) == re.sub('\./?', '', path)
 
     def get_content(self, binary_mode: bool = False):
         if not self._content and self.dir:

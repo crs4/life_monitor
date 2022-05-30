@@ -70,11 +70,11 @@ class WorkflowRepository():
         return self._metadata
 
     @abstractclassmethod
-    def find_file_by_pattern(self, search: str) -> RepositoryFile:
+    def find_file_by_pattern(self, search: str, path: str = '.') -> RepositoryFile:
         pass
 
     @abstractclassmethod
-    def find_file_by_name(self, name: str) -> RepositoryFile:
+    def find_file_by_name(self, name: str, path: str = '.') -> RepositoryFile:
         pass
 
     @abstractclassmethod
