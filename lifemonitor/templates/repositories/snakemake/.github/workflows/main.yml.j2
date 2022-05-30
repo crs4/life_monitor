@@ -16,7 +16,7 @@ jobs:
         uses: github/super-linter@v4
         env:
           VALIDATE_ALL_CODEBASE: false
-          DEFAULT_BRANCH: {{ repo_branch }}
+          DEFAULT_BRANCH: {% raw %}${GITHUB_REF#refs/heads/}{% endraw %}
           GITHUB_TOKEN: {% raw %}${{ secrets.GITHUB_TOKEN }}{% endraw %}
           VALIDATE_SNAKEMAKE_SNAKEFMT: true
 
