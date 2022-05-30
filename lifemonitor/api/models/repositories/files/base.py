@@ -66,7 +66,7 @@ class RepositoryFile():
         return self.name == name and self.has_path(path)
 
     def has_path(self, path) -> bool:
-        return re.sub('\./?', '', self.dir) == re.sub('\./?', '', path)
+        return re.sub(r'\./?', '', self.dir) == re.sub(r'\./?', '', path)
 
     def get_content(self, binary_mode: bool = False):
         if not self._content and self.dir:
