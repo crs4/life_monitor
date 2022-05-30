@@ -451,17 +451,13 @@ def issues(event: GithubEvent):
         repository_issue = issue.as_repository_issue()
         logger.debug("LifeMonitor issue: %r", repository_issue)
         if repository_issue:
-            logger.debug("Entering: %r", isinstance(repository_issue, MissingWorkflowFile))
-            if isinstance(repository_issue, MissingWorkflowFile):
-                logger.debug("Missing workflow file issue")
-
-                wizard = GithubWizard.from_event(event)
-                logger.debug("Current wizard: %r", wizard)
-                if wizard:
-                    if not wizard.current_step:
-                        next_step = wizard.get_next_step()
-                        logger.debug("Next step: %r", next_step)
-                        wizard.io_handler.write(next_step, append_help=True)
+            wizard = GithubWizard.from_event(event)
+            logger.debug("Current wizard: %r", wizard)
+            if wizard:
+                if not wizard.current_step:
+                    next_step = wizard.get_next_step()
+                    logger.debug("Next step: %r", next_step)
+                    wizard.io_handler.write(next_step, append_help=True)
 
     return "No action", 204
 
