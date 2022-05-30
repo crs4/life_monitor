@@ -166,18 +166,14 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
             return self.find_remote_file_by_name(name, ref=ref)
         return self.local_repo.find_file_by_name(name)
 
-    def find_remote_workflow(self, ref: str = None) -> GitRepositoryFile:
-        for e in self.get_contents('.', ref=ref or self.ref):
-            for ext, wf_type in WorkflowFile.extension_map.items():
-                if re.search(rf"\.{ext}$", e.name):
-                    return GitRepositoryFile(e, type=wf_type)
+                wf = WorkflowFile.is_workflow(GitRepositoryFile(e))
         return None
 
     def find_workflow(self, ref: str = None) -> WorkflowFile:
-        logger.debug("Local repo: %r", not self.local_repo)
-        if not self.local_repo:
-            return self.find_remote_workflow(ref=ref)
-        return self.local_repo.find_workflow()
+        logger.debug("Local repo: %r", self.local_repo)
+        if self.local_repo:
+            return self.local_repo.find_workflow()
+        return self.find_remote_workflow(ref=ref)
 
     def generate_metadata(self):
         if self._local_repo:
