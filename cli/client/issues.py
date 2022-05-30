@@ -132,15 +132,19 @@ def check(config, repository, output_path=None):
 
 @issues_group.command(help="Test an issue type")
 @click.argument('issue_file', type=click.Path(exists=True))
+@click.option('-c', '--issue-class', type=str, multiple=True, default=None, )
 @repository_arg
 @output_path_arg
 @click.pass_obj
-def test(config, issue_file, repository, output_path=None):
+def test(config, issue_file, issue_class, repository, output_path=None):
     try:
+        logger.debug("issue classes: %r", issue_class)
         init_output_path(output_path=output_path)
         logger.debug(issue_file)
         repo = get_repository(repository, local_path=output_path)
-        issues_list = [_() for _ in load_issue(issue_file)]
+        file_issues = load_issue(issue_file)
+        logger.debug("File issues: %r", [_.name for _ in file_issues])
+        issues_list = [_() for _ in file_issues if not issue_class or _.__name__ in issue_class]
         logger.debug("Issue: %r", issues_list)
         logger.debug("Repository: %r", repo)
         # Configure Table
