@@ -97,16 +97,17 @@ def __prepare_pr_head__(repo: InstallationGithubWorkflowRepository,
         except Exception as e:
             raise IllegalStateException("Unable to prepare support branch for PR %r: %r" % (head, str(e)))
         for change in files:
-            current_file_version = repo.find_remote_file_by_name(change.name, ref=head)
-            if current_file_version:
-                logger.debug("Found a previous version of the file: %r", current_file_version)
-                if allow_update:
-                    repo.update_file(os.path.join(change.dir, change.name),
-                                     f"Update {change.name}", change.get_content(),
-                                     sha=current_file_version.sha, branch=head)
-            else:
+            try:
                 repo.create_file(os.path.join(change.dir, change.name),
                                  f"Add {change.name}", change.get_content(), branch=head)
+            except Exception:
+                if allow_update:
+                    current_file_version = repo.find_remote_file_by_name(change.name, ref=head)
+                    logger.debug("Found a previous version of the file: %r", current_file_version)
+                    if current_file_version:
+                        repo.update_file(os.path.join(change.dir, change.name),
+                                         f"Update {change.name}", change.get_content(),
+                                         sha=current_file_version.sha, branch=head)
         return head
     except KeyError as e:
         raise ValueError(f"Issue not valid: {str(e)}")
