@@ -25,8 +25,9 @@ import logging
 import os
 from typing import Dict, List
 
-import yaml
 import lifemonitor.api.models as models
+import yaml
+
 from .files import RepositoryFile, TemplateRepositoryFile
 
 # set module level logger
