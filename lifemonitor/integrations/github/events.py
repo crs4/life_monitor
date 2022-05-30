@@ -94,6 +94,10 @@ class GithubEvent():
         return self._headers
 
     @property
+    def pusher(self) -> str:
+        return self._raw_data['pusher']['name'] if 'pusher' in self._raw_data else None
+
+    @property
     def sender(self) -> OAuthIdentity:
         if not self._sender:
             # search user identity
