@@ -24,7 +24,7 @@ import logging
 import os
 
 from lifemonitor.api.models.issues.common.files.missing import \
-    MissingWorkflowFile
+    NotInitialisedRepositoryIssue
 from lifemonitor.api.models.repositories.github import GithubWorkflowRepository
 from lifemonitor.api.models.repositories.templates import \
     WorkflowRepositoryTemplate
@@ -75,7 +75,7 @@ class RepositoryTemplateWizard(Wizard):
     title = "Repository Template"
     description = ""
     labels = ['enhancement']
-    issue = MissingWorkflowFile
+    issue = NotInitialisedRepositoryIssue
 
     workflow_title = QuestionStep("Choose a name for your workflow?")
     workflow_description = QuestionStep("Type a description for your workflow?")

@@ -43,6 +43,16 @@ class MissingConfigFile(WorkflowRepositoryIssue):
         return False
 
 
+class NotInitialisedRepositoryIssue(WorkflowRepositoryIssue):
+    name = "Repository not intialised"
+    description = "No workflow and crate metadata found on this repository."
+    labels = ['invalid', 'enhancement', 'config']
+    depends_on = [MissingConfigFile]
+
+    def check(self, repo: WorkflowRepository) -> bool:
+        return repo.find_workflow() is None and repo.metadata is None
+
+
 class MissingWorkflowFile(WorkflowRepositoryIssue):
     name = "Missing workflow file"
     description = "No workflow found on this repository.<br>"\
