@@ -118,14 +118,19 @@ def __prepare_pr_head__(repo: InstallationGithubWorkflowRepository,
 def create_pull_request_from_github_issue(repo: InstallationGithubWorkflowRepository,
                                           identifier: str,
                                           issue: Issue, files: List[RepositoryFile],
-                                          allow_update: bool = True):
+                                          allow_update: bool = True,
+                                          create_comment: str = None, update_comment: str = None):
     assert isinstance(repo, Repository), repo
     assert isinstance(issue, Issue), issue
     try:
-        head = __prepare_pr_head__(repo, identifier, files, allow_update=allow_update)
         pr = find_pull_request_by_title(repo, issue.id)
+        if pr and update_comment:
+            issue.create_comment(update_comment)
+        head = __prepare_pr_head__(repo, identifier, files, allow_update=allow_update)
+        logger.debug("HEAD: %r -> %r", head, repo)
         if not pr:
-            logger.debug("HEAD: %r -> %r", head, repo)
+            if create_comment:
+                issue.create_comment(create_comment)
             pr = repo.create_pull(issue=issue,
                                   base=repo.ref or repo.default_branch, head=head)
         return pr

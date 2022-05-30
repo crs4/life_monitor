@@ -541,11 +541,13 @@ def issue_comment(event: GithubEvent):
                         logger.debug("REV: %r", repo.rev)
                         logger.debug("DEFAULT BRANCH: %r", repo.default_branch)
                         if not pull_requests.find_pull_request_by_title(repo, next_step.title):
-                            issue.create_comment(next_step.as_string())
+                            issue.create_comment(
+                                f"<b>{next_step.title}</b><br>Please wait, collecting files...")
                             with TemporaryDirectory(dir='/tmp') as target_path:
                                 pr = pull_requests.create_pull_request_from_github_issue(
                                     repo, next_step.id, issue,
-                                    next_step.get_files(repo, target_path=target_path), True)
+                                    next_step.get_files(repo, target_path=target_path), True,
+                                    create_comment=next_step.as_string())
                                 if not pr:
                                     logger.warning("Unable to create PR for issue: %r", issue)
                                 # Uncomment to create a separate PR to propose changes
