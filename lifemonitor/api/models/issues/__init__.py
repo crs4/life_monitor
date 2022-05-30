@@ -25,11 +25,11 @@ import glob
 import inspect
 import logging
 import os
-from functools import cmp_to_key
 from hashlib import sha1
 from importlib import import_module
 from typing import List, Type
 
+import networkx as nx
 from lifemonitor.api.models import repositories
 from lifemonitor.utils import to_snake_case
 
@@ -131,14 +131,6 @@ class WorkflowRepositoryIssue():
                                     description=description, depends_on=depends_on, labels=labels)
 
 
-def _compare_issues(issue1: WorkflowRepositoryIssue, issue2: WorkflowRepositoryIssue):
-    if len(issue1.depends_on) == 0 or issue1 in issue2.depends_on:
-        return -1
-    if len(issue2.depends_on) == 0 or issue2 in issue1.depends_on:
-        return 1
-    return 0
-
-
 def load_issue(issue_file) -> List[WorkflowRepositoryIssue]:
     issues = {}
     base_module = '{}'.format(os.path.join(os.path.dirname(issue_file)).replace('/', '.'))
@@ -156,6 +148,7 @@ def load_issue(issue_file) -> List[WorkflowRepositoryIssue]:
 def find_issue_types(path: str = None) -> List[WorkflowRepositoryIssue]:
     errors = []
     issues = {}
+    g = nx.DiGraph()
     current_path = path or os.path.dirname(__file__)
     for dirpath, dirnames, filenames in os.walk(current_path):
         base_path = dirpath.replace(f"{current_path}/", '')
@@ -173,7 +166,13 @@ def find_issue_types(path: str = None) -> List[WorkflowRepositoryIssue]:
                             and inspect.getmodule(obj) == mod \
                             and obj != WorkflowRepositoryIssue \
                                 and issubclass(obj, WorkflowRepositoryIssue):
-                            issues[obj.name] = obj
+                            issues[obj.__name__] = obj
+                            dependencies = getattr(obj, 'depends_on', None)
+                            if not dependencies or len(dependencies) == 0:
+                                g.add_edge('r', obj.__name__)
+                            else:
+                                for dep in dependencies:
+                                    g.add_edge(dep.__name__, obj.__name__)
                 except ModuleNotFoundError as e:
                     logger.exception(e)
                     logger.error("ModuleNotFoundError: Unable to load module %s", m)
@@ -182,7 +181,10 @@ def find_issue_types(path: str = None) -> List[WorkflowRepositoryIssue]:
         logger.error("** There were some errors loading application modules.**")
         if logger.isEnabledFor(logging.DEBUG):
             logger.error("** Unable to load issues from %s", ", ".join(errors))
-    return [i for i in sorted(issues.values(), key=cmp_to_key(_compare_issues))]
+    logger.debug("Issues: %r", [_.__name__ for _ in issues.values()])
+    sorted_issues = [issues[_] for _ in nx.dfs_preorder_nodes(g, source='r') if _ != 'r']
+    logger.debug("Sorted issues: %r", [_.__name__ for _ in sorted_issues])
+    return sorted_issues
 
 
 __all__ = ["WorkflowRepositoryIssue"]
