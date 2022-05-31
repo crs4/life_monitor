@@ -88,7 +88,8 @@ class MissingRoCrateWorkflowFile(WorkflowRepositoryIssue):
     def check(self, repo: WorkflowRepository) -> bool:
         if repo.metadata:
             wf_file = repo.metadata.get_workflow()
-            logger.debug("Workflow file: %r - %s %s",
-                         wf_file, wf_file.dir, wf_file.name)
+            if wf_file:
+                logger.debug("Workflow file: %r - %s %s",
+                             wf_file, wf_file.dir, wf_file.name)
             return not wf_file or not repo.find_file_by_name(wf_file.name, path=wf_file.dir)
         return False
