@@ -34,6 +34,9 @@ from . import QuestionStep, UpdateStep, Wizard
 # set module level logger
 logger = logging.getLogger(__name__)
 
+valid_workflow_types = ["galaxy", "snakemake", "other"]
+supported_workflows = ["snakemake", "galaxy"]
+
 
 def get_files(wizard: RepositoryTemplateWizard, repo: GithubWorkflowRepository, target_path: str):
 
@@ -74,14 +77,22 @@ def get_files(wizard: RepositoryTemplateWizard, repo: GithubWorkflowRepository, 
 class RepositoryTemplateWizard(Wizard):
     title = "Repository Template"
     description = ""
-    labels = ['enhancement']
+    labels = ['config']
     issue = NotInitialisedRepositoryIssue
 
-    workflow_title = QuestionStep("Choose a name for your workflow?")
+    workflow_type = QuestionStep("Which type of workflow are going to host on this repository?",
+                                 description=f"<br/>Only `{', '.join(supported_workflows)}` workflows are supported at the moment."
+                                 "<br>The support for `galaxy` workflows is minimal.",
+                                 options=valid_workflow_types)
+    workflow_title = QuestionStep("Choose a name for your workflow?",
+                                  when=lambda _: _.workflow_type.answer in supported_workflows)
     workflow_description = QuestionStep("Type a description for your workflow?")
-    workflow_type = QuestionStep("Which type of workflow are going to host on this repository?", options=["galaxy", "snakemake"])
+
     workflow_template = UpdateStep("Repository initialisation",
                                    description="Merge this PR to initialiase your Workflow Testing RO-Crate repository",
                                    callback=get_files)
+    wizard_stop = QuestionStep("Unsupported workflow type",
+                               description="Your chosen workflow type is no supported at the moment",
+                               when=lambda _: _.workflow_type.answer not in supported_workflows)
 
-    steps = [workflow_title, workflow_description, workflow_type, workflow_template]
+    steps = [workflow_type, wizard_stop, workflow_title, workflow_description, workflow_template]
