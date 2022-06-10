@@ -143,8 +143,8 @@ class ROCrate(Resource):
     def check_for_changes(self, roc_link: str, extra_auth: ExternalServiceAuthorizationHeader = None) -> Tuple:
         # try either with authorization header and without authorization
         with tempfile.NamedTemporaryFile(dir=BaseConfig.BASE_TEMP_FOLDER) as target_path:
-            local_path = self.download_from_source(target_path.name, uri=roc_link, extra_auth=extra_auth)
-            logger.debug("Temp local path of crate to compare: %r", local_path)
+            local_path, ref, commit = self.download_from_source(target_path.name, uri=roc_link, extra_auth=extra_auth)
+            logger.debug("Temp local path of crate to compare: %r (ref: %r, commit: %r)", local_path, ref, commit)
             repo = repositories.ZippedWorkflowRepository(local_path)
             return self.repository.compare(repo)
 
@@ -162,12 +162,43 @@ class ROCrate(Resource):
         logger.debug("ZIP Archive: %s", local_zip)
         return (tmpdir_path / 'rocrate.zip').as_posix()
 
-    def download_from_source(self, target_path: str = None, uri: str = None,
-                             extra_auth: ExternalServiceAuthorizationHeader = None) -> str:
+    @staticmethod
+    def _is_github_crate_(uri: str) -> str:
+        # FIXME: replace with a better detection mechanism
+        if uri.startswith('https://github.com'):
+            token = None
+            # normalize uri as clone URL
+            if not uri.endswith('.git'):
+                uri += '.git'
+            return uri
+        return None
+
+    @staticmethod
+    def _find_git_ref_(repo: GithubWorkflowRepository, version: str) -> str:
+        assert isinstance(repo, WorkflowRepository)
+        ref = repo.ref
+        commit = repo.get_commit(ref) if ref else None
+        try:
+            branch = repo.get_branch(version)
+            ref, commit = f"refs/remotes/origin/{branch.name}", branch.commit
+        except GithubException as e:
+            logger.debug(f"Unable to get branch {version}: %s", str(e))
+            for tag in repo.get_tags():
+                if tag.name == version:
+                    ref, commit = f"refs/tags/{tag.name}", tag.commit
+                    break
+        logger.debug("Detected ref: %r", ref)
+        return ref, commit
+
+    def download_from_source(self, target_path: str = None, uri: str = None, version: str = None,
+                             extra_auth: ExternalServiceAuthorizationHeader = None) -> Tuple[str, str, str]:
         errors = []
 
         # set URI
         uri = uri or self.uri
+
+        # set version
+        version = version or self.version
 
         # set target_path
         if not target_path:
@@ -176,19 +207,20 @@ class ROCrate(Resource):
             # try either with authorization header and without authorization
             for authorization in self._get_authorizations(extra_auth=extra_auth):
                 try:
-                    # FIXME: replace with a better detection mechanism
-                    if uri.startswith('https://github.com'):
+                    git_url = self._is_github_crate_(uri)
+                    if git_url:
                         token = None
-                        # normalize uri as clone URL
-                        if not uri.endswith('.git'):
-                            uri += '.git'
                         if authorization and isinstance(authorization, ExternalServiceAuthorizationHeader):
                             token = authorization.auth_token
-                        with repositories.RepoCloneContextManager(uri, auth_token=token) as tmp_path:
-                            repo = repositories.LocalWorkflowRepository(tmp_path)
+                        with repositories.RepoCloneContextManager(git_url, auth_token=token) as tmp_path:
+                            repo = repositories.GithubWorkflowRepository.from_local(tmp_path, git_url, token=token)
+                            ref, commit = self._find_git_ref_(repo, version)
+                            repo.checkout_ref(ref)  # , branch_name=version)
+                            logger.debug("Checkout DONE")
+                            logger.debug(get_current_ref(tmp_path))
                             archive = repo.write_zip(target_path)
                             logger.debug("Zip file written to: %r", archive)
-                            return archive
+                            return archive, ref, commit
                     else:
                         auth_header = authorization.as_http_header() if authorization else None
                         logger.debug(auth_header)
@@ -196,7 +228,7 @@ class ROCrate(Resource):
                                                  target_path=target_path,
                                                  authorization=auth_header)
                         logger.debug("ZIP Archive: %s", local_zip)
-                        return target_path
+                        return target_path, None, None
                 except lm_exceptions.NotAuthorizedException as e:
                     logger.info("Caught authorization error exception while downloading and processing RO-crate: %s", e)
                     errors.append(str(e))
