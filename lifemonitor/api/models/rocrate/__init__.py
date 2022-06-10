@@ -85,6 +85,12 @@ class ROCrate(Resource):
             self._local_path = os.path.join(base_path, f"{self.uuid}.zip")
         return self._local_path
 
+    @property
+    def revision(self) -> Optional[GithubRepositoryRevision]:
+        if self._is_github_crate_(self.uri) and isinstance(self.repository, GithubWorkflowRepository):
+            return self.repository.get_revision(self.version)
+        return None
+
     @hybrid_property
     def crate_metadata(self):
         return self.repository.metadata.to_json()
