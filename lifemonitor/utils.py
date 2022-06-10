@@ -29,19 +29,20 @@ import os
 import random
 import re
 import shutil
-import pygit2
 import socket
 import string
 import tempfile
+import time
 import urllib
 import uuid
 import zipfile
 from datetime import datetime
 from importlib import import_module
 from os.path import basename, dirname, isfile, join
-from typing import List
+from typing import Dict, List
 
 import flask
+import pygit2
 import requests
 import yaml
 from dateutil import parser
@@ -198,6 +199,10 @@ def validate_url(url: str) -> bool:
         return all([result.scheme, result.netloc])
     except Exception:
         return False
+
+
+def get_last_update(path: str):
+    return time.ctime(max(os.stat(root).st_mtime for root, _, _ in os.walk(path)))
 
 
 class ROCrateLinkContext(object):
@@ -391,6 +396,83 @@ def clone_repo(url: str, ref: str = None, target_path: str = None, auth_token: s
             logger.debug("Deleting clone local path: %r %r", target_path, local_path)
             shutil.rmtree(local_path, ignore_errors=True)
         logger.debug("Clean up clone local path: %r %r ..... DONE", target_path, local_path)
+
+
+def checkout_ref(repo_path: str, ref: str, auth_token: str = None, branch_name: str = None):
+    try:
+        clone = pygit2.Repository(repo_path)
+        if ref is not None:
+            try:
+                if "HEAD" in ref:
+                    clone.checkout_head()
+                else:
+                    ref_obj = clone.lookup_reference(ref)
+                    clone.checkout(ref_obj)
+            except KeyError:
+                logger.debug(f"Invalid repo reference: unable to find the reference {ref} on the repo {repo_path}")
+        if branch_name:
+            branch_ref = f'refs/heads/{branch_name}'
+            clone.branches.create(branch_name, clone.head.peel())
+            ref_obj = clone.lookup_reference(branch_ref)
+            clone.checkout(ref_obj)
+        return repo_path
+    except pygit2.errors.GitError as e:
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.exception(e)
+        if 'authentication' in str(e):
+            raise lm_exceptions.NotAuthorizedException("Token authorization not valid")
+        raise lm_exceptions.DownloadException(detail=str(e))
+
+
+def get_current_ref(local_repo_path: str) -> str:
+    assert os.path.isdir(local_repo_path), "Path should be a folder"
+    repo = pygit2.Repository(local_repo_path)
+    return repo.head.name
+
+
+def detect_ref_type(ref: str) -> str:
+    # TODO: to be extended
+    ref_map = {
+        "refs/tags": "tag",
+        "refs/pull": "pull_request"
+    }
+    return next((v for k, v in ref_map.items() if k in ref), "branch")
+
+
+def find_refs_by_commit(repo: pygit2.Repository, commit: str):
+    refs = []
+    for ref_name in repo.references:
+        ref = repo.lookup_reference(ref_name)
+        if ref.target == commit:
+            refs.append({
+                'shorthand': ref.shorthand,
+                'ref': ref.name,
+                'type': detect_ref_type(ref.name)
+            })
+    return refs
+
+
+def find_commit_info(repo: pygit2.Repository, commit=None, ref=None) -> pygit2.Object:
+    assert isinstance(repo, pygit2.Repository), repo
+    for c in repo.walk(ref or repo.head.target):
+        if not commit or c.hex == commit or str(c.hex) == str(commit):
+            return c
+    return None
+
+
+def get_git_repo_revision(local_repo_path: str) -> Dict:
+    assert os.path.isdir(local_repo_path), "Path should be a folder"
+    repo = pygit2.Repository(local_repo_path)
+    last_commit = find_commit_info(repo)
+    refs = find_refs_by_commit(repo, repo.head.target)
+    assert isinstance(last_commit, pygit2.Object), "Unable to find the last repo commit"
+    return {
+        "sha": repo.head.target,
+        "created": datetime.fromtimestamp(last_commit.commit_time),
+        "refs": refs,
+        "type": detect_ref_type(repo.head.name),
+        "remotes": [_.url for _ in repo.remotes]
+    }
 
 
 def load_test_definition_filename(filename):
