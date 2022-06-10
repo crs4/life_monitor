@@ -20,6 +20,7 @@
 
 from __future__ import annotations
 
+import datetime
 import logging
 import os
 import re
@@ -36,11 +37,14 @@ from lifemonitor.api.models.repositories.files import (RepositoryFile,
 from lifemonitor.api.models.repositories.local import LocalWorkflowRepository
 from lifemonitor.config import BaseConfig
 from lifemonitor.exceptions import IllegalStateException
-from lifemonitor.utils import clone_repo
+from lifemonitor.utils import (checkout_ref, clone_repo, get_current_ref,
+                               get_git_repo_revision)
 
 from github.ContentFile import ContentFile
 from github.Repository import Repository as GithubRepository
 from github.Requester import Requester
+
+from .local import ZippedWorkflowRepository
 
 DEFAULT_BASE_URL = "https://api.github.com"
 DEFAULT_TIMEOUT = 15
@@ -67,6 +71,60 @@ class GitRepositoryFile(RepositoryFile):
     @property
     def sha(self) -> str:
         return self._content.sha
+
+
+class GithubRepositoryReference():
+
+    def __init__(self, repository: InstallationGithubWorkflowRepository, raw_data: Dict) -> None:
+        assert isinstance(repository, InstallationGithubWorkflowRepository), raw_data
+        assert isinstance(raw_data, dict), raw_data
+        self._repository = repository
+        self._raw_data = raw_data
+
+    @property
+    def repository(self) -> InstallationGithubWorkflowRepository:
+        return self._repository
+
+    @property
+    def shorthand(self) -> str:
+        return self._raw_data.get('shorthand', None)
+
+    @property
+    def type(self) -> str:
+        return self._raw_data.get('type', None)
+
+    @property
+    def ref(self) -> str:
+        return self._raw_data.get('ref', None)
+
+
+class GithubRepositoryRevision():
+
+    def __init__(self, repository: InstallationGithubWorkflowRepository, raw_data: Dict):
+        assert isinstance(repository, InstallationGithubWorkflowRepository), raw_data
+        assert isinstance(raw_data, dict), raw_data
+        self._repository = repository
+        self._raw_data = raw_data
+
+    @property
+    def repository(self) -> InstallationGithubWorkflowRepository:
+        return self._repository
+
+    @property
+    def sha(self) -> str:
+        return self._raw_data.get('sha', None)
+
+    @property
+    def created(self) -> datetime.datetime:
+        return self._raw_data.get('created', None)
+
+    @property
+    def main_ref(self) -> GithubRepositoryReference:
+        return GithubRepositoryReference(self._repository, self._raw_data.get("main_ref", None))
+
+    @property
+    def refs(self):
+        return map(lambda x: GithubRepositoryReference(self._repository, x), self._raw_data.get('refs'))
 
 
 class TempWorkflowRepositoryMetadata(WorkflowRepositoryMetadata):
@@ -103,7 +161,7 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
                  ref: str = None, rev: str = None,
                  local_path: str = None, auto_cleanup: bool = True) -> None:
         super().__init__(requester, headers, attributes, completed)
-        self.ref = ref if ref is not None else f"refs/heads/{self.default_branch}"
+        self._ref = ref
         self.rev = rev
         self.auto_cleanup = auto_cleanup
         self._metadata = None
@@ -122,6 +180,31 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
             elif e.type == 'dir':
                 files.extend(self.__get_files__(e.path, ref=ref))
         return files
+
+    def checkout_ref(self, ref: str, token: str = None, branch_name: str = None) -> bool:
+        return checkout_ref(self.local_path, ref, auth_token=token, branch_name=branch_name)
+
+    @property
+    def ref(self) -> str:
+        if not self._ref:
+            if self._local_repo:
+                self._ref = get_current_ref(self._local_repo._local_path)
+            elif self._local_path:
+                self._ref = get_current_ref(self._local_path)
+            else:
+                self._ref = f"refs/heads/{self.default_branch}"
+        return self._ref
+
+    @property
+    def revision(self) -> GithubRepositoryRevision:
+        return self.get_revision(self.ref)
+
+    def get_revision(self, branch_or_ref: str) -> GithubRepositoryRevision:
+        rev_data = get_git_repo_revision(self.local_repo.local_path)
+        main_ref = next((_ for _ in rev_data["refs"] if branch_or_ref in (_["shorthand"], _["ref"])), None)
+        assert main_ref, "Unable to find ref '{}'".format(branch_or_ref)
+        rev_data["main_ref"] = main_ref
+        return GithubRepositoryRevision(self, rev_data)
 
     @property
     def files(self):
