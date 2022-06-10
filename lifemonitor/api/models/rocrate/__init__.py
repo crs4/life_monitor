@@ -25,16 +25,20 @@ import os
 import tempfile
 import uuid as _uuid
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import lifemonitor.exceptions as lm_exceptions
 from flask import current_app
+from github.GithubException import GithubException, RateLimitExceededException
 from lifemonitor.api.models import db, repositories
+from lifemonitor.api.models.repositories.base import WorkflowRepository
+from lifemonitor.api.models.repositories.github import (
+    GithubRepositoryRevision, GithubWorkflowRepository)
 from lifemonitor.auth.models import (ExternalServiceAuthorizationHeader,
                                      HostingService, Resource)
 from lifemonitor.config import BaseConfig
 from lifemonitor.models import JSON
-from lifemonitor.utils import download_url
+from lifemonitor.utils import download_url, get_current_ref
 from sqlalchemy.ext.hybrid import hybrid_property
 
 # set module level logger
@@ -59,10 +63,11 @@ class ROCrate(Resource):
     }
 
     def __init__(self, uri, uuid=None, name=None,
-                 version=None, hosting_service=None) -> None:
+                 version=None, hosting_service=None,
+                 repository: repositories.WorkflowRepository = None) -> None:
         super().__init__(uri, uuid=uuid, name=name, version=version)
         self.hosting_service = hosting_service
-        self._repository: repositories.WorkflowRepository = None
+        self._repository: repositories.WorkflowRepository = repository
 
     @property
     def local_path(self):
@@ -93,12 +98,30 @@ class ROCrate(Resource):
             raise lm_exceptions.IllegalStateException("URI (roc_link) not set")
         if not self._repository:
             # download the RO-Crate if it is not locally stored
+            ref = None
             if not os.path.exists(self.local_path):
-                self.download_from_source(self.local_path)
+                _, ref, _ = self.download_from_source(self.local_path)
             # instantiate a local ROCrate repository
-            self._repository = repositories.ZippedWorkflowRepository(self.local_path)
+            if self._is_github_crate_(self.uri):
+                authorizations = self.authorizations + [None]
+                token = None
+                for authorization in authorizations:
+                    if authorization and isinstance(authorization, ExternalServiceAuthorizationHeader):
+                        token = authorization.auth_token
+                        try:
+                            self._repository = repositories.GithubWorkflowRepository.from_zip(self.local_path, self.uri, token=token, ref=ref)
+                        except RateLimitExceededException as e:
+                            raise lm_exceptions.RateLimitExceededException(detail=str(e))
+                        except Exception as e:
+                            if logger.isEnabledFor(logging.DEBUG):
+                                logger.exception(e)
+                        if self._repository:
+                            break
+            else:
+                self._repository = repositories.ZippedWorkflowRepository(self.local_path)
+
             # set metadata
-            self._metadata = self.repository.metadata.to_json()
+            self._metadata = self._repository.metadata.to_json()
             self._metadata_loaded = True
         return self._repository
 
