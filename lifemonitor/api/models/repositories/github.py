@@ -352,6 +352,34 @@ class GithubWorkflowRepository(InstallationGithubWorkflowRepository):
             return cls(repo_url.replace('git@github.com:', ''),
                        token=token, ref=ref, local_path=local_path, auto_cleanup=auto_cleanup)
 
+    @classmethod
+    def from_local(cls, archive_path: str, url: str, token: str = None, ref: str = None,
+                   local_path: str = None, auto_cleanup: bool = True) -> GithubWorkflowRepository:
+        repo = None
+        repo_url = url.replace('.git', '')
+        if repo_url.startswith('https://github.com'):
+            repo = cls(repo_url.replace('https://github.com/', ''),
+                       token=token, ref=ref, local_path=local_path, auto_cleanup=auto_cleanup)
+        elif repo_url.startswith('git@github.com'):
+            repo = cls(repo_url.replace('git@github.com:', ''),
+                       token=token, ref=ref, local_path=local_path, auto_cleanup=auto_cleanup)
+        repo._local_repo = LocalWorkflowRepository(archive_path)
+        return repo
+
+    @classmethod
+    def from_zip(cls, archive_path: str, url: str, token: str = None, ref: str = None,
+                 local_path: str = None, auto_cleanup: bool = True) -> GithubWorkflowRepository:
+        repo = None
+        repo_url = url.replace('.git', '')
+        if repo_url.startswith('https://github.com'):
+            repo = cls(repo_url.replace('https://github.com/', ''),
+                       token=token, ref=ref, local_path=local_path, auto_cleanup=auto_cleanup)
+        elif repo_url.startswith('git@github.com'):
+            repo = cls(repo_url.replace('git@github.com:', ''),
+                       token=token, ref=ref, local_path=local_path, auto_cleanup=auto_cleanup)
+        repo._local_repo = ZippedWorkflowRepository(archive_path, auto_cleanup=auto_cleanup)
+        return repo
+
 
 class RepoCloneContextManager():
 
