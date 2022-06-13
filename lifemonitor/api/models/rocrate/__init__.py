@@ -112,16 +112,17 @@ class ROCrate(Resource):
                 authorizations = self.authorizations + [None]
                 token = None
                 for authorization in authorizations:
-                    if authorization and isinstance(authorization, ExternalServiceAuthorizationHeader):
-                        token = authorization.auth_token
+                    if not authorization or isinstance(authorization, ExternalServiceAuthorizationHeader):
+                        token = authorization.auth_token if authorization else None
                         try:
                             self._repository = repositories.GithubWorkflowRepository.from_zip(self.local_path, self.uri, token=token, ref=ref)
+                            logger.debug("The loaded repository: %r", self._repository)
                         except RateLimitExceededException as e:
                             raise lm_exceptions.RateLimitExceededException(detail=str(e))
                         except Exception as e:
                             if logger.isEnabledFor(logging.DEBUG):
                                 logger.exception(e)
-                        if self._repository:
+                        if self._repository is not None:
                             break
             else:
                 self._repository = repositories.ZippedWorkflowRepository(self.local_path)
