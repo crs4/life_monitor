@@ -128,8 +128,70 @@ A _test engine_ is a software application that runs workflow tests according to 
 ```
 
 
+## LifeMonitor-specific features and requirements
+
+### Test service types
+
+LifeMonitor currently supports monitoring tests executed on:
+
+[GitHub Actions](https://docs.github.com/en/actions)
+
+```json
+{
+    "@id": "https://w3id.org/ro/terms/test#GithubService",
+    "@type": "TestService",
+    "name": "Github Actions",
+    "url": {"@id": "https://github.com"}
+}
+```
+
+[Travis CI](https://travis-ci.com)
+
+```json
+{
+    "@id": "https://w3id.org/ro/terms/test#TravisService",
+    "@type": "TestService",
+    "name": "Travis CI",
+    "url": {"@id": "https://www.travis-ci.com"}
+}
+```
+
+[Jenkins](https://www.jenkins.io)
+
+```json
+{
+    "@id": "https://w3id.org/ro/terms/test#JenkinsService",
+    "@type": "TestService",
+    "name": "Jenkins",
+    "url": {"@id": "https://www.jenkins.io"}
+}
+```
+
+To fetch test build data from the CI service, LifeMonitor needs to be pointed to the specific project's endpoint via the `TestInstance` properties.
+
+In the case of GitHub Actions, `url` must be set to `"https://api.github.com"`, while `resource` must be in the form:
+
+```
+repos/<OWNER>/<REPO NAME>/actions/workflows/<YAML FILE NAME>
+```
+
+For instance, the [fair-crcc-send-data](https://github.com/crs4/fair-crcc-send-data) repository has a GitHub Actions workflow, `.github/workflows/main.yml`, that runs tests for the scientific workflow it hosts. To have the test runs monitored by LifeMonitor, the `TestInstance` entry needs to be set up as follows:
+
+```json
+{
+    "@id": "#my-test",
+    "@type": "TestInstance",
+    "url": "https://api.github.com",
+    "resource": "repos/crs4/fair-crcc-send-data/actions/workflows/main.yml",
+    "runsOn": {"@id": "https://w3id.org/ro/terms/test#GithubService"},
+    "name": "My Test"
+}
+```
+
+For Travis CI builds, set `url` to `https://travis-ci.com` and `resource` to `github/<OWNER>/<REPO NAME>` or `repo/<REPO ID>`. For Jenkins builds, set `url` to the base URL of the Jenkins instance (e.g., `"https://jenkins.example.org"`) and `resource` to the project's relative URL (e.g., `"job/my_tests"`).
+
+
 ## Example
-An example of Workflow Testing RO-Crate metadata.
 
 ```json
 {
