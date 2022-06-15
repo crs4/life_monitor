@@ -97,6 +97,11 @@ class Status:
                             "issue": messages.no_build_found_for_instance.format(test_instance)
                         })
                     else:
+                        checking_builds = None
+                        while latest_build.status not in ["passed", "failed", "error"]:
+                            if checking_builds is None:
+                                checking_builds = test_instance.get_test_builds()
+                            latest_build = latest_builds.pop()
                         latest_builds.append(latest_build)
                         status = WorkflowStatus._update_status(status, latest_build.is_successful())
                 except lm_exceptions.TestingServiceException as e:
