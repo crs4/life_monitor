@@ -61,6 +61,9 @@ class TestBuild(ABC, CacheMixin):
     def is_successful(self):
         return self.result == TestBuild.Result.SUCCESS
 
+    def is_failed(self) -> bool:
+        return self.result == TestBuild.Result.FAILED
+
     @property
     @abstractmethod
     def id(self) -> str:
