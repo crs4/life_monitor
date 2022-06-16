@@ -97,13 +97,18 @@ class Status:
                             "issue": messages.no_build_found_for_instance.format(test_instance)
                         })
                     else:
-                        checking_builds = None
-                        while latest_build.status not in ["passed", "failed", "error"]:
-                            if checking_builds is None:
-                                checking_builds = test_instance.get_test_builds()
-                            latest_build = latest_builds.pop()
-                        latest_builds.append(latest_build)
-                        status = WorkflowStatus._update_status(status, latest_build.is_successful())
+                        # Search the latest completed build
+                        checking_builds = test_instance.get_test_builds()
+                        while checking_builds:
+                            logger.warning("Current list of test builds: %r", checking_builds)
+                            latest_build = checking_builds.pop() if checking_builds else None
+                            logger.debug("Next build to check %r: %r", latest_build, latest_build.status if latest_build else None)
+                            if latest_build and latest_build.status in ["passed", "failed", "error"]:
+                                break
+                        # Update aggregated status using the latest completed build
+                        if latest_build:
+                            latest_builds.append(latest_build)
+                            status = WorkflowStatus._update_status(status, latest_build.is_successful())
                 except lm_exceptions.TestingServiceException as e:
                     availability_issues.append({
                         "service": test_instance.testing_service.url,
