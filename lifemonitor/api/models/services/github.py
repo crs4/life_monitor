@@ -291,6 +291,10 @@ class GithubTestBuild(models.TestBuild):
         return self._metadata.id
 
     @property
+    def attempt_number(self) -> int:
+        return self._metadata.raw_data['run_attempt']
+
+    @property
     def duration(self) -> int:
         return int((self._metadata.updated_at - self._metadata.created_at).total_seconds())
 
@@ -334,7 +338,14 @@ class GithubTestBuild(models.TestBuild):
 
     @property
     def timestamp(self) -> int:
-        return int(self._metadata.updated_at.timestamp())
+
+    @property
+    def created_at(self) -> int:
+        return self._metadata.created_at
+
+    @property
+    def updated_at(self) -> int:
+        return self._metadata.updated_at
 
     @property
     def url(self) -> str:
