@@ -189,6 +189,26 @@ class GithubTestingService(TestingService):
             list_item="workflow_runs",
         )
 
+    @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True,
+            unless=lambda r: r[1]["status"] != GithubTestingService.GithubStatus.COMPLETED)
+    def __get_gh_workflow_run_attempt__(self,
+                                        workflow_run: github.WorkflowRun.WorkflowRun,
+                                        attempt: int):
+        url = f"{workflow_run.url}/attempts/{attempt}"
+        logger.debug("Attempt URL: %r", url)
+        headers, data = workflow_run._requester.requestJsonAndCheck("GET", url)
+        return headers, data
+
+    # @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True)
+    def __get_gh_workflow_run_attempts__(self,
+                                         workflow_run: github.WorkflowRun.WorkflowRun) -> List[github.WorkflowRun.WorkflowRun]:
+        result = []
+        i = workflow_run.raw_data['run_attempt']
+        while i >= 1:
+            headers, data = self.__get_gh_workflow_run_attempt__(workflow_run, i)
+            result.append(WorkflowRun(workflow_run._requester, headers, data, True))
+            i -= 1
+        return result
             logger.debug("Loading Github run ID %r", run.id)
             # The Workflow.get_runs method in the PyGithub API has a status argument
             # which in theory we could use to filter the runs that are retrieved to
