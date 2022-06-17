@@ -309,22 +309,24 @@ class GithubTestingService(TestingService):
 
     def get_test_build(self, test_instance: models.TestInstance, build_number: int) -> GithubTestBuild:
         try:
-            logger.debug("Inefficient get_test_build implementation.  Rewrite me!")
-            # TODO:  We search through the runs of the workflow because there's no
-            # obvious way to istantiate a PyGithub WorkflowRun object given a build
-            # number -- but there's has to be a way.  We can easily asseble the URL
-            # of the request to directly retrive the data we need here.
-            try:
-                build_number = int(build_number)
-            except ValueError as e:
-                raise lm_exceptions.LifeMonitorException("Invalid 'build_number'",
-                                                         details="The build parameter must be an integer: {0}".format(str(e)), status=400)
-            for run in self._iter_runs(test_instance):
-                if run.id == build_number:
-                    return GithubTestBuild(self, test_instance, run)
-            raise lm_exceptions.EntityNotFoundException(models.TestBuild, entity_id=build_number)
+            # parse build identifier
+            run_id, run_attempt = build_number.split('_')
+            logger.debug("Searching build: %r %r", run_id, run_attempt)
+            # get a reference to the test instance repository
+            repo: Repository = self._get_repo(test_instance)
+            # build url
+            url = f"/repos/{repo.full_name}/actions/runs/{run_id}/attempts/{run_attempt}"
+            logger.debug("Build URL: %s", url)
+            headers, data = repo._requester.requestJsonAndCheck("GET", url)
+            return GithubTestBuild(self, test_instance, WorkflowRun(repo._requester, headers, data, True))
+        except ValueError as e:
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.exception(e)
+            raise lm_exceptions.BadRequestException(detail="Invalid build identifier")
         except GithubRateLimitExceededException as e:
             raise lm_exceptions.RateLimitExceededException(detail=str(e), instance=test_instance)
+        except UnknownObjectException as e:
+            raise lm_exceptions.EntityNotFoundException(models.TestBuild, entity_id=build_number)
 
     def get_instance_external_link(self, test_instance: models.TestInstance) -> str:
         _, repo_full_name, workflow_id = self._get_workflow_info(test_instance.resource)
