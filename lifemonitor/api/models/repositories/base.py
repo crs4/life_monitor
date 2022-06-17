@@ -151,9 +151,9 @@ class WorkflowRepository():
         logger.debug("Differences: %r", differences)
         return missing_left, missing_right, differences
 
-    def compare(self, repo: WorkflowRepository, exclude: List[str] = None) -> Tuple[List[RepositoryFile],
-                                                                                    List[RepositoryFile],
-                                                                                    List[Tuple[RepositoryFile, RepositoryFile]]]:
+    def compare_to(self, repo: WorkflowRepository, exclude: List[str] = None) -> Tuple[List[RepositoryFile],
+                                                                                       List[RepositoryFile],
+                                                                                       List[Tuple[RepositoryFile, RepositoryFile]]]:
         assert repo and isinstance(repo, WorkflowRepository), repo
         return self.__compare__(self.files, repo.files, exclude=exclude)
 

@@ -176,7 +176,7 @@ class ROCrate(Resource):
             local_path, ref, commit = self.download_from_source(target_path.name, uri=roc_link, extra_auth=extra_auth)
             logger.debug("Temp local path of crate to compare: %r (ref: %r, commit: %r)", local_path, ref, commit)
             repo = repositories.ZippedWorkflowRepository(local_path)
-            return self.repository.compare(repo)
+            return self.repository.compare_to(repo)
 
     def download(self, target_path: str) -> str:
         # load ro-crate if not locally stored
