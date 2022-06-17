@@ -18,17 +18,26 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import itertools
 import logging
-from typing import Optional
+from datetime import datetime, timedelta
+from typing import List, Optional
 from unittest.mock import MagicMock
 
 import lifemonitor.api.models as models
 import pytest
+from github.Workflow import Workflow
+from github.WorkflowRun import WorkflowRun
+from lifemonitor.api.models.repositories.github import GithubWorkflowRepository
+from lifemonitor.cache import cache
 from tests.conftest_helpers import get_github_token
 
 logger = logging.getLogger(__name__)
 
 build_query_limit = 20
+
+# reference to the main workflow installed on life-monitor/workflow-tests repository
+workflow_tests_resource = '/repos/life-monitor/workflow-tests/actions/workflows/28339110'
 
 # Fixtures are matched to test arguments through their name, so the warning
 # about redefining the outer name gets in our way.
@@ -41,15 +50,61 @@ def api_url() -> str:
 
 
 @pytest.fixture
-def test_workflow_resource() -> str:
-    return '/repos/crs4/life_monitor/actions/workflows/4094661'
+def repo_full_name() -> str:
+    return "life-monitor/workflow-tests"
 
 
 @pytest.fixture
-def test_instance(test_workflow_resource):
+def test_workflow_resource() -> str:
+    return workflow_tests_resource
+
+
+@pytest.fixture
+def git_ref(request):
+    ref_type = "branch"
+    ref_value = "main"
+    ref = None
+    try:
+        ref_type = request.param[0]
+        ref_value = request.param[1]
+    except Exception:
+        logger.warning("Not param for test_instance fixture")
+    # set repo ref
+    if ref_type and ref_value:
+        ref = f"refs/{'heads' if ref_type=='branch' else 'tags'}/{ref_value}"
+    return ref_type, ref_value, ref
+
+
+@pytest.fixture
+def test_instance(request, git_ref, repo_full_name, test_workflow_resource):
+    ref_type, ref_value, ref = git_ref
+    test_resource = test_workflow_resource
+    try:
+        test_resource = request.param
+    except Exception:
+        pass
+    # define a parametric revision
+    revision = MagicMock()
+    revision.main_ref = MagicMock()
+    revision.main_ref.shorthand = ref_value
+    # define a test suite mock
+    test_suite = MagicMock()
+    test_suite.workflow_version = MagicMock()
+    test_suite.workflow_version.version = revision.main_ref.shorthand
+    test_suite.workflow_version.revision = revision if ref_value else None
+    test_suite.workflow_version.repository = GithubWorkflowRepository(repo_full_name, ref=ref)
+    # define a test_instance mock
     instance = MagicMock()
-    instance.resource = test_workflow_resource
+    instance.resource = test_resource
+    instance.test_suite = test_suite
     return instance
+
+
+@pytest.fixture
+def test_instance_one_version(test_instance):
+    test_instance.test_suite.workflow_version.previous_version = None
+    test_instance.test_suite.workflow_version.next_version = None
+    return test_instance
 
 
 @pytest.fixture
@@ -76,44 +131,50 @@ def test_connection(github_service):
     assert github_service.check_connection()
 
 
-def test_get_builds(github_service, test_instance):
-    builds = github_service.get_test_builds(test_instance)
-    assert len(builds) == 10
+@pytest.mark.parametrize("git_ref", [("tag", "0.1.0")], indirect=True)
+def test_get_builds(github_service, git_ref, test_instance_one_version):
+    builds = github_service.get_test_builds(test_instance_one_version)
+    assert len(builds) == 1
     assert all(isinstance(b, models.GithubTestBuild) for b in builds)
     # verify order by decreasing timestamp
     for i in range(len(builds) - 1):
         assert builds[i].timestamp > builds[i + 1].timestamp
 
 
-def test_get_builds_limit(github_service, test_instance):
+@pytest.mark.parametrize("git_ref", [(None, None)], indirect=True)
+def test_get_builds_limit(github_service, git_ref, test_instance_one_version):
     number_of_builds = 5
-    builds = github_service.get_test_builds(test_instance, limit=number_of_builds)
+    builds = github_service.get_test_builds(test_instance_one_version, limit=number_of_builds)
     assert len(builds) == number_of_builds, "Returned number of builds != specified limit"
 
 
-def test_get_one_build(github_service, test_instance):
-    builds = github_service.get_test_builds(test_instance, limit=8)
+@pytest.mark.parametrize("git_ref", [(None, None)], indirect=True)
+def test_get_one_build(github_service, git_ref, test_instance_one_version):
+    builds = github_service.get_test_builds(test_instance_one_version, limit=8)
     test_build = builds[3]
-    build = github_service.get_test_build(test_instance, test_build.build_number)
+    build = github_service.get_test_build(test_instance_one_version, test_build.id)
     assert build
     assert build.id == test_build.id
     for p in ('id', 'build_number', 'duration', 'metadata', 'revision', 'result', 'status', 'timestamp', 'url'):
         assert getattr(build, p), "Unable to find the property {}".format(p)
 
 
-def test_get_last_builds(github_service: models.GithubTestingService, test_instance):
-    the_builds = github_service.get_test_builds(test_instance, limit=build_query_limit)
+@pytest.mark.parametrize("git_ref", [(None, None)], indirect=True)
+def test_get_last_builds(github_service: models.GithubTestingService, git_ref, test_instance_one_version):
+    the_builds = github_service.get_test_builds(test_instance_one_version, limit=build_query_limit)
     # latest build
-    last_build = github_service.get_last_test_build(test_instance)
+    last_build = github_service.get_last_test_build(test_instance_one_version)
     assert last_build.id == the_builds[0].id
     # latest passed build
-    latest_passed_build = github_service.get_last_passed_test_build(test_instance)
+    latest_passed_build = github_service.get_last_passed_test_build(test_instance_one_version)
     # Get first passed build from the list, or None if there are None
     build = next((b for b in the_builds if b.is_successful()), None)
     assert build == latest_passed_build or (build is None) or \
         (build is not None and latest_passed_build is not None and build.id == latest_passed_build.id)
     # latest failed build
-    latest_failed_build = github_service.get_last_failed_test_build(test_instance)
+    latest_failed_build = github_service.get_last_failed_test_build(test_instance_one_version)
     build = next((b for b in the_builds if not b.is_successful()), None)
     assert build == latest_failed_build or build is None or \
         (build is not None and latest_failed_build is not None and build.id == latest_failed_build.id)
+
+
