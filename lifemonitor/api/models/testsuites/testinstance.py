@@ -105,6 +105,9 @@ class TestInstance(db.Model, ModelMixin):
     def last_test_build(self):
         return self.get_last_test_build()
 
+    def start_test_build(self):
+        return self.testing_service.start_test_build(self)
+
     @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True)
     def get_last_test_build(self):
         builds = self.get_test_builds(limit=10)
