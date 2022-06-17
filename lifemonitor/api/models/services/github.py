@@ -334,7 +334,7 @@ class GithubTestingService(TestingService):
 
     def get_test_build_external_link(self, test_build: models.TestBuild) -> str:
         repo = self._get_repo(test_build.test_instance)
-        return f'https://github.com/{repo.full_name}/actions/runs/{test_build.id}'
+        return f'https://github.com/{repo.full_name}/actions/runs/{test_build.build_number}/attempts/{test_build.attempt_number}'
 
     def get_test_build_output(self, test_instance: models.TestInstance, build_number, offset_bytes=0, limit_bytes=131072):
         raise lm_exceptions.NotImplementedException(detail="not supported for GitHub test builds")
@@ -454,4 +454,4 @@ class GithubTestBuild(models.TestBuild):
 
     @property
     def url(self) -> str:
-        return self._metadata.url
+        return f"{self._metadata.url}/attempts/{self.attempt_number}"
