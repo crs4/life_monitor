@@ -154,7 +154,41 @@ class GithubTestingService(TestingService):
         workflow = self._get_gh_workflow(repository, workflow_id)
         logger.debug("Retrieved workflow %s from github", workflow_id)
 
-        for run in self._get_gh_workflow_runs(workflow):
+    def __get_gh_workflow_runs__(self,
+                                 workflow: github.Worflow.Workflow,
+                                 branch=github.GithubObject.NotSet,
+                                 status=github.GithubObject.NotSet,
+                                 created=github.GithubObject.NotSet):
+        """
+        Extends `Workflow.get_runs` to support `created` param
+        """
+        branch = branch or github.GithubObject.NotSet
+        status = status or github.GithubObject.NotSet
+        created = created or github.GithubObject.NotSet
+        assert (
+            branch is github.GithubObject.NotSet
+            or isinstance(branch, github.Branch.Branch)
+            or isinstance(branch, str)
+        ), branch
+        assert status is github.GithubObject.NotSet or isinstance(status, str), status
+        url_parameters = dict()
+        if branch is not github.GithubObject.NotSet:
+            url_parameters["branch"] = (
+                branch.name if isinstance(branch, github.Branch.Branch) else branch
+            )
+        if created is not github.GithubObject.NotSet:
+            url_parameters["created"] = created
+        if status is not github.GithubObject.NotSet:
+            url_parameters["status"] = status
+        return github.PaginatedList.PaginatedList(
+            github.WorkflowRun.WorkflowRun,
+            workflow._requester,
+            f"{workflow.url}/runs",
+            url_parameters,
+            None,
+            list_item="workflow_runs",
+        )
+
             logger.debug("Loading Github run ID %r", run.id)
             # The Workflow.get_runs method in the PyGithub API has a status argument
             # which in theory we could use to filter the runs that are retrieved to
