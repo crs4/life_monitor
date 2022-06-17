@@ -26,7 +26,6 @@ from unittest.mock import MagicMock
 
 import lifemonitor.api.models as models
 import pytest
-from github.Workflow import Workflow
 from github.WorkflowRun import WorkflowRun
 from lifemonitor.api.models.repositories.github import GithubWorkflowRepository
 from lifemonitor.cache import cache
@@ -199,7 +198,7 @@ def test_instance_builds_filtered_by_branch(github_service: models.GithubTesting
 @pytest.mark.parametrize("git_ref", [(None, None)], indirect=True)
 @pytest.mark.parametrize("test_instance", [workflow_tests_resource], indirect=True)
 def test_get_runs_by_date(github_service: models.GithubTestingService, git_ref, test_instance):
- # retrieve repo and ref info
+    # retrieve repo and ref info
     ref_type, ref_value, ref = git_ref
     _, repository, workflow_id = github_service._get_workflow_info(test_instance.resource)
     # get github workflow

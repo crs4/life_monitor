@@ -196,7 +196,6 @@ class ROCrate(Resource):
     def _is_github_crate_(uri: str) -> str:
         # FIXME: replace with a better detection mechanism
         if uri.startswith('https://github.com'):
-            token = None
             # normalize uri as clone URL
             if not uri.endswith('.git'):
                 uri += '.git'

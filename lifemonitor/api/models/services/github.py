@@ -167,11 +167,7 @@ class GithubTestingService(TestingService):
         branch = branch or github.GithubObject.NotSet
         status = status or github.GithubObject.NotSet
         created = created or github.GithubObject.NotSet
-        assert (
-            branch is github.GithubObject.NotSet
-            or isinstance(branch, github.Branch.Branch)
-            or isinstance(branch, str)
-        ), branch
+        assert (branch is github.GithubObject.NotSet or isinstance(branch, github.Branch.Branch) or isinstance(branch, str)), branch
         assert status is github.GithubObject.NotSet or isinstance(status, str), status
         url_parameters = dict()
         if branch is not github.GithubObject.NotSet:
@@ -326,7 +322,7 @@ class GithubTestingService(TestingService):
         except GithubRateLimitExceededException as e:
             raise lm_exceptions.RateLimitExceededException(detail=str(e), instance=test_instance)
         except UnknownObjectException as e:
-            raise lm_exceptions.EntityNotFoundException(models.TestBuild, entity_id=build_number)
+            raise lm_exceptions.EntityNotFoundException(models.TestBuild, entity_id=build_number, detail=str(e))
 
     def get_instance_external_link(self, test_instance: models.TestInstance) -> str:
         _, repo_full_name, workflow_id = self._get_workflow_info(test_instance.resource)
