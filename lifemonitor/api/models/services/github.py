@@ -284,7 +284,7 @@ class GithubTestBuild(models.TestBuild):
 
     @property
     def id(self) -> str:
-        return str(self._metadata.id)
+        return f"{self._metadata.id}_{self.attempt_number}"
 
     @property
     def build_number(self) -> int:
