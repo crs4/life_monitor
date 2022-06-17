@@ -338,6 +338,7 @@ class GithubTestBuild(models.TestBuild):
 
     @property
     def timestamp(self) -> int:
+        return int(self._metadata.created_at.timestamp())
 
     @property
     def created_at(self) -> int:
