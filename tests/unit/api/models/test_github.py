@@ -363,3 +363,19 @@ def test_instance_builds_versioned_by_date(
         assert len(instance_builds) == 2, "Unexpected number of runs for the instance revision"
 
 
+@pytest.mark.parametrize("git_ref", [("tag", "0.3.0")], indirect=True)
+@pytest.mark.parametrize("test_instance", [workflow_tests_resource], indirect=True)
+def test_versioned_instance_new_build(
+        github_service: models.GithubTestingService, git_ref, test_instance):
+
+    assert test_instance.resource == workflow_tests_resource
+
+    ref_type, ref_value, ref = git_ref
+    repo = test_instance.test_suite.workflow_version.repository
+    assert repo
+    assert repo.revision.main_ref.shorthand == ref_value
+
+    last_build = github_service.get_last_test_build(test_instance)
+    assert last_build, "Last build not found"
+
+    assert github_service.start_test_build(test_instance), "Test instance build not started"
