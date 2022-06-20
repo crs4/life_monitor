@@ -103,25 +103,6 @@ class LocalWorkflowRepository(WorkflowRepository):
             if self._file_key_(self._metadata.repository_file) not in self._transient_files['remove'] \
             else None
 
-    def generate_metadata(self, workflow_version: str = "main", license: str = "MIT", **kwargs) -> WorkflowRepositoryMetadata:
-        workflow = self.find_workflow()
-        if not workflow:
-            raise IllegalStateException("No workflow found", instance=self)
-        workflow_type = workflow.type
-        logger.debug("Detected workflow type: %r", workflow_type)
-        try:
-            from ..rocrate import generators
-            generators.generate_crate(workflow_type, workflow_version=workflow_version,
-                                      local_repo_path=self.local_path, license=license, **kwargs)
-            self._metadata = WorkflowRepositoryMetadata(self, init=False, exclude=self.exclude,
-                                                        local_path=self._local_path)
-        except Exception as e:
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.exception(e)
-            self._metadata = super().generate_metadata()
-        self.add_file(self._metadata.repository_file)
-        return self._metadata
-
     def find_file_by_pattern(self, search: str) -> RepositoryFile:
         return next((f for f in self.files if re.search(search, f.name)), None)
 

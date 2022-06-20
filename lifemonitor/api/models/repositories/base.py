@@ -157,10 +157,25 @@ class WorkflowRepository():
         assert repo and isinstance(repo, WorkflowRepository), repo
         return self.__compare__(self.files, repo.files, exclude=exclude)
 
-    def generate_metadata(self) -> WorkflowRepositoryMetadata:
-        self._metadata = WorkflowRepositoryMetadata(self, init=True, exclude=self.exclude,
-                                                    local_path=self._local_path)
-        self._metadata.write(self._local_path)
+    def generate_metadata(self, workflow_version: str = "main", license: str = "MIT", **kwargs) -> WorkflowRepositoryMetadata:
+        workflow = self.find_workflow()
+        if not workflow:
+            raise IllegalStateException("No workflow found", instance=self)
+        workflow_type = workflow.type
+        logger.debug("Detected workflow type: %r", workflow_type)
+        try:
+            from ..rocrate import generators
+            generators.generate_crate(workflow_type, workflow_version=workflow_version,
+                                      local_repo_path=self.local_path, license=license, **kwargs)
+            self._metadata = WorkflowRepositoryMetadata(self, init=False, exclude=self.exclude,
+                                                        local_path=self._local_path)
+        except Exception as e:
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.exception(e)
+            self._metadata = WorkflowRepositoryMetadata(self, init=True, exclude=self.exclude,
+                                                        local_path=self._local_path)
+            self._metadata.write(self._local_path)
+        self.add_file(self._metadata.repository_file)
         return self._metadata
 
     @property
