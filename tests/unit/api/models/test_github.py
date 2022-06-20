@@ -378,3 +378,9 @@ def test_versioned_instance_new_build(
     assert last_build, "Last build not found"
 
     assert github_service.start_test_build(test_instance), "Test instance build not started"
+
+
+def test_instance_list_gh_workflows(github_service: models.GithubTestingService, repo_full_name):
+    repo = github_service._gh_service.get_repo(repo_full_name)
+    for w in repo.get_workflows():
+        logger.debug("Workflow: %r", w)
