@@ -3,6 +3,8 @@ name: Tests
 on:
   push:
     branches: [ {{ repo_branch }} ]
+    tags:
+      - '*.*.*'
   pull_request:
     branches: [ {{ repo_branch }} ]
 
