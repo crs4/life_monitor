@@ -362,6 +362,7 @@ def test_instance_builds_versioned_by_date(
         assert len(instance_builds) == 2, "Unexpected number of runs for the instance revision"
 
 
+@pytest.mark.skip(reason="skip this test by default")
 @pytest.mark.parametrize("git_ref", [("tag", "0.3.0")], indirect=True)
 @pytest.mark.parametrize("test_instance", [workflow_tests_resource], indirect=True)
 def test_versioned_instance_new_build(
