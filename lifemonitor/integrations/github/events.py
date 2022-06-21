@@ -299,12 +299,12 @@ class GithubRepositoryReference(object):
     @property
     def repository(self) -> GithubWorkflowRepository:
         if not self._repo:
-            repo = self.event.installation.get_repo(self.full_name)
-            repo.ref = self.ref
+            ref = self.ref
             if self.branch:
-                repo.ref = f"refs/heads/{self.branch}"
+                ref = f"refs/heads/{self.branch}"
             elif self.tag:
-                repo.ref = f"refs/tags/{self.tag}"
+                ref = f"refs/tags/{self.tag}"
+            repo = self.event.installation.get_repo(self.full_name, ref=ref)
             repo.rev = self.rev
             self._repo = repo
         return self._repo
