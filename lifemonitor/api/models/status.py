@@ -106,6 +106,7 @@ class Status:
                             if latest_build and latest_build.status in ["passed", "failed", "error"]:
                                 break
                         # Update aggregated status using the latest completed build
+                        logger.debug("Latest build found: %r", latest_build)
                         if latest_build:
                             latest_builds.append(latest_build)
                             status = WorkflowStatus._update_status(status, latest_build.is_successful())
