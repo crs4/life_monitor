@@ -38,8 +38,8 @@ push:
     #                                   # by the endpoint `<lifemonitor_url>/registries`
     #                                   # (e.g., https://api.lifemontor.eu/registries)
     - name: "v*.*.*"
-      update_registries: [{{registries|join(', ', attribute="name")}}]
+      update_registries: [{{registries|join(', ', attribute="client_name")}}]
       enable_notifications: true
     - name: "*.*.*"
-      update_registries: [{{registries|join(', ', attribute="name")}}]
+      update_registries: [{{registries|join(', ', attribute="client_name")}}]
       enable_notifications: true

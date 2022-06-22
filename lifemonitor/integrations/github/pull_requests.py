@@ -31,16 +31,32 @@ from lifemonitor.api.models.repositories.github import \
 from lifemonitor.exceptions import IllegalStateException
 from lifemonitor.integrations.github.app import LifeMonitorGithubApp
 
+from github.GithubException import GithubException
 from github.Issue import Issue
 from github.PullRequest import PullRequest
 from github.Repository import Repository
-from github.GithubException import GithubException
 
 from . import issues
 from .utils import crate_branch, delete_branch
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
+
+
+class GithubPullRequest(PullRequest):
+
+    def __init__(self, requester, headers, attributes, completed):
+        super().__init__(requester, headers, attributes, completed)
+
+    def as_repository_issue(self) -> issues.WorkflowRepositoryIssue:
+        issue = None
+        issue_type = WorkflowRepositoryIssue.from_string(self.title)
+        if issue_type:
+            issue: issues.WorkflowRepositoryIssue = issue_type()
+        return issue
+
+    def as_issue(self) -> issues.GithubIssue:
+        return issues.GithubIssue(self._requester, self.raw_headers, super().as_issue().raw_data, True)
 
 
 def find_pull_request_by_issue(repo: Repository, issue: Union[str, WorkflowRepositoryIssue]) -> PullRequest:
@@ -81,16 +97,17 @@ def __prepare_pr_head__(repo: InstallationGithubWorkflowRepository,
         except Exception as e:
             raise IllegalStateException("Unable to prepare support branch for PR %r: %r" % (head, str(e)))
         for change in files:
-            current_file_version = repo.find_remote_file_by_name(change.name, ref=head)
-            if current_file_version:
-                logger.debug("Found a previous version of the file: %r", current_file_version)
-                if allow_update:
-                    repo.update_file(os.path.join(change.dir, change.name),
-                                     f"Update {change.name}", change.get_content(),
-                                     sha=current_file_version.sha, branch=head)
-            else:
+            try:
                 repo.create_file(os.path.join(change.dir, change.name),
                                  f"Add {change.name}", change.get_content(), branch=head)
+            except Exception:
+                if allow_update:
+                    current_file_version = repo.find_remote_file_by_name(change.name, ref=head)
+                    logger.debug("Found a previous version of the file: %r", current_file_version)
+                    if current_file_version:
+                        repo.update_file(os.path.join(change.dir, change.name),
+                                         f"Update {change.name}", change.get_content(),
+                                         sha=current_file_version.sha, branch=head)
         return head
     except KeyError as e:
         raise ValueError(f"Issue not valid: {str(e)}")
@@ -102,14 +119,19 @@ def __prepare_pr_head__(repo: InstallationGithubWorkflowRepository,
 def create_pull_request_from_github_issue(repo: InstallationGithubWorkflowRepository,
                                           identifier: str,
                                           issue: Issue, files: List[RepositoryFile],
-                                          allow_update: bool = True):
+                                          allow_update: bool = True,
+                                          create_comment: str = None, update_comment: str = None):
     assert isinstance(repo, Repository), repo
     assert isinstance(issue, Issue), issue
     try:
-        head = __prepare_pr_head__(repo, identifier, files, allow_update=allow_update)
         pr = find_pull_request_by_title(repo, issue.id)
+        if pr and update_comment:
+            issue.create_comment(update_comment)
+        head = __prepare_pr_head__(repo, identifier, files, allow_update=allow_update)
+        logger.debug("HEAD: %r -> %r", head, repo)
         if not pr:
-            logger.debug("HEAD: %r -> %r", head, repo)
+            if create_comment:
+                issue.create_comment(create_comment)
             pr = repo.create_pull(issue=issue,
                                   base=repo.ref or repo.default_branch, head=head)
         return pr

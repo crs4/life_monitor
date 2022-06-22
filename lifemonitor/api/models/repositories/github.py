@@ -142,11 +142,17 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
             return self.remote_metadata
         return self.local_repo.metadata
 
-    def find_remote_file_by_pattern(self, search: str, ref: str = None) -> GitRepositoryFile:
-        for e in self.get_contents('.', ref=ref or self.ref):
+    def find_remote_file_by_pattern(self, search: str, ref: str = None,
+                                    path: str = ".", include_subdirs: bool = False) -> GitRepositoryFile:
+        for e in self.get_contents(path, ref=ref or self.ref):
             logger.debug("Name: %r -- type: %r", e.name, e.type)
+            c_file = None
+            if include_subdirs and e.type == "dir":
+                c_file = self.find_remote_file_by_pattern(search, ref=ref, path=f"{path}/{e.name}")
             if re.search(search, e.name):
-                return GitRepositoryFile(e)
+                c_file = e
+            if c_file:
+                return GitRepositoryFile(c_file)
         return None
 
     def find_file_by_pattern(self, search: str, ref: str = None) -> GitRepositoryFile:
@@ -154,30 +160,41 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
             return self.find_remote_file_by_pattern(search, ref=ref)
         return self.local_repo.find_file_by_pattern(search)
 
-    def find_remote_file_by_name(self, name: str, ref: str = None) -> GitRepositoryFile:
-        for e in self.get_contents('.', ref=ref or self.ref):
+    def find_remote_file_by_name(self, name: str, ref: str = None,
+                                 path: str = '.', include_subdirs: bool = False) -> GitRepositoryFile:
+        for e in self.get_contents(path, ref=ref or self.ref):
             logger.debug("Name: %r -- type: %r", e.name, e.type)
+            c_file = None
+            if include_subdirs and e.type == "dir":
+                c_file = self.find_remote_file_by_name(name, ref=ref, path=f"{path}/{e.name}")
             if e.name == name:
-                return GitRepositoryFile(e)
+                c_file = e
+            if c_file:
+                return GitRepositoryFile(c_file)
         return None
 
-    def find_file_by_name(self, name: str, ref: str = None) -> GitRepositoryFile:
+    def find_file_by_name(self, name: str, ref: str = None, path: str = '.') -> GitRepositoryFile:
         if not self.local_repo:
-            return self.find_remote_file_by_name(name, ref=ref)
-        return self.local_repo.find_file_by_name(name)
+            return self.find_remote_file_by_name(name, ref=ref, path=path)
+        return self.local_repo.find_file_by_name(name, path=path)
 
-    def find_remote_workflow(self, ref: str = None) -> GitRepositoryFile:
-        for e in self.get_contents('.', ref=ref or self.ref):
-            for ext, wf_type in WorkflowFile.extension_map.items():
-                if re.search(rf"\.{ext}$", e.name):
-                    return GitRepositoryFile(e, type=wf_type)
+    def find_remote_workflow(self, ref: str = None, path: str = '.') -> GitRepositoryFile:
+        for e in self.get_contents(path, ref=ref or self.ref):
+            logger.debug("Checking: %r (type: %s)", e.name, e.type)
+            if e.type == 'dir':
+                wf = self.find_remote_workflow(ref=ref, path=f"{path}/{e.name}")
+            else:
+                wf = WorkflowFile.is_workflow(GitRepositoryFile(e))
+            logger.debug("Is workflow: %r", wf)
+            if wf:
+                return wf
         return None
 
     def find_workflow(self, ref: str = None) -> WorkflowFile:
-        logger.debug("Local repo: %r", not self.local_repo)
-        if not self.local_repo:
-            return self.find_remote_workflow(ref=ref)
-        return self.local_repo.find_workflow()
+        logger.debug("Local repo: %r", self.local_repo)
+        if self.local_repo:
+            return self.local_repo.find_workflow()
+        return self.find_remote_workflow(ref=ref)
 
     def generate_metadata(self):
         if self._local_repo:
@@ -287,6 +304,6 @@ class RepoCloneContextManager():
 
 
 def __make_requester__(jwt: str = None, token: str = None, base_url: str = DEFAULT_BASE_URL) -> Requester:
-    return Requester(token, None, jwt, base_url,
+    return Requester(token or None, None, jwt, base_url,
                      DEFAULT_TIMEOUT, "PyGithub/Python", DEFAULT_PER_PAGE,
                      True, None, None)

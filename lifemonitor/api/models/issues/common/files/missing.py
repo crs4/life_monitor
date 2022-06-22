@@ -43,12 +43,22 @@ class MissingConfigFile(WorkflowRepositoryIssue):
         return False
 
 
+class NotInitialisedRepositoryIssue(WorkflowRepositoryIssue):
+    name = "Repository not intialised"
+    description = "No workflow and crate metadata found on this repository."
+    labels = ['invalid', 'enhancement', 'config']
+    depends_on = [MissingConfigFile]
+
+    def check(self, repo: WorkflowRepository) -> bool:
+        return repo.find_workflow() is None and repo.metadata is None
+
+
 class MissingWorkflowFile(WorkflowRepositoryIssue):
     name = "Missing workflow file"
     description = "No workflow found on this repository.<br>"\
-        "You should place the workflow file (e.g., <code>.ga</code> file) on the root of this repository."
-    labels = ['invalid', 'enhancement']
-    depends_on = [MissingConfigFile]
+        "You should place the workflow file (e.g., <code>.ga</code> file) according to the best practices ."
+    labels = ['invalid', 'bug']
+    depends_on = [NotInitialisedRepositoryIssue]
 
     def check(self, repo: WorkflowRepository) -> bool:
         return repo.find_workflow() is None
@@ -66,4 +76,20 @@ class MissingMetadataFile(WorkflowRepositoryIssue):
             metadata = repo.generate_metadata()
             self.add_change(metadata.repository_file)
             return True
+        return False
+
+
+class MissingRoCrateWorkflowFile(WorkflowRepositoryIssue):
+    name = "Missing RO-Crate workflow file"
+    description = "The workflow file declared on RO-Crate metadata is missing in this repository."
+    labels = ['invalid', 'bug']
+    depends_on = [MissingMetadataFile]
+
+    def check(self, repo: WorkflowRepository) -> bool:
+        if repo.metadata:
+            wf_file = repo.metadata.get_workflow()
+            if wf_file:
+                logger.debug("Workflow file: %r - %s %s",
+                             wf_file, wf_file.dir, wf_file.name)
+            return not wf_file or not repo.find_file_by_name(wf_file.name, path=wf_file.dir)
         return False

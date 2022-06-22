@@ -34,8 +34,10 @@ from lifemonitor.integrations.github.app import (LifeMonitorGithubApp,
                                                  LifeMonitorInstallation)
 from lifemonitor.integrations.github.issues import (GithubIssue,
                                                     GithubIssueComment)
+from lifemonitor.integrations.github.pull_requests import GithubPullRequest
 
-from github.PullRequest import PullRequest
+from github.Workflow import Workflow
+from github.WorkflowRun import WorkflowRun
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
@@ -90,6 +92,10 @@ class GithubEvent():
     @property
     def headers(self) -> dict:
         return self._headers
+
+    @property
+    def pusher(self) -> str:
+        return self._raw_data['pusher']['name'] if 'pusher' in self._raw_data else None
 
     @property
     def sender(self) -> OAuthIdentity:
@@ -167,9 +173,9 @@ class GithubEvent():
             GithubIssue(self.installation._requester, {}, self.payload['issue'], True)
 
     @property
-    def pull_request(self) -> Optional[PullRequest]:
+    def pull_request(self) -> Optional[GithubPullRequest]:
         return None if 'pull_request' not in self.payload else \
-            PullRequest(self.installation._requester, {}, self.payload['pull_request'], True)
+            GithubPullRequest(self.installation._requester, {}, self.payload['pull_request'], True)
 
     @property
     def comment(self) -> Optional[GithubIssueComment]:
@@ -178,6 +184,16 @@ class GithubEvent():
             return None if 'comment' not in self.payload else \
                 GithubIssueComment(self.installation._requester, {}, self.payload['comment'], True, issue=issue)
         return None
+
+    @property
+    def workflow(self) -> Optional[Workflow]:
+        return None if 'workflow' not in self.payload else \
+            Workflow(self.installation._requester, {}, self.payload['workflow'], True)
+
+    @property
+    def workflow_run(self) -> Optional[WorkflowRun]:
+        return None if 'workflow_run' not in self.payload else \
+            WorkflowRun(self.installation._requester, {}, self.payload['workflow_run'], True)
 
     @staticmethod
     def from_request(request: Request = None) -> GithubEvent:

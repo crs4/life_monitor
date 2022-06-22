@@ -31,12 +31,12 @@ from typing import Dict, List, Tuple
 
 import lifemonitor.api.models.issues as issues
 from lifemonitor.api.models.repositories.config import WorkflowRepositoryConfig
-from lifemonitor.api.models.repositories.files import (RepositoryFile,
-                                                       WorkflowFile)
 from lifemonitor.exceptions import IllegalStateException
 from lifemonitor.test_metadata import get_roc_suites, get_workflow_authors
 from lifemonitor.utils import to_camel_case
 from rocrate.rocrate import Metadata, ROCrate
+
+from .files import RepositoryFile, WorkflowFile
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -70,11 +70,11 @@ class WorkflowRepository():
         return self._metadata
 
     @abstractclassmethod
-    def find_file_by_pattern(self, search: str) -> RepositoryFile:
+    def find_file_by_pattern(self, search: str, path: str = '.') -> RepositoryFile:
         pass
 
     @abstractclassmethod
-    def find_file_by_name(self, name: str) -> RepositoryFile:
+    def find_file_by_name(self, name: str, path: str = '.') -> RepositoryFile:
         pass
 
     @abstractclassmethod
@@ -250,12 +250,10 @@ class WorkflowRepositoryMetadata(ROCrate):
     def get_workflow(self) -> WorkflowFile:
         if self.mainEntity and self.mainEntity.id:
             lang = self.mainEntity.get("programmingLanguage", None)
-            return WorkflowFile(
-                self.source,
-                self.mainEntity.get("name", self.mainEntity.id) if self.mainEntity else None,
-                type=lang.get("name", lang.id).lower() if lang else None,
-                dir=self.source
-            )
+            path, filename = os.path.split(self.mainEntity.id)
+            return WorkflowFile(self.source, filename,
+                                type=lang.get("name", lang.id).lower() if lang else None,
+                                dir=path)
         return None
 
     @property

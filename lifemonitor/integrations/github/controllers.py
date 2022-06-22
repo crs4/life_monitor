@@ -29,13 +29,10 @@ from flask_apscheduler import APScheduler
 from lifemonitor import cache
 from lifemonitor.api import serializers
 from lifemonitor.api.models import WorkflowRegistry
-from lifemonitor.api.models.issues import WorkflowRepositoryIssue
-from lifemonitor.api.models.issues.common.files.missing import \
-    MissingWorkflowFile
 from lifemonitor.api.models.registries.settings import RegistrySettings
 from lifemonitor.api.models.repositories.github import GithubWorkflowRepository
 from lifemonitor.api.models.testsuites.testinstance import TestInstance
-from lifemonitor.api.models.wizards import QuestionStep, UpdateStep, Wizard
+from lifemonitor.api.models.wizards import QuestionStep, UpdateStep
 from lifemonitor.api.models.workflows import WorkflowVersion
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 from lifemonitor.integrations.github import pull_requests
@@ -64,26 +61,41 @@ def ping(event: GithubEvent):
 
 def refresh_workflow_builds(event: GithubEvent):
     try:
+
         logger.debug("Workflow run event: %r", event)
-        repository = event['payload']['repository']
-        logger.debug("Workflow repository: %r", repository)
-        workflow = event['payload']['workflow']
-        logger.debug("Workflow: %r", workflow)
-        workflow_run = event['payload']['workflow_run']
-        logger.debug("Workflow run: %r", workflow_run)
-        workflow_name = workflow['path'].replace('.github/workflows/', '')
+
+        installation = event.installation
+        logger.debug("Installation: %r", installation)
+
+        repo_info = event.repository_reference
+        logger.debug("Repo reference: %r", repo_info)
+
+        repo: GithubWorkflowRepository = repo_info.repository
+        logger.debug("Repository: %r", repo)
+
+        github_workflow = event.workflow
+        logger.debug("Github Workflow: %r (name: %s, path: %s)",
+                     github_workflow, github_workflow.name, github_workflow.path)
+
+        github_workflow_run = event.workflow_run
+        logger.debug("Github Workflow: %r", github_workflow_run)
+
+        workflow_name = github_workflow.path.replace('.github/workflows/', '')
         logger.debug("Workflow NAME: %r", workflow_name)
-        workflow_resource = f"repos/{repository['full_name']}/actions/workflows/{workflow_name}"
+
+        workflow_resource = f"repos/{repo.full_name}/actions/workflows/{workflow_name}"
         logger.debug("Workflow Resource: %r", workflow_resource)
         instances = TestInstance.find_by_resource(workflow_resource)
         logger.debug("Instances: %r", instances)
-        with cache.transaction():
+        with cache.cache.transaction():
             for i in instances:
                 i.get_test_builds(limit=10)
-                i.get_test_build(workflow_run['id'])
+                i.get_test_build(github_workflow_run.id)
                 i.last_test_build
         return f"Test instance related with resource '{workflow_resource}' updated", 200
     except Exception as e:
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.exception(e)
         logger.error(e)
         return "Internal Error", 500
 
@@ -353,6 +365,42 @@ def push(event: GithubEvent):
         return "Internal Error", 500
 
 
+def __delete_support_branches__(event: GithubEvent):
+    repo = event.repository_reference
+    logger.debug("Repo reference: %r", repo)
+
+    # detect the current LifeMonitor issue
+    issue_or_pullrequest = event.issue or event.pull_request
+    issue = issue_or_pullrequest.as_repository_issue() if issue_or_pullrequest else None
+    if not issue:
+        logger.warning("No support branch to delete since no LifeMonitor issue has been detected")
+        return
+
+    # initialize support branches to delete
+    support_branches = [issue.id]
+
+    # check if the current issue is associated to a wizard
+    wizard = GithubWizard.from_event(event)
+    logger.debug("Detected wizard: %r", wizard)
+    if wizard:
+        current_step = wizard.current_step
+        logger.debug("Detected wizard step: %r", current_step)
+        if current_step:
+            support_branches.append(current_step.id)
+
+    # delete support branches
+    logger.warning("Support branches to delete: %r", support_branches)
+    for support_branch in support_branches:
+        try:
+            logger.debug("Trying to delete support branch: %s ...", support_branch)
+            delete_branch(event.repository_reference.repository, support_branch)
+            logger.debug("Support branch %s deleted", support_branch)
+        except Exception as e:
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.exception(e)
+            logger.warn("Unable to delete support branch %s", support_branch)
+
+
 def pull_request(event: GithubEvent):
     logger.debug("Event: %r", event)
 
@@ -373,20 +421,8 @@ def pull_request(event: GithubEvent):
     logger.debug("HEAD of this PR: %s", ref)
 
     # delete support branch of closed issues
-    support_branch = ref
     if event.action == "closed":
-        support_branches = []
-        support_branches.extend([b.id for b in WorkflowRepositoryIssue.all()])
-        support_branches.extend([s.id for s in w.steps if isinstance(s, UpdateStep)] for w in Wizard.all())
-        if support_branch in support_branches:
-            try:
-                logger.debug("Trying to delete support branch: %s ...", support_branch)
-                delete_branch(event.repository_reference.repository, support_branch)
-                logger.debug("Support branch %s deleted", support_branch)
-            except Exception as e:
-                if logger.isEnabledFor(logging.DEBUG):
-                    logger.exception(e)
-                logger.warn("Unable to delete support branch %s", support_branch)
+        __delete_support_branches__(event)
 
 
 def issues(event: GithubEvent):
@@ -401,7 +437,7 @@ def issues(event: GithubEvent):
 
     # delete support branch of closed issues
     if event.action == "closed":
-        delete_branch(event.repository_reference.repository, issue)
+        __delete_support_branches__(event)
 
     # check the author of the current issue
     if issue.user.login != event.application.bot:
@@ -413,17 +449,13 @@ def issues(event: GithubEvent):
         repository_issue = issue.as_repository_issue()
         logger.debug("LifeMonitor issue: %r", repository_issue)
         if repository_issue:
-            logger.debug("Entering: %r", isinstance(repository_issue, MissingWorkflowFile))
-            if isinstance(repository_issue, MissingWorkflowFile):
-                logger.debug("Missing workflow file issue")
-
-                wizard = GithubWizard.from_event(event)
-                logger.debug("Current wizard: %r", wizard)
-                if wizard:
-                    if not wizard.current_step:
-                        next_step = wizard.get_next_step()
-                        logger.debug("Next step: %r", next_step)
-                        wizard.io_handler.write(next_step, append_help=True)
+            wizard = GithubWizard.from_event(event)
+            logger.debug("Current wizard: %r", wizard)
+            if wizard:
+                if not wizard.current_step:
+                    next_step = wizard.get_next_step()
+                    logger.debug("Next step: %r", next_step)
+                    wizard.io_handler.write(next_step, append_help=True)
 
     return "No action", 204
 
@@ -503,11 +535,13 @@ def issue_comment(event: GithubEvent):
                         logger.debug("REV: %r", repo.rev)
                         logger.debug("DEFAULT BRANCH: %r", repo.default_branch)
                         if not pull_requests.find_pull_request_by_title(repo, next_step.title):
-                            issue.create_comment(next_step.as_string())
+                            issue.create_comment(
+                                f"<b>{next_step.title}</b><br>Please wait, collecting files...")
                             with TemporaryDirectory(dir='/tmp') as target_path:
                                 pr = pull_requests.create_pull_request_from_github_issue(
                                     repo, next_step.id, issue,
-                                    next_step.get_files(repo, target_path=target_path), True)
+                                    next_step.get_files(repo, target_path=target_path), False,
+                                    create_comment=next_step.as_string())
                                 if not pr:
                                     logger.warning("Unable to create PR for issue: %r", issue)
                                 # Uncomment to create a separate PR to propose changes
@@ -566,18 +600,32 @@ def handle_event():
     logger.debug("Request header values: %r", request.headers)
     if not LifeMonitorGithubApp.check_initialization():
         return "GitHub Integration not configured", 503
-    valid = LifeMonitorGithubApp.validate_signature(request)
-    logger.debug("Signature valid?: %r", valid)
-    if not valid:
-        return "Signature Invalid", 401
+
+    # filter events: skip all push on branches generated by LifeMonitor
     event = GithubEvent.from_request()
     try:
-        if event.repository_reference.branch and event.repository_reference.branch.startswith('lifemonitor-issue'):
+        branch = event.repository_reference.branch
+        if branch and (branch.startswith('lifemonitor-issue') or branch.startswith('wizard-step')):
             msg = f"Nothing to do for the event '{event.type}' on branch {event.repository_reference.branch}"
             logger.debug(msg)
             return msg, 204
     except ValueError as e:
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.exception(e)
         logger.debug(str(e))
+
+    # check the author of the current pull_request
+    if event.pusher == event.application.bot:
+        logger.debug("Nothing to do: commit pushed by LifeMonitor[Bot]")
+        return f"Push created by {event.application.bot}", 204
+
+    # Validate message signature
+    valid = LifeMonitorGithubApp.validate_signature(request)
+    logger.debug("Signature valid?: %r", valid)
+    if not valid:
+        return "Signature Invalid", 401
+
+    # Submit event to an async handler
     event_handler = __event_handlers__.get(event.type, None)
     logger.debug("Event: %r", event)
     if not event_handler:

@@ -1,4 +1,3 @@
-
 # Copyright (c) 2020-2021 CRS4
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -27,66 +26,10 @@ from typing import Dict, Optional
 
 from flask import render_template_string
 
+from .base import RepositoryFile
+
 # set module level logger
 logger = logging.getLogger(__name__)
-
-
-class RepositoryFile():
-
-    def __init__(self, repository_path: str, name: str,
-                 type: str = None, dir: str = ".", content=None) -> None:
-        self.repository_path = repository_path
-        self.name = name
-        self.dir = dir
-        self._type = type
-        self._content = content
-
-    def __repr__(self) -> str:
-        return f"File {self.name} (dir: {self.dir})"
-
-    @property
-    def type(self) -> str:
-        if not self._type and self.name:
-            return self.get_type(self.name)
-        return self._type
-
-    @property
-    def path(self) -> str:
-        dir_path = self.dir
-        if self.repository_path:
-            dir_path = os.path.abspath(os.path.join(self.repository_path, dir_path))
-        return os.path.join(dir_path, self.name)
-
-    def get_content(self, binary_mode: bool = False):
-        if not self._content and self.dir:
-            with open(f"{self.path}", 'rb' if binary_mode else 'r') as f:
-                return f.read()
-        return self._content
-
-    @staticmethod
-    def get_type(filename: str) -> str:
-        parts = os.path.splitext(filename) if filename else None
-        return parts[1].replace('.', '') if parts and len(parts) > 0 else None
-
-
-class WorkflowFile(RepositoryFile):
-
-    extension_map = {
-        'ga': 'galaxy',
-        'smk': 'snakemake',
-        'ipynb': 'jupyter',
-        'sh': 'bash',
-    }
-
-    def __repr__(self) -> str:
-        return f"Workflow \"{self.name}\" (type: {self.type}, path: {self.path})"
-
-    @classmethod
-    def get_workflow_extension(cls, workflow_type: str) -> str:
-        for ext, wtype in cls.extension_map.items():
-            if wtype == workflow_type:
-                return ext
-        return None
 
 
 class TemplateRepositoryFile(RepositoryFile):

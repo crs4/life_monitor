@@ -45,7 +45,7 @@ def get_repository(repository: str, local_path: str = None):
     if is_url(repository):
         remote_repo_url = repository
         if remote_repo_url.endswith('.git'):
-            return GithubWorkflowRepository.from_url(remote_repo_url, auto_cleanup=False, local_path=local_path)
+            return GithubWorkflowRepository.from_url(remote_repo_url, auto_cleanup=True, local_path=local_path)
     else:
         return LocalWorkflowRepository(repository)
     return ValueError("Repository type not supported")
@@ -53,19 +53,20 @@ def get_repository(repository: str, local_path: str = None):
 
 def init_output_path(output_path):
     logger.debug("Output path: %r", output_path)
-    files = os.listdir(output_path)
-    logger.debug("File: %r", files)
-    if len(files) > 0:
-        answer = Prompt.ask(f"The folder '{output_path}' is not empty. "
-                            "Would like to delete its content?", choices=["y", "n"], default="y")
-        logger.debug("Answer: %r", answer)
-        if answer == 'y':
-            for root, dirs, files in os.walk(output_path):
-                for f in files:
-                    os.unlink(os.path.join(root, f))
-                for d in dirs:
-                    shutil.rmtree(os.path.join(root, d))
-        else:
-            sys.exit(0)
+    if os.path.exists(output_path):
+        files = os.listdir(output_path)
+        logger.debug("File: %r", files)
+        if len(files) > 0:
+            answer = Prompt.ask(f"The folder '{output_path}' is not empty. "
+                                "Would like to delete its content?", choices=["y", "n"], default="y")
+            logger.debug("Answer: %r", answer)
+            if answer == 'y':
+                for root, dirs, files in os.walk(output_path):
+                    for f in files:
+                        os.unlink(os.path.join(root, f))
+                    for d in dirs:
+                        shutil.rmtree(os.path.join(root, d))
+            else:
+                sys.exit(0)
     if not os.path.exists(output_path):
         os.makedirs(output_path, exist_ok=True)

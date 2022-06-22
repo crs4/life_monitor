@@ -70,10 +70,11 @@ class WorkflowRepositoryTemplate(WorkflowRepository):
         return self._files
 
     def get_workflow_name(self) -> str:
-        wext = WorkflowFile.get_workflow_extension(self.name)
-        if wext:
-            return f"workflow.{WorkflowFile.get_workflow_extension(self.name)}"
-        return None
+        # try to find a valid extension for the workflow of this template
+        wext = WorkflowFile.get_workflow_extensions(self.name)
+        if wext and len(wext) > 0:
+            return f"workflow.{wext.pop()}"  # pick the first
+        return "workflow"
 
     def _load_files(self, path: str = None):
         result = []

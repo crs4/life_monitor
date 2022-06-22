@@ -111,9 +111,10 @@ class LocalWorkflowRepository(WorkflowRepository):
 
     def find_workflow(self) -> WorkflowFile:
         for file in self.files:
-            for ext, wf_type in WorkflowFile.extension_map.items():
-                if re.search(rf"\.{ext}$", file.name):
-                    return WorkflowFile(file.repository_path, file.name, wf_type, dir=file.dir)
+            wf = WorkflowFile.is_workflow(file)
+            if wf:
+                logger.debug("Detected workflow: %r", wf)
+                return wf
         return None
 
 
