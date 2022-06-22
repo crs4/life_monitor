@@ -111,7 +111,7 @@ certs:
 	  echo "$(yellow)WARNING: Using existing JWT keys $(reset)" ; \
 	fi
 
-lifemonitor: docker/lifemonitor.Dockerfile certs app.py gunicorn.conf.py
+lifemonitor: docker/lifemonitor.Dockerfile certs app.py gunicorn.conf.py ## Build LifeMonitor Docker image
 	@printf "\n$(bold)Building LifeMonitor Docker image...$(reset)\n" ; \
 	$(build_kit) docker $(build_cmd) $(cache_from_opt) $(cache_to_opt) \
 		  ${sw_version_arg} ${build_number_arg} \

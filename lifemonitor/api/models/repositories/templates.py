@@ -24,9 +24,9 @@ import logging
 import os
 from typing import Dict, List
 
-from lifemonitor.api.models.repositories.files import (RepositoryFile,
-                                                       TemplateRepositoryFile,
+from lifemonitor.api.models.repositories.files import (TemplateRepositoryFile,
                                                        WorkflowFile)
+from lifemonitor.api.models.repositories.local import LocalWorkflowRepository
 
 from .base import WorkflowRepository, WorkflowRepositoryMetadata
 
@@ -69,26 +69,17 @@ class WorkflowRepositoryTemplate(WorkflowRepository):
             self._dirty = False
         return self._files
 
-    def get_workflow_name(self) -> WorkflowFile:
+    def get_workflow_name(self) -> str:
         wext = WorkflowFile.get_workflow_extension(self.name)
         if wext:
             return f"workflow.{WorkflowFile.get_workflow_extension(self.name)}"
         return None
 
-    def generate_metadata(self) -> WorkflowRepositoryMetadata:
-        self._metadata = WorkflowRepositoryMetadata(self, init=True, exclude=self.exclude,
-                                                    local_path=self._local_path)
-        self._metadata.add_workflow(self.get_workflow_name(),
-                                    lang=self.name, properties={
-                                        'name': self.data.get('workflow_title', None)} if self.data else None)
-        self._metadata.write(self._local_path)
-        return self._metadata
-
     def _load_files(self, path: str = None):
         result = []
-        paths = [path or self.template_path]
-        if not path:
-            paths.append(os.path.join(self._templates_base_path, 'base'))
+        paths = [path] if path else None
+        if not paths:
+            paths = [os.path.join(self._templates_base_path, 'base'), self.template_path]
         for base_path in paths:
             for root, _, files in os.walk(base_path):
                 logger.debug("Root: %r", root)
@@ -98,8 +89,6 @@ class WorkflowRepositoryTemplate(WorkflowRepository):
                     result.append(
                         TemplateRepositoryFile(base_path, filename, filename,
                                                dir=dirname, data=self.data))
-        self.generate_metadata()
-        result.append(RepositoryFile(self._local_path, self.metadata.DEFAULT_METADATA_FILENAME))
         return result
 
     def get_files(self, **kwargs) -> List[TemplateRepositoryFile]:
@@ -110,3 +99,25 @@ class WorkflowRepositoryTemplate(WorkflowRepository):
             if f.name == name or f"{f.name}.j2" == name:
                 return f
         return None
+
+    def generate(self, target_path: str = None) -> LocalWorkflowRepository:
+        target_path = target_path or self.local_path
+        logger.debug("Rendering template files to %s...", target_path)
+        self.write(target_path)
+        logger.debug("Rendering template files to %s... DONE", target_path)
+        repo = LocalWorkflowRepository(target_path)
+        opts = self.data.copy()
+        opts.update({
+            'root': target_path,
+        })
+        repo.generate_metadata(**self.data)
+        return repo
+
+    def generate_metadata(self) -> WorkflowRepositoryMetadata:
+        self._metadata = WorkflowRepositoryMetadata(self, init=True, exclude=self.exclude,
+                                                    local_path=self._local_path)
+        self._metadata.add_workflow(self.get_workflow_name(),
+                                    lang=self.name, properties={
+                                        'name': self.data.get('workflow_title', None)} if self.data else None)
+        self._metadata.write(self._local_path)
+        return self._metadata

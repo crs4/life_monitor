@@ -29,7 +29,6 @@ from pathlib import Path
 
 import yaml
 
-
 YamlLoader = getattr(yaml, "CLoader", getattr(yaml, "Loader"))
 
 

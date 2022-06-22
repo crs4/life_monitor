@@ -3,8 +3,8 @@ FROM python:3.9-slim-buster as base
 # Install base requirements
 RUN apt-get update -q \
  && apt-get install -y --no-install-recommends \
-        bash lftp rsync \
-        redis-tools \
+        bash lftp rsync build-essential  \
+        redis-tools git \
         postgresql-client-11 \
  && apt-get clean -y && rm -rf /var/lib/apt/lists
 

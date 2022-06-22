@@ -21,10 +21,11 @@
 from __future__ import annotations
 
 import logging
+import os
 
 from lifemonitor.api.models.issues.common.files.missing import \
     MissingWorkflowFile
-from lifemonitor.api.models.repositories import WorkflowRepository
+from lifemonitor.api.models.repositories.github import GithubWorkflowRepository
 from lifemonitor.api.models.repositories.templates import \
     WorkflowRepositoryTemplate
 
@@ -34,17 +35,31 @@ from . import QuestionStep, UpdateStep, Wizard
 logger = logging.getLogger(__name__)
 
 
-def get_files(wizard: RepositoryTemplateWizard, repo: WorkflowRepository, target_path: str):
+def get_files(wizard: RepositoryTemplateWizard, repo: GithubWorkflowRepository, target_path: str):
 
-    workflow_title = wizard.workflow_title.answer
+    workflow_name = wizard.workflow_title.answer
     workflow_description = wizard.workflow_description.answer
     workflow_type = wizard.workflow_type.answer
 
-    logger.debug("Preparing template for workflow: %r (type: %r)", workflow_title, workflow_type)
+    logger.debug("Preparing template for workflow: %r (type: %r)", workflow_name, workflow_type)
 
-    repo_template = WorkflowRepositoryTemplate("galaxy", local_path=target_path, data={
-        'workflow_title': workflow_title, 'workflow_description': workflow_description}
-    )
+    # Temporary workaround to assign the proper name
+    # to the workflow and its related entities. Generators do not support
+    # the workflow name as input: they use the root name as workflow name.
+    # TODO: remove this fix when generators support
+    # the workflow_name as input
+    try:
+        workflow_path = os.path.join(target_path, workflow_name)
+        os.makedirs(workflow_path)
+    except Exception:
+        workflow_path = target_path
+
+    repo_template = WorkflowRepositoryTemplate(workflow_type, local_path=workflow_path, data={
+        'workflow_name': workflow_name, 'workflow_description': workflow_description,
+        'workflow_version': repo.default_branch,
+        'repo_url': repo.html_url, 'repo_full_name': repo.full_name, 'repo_branch': repo.default_branch
+    }).generate()
+
     logger.debug("Template files: %r --> %r", repo_template, repo_template.files)
     logger.debug("Repository files: %r --> %r", repo, repo.files)
     try:
@@ -64,12 +79,7 @@ class RepositoryTemplateWizard(Wizard):
 
     workflow_title = QuestionStep("Choose a name for your workflow?")
     workflow_description = QuestionStep("Type a description for your workflow?")
-    workflow_type = QuestionStep("Which type of workflow are going to host on this repository?", options=["galaxy"])
-    # questionB = QuestionStep("Question B?", options=["B1", "B2"], when=lambda _: _.questionA.answer == 'B')
-    # questionC = QuestionStep("Question C?", options=["C1", "C2"],
-    #                          description="This is an optional description for the question C",
-    #                          when=lambda _: _.questionA.answer == 'C')
-
+    workflow_type = QuestionStep("Which type of workflow are going to host on this repository?", options=["galaxy", "snakemake"])
     workflow_template = UpdateStep("Update you Workflow RO-Crate repository",
                                    description="According to the recommended layout for workflow RO-Crates, you should add the following files",
                                    callback=get_files)

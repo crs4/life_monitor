@@ -157,9 +157,25 @@ class WorkflowRepository():
         assert repo and isinstance(repo, WorkflowRepository), repo
         return self.__compare__(self.files, repo.files, exclude=exclude)
 
-    def generate_metadata(self) -> WorkflowRepositoryMetadata:
-        self._metadata = WorkflowRepositoryMetadata(self, init=True, exclude=self.exclude)
-        self._metadata.write(self._local_path)
+    def generate_metadata(self, workflow_version: str = "main", license: str = "MIT", **kwargs) -> WorkflowRepositoryMetadata:
+        workflow = self.find_workflow()
+        if not workflow:
+            raise IllegalStateException("No workflow found", instance=self)
+        workflow_type = workflow.type
+        logger.debug("Detected workflow type: %r", workflow_type)
+        try:
+            from ..rocrate import generators
+            generators.generate_crate(workflow_type, workflow_version=workflow_version,
+                                      local_repo_path=self.local_path, license=license, **kwargs)
+            self._metadata = WorkflowRepositoryMetadata(self, init=False, exclude=self.exclude,
+                                                        local_path=self._local_path)
+        except Exception as e:
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.exception(e)
+            self._metadata = WorkflowRepositoryMetadata(self, init=True, exclude=self.exclude,
+                                                        local_path=self._local_path)
+            self._metadata.write(self._local_path)
+        self.add_file(self._metadata.repository_file)
         return self._metadata
 
     @property
@@ -182,6 +198,15 @@ class WorkflowRepository():
         if not self.metadata:
             raise IllegalStateException(detail="Missing RO Crate metadata")
         return self.metadata.write_zip(target_path)
+
+    def write(self, target_path: str):
+        for f in self.files:
+            base_path = os.path.join(target_path, f.dir)
+            file_path = os.path.join(base_path, f.name)
+            logger.debug("Writing file: %r", file_path)
+            os.makedirs(base_path, exist_ok=True)
+            with open(file_path, "w") as out:
+                out.write(f.get_content())
 
 
 class IssueCheckResult:
@@ -222,13 +247,14 @@ class WorkflowRepositoryMetadata(ROCrate):
         self.repository = repo
         self._file = None
 
-    def get_workflow(self):
+    def get_workflow(self) -> WorkflowFile:
         if self.mainEntity and self.mainEntity.id:
             lang = self.mainEntity.get("programmingLanguage", None)
             return WorkflowFile(
-                os.path.join(self.source, self.mainEntity.id),
-                lang.get("name", lang.id).lower() if lang else None,
-                self.mainEntity.get("name", self.mainEntity.id) if self.mainEntity else None
+                self.source,
+                self.mainEntity.get("name", self.mainEntity.id) if self.mainEntity else None,
+                type=lang.get("name", lang.id).lower() if lang else None,
+                dir=self.source
             )
         return None
 

@@ -1,0 +1,80 @@
+# Copyright (c) 2020-2021 CRS4
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+
+import inspect
+import logging
+from importlib import import_module
+from pathlib import Path
+from typing import List
+
+
+# set module level logger
+logger = logging.getLogger(__name__)
+
+
+def get_supported_workflow_types() -> List[str]:
+    from repo2rocrate.cli import GEN_MAP
+    return list(GEN_MAP.keys())
+
+
+def generate_crate(workflow_type: str, workflow_version: str,
+                   local_repo_path: str,
+                   repo_url: str = None, license: str = "MIT", **kwargs):
+
+    make_crate = get_crate_generator(workflow_type)
+    if not make_crate:
+        m = "Unable to find a generator for the workflow type '%s'" % workflow_type
+        logger.error(m)
+        raise RuntimeError(m)
+
+    # TODO: generalize the config object to
+    #       other types of generators and CI instances.
+    #       The current implementation only supports Snakemake and Github CI
+    cfg = {
+        "root": Path(local_repo_path),
+        "repo_url": repo_url,
+        "version": workflow_version,
+        "license": license,
+        "ci_workflow": kwargs.get('ci_workflow', 'main.yml'),
+        "lang_version": kwargs.get('lan_version', '0.6.5')
+    }
+    logger.warning("Config: %r", cfg)
+    crate = make_crate(**cfg)
+    crate.write(local_repo_path)
+    return crate
+
+
+def get_crate_generator(workflow_type: str):
+    try:
+        mod = import_module(f"repo2rocrate.{workflow_type}")
+        make_crate = getattr(mod, "make_crate")
+        logger.debug("Found make_crate: %r", make_crate)
+        if not inspect.isfunction(make_crate):
+            logger.warning("'make_crate' in %r is not a function")
+        return make_crate
+    except ModuleNotFoundError:
+        raise NotImplementedError('No RO-Crate generator for workflow type "%s"' % workflow_type)
+    except AttributeError:
+        logger.error("AttributeError: Unable to find function make_crate on module %s", mod)
+    return None
+
+
+__all__ = [get_crate_generator, get_supported_workflow_types]

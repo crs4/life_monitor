@@ -103,11 +103,6 @@ class LocalWorkflowRepository(WorkflowRepository):
             if self._file_key_(self._metadata.repository_file) not in self._transient_files['remove'] \
             else None
 
-    def generate_metadata(self) -> WorkflowRepositoryMetadata:
-        metadata = super().generate_metadata()
-        self.add_file(metadata.repository_file)
-        return metadata
-
     def find_file_by_pattern(self, search: str) -> RepositoryFile:
         return next((f for f in self.files if re.search(search, f.name)), None)
 
@@ -118,7 +113,7 @@ class LocalWorkflowRepository(WorkflowRepository):
         for file in self.files:
             for ext, wf_type in WorkflowFile.extension_map.items():
                 if re.search(rf"\.{ext}$", file.name):
-                    return file
+                    return WorkflowFile(file.repository_path, file.name, wf_type, dir=file.dir)
         return None
 
 
