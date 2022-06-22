@@ -304,6 +304,6 @@ class RepoCloneContextManager():
 
 
 def __make_requester__(jwt: str = None, token: str = None, base_url: str = DEFAULT_BASE_URL) -> Requester:
-    return Requester(token, None, jwt, base_url,
+    return Requester(token or None, None, jwt, base_url,
                      DEFAULT_TIMEOUT, "PyGithub/Python", DEFAULT_PER_PAGE,
                      True, None, None)

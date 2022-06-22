@@ -340,6 +340,6 @@ class LifeMonitorInstallation(Installation.Installation):
 
 def __make_requester__(jwt: str = None, token: str = None, base_url: str = DEFAULT_BASE_URL) -> Requester:
     assert jwt or token, "Auth JWT or TOKEN should be set"
-    return Requester(token, None, jwt, base_url,
+    return Requester(token or None, None, jwt or None, base_url,
                      DEFAULT_TIMEOUT, "PyGithub/Python", DEFAULT_PER_PAGE,
                      True, None, None)
