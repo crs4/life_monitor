@@ -71,8 +71,12 @@ class Status:
                 status = AggregateTestStatus.SOME_PASSING
         return status
 
-    @staticmethod
-    def check_status(suites):
+    @classmethod
+    def _skip_build(cls, test_build) -> bool:
+        return not test_build or test_build.status not in ["passed", "failed", "error"]
+
+    @classmethod
+    def check_status(cls, suites):
         status = AggregateTestStatus.NOT_AVAILABLE
         latest_builds = []
         availability_issues = []
@@ -103,13 +107,13 @@ class Status:
                             logger.warning("Current list of test builds: %r", checking_builds)
                             latest_build = checking_builds.pop() if checking_builds else None
                             logger.debug("Next build to check %r: %r", latest_build, latest_build.status if latest_build else None)
-                            if latest_build and latest_build.status in ["passed", "failed", "error"]:
+                            if not cls._skip_build(latest_build):
                                 break
                         # Update aggregated status using the latest completed build
                         logger.debug("Latest build found: %r", latest_build)
-                        if latest_build:
+                        if not cls._skip_build(latest_build):
                             latest_builds.append(latest_build)
-                            status = WorkflowStatus._update_status(status, latest_build.is_successful())
+                            status = cls._update_status(status, latest_build.is_successful())
                 except lm_exceptions.TestingServiceException as e:
                     availability_issues.append({
                         "service": test_instance.testing_service.url,
