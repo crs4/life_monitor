@@ -149,10 +149,15 @@ class VersionDetailsSchema(BaseSchema):
     submitter = ma.Nested(UserSchema(only=('id', 'username')), attribute="submitter")
     authors = fields.List(attribute="authors", cls_or_instance=fields.Dict())
     links = fields.Method('get_links')
+    status = fields.Method('get_status')
 
     class Meta:
         model = models.WorkflowVersion
         additional = ('rocrate_metadata',)
+
+    def __init__(self, *args, **kwargs):
+        exclude = kwargs.pop('exclude', ('status',) if "status" not in kwargs.get('only', ()) else ())
+        super().__init__(*args, exclude=exclude, **kwargs)
 
     def get_links(self, obj: models.WorkflowVersion):
         links = {
@@ -164,6 +169,13 @@ class VersionDetailsSchema(BaseSchema):
         for r_name, rv in obj.registry_workflow_versions.items():
             links['registries'][r_name] = rv.link
         return links
+
+    def get_status(self, obj: models.WorkflowVersion):
+        try:
+            return WorkflowStatusSchema(only=('aggregate_test_status', 'latest_builds', 'reason')).dump(obj)
+        except Exception as e:
+            logger.exception(e)
+            return None
 
     def get_rocrate(self, obj: models.WorkflowVersion):
         rocrate = {
