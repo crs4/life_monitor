@@ -284,7 +284,7 @@ class ListOfWorkflowVersions(ResourceMetadataSchema):
     def get_versions(self, obj: models.Workflow):
         return [VersionDetailsSchema(only=("uuid", "version", "ro_crate",
                                            "is_latest", "submitter", "authors")).dump(v)
-                for v in obj.versions.values()]
+                for v in sorted(obj.versions.values(), key=lambda x: x.updated, reverse=True)]
 
 
 class LatestWorkflowSchema(WorkflowVersionSchema):
@@ -470,8 +470,11 @@ class WorkflowVersionListItem(WorkflowSchema):
     def get_versions(self, workflow):
         try:
             if self.workflow_versions:
-                schema = VersionDetailsSchema(only=("uuid", "version", "ro_crate", "is_latest"))
-                return [schema.dump(v) for v in workflow.versions.values()]
+                properties = ["uuid", "version", "ro_crate", "is_latest"]
+                if "status" not in self.exclude:
+                    properties.append("status")
+                schema = VersionDetailsSchema(only=properties)
+                return [schema.dump(v) for v in sorted(workflow.versions.values(), key=lambda x: x.modified, reverse=True)]
             return None
         except Exception as e:
             logger.debug(e)
