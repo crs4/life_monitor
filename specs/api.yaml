@@ -663,8 +663,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
-  
-  
+
   /workflows/{wf_uuid}:
     get:
       summary: Get a workflow
@@ -732,7 +731,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
-    
+
     delete:
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "workflows_delete"
@@ -1109,6 +1108,8 @@ paths:
       parameters:
         - $ref: "#/components/parameters/wf_uuid"
         - $ref: "#/components/parameters/version"
+        - $ref: "#/components/parameters/suite_status"
+        - $ref: "#/components/parameters/suite_latest_builds"
       responses:
         "200":
           description: List of test suites associated with the specified workflow and workflow version
@@ -1856,7 +1857,7 @@ components:
         items:
           type: array
           items:
-            $ref: "#/components/schemas/Issue"        
+            $ref: "#/components/schemas/Issue"
       description: |
         List of issue types
       required:
