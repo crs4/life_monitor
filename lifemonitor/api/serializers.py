@@ -542,10 +542,32 @@ class SuiteSchema(ResourceMetadataSchema):
     definition = fields.Method("get_definition")
     instances = fields.Nested(TestInstanceSchema(self_link=False, exclude=('meta',)),
                               attribute="test_instances", many=True)
+    status = fields.Method("get_status")
+    latest_builds = fields.Method("get_latest_builds")
+
+    def __init__(self, *args, self_link: bool = True,
+                 status: bool = False, latest_builds: bool = False, **kwargs):
+        super().__init__(*args, self_link=self_link, **kwargs)
+        self.status = status
+        self.latest_builds = latest_builds
 
     def get_definition(self, obj):
         to_skip = ['path']
         return {k: v for k, v in obj.definition.items() if k not in to_skip}
+
+    def get_status(self, obj):
+        try:
+            return SuiteStatusSchema(only=('status',)).dump(obj)['status'] if self.status else None
+        except:
+            logger.warning("Unable to extract status for suite: %r", obj)
+            return None
+
+    def get_latest_builds(self, obj):
+        try:
+            return SuiteStatusSchema(only=('latest_builds',)).dump(obj)['latest_builds'] if self.latest_builds else None
+        except:
+            logger.warning("Unable to extract latest_builds for suite: %r", obj)
+            return None
 
     @post_dump
     def remove_skip_values(self, data, **kwargs):
@@ -557,6 +579,26 @@ class SuiteSchema(ResourceMetadataSchema):
 
 class ListOfSuites(ListOfItems):
     __item_scheme__ = SuiteSchema
+
+    def __init__(self, *args,
+                 self_link: bool = True,
+                 status: bool = False, latest_builds: bool = False,
+                 **kwargs):
+        super().__init__(*args, self_link=self_link, **kwargs)
+        self.status = status
+        self.latest_builds = latest_builds
+
+    def get_items(self, obj):
+        exclude = ['meta', 'links']
+        if not self.status:
+            exclude.append('status')
+        if not self.latest_builds:
+            exclude.append('latest_builds')
+        return [self.__item_scheme__(
+            exclude=tuple(exclude), many=False,
+            status=self.status,
+            latest_builds=self.latest_builds
+        ).dump(_) for _ in obj] if self.__item_scheme__ else None
 
 
 class SuiteStatusSchema(ResourceMetadataSchema):
