@@ -219,10 +219,10 @@ def workflows_rocrate_download(wf_uuid, wf_version):
 
 @authorized
 @cached(timeout=Timeout.REQUEST)
-def registry_workflows_get(status=False):
+def registry_workflows_get(status=False, versions=False):
     workflows = lm.get_registry_workflows(current_registry)
     logger.debug("workflows_get. Got %s workflows (registry: %s)", len(workflows), current_registry)
-    return serializers.ListOfWorkflows(workflow_status=status).dump(workflows)
+    return serializers.ListOfWorkflows(workflow_status=status, workflow_versions=versions).dump(workflows)
 
 
 @authorized

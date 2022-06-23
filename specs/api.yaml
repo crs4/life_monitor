@@ -362,6 +362,7 @@ paths:
         - RegistryClientCredentials: ["registry.workflow.read"]
         - RegistryCodeFlow: ["registry.workflow.read"]
       parameters:
+        - $ref: "#/components/parameters/wf_versions"
         - $ref: "#/components/parameters/wf_status"
       responses:
         "200":
