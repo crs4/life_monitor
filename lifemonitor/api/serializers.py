@@ -558,14 +558,14 @@ class SuiteSchema(ResourceMetadataSchema):
     def get_status(self, obj):
         try:
             return SuiteStatusSchema(only=('status',)).dump(obj)['status'] if self.status else None
-        except:
+        except Exception:
             logger.warning("Unable to extract status for suite: %r", obj)
             return None
 
     def get_latest_builds(self, obj):
         try:
             return SuiteStatusSchema(only=('latest_builds',)).dump(obj)['latest_builds'] if self.latest_builds else None
-        except:
+        except Exception:
             logger.warning("Unable to extract latest_builds for suite: %r", obj)
             return None
 
