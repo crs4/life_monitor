@@ -2504,10 +2504,10 @@ components:
               type: array
               items:
                 $ref: "#/components/schemas/TestInstance"
+          required:
+            - uuid
+            - instances
         - $ref: "#/components/schemas/TestSuiteStatusProperties"
-      required:
-        - uuid
-        - instances
 
     ListOfTestSuite:
       type: object
@@ -2542,10 +2542,11 @@ components:
               type: string
               description: Universal unique identifier of the test suite
               example: e3208b02-69b6-4e32-a3dc-b93967d30e2c
+          required:
+            - suite_uuid
         - $ref: "#/components/schemas/TestSuiteStatusProperties"
-      required:
-        - suite_uuid
-        - status
+          required:
+            - status
 
     BuildStatus:
       type: string
