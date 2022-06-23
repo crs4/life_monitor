@@ -238,10 +238,10 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
                 return GitRepositoryFile(c_file)
         return None
 
-    def find_file_by_pattern(self, search: str, ref: str = None) -> GitRepositoryFile:
+    def find_file_by_pattern(self, search: str, path: str = None, ref: str = None) -> GitRepositoryFile:
         if not self.local_repo:
             return self.find_remote_file_by_pattern(search, ref=ref)
-        return self.local_repo.find_file_by_pattern(search)
+        return self.local_repo.find_file_by_pattern(search, path=path)
 
     def find_remote_file_by_name(self, name: str, ref: str = None,
                                  path: str = '.', include_subdirs: bool = False) -> GitRepositoryFile:
