@@ -102,11 +102,8 @@ class Status:
                         })
                     else:
                         # Search the latest completed build
-                        checking_builds = test_instance.get_test_builds()
-                        while checking_builds:
-                            logger.warning("Current list of test builds: %r", checking_builds)
-                            latest_build = checking_builds.pop() if checking_builds else None
-                            logger.debug("Next build to check %r: %r", latest_build, latest_build.status if latest_build else None)
+                        for latest_build in test_instance.get_test_builds():
+                            logger.debug("Checking build %r: %r", latest_build, latest_build.status)
                             if not cls._skip_build(latest_build):
                                 break
                         # Update aggregated status using the latest completed build
