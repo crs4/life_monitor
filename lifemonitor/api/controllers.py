@@ -219,10 +219,10 @@ def workflows_rocrate_download(wf_uuid, wf_version):
 
 @authorized
 @cached(timeout=Timeout.REQUEST)
-def registry_workflows_get(status=False):
+def registry_workflows_get(status=False, versions=False):
     workflows = lm.get_registry_workflows(current_registry)
     logger.debug("workflows_get. Got %s workflows (registry: %s)", len(workflows), current_registry)
-    return serializers.ListOfWorkflows(workflow_status=status).dump(workflows)
+    return serializers.ListOfWorkflows(workflow_status=status, workflow_versions=versions).dump(workflows)
 
 
 @authorized
@@ -577,13 +577,12 @@ def workflows_get_issue_types():
 
 
 @cached(timeout=Timeout.REQUEST)
-def workflows_get_suites(wf_uuid, version='latest'):
+def workflows_get_suites(wf_uuid, version='latest', status: bool = False, latest_builds: bool = False):
     workflow_version = __get_workflow_version__(wf_uuid, version)
     logger.debug("GET suites of workflow version: %r", workflow_version)
-    return serializers.ListOfSuites().dump(workflow_version.test_suites)
-    # response = __get_workflow_version__(wf_uuid, version)
-    # return response if isinstance(response, Response) \
-    #     else serializers.ListOfSuites().dump(response.test_suites)
+    return serializers.ListOfSuites(
+        status=status, latest_builds=latest_builds
+    ).dump(workflow_version.test_suites)
 
 
 def _get_suite_or_problem(suite_uuid):
@@ -615,10 +614,10 @@ def _get_suite_or_problem(suite_uuid):
 
 
 @cached(timeout=Timeout.REQUEST)
-def suites_get_by_uuid(suite_uuid):
+def suites_get_by_uuid(suite_uuid, status: bool = False, latest_builds: bool = False):
     response = _get_suite_or_problem(suite_uuid)
     return response if isinstance(response, Response) \
-        else serializers.SuiteSchema().dump(response)
+        else serializers.SuiteSchema(status=status, latest_builds=latest_builds).dump(response)
 
 
 @cached(timeout=Timeout.REQUEST)

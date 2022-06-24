@@ -362,6 +362,7 @@ paths:
         - RegistryClientCredentials: ["registry.workflow.read"]
         - RegistryCodeFlow: ["registry.workflow.read"]
       parameters:
+        - $ref: "#/components/parameters/wf_versions"
         - $ref: "#/components/parameters/wf_status"
       responses:
         "200":
@@ -662,8 +663,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
-  
-  
+
   /workflows/{wf_uuid}:
     get:
       summary: Get a workflow
@@ -731,7 +731,7 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
-    
+
     delete:
       x-openapi-router-controller: lifemonitor.api.controllers
       operationId: "workflows_delete"
@@ -1108,6 +1108,8 @@ paths:
       parameters:
         - $ref: "#/components/parameters/wf_uuid"
         - $ref: "#/components/parameters/version"
+        - $ref: "#/components/parameters/suite_status"
+        - $ref: "#/components/parameters/suite_latest_builds"
       responses:
         "200":
           description: List of test suites associated with the specified workflow and workflow version
@@ -1139,6 +1141,8 @@ paths:
         - {}
       parameters:
         - $ref: "#/components/parameters/suite_uuid"
+        - $ref: "#/components/parameters/suite_status"
+        - $ref: "#/components/parameters/suite_latest_builds"
       responses:
         "200":
           description: TestSuite object
@@ -1567,6 +1571,24 @@ components:
         type: string
       required: true
       example: e3208b02-69b6-4e32-a3dc-b93967d30e2c
+    suite_status:
+      name: "status"
+      in: query
+      schema:
+        type: boolean
+        default: false
+      description: |
+        `true` to include the suite status
+      example: "false"
+    suite_latest_builds:
+      name: "latest_builds"
+      in: query
+      schema:
+        type: boolean
+        default: false
+      description: |
+        `true` to include the latest builds which contribute to the suite status
+      example: "false"
     instance_uuid:
       name: "instance_uuid"
       description: "Universal unique identifier of the test instance"
@@ -1835,7 +1857,7 @@ components:
         items:
           type: array
           items:
-            $ref: "#/components/schemas/Issue"        
+            $ref: "#/components/schemas/Issue"
       description: |
         List of issue types
       required:
@@ -2461,29 +2483,31 @@ components:
               example: ">=0.70"
 
     TestSuite:
-      type: object
-      properties:
-        uuid:
-          type: string
-          description: Universal unique identifier of the test suite
-          example: e3208b02-69b6-4e32-a3dc-b93967d30e2c
-        roc_suite:
-          type: string
-          description: RO-Crate identifier of the TestSuite
-          example: "#test1"
-        name:
-          type: string
-          description: A name for the test suite.
-          example: Workflow Test Suite
-        definition:
-          $ref: "#/components/schemas/TestSuiteDefinition"
-        instances:
-          type: array
-          items:
-            $ref: "#/components/schemas/TestInstance"
-      required:
-        - uuid
-        - instances
+      allOf:
+        - type: object
+          properties:
+            uuid:
+              type: string
+              description: Universal unique identifier of the test suite
+              example: e3208b02-69b6-4e32-a3dc-b93967d30e2c
+            roc_suite:
+              type: string
+              description: RO-Crate identifier of the TestSuite
+              example: "#test1"
+            name:
+              type: string
+              description: A name for the test suite.
+              example: Workflow Test Suite
+            definition:
+              $ref: "#/components/schemas/TestSuiteDefinition"
+            instances:
+              type: array
+              items:
+                $ref: "#/components/schemas/TestInstance"
+          required:
+            - uuid
+            - instances
+        - $ref: "#/components/schemas/TestSuiteStatusProperties"
 
     ListOfTestSuite:
       type: object
@@ -2495,13 +2519,9 @@ components:
       required:
         - items
 
-    TestSuiteStatus:
+    TestSuiteStatusProperties:
       type: object
       properties:
-        suite_uuid:
-          type: string
-          description: Universal unique identifier of the test suite
-          example: e3208b02-69b6-4e32-a3dc-b93967d30e2c
         status:
           $ref: "#/components/schemas/AggregateTestStatus"
         latest_builds:
@@ -2511,10 +2531,22 @@ components:
         reason:
           description: Reason why the status is unavailable
           type: string
+          example: "Unreachable testing service"
           nullable: true
-      required:
-        - suite_uuid
-        - status
+
+    TestSuiteStatus:
+      allOf:
+        - type: object
+          properties:
+            suite_uuid:
+              type: string
+              description: Universal unique identifier of the test suite
+              example: e3208b02-69b6-4e32-a3dc-b93967d30e2c
+          required:
+            - suite_uuid
+        - $ref: "#/components/schemas/TestSuiteStatusProperties"
+          required:
+            - status
 
     BuildStatus:
       type: string

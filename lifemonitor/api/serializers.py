@@ -149,10 +149,15 @@ class VersionDetailsSchema(BaseSchema):
     submitter = ma.Nested(UserSchema(only=('id', 'username')), attribute="submitter")
     authors = fields.List(attribute="authors", cls_or_instance=fields.Dict())
     links = fields.Method('get_links')
+    status = fields.Method('get_status')
 
     class Meta:
         model = models.WorkflowVersion
         additional = ('rocrate_metadata',)
+
+    def __init__(self, *args, **kwargs):
+        exclude = kwargs.pop('exclude', ('status',) if "status" not in kwargs.get('only', ()) else ())
+        super().__init__(*args, exclude=exclude, **kwargs)
 
     def get_links(self, obj: models.WorkflowVersion):
         links = {
@@ -164,6 +169,13 @@ class VersionDetailsSchema(BaseSchema):
         for r_name, rv in obj.registry_workflow_versions.items():
             links['registries'][r_name] = rv.link
         return links
+
+    def get_status(self, obj: models.WorkflowVersion):
+        try:
+            return WorkflowStatusSchema(only=('aggregate_test_status', 'latest_builds', 'reason')).dump(obj)
+        except Exception as e:
+            logger.exception(e)
+            return None
 
     def get_rocrate(self, obj: models.WorkflowVersion):
         rocrate = {
@@ -530,10 +542,32 @@ class SuiteSchema(ResourceMetadataSchema):
     definition = fields.Method("get_definition")
     instances = fields.Nested(TestInstanceSchema(self_link=False, exclude=('meta',)),
                               attribute="test_instances", many=True)
+    status = fields.Method("get_status")
+    latest_builds = fields.Method("get_latest_builds")
+
+    def __init__(self, *args, self_link: bool = True,
+                 status: bool = False, latest_builds: bool = False, **kwargs):
+        super().__init__(*args, self_link=self_link, **kwargs)
+        self.status = status
+        self.latest_builds = latest_builds
 
     def get_definition(self, obj):
         to_skip = ['path']
         return {k: v for k, v in obj.definition.items() if k not in to_skip}
+
+    def get_status(self, obj):
+        try:
+            return SuiteStatusSchema(only=('status',)).dump(obj)['status'] if self.status else None
+        except Exception:
+            logger.warning("Unable to extract status for suite: %r", obj)
+            return None
+
+    def get_latest_builds(self, obj):
+        try:
+            return SuiteStatusSchema(only=('latest_builds',)).dump(obj)['latest_builds'] if self.latest_builds else None
+        except Exception:
+            logger.warning("Unable to extract latest_builds for suite: %r", obj)
+            return None
 
     @post_dump
     def remove_skip_values(self, data, **kwargs):
@@ -545,6 +579,26 @@ class SuiteSchema(ResourceMetadataSchema):
 
 class ListOfSuites(ListOfItems):
     __item_scheme__ = SuiteSchema
+
+    def __init__(self, *args,
+                 self_link: bool = True,
+                 status: bool = False, latest_builds: bool = False,
+                 **kwargs):
+        super().__init__(*args, self_link=self_link, **kwargs)
+        self.status = status
+        self.latest_builds = latest_builds
+
+    def get_items(self, obj):
+        exclude = ['meta', 'links']
+        if not self.status:
+            exclude.append('status')
+        if not self.latest_builds:
+            exclude.append('latest_builds')
+        return [self.__item_scheme__(
+            exclude=tuple(exclude), many=False,
+            status=self.status,
+            latest_builds=self.latest_builds
+        ).dump(_) for _ in obj] if self.__item_scheme__ else None
 
 
 class SuiteStatusSchema(ResourceMetadataSchema):
