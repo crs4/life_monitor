@@ -284,7 +284,7 @@ class ListOfWorkflowVersions(ResourceMetadataSchema):
     def get_versions(self, obj: models.Workflow):
         return [VersionDetailsSchema(only=("uuid", "version", "ro_crate",
                                            "is_latest", "submitter", "authors")).dump(v)
-                for v in sorted(obj.versions.values(), key=lambda x: x.updated, reverse=True)]
+                for v in sorted(obj.versions.values(), key=lambda x: x.modified, reverse=True)]
 
 
 class LatestWorkflowSchema(WorkflowVersionSchema):
