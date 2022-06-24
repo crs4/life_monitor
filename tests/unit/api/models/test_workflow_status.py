@@ -64,6 +64,7 @@ def suite(error_description, request):
         test_instance.testing_service = MagicMock()
         test_instance.last_test_build = MagicMock()
         if i is None:
+            test_instance.last_test_build.status = "error"
             test_instance.last_test_build.is_successful.side_effect = \
                 lm_exceptions.TestingServiceException(error_description)
         else:
