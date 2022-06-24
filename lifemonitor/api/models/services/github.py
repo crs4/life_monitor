@@ -197,7 +197,7 @@ class GithubTestingService(TestingService):
         headers, data = workflow_run._requester.requestJsonAndCheck("GET", url)
         return headers, data
 
-    # @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True)
+    @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True)
     def __get_gh_workflow_run_attempts__(self,
                                          workflow_run: github.WorkflowRun.WorkflowRun) -> List[github.WorkflowRun.WorkflowRun]:
         result = []
@@ -208,7 +208,7 @@ class GithubTestingService(TestingService):
             i -= 1
         return result
 
-    # @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True)
+    @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True)
     def _get_gh_workflow_runs(self, workflow: Workflow.Workflow, test_instance: models.TestInstance, first_build: bool = False) -> List:
         branch = github.GithubObject.NotSet
         created = github.GithubObject.NotSet
@@ -229,7 +229,7 @@ class GithubTestingService(TestingService):
         logger.debug("Fetching runs : %r - %r", branch, created)
         return list(self.__get_gh_workflow_runs__(workflow, branch=branch, created=created))
 
-    # @cached(timeout=Timeout.REQUEST, client_scope=False, transactional_update=True)
+    @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True)
     def _list_workflow_runs(self, test_instance: models.TestInstance,
                             status: str = None, limit: int = None) -> Generator[github.WorkflowRun.WorkflowRun]:
         # get gh workflow
@@ -303,6 +303,7 @@ class GithubTestingService(TestingService):
         except GithubRateLimitExceededException as e:
             raise lm_exceptions.RateLimitExceededException(detail=str(e), instance=test_instance)
 
+    @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True)
     def get_test_build(self, test_instance: models.TestInstance, build_number: int) -> GithubTestBuild:
         try:
             # parse build identifier
