@@ -553,7 +553,7 @@ def cached(timeout=Timeout.REQUEST, client_scope=True, unless=None, transactiona
                 elif not transaction and isinstance(transactional_update, bool):
                     skip_transaction = not transactional_update
                 logger.error("Skipping transaction for %r: %r", key, skip_transaction)
-                if not skip_transaction: #transaction or transactional_update:  # skip_transaction:
+                if not skip_transaction:  # transaction or transactional_update:  # skip_transaction:
                     read_from_cache = transaction is None
                     logger.warning("Read from cache: %r", read_from_cache)
                     with hc.transaction() as transaction:

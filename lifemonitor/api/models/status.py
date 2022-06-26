@@ -110,7 +110,7 @@ class Status:
                         latest_builds.append(latest_build)
                         # Update aggregated status using the latest completed build
                         logger.debug("Latest build found: %r", latest_build)
-                        if not cls._skip_build(latest_build):                            
+                        if not cls._skip_build(latest_build):
                             status = cls._update_status(status, latest_build.is_successful())
                 except lm_exceptions.TestingServiceException as e:
                     availability_issues.append({
