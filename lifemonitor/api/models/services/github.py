@@ -187,8 +187,8 @@ class GithubTestingService(TestingService):
             list_item="workflow_runs",
         )
 
-    @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True,
-            unless=lambda r: r[1]["status"] != GithubTestingService.GithubStatus.COMPLETED)
+    @cached(timeout=Timeout.NONE, client_scope=False,
+            transactional_update=lambda r: r[1]["status"] != GithubTestingService.GithubStatus.COMPLETED)
     def __get_gh_workflow_run_attempt__(self,
                                         workflow_run: github.WorkflowRun.WorkflowRun,
                                         attempt: int):
@@ -303,7 +303,8 @@ class GithubTestingService(TestingService):
         except GithubRateLimitExceededException as e:
             raise lm_exceptions.RateLimitExceededException(detail=str(e), instance=test_instance)
 
-    @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True)
+    @cached(timeout=Timeout.NONE, client_scope=False,
+            transactional_update=lambda b: b._metadata.status != GithubTestingService.GithubStatus.COMPLETED)
     def get_test_build(self, test_instance: models.TestInstance, build_number: int) -> GithubTestBuild:
         try:
             # parse build identifier

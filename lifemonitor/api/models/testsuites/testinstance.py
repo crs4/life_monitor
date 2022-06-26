@@ -117,8 +117,7 @@ class TestInstance(db.Model, ModelMixin):
     def get_test_builds(self, limit=10):
         return self.testing_service.get_test_builds(self, limit=limit)
 
-    @cached(timeout=Timeout.BUILD, client_scope=False, transactional_update=True,
-            unless=lambda b: b.status in [models.BuildStatus.RUNNING, models.BuildStatus.WAITING])
+    @cached(timeout=Timeout.BUILD, client_scope=False, transactional_update=True)
     def get_test_build(self, build_number):
         return self.testing_service.get_test_build(self, build_number)
 

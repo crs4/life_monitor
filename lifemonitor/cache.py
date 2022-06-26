@@ -536,10 +536,26 @@ def cached(timeout=Timeout.REQUEST, client_scope=True, unless=None, transactiona
             hc = cache if obj is None else obj.cache
             result = None
             if hc and hc.cache_enabled:
+                # compute cache key
                 key = make_cache_key(function, client_scope, args=args, kwargs=kwargs)
+                # retrieve the current transaction (might be None)
                 transaction = hc.get_current_transaction()
-                if transaction or transactional_update:
+                logger.debug("Current transaction: %r", transaction)
+                # decide if skip the transaction
+                skip_transaction = transaction is None
+                if transactional_update and callable(transactional_update):
+                    current_value = cache.get(key)
+                    # logger.debug("Current value: %r", current_value)
+                    logger.debug("Transaction uodate callable: %r", transactional_update)
+                    if current_value:
+                        skip_transaction = not transactional_update(current_value)
+                        logger.debug("Computed callable skip_transacion: %r", skip_transaction)
+                elif not transaction and isinstance(transactional_update, bool):
+                    skip_transaction = not transactional_update
+                logger.error("Skipping transaction for %r: %r", key, skip_transaction)
+                if not skip_transaction: #transaction or transactional_update:  # skip_transaction:
                     read_from_cache = transaction is None
+                    logger.warning("Read from cache: %r", read_from_cache)
                     with hc.transaction() as transaction:
                         logger.debug("Getting value using transaction: new=%r", read_from_cache)
                         result = _process_cache_data(cache, transaction,
