@@ -230,8 +230,13 @@ class GithubTestingService(TestingService):
             branch = github.GithubObject.NotSet
             logger.warning("No revision associated with workflow version %r", workflow)
             workflow_version = test_instance.test_suite.workflow_version
+            logger.warning("Checking Workflow version: %r (previous: %r, next: %r)",
+                           workflow_version, workflow_version.previous_version, workflow_version.next_version)
             if not workflow_version.previous_version:
-                logger.debug("No previous version found, then no filter applied... Loading all available builds")
+                if not workflow_version.next_version:
+                    logger.debug("No previous version found, then no filter applied... Loading all available builds")
+                else:
+                    created = "<{}".format(workflow_version.next_version.created.isoformat())
             elif not workflow_version.next_version:
                 created = ">={}".format(workflow_version.created.isoformat())
             else:
