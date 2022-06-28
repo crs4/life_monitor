@@ -29,9 +29,9 @@ from urllib.parse import urlparse
 
 import lifemonitor.api.models as models
 import lifemonitor.exceptions as lm_exceptions
-from lifemonitor.api.models.testsuites.testinstance import TestInstance
 from lifemonitor.cache import Timeout, cached
-from lifemonitor.integrations.github.utils import CachedPaginatedList, GithubApiWrapper
+from lifemonitor.integrations.github.utils import (CachedPaginatedList,
+                                                   GithubApiWrapper)
 
 import github
 from github import GithubException
@@ -336,23 +336,18 @@ class GithubTestingService(TestingService):
     def _get_test_build(self, run_id, run_attempt, repo: Repository) -> GithubTestBuild:
         try:
             # build url
-            logger.warning("************************************************************")
-
             url = f"/repos/{repo.full_name}/actions/runs/{run_id}/attempts/{run_attempt}"
             logger.debug("Build URL: %s", url)
             headers, data = repo._requester.requestJsonAndCheck("GET", url)
-            logger.warning("************************************************************")
-
             return headers, data
-            # return GithubTestBuild(self, test_instance, WorkflowRun(repo._requester, headers, data, True))
         except ValueError as e:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.exception(e)
             raise lm_exceptions.BadRequestException(detail="Invalid build identifier")
         except GithubRateLimitExceededException as e:
-            raise lm_exceptions.RateLimitExceededException(detail=str(e), instance=test_instance)
+            raise lm_exceptions.RateLimitExceededException(detail=str(e), run_id=run_id, run_attempt=run_attempt)
         except UnknownObjectException as e:
-            raise lm_exceptions.EntityNotFoundException(models.TestBuild, entity_id=build_number, detail=str(e))
+            raise lm_exceptions.EntityNotFoundException(models.TestBuild, entity_id=f"{run_id}_{run_attempt}", detail=str(e))
 
     def get_instance_external_link(self, test_instance: models.TestInstance) -> str:
         _, repo_full_name, workflow_id = self._get_workflow_info(test_instance.resource)

@@ -99,8 +99,6 @@ def refresh_workflow_builds(event: GithubEvent):
                 if workflow_version.version in refs or (not workflow_version.has_revision() and not workflow_version.next_version):
                     logger.warning("Version %r to uodate", workflow_version)
                     i.get_test_build(f"{github_workflow_run.id}_{github_workflow_run.raw_data['run_attempt']}")
-                    # i.get_test_builds(limit=10)
-                    # i.last_test_build
                     i.test_suite.workflow_version.status
                 else:
                     logger.warning("Skipping instance %r not bound to the current branch or tag", i)
@@ -156,15 +154,13 @@ def refresh_workflow_build(event: GithubEvent):
                         logger.warning("Version %s in refs %r", i.test_suite.workflow_version.version, refs)
                         last_build_id = f"{github_workflow_run.id}_{github_workflow_run.raw_data['run_attempt']}"
                         i.get_test_build(last_build_id)
-                        # i.get_test_builds(limit=10)
-                        # i.last_test_build
                         i.test_suite.workflow_version.status
                         logger.info("Version %s updated... last build: %s", i.test_suite.workflow_version.version, last_build_id)
                 else:
                     logger.warning("Version %s not in refs %r", i.test_suite.workflow_version.version, refs)
             return f"Test instance related with resource '{workflow_resource}' updated", 200
         else:
-            return f"No build attached to the current event", 204
+            return "No build attached to the current event", 204
     except Exception as e:
         if logger.isEnabledFor(logging.DEBUG):
             logger.exception(e)

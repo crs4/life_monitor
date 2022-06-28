@@ -228,7 +228,7 @@ class CachedPaginatedList(PaginatedList):
     Extend the default Github PaginatedList to enable caching of list items.
     """
 
-    def __init__(self, contentClass: Type[T], requester: Requester,
+    def __init__(self, contentClass: Type, requester: Requester,
                  firstUrl: str, firstParams: Any, headers: Optional[Dict[str, str]] = None,
                  list_item: str = "items",
                  transactional_update: Optional[bool | Callable] = False,
