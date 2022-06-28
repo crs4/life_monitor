@@ -333,13 +333,13 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
 class GithubWorkflowRepository(InstallationGithubWorkflowRepository):
 
     def __init__(self, full_name_or_id: str, token: str = None,
-                 ref: str = None, local_path: str = None, auto_cleanup: bool = True) -> None:
+                 ref: str = None, rev: str = None, local_path: str = None, auto_cleanup: bool = True) -> None:
         assert isinstance(full_name_or_id, (str, int)), full_name_or_id
         url_base = "/repositories/" if isinstance(full_name_or_id, int) else "/repos/"
         url = f"{url_base}{full_name_or_id}"
         super().__init__(
             __make_requester__(token=token), headers={}, attributes={'url': url}, completed=False,
-            ref=ref, local_path=local_path, auto_cleanup=auto_cleanup)
+            ref=ref, rev=rev, local_path=local_path, auto_cleanup=auto_cleanup)
 
     @classmethod
     def from_url(cls, url: str, token: str = None, ref: str = None,

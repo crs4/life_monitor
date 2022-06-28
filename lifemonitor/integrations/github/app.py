@@ -295,16 +295,16 @@ class LifeMonitorInstallation(Installation.Installation):
     def _requester(self, value: Requester):
         self.__requester = value
 
-    def get_repo(self, full_name_or_id, ref: str = None, lazy=False) -> InstallationGithubWorkflowRepository:
+    def get_repo(self, full_name_or_id, ref: str = None, rev: str = None, lazy=False) -> InstallationGithubWorkflowRepository:
         assert isinstance(full_name_or_id, (str, int)), full_name_or_id
         url_base = "/repositories/" if isinstance(full_name_or_id, int) else "/repos/"
         url = f"{url_base}{full_name_or_id}"
         if lazy:
             return GithubWorkflowRepository(
-                self._requester, {}, {"url": url}, completed=False, ref=ref
+                self._requester, {}, {"url": url}, completed=False, ref=ref, rev=rev
             )
         headers, data = self._requester.requestJsonAndCheck("GET", url)
-        return InstallationGithubWorkflowRepository(self._requester, headers, data, completed=True, ref=ref)
+        return InstallationGithubWorkflowRepository(self._requester, headers, data, completed=True, ref=ref, rev=rev)
 
     def get_repos(self) -> List[InstallationGithubWorkflowRepository]:
         url_parameters = dict()
