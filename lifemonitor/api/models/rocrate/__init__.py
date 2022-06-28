@@ -91,6 +91,14 @@ class ROCrate(Resource):
             return self.repository.get_revision(self.version)
         return None
 
+    def has_revision(self) -> bool:
+        try:
+            branch = self.revision.main_ref.shorthand
+            assert branch, "Branch cannot be empty"
+            return True
+        except Exception:
+            return False
+
     @hybrid_property
     def crate_metadata(self):
         return self.repository.metadata.to_json()
