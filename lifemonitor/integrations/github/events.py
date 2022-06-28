@@ -192,8 +192,14 @@ class GithubEvent():
 
     @property
     def workflow_run(self) -> Optional[WorkflowRun]:
-        return None if 'workflow_run' not in self.payload else \
-            WorkflowRun(self.installation._requester, {}, self.payload['workflow_run'], True)
+
+    @property
+    def workflow_build_id(self) -> Optional[str]:
+        if 'workflow_job' in self.payload:
+            job = self.payload['workflow_job']
+            if job:
+                return f"{job['run_id']}_{job['run_attempt']}"
+        return None
 
     @staticmethod
     def from_request(request: Request = None) -> GithubEvent:
