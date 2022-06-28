@@ -460,10 +460,10 @@ def find_commit_info(repo: pygit2.Repository, commit=None, ref=None) -> pygit2.O
     return None
 
 
-def get_git_repo_revision(local_repo_path: str) -> Dict:
+def get_git_repo_revision(local_repo_path: str, commit: str = None) -> Dict:
     assert os.path.isdir(local_repo_path), "Path should be a folder"
     repo = pygit2.Repository(local_repo_path)
-    last_commit = find_commit_info(repo)
+    last_commit = find_commit_info(repo, commit)
     refs = find_refs_by_commit(repo, repo.head.target)
     assert isinstance(last_commit, pygit2.Object), "Unable to find the last repo commit"
     return {
