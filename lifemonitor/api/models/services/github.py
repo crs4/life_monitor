@@ -20,6 +20,7 @@
 
 from __future__ import annotations
 
+import itertools
 import logging
 import re
 from typing import Generator, List, Optional, Tuple
@@ -30,9 +31,10 @@ import lifemonitor.api.models as models
 import lifemonitor.exceptions as lm_exceptions
 from lifemonitor.api.models.testsuites.testinstance import TestInstance
 from lifemonitor.cache import Timeout, cached
+from lifemonitor.integrations.github.utils import CachedPaginatedList, GithubApiWrapper
 
 import github
-from github import Github, GithubException
+from github import GithubException
 from github import \
     RateLimitExceededException as GithubRateLimitExceededException
 from github.GithubException import UnknownObjectException
@@ -86,9 +88,9 @@ class GithubTestingService(TestingService):
         try:
             logger.debug("Instantiating with: url %s; token: %r\nClient configuration: %s",
                          self.url, self.token is not None, self._configuration_)
-            self._gh_obj = Github(base_url=self.url,
-                                  login_or_token=self.token.value if self.token else None,
-                                  **self._configuration_)
+            self._gh_obj = GithubApiWrapper(base_url=self.url,
+                                            login_or_token=self.token.value if self.token else None,
+                                            **self._configuration_)
             logger.debug("Github client created.")
         except Exception as e:
             raise lm_exceptions.TestingServiceException(e)
@@ -102,12 +104,13 @@ class GithubTestingService(TestingService):
         return github.MainClass.DEFAULT_BASE_URL
 
     @property
-    def _gh_service(self) -> Github:
+    def _gh_service(self) -> GithubApiWrapper:
         logger.debug("Github client requested.")
         if not self._gh_obj:
             self.initialize()
         return self._gh_obj
 
+    @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True)
     def _get_workflow_info(self, resource):
         return self._parse_workflow_url(resource)
 
@@ -147,8 +150,9 @@ class GithubTestingService(TestingService):
         logger.debug("Getting github workflow...")
         return self._gh_service.get_repo(repository).get_workflow(workflow_id)
 
-    def _get_gh_workflow_from_test_instance(self, test_instance: TestInstance) -> Workflow:
-        _, repository, workflow_id = self._get_workflow_info(test_instance.resource)
+    @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True)
+    def _get_gh_workflow_from_test_instance_resource(self, test_instance_resource: str) -> Workflow:
+        _, repository, workflow_id = self._get_workflow_info(test_instance_resource)
         logger.debug("Getting github workflow --  wf id: %s; repository: %s", workflow_id, repository)
 
         workflow = self._get_gh_workflow(repository, workflow_id)
@@ -164,6 +168,7 @@ class GithubTestingService(TestingService):
         """
         Extends `Workflow.get_runs` to support `created` param
         """
+        logger.debug("Getting runs of workflow %r ...", workflow)
         branch = branch or github.GithubObject.NotSet
         status = status or github.GithubObject.NotSet
         created = created or github.GithubObject.NotSet
@@ -178,17 +183,20 @@ class GithubTestingService(TestingService):
             url_parameters["created"] = created
         if status is not github.GithubObject.NotSet:
             url_parameters["status"] = status
-        return github.PaginatedList.PaginatedList(
+        logger.debug("Getting runs of workflow %r ... DONE", workflow)
+        # return github.PaginatedList.PaginatedList(
+        return CachedPaginatedList(
             github.WorkflowRun.WorkflowRun,
             workflow._requester,
             f"{workflow.url}/runs",
             url_parameters,
             None,
             list_item="workflow_runs",
+            force_use_cache=lambda r: r.status == GithubTestingService.GithubStatus.COMPLETED
         )
 
-    @cached(timeout=Timeout.NONE, client_scope=False,
-            transactional_update=lambda r: r[1]["status"] != GithubTestingService.GithubStatus.COMPLETED)
+    @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True,
+            force_cache_value=lambda r: r[1]["status"] == GithubTestingService.GithubStatus.COMPLETED)
     def __get_gh_workflow_run_attempt__(self,
                                         workflow_run: github.WorkflowRun.WorkflowRun,
                                         attempt: int):
@@ -199,17 +207,20 @@ class GithubTestingService(TestingService):
 
     @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True)
     def __get_gh_workflow_run_attempts__(self,
-                                         workflow_run: github.WorkflowRun.WorkflowRun) -> List[github.WorkflowRun.WorkflowRun]:
+                                         workflow_run: github.WorkflowRun.WorkflowRun,
+                                         limit: int = 10) -> List[github.WorkflowRun.WorkflowRun]:
         result = []
         i = workflow_run.raw_data['run_attempt']
         while i >= 1:
             headers, data = self.__get_gh_workflow_run_attempt__(workflow_run, i)
             result.append(WorkflowRun(workflow_run._requester, headers, data, True))
             i -= 1
+            if len(result) == limit:
+                break
         return result
 
     @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True)
-    def _get_gh_workflow_runs(self, workflow: Workflow.Workflow, test_instance: models.TestInstance, first_build: bool = False) -> List:
+    def _get_gh_workflow_runs(self, workflow: Workflow.Workflow, test_instance: models.TestInstance, limit: int = 10) -> List:
         branch = github.GithubObject.NotSet
         created = github.GithubObject.NotSet
         try:
@@ -227,19 +238,20 @@ class GithubTestingService(TestingService):
                 created = "{}..{}".format(workflow_version.created.isoformat(),
                                           workflow_version.next_version.created.isoformat())
         logger.debug("Fetching runs : %r - %r", branch, created)
-        return list(self.__get_gh_workflow_runs__(workflow, branch=branch, created=created))
+        # return list(self.__get_gh_workflow_runs__(workflow, branch=branch, created=created))
+        return list(itertools.islice(self.__get_gh_workflow_runs__(workflow, branch=branch, created=created), limit))
 
     @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True)
     def _list_workflow_runs(self, test_instance: models.TestInstance,
-                            status: str = None, limit: int = None) -> Generator[github.WorkflowRun.WorkflowRun]:
+                            status: str = None, limit: int = 10) -> Generator[github.WorkflowRun.WorkflowRun]:
         # get gh workflow
-        workflow = self._get_gh_workflow_from_test_instance(test_instance)
+        workflow = self._get_gh_workflow_from_test_instance_resource(test_instance.resource)
         logger.debug("Retrieved workflow %s from github", workflow)
         logger.warning("Workflow Runs Limit: %r", limit)
         logger.warning("Workflow Runs Status: %r", status)
 
         result = []
-        for run in self._get_gh_workflow_runs(workflow, test_instance):
+        for run in self._get_gh_workflow_runs(workflow, test_instance, limit=limit):
             logger.debug("Loading Github run ID %r", run.id)
             # The Workflow.get_runs method in the PyGithub API has a status argument
             # which in theory we could use to filter the runs that are retrieved to
@@ -252,7 +264,7 @@ class GithubTestingService(TestingService):
             # if status is None or run.status == status:
             logger.debug("Number of attempts of run ID %r: %r", run.id, run.raw_data['run_attempt'])
             if (limit is None or limit > 1) and run.raw_data['run_attempt'] > 1:
-                for attempt in self.__get_gh_workflow_run_attempts__(run):
+                for attempt in self.__get_gh_workflow_run_attempts__(run, limit=limit - len(result)):
                     if status is None or attempt.status == status:
                         result.append(attempt)
             else:
@@ -299,12 +311,12 @@ class GithubTestingService(TestingService):
         try:
             logger.debug("Getting test builds...")
             return [GithubTestBuild(self, test_instance, run)
-                    for run in self._list_workflow_runs(test_instance)[:limit]]
+                    for run in self._list_workflow_runs(test_instance, limit=limit)[:limit]]
         except GithubRateLimitExceededException as e:
             raise lm_exceptions.RateLimitExceededException(detail=str(e), instance=test_instance)
 
     @cached(timeout=Timeout.NONE, client_scope=False,
-            transactional_update=lambda b: b._metadata.status != GithubTestingService.GithubStatus.COMPLETED)
+            force_cache_value=lambda b: b._metadata.status == GithubTestingService.GithubStatus.COMPLETED)
     def get_test_build(self, test_instance: models.TestInstance, build_number: int) -> GithubTestBuild:
         try:
             # parse build identifier
@@ -312,11 +324,27 @@ class GithubTestingService(TestingService):
             logger.debug("Searching build: %r %r", run_id, run_attempt)
             # get a reference to the test instance repository
             repo: Repository = self._get_repo(test_instance)
+            headers, data = self._get_test_build(run_id, run_attempt, repo)
+            return GithubTestBuild(self, test_instance, WorkflowRun(repo._requester, headers, data, True))
+        except ValueError as e:
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.exception(e)
+            raise lm_exceptions.BadRequestException(detail="Invalid build identifier")
+
+    @cached(timeout=Timeout.NONE, client_scope=False,
+            force_cache_value=lambda b: b[1]['status'] == GithubTestingService.GithubStatus.COMPLETED)
+    def _get_test_build(self, run_id, run_attempt, repo: Repository) -> GithubTestBuild:
+        try:
             # build url
+            logger.warning("************************************************************")
+
             url = f"/repos/{repo.full_name}/actions/runs/{run_id}/attempts/{run_attempt}"
             logger.debug("Build URL: %s", url)
             headers, data = repo._requester.requestJsonAndCheck("GET", url)
-            return GithubTestBuild(self, test_instance, WorkflowRun(repo._requester, headers, data, True))
+            logger.warning("************************************************************")
+
+            return headers, data
+            # return GithubTestBuild(self, test_instance, WorkflowRun(repo._requester, headers, data, True))
         except ValueError as e:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.exception(e)
@@ -346,7 +374,7 @@ class GithubTestingService(TestingService):
                 assert isinstance(run, WorkflowRun)
                 return run.rerun()
             else:
-                workflow = self._get_gh_workflow_from_test_instance(test_instance)
+                workflow = self._get_gh_workflow_from_test_instance_resource(test_instance.resource)
                 assert isinstance(workflow, Workflow), workflow
                 return workflow.create_dispatch(test_instance.test_suite.workflow_version.version)
         except Exception as e:
