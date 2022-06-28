@@ -192,6 +192,14 @@ class GithubEvent():
 
     @property
     def workflow_run(self) -> Optional[WorkflowRun]:
+        if 'workflow_run' in self.payload:
+            return WorkflowRun(self.installation._requester, {}, self.payload['workflow_run'], True)
+        if 'workflow_job' in self.payload:
+            return WorkflowRun(self.installation._requester, {}, {
+                'id': self.payload['workflow_job']['run_id'],
+                'url': self.payload['workflow_job']['run_url']
+            }, False)
+        return None
 
     @property
     def workflow_build_id(self) -> Optional[str]:
