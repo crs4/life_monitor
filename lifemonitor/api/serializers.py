@@ -477,7 +477,9 @@ class WorkflowVersionListItem(WorkflowSchema):
                 return [schema.dump(v) for v in sorted(workflow.versions.values(), key=lambda x: x.modified, reverse=True)]
             return None
         except Exception as e:
-            logger.debug(e)
+            logger.error(e)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.exception(e)
             return None
 
     def get_latest_build(self, workflow):
