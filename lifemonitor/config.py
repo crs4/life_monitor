@@ -244,12 +244,15 @@ def configure_logging(app):
         level_value = logging.INFO
         error = True
 
+    log_format = f'[{COLOR_SEQ % (90)}%(asctime)s{RESET_SEQ}] %(levelname)s in %(module)s: {COLOR_SEQ % (90)}%(message)s{RESET_SEQ}'
+    if level_value == logging.DEBUG:
+        log_format = f'[{COLOR_SEQ % (90)}%(asctime)s{RESET_SEQ}] %(levelname)s in %(module)s::%(funcName)s @ line: %(lineno)s: {COLOR_SEQ % (90)}%(message)s{RESET_SEQ}'
+
     dictConfig({
         'version': 1,
         'formatters': {'default': {
             '()': ColorFormatter,
-            'format':
-                f'[{COLOR_SEQ % (90)}%(asctime)s{RESET_SEQ}] %(levelname)s in %(module)s: {COLOR_SEQ % (90)}%(message)s{RESET_SEQ}',
+            'format': log_format,
         }},
         'filters': {
             'myfilter': {
