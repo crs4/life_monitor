@@ -20,6 +20,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import tempfile
@@ -31,15 +32,19 @@ import lifemonitor.exceptions as lm_exceptions
 from flask import current_app
 from github.GithubException import GithubException, RateLimitExceededException
 from lifemonitor.api.models import db, repositories
-from lifemonitor.api.models.repositories.base import WorkflowRepository
+from lifemonitor.api.models.repositories.base import (
+    WorkflowRepository, WorkflowRepositoryMetadata)
 from lifemonitor.api.models.repositories.github import (
     GithubRepositoryRevision, GithubWorkflowRepository)
+from lifemonitor.api.models.repositories.local import LocalWorkflowRepository
 from lifemonitor.auth.models import (ExternalServiceAuthorizationHeader,
                                      HostingService, Resource)
 from lifemonitor.config import BaseConfig
 from lifemonitor.models import JSON
 from lifemonitor.utils import download_url, get_current_ref
 from sqlalchemy.ext.hybrid import hybrid_property
+
+from rocrate import rocrate
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -56,6 +61,8 @@ class ROCrate(Resource):
     _local_path = db.Column("local_path", db.String, nullable=True)
     _metadata_loaded = False
     _repository: repositories.WorkflowRepository = None
+
+    __crate_reader__: WorkflowRepositoryMetadata = None
 
     __mapper_args__ = {
         'polymorphic_identity': 'ro_crate',
@@ -101,10 +108,24 @@ class ROCrate(Resource):
 
     @hybrid_property
     def crate_metadata(self):
+        if self._metadata:
+            return self._metadata
         return self.repository.metadata.to_json()
 
-    def load_metadata(self) -> dict:
-        return self.repository.metadata.to_json()
+    @property
+    def _crate_reader(self) -> rocrate.ROCrate:
+        if not self.__crate_reader__:
+            if self._metadata:
+                with tempfile.TemporaryDirectory(dir='/tmp') as tmp_dir:
+                    with open(os.path.join(
+                            tmp_dir,
+                            WorkflowRepositoryMetadata.DEFAULT_METADATA_FILENAME), 'w') as out:
+                        json.dump(self._metadata, out)
+                    self.__crate_reader__ = WorkflowRepositoryMetadata(
+                        LocalWorkflowRepository(tmp_dir), init=False)
+            else:
+                self.__crate_reader__ = self.repository.metadata
+        return self.__crate_reader__
 
     @property
     def repository(self) -> repositories.WorkflowRepository:
@@ -142,33 +163,33 @@ class ROCrate(Resource):
 
     @property
     def authors(self) -> List[Dict]:
-        return self.repository.metadata.get_authors()
+        return self._crate_reader.get_authors()
 
     def get_authors(self, suite_id: str = None) -> List[Dict]:
-        return self.repository.metadata.get_authors(suite_id=suite_id)
+        return self._crate_reader.get_authors(suite_id=suite_id)
 
     @hybrid_property
     def roc_suites(self):
-        return self.repository.metadata.get_roc_suites()
+        return self._crate_reader.get_roc_suites()
 
     def get_roc_suite(self, roc_suite_identifier):
-        return self.repository.metadata.get_get_roc_suite(roc_suite_identifier)
+        return self._crate_reader.get_get_roc_suite(roc_suite_identifier)
 
     @property
     def based_on(self) -> str:
-        return self.repository.metadata.isBasedOn
+        return self._crate_reader.isBasedOn
 
     @property
     def based_on_link(self) -> str:
-        return self.repository.metadata.isBasedOn
+        return self._crate_reader.isBasedOn
 
     @property
     def dataset_name(self):
-        return self.repository.metadata.dataset_name
+        return self._crate_reader.dataset_name
 
     @property
     def main_entity_name(self):
-        return self.repository.metadata.main_entity_name
+        return self._crate_reader.main_entity_name
 
     def _get_authorizations(self, extra_auth: ExternalServiceAuthorizationHeader = None):
         authorizations = []
