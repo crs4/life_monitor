@@ -201,7 +201,7 @@ class CacheTransaction(object):
                                 lk.release()
                                 logger.debug("Lock for key '%r' released: %r", k, lk.locked)
                             except redis_lock.NotAcquired as e:
-                                logger.warning(e)
+                                logger.debug(e)
                         else:
                             logger.debug("Lock for key '%s' not acquired or expired")
                     else:
@@ -569,7 +569,7 @@ def cache_function(function: Callable, timeout=Timeout.REQUEST,
             logger.debug("Skipping transaction for %r: %r", key, skip_transaction)
             if not skip_transaction:  # transaction or transactional_update:  # skip_transaction:
                 read_from_cache = transaction is None
-                logger.warning("Read from cache: %r", read_from_cache)
+                logger.debug("Read from cache: %r", read_from_cache)
                 with hc.transaction() as transaction:
                     logger.debug("Getting value using transaction: new=%r", read_from_cache)
                     result = _process_cache_data(cache, transaction,

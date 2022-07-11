@@ -340,7 +340,7 @@ class TestInstanceSchema(ResourceMetadataSchema):
 
 def format_availability_issues(status: models.WorkflowStatus):
     issues = status.availability_issues
-    logger.info(issues)
+    logger.debug("Found issues: %r", issues)
     if 'not_available' == status.aggregated_status and len(issues) > 0:
         return ', '.join([f"{i['issue']}: Unable to get resource '{i['resource']}' from service '{i['service']}'" if 'service' in i and 'resource' in i else i['issue'] for i in issues])
     return None
