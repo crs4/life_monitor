@@ -45,7 +45,7 @@ from lifemonitor.integrations.github.notifications import \
 from lifemonitor.integrations.github.settings import GithubUserSettings
 from lifemonitor.integrations.github.utils import delete_branch, match_ref
 from lifemonitor.integrations.github.wizards import GithubWizard
-from lifemonitor.utils import get_git_repo_revision
+from lifemonitor.utils import bool_from_string, get_git_repo_revision
 
 from github.PullRequest import PullRequest
 
@@ -296,7 +296,9 @@ def __check_for_issues_and_register__(repo_info: GithubRepositoryReference,
                                       github_settings: GithubUserSettings,
                                       registry_settings: RegistrySettings,
                                       check_issues: bool = True):
-    register = True
+    # enable/disable registry integration according to settings
+    register = bool_from_string(current_app.config['ENABLE_REGISTRY_INTEGRATION']) if current_app else False
+    # set repo
     repo: GithubWorkflowRepository = repo_info.repository
     logger.debug("Repo to register: %r", repo)
     # filter branches and tags according to global and current repo settings
@@ -659,8 +661,12 @@ def event_handler_wrapper(app, handler, event):
     logger.debug("Current app: %r", app)
     logger.debug("Current handler: %r", handler)
     logger.debug("Current event: %r", event)
-    with app.app_context():
-        return handler(event)
+    # enable/disable registry integration according to settings
+    if bool_from_string(current_app.config['ENABLE_GITHUB_APP_INTEGRATION']):
+        with app.app_context():
+            return handler(event)
+    else:
+        logger.info("Github App integration disabled on settings")
 
 
 @blueprint.route("/integrations/github", methods=("POST",))

@@ -89,6 +89,9 @@ class BaseConfig:
     DATA_WORKFLOWS = "./data"
     # Base URL of the LifeMonitor web app associated with this back-end instance
     WEBAPP_URL = "https://app.lifemonitor.eu"
+    # Enable/disable integrations
+    ENABLE_GITHUB_APP_INTEGRATION = False
+    ENABLE_REGISTRY_INTEGRATION = False
 
 
 class DevelopmentConfig(BaseConfig):
