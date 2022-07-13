@@ -267,6 +267,13 @@ class OAuth2Registry(OAuth):
         except ValueError:
             raise LifeMonitorException(f"Unable to load the '{name}' OAuth2 client")
 
+    def find_client_by_uri(self, api_url: str):
+        assert api_url, "API url cannot be empty"
+        for client in self.get_clients():
+            if api_url == client.OAUTH_APP_CONFIG['api_base_url']:
+                return client
+        return None
+
     def get_clients(self):
         return self._clients.values()
 
