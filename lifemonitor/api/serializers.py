@@ -230,7 +230,12 @@ class WorkflowVersionSchema(ResourceSchema):
         self.subscriptionsOf = subscriptionsOf
 
     def get_version(self, obj):
-        exclude = ('rocrate_metadata',) if not self.rocrate_metadata else ()
+        try:
+            exclude = ('rocrate_metadata',) if not self.rocrate_metadata else ()
+        except Exception as e:
+            exclude = ('rocrate_metadata',)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.exception(e)
         return VersionDetailsSchema(exclude=exclude).dump(obj)
 
     def get_subscriptions(self, wv: models.WorkflowVersion):
