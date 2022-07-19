@@ -38,6 +38,9 @@ build_query_limit = 20
 # reference to the main workflow installed on life-monitor/workflow-tests repository
 workflow_tests_resource = '/repos/life-monitor/workflow-tests/actions/workflows/28339110'
 
+# set token from env
+token = get_github_token()
+
 # Fixtures are matched to test arguments through their name, so the warning
 # about redefining the outer name gets in our way.
 # pylint: disable=redefined-outer-name
@@ -74,6 +77,7 @@ def git_ref(request):
     return ref_type, ref_value, ref
 
 
+@pytest.mark.skipif(not token, reason="Github token not set")
 @pytest.fixture
 def test_instance(request, git_ref, repo_full_name, test_workflow_resource):
     ref_type, ref_value, ref = git_ref
@@ -108,7 +112,6 @@ def test_instance_one_version(test_instance):
 
 @pytest.fixture
 def github_token() -> Optional[models.TestingServiceToken]:
-    token = get_github_token()
     return models.TestingServiceToken('Bearer', token) if token else None
 
 
@@ -117,6 +120,7 @@ def github_service(api_url: str, github_token: models.TestingServiceToken) -> mo
     return models.GithubTestingService(url=api_url, token=github_token)
 
 
+@pytest.mark.skipif(not token, reason="Github token not set")
 def test_connection_no_api_url(github_token):
     # Test that the GithubTestingService works without specifying a URL for the API.
     # The API URL isn't implemented as a fixture parameter to `github_service` because
@@ -126,10 +130,12 @@ def test_connection_no_api_url(github_token):
     assert github_service.check_connection()
 
 
+@pytest.mark.skipif(not token, reason="Github token not set")
 def test_connection(github_service):
     assert github_service.check_connection()
 
 
+@pytest.mark.skipif(not token, reason="Github token not set")
 @pytest.mark.parametrize("git_ref", [("tag", "0.1.0")], indirect=True)
 def test_get_builds(github_service, git_ref, test_instance_one_version):
     builds = github_service.get_test_builds(test_instance_one_version)
@@ -140,6 +146,7 @@ def test_get_builds(github_service, git_ref, test_instance_one_version):
         assert builds[i].timestamp > builds[i + 1].timestamp
 
 
+@pytest.mark.skipif(not token, reason="Github token not set")
 @pytest.mark.parametrize("git_ref", [(None, None)], indirect=True)
 def test_get_builds_limit(github_service, git_ref, test_instance_one_version):
     number_of_builds = 5
@@ -147,6 +154,7 @@ def test_get_builds_limit(github_service, git_ref, test_instance_one_version):
     assert len(builds) == number_of_builds, "Returned number of builds != specified limit"
 
 
+@pytest.mark.skipif(not token, reason="Github token not set")
 @pytest.mark.parametrize("git_ref", [(None, None)], indirect=True)
 def test_get_one_build(github_service, git_ref, test_instance_one_version):
     builds = github_service.get_test_builds(test_instance_one_version, limit=8)
@@ -158,6 +166,7 @@ def test_get_one_build(github_service, git_ref, test_instance_one_version):
         assert getattr(build, p), "Unable to find the property {}".format(p)
 
 
+@pytest.mark.skipif(not token, reason="Github token not set")
 @pytest.mark.parametrize("git_ref", [(None, None)], indirect=True)
 def test_get_last_builds(github_service: models.GithubTestingService, git_ref, test_instance_one_version):
     the_builds = github_service.get_test_builds(test_instance_one_version, limit=build_query_limit)
@@ -177,6 +186,7 @@ def test_get_last_builds(github_service: models.GithubTestingService, git_ref, t
         (build is not None and latest_failed_build is not None and build.id == latest_failed_build.id)
 
 
+@pytest.mark.skipif(not token, reason="Github token not set")
 @pytest.mark.parametrize("git_ref", [("branch", "main")], indirect=True)
 @pytest.mark.parametrize("test_instance", [workflow_tests_resource], indirect=True)
 def test_instance_builds_filtered_by_branch(github_service: models.GithubTestingService, git_ref, test_instance):
@@ -195,6 +205,7 @@ def test_instance_builds_filtered_by_branch(github_service: models.GithubTesting
         assert run.head_branch == ref_value, f"Unexpected branch for workflow run {run}"
 
 
+@pytest.mark.skipif(not token, reason="Github token not set")
 @pytest.mark.parametrize("git_ref", [(None, None)], indirect=True)
 @pytest.mark.parametrize("test_instance", [workflow_tests_resource], indirect=True)
 def test_get_runs_by_date(github_service: models.GithubTestingService, git_ref, test_instance):
@@ -233,6 +244,7 @@ def test_get_runs_by_date(github_service: models.GithubTestingService, git_ref, 
     logger.debug("Runs after: %r --- num: %r", runs_after, len(runs_after))
 
 
+@pytest.mark.skipif(not token, reason="Github token not set")
 @pytest.mark.parametrize("git_ref", [("branch", "main"), ("tag", "0.1.0"), ("tag", "0.3.0")], indirect=True)
 @pytest.mark.parametrize("test_instance", [workflow_tests_resource], indirect=True)
 def test_instance_builds_versioned_by_revision(
@@ -273,6 +285,7 @@ def test_instance_builds_versioned_by_revision(
     logger.debug("Not found: %r", not_found)
 
 
+@pytest.mark.skipif(not token, reason="Github token not set")
 @pytest.mark.parametrize("git_ref", [(None, None)], indirect=True)
 def test_instance_builds_versioned_by_date(
         github_service: models.GithubTestingService, git_ref, test_instance_one_version):
@@ -362,6 +375,7 @@ def test_instance_builds_versioned_by_date(
         assert len(instance_builds) == 2, "Unexpected number of runs for the instance revision"
 
 
+@pytest.mark.skipif(not token, reason="Github token not set")
 @pytest.mark.skip(reason="skip this test by default")
 @pytest.mark.parametrize("git_ref", [("tag", "0.3.0")], indirect=True)
 @pytest.mark.parametrize("test_instance", [workflow_tests_resource], indirect=True)
@@ -381,6 +395,7 @@ def test_versioned_instance_new_build(
     assert github_service.start_test_build(test_instance), "Test instance build not started"
 
 
+@pytest.mark.skipif(not token, reason="Github token not set")
 def test_instance_list_gh_workflows(github_service: models.GithubTestingService, repo_full_name):
     repo = github_service._gh_service.get_repo(repo_full_name)
     for w in repo.get_workflows():

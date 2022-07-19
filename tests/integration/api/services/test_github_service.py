@@ -24,11 +24,13 @@ import uuid
 import pytest
 
 from tests import utils
+from tests.conftest_helpers import get_github_token
 from tests.conftest_types import ClientAuthenticationMethod
 
 logger = logging.getLogger()
 
 
+@pytest.mark.skipif(not get_github_token(), reason="Github token not set")
 @pytest.mark.parametrize("client_auth_method", [
     ClientAuthenticationMethod.API_KEY,
 ], indirect=True)
