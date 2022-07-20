@@ -33,6 +33,7 @@ from enum import Enum
 from typing import List
 
 from authlib.integrations.sqla_oauth2 import OAuth2TokenMixin
+from flask import current_app
 from flask_bcrypt import check_password_hash, generate_password_hash
 from flask_login import AnonymousUserMixin, UserMixin
 from lifemonitor import exceptions as lm_exceptions
@@ -757,8 +758,10 @@ class HostingService(Resource):
     def from_url(cls, url: str, api_url: str = None) -> HostingService:
         instance = None
         try:
-            from lifemonitor.auth.oauth2.client.models import OAuth2IdentityProvider
-            from lifemonitor.auth.oauth2.client.services import oauth2_registry
+            from lifemonitor.auth.oauth2.client.models import \
+                OAuth2IdentityProvider
+            from lifemonitor.auth.oauth2.client.services import (
+                config_oauth2_registry, oauth2_registry)
             p_url = urllib.parse.urlparse(url)
             uri = f"{p_url.scheme}://{p_url.netloc}"  # it doesn't discriminate between subdomains
             instance = HostingService.find_by_uri(uri)
@@ -786,6 +789,7 @@ class HostingService(Resource):
                 # If server_credentials do not exist, try to initialize them
                 # using info from the OAuth2Registry
                 if not server_credentials:
+                    config_oauth2_registry(current_app)
                     for a_uri in (api_url, uri):
                         client_info = oauth2_registry.find_client_by_uri(a_uri)
                         if client_info:

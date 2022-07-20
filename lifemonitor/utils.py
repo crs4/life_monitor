@@ -147,6 +147,16 @@ def to_snake_case(camel_str) -> str:
     return pattern.sub('_', "".join(camel_str.split())).lower()
 
 
+def to_kebab_case(camel_str) -> str:
+    """
+    Convert camel_case string to a kebab_case string
+    :param camel_str:
+    :return:
+    """
+    pattern = re.compile(r'(?<!^)(?=[A-Z])')
+    return pattern.sub('-', "".join(camel_str.split())).lower()
+
+
 def sizeof_fmt(num, suffix='B'):
     # Thanks to Sridhar Ratnakumar
     # https://stackoverflow.com/questions/1094841/get-human-readable-version-of-file-size

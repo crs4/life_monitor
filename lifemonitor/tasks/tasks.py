@@ -113,21 +113,22 @@ def check_last_build():
                                 logger.info("Updating build: %r", i.get_test_build(b.id))
                             last_build = i.last_test_build
                             # check state transition
-                            failed = last_build.status == BuildStatus.FAILED
-                            if len(builds) == 1 and failed or \
-                                    builds[0].status in (BuildStatus.FAILED, BuildStatus.PASSED) and \
-                                    builds[1].status in (BuildStatus.FAILED, BuildStatus.PASSED) and \
-                                    len(builds) > 1 and builds[1].status != last_build.status:
-                                logger.error("Updating latest build: %r", last_build)
-                                notification_name = f"{last_build} {'FAILED' if failed else 'RECOVERED'}"
-                                if len(Notification.find_by_name(notification_name)) == 0:
-                                    users = workflow_version.workflow.get_subscribers()
-                                    n = WorkflowStatusNotification(
-                                        EventType.BUILD_FAILED if failed else EventType.BUILD_RECOVERED,
-                                        notification_name,
-                                        {'build': BuildSummarySchema(exclude_nested=False).dump(last_build)},
-                                        users)
-                                    n.save()
+                            if last_build:
+                                failed = last_build.status == BuildStatus.FAILED
+                                if len(builds) == 1 and failed or \
+                                        builds[0].status in (BuildStatus.FAILED, BuildStatus.PASSED) and \
+                                        builds[1].status in (BuildStatus.FAILED, BuildStatus.PASSED) and \
+                                        len(builds) > 1 and builds[1].status != last_build.status:
+                                    logger.error("Updating latest build: %r", last_build)
+                                    notification_name = f"{last_build} {'FAILED' if failed else 'RECOVERED'}"
+                                    if len(Notification.find_by_name(notification_name)) == 0:
+                                        users = workflow_version.workflow.get_subscribers()
+                                        n = WorkflowStatusNotification(
+                                            EventType.BUILD_FAILED if failed else EventType.BUILD_RECOVERED,
+                                            notification_name,
+                                            {'build': BuildSummarySchema(exclude_nested=False).dump(last_build)},
+                                            users)
+                                        n.save()
         except Exception as e:
             logger.error("Error when executing task 'check_last_build': %s", str(e))
             if logger.isEnabledFor(logging.DEBUG):

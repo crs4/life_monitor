@@ -27,6 +27,7 @@ from typing import Dict, List
 from lifemonitor.api.models.repositories.files import (TemplateRepositoryFile,
                                                        WorkflowFile)
 from lifemonitor.api.models.repositories.local import LocalWorkflowRepository
+from lifemonitor.utils import to_kebab_case
 
 from .base import WorkflowRepository, WorkflowRepositoryMetadata
 
@@ -71,10 +72,11 @@ class WorkflowRepositoryTemplate(WorkflowRepository):
 
     def get_workflow_name(self) -> str:
         # try to find a valid extension for the workflow of this template
+        prefix = to_kebab_case(self.name)
         wext = WorkflowFile.get_workflow_extensions(self.name)
         if wext and len(wext) > 0:
-            return f"workflow.{wext.pop()}"  # pick the first
-        return "workflow"
+            return f"{prefix}.{wext.pop()}"  # pick the first
+        return prefix
 
     def _load_files(self, path: str = None):
         result = []

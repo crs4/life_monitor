@@ -662,11 +662,12 @@ def event_handler_wrapper(app, handler, event):
     logger.debug("Current handler: %r", handler)
     logger.debug("Current event: %r", event)
     # enable/disable registry integration according to settings
-    if bool_from_string(current_app.config['ENABLE_GITHUB_APP_INTEGRATION']):
-        with app.app_context():
+
+    with app.app_context():
+        if bool_from_string(current_app.config['ENABLE_GITHUB_APP_INTEGRATION']):
             return handler(event)
-    else:
-        logger.info("Github App integration disabled on settings")
+        else:
+            logger.info("Github App integration disabled on settings")
 
 
 @blueprint.route("/integrations/github", methods=("POST",))

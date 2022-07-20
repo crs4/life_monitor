@@ -19,12 +19,9 @@
 # SOFTWARE.
 
 
-import inspect
 import logging
-from importlib import import_module
 from pathlib import Path
 from typing import List
-
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -35,10 +32,11 @@ def get_supported_workflow_types() -> List[str]:
     return list(GEN_MAP.keys())
 
 
-def generate_crate(workflow_type: str, workflow_version: str,
+def generate_crate(workflow_type: str,
+                   workflow_name: str,
+                   workflow_version: str,
                    local_repo_path: str,
                    repo_url: str = None, license: str = "MIT", **kwargs):
-
     make_crate = get_crate_generator(workflow_type)
     if not make_crate:
         m = "Unable to find a generator for the workflow type '%s'" % workflow_type
@@ -51,7 +49,8 @@ def generate_crate(workflow_type: str, workflow_version: str,
     cfg = {
         "root": Path(local_repo_path),
         "repo_url": repo_url,
-        "version": workflow_version,
+        "wf_name": workflow_name,
+        "wf_version": workflow_version,
         "license": license,
         "ci_workflow": kwargs.get('ci_workflow', 'main.yml'),
         "lang_version": kwargs.get('lan_version', '0.6.5')
@@ -64,16 +63,14 @@ def generate_crate(workflow_type: str, workflow_version: str,
 
 def get_crate_generator(workflow_type: str):
     try:
-        mod = import_module(f"repo2rocrate.{workflow_type}")
-        make_crate = getattr(mod, "make_crate")
-        logger.debug("Found make_crate: %r", make_crate)
-        if not inspect.isfunction(make_crate):
-            logger.warning("'make_crate' in %r is not a function")
+        import repo2rocrate
+        make_crate = repo2rocrate.LANG_MODULES[workflow_type].make_crate
+        logger.debug("Found crate generator: %r", make_crate)
         return make_crate
     except ModuleNotFoundError:
         raise NotImplementedError('No RO-Crate generator for workflow type "%s"' % workflow_type)
     except AttributeError:
-        logger.error("AttributeError: Unable to find function make_crate on module %s", mod)
+        logger.error("AttributeError: Unable to find function make_crate on module %s", workflow_type)
     return None
 
 

@@ -168,6 +168,9 @@ class WorkflowRegistryClient(ABC):
         except AttributeError:
             raise RuntimeError(f"Unable to find a OAuth2 client for the {self.registry.name} service")
 
+    def __repr__(self) -> str:
+        return '<WorkflowRegistryClient of {}'.format(self._registry)
+
     @property
     def registry(self):
         return self._registry
