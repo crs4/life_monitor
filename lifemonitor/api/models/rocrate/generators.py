@@ -35,10 +35,11 @@ def get_supported_workflow_types() -> List[str]:
     return list(GEN_MAP.keys())
 
 
-def generate_crate(workflow_type: str, workflow_version: str,
+def generate_crate(workflow_type: str,
+                   workflow_name: str,
+                   workflow_version: str,
                    local_repo_path: str,
                    repo_url: str = None, license: str = "MIT", **kwargs):
-
     make_crate = get_crate_generator(workflow_type)
     if not make_crate:
         m = "Unable to find a generator for the workflow type '%s'" % workflow_type
@@ -51,7 +52,8 @@ def generate_crate(workflow_type: str, workflow_version: str,
     cfg = {
         "root": Path(local_repo_path),
         "repo_url": repo_url,
-        "version": workflow_version,
+        "wf_name": workflow_name,
+        "wf_version": workflow_version,
         "license": license,
         "ci_workflow": kwargs.get('ci_workflow', 'main.yml'),
         "lang_version": kwargs.get('lan_version', '0.6.5')

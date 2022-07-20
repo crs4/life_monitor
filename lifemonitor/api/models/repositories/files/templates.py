@@ -25,6 +25,7 @@ import os
 from typing import Dict, Optional
 
 from flask import render_template_string
+from lifemonitor import utils
 
 from .base import RepositoryFile
 
@@ -70,7 +71,11 @@ class TemplateRepositoryFile(RepositoryFile):
             with open(self.template_file_path, 'rb' if binary_mode else 'r') as f:
                 template = f.read()
                 if self.template_file_path.endswith('.j2'):
-                    template = render_template_string(template, **data) + '\n'
+                    template = render_template_string(template,
+                                                      filename=self.name,
+                                                      workflow_snakecase_name=utils.to_snake_case(data.get('workflow_name', '')),
+                                                      workflow_kebabcase_name=utils.to_kebab_case(data.get('workflow_name', '')),
+                                                      **data) + '\n'
                 return template
         return self._content
 
