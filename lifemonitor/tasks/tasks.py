@@ -7,7 +7,7 @@ import flask
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
 from lifemonitor.api.models.notifications import WorkflowStatusNotification
-from lifemonitor.api.models.testsuites.testbuild import BuildStatus, TestBuild
+from lifemonitor.api.models.testsuites.testbuild import BuildStatus
 from lifemonitor.api.serializers import BuildSummarySchema
 from lifemonitor.auth.models import (EventType, Notification,
                                      UnconfiguredEmailNotification, User)

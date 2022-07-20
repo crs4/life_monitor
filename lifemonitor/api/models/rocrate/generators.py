@@ -19,12 +19,9 @@
 # SOFTWARE.
 
 
-import inspect
 import logging
-from importlib import import_module
 from pathlib import Path
 from typing import List
-
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -73,7 +70,7 @@ def get_crate_generator(workflow_type: str):
     except ModuleNotFoundError:
         raise NotImplementedError('No RO-Crate generator for workflow type "%s"' % workflow_type)
     except AttributeError:
-        logger.error("AttributeError: Unable to find function make_crate on module %s", mod)
+        logger.error("AttributeError: Unable to find function make_crate on module %s", workflow_type)
     return None
 
 

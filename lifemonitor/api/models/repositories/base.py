@@ -168,7 +168,7 @@ class WorkflowRepository():
         logger.debug("Detected workflow type: %r", workflow_type)
         try:
             from ..rocrate import generators
-            generators.generate_crate(workflow_type,                                       
+            generators.generate_crate(workflow_type,
                                       workflow_name=workflow_name, workflow_version=workflow_version,
                                       local_repo_path=self.local_path, license=license, **kwargs)
             self._metadata = WorkflowRepositoryMetadata(self, init=False, exclude=self.exclude,
