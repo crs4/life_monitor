@@ -116,7 +116,12 @@ class GithubEvent():
 
     @property
     def hosting_service(self) -> HostingService:
-        return HostingService.from_url('https://github.com')
+        try:
+            return HostingService.from_url('https://github.com', 'https://api.github.com')
+        except Exception as e:
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.exception(e)
+            return None
 
     @property
     def application(self) -> LifeMonitorGithubApp:
@@ -268,6 +273,8 @@ class GithubRepositoryReference(object):
 
     @property
     def ref(self) -> str:
+        if self.event.workflow_run:
+            return f"refs/heads/{self.event.workflow_run.head_branch}"
         ref = self._repo.ref if self._repo else self._raw_data.get('ref', None)
         ref_type = self._raw_data.get('ref_type', None)
         if ref and ref_type == 'tag' and not ref.startswith('refs/'):
@@ -276,6 +283,8 @@ class GithubRepositoryReference(object):
 
     @property
     def rev(self) -> str:
+        if self.event.workflow_run:
+            return self.event.workflow_run.head_sha
         try:
             key = 'before' if self.deleted else 'after'
             return self._raw_data.get(key, None)
