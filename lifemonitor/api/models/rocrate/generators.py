@@ -64,11 +64,9 @@ def generate_crate(workflow_type: str, workflow_version: str,
 
 def get_crate_generator(workflow_type: str):
     try:
-        mod = import_module(f"repo2rocrate.{workflow_type}")
-        make_crate = getattr(mod, "make_crate")
-        logger.debug("Found make_crate: %r", make_crate)
-        if not inspect.isfunction(make_crate):
-            logger.warning("'make_crate' in %r is not a function")
+        import repo2rocrate
+        make_crate = repo2rocrate.LANG_MODULES[workflow_type].make_crate
+        logger.debug("Found crate generator: %r", make_crate)
         return make_crate
     except ModuleNotFoundError:
         raise NotImplementedError('No RO-Crate generator for workflow type "%s"' % workflow_type)
