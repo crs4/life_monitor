@@ -22,14 +22,14 @@ import logging
 
 import connexion
 import flask
-from flask import flash, redirect, render_template, request, session, url_for
+from flask import current_app, flash, redirect, render_template, request, session, url_for
 from flask_login import login_required, login_user, logout_user
 from lifemonitor.cache import Timeout, cached, clear_cache
 from lifemonitor.utils import (NextRouteRegistry, next_route_aware,
                                split_by_crlf)
 
 from .. import exceptions
-from ..utils import OpenApiSpecs
+from ..utils import OpenApiSpecs, boolean_value
 from . import serializers
 from .forms import (EmailForm, LoginForm, NotificationsForm, Oauth2ClientForm,
                     RegisterForm, SetPasswordForm)
@@ -182,6 +182,8 @@ def profile(form=None, passwordForm=None, currentView=None,
                            passwordForm=passwordForm or SetPasswordForm(),
                            emailForm=emailForm or EmailForm(),
                            notificationsForm=notificationsForm or NotificationsForm(),
+                           enableGithubAppIntegration=boolean_value(current_app.config['ENABLE_GITHUB_APP_INTEGRATION']),
+                           enableRegistryIntegration=boolean_value(current_app.config['ENABLE_REGISTRY_INTEGRATION']),
                            oauth2ClientForm=form or Oauth2ClientForm(),
                            githubSettingsForm=githubSettingsForm or GithubSettingsForm.from_model(current_user),
                            registrySettingsForm=registrySettingsForm or RegistrySettingsForm.from_model(current_user),

@@ -22,12 +22,20 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import List
+from typing import Any, Callable, Dict, List, Optional, OrderedDict, Tuple, Type
+import github
 
 from github.GithubException import GithubException
 from github.Issue import Issue
 from github.Label import Label
 from github.Repository import Repository
+from github.Requester import Requester
+from github.PaginatedList import PaginatedList
+
+from lifemonitor.cache import cache_function
+
+from lifemonitor.cache import Timeout, cached
+from lifemonitor.integrations.github.config import DEFAULT_BASE_URL, DEFAULT_PER_PAGE, DEFAULT_TIMEOUT
 
 from ...api.models.wizards import (IOHandler, QuestionStep, Step, UpdateStep,
                                    Wizard)
@@ -40,13 +48,13 @@ def match_ref(ref: str, refs: List[str]) -> str:
     if not ref:
         return None
     for v in refs:
-        pattern = rf"^({v})$".replace('*', "[a-zA-Z0-9.-_/]")
+        pattern = rf"^({v})$".replace('*', "[a-zA-Z0-9-_/]+")
         try:
             logger.debug("Searching match for %s (pattern: %s)", ref, pattern)
             match = re.match(pattern, ref)
             if match:
                 logger.debug("Match found: %r", match)
-                return (match.group(0), pattern.replace("[a-zA-Z0-9.-_/]", '*').strip('^()$'))
+                return (match.group(0), pattern.replace("[a-zA-Z0-9-_/]+", '*').strip('^()$'))
         except Exception:
             logger.debug("Unable to find a match for %s (pattern: %s)", ref, pattern)
     return None
@@ -150,3 +158,112 @@ class GithubIOHandler(IOHandler):
     def write(self, step: Step, append_help: bool = False):
         assert isinstance(step, Step), step
         self.issue.create_comment(step.as_string(append_help=append_help))
+
+
+class GithubApiWrapper(github.Github):
+    """
+    Extend the main Github class to customise the internal requester object.
+    """
+
+    def __init__(
+        self,
+        login_or_token=None,
+        password=None,
+        jwt=None,
+        base_url=DEFAULT_BASE_URL,
+        timeout=DEFAULT_TIMEOUT,
+        user_agent="PyGithub/Python",
+        per_page=DEFAULT_PER_PAGE,
+        verify=True,
+        retry=None,
+        pool_size=None,
+    ):
+        super().__init__(login_or_token, password, jwt, base_url, timeout,
+                         user_agent, per_page, verify, retry, pool_size)
+        self.__requester = CachedGithubRequester(
+            login_or_token,
+            password,
+            jwt,
+            base_url,
+            timeout,
+            user_agent,
+            per_page,
+            verify,
+            retry,
+            pool_size,
+        )
+
+
+class CachedGithubRequester(Requester):
+
+    """
+    Extend the default Github Requester to enable caching.
+    """
+
+    @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True)
+    def requestJsonAndCheck(self, verb: str, url: str,
+                            parameters: Optional[Dict[str, Any]] = None,
+                            headers: Optional[Dict[str, str]] = None,
+                            input: Optional[Any] = None) -> Tuple[Dict[str, Any], Optional[Dict[str, Any]]]:
+        return super().requestJsonAndCheck(verb, url, parameters, headers, input)
+
+    @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True)
+    def requestMultipartAndCheck(self, verb: str, url: str,
+                                 parameters: Optional[Dict[str, Any]] = None,
+                                 headers: Optional[Dict[str, Any]] = None,
+                                 input: Optional[OrderedDict] = None) -> Tuple[Dict[str, Any], Optional[Dict[str, Any]]]:
+        return super().requestMultipartAndCheck(verb, url, parameters, headers, input)
+
+    @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True)
+    def requestBlobAndCheck(self, verb: str, url: str,
+                            parameters: Optional[Dict[str, Any]] = None,
+                            headers: Optional[Dict[str, Any]] = None,
+                            input: Optional[str] = None) -> Tuple[Dict[str, Any], Optional[Dict[str, Any]]]:
+        return super().requestBlobAndCheck(verb, url, parameters, headers, input)
+
+
+class CachedPaginatedList(PaginatedList):
+
+    """
+    Extend the default Github PaginatedList to enable caching of list items.
+    """
+
+    def __init__(self, contentClass: Type, requester: Requester,
+                 firstUrl: str, firstParams: Any, headers: Optional[Dict[str, str]] = None,
+                 list_item: str = "items",
+                 transactional_update: Optional[bool | Callable] = False,
+                 force_use_cache: Optional[bool | Callable] = False,
+                 unless: Optional[bool | Callable] = None) -> None:
+        super().__init__(contentClass, requester, firstUrl, firstParams, headers, list_item)
+        self.transaction_update = transactional_update
+        self.unless = unless
+        self.force_use_cache = force_use_cache
+
+    def __process_item__(self, item):
+
+        def _get_item_(item):
+            logger.debug("Transaction update: %r", self.force_use_cache(item) if self.force_use_cache else False)
+            logger.debug("Status: %r", item.status)
+            return item
+
+        logger.debug(f"Processing item: {item}")
+        if not item:
+            return None
+
+        return cache_function(_get_item_,
+                              timeout=Timeout.NONE, client_scope=False,
+                              transactional_update=self.transaction_update,
+                              unless=self.unless,
+                              force_cache_value=self.force_use_cache,
+                              args=(item,))
+
+    def __getitem__(self, index):
+        return self.__process_item__(super().__getitem__(index))
+
+    def __iter__(self):
+        items = []
+        for item in super().__iter__():
+            cached_item = self.__process_item__(item)
+            if cached_item:
+                items.append(cached_item)
+        yield from items

@@ -27,6 +27,7 @@ import pickle
 import threading
 import time
 from contextlib import contextmanager
+from typing import Callable, Optional
 
 import redis
 import redis_lock
@@ -200,7 +201,7 @@ class CacheTransaction(object):
                                 lk.release()
                                 logger.debug("Lock for key '%r' released: %r", k, lk.locked)
                             except redis_lock.NotAcquired as e:
-                                logger.warning(e)
+                                logger.debug(e)
                         else:
                             logger.debug("Lock for key '%s' not acquired or expired")
                     else:
@@ -524,36 +525,80 @@ def _process_cache_data(cache, transaction, key, unless, timeout,
     return result
 
 
-def cached(timeout=Timeout.REQUEST, client_scope=True, unless=None, transactional_update=False):
+def cache_function(function: Callable, timeout=Timeout.REQUEST,
+                   client_scope=True,
+                   unless: Optional[bool | Callable] = None,
+                   transactional_update: Optional[bool | Callable] = False,
+                   force_cache_value: Optional[bool | Callable] = False,
+                   args=(), kwargs={}):
+    logger.debug("Args: %r", args)
+    logger.debug("KwArgs: %r", kwargs)
+    obj: CacheMixin = args[0] if len(args) > 0 and isinstance(args[0], CacheMixin) else None
+    logger.debug("Wrapping a method of a CacheMixin instance: %r", obj is not None)
+    hc = cache if obj is None else obj.cache
+    result = None
+    if hc and hc.cache_enabled:
+        # compute cache key
+        key = make_cache_key(function, client_scope, args=args, kwargs=kwargs)
+        # retrieve the current transaction (might be None)
+        transaction = hc.get_current_transaction()
+        logger.debug("Current transaction: %r", transaction)
+        # decide whether to force the cache value
+        use_cache_value = force_cache_value
+        current_cache_value = None
+        if force_cache_value and callable(force_cache_value):
+            current_cache_value = cache.get(key)
+            if current_cache_value:
+                use_cache_value = force_cache_value(current_cache_value)
+            else:
+                use_cache_value = False
+        if use_cache_value:
+            logger.debug("Using current cache value: %r", current_cache_value)
+            result = current_cache_value
+        else:
+            # decide whether to skip the transactional update
+            skip_transaction = transaction is None
+            if transactional_update and callable(transactional_update):
+                current_value = transaction.get(key) if transaction else None or cache.get(key)
+                logger.debug("Transaction uodate callable: %r", transactional_update)
+                if current_value:
+                    skip_transaction = not transactional_update(current_value)
+                    logger.debug("Computed callable skip_transacion: %r", skip_transaction)
+            elif not transaction and isinstance(transactional_update, bool):
+                skip_transaction = not transactional_update
+            logger.debug("Skipping transaction for %r: %r", key, skip_transaction)
+            if not skip_transaction:  # transaction or transactional_update:  # skip_transaction:
+                read_from_cache = transaction is None
+                logger.debug("Read from cache: %r", read_from_cache)
+                with hc.transaction() as transaction:
+                    logger.debug("Getting value using transaction: new=%r", read_from_cache)
+                    result = _process_cache_data(cache, transaction,
+                                                 key, unless, timeout,
+                                                 read_from_cache, False,
+                                                 function, args, kwargs)
+            else:
+                logger.debug("Getting value from cache")
+                result = _process_cache_data(cache, transaction, key, unless, timeout,
+                                             True, True, function, args, kwargs)
+    else:
+        logger.debug("Cache disabled: getting value from the actual function...")
+        result = function(*args, **kwargs)
+    return result
+
+
+def cached(timeout=Timeout.REQUEST, client_scope=True,
+           unless: Optional[bool | Callable] = None,
+           transactional_update: Optional[bool | Callable] = False,
+           force_cache_value: Optional[bool | Callable] = False):
     def decorator(function):
 
         @functools.wraps(function)
         def wrapper(*args, **kwargs):
-            logger.debug("Args: %r", args)
-            logger.debug("KwArgs: %r", kwargs)
-            obj: CacheMixin = args[0] if len(args) > 0 and isinstance(args[0], CacheMixin) else None
-            logger.debug("Wrapping a method of a CacheMixin instance: %r", obj is not None)
-            hc = cache if obj is None else obj.cache
-            result = None
-            if hc and hc.cache_enabled:
-                key = make_cache_key(function, client_scope, args=args, kwargs=kwargs)
-                transaction = hc.get_current_transaction()
-                if transaction or transactional_update:
-                    read_from_cache = transaction is None
-                    with hc.transaction() as transaction:
-                        logger.debug("Getting value using transaction: new=%r", read_from_cache)
-                        result = _process_cache_data(cache, transaction,
-                                                     key, unless, timeout,
-                                                     read_from_cache, False,
-                                                     function, args, kwargs)
-                else:
-                    logger.debug("Getting value from cache")
-                    result = _process_cache_data(cache, transaction, key, unless, timeout,
-                                                 True, True, function, args, kwargs)
-            else:
-                logger.debug("Cache disabled: getting value from the actual function...")
-                result = function(*args, **kwargs)
-            return result
+            return cache_function(function, timeout=timeout,
+                                  client_scope=client_scope, unless=unless,
+                                  transactional_update=transactional_update,
+                                  force_cache_value=force_cache_value,
+                                  args=args, kwargs=kwargs)
 
         return wrapper
     return decorator

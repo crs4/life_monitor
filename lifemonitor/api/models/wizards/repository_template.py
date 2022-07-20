@@ -66,7 +66,7 @@ def get_files(wizard: RepositoryTemplateWizard, repo: GithubWorkflowRepository, 
     logger.debug("Template files: %r --> %r", repo_template, repo_template.files)
     logger.debug("Repository files: %r --> %r", repo, repo.files)
     try:
-        missing_left, missing_right, differences = repo_template.compare(repo)
+        missing_left, missing_right, differences = repo_template.compare_to(repo)
         logger.debug("Diff (left, right, changed)=(%r,%r,%r)", missing_left, missing_right, differences)
         return missing_right
     except Exception as e:

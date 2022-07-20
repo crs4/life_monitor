@@ -808,6 +808,8 @@ def instances_builds_get_by_id(instance_uuid, build_id):
                             detail=messages.instance_build_not_found.format(build_id, instance_uuid))
     except lm_exceptions.RateLimitExceededException as e:
         return lm_exceptions.report_problem(403, e.title, detail=e.detail)
+    except lm_exceptions.BadRequestException as e:
+        return lm_exceptions.report_problem(400, e.title, detail=e.detail)
     except Exception as e:
         return lm_exceptions.report_problem(500, "Internal Error", extra_info={"exception": str(e)})
 

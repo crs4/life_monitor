@@ -192,8 +192,22 @@ class GithubEvent():
 
     @property
     def workflow_run(self) -> Optional[WorkflowRun]:
-        return None if 'workflow_run' not in self.payload else \
-            WorkflowRun(self.installation._requester, {}, self.payload['workflow_run'], True)
+        if 'workflow_run' in self.payload:
+            return WorkflowRun(self.installation._requester, {}, self.payload['workflow_run'], True)
+        if 'workflow_job' in self.payload:
+            return WorkflowRun(self.installation._requester, {}, {
+                'id': self.payload['workflow_job']['run_id'],
+                'url': self.payload['workflow_job']['run_url']
+            }, False)
+        return None
+
+    @property
+    def workflow_build_id(self) -> Optional[str]:
+        if 'workflow_job' in self.payload:
+            job = self.payload['workflow_job']
+            if job:
+                return f"{job['run_id']}_{job['run_attempt']}"
+        return None
 
     @staticmethod
     def from_request(request: Request = None) -> GithubEvent:
@@ -299,12 +313,12 @@ class GithubRepositoryReference(object):
     @property
     def repository(self) -> GithubWorkflowRepository:
         if not self._repo:
-            repo = self.event.installation.get_repo(self.full_name)
-            repo.ref = self.ref
+            ref = self.ref
             if self.branch:
-                repo.ref = f"refs/heads/{self.branch}"
+                ref = f"refs/heads/{self.branch}"
             elif self.tag:
-                repo.ref = f"refs/tags/{self.tag}"
+                ref = f"refs/tags/{self.tag}"
+            repo = self.event.installation.get_repo(self.full_name, ref=ref)
             repo.rev = self.rev
             self._repo = repo
         return self._repo

@@ -20,22 +20,31 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import tempfile
 import uuid as _uuid
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import lifemonitor.exceptions as lm_exceptions
 from flask import current_app
+from github.GithubException import GithubException, RateLimitExceededException
 from lifemonitor.api.models import db, repositories
+from lifemonitor.api.models.repositories.base import (
+    WorkflowRepository, WorkflowRepositoryMetadata)
+from lifemonitor.api.models.repositories.github import (
+    GithubRepositoryRevision, GithubWorkflowRepository)
+from lifemonitor.api.models.repositories.local import LocalWorkflowRepository
 from lifemonitor.auth.models import (ExternalServiceAuthorizationHeader,
                                      HostingService, Resource)
 from lifemonitor.config import BaseConfig
 from lifemonitor.models import JSON
-from lifemonitor.utils import download_url
+from lifemonitor.utils import download_url, get_current_ref
 from sqlalchemy.ext.hybrid import hybrid_property
+
+from rocrate import rocrate
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -53,16 +62,19 @@ class ROCrate(Resource):
     _metadata_loaded = False
     _repository: repositories.WorkflowRepository = None
 
+    __crate_reader__: WorkflowRepositoryMetadata = None
+
     __mapper_args__ = {
         'polymorphic_identity': 'ro_crate',
         "inherit_condition": id == Resource.id
     }
 
     def __init__(self, uri, uuid=None, name=None,
-                 version=None, hosting_service=None) -> None:
+                 version=None, hosting_service=None,
+                 repository: repositories.WorkflowRepository = None) -> None:
         super().__init__(uri, uuid=uuid, name=name, version=version)
         self.hosting_service = hosting_service
-        self._repository: repositories.WorkflowRepository = None
+        self._repository: repositories.WorkflowRepository = repository
 
     @property
     def local_path(self):
@@ -80,12 +92,40 @@ class ROCrate(Resource):
             self._local_path = os.path.join(base_path, f"{self.uuid}.zip")
         return self._local_path
 
+    @property
+    def revision(self) -> Optional[GithubRepositoryRevision]:
+        if self._is_github_crate_(self.uri) and isinstance(self.repository, GithubWorkflowRepository):
+            return self.repository.get_revision(self.version)
+        return None
+
+    def has_revision(self) -> bool:
+        try:
+            branch = self.revision.main_ref.shorthand
+            assert branch, "Branch cannot be empty"
+            return True
+        except Exception:
+            return False
+
     @hybrid_property
     def crate_metadata(self):
+        if self._metadata:
+            return self._metadata
         return self.repository.metadata.to_json()
 
-    def load_metadata(self) -> dict:
-        return self.repository.metadata.to_json()
+    @property
+    def _crate_reader(self) -> rocrate.ROCrate:
+        if not self.__crate_reader__:
+            if self._metadata:
+                with tempfile.TemporaryDirectory(dir='/tmp') as tmp_dir:
+                    with open(os.path.join(
+                            tmp_dir,
+                            WorkflowRepositoryMetadata.DEFAULT_METADATA_FILENAME), 'w') as out:
+                        json.dump(self._metadata, out)
+                    self.__crate_reader__ = WorkflowRepositoryMetadata(
+                        LocalWorkflowRepository(tmp_dir), init=False)
+            else:
+                self.__crate_reader__ = self.repository.metadata
+        return self.__crate_reader__
 
     @property
     def repository(self) -> repositories.WorkflowRepository:
@@ -93,44 +133,63 @@ class ROCrate(Resource):
             raise lm_exceptions.IllegalStateException("URI (roc_link) not set")
         if not self._repository:
             # download the RO-Crate if it is not locally stored
+            ref = None
             if not os.path.exists(self.local_path):
-                self.download_from_source(self.local_path)
+                _, ref, _ = self.download_from_source(self.local_path)
             # instantiate a local ROCrate repository
-            self._repository = repositories.ZippedWorkflowRepository(self.local_path)
+            if self._is_github_crate_(self.uri):
+                authorizations = self.authorizations + [None]
+                token = None
+                for authorization in authorizations:
+                    if not authorization or isinstance(authorization, ExternalServiceAuthorizationHeader):
+                        token = authorization.auth_token if authorization else None
+                        try:
+                            self._repository = repositories.GithubWorkflowRepository.from_zip(self.local_path, self.uri, token=token, ref=ref)
+                            logger.debug("The loaded repository: %r", self._repository)
+                        except RateLimitExceededException as e:
+                            raise lm_exceptions.RateLimitExceededException(detail=str(e))
+                        except Exception as e:
+                            if logger.isEnabledFor(logging.DEBUG):
+                                logger.exception(e)
+                        if self._repository is not None:
+                            break
+            else:
+                self._repository = repositories.ZippedWorkflowRepository(self.local_path)
+
             # set metadata
-            self._metadata = self.repository.metadata.to_json()
+            self._metadata = self._repository.metadata.to_json()
             self._metadata_loaded = True
         return self._repository
 
     @property
     def authors(self) -> List[Dict]:
-        return self.repository.metadata.get_authors()
+        return self._crate_reader.get_authors()
 
     def get_authors(self, suite_id: str = None) -> List[Dict]:
-        return self.repository.metadata.get_authors(suite_id=suite_id)
+        return self._crate_reader.get_authors(suite_id=suite_id)
 
     @hybrid_property
     def roc_suites(self):
-        return self.repository.metadata.get_roc_suites()
+        return self._crate_reader.get_roc_suites()
 
     def get_roc_suite(self, roc_suite_identifier):
-        return self.repository.metadata.get_get_roc_suite(roc_suite_identifier)
+        return self._crate_reader.get_get_roc_suite(roc_suite_identifier)
 
     @property
     def based_on(self) -> str:
-        return self.repository.metadata.isBasedOn
+        return self._crate_reader.isBasedOn
 
     @property
     def based_on_link(self) -> str:
-        return self.repository.metadata.isBasedOn
+        return self._crate_reader.isBasedOn
 
     @property
     def dataset_name(self):
-        return self.repository.metadata.dataset_name
+        return self._crate_reader.dataset_name
 
     @property
     def main_entity_name(self):
-        return self.repository.metadata.main_entity_name
+        return self._crate_reader.main_entity_name
 
     def _get_authorizations(self, extra_auth: ExternalServiceAuthorizationHeader = None):
         authorizations = []
@@ -143,10 +202,10 @@ class ROCrate(Resource):
     def check_for_changes(self, roc_link: str, extra_auth: ExternalServiceAuthorizationHeader = None) -> Tuple:
         # try either with authorization header and without authorization
         with tempfile.NamedTemporaryFile(dir=BaseConfig.BASE_TEMP_FOLDER) as target_path:
-            local_path = self.download_from_source(target_path.name, uri=roc_link, extra_auth=extra_auth)
-            logger.debug("Temp local path of crate to compare: %r", local_path)
+            local_path, ref, commit = self.download_from_source(target_path.name, uri=roc_link, extra_auth=extra_auth)
+            logger.debug("Temp local path of crate to compare: %r (ref: %r, commit: %r)", local_path, ref, commit)
             repo = repositories.ZippedWorkflowRepository(local_path)
-            return self.repository.compare(repo)
+            return self.repository.compare_to(repo)
 
     def download(self, target_path: str) -> str:
         # load ro-crate if not locally stored
@@ -162,12 +221,42 @@ class ROCrate(Resource):
         logger.debug("ZIP Archive: %s", local_zip)
         return (tmpdir_path / 'rocrate.zip').as_posix()
 
-    def download_from_source(self, target_path: str = None, uri: str = None,
-                             extra_auth: ExternalServiceAuthorizationHeader = None) -> str:
+    @staticmethod
+    def _is_github_crate_(uri: str) -> str:
+        # FIXME: replace with a better detection mechanism
+        if uri.startswith('https://github.com'):
+            # normalize uri as clone URL
+            if not uri.endswith('.git'):
+                uri += '.git'
+            return uri
+        return None
+
+    @staticmethod
+    def _find_git_ref_(repo: GithubWorkflowRepository, version: str) -> str:
+        assert isinstance(repo, WorkflowRepository)
+        ref = repo.ref
+        commit = repo.get_commit(ref) if ref else None
+        try:
+            branch = repo.get_branch(version)
+            ref, commit = f"refs/remotes/origin/{branch.name}", branch.commit
+        except GithubException as e:
+            logger.debug(f"Unable to get branch {version}: %s", str(e))
+            for tag in repo.get_tags():
+                if tag.name == version:
+                    ref, commit = f"refs/tags/{tag.name}", tag.commit
+                    break
+        logger.debug("Detected ref: %r", ref)
+        return ref, commit
+
+    def download_from_source(self, target_path: str = None, uri: str = None, version: str = None,
+                             extra_auth: ExternalServiceAuthorizationHeader = None) -> Tuple[str, str, str]:
         errors = []
 
         # set URI
         uri = uri or self.uri
+
+        # set version
+        version = version or self.version
 
         # set target_path
         if not target_path:
@@ -176,19 +265,20 @@ class ROCrate(Resource):
             # try either with authorization header and without authorization
             for authorization in self._get_authorizations(extra_auth=extra_auth):
                 try:
-                    # FIXME: replace with a better detection mechanism
-                    if uri.startswith('https://github.com'):
+                    git_url = self._is_github_crate_(uri)
+                    if git_url:
                         token = None
-                        # normalize uri as clone URL
-                        if not uri.endswith('.git'):
-                            uri += '.git'
                         if authorization and isinstance(authorization, ExternalServiceAuthorizationHeader):
                             token = authorization.auth_token
-                        with repositories.RepoCloneContextManager(uri, auth_token=token) as tmp_path:
-                            repo = repositories.LocalWorkflowRepository(tmp_path)
+                        with repositories.RepoCloneContextManager(git_url, auth_token=token) as tmp_path:
+                            repo = repositories.GithubWorkflowRepository.from_local(tmp_path, git_url, token=token)
+                            ref, commit = self._find_git_ref_(repo, version)
+                            repo.checkout_ref(ref)  # , branch_name=version)
+                            logger.debug("Checkout DONE")
+                            logger.debug(get_current_ref(tmp_path))
                             archive = repo.write_zip(target_path)
                             logger.debug("Zip file written to: %r", archive)
-                            return archive
+                            return archive, ref, commit
                     else:
                         auth_header = authorization.as_http_header() if authorization else None
                         logger.debug(auth_header)
@@ -196,7 +286,7 @@ class ROCrate(Resource):
                                                  target_path=target_path,
                                                  authorization=auth_header)
                         logger.debug("ZIP Archive: %s", local_zip)
-                        return target_path
+                        return target_path, None, None
                 except lm_exceptions.NotAuthorizedException as e:
                     logger.info("Caught authorization error exception while downloading and processing RO-crate: %s", e)
                     errors.append(str(e))

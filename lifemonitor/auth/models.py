@@ -754,21 +754,51 @@ class HostingService(Resource):
             raise lm_exceptions.LifeMonitorException(detail=str(e), stack=str(e))
 
     @classmethod
-    def from_url(cls, url: str) -> HostingService:
+    def from_url(cls, url: str, api_url: str = None) -> HostingService:
         instance = None
         try:
-            from lifemonitor.auth.oauth2.client.models import \
-                OAuth2IdentityProvider
+            from lifemonitor.auth.oauth2.client.models import OAuth2IdentityProvider
+            from lifemonitor.auth.oauth2.client.services import oauth2_registry
             p_url = urllib.parse.urlparse(url)
             uri = f"{p_url.scheme}://{p_url.netloc}"  # it doesn't discriminate between subdomains
             instance = HostingService.find_by_uri(uri)
             if not instance:
                 instance = HostingService(uri)
-                try:
-                    instance.server_credentials = \
-                        OAuth2IdentityProvider.find_by_api_url(uri)
-                except lm_exceptions.EntityNotFoundException:
-                    logger.warning(f"No identity provider associated with the hosting service '{uri}'")
+            if not instance.server_credentials:
+                # Set a reasonable URL if not provided
+                if not api_url:
+                    if p_url.netloc == 'github.com':
+                        api_url = 'https://api.github.com'
+                    else:
+                        # try with the 'api' prefix
+                        api_url = f"{p_url.scheme}://api.{p_url.netloc}"
+                        logger.debug("API url: %r", api_url)
+                # Try to find existing OAuth2IdentityProvider
+                server_credentials = None
+                for a_uri in (api_url, uri):
+                    try:
+                        logger.debug("Searching with uri: %r", a_uri)
+                        server_credentials = \
+                            OAuth2IdentityProvider.find_by_api_url(a_uri)
+                        break
+                    except lm_exceptions.EntityNotFoundException:
+                        logger.warning(f"No identity provider associated with the hosting service '{a_uri}'")
+                # If server_credentials do not exist, try to initialize them
+                # using info from the OAuth2Registry
+                if not server_credentials:
+                    for a_uri in (api_url, uri):
+                        client_info = oauth2_registry.find_client_by_uri(a_uri)
+                        if client_info:
+                            try:
+                                server_credentials = OAuth2IdentityProvider.find_by_name(client_info.name)
+                            except lm_exceptions.EntityNotFoundException as e:
+                                logger.debug(e)
+                            finally:
+                                if not server_credentials:
+                                    server_credentials = OAuth2IdentityProvider(client_info.name, **client_info.OAUTH_APP_CONFIG)
+                                break
+                instance.server_credentials = server_credentials
+                instance.save()
         except Exception as e:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.exception(e)

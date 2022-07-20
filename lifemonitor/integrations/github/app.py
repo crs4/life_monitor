@@ -45,6 +45,8 @@ from github.PaginatedList import PaginatedList
 from github.Repository import Repository as GithubRepository
 from github.Requester import Requester
 
+from lifemonitor.integrations.github.utils import CachedGithubRequester
+
 from .config import (DEFAULT_BASE_URL, DEFAULT_PER_PAGE, DEFAULT_TIMEOUT,
                      DEFAULT_TOKEN_EXPIRATION)
 
@@ -295,16 +297,16 @@ class LifeMonitorInstallation(Installation.Installation):
     def _requester(self, value: Requester):
         self.__requester = value
 
-    def get_repo(self, full_name_or_id, lazy=False) -> InstallationGithubWorkflowRepository:
+    def get_repo(self, full_name_or_id, ref: str = None, rev: str = None, lazy=False) -> InstallationGithubWorkflowRepository:
         assert isinstance(full_name_or_id, (str, int)), full_name_or_id
         url_base = "/repositories/" if isinstance(full_name_or_id, int) else "/repos/"
         url = f"{url_base}{full_name_or_id}"
         if lazy:
             return GithubWorkflowRepository(
-                self._requester, {}, {"url": url}, completed=False
+                self._requester, {}, {"url": url}, completed=False, ref=ref, rev=rev
             )
         headers, data = self._requester.requestJsonAndCheck("GET", url)
-        return InstallationGithubWorkflowRepository(self._requester, headers, data, completed=True)
+        return InstallationGithubWorkflowRepository(self._requester, headers, data, completed=True, ref=ref, rev=rev)
 
     def get_repos(self) -> List[InstallationGithubWorkflowRepository]:
         url_parameters = dict()
@@ -340,6 +342,6 @@ class LifeMonitorInstallation(Installation.Installation):
 
 def __make_requester__(jwt: str = None, token: str = None, base_url: str = DEFAULT_BASE_URL) -> Requester:
     assert jwt or token, "Auth JWT or TOKEN should be set"
-    return Requester(token or None, None, jwt or None, base_url,
-                     DEFAULT_TIMEOUT, "PyGithub/Python", DEFAULT_PER_PAGE,
-                     True, None, None)
+    return CachedGithubRequester(token or None, None, jwt or None, base_url,
+                                 DEFAULT_TIMEOUT, "PyGithub/Python", DEFAULT_PER_PAGE,
+                                 True, None, None)

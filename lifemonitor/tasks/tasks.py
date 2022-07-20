@@ -99,32 +99,35 @@ def check_last_build():
     logger.info("Starting 'check_last build' task...")
     for w in Workflow.all():
         try:
-            latest_version = w.latest_version
-            for s in latest_version.test_suites:
-                logger.info("Updating workflow: %r", w)
-                for i in s.test_instances:
-                    with i.cache.transaction(str(i)):
-                        builds = i.get_test_builds(limit=10)
-                        logger.info("Updating latest builds: %r", builds)
-                        for b in builds:
-                            logger.info("Updating build: %r", i.get_test_build(b.id))
-                        last_build = i.last_test_build
-                        # check state transition
-                        failed = last_build.status == BuildStatus.FAILED
-                        if len(builds) == 1 and failed or \
-                                builds[0].status in (BuildStatus.FAILED, BuildStatus.PASSED) and \
-                                builds[1].status in (BuildStatus.FAILED, BuildStatus.PASSED) and \
-                                len(builds) > 1 and builds[1].status != last_build.status:
-                            logger.info("Updating latest build: %r", last_build)
-                            notification_name = f"{last_build} {'FAILED' if failed else 'RECOVERED'}"
-                            if len(Notification.find_by_name(notification_name)) == 0:
-                                users = latest_version.workflow.get_subscribers()
-                                n = WorkflowStatusNotification(
-                                    EventType.BUILD_FAILED if failed else EventType.BUILD_RECOVERED,
-                                    notification_name,
-                                    {'build': BuildSummarySchema(exclude_nested=False).dump(last_build)},
-                                    users)
-                                n.save()
+            for workflow_version in w.versions.values():
+                if workflow_version and len(workflow_version.github_versions) > 0:
+                    logger.warning("Workflow skipped because updated via github app")
+                    continue
+                for s in workflow_version.test_suites:
+                    logger.info("Updating workflow: %r", w)
+                    for i in s.test_instances:
+                        with i.cache.transaction(str(i)):
+                            builds = i.get_test_builds(limit=10)
+                            logger.info("Updating latest builds: %r", builds)
+                            for b in builds:
+                                logger.info("Updating build: %r", i.get_test_build(b.id))
+                            last_build = i.last_test_build
+                            # check state transition
+                            failed = last_build.status == BuildStatus.FAILED
+                            if len(builds) == 1 and failed or \
+                                    builds[0].status in (BuildStatus.FAILED, BuildStatus.PASSED) and \
+                                    builds[1].status in (BuildStatus.FAILED, BuildStatus.PASSED) and \
+                                    len(builds) > 1 and builds[1].status != last_build.status:
+                                logger.error("Updating latest build: %r", last_build)
+                                notification_name = f"{last_build} {'FAILED' if failed else 'RECOVERED'}"
+                                if len(Notification.find_by_name(notification_name)) == 0:
+                                    users = workflow_version.workflow.get_subscribers()
+                                    n = WorkflowStatusNotification(
+                                        EventType.BUILD_FAILED if failed else EventType.BUILD_RECOVERED,
+                                        notification_name,
+                                        {'build': BuildSummarySchema(exclude_nested=False).dump(last_build)},
+                                        users)
+                                    n.save()
         except Exception as e:
             logger.error("Error when executing task 'check_last_build': %s", str(e))
             if logger.isEnabledFor(logging.DEBUG):

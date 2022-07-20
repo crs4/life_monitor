@@ -230,7 +230,12 @@ class WorkflowVersionSchema(ResourceSchema):
         self.subscriptionsOf = subscriptionsOf
 
     def get_version(self, obj):
-        exclude = ('rocrate_metadata',) if not self.rocrate_metadata else ()
+        try:
+            exclude = ('rocrate_metadata',) if not self.rocrate_metadata else ()
+        except Exception as e:
+            exclude = ('rocrate_metadata',)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.exception(e)
         return VersionDetailsSchema(exclude=exclude).dump(obj)
 
     def get_subscriptions(self, wv: models.WorkflowVersion):
@@ -284,7 +289,7 @@ class ListOfWorkflowVersions(ResourceMetadataSchema):
     def get_versions(self, obj: models.Workflow):
         return [VersionDetailsSchema(only=("uuid", "version", "ro_crate",
                                            "is_latest", "submitter", "authors")).dump(v)
-                for v in obj.versions.values()]
+                for v in sorted(obj.versions.values(), key=lambda x: x.modified, reverse=True)]
 
 
 class LatestWorkflowSchema(WorkflowVersionSchema):
@@ -340,7 +345,7 @@ class TestInstanceSchema(ResourceMetadataSchema):
 
 def format_availability_issues(status: models.WorkflowStatus):
     issues = status.availability_issues
-    logger.info(issues)
+    logger.debug("Found issues: %r", issues)
     if 'not_available' == status.aggregated_status and len(issues) > 0:
         return ', '.join([f"{i['issue']}: Unable to get resource '{i['resource']}' from service '{i['service']}'" if 'service' in i and 'resource' in i else i['issue'] for i in issues])
     return None
@@ -470,11 +475,16 @@ class WorkflowVersionListItem(WorkflowSchema):
     def get_versions(self, workflow):
         try:
             if self.workflow_versions:
-                schema = VersionDetailsSchema(only=("uuid", "version", "ro_crate", "is_latest"))
-                return [schema.dump(v) for v in workflow.versions.values()]
+                properties = ["uuid", "version", "ro_crate", "is_latest"]
+                if "status" not in self.exclude:
+                    properties.append("status")
+                schema = VersionDetailsSchema(only=properties)
+                return [schema.dump(v) for v in sorted(workflow.versions.values(), key=lambda x: x.modified, reverse=True)]
             return None
         except Exception as e:
-            logger.debug(e)
+            logger.error(e)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.exception(e)
             return None
 
     def get_latest_build(self, workflow):

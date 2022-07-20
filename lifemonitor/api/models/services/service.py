@@ -183,6 +183,9 @@ class TestingService(db.Model, ModelMixin):
     def get_test_builds(self, test_instance: models.TestInstance, limit: int = 10) -> list:
         raise lm_exceptions.NotImplementedException()
 
+    def start_test_build(self, test_instance: models.TestInstance) -> bool:
+        raise lm_exceptions.NotImplementedException()
+
     def get_test_builds_as_dict(self, test_instance: models.TestInstance, test_output) -> Dict[str, Any]:
         last_test_build = self.last_test_build
         last_passed_test_build = self.last_passed_test_build

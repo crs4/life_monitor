@@ -45,6 +45,7 @@ from lifemonitor.integrations.github.notifications import \
 from lifemonitor.integrations.github.settings import GithubUserSettings
 from lifemonitor.integrations.github.utils import delete_branch, match_ref
 from lifemonitor.integrations.github.wizards import GithubWizard
+from lifemonitor.utils import bool_from_string, get_git_repo_revision
 
 from github.PullRequest import PullRequest
 
@@ -80,6 +81,10 @@ def refresh_workflow_builds(event: GithubEvent):
         github_workflow_run = event.workflow_run
         logger.debug("Github Workflow: %r", github_workflow_run)
 
+        repo_revision = get_git_repo_revision(repo.local_repo.local_path, github_workflow_run.raw_data['head_sha'])
+        refs = [_['ref'].split('/')[-1] for _ in repo_revision['refs']]
+        logger.debug("REFS: %r", refs)
+
         workflow_name = github_workflow.path.replace('.github/workflows/', '')
         logger.debug("Workflow NAME: %r", workflow_name)
 
@@ -87,12 +92,75 @@ def refresh_workflow_builds(event: GithubEvent):
         logger.debug("Workflow Resource: %r", workflow_resource)
         instances = TestInstance.find_by_resource(workflow_resource)
         logger.debug("Instances: %r", instances)
+
         with cache.cache.transaction():
             for i in instances:
-                i.get_test_builds(limit=10)
-                i.get_test_build(github_workflow_run.id)
-                i.last_test_build
+                workflow_version = i.test_suite.workflow_version
+                if workflow_version.version in refs or (not workflow_version.has_revision() and not workflow_version.next_version):
+                    logger.warning("Version %r to uodate", workflow_version)
+                    i.get_test_build(f"{github_workflow_run.id}_{github_workflow_run.raw_data['run_attempt']}")
+                    i.test_suite.workflow_version.status
+                else:
+                    logger.warning("Skipping instance %r not bound to the current branch or tag", i)
         return f"Test instance related with resource '{workflow_resource}' updated", 200
+    except Exception as e:
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.exception(e)
+        logger.error(e)
+        return "Internal Error", 500
+
+
+def refresh_workflow_build(event: GithubEvent):
+    try:
+
+        logger.debug("Workflow run event: %r", event)
+
+        installation = event.installation
+        logger.debug("Installation: %r", installation)
+
+        repo_info = event.repository_reference
+        logger.debug("Repo reference: %r", repo_info)
+
+        workflow_job = event._raw_data.get('workflow_job', None)
+        logger.debug("workflow job: %r", workflow_job)
+
+        repo: GithubWorkflowRepository = repo_info.repository
+        logger.debug("Repository: %r", repo)
+
+        repo_revision = get_git_repo_revision(repo.local_repo.local_path, workflow_job['head_sha'])
+        refs = [_['ref'].split('/')[-1] for _ in repo_revision['refs']]
+        logger.debug("REFS: %r", refs)
+
+        github_workflow_run = event.workflow_run
+        logger.debug("Github Workflow: %r", github_workflow_run)
+
+        workflow_name = github_workflow_run.raw_data['path'].replace('.github/workflows/', '')
+        logger.debug("Workflow NAME: %r", workflow_name)
+
+        build_id = event.workflow_build_id
+        logger.debug("Workflow build ID: %r", build_id)
+
+        if build_id:
+            workflow_resource = f"repos/{repo.full_name}/actions/workflows/{workflow_name}"
+            logger.debug("Workflow Resource: %r", workflow_resource)
+            instances = TestInstance.find_by_resource(workflow_resource)
+            logger.debug("Instances: %r", instances)
+
+            with cache.cache.transaction():
+                for i in instances:
+                    logger.warning("Checking version %s in refs %r", i.test_suite.workflow_version.version, refs)
+                    workflow_version = i.test_suite.workflow_version
+                    if workflow_version.version in refs or not workflow_version.has_revision():
+                        logger.warning("Version %s in refs %r", i.test_suite.workflow_version.version, refs)
+                        last_build_id = f"{github_workflow_run.id}_{github_workflow_run.raw_data['run_attempt']}"
+                        i.get_test_build(last_build_id)
+                        i.test_suite.workflow_version.status
+                        logger.info("Version %s updated... last build: %s", i.test_suite.workflow_version.version, last_build_id)
+                else:
+                    logger.warning("Version %s not in refs %r", i.test_suite.workflow_version.version, refs)
+            return f"Test instance related with resource '{workflow_resource}' updated", 200
+        else:
+            return "No build attached to the current event", 204
     except Exception as e:
         if logger.isEnabledFor(logging.DEBUG):
             logger.exception(e)
@@ -228,7 +296,9 @@ def __check_for_issues_and_register__(repo_info: GithubRepositoryReference,
                                       github_settings: GithubUserSettings,
                                       registry_settings: RegistrySettings,
                                       check_issues: bool = True):
-    register = True
+    # enable/disable registry integration according to settings
+    register = bool_from_string(current_app.config['ENABLE_REGISTRY_INTEGRATION']) if current_app else False
+    # set repo
     repo: GithubWorkflowRepository = repo_info.repository
     logger.debug("Repo to register: %r", repo)
     # filter branches and tags according to global and current repo settings
@@ -569,6 +639,7 @@ def issue_comment(event: GithubEvent):
 __event_handlers__ = {
     "ping": ping,
     "workflow_run": refresh_workflow_builds,
+    "workflow_job": refresh_workflow_build,
     "installation": installation_repositories,
     "installation_repositories": installation_repositories,
     "push": push,
@@ -590,8 +661,12 @@ def event_handler_wrapper(app, handler, event):
     logger.debug("Current app: %r", app)
     logger.debug("Current handler: %r", handler)
     logger.debug("Current event: %r", event)
-    with app.app_context():
-        return handler(event)
+    # enable/disable registry integration according to settings
+    if bool_from_string(current_app.config['ENABLE_GITHUB_APP_INTEGRATION']):
+        with app.app_context():
+            return handler(event)
+    else:
+        logger.info("Github App integration disabled on settings")
 
 
 @blueprint.route("/integrations/github", methods=("POST",))

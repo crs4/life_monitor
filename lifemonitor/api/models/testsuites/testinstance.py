@@ -105,6 +105,9 @@ class TestInstance(db.Model, ModelMixin):
     def last_test_build(self):
         return self.get_last_test_build()
 
+    def start_test_build(self):
+        return self.testing_service.start_test_build(self)
+
     @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True)
     def get_last_test_build(self):
         builds = self.get_test_builds(limit=10)
@@ -114,8 +117,7 @@ class TestInstance(db.Model, ModelMixin):
     def get_test_builds(self, limit=10):
         return self.testing_service.get_test_builds(self, limit=limit)
 
-    @cached(timeout=Timeout.BUILD, client_scope=False, transactional_update=True,
-            unless=lambda b: b.status in [models.BuildStatus.RUNNING, models.BuildStatus.WAITING])
+    @cached(timeout=Timeout.BUILD, client_scope=False, transactional_update=True)
     def get_test_build(self, build_number):
         return self.testing_service.get_test_build(self, build_number)
 

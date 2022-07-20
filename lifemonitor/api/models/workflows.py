@@ -214,6 +214,25 @@ class WorkflowVersion(ROCrate):
         return '<WorkflowVersion ({}, {}), name: {}, ro_crate link {}>'.format(
             self.uuid, self.version, self.name, self.roc_link)
 
+    @property
+    def previous_version(self) -> WorkflowVersion:
+        previous = None
+        for v in self.workflow.versions.values():
+            if v == self:
+                return previous
+            previous = v
+        return None
+
+    @property
+    def next_version(self) -> WorkflowVersion:
+        found = False
+        for v in self.workflow.versions.values():
+            if v == self:
+                found = True
+            elif found:
+                return v
+        return None
+
     def check_health(self) -> dict:
         health = {'healthy': True, 'issues': []}
         for suite in self.test_suites:

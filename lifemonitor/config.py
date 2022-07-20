@@ -89,6 +89,9 @@ class BaseConfig:
     DATA_WORKFLOWS = "./data"
     # Base URL of the LifeMonitor web app associated with this back-end instance
     WEBAPP_URL = "https://app.lifemonitor.eu"
+    # Enable/disable integrations
+    ENABLE_GITHUB_APP_INTEGRATION = False
+    ENABLE_REGISTRY_INTEGRATION = False
 
 
 class DevelopmentConfig(BaseConfig):
@@ -244,12 +247,15 @@ def configure_logging(app):
         level_value = logging.INFO
         error = True
 
+    log_format = f'[{COLOR_SEQ % (90)}%(asctime)s{RESET_SEQ}] %(levelname)s in %(module)s: {COLOR_SEQ % (90)}%(message)s{RESET_SEQ}'
+    if level_value == logging.DEBUG:
+        log_format = f'[{COLOR_SEQ % (90)}%(asctime)s{RESET_SEQ}] %(levelname)s in %(module)s::%(funcName)s @ line: %(lineno)s: {COLOR_SEQ % (90)}%(message)s{RESET_SEQ}'
+
     dictConfig({
         'version': 1,
         'formatters': {'default': {
             '()': ColorFormatter,
-            'format':
-                f'[{COLOR_SEQ % (90)}%(asctime)s{RESET_SEQ}] %(levelname)s in %(module)s: {COLOR_SEQ % (90)}%(message)s{RESET_SEQ}',
+            'format': log_format,
         }},
         'filters': {
             'myfilter': {

@@ -57,14 +57,18 @@
                 <a class="nav-link font-weight-bold" tab="notificationsTab"
                     href="#notifications" data-toggle="tab">Notifications</a>
               </li>
+              {% if enableGithubAppIntegration %}
               <li class="nav-item">
                 <a class="nav-link font-weight-bold" tab="githubSettingsTab"
                     href="#githubsettings" data-toggle="tab">Github Integration</a>
               </li>
+              {% endif %}
+              {% if enableRegistryIntegration %}
               <li class="nav-item">
                 <a class="nav-link font-weight-bold" tab="registrySettingsTab"
                     href="#registrysettings" data-toggle="tab">Registry Integration</a>
               </li>
+              {% endif %}
           </div><!-- /.card-header -->
           <div class="card-body">
             <div class="tab-content">
