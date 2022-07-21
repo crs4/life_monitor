@@ -124,3 +124,12 @@ class WorkflowRepositoryTemplate(WorkflowRepository):
                                         'name': self.data.get('workflow_title', None)} if self.data else None)
         self._metadata.write(self._local_path)
         return self._metadata
+
+    def write(self, target_path: str):
+        super().write(target_path)
+        # rename files according to best practices
+        if self.name == "galaxy":
+            os.rename(os.path.join(target_path, 'workflow.ga'),
+                      os.path.join(target_path, f"{to_kebab_case(self.data.get('workflow_name', 'workflow'))}.ga"))
+            os.rename(os.path.join(target_path, 'workflow-test.yml'),
+                      os.path.join(target_path, f"{to_kebab_case(self.data.get('workflow_name', 'workflow'))}-test.yml"))
