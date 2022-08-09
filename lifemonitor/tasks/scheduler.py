@@ -57,7 +57,7 @@ class Scheduler(APScheduler):
                      trigger=trigger or DateTrigger(run_date=datetime.datetime.now()), replace_existing=True)
 
 
-def schedule(trigger=None, name=None, priority=0, options: Dict = None):
+def schedule(trigger=None, name=None, priority=0, queue_name: str = "default", options: Dict = None):
     """
     Decorator to add a scheduled job calling the wrapped function.
     :param  trigger:  an instance of any of the trigger types provided in apscheduler.triggers.
@@ -74,7 +74,7 @@ def schedule(trigger=None, name=None, priority=0, options: Dict = None):
         job_name = name or fn_name
         # create an actor for 'fn'
         aoptions = options or {}
-        actor = dramatiq.actor(fn, actor_name=job_name, queue_name="default", priority=priority, broker=None, **aoptions)
+        actor = dramatiq.actor(fn, actor_name=job_name, queue_name=queue_name, priority=priority, broker=None, **aoptions)
 
         # We check to see whether the scheduler is available simply by verifying whether the
         # app has the `scheduler` attributed defined.
