@@ -53,13 +53,22 @@ if [[ -n "${WORKER_THREADS:-}" ]]; then
   log "Worker starting with ${WORKER_THREADS} threads per process"
 fi
 
+# Set worker queues
+#WORKER_QUEUES="heartbeat"
+queues=""
+if [[ -n "${WORKER_QUEUES:-}" ]]; then
+  queues="--queues ${WORKER_QUEUES}"
+  log "Worker starting to listen queues: ${WORKER_QUEUES}"
+fi
+
+# Start worker processes/threads
 while : ; do
-  /usr/local/bin/dramatiq \
+  /opt/homebrew/bin/dramatiq \
     ${verbose:-} \
     ${watch:-} \
     ${processes:-} \
     ${threads:-} \
-    lifemonitor.tasks.worker:broker lifemonitor.tasks.tasks
+    lifemonitor.tasks.worker:broker lifemonitor.tasks ${queues}
   exit_code=$?
   if [[ $exit_code == 3 ]]; then
     log "dramatiq worker could not connect to message broker (exit code ${exit_code})" 
