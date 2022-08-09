@@ -338,7 +338,7 @@ def test_cache_task_last_build(app_context, redis_cache, user1):
     _, workflow = utils.pick_and_register_workflow(user1, valid_workflow)
     assert workflow, "Workflow should be set"
 
-    from lifemonitor.tasks.tasks import check_last_build
+    from lifemonitor.tasks.jobs.builds import check_last_build
     check_last_build()
 
     sleep(2)

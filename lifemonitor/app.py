@@ -30,7 +30,7 @@ import lifemonitor.config as config
 from lifemonitor import __version__ as version
 from lifemonitor.integrations import init_integrations
 from lifemonitor.routes import register_routes
-from lifemonitor.tasks import init_task_queue
+from lifemonitor.tasks import init_task_queues
 
 from . import commands
 from .cache import init_cache
@@ -131,7 +131,7 @@ def initialize_app(app: Flask, app_context, prom_registry=None, load_jobs: bool 
     # configure app routes
     register_routes(app)
     # init scheduler/worker for async tasks
-    init_task_queue(app, load_jobs=load_jobs)
+    init_task_queues(app, load_jobs=load_jobs)
     # init mail system
     init_mail(app)
     # initialize integrations

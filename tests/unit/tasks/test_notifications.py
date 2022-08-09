@@ -44,7 +44,7 @@ def test_unconfigured_email_notification(mail, app_settings, app_context, user1)
     assert len(notifications) == 0, "Unexpected number of notifications"
 
     # Check email configuration
-    from lifemonitor.tasks.tasks import check_email_configuration, send_email_notifications
+    from lifemonitor.tasks.jobs.builds import check_email_configuration, send_email_notifications
     check_email_configuration()
 
     # Check if notification for user1 and admin has been generated
