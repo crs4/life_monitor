@@ -63,7 +63,7 @@ fi
 
 # Start worker processes/threads
 while : ; do
-  /opt/homebrew/bin/dramatiq \
+  /usr/local/bin/dramatiq \
     ${verbose:-} \
     ${watch:-} \
     ${processes:-} \
