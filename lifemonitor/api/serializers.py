@@ -418,7 +418,11 @@ class WorkflowStatusSchema(WorkflowVersionSchema):
 
     def get_reason(self, workflow_version):
         try:
+<<<<<<< HEAD
             if (len(self._errors) > 0):
+=======
+            if len(self._errors) > 0:
+>>>>>>> 942d2fe6 (Fix flake8 issues)
                 return ', '.join([str(i) for i in self._errors])
             return format_availability_issues(workflow_version.status)
         except Exception as e:
@@ -634,7 +638,11 @@ class SuiteStatusSchema(ResourceMetadataSchema):
             return []
 
     def get_reason(self, suite):
+<<<<<<< HEAD
         if (len(self._errors) > 0):
+=======
+        if len(self._errors) > 0:
+>>>>>>> 942d2fe6 (Fix flake8 issues)
             return ", ".join(self._errors)
         try:
             return format_availability_issues(suite.status)

@@ -233,7 +233,7 @@ def load_modules(path: str = None, include: List[str] = None, exclude: List[str]
         for f in modules_files:
             module_name = os.path.basename(f)[:-3]
             logger.debug("Checking module: %r", module_name)
-            logger.debug(include and (not module_name in include))
+            logger.debug(include and (module_name not in include))
             fully_qualified_module_name = '{}.{}'.format('lifemonitor.tasks.jobs', module_name)
             if (include and (module_name not in include)) or (exclude and (module_name in exclude)):
                 logger.warning("Skipping module '%s'", fully_qualified_module_name)
@@ -243,7 +243,7 @@ def load_modules(path: str = None, include: List[str] = None, exclude: List[str]
                 loaded_modules[fully_qualified_module_name] = import_module(fully_qualified_module_name)
             except ModuleNotFoundError as e:
                 logger.exception(e)
-                logger.error("ModuleNotFoundError: Unable to load module %s", m)
+                logger.error("ModuleNotFoundError: Unable to load module %s", fully_qualified_module_name)
                 errors.append(fully_qualified_module_name)
     if len(errors) > 0:
         logger.error("** There were some errors loading application modules.**")

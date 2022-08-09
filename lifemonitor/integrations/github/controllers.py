@@ -708,7 +708,6 @@ def handle_event():
         return "OK", 200
 
 
-
 def init_integration(app: Flask):
     try:
         # Initialize GitHub App Integration

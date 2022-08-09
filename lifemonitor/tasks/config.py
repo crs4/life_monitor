@@ -1,19 +1,17 @@
 
-import sys
 import atexit
 import logging
+import sys
 from threading import local as thread_local
 from typing import List
 
-
-from .jobs import load_job_modules
 import dramatiq
 from dramatiq.brokers.redis import RedisBroker
 from dramatiq.results import Results
 from dramatiq.results.backends.redis import RedisBackend
-from flask_apscheduler import APScheduler
-
 from lifemonitor.tasks.scheduler import Scheduler
+
+from .jobs import load_job_modules
 
 REDIS_NAMESPACE = 'dramatiq'
 
