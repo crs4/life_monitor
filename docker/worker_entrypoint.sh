@@ -13,6 +13,7 @@ function log() {
   printf "%s [worker_entrypoint] %s\n" "$(date +"%F %T")" "${*}" >&2
 }
 
+# DEBUG="${DEBUG:-0}"
 FLASK_ENV="${FLASK_ENV:-production}"
 if [[ "${FLASK_ENV}" == "development" ]]; then
   DEBUG="${DEBUG:-1}"
@@ -36,13 +37,19 @@ if [[ -n "${DEBUG:-}" ]]; then
   log "Worker watching source code directory"
 fi
 
+# Set worker processes
+# WORKER_PROCESSES=1
+processes=""
 if [[ -n "${WORKER_PROCESSES:-}" ]]; then
   processes="--processes ${WORKER_PROCESSES}"
   log "Worker starting ${WORKER_PROCESSES} processes"
 fi
 
+# Set worker threads
+# WORKER_THREADS=1
+threads=""
 if [[ -n "${WORKER_THREADS:-}" ]]; then
-  processes="--threads ${WORKER_THREADS}"
+  threads="--threads ${WORKER_THREADS}"
   log "Worker starting with ${WORKER_THREADS} threads per process"
 fi
 
