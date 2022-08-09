@@ -3,6 +3,7 @@ import sys
 import atexit
 import logging
 from threading import local as thread_local
+from typing import List
 
 
 from .jobs import load_job_modules
@@ -42,13 +43,13 @@ class AppContextMiddleware(dramatiq.Middleware):
     after_skip_message = after_process_message
 
 
-def init_task_queue(app):
+def init_task_queue(app, load_jobs: bool = True):
     # detect if we are running the main app or a custom command.
     command_line = ' '.join(sys.argv)
     is_main_flask_app = \
         ('app.py' in command_line) \
-        or ('gunicorn' in command_line) \
-        or ('dramatiq' in command_line)
+        or ('gunicorn' in command_line)
+    # or ('dramatiq' in command_line)
 
     # initialize task queue only if running the main Flask app
     # if not is_main_flask_app:
@@ -65,7 +66,8 @@ def init_task_queue(app):
     dramatiq.set_broker(redis_broker)
     redis_broker.add_middleware(AppContextMiddleware(app))
     app.broker = redis_broker
-    # Initialize task scheduler
+
+    # Initialize the task scheduler
     if not app.config.get('WORKER', False) or not is_main_flask_app:
         logger.info("Initializing job scheduler")
         app.scheduler = Scheduler()
@@ -79,8 +81,13 @@ def init_task_queue(app):
     else:
         # When we run as a worker, the scheduler is initialized but not started
         logger.info("Running app in worker process")
+
     # load jobs
-    if app.config.get('ENV') not in ['testingSupport', 'testing']:
-        logger.debug("Loading job modules...")
-        load_job_modules()
-        logger.debug("Loading job modules... DONE")
+    if load_jobs and app.config.get('ENV') not in ['testingSupport', 'testing']:
+        load_task_jobs()
+
+
+def load_task_jobs(include: List[str] = None, exclude: List[str] = None):
+    logger.debug("Loading job modules...")
+    load_job_modules(include=include, exclude=exclude)
+    logger.debug("Loading job modules... DONE")
