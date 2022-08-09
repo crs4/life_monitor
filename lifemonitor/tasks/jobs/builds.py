@@ -1,60 +1,26 @@
 
 import datetime
 import logging
+import time
 
-import dramatiq
-import flask
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
 from lifemonitor.api.models.notifications import WorkflowStatusNotification
-from lifemonitor.api.models.testsuites.testbuild import BuildStatus
+from lifemonitor.api.models.testsuites.testbuild import BuildStatus, TestBuild
 from lifemonitor.api.serializers import BuildSummarySchema
-from lifemonitor.auth.models import (EventType, Notification,
-                                     UnconfiguredEmailNotification, User)
+from lifemonitor.auth.models import (EventType, Notification)
 from lifemonitor.cache import Timeout
-from lifemonitor.mail import send_notification
+from lifemonitor.tasks.scheduler import TASK_EXPIRATION_TIME, schedule
 
 # set module level logger
 logger = logging.getLogger(__name__)
-
-# set expiration time (in msec) of tasks
-TASK_EXPIRATION_TIME = 30000
-
-
-def schedule(trigger):
-    """
-    Decorator to add a scheduled job calling the wrapped function.
-    :param  trigger:  an instance of any of the trigger types provided in apscheduler.triggers.
-    """
-    def decorator(actor):
-        app = flask.current_app
-        # Check whether the app has a scheduler attribute.
-        # When we run as a worker, the app is created but the
-        # scheduler is not initialized.
-        fn_name = f"{actor.fn.__module__}.{actor.fn.__name__}"
-        # We check to see whether the scheduler is available simply by verifying whether the
-        # app has the `scheduler` attributed defined.
-        # The LM app should have this; the worker app does not have it.
-        if hasattr(app, "scheduler"):
-            logger.debug("Scheduling function %s with trigger %r", fn_name, trigger)
-            flask.current_app.scheduler.add_job(id=fn_name, func=actor.send, trigger=trigger, replace_existing=True)
-        else:
-            logger.debug("Schedule %s no-op - scheduler not initialized", fn_name)
-        return actor
-    return decorator
 
 
 logger.info("Importing task definitions")
 
 
-@schedule(CronTrigger(second=0))
-@dramatiq.actor(max_retries=3, max_age=TASK_EXPIRATION_TIME)
-def heartbeat():
-    logger.info("Heartbeat!")
-
-
-@schedule(IntervalTrigger(seconds=Timeout.WORKFLOW * 3 / 4))
-@dramatiq.actor(max_retries=3, max_age=TASK_EXPIRATION_TIME)
+@schedule(trigger=IntervalTrigger(seconds=Timeout.WORKFLOW * 3 / 4),
+          queue_name='builds', options={'max_retries': 3, 'max_age': TASK_EXPIRATION_TIME})
 def check_workflows():
     from flask import current_app
     from lifemonitor.api.controllers import workflows_rocrate_download
@@ -91,8 +57,8 @@ def check_workflows():
     logger.info("Starting 'check_workflows' task.... DONE!")
 
 
-@schedule(IntervalTrigger(seconds=Timeout.BUILD * 3 / 4))
-@dramatiq.actor(max_retries=3, max_age=TASK_EXPIRATION_TIME)
+@schedule(trigger=IntervalTrigger(seconds=Timeout.BUILD * 3 / 4),
+          queue_name='builds', options={'max_retries': 3, 'max_age': TASK_EXPIRATION_TIME})
 def check_last_build():
     from lifemonitor.api.models import Workflow
 
@@ -136,71 +102,29 @@ def check_last_build():
     logger.info("Checking last build: DONE!")
 
 
-@schedule(IntervalTrigger(seconds=60))
-@dramatiq.actor(max_retries=0, max_age=TASK_EXPIRATION_TIME)
-def send_email_notifications():
-    notifications = [n for n in Notification.not_emailed()
-                     if not isinstance(n, UnconfiguredEmailNotification)]
-    logger.info("Found %r notifications to send by email", len(notifications))
-    count = 0
-    for n in notifications:
-        logger.debug("Processing notification %r ...", n)
-        recipients = [
-            u.user.email for u in n.users
-            if u.emailed is None and u.user.email_notifications_enabled and u.user.email
-        ]
-        sent = send_notification(n, recipients=recipients)
-        logger.debug("Notification email sent: %r", sent is not None)
-        if sent:
-            logger.debug("Notification '%r' sent by email @ %r", n.id, sent)
-            for u in n.users:
-                if u.user.email in recipients:
-                    u.emailed = sent
-            n.save()
-            count += 1
-        logger.debug("Processing notification %r ... DONE", n)
-    logger.info("%r notifications sent by email", count)
-    return count
+@schedule(trigger=CronTrigger(minute=0, hour=2),
+          queue_name='builds', options={'max_retries': 3, 'max_age': TASK_EXPIRATION_TIME})
+def periodic_builds():
+    from lifemonitor.api.models import Workflow
 
+    logger.info("Running 'periodic builds' task...")
+    for w in Workflow.all():
 
-@schedule(CronTrigger(minute=0, hour=1))
-@dramatiq.actor(max_retries=0, max_age=TASK_EXPIRATION_TIME)
-def cleanup_notifications():
-    logger.info("Starting notification cleanup")
-    count = 0
-    current_time = datetime.datetime.utcnow()
-    one_week_ago = current_time - datetime.timedelta(days=0)
-    notifications = Notification.older_than(one_week_ago)
-    for n in notifications:
-        try:
-            n.delete()
-            count += 1
-        except Exception as e:
-            logger.debug(e)
-            logger.error("Error when deleting notification %r", n)
-    logger.info("Notification cleanup completed: deleted %r notifications", count)
-
-
-@schedule(IntervalTrigger(seconds=60))
-@dramatiq.actor(max_retries=0, max_age=TASK_EXPIRATION_TIME)
-def check_email_configuration():
-    logger.info("Check for users without notification email")
-    users = []
-    try:
-        for u in User.all():
-            n_list = UnconfiguredEmailNotification.find_by_user(u)
-            if not u.email:
-                if len(n_list) == 0:
-                    users.append(u)
-            elif len(n_list) > 0:
-                for n in n_list:
-                    n.remove_user(u)
-                u.save()
-        if len(users) > 0:
-            n = UnconfiguredEmailNotification(
-                "Unconfigured email",
-                users=users)
-            n.save()
-    except Exception as e:
-        logger.debug(e)
-    logger.info("Check for users without notification email configured: generated a notification for users %r", users)
+        for workflow_version in w.versions.values():
+            for s in workflow_version.test_suites:
+                for i in s.test_instances:
+                    try:
+                        last_build: TestBuild = i.last_test_build
+                        if datetime.datetime.fromtimestamp(last_build.timestamp) \
+                                + datetime.timedelta(minutes=1) < datetime.datetime.now():
+                            logger.info("Triggering build of test suite %s on test instance %s for workflow version %s", s, i, workflow_version)
+                            i.start_test_build()
+                            time.sleep(10)
+                        else:
+                            logger.warning("Skipping %s (last build: %s)",
+                                           i, datetime.datetime.fromtimestamp(last_build.timestamp))
+                    except Exception as e:
+                        logger.error("Error when starting periodic build on test instance %s: %s", i, str(e))
+                        if logger.isEnabledFor(logging.DEBUG):
+                            logger.exception(e)
+    logger.info("Running 'periodic builds': DONE!")
