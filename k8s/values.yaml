@@ -189,7 +189,13 @@ worker:
   imagePullSecrets: []
 
   processes: 1
-  #threads: 1
+  threads: 1
+
+  queues:
+    - name: github
+      # image: *lifemonitorImage
+    - name: heartbeat
+      # image: *lifemonitorImage
 
   podAnnotations: {}
 
