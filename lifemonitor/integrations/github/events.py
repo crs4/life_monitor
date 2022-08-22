@@ -21,8 +21,9 @@
 
 from __future__ import annotations
 
+import json
 import logging
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from flask import Request
 from flask import request as current_request
@@ -219,6 +220,26 @@ class GithubEvent():
         request = request or current_request
         assert isinstance(request, Request), request
         return GithubEvent(request.headers, request.get_json())
+
+    @classmethod
+    def from_dict(cls, data: Dict) -> GithubEvent:
+        return cls(data.get('headers', {}), data.get('data', {}))
+
+    def to_dict(self) -> Dict:
+        logger.error("Headers: %r", self._headers)
+        return {
+            'headers': {k: v for k, v in self._headers.items()},
+            'data': self._raw_data
+        }
+
+    @classmethod
+    def from_json(cls, data: str) -> GithubEvent:
+        raw_data = json.loads(data)
+        return cls(raw_data.get('headers', {}), raw_data.get('data', {}))
+
+    def to_json(self) -> str:
+        logger.error("Headers: %r", self._headers)
+        return json.dumps(self.to_dict())
 
 
 class GithubRepositoryReference(object):
