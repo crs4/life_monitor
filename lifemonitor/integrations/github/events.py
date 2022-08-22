@@ -78,7 +78,7 @@ class GithubEvent():
 
     @property
     def installation_target_id(self) -> str:
-        return self._headers.get("X-GitHub-Hook-Installation-Target-ID", None)
+        return self._headers.get("X-Github-Hook-Installation-Target-Id", None)
 
     @property
     def installation_target_type(self) -> str:
