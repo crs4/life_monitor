@@ -64,8 +64,10 @@ testing_services:
 
 # Settings for integrations with third-party apps
 integrations:
-  {}
-  # github:
+  registry:
+    enabled: false
+  github:
+    enabled: false
   #   api_id:
   #   client_id:
   #   client_secret:
@@ -101,9 +103,9 @@ backup:
   successfulJobsHistoryLimit: 30
   failedJobsHistoryLimit: 30
   existingClaim: data-api-backup
-  # Settings to mirror the (cluster) local backup 
+  # Settings to mirror the (cluster) local backup
   # to a remote site via FTPS or SFTP
-  remote:    
+  remote:
     enabled: false
     user: username
     password: password
@@ -195,6 +197,10 @@ worker:
     - name: github
       # image: *lifemonitorImage
     - name: heartbeat
+      # image: *lifemonitorImage
+    - name: notifications
+      # image: *lifemonitorImage
+    - name: builds
       # image: *lifemonitorImage
 
   podAnnotations: {}
