@@ -55,8 +55,7 @@ def sayHello(event_handler, event):
 
 @schedule(name='githubEventHandler', queue_name="github", options={'max_retries': 0, 'max_age': TASK_EXPIRATION_TIME})
 def handle_event(event):
-    logger.warning("Hello guys")
-    logger.warning("Params: %r - %r - %r", flask.current_app, event)
+    logger.warning("Github event: %r", event)
 
     e = GithubEvent.from_json(event)
     logger.debug(e)
