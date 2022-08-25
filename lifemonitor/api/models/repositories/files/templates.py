@@ -64,19 +64,21 @@ class TemplateRepositoryFile(RepositoryFile):
             os.path.abspath(os.path.join(self.repository_path, self.dir)),
             self.name)
 
-    def get_content(self, binary_mode: bool = False, **kwargs):
+    def get_content(self, binary_mode: bool = False, refresh: bool = False, **kwargs):
         data = self.data.copy() if self.data else {}
         data.update(kwargs)
-        if not self._content and self.dir:
-            with open(self.template_file_path, 'rb' if binary_mode else 'r') as f:
-                template = f.read()
-                if self.template_file_path.endswith('.j2'):
-                    template = render_template_string(template,
-                                                      filename=self.name,
-                                                      workflow_snakecase_name=utils.to_snake_case(data.get('workflow_name', '')),
-                                                      workflow_kebabcase_name=utils.to_kebab_case(data.get('workflow_name', '')),
-                                                      **data) + '\n'
-                return template
+        if (not self._content or refresh) and self.dir:
+            is_template = self.template_file_path.endswith('.j2')
+            with open(self.template_file_path, 'rb' if binary_mode and not is_template else 'r') as f:
+                content = f.read()
+                if is_template:
+                    self._content = render_template_string(content,
+                                                           filename=self.name,
+                                                           workflow_snakecase_name=utils.to_snake_case(data.get('workflow_name', '')),
+                                                           workflow_kebabcase_name=utils.to_kebab_case(data.get('workflow_name', '')),
+                                                           **data) + '\n'
+                else:
+                    self._content = content
         return self._content
 
     def write(self, binary_mode: bool = False, output_file_path: str = None, **kwargs):
