@@ -22,14 +22,15 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Dict, List
+import tempfile
+from typing import Dict, List, Type
 
 from lifemonitor.api.models.repositories.files import (TemplateRepositoryFile,
                                                        WorkflowFile)
 from lifemonitor.api.models.repositories.local import LocalWorkflowRepository
-from lifemonitor.utils import to_kebab_case
+from lifemonitor.utils import find_types, to_kebab_case
 
-from .base import WorkflowRepository, WorkflowRepositoryMetadata
+from ..base import WorkflowRepository, WorkflowRepositoryMetadata
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -37,8 +38,13 @@ logger = logging.getLogger(__name__)
 
 class WorkflowRepositoryTemplate(WorkflowRepository):
 
-    def __init__(self, name: str, local_path: str = ".",
+    # template subclasses
+    templates: List[WorkflowRepositoryTemplate] = None
+
+    def __init__(self, name: str, local_path: str = None,
                  data: dict = None, exclude: List[str] = None) -> None:
+        if not local_path:
+            local_path = tempfile.NamedTemporaryFile(dir='/tmp').name
         super().__init__(local_path, exclude=exclude)
         self.name = name
         self._files = None
@@ -133,3 +139,23 @@ class WorkflowRepositoryTemplate(WorkflowRepository):
                       os.path.join(target_path, f"{to_kebab_case(self.data.get('workflow_name', 'workflow'))}.ga"))
             os.rename(os.path.join(target_path, 'workflow-test.yml'),
                       os.path.join(target_path, f"{to_kebab_case(self.data.get('workflow_name', 'workflow'))}-test.yml"))
+
+    @classmethod
+    def _types(cls) -> List[WorkflowRepositoryTemplate]:
+        if not cls.templates:
+            cls.templates = find_types(WorkflowRepositoryTemplate, path=os.path.dirname(__file__))
+        return cls.templates
+
+    @classmethod
+    def _get_type(cls, name: str) -> WorkflowRepositoryTemplate:
+        try:
+            return cls._types()[f"{name.capitalize()}RepositoryTemplate"]
+        except AttributeError:
+            return WorkflowRepositoryTemplate
+
+    @classmethod
+    def new_instance(cls, name: str, local_path: str = None,
+                     data: dict = None, exclude: List[str] = None) -> WorkflowRepositoryTemplate:
+        tmpl_type = cls._get_type(name)
+        logger.debug("Using template type: %s", tmpl_type)
+        return tmpl_type(name, local_path=local_path, data=data, exclude=exclude)
