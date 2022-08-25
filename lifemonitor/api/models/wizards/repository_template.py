@@ -34,8 +34,8 @@ from . import QuestionStep, UpdateStep, Wizard
 # set module level logger
 logger = logging.getLogger(__name__)
 
-valid_workflow_types = ["galaxy", "snakemake", "other"]
-supported_workflows = ["snakemake", "galaxy"]
+valid_workflow_types = ["galaxy", "snakemake", "nextflow", "other"]
+supported_workflows = ["snakemake", "galaxy", "nextflow"]
 
 
 def get_files(wizard: RepositoryTemplateWizard, repo: GithubWorkflowRepository, target_path: str):
@@ -53,11 +53,12 @@ def get_files(wizard: RepositoryTemplateWizard, repo: GithubWorkflowRepository, 
     # the workflow_name as input
     try:
         workflow_path = os.path.join(target_path, workflow_name)
-        os.makedirs(workflow_path)
+        if workflow_type != 'nextflow':
+            os.makedirs(workflow_path)
     except Exception:
         workflow_path = target_path
 
-    repo_template = WorkflowRepositoryTemplate(workflow_type, local_path=workflow_path, data={
+    repo_template = WorkflowRepositoryTemplate.new_instance(workflow_type, local_path=workflow_path, data={
         'workflow_name': workflow_name, 'workflow_description': workflow_description,
         'workflow_version': repo.default_branch,
         'repo_url': repo.html_url, 'repo_full_name': repo.full_name, 'repo_branch': repo.default_branch
@@ -67,7 +68,7 @@ def get_files(wizard: RepositoryTemplateWizard, repo: GithubWorkflowRepository, 
     logger.debug("Repository files: %r --> %r", repo, repo.files)
     try:
         missing_left, missing_right, differences = repo_template.compare_to(repo)
-        logger.debug("Diff (left, right, changed)=(%r,%r,%r)", missing_left, missing_right, differences)
+        logger.debug("Diff (left, right, changed)=(%r,%r,%r)", missing_left, missing_right, differences)        
         return missing_right
     except Exception as e:
         logger.exception(e)
@@ -81,8 +82,7 @@ class RepositoryTemplateWizard(Wizard):
     issue = NotInitialisedRepositoryIssue
 
     workflow_type = QuestionStep("Which type of workflow are going to host on this repository?",
-                                 description=f"<br/>Only `{', '.join(supported_workflows)}` workflows are supported at the moment."
-                                 "<br>The support for `galaxy` workflows is minimal.",
+                                 description=f"",
                                  options=valid_workflow_types)
     workflow_title = QuestionStep("Choose a name for your workflow?",
                                   when=lambda _: _.workflow_type.answer in supported_workflows)
