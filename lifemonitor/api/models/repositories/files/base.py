@@ -52,8 +52,21 @@ class RepositoryFile():
     def extension(self) -> str:
         return self.splitext()[1]
 
+    @property
+    def is_executable(self) -> bool:
+        return os.access(self.path, os.X_OK)
+
     def splitext(self) -> Tuple[str, str]:
         return os.path.splitext(self.name)
+
+    @property
+    def is_binary(self) -> bool:
+        try:
+            with open(self.path) as f:
+                f.readline()
+            return False
+        except UnicodeDecodeError:
+            return True
 
     @property
     def path(self) -> str:

@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import logging
 import os
+from base64 import b64encode
 from typing import List, Union
 
 from lifemonitor.api.models.issues import WorkflowRepositoryIssue
@@ -32,6 +33,9 @@ from lifemonitor.exceptions import IllegalStateException
 from lifemonitor.integrations.github.app import LifeMonitorGithubApp
 
 from github.GithubException import GithubException
+from github.GithubObject import NotSet
+from github.GitRef import GitRef
+from github.InputGitTreeElement import InputGitTreeElement
 from github.Issue import Issue
 from github.PullRequest import PullRequest
 from github.Repository import Repository
@@ -85,29 +89,54 @@ def __prepare_pr_head__(repo: InstallationGithubWorkflowRepository,
         head = identifier
         logger.debug("PR head: %r", head)
         branch = None
+        branch_ref: GitRef = None
         try:
             branch = repo.get_branch(head)
             if branch and not allow_update:
                 return branch
+            branch_ref = repo.get_git_ref(f'head/{head}')
         except GithubException as e:
             logger.debug("Branch not found: %r", str(e))
         try:
             if not branch:
-                branch = crate_branch(repo, head)
+                branch_ref = crate_branch(repo, head)
+                branch = repo.get_branch(head)
         except Exception as e:
             raise IllegalStateException("Unable to prepare support branch for PR %r: %r" % (head, str(e)))
+
+        git_elements = []
         for change in files:
             try:
-                repo.create_file(os.path.join(change.dir, change.name),
-                                 f"Add {change.name}", change.get_content(), branch=head)
-            except Exception:
+                is_binary = change.is_binary
+                content = change.get_content(binary_mode=True).decode('utf-8')
+                blob = repo.create_git_blob(b64encode(content) if is_binary else content, 'base64' if is_binary else 'utf-8')
+                logger.debug("Path: %r", os.path.join(change.dir, change.name).replace('./', ''))
+                file_stat = '100755' if change.is_executable else '100644'
+                tree_element = InputGitTreeElement(path=os.path.join(change.dir, change.name).replace('./', ''),
+                                                   mode=file_stat, type='blob', sha=blob.sha)
+                logger.debug("Created Git element: %r", tree_element)
+                git_elements.append(tree_element)
+            except Exception as e:
+                logger.debug(e)
                 if allow_update:
                     current_file_version = repo.find_remote_file_by_name(change.name, ref=head)
                     logger.debug("Found a previous version of the file: %r", current_file_version)
                     if current_file_version:
                         repo.update_file(os.path.join(change.dir, change.name),
-                                         f"Update {change.name}", change.get_content(),
+                                         f"Update {change.name}", change.get_content(binary_mode=True),
                                          sha=current_file_version.sha, branch=head)
+        if len(git_elements) == 0:
+            logger.warning("No git element to add")
+        else:
+            base_tree = NotSet
+            try:
+                base_tree = repo.get_git_tree(sha=branch.commit.sha)
+            except Exception:
+                logger.warning("No parent tree found")
+            tree = repo.create_git_tree(git_elements, base_tree=base_tree)
+            parent = repo.get_git_commit(sha=branch.commit.sha)
+            commit = repo.create_git_commit("Initialise workflow repository", tree, [parent])
+            branch_ref.edit(sha=commit.sha)
         return head
     except KeyError as e:
         raise ValueError(f"Issue not valid: {str(e)}")
