@@ -68,7 +68,7 @@ def get_files(wizard: RepositoryTemplateWizard, repo: GithubWorkflowRepository, 
     logger.debug("Repository files: %r --> %r", repo, repo.files)
     try:
         missing_left, missing_right, differences = repo_template.compare_to(repo)
-        logger.debug("Diff (left, right, changed)=(%r,%r,%r)", missing_left, missing_right, differences)        
+        logger.debug("Diff (left, right, changed)=(%r,%r,%r)", missing_left, missing_right, differences)
         return missing_right
     except Exception as e:
         logger.exception(e)
@@ -82,7 +82,7 @@ class RepositoryTemplateWizard(Wizard):
     issue = NotInitialisedRepositoryIssue
 
     workflow_type = QuestionStep("Which type of workflow are going to host on this repository?",
-                                 description=f"",
+                                 description="",
                                  options=valid_workflow_types)
     workflow_title = QuestionStep("Choose a name for your workflow?",
                                   when=lambda _: _.workflow_type.answer in supported_workflows)
