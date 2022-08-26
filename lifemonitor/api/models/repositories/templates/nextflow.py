@@ -24,6 +24,7 @@ import logging
 import os
 from typing import List
 
+import git
 import nf_core
 import nf_core.create
 from lifemonitor.api.models.repositories.files.base import RepositoryFile
@@ -68,7 +69,7 @@ class NextflowRepositoryTemplate(WorkflowRepositoryTemplate):
         target_path = target_path or self.local_path
         logger.debug("Rendering template files to %s...", target_path)
         # name, description, author, version="1.0dev", no_git=False, force=False, outdir=None
-        create_obj = nf_core.create.PipelineCreate(
+        create_obj = NextflowPipeline(
             self.data.get("workflow_name"),
             self.data.get("workflow_description", ""),
             self.data.get("workflow_author", ""),
@@ -95,3 +96,27 @@ class NextflowRepositoryTemplate(WorkflowRepositoryTemplate):
         })
         repo.generate_metadata(**self.data)
         return repo
+
+
+class NextflowPipeline(nf_core.create.PipelineCreate):
+
+    def git_init_pipeline(self):
+        """Initialises the new pipeline as a Git repository and submits first commit."""
+        logger.info("Initialising pipeline git repository")
+        repo = git.Repo.init(self.outdir)
+        repo.config_reader().set_value('user', 'name', 'lifemonitor[bot]').release()
+        repo.config_reader().set_value('user', 'email', 'botr@lifemonitor.eu').release()
+        repo.config_writer().set_value('user', 'name', 'lifemonitor[bot]').release()
+        repo.config_writer().set_value('user', 'email', 'botr@lifemonitor.eu').release()
+        repo.git.add(A=True)
+        repo.index.commit(f"initial template build from nf-core/tools, version {nf_core.__version__}")
+        # Add TEMPLATE branch to git repository
+        repo.git.branch("TEMPLATE")
+        repo.git.branch("dev")
+        logger.info(
+            "Done. Remember to add a remote and push to GitHub:\n"
+            f"[white on grey23] cd {self.outdir} \n"
+            " git remote add origin git@github.com:USERNAME/REPO_NAME.git \n"
+            " git push --all origin                                       "
+        )
+        logger.info("This will also push your newly created dev branch and the TEMPLATE branch for syncing.")
