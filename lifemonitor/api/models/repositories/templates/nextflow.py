@@ -76,8 +76,7 @@ class NextflowRepositoryTemplate(WorkflowRepositoryTemplate):
             self.data.get('workflow_version', "0.1.0"),
             False, True, target_path)
         create_obj.init_pipeline()
-        from git import util
-
+        
         # patch prettier config to ignore crate and lm metadata
         with open(os.path.join(target_path, '.prettierignore'), 'a') as out:
             out.write('ro-crate-metadata.json\n')
