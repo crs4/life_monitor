@@ -88,7 +88,7 @@ class NextflowRepositoryTemplate(WorkflowRepositoryTemplate):
         os.chmod(os.path.join(target_path, 'bin/check_samplesheet.py'), 0o777)
 
         logger.debug("Rendering template files to %s... DONE", target_path)
-        repo = LocalWorkflowRepository(target_path)
+        repo = LocalWorkflowRepository(local_path=target_path)
         opts = self.data.copy()
         opts.update({
             'root': target_path,
