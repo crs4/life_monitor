@@ -3,9 +3,9 @@ FROM python:3.9-slim-buster as base
 # Install base requirements
 RUN apt-get update -q \
  && apt-get install -y --no-install-recommends \
-        bash lftp rsync build-essential  \
+        bash lftp curl rsync build-essential  \
         redis-tools git \
-        postgresql-client-11 \
+        postgresql-client-11 default-jre \
  && apt-get clean -y && rm -rf /var/lib/apt/lists
 
 # Create a user 'lm' with HOME at /lm
@@ -27,6 +27,9 @@ ENV PYTHONPATH=/lm:/usr/local/lib/python3.7/dist-packages:/usr/lib/python3/dist-
     PROMETHEUS_METRICS_PORT=9090 \
     REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
 
+# Install Nextflow
+RUN curl -fsSL get.nextflow.io | bash
+
 # Set the final working directory
 WORKDIR /lm
 
@@ -44,9 +47,11 @@ RUN chmod 755 \
       /usr/local/bin/wait-for-redis.sh \
       /usr/local/bin/lm_entrypoint.sh \
       /usr/local/bin/worker_entrypoint.sh \
+      /nextflow \
     && certs=$(ls *.crt 2> /dev/null) \
     && mv *.crt /usr/local/share/ca-certificates/ \
-    && update-ca-certificates || true
+    && update-ca-certificates || true \
+    && mv /nextflow /usr/local/bin
 
 # Set the container entrypoint
 ENTRYPOINT /usr/local/bin/lm_entrypoint.sh
@@ -55,7 +60,8 @@ ENTRYPOINT /usr/local/bin/lm_entrypoint.sh
 RUN mkdir -p /var/data/lm \
     && chown -R lm:lm /var/data/lm \
     && ln -s /var/data/lm /lm/data \
-    && chown -R lm:lm /lm/data
+    && chown -R lm:lm /lm/data \
+    && mkdir /lm/.nextflow && chmod -R 777 /lm/.nextflow
 
 # Set the default user
 USER lm
