@@ -71,19 +71,21 @@ class NextflowRepositoryTemplate(WorkflowRepositoryTemplate):
         create_obj = nf_core.create.PipelineCreate(
             self.data.get("workflow_name"),
             self.data.get("workflow_description", ""),
-            self.data.get("workflow_author", ""), 
+            self.data.get("workflow_author", ""),
             self.data.get('workflow_version', "0.1.0"),
             False, True, target_path)
         create_obj.init_pipeline()
+        from git import util
+
         # patch prettier config to ignore crate and lm metadata
-        with open(os.path.join(self.local_path, '.prettierignore'), 'a') as out:
+        with open(os.path.join(target_path, '.prettierignore'), 'a') as out:
             out.write('ro-crate-metadata.json\n')
             out.write('lifemonitor.yaml\n')
         # patch editor config to ignore license
-        with open(os.path.join(self.local_path, '.editorconfig'), 'a') as file:
+        with open(os.path.join(target_path, '.editorconfig'), 'a') as file:
             file.write(ignore_license)
         # patch permission of checker script
-        os.chmod(os.path.join(self.local_path, 'bin/check_samplesheet.py'), 0o777)
+        os.chmod(os.path.join(target_path, 'bin/check_samplesheet.py'), 0o777)
 
         logger.debug("Rendering template files to %s... DONE", target_path)
         repo = LocalWorkflowRepository(target_path)
