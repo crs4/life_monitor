@@ -103,8 +103,6 @@ class NextflowPipeline(nf_core.create.PipelineCreate):
         """Initialises the new pipeline as a Git repository and submits first commit."""
         logger.info("Initialising pipeline git repository")
         repo = git.Repo.init(self.outdir)
-        repo.config_reader().set_value('user', 'name', 'lifemonitor[bot]').release()
-        repo.config_reader().set_value('user', 'email', 'botr@lifemonitor.eu').release()
         repo.config_writer().set_value('user', 'name', 'lifemonitor[bot]').release()
         repo.config_writer().set_value('user', 'email', 'botr@lifemonitor.eu').release()
         repo.git.add(A=True)
