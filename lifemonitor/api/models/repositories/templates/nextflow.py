@@ -67,10 +67,12 @@ class NextflowRepositoryTemplate(WorkflowRepositoryTemplate):
     def generate(self, target_path: str = None) -> LocalWorkflowRepository:
         target_path = target_path or self.local_path
         logger.debug("Rendering template files to %s...", target_path)
+        # name, description, author, version="1.0dev", no_git=False, force=False, outdir=None
         create_obj = nf_core.create.PipelineCreate(
             self.data.get("workflow_name"),
             self.data.get("workflow_description", ""),
-            self.data.get("workflow_author", ""), self.data.get('workflow_version'),
+            self.data.get("workflow_author", ""), 
+            self.data.get('workflow_version', "0.1.0"),
             False, True, target_path)
         create_obj.init_pipeline()
         # patch prettier config to ignore crate and lm metadata
