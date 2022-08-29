@@ -37,7 +37,7 @@ from . import WorkflowRepositoryTemplate
 logger = logging.getLogger(__name__)
 
 # log loaded nf_core.utils is loaded
-logger.debug("Loaded module 'nf-core.utils'", nf_core_utils)
+logger.debug("Loaded module 'nf-core.utils': %r", nf_core_utils)
 
 # Ignore LICENSE
 ignore_license = """
