@@ -25,15 +25,18 @@ import os
 from typing import List
 
 import git
-import nf_core
 import nf_core.create
 from lifemonitor.api.models.repositories.files.base import RepositoryFile
 from lifemonitor.api.models.repositories.local import LocalWorkflowRepository
+from nf_core import utils as nf_core_utils
 
 from . import WorkflowRepositoryTemplate
 
 # set module level logger
 logger = logging.getLogger(__name__)
+
+# log loaded nf_core.utils is loaded
+logger.debug("Loaded module 'nf-core.utils'", nf_core_utils)
 
 # Ignore LICENSE
 ignore_license = """
