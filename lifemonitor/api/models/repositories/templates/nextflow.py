@@ -69,7 +69,7 @@ class NextflowRepositoryTemplate(WorkflowRepositoryTemplate):
         target_path = target_path or self.local_path
         logger.debug("Rendering template files to %s...", target_path)
         # name, description, author, version="1.0dev", no_git=False, force=False, outdir=None
-        create_obj = NextflowPipeline(
+        create_obj = nf_core.create.PipelineCreate(
             self.data.get("workflow_name"),
             self.data.get("workflow_description", ""),
             self.data.get("workflow_author", ""),
@@ -103,8 +103,6 @@ class NextflowPipeline(nf_core.create.PipelineCreate):
         """Initialises the new pipeline as a Git repository and submits first commit."""
         logger.info("Initialising pipeline git repository")
         repo = git.Repo.init(self.outdir)
-        repo.config_writer().set_value('user', 'name', 'lifemonitor[bot]').release()
-        repo.config_writer().set_value('user', 'email', 'botr@lifemonitor.eu').release()
         repo.git.add(A=True)
         repo.index.commit(f"initial template build from nf-core/tools, version {nf_core.__version__}")
         # Add TEMPLATE branch to git repository

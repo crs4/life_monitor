@@ -5,10 +5,10 @@ RUN apt-get update -q \
  && apt-get install -y --no-install-recommends \
         bash lftp curl rsync build-essential  \
         redis-tools git \
-        postgresql-client-11 default-jre \
+        postgresql-client-11 openjdk-11-jre \
  && apt-get clean -y && rm -rf /var/lib/apt/lists
 
-# Create a user 'lm' with HOME at /lm
+# Create a user 'lm' with HOME at /lm and set 'lm' as default git user
 RUN useradd -d /lm -m lm
 
 # Copy requirements and certificates
@@ -65,6 +65,10 @@ RUN mkdir -p /var/data/lm \
 
 # Set the default user
 USER lm
+
+# Set default Git user
+RUN git config --global user.name "LifeMonitor[bot]" \
+    && git config --global user.email "noreply@lifemonitor.eu"
 
 # Copy lifemonitor app
 COPY --chown=lm:lm app.py lm-admin lm gunicorn.conf.py /lm/
