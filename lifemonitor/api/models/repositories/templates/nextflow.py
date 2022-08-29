@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 from typing import List
 
 import git
@@ -72,7 +73,7 @@ class NextflowRepositoryTemplate(WorkflowRepositoryTemplate):
         target_path = target_path or self.local_path
         logger.debug("Rendering template files to %s...", target_path)
         # name, description, author, version="1.0dev", no_git=False, force=False, outdir=None
-        create_obj = nf_core.create.PipelineCreate(
+        create_obj = NextflowPipeline(
             self.data.get("workflow_name"),
             self.data.get("workflow_description", ""),
             self.data.get("workflow_author", ""),
@@ -101,6 +102,22 @@ class NextflowRepositoryTemplate(WorkflowRepositoryTemplate):
 
 
 class NextflowPipeline(nf_core.create.PipelineCreate):
+
+    def __init__(self, name, description, author, version="1.0dev", no_git=False, force=False, outdir=None):
+        """ Override default constructor to properly set workflow name"""
+        short_name = re.sub(r"\s+", "-", name.lower()).replace("nf-core/", "").replace("/", "-")
+        name = f"nf-core/{short_name}"
+        name_noslash = name.replace("/", "-")
+        if not outdir:
+            outdir = os.path.join(os.getcwd(), name_noslash)
+        super().__init__(name, description, author, version, no_git, force, outdir)
+        # override default name
+        self.name = name
+        self.short_name = short_name
+        self.name_noslash = name_noslash
+        self.name_docker = name.replace("nf-core", "nfcore")
+        self.logo_light = f"{name_noslash}_logo_light.png"
+        self.logo_dark = f"{name_noslash}_logo_dark.png"
 
     def git_init_pipeline(self):
         """Initialises the new pipeline as a Git repository and submits first commit."""
