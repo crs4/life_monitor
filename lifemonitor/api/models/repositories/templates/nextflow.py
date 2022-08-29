@@ -105,7 +105,7 @@ class NextflowPipeline(nf_core.create.PipelineCreate):
 
     def __init__(self, name, description, author, version="1.0dev", no_git=False, force=False, outdir=None):
         """ Override default constructor to properly set workflow name"""
-        short_name = re.sub(r"\s+", "-", name.lower()).replace("nf-core/", "").replace("/", "-")
+        short_name = re.sub(r"\s+", "-", name.lower()).replace("nf-core/", "").replace("/", "_")
         name = f"nf-core/{short_name}"
         name_noslash = name.replace("/", "-")
         if not outdir:
