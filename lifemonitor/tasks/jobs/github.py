@@ -1,9 +1,9 @@
 
 import logging
 
-import flask
 from lifemonitor.integrations.github.controllers import get_event_handler
 from lifemonitor.integrations.github.events import GithubEvent
+
 from ..scheduler import TASK_EXPIRATION_TIME, schedule
 
 # set module level logger
