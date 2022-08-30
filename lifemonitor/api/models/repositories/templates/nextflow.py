@@ -25,7 +25,6 @@ import os
 import re
 from typing import List
 
-import git
 import nf_core.create
 from lifemonitor.api.models.repositories.files.base import RepositoryFile
 from lifemonitor.api.models.repositories.local import LocalWorkflowRepository
