@@ -85,6 +85,7 @@ class NextflowRepositoryTemplate(WorkflowRepositoryTemplate):
         with open(os.path.join(target_path, '.prettierignore'), 'a') as out:
             out.write('ro-crate-metadata.json\n')
             out.write('lifemonitor.yaml\n')
+            out.write('bin/check_samplesheet.py\n')
         # patch editor config to ignore license
         with open(os.path.join(target_path, '.editorconfig'), 'a') as file:
             file.write(ignore_license)
