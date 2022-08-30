@@ -102,14 +102,6 @@ class NextflowRepositoryTemplate(WorkflowRepositoryTemplate):
 
 
 class NextflowPipeline(nf_core.create.PipelineCreate):
-    
-    
-    #  self.short_name = name.lower().replace(r"/\s+/", "-").replace("nf-core/", "").replace("/", "-")
-    #     self.name = f"nf-core/{self.short_name}"
-    #     self.name_noslash = self.name.replace("/", "-")
-    #     self.name_docker = self.name.replace("nf-core", "nfcore")
-    #     self.logo_light = f"{self.name_noslash}_logo_light.png"
-    #     self.logo_dark = f"{self.name_noslash}_logo_dark.png"
 
     def __init__(self, name, description, author, version="1.0dev", no_git=False, force=False, outdir=None):
         """ Override default constructor to properly set workflow name"""

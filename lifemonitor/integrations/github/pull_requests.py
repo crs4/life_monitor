@@ -133,8 +133,8 @@ def __prepare_pr_head__(repo: InstallationGithubWorkflowRepository,
                 logger.debug("Found a previous version of the file: %r", current_file_version)
                 if current_file_version:
                     repo.update_file(os.path.join(change.dir, change.name),
-                                        f"Update {change.name}", change.get_content(binary_mode=True),
-                                        sha=current_file_version.sha, branch=head)
+                                     f"Update {change.name}", change.get_content(binary_mode=True),
+                                     sha=current_file_version.sha, branch=head)
         if len(git_elements) == 0:
             logger.warning("No git element to add")
         else:
