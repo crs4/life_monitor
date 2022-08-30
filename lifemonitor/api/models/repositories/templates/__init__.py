@@ -150,7 +150,7 @@ class WorkflowRepositoryTemplate(WorkflowRepository):
     def _get_type(cls, name: str) -> WorkflowRepositoryTemplate:
         try:
             return cls._types()[f"{name.capitalize()}RepositoryTemplate"]
-        except AttributeError:
+        except KeyError:
             return WorkflowRepositoryTemplate
 
     @classmethod
