@@ -90,11 +90,13 @@ def __prepare_pr_head__(repo: InstallationGithubWorkflowRepository,
         logger.debug("PR head: %r", head)
         branch = None
         branch_ref: GitRef = None
+        branch_exists = False
         try:
             branch = repo.get_branch(head)
             if branch and not allow_update:
-                return branch
+                return head
             branch_ref = repo.get_git_ref(f'head/{head}')
+            branch_exists = True
         except GithubException as e:
             logger.debug("Branch not found: %r", str(e))
         try:
@@ -106,25 +108,33 @@ def __prepare_pr_head__(repo: InstallationGithubWorkflowRepository,
 
         git_elements = []
         for change in files:
-            try:
-                is_binary = change.is_binary
-                content = change.get_content(binary_mode=True).decode('utf-8')
-                blob = repo.create_git_blob(b64encode(content) if is_binary else content, 'base64' if is_binary else 'utf-8')
-                logger.debug("Path: %r", os.path.join(change.dir, change.name).replace('./', ''))
-                file_stat = '100755' if change.is_executable else '100644'
-                tree_element = InputGitTreeElement(path=os.path.join(change.dir, change.name).replace('./', ''),
-                                                   mode=file_stat, type='blob', sha=blob.sha)
-                logger.debug("Created Git element: %r", tree_element)
-                git_elements.append(tree_element)
-            except Exception as e:
-                logger.debug(e)
-                if allow_update:
-                    current_file_version = repo.find_remote_file_by_name(change.name, ref=head)
-                    logger.debug("Found a previous version of the file: %r", current_file_version)
-                    if current_file_version:
-                        repo.update_file(os.path.join(change.dir, change.name),
-                                         f"Update {change.name}", change.get_content(binary_mode=True),
-                                         sha=current_file_version.sha, branch=head)
+            if not branch_exists:
+                try:
+                    logger.debug("Processing file: %s...", change.name)
+                    is_binary = change.is_binary
+                    content = change.get_content(binary_mode=True)
+                    try:
+                        content = content.decode('utf-8')
+                    except Exception:
+                        pass
+                    blob = repo.create_git_blob(b64encode(content).decode('utf-8') if is_binary else content, 'base64' if is_binary else 'utf-8')
+                    logger.debug("Path: %r", os.path.join(change.dir, change.name).replace('./', ''))
+                    file_stat = '100755' if change.is_executable else '100644'
+                    tree_element = InputGitTreeElement(path=os.path.join(change.dir, change.name).replace('./', ''),
+                                                       mode=file_stat, type='blob', sha=blob.sha)
+                    logger.debug("Created Git element: %r (file: %r)", tree_element, change.name)
+                    git_elements.append(tree_element)
+                    logger.debug("Processing file: %s... DONE", change.name)
+                except Exception as e:
+                    logger.exception(e)
+            # TODO: update existing files if updates are allowed
+            if branch_exists and allow_update:
+                current_file_version = repo.find_remote_file_by_name(change.name, ref=head)
+                logger.debug("Found a previous version of the file: %r", current_file_version)
+                if current_file_version:
+                    repo.update_file(os.path.join(change.dir, change.name),
+                                        f"Update {change.name}", change.get_content(binary_mode=True),
+                                        sha=current_file_version.sha, branch=head)
         if len(git_elements) == 0:
             logger.warning("No git element to add")
         else:
