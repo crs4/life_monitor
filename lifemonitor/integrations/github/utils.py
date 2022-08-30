@@ -196,27 +196,38 @@ class GithubApiWrapper(github.Github):
         )
 
 
+def __cache_request_value__(verb: str, url: str, *args,
+                            parameters: Optional[Dict[str, Any]] = None,
+                            headers: Optional[Dict[str, str]] = None,
+                            input: Optional[Any] = None, **kwargs):
+    logger.debug("VERB: %r", verb)
+    logger.debug("URL: %r", url)
+    if verb.upper() != "GET":
+        return True
+    return False
+
+
 class CachedGithubRequester(Requester):
 
     """
     Extend the default Github Requester to enable caching.
     """
 
-    @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True)
+    @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True, unless=__cache_request_value__)
     def requestJsonAndCheck(self, verb: str, url: str,
                             parameters: Optional[Dict[str, Any]] = None,
                             headers: Optional[Dict[str, str]] = None,
                             input: Optional[Any] = None) -> Tuple[Dict[str, Any], Optional[Dict[str, Any]]]:
         return super().requestJsonAndCheck(verb, url, parameters, headers, input)
 
-    @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True)
+    @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True, unless=__cache_request_value__)
     def requestMultipartAndCheck(self, verb: str, url: str,
                                  parameters: Optional[Dict[str, Any]] = None,
                                  headers: Optional[Dict[str, Any]] = None,
                                  input: Optional[OrderedDict] = None) -> Tuple[Dict[str, Any], Optional[Dict[str, Any]]]:
         return super().requestMultipartAndCheck(verb, url, parameters, headers, input)
 
-    @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True)
+    @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True, unless=__cache_request_value__)
     def requestBlobAndCheck(self, verb: str, url: str,
                             parameters: Optional[Dict[str, Any]] = None,
                             headers: Optional[Dict[str, Any]] = None,
