@@ -78,7 +78,7 @@ class NextflowRepositoryTemplate(WorkflowRepositoryTemplate):
             self.data.get("workflow_description", ""),
             self.data.get("workflow_author", ""),
             self.data.get('workflow_version', "0.1.0"),
-            False, True, target_path)
+            False, True, outdir=target_path, plain=True)
         create_obj.init_pipeline()
 
         # patch prettier config to ignore crate and lm metadata
@@ -103,21 +103,11 @@ class NextflowRepositoryTemplate(WorkflowRepositoryTemplate):
 
 class NextflowPipeline(nf_core.create.PipelineCreate):
 
-    def __init__(self, name, description, author, version="1.0dev", no_git=False, force=False, outdir=None):
+    def __init__(self, name, description, author, version="1.0dev", no_git=False,
+                 force=False, outdir=None, template_yaml=None, plain=True):
         """ Override default constructor to properly set workflow name"""
-        # short_name = re.sub(r"\s+", "-", name.lower()).replace("nf-core/", "").replace("/", "_")
-        # name = f"nf-core/{short_name}"
-        # name_noslash = name.replace("/", "-")
-        # if not outdir:
-        #     outdir = os.path.join(os.getcwd(), name_noslash)
-        super().__init__(re.sub(r"\s+", "", name), description, author, version, no_git, force, outdir)
-        # override default name
-        # self.name = name
-        # self.short_name = short_name
-        # self.name_noslash = name_noslash
-        # self.name_docker = name.replace("nf-core", "nfcore")
-        # self.logo_light = f"{name_noslash}_logo_light.png"
-        # self.logo_dark = f"{name_noslash}_logo_dark.png"
+        super().__init__(re.sub(r"\s+", "", name), description, author, version, no_git,
+                         force, outdir, template_yaml_path=template_yaml, plain=plain)
 
     def git_init_pipeline(self):
         """Initialises the new pipeline as a Git repository and submits first commit."""
