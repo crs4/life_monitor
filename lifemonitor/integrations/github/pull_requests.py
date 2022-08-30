@@ -88,7 +88,7 @@ def __prepare_pr_head__(repo: InstallationGithubWorkflowRepository,
         try:
             branch = repo.get_branch(head)
             if branch and not allow_update:
-                return None
+                return branch
         except GithubException as e:
             logger.debug("Branch not found: %r", str(e))
         try:
