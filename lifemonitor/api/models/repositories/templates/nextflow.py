@@ -110,19 +110,19 @@ class NextflowPipeline(nf_core.create.PipelineCreate):
         super().__init__(re.sub(r"\s+", "", name), description, author, version, no_git,
                          force, outdir, template_yaml_path=template_yaml, plain=plain)
 
-    def git_init_pipeline(self):
-        """Initialises the new pipeline as a Git repository and submits first commit."""
-        logger.info("Initialising pipeline git repository")
-        repo = git.Repo.init(self.outdir)
-        repo.git.add(A=True)
-        repo.index.commit(f"initial template build from nf-core/tools, version {nf_core.__version__}")
-        # Add TEMPLATE branch to git repository
-        repo.git.branch("TEMPLATE")
-        repo.git.branch("dev")
-        logger.info(
-            "Done. Remember to add a remote and push to GitHub:\n"
-            f"[white on grey23] cd {self.outdir} \n"
-            " git remote add origin git@github.com:USERNAME/REPO_NAME.git \n"
-            " git push --all origin                                       "
-        )
-        logger.info("This will also push your newly created dev branch and the TEMPLATE branch for syncing.")
+    # def git_init_pipeline(self):
+    #     """Initialises the new pipeline as a Git repository and submits first commit."""
+    #     logger.info("Initialising pipeline git repository")
+    #     repo = git.Repo.init(self.outdir)
+    #     repo.git.add(A=True)
+    #     repo.index.commit(f"initial template build from nf-core/tools, version {nf_core.__version__}")
+    #     # Add TEMPLATE branch to git repository
+    #     repo.git.branch("TEMPLATE")
+    #     repo.git.branch("dev")
+    #     logger.info(
+    #         "Done. Remember to add a remote and push to GitHub:\n"
+    #         f"[white on grey23] cd {self.outdir} \n"
+    #         " git remote add origin git@github.com:USERNAME/REPO_NAME.git \n"
+    #         " git push --all origin                                       "
+    #     )
+    #     logger.info("This will also push your newly created dev branch and the TEMPLATE branch for syncing.")
