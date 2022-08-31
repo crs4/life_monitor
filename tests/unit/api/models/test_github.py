@@ -35,8 +35,8 @@ logger = logging.getLogger(__name__)
 
 build_query_limit = 20
 
-# reference to the main workflow installed on life-monitor/workflow-tests repository
-workflow_tests_resource = '/repos/life-monitor/workflow-tests/actions/workflows/28339110'
+# reference to the main workflow installed on lifemonitor/workflow-tests repository
+workflow_tests_resource = '/repos/lifemonitor/workflow-tests/actions/workflows/28339110'
 
 # set token from env
 token = get_github_token()
@@ -53,7 +53,7 @@ def api_url() -> str:
 
 @pytest.fixture
 def repo_full_name() -> str:
-    return "life-monitor/workflow-tests"
+    return "lifemonitor/workflow-tests"
 
 
 @pytest.fixture
