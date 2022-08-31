@@ -22,20 +22,22 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Any, Callable, Dict, List, Optional, OrderedDict, Tuple, Type
-import github
+from typing import (Any, Callable, Dict, List, Optional, OrderedDict, Tuple,
+                    Type)
 
+from lifemonitor.cache import Timeout, cache_function, cached
+from lifemonitor.integrations.github.config import (DEFAULT_BASE_URL,
+                                                    DEFAULT_PER_PAGE,
+                                                    DEFAULT_TIMEOUT)
+
+import github
 from github.GithubException import GithubException
+from github.GitRef import GitRef
 from github.Issue import Issue
 from github.Label import Label
+from github.PaginatedList import PaginatedList
 from github.Repository import Repository
 from github.Requester import Requester
-from github.PaginatedList import PaginatedList
-
-from lifemonitor.cache import cache_function
-
-from lifemonitor.cache import Timeout, cached
-from lifemonitor.integrations.github.config import DEFAULT_BASE_URL, DEFAULT_PER_PAGE, DEFAULT_TIMEOUT
 
 from ...api.models.wizards import (IOHandler, QuestionStep, Step, UpdateStep,
                                    Wizard)
@@ -60,7 +62,7 @@ def match_ref(ref: str, refs: List[str]) -> str:
     return None
 
 
-def crate_branch(repo: Repository, branch_name: str, rev: str = None):
+def crate_branch(repo: Repository, branch_name: str, rev: str = None) -> GitRef:
     head = repo.get_commit(rev or repo.rev or 'HEAD')
     logger.debug("HEAD commit: %r", head.sha)
     logger.debug("New target branch ref: %r", f'refs/heads/{branch_name}'.format(**locals()))
@@ -194,27 +196,38 @@ class GithubApiWrapper(github.Github):
         )
 
 
+def __cache_request_value__(verb: str, url: str, *args,
+                            parameters: Optional[Dict[str, Any]] = None,
+                            headers: Optional[Dict[str, str]] = None,
+                            input: Optional[Any] = None, **kwargs):
+    logger.debug("VERB: %r", verb)
+    logger.debug("URL: %r", url)
+    if verb.upper() != "GET":
+        return True
+    return False
+
+
 class CachedGithubRequester(Requester):
 
     """
     Extend the default Github Requester to enable caching.
     """
 
-    @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True)
+    @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True, unless=__cache_request_value__)
     def requestJsonAndCheck(self, verb: str, url: str,
                             parameters: Optional[Dict[str, Any]] = None,
                             headers: Optional[Dict[str, str]] = None,
                             input: Optional[Any] = None) -> Tuple[Dict[str, Any], Optional[Dict[str, Any]]]:
         return super().requestJsonAndCheck(verb, url, parameters, headers, input)
 
-    @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True)
+    @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True, unless=__cache_request_value__)
     def requestMultipartAndCheck(self, verb: str, url: str,
                                  parameters: Optional[Dict[str, Any]] = None,
                                  headers: Optional[Dict[str, Any]] = None,
                                  input: Optional[OrderedDict] = None) -> Tuple[Dict[str, Any], Optional[Dict[str, Any]]]:
         return super().requestMultipartAndCheck(verb, url, parameters, headers, input)
 
-    @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True)
+    @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True, unless=__cache_request_value__)
     def requestBlobAndCheck(self, verb: str, url: str,
                             parameters: Optional[Dict[str, Any]] = None,
                             headers: Optional[Dict[str, Any]] = None,

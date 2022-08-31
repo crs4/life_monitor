@@ -60,6 +60,10 @@ def _get_timeout_key(n: str) -> str:
     return f"CACHE_{n}_TIMEOUT"
 
 
+def _log_key_value(key) -> str:
+    return key[:80] if key else ""
+
+
 class Timeout:
     # Set default timeouts
     NONE = 0
@@ -139,7 +143,7 @@ class CacheTransaction(object):
     def lock(self, key: str,
              timeout: int = Timeout.REQUEST,
              expire=15, retry=1, auto_renewal=True):
-        logger.debug("Getting lock for key %r...", key)
+        logger.debug("Getting lock for key %r...", _log_key_value(key))
         if key in self.__locks__:
             yield self.__locks__[key]
         else:
@@ -147,13 +151,13 @@ class CacheTransaction(object):
             while not lock.acquire(blocking=False, timeout=timeout if timeout > 0 else None):
                 logger.debug("Waiting for lock key '%r'... (retry in %r secs)", lock, retry)
                 time.sleep(retry)
-            logger.debug("Lock for key '%r' acquired: %r", key, lock.locked)
+            logger.debug("Lock for key '%r' acquired: %r", _log_key_value(key), lock.locked)
             self.__locks__[key] = lock
-            logger.debug("Lock for key '%r' added to transaction %r: %r", key, self.name, self.has_lock(key))
+            logger.debug("Lock for key '%r' added to transaction %r: %r", _log_key_value(key), self.name, self.has_lock(key))
             try:
                 yield lock
             finally:
-                logger.debug("Releasing transactional lock context for key '%s'", key)
+                logger.debug("Releasing transactional lock context for key '%s'", _log_key_value(key))
 
     def has_lock(self, key: str) -> bool:
         return key in self.__locks__
@@ -188,7 +192,7 @@ class CacheTransaction(object):
                 logger.debug("Finalizing transaction...")
                 pipeline = self.__cache__.backend.pipeline()
                 for k, data in self.__data__.items():
-                    logger.debug(f"Setting key {k} on transaction pipeline (timeout: {data[1]}")
+                    logger.debug(f"Setting key {k[:100]} on transaction pipeline (timeout: {data[1]}")
                     pipeline.set(k, pickle.dumps(data[0]), ex=data[1] if data[1] > 0 else None)
                 pipeline.execute()
                 logger.debug("Transaction finalized!")
@@ -196,16 +200,16 @@ class CacheTransaction(object):
                     lk = self.__locks__.pop(k)
                     if lk:
                         if lk.locked:
-                            logger.debug("Releasing lock for key '%r'...", k)
+                            logger.debug("Releasing lock for key '%r'...", _log_key_value(k))
                             try:
                                 lk.release()
-                                logger.debug("Lock for key '%r' released: %r", k, lk.locked)
+                                logger.debug("Lock for key '%r' released: %r", _log_key_value(k), lk.locked)
                             except redis_lock.NotAcquired as e:
                                 logger.debug(e)
                         else:
-                            logger.debug("Lock for key '%s' not acquired or expired")
+                            logger.debug("Lock for key '%s' not acquired or expired", _log_key_value(k))
                     else:
-                        logger.debug("No lock for key %r", k)
+                        logger.debug("No lock for key %r", _log_key_value(k))
                 logger.debug(f"All lock of {self} released")
                 logger.debug(f"{self} closed")
             except Exception as e:
@@ -352,30 +356,30 @@ class Cache(object):
     def lock(self, key: str,
              timeout: int = Timeout.REQUEST,
              expire=15, retry=1, auto_renewal=True):
-        logger.debug("Getting lock for key %r...", key)
+        logger.debug("Getting lock for key %r...", _log_key_value(key))
         lock = redis_lock.Lock(self.backend, key, expire=expire, auto_renewal=auto_renewal)
         try:
             while not lock.acquire(blocking=False, timeout=timeout if timeout > 0 else None):
                 logger.debug("Waiting to acquire the lock for '%r'... (retry in %r secs)", lock, retry)
                 time.sleep(retry)
-            logger.debug(f"Lock for key '{key}' acquired: {lock.locked}")
+            logger.debug(f"Lock for key '{_log_key_value(key)}' acquired: {lock.locked}")
             yield lock
         finally:
             try:
-                logger.debug("Exiting from transactional lock context for key '%s'", key)
+                logger.debug("Exiting from transactional lock context for key '%s'", _log_key_value(key))
                 if not lock.locked:
-                    logger.debug("Lock for key '%s' not acquired", key)
+                    logger.debug("Lock for key '%s' not acquired", _log_key_value(key))
                 else:
-                    logger.debug("Auto release of lock for key '%s'", key)
+                    logger.debug("Auto release of lock for key '%s'", _log_key_value(key))
                     lock.release()
-                    logger.debug("Lock for key='%s' released: %r", key, lock.locked)
+                    logger.debug("Lock for key='%s' released: %r", _log_key_value(key), lock.locked)
             except redis_lock.NotAcquired as e:
                 logger.debug(e)
 
     def set(self, key: str, value, timeout: int = Timeout.NONE, prefix: str = CACHE_PREFIX):
         if key is not None and self.cache_enabled:
             key = self._make_key(key, prefix=prefix)
-            logger.debug("Setting cache value for key %r.... (timeout: %r)", key, timeout)
+            logger.debug("Setting cache value for key %r.... (timeout: %r)", _log_key_value(key), timeout)
             if value is None:
                 self.backend.delete(key)
             else:
@@ -408,7 +412,7 @@ class Cache(object):
             logger.debug("Redis backend detected!")
             logger.debug(f"Pattern: {prefix}{pattern}")
             for key in self.backend.scan_iter(self._make_key(pattern, prefix=prefix)):
-                logger.debug("Delete key: %r", key)
+                logger.debug("Delete key: %r", _log_key_value(key))
                 self.backend.delete(key)
 
     def clear(self):
@@ -478,7 +482,7 @@ def make_cache_key(func=None, client_scope=True, args=None, kwargs=None) -> str:
     if kwargs:
         kwargs_str = "-".join([f"{k}={str(v)}" for k, v in kwargs.items()])
         result += f"#{kwargs_str}"
-    logger.debug("make_key calculated key: %r", result)
+    logger.debug("make_key calculated key: %r", _log_key_value(result))
     return result
 
 
@@ -515,13 +519,13 @@ def _process_cache_data(cache, transaction, key, unless, timeout,
                 logger.debug("Cache empty: getting value from the actual function...")
                 result = function(*args, **kwargs)
                 logger.debug("Checking unless function: %r", unless)
-                if unless is None or unless is False or callable(unless) and not unless(result):
+                if unless is None or unless is False or callable(unless) and not unless(*args[1:], result=result, **kwargs):
                     writer.set(key, result, timeout=timeout)
                 else:
                     logger.debug("Don't set value in cache due to unless=%r",
                                  "None" if unless is None else "True")
     else:
-        logger.debug(f"Reusing value from cache key '{key}'...")
+        logger.debug(f"Reusing value from cache key '{_log_key_value(key)}'...")
     return result
 
 
@@ -566,7 +570,7 @@ def cache_function(function: Callable, timeout=Timeout.REQUEST,
                     logger.debug("Computed callable skip_transacion: %r", skip_transaction)
             elif not transaction and isinstance(transactional_update, bool):
                 skip_transaction = not transactional_update
-            logger.debug("Skipping transaction for %r: %r", key, skip_transaction)
+            logger.debug("Skipping transaction for %r: %r", _log_key_value(key), skip_transaction)
             if not skip_transaction:  # transaction or transactional_update:  # skip_transaction:
                 read_from_cache = transaction is None
                 logger.debug("Read from cache: %r", read_from_cache)

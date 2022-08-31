@@ -27,6 +27,8 @@ from lifemonitor.api.models.repositories.files.workflows.galaxy import \
     GalaxyWorkflowFile
 from lifemonitor.api.models.repositories.files.workflows.jupyter import \
     JupyterWorkflowFile
+from lifemonitor.api.models.repositories.files.workflows.nextflow import \
+    NextflowWorkflowFile
 from lifemonitor.api.models.repositories.files.workflows.snakemake import \
     SnakemakeWorkflowFile
 from lifemonitor.api.models.repositories.github import GithubWorkflowRepository
@@ -57,7 +59,7 @@ def remote_snakemake_github_repository(github_token) -> GithubWorkflowRepository
 
 def test_workflow_types():
 
-    expected_types = (GalaxyWorkflowFile, SnakemakeWorkflowFile, JupyterWorkflowFile)
+    expected_types = (GalaxyWorkflowFile, SnakemakeWorkflowFile, JupyterWorkflowFile, NextflowWorkflowFile)
     actual_types = WorkflowFile.get_types()
     assert len(actual_types) == len(expected_types), "Unexpected number of supported workflow types"
     for w_type in expected_types:
