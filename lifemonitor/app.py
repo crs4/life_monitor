@@ -30,7 +30,7 @@ import lifemonitor.config as config
 from lifemonitor import __version__ as version
 from lifemonitor.integrations import init_integrations
 from lifemonitor.routes import register_routes
-from lifemonitor.tasks.task_queue import init_task_queue
+from lifemonitor.tasks import init_task_queues
 
 from . import commands
 from .cache import init_cache
@@ -43,7 +43,7 @@ from .serializers import ma
 logger = logging.getLogger(__name__)
 
 
-def create_app(env=None, settings=None, init_app=True, worker=False, **kwargs):
+def create_app(env=None, settings=None, init_app=True, worker=False, load_jobs=True, **kwargs):
     """
     App factory method
     :param env:
@@ -79,7 +79,7 @@ def create_app(env=None, settings=None, init_app=True, worker=False, **kwargs):
     # initialize the application
     if init_app:
         with app.app_context() as ctx:
-            initialize_app(app, ctx)
+            initialize_app(app, ctx, load_jobs=load_jobs)
 
     # append routes to check app health
     @app.route("/health")
@@ -115,7 +115,7 @@ def create_app(env=None, settings=None, init_app=True, worker=False, **kwargs):
     return app
 
 
-def initialize_app(app: Flask, app_context, prom_registry=None):
+def initialize_app(app: Flask, app_context, prom_registry=None, load_jobs: bool = True):
     # init tmp folder
     os.makedirs(app.config.get('BASE_TEMP_FOLDER'), exist_ok=True)
     # configure logging
@@ -131,7 +131,7 @@ def initialize_app(app: Flask, app_context, prom_registry=None):
     # configure app routes
     register_routes(app)
     # init scheduler/worker for async tasks
-    init_task_queue(app)
+    init_task_queues(app, load_jobs=load_jobs)
     # init mail system
     init_mail(app)
     # initialize integrations

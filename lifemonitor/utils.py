@@ -23,6 +23,7 @@ import base64
 import ftplib
 import functools
 import glob
+import inspect
 import json
 import logging
 import os
@@ -39,9 +40,10 @@ import zipfile
 from datetime import datetime
 from importlib import import_module
 from os.path import basename, dirname, isfile, join
-from typing import Dict, List
+from typing import Dict, List, Type
 
 import flask
+import networkx as nx
 import pygit2
 import requests
 import yaml
@@ -213,6 +215,98 @@ def validate_url(url: str) -> bool:
 
 def get_last_update(path: str):
     return time.ctime(max(os.stat(root).st_mtime for root, _, _ in os.walk(path)))
+
+
+def load_modules(path: str = None, include: List[str] = None, exclude: List[str] = None) -> Dict[str, Type]:
+    errors = []
+
+    logger.debug("Include modules: %r", include)
+    logger.debug("Exclude modules: %r", exclude)
+
+    loaded_modules = {}
+    current_path = path or os.path.dirname(__file__)
+    for dirpath, _, _ in os.walk(current_path):
+        # computer subpackage modules
+        modules_files = [f for f in glob.glob(os.path.join(dirpath, "*.py")) if os.path.isfile(f) and not f.endswith('__init__.py')]
+        logger.debug("Module files: %r", modules_files)
+
+        for f in modules_files:
+            module_name = os.path.basename(f)[:-3]
+            logger.debug("Checking module: %r", module_name)
+            logger.debug(include and (module_name not in include))
+            fully_qualified_module_name = '{}.{}'.format('lifemonitor.tasks.jobs', module_name)
+            if (include and (module_name not in include)) or (exclude and (module_name in exclude)):
+                logger.warning("Skipping module '%s'", fully_qualified_module_name)
+                continue
+            # load subclasses of T from detected modules
+            try:
+                loaded_modules[fully_qualified_module_name] = import_module(fully_qualified_module_name)
+            except ModuleNotFoundError as e:
+                logger.exception(e)
+                logger.error("ModuleNotFoundError: Unable to load module %s", fully_qualified_module_name)
+                errors.append(fully_qualified_module_name)
+    if len(errors) > 0:
+        logger.error("** There were some errors loading application modules.**")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.error("** Unable to load types from %s", ", ".join(errors))
+    logger.debug("Loaded modules: %r", loaded_modules)
+    return loaded_modules
+
+
+def find_types(T: Type, path: str = None) -> Dict[str, Type]:
+    errors = []
+    types = {}
+    g = nx.DiGraph()
+    root_path = os.path.abspath(os.path.dirname(f"{__file__}/../../"))
+    # current_path = path or os.path.dirname(__file__)
+    base_path = os.path.abspath(path or os.path.dirname(__file__))
+    logger.debug("Base path: %r", base_path)
+
+    # base module
+    base_module_relative_path = base_path.replace(f"{root_path}/", '')
+    logger.debug("Base module relative path: %r", base_module_relative_path)
+    base_module = base_module_relative_path.replace('/', '.')
+    logger.debug("Base module: %r", base_module)
+
+    for dirpath, _, _ in os.walk(base_path):
+        # compute path and name of current subpackage
+        current_relative_path = dirpath.replace(f"{root_path}/", '')
+        current_package = current_relative_path.replace('/', '.')
+        # computer subpackage modules
+        modules_files = glob.glob(os.path.join(dirpath, "*.py"))
+        logger.debug("Module files: %r", modules_files)
+        modules = ['{}.{}'.format(current_package, os.path.basename(f)[:-3])
+                   for f in modules_files if os.path.isfile(f) and not f.endswith('__init__.py')]
+        # load subclasses of T from detected modules
+        for m in modules:
+            try:
+                mod = import_module(m)
+                for _, obj in inspect.getmembers(mod):
+                    if inspect.isclass(obj) \
+                        and inspect.getmodule(obj) == mod \
+                        and obj != T \
+                            and issubclass(obj, T):
+                        types[obj.__name__] = obj
+                        dependencies = getattr(obj, 'depends_on', None)
+                        if not dependencies or len(dependencies) == 0:
+                            g.add_edge('r', obj.__name__)
+                        else:
+                            for dep in dependencies:
+                                g.add_edge(dep.__name__, obj.__name__)
+            except ModuleNotFoundError as e:
+                logger.exception(e)
+                logger.error("ModuleNotFoundError: Unable to load module %s", m)
+                errors.append(m)
+
+    logger.debug("Values: %r", types)
+    if len(errors) > 0:
+        logger.error("** There were some errors loading application modules.**")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.error("** Unable to load types from %s", ", ".join(errors))
+    logger.debug("Types: %r", [_.__name__ for _ in types.values()])
+    sorted_types = {_: types[_] for _ in nx.dfs_preorder_nodes(g, source='r') if _ != 'r'}
+    logger.debug("Sorted types: %r", [_ for _ in sorted_types])
+    return sorted_types
 
 
 class ROCrateLinkContext(object):

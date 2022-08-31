@@ -98,6 +98,8 @@ Define environment variables shared by some pods.
   value: "{{ .Values.redis.auth.password }}"
 - name: WORKER_PROCESSES
   value: "{{ .Values.worker.processes }}"
+- name: WORKER_THREADS
+  value: "{{ .Values.worker.threads }}"
 - name: LIFEMONITOR_TLS_KEY
   value: "/lm/certs/tls.key"
 - name: LIFEMONITOR_TLS_CERT
@@ -119,9 +121,11 @@ Define volumes shared by some pods.
     claimName: data-{{- .Release.Name -}}-workflows
 {{- if .Values.integrations -}}
 {{- range $k, $v := .Values.integrations }}
+{{- if $v.private_key }}
 - name: lifemonitor-{{ $k }}-key
   secret:
     secretName: {{ $v.private_key.secret }}
+{{- end -}}
 {{- end -}}
 {{- end -}}
 {{- end -}}
@@ -140,8 +144,10 @@ Define mount points shared by some pods.
   mountPath: "/var/data/lm"
 {{- if .Values.integrations -}}
 {{- range $k, $v := .Values.integrations }}
+{{- if $v.private_key }}
 - name: lifemonitor-{{ $k }}-key
   mountPath: "/lm/integrations/{{ $k | lower }}"
+{{- end -}}
 {{- end -}}
 {{- end -}}
 {{- end -}}

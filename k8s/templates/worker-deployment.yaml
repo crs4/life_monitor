@@ -1,57 +1,71 @@
+{{- range $i, $queue := .Values.worker.queues }}
+
+--- 
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "chart.fullname" . }}-worker
+  name: {{ include "chart.fullname" $ }}-worker-{{ $queue.name }}
   labels:
-    {{- include "chart.labels" . | nindent 4 }}
+    {{- include "chart.labels" $ | nindent 4 }}
 spec:
-  {{- if not .Values.worker.autoscaling.enabled }}
-  replicas: {{ .Values.worker.replicaCount }}
+  {{- if not $.Values.worker.autoscaling.enabled }}
+  replicas: {{ $.Values.worker.replicaCount }}
   {{- end }}
   selector:
     matchLabels:
-      {{- include "chart.selectorLabels" . | nindent 6 }}
+      {{- include "chart.selectorLabels" $ | nindent 6 }}
   template:
     metadata:
       annotations:
-        checksum/settings: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
-      {{- with .Values.worker.podAnnotations }}
+        checksum/settings: {{ include (print $.Template.BasePath "/secret.yaml") $ | sha256sum }}
+      {{- with $.Values.worker.podAnnotations }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "chart.selectorLabels" . | nindent 8 }}
+        {{- include "chart.selectorLabels" $ | nindent 8 }}
     spec:
-      {{- with .Values.worker.imagePullSecrets }}
+      {{- with $.Values.worker.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "chart.serviceAccountName" . }}
+      serviceAccountName: {{ include "chart.serviceAccountName" $ }}
       securityContext:
-        {{- toYaml .Values.worker.podSecurityContext | nindent 8 }}
+        {{- toYaml $.Values.worker.podSecurityContext | nindent 8 }}
       initContainers:
         - name: init
           securityContext:
-            {{- toYaml .Values.lifemonitor.securityContext | nindent 12 }}
-          image: {{ include "chart.lifemonitor.image" . }}
-          imagePullPolicy: {{ .Values.lifemonitor.imagePullPolicy }}
+            {{- toYaml $.Values.lifemonitor.securityContext | nindent 12 }}
+          image: {{ include "chart.lifemonitor.image" $ }}
+          imagePullPolicy: {{ $.Values.lifemonitor.imagePullPolicy }}
           command: ["/bin/sh","-c"]
           args: ["wait-for-redis.sh && wait-for-postgres.sh && ./lm-admin db wait-for-db"]
           env:
-          {{- include "lifemonitor.common-env" . | nindent 12 }}
+          {{- include "lifemonitor.common-env" $ | nindent 12 }}
           volumeMounts:
-          {{- include "lifemonitor.common-volume-mounts" . | nindent 12 }}
+          {{- include "lifemonitor.common-volume-mounts" $ | nindent 12 }}
       containers:
         - name: worker
           securityContext:
-            {{- toYaml .Values.worker.securityContext | nindent 12 }}
-          image: {{ include "chart.lifemonitor.image" . }}
-          imagePullPolicy: {{ .Values.worker.imagePullPolicy }}
+            {{- toYaml $.Values.worker.securityContext | nindent 12 }}
+          {{- if $queue.image }}
+          image: {{ $queue.image }}
+          {{ else }}
+          image: {{ include "chart.lifemonitor.image" $ }}
+          {{- end }}
+          imagePullPolicy: {{ $.Values.worker.imagePullPolicy }}
           command: ["/bin/sh","-c"]
           args: ["/usr/local/bin/worker_entrypoint.sh"]
           env:
-          {{- include "lifemonitor.common-env" . | nindent 12 }}
+          {{- include "lifemonitor.common-env" $ | nindent 12 }}
+            - name: WORKER_QUEUES            
+              {{if eq $queue.name "all" }}
+              value:
+              {{ else }}
+              value: {{ $queue.name }}
+              {{ end }}
           volumeMounts:
-          {{- include "lifemonitor.common-volume-mounts" . | nindent 12 }}
+          {{- include "lifemonitor.common-volume-mounts" $ | nindent 12 }}
           # livenessProbe:
           #   httpGet:
           #     scheme: HTTPS
@@ -65,18 +79,19 @@ spec:
           #   initialDelaySeconds: 5
           #   periodSeconds: 3
           resources:
-            {{- toYaml .Values.worker.resources | nindent 12 }}
+            {{- toYaml $.Values.worker.resources | nindent 12 }}
       volumes:
-      {{- include "lifemonitor.common-volume" . | nindent 8 }}
-      {{- with .Values.worker.nodeSelector }}
+      {{- include "lifemonitor.common-volume" $ | nindent 8 }}
+      {{- with $.Values.worker.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.worker.affinity }}
+      {{- with $.Values.worker.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.worker.tolerations }}
+      {{- with $.Values.worker.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+{{- end }}

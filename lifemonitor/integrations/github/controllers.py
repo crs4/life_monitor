@@ -22,10 +22,9 @@ from __future__ import annotations
 
 import logging
 from tempfile import TemporaryDirectory
-from typing import Dict, List, Union
+from typing import Callable, Dict, List, Union
 
 from flask import Blueprint, Flask, current_app, request
-from flask_apscheduler import APScheduler
 from lifemonitor import cache
 from lifemonitor.api import serializers
 from lifemonitor.api.models import WorkflowRegistry
@@ -45,6 +44,7 @@ from lifemonitor.integrations.github.notifications import \
 from lifemonitor.integrations.github.settings import GithubUserSettings
 from lifemonitor.integrations.github.utils import delete_branch, match_ref
 from lifemonitor.integrations.github.wizards import GithubWizard
+from lifemonitor.tasks import Scheduler
 from lifemonitor.utils import bool_from_string, get_git_repo_revision
 
 from github.PullRequest import PullRequest
@@ -651,23 +651,14 @@ __event_handlers__ = {
 }
 
 
+def get_event_handler(event_type: str) -> Callable:
+    return __event_handlers__.get(event_type, None)
+
+
 # Integration Blueprint
 blueprint = Blueprint("github_integration", __name__,
                       template_folder='templates',
                       static_folder="static", static_url_path='/static')
-
-
-def event_handler_wrapper(app, handler, event):
-    logger.debug("Current app: %r", app)
-    logger.debug("Current handler: %r", handler)
-    logger.debug("Current event: %r", event)
-    # enable/disable registry integration according to settings
-
-    with app.app_context():
-        if bool_from_string(current_app.config['ENABLE_GITHUB_APP_INTEGRATION']):
-            return handler(event)
-        else:
-            logger.info("Github App integration disabled on settings")
 
 
 @blueprint.route("/integrations/github", methods=("POST",))
@@ -711,10 +702,10 @@ def handle_event():
     else:
         app = current_app
         logger.debug("Current app: %r", app)
-        scheduler: APScheduler = app.scheduler
+        scheduler: Scheduler = app.scheduler
         logger.debug("Current app scheduler: %r", scheduler)
-        scheduler.add_job(event.id, event_handler_wrapper, args=[scheduler.app, event_handler, event], replace_existing=True)
-        return "Event handler scheduled", 200
+        scheduler.run_job('githubEventHandler', event.to_json())
+        return "OK", 200
 
 
 def init_integration(app: Flask):

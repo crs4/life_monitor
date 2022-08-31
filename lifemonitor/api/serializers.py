@@ -418,7 +418,7 @@ class WorkflowStatusSchema(WorkflowVersionSchema):
 
     def get_reason(self, workflow_version):
         try:
-            if (len(self._errors) > 0):
+            if len(self._errors) > 0:
                 return ', '.join([str(i) for i in self._errors])
             return format_availability_issues(workflow_version.status)
         except Exception as e:
@@ -634,7 +634,7 @@ class SuiteStatusSchema(ResourceMetadataSchema):
             return []
 
     def get_reason(self, suite):
-        if (len(self._errors) > 0):
+        if len(self._errors) > 0:
             return ", ".join(self._errors)
         try:
             return format_availability_issues(suite.status)
