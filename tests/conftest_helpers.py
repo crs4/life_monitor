@@ -257,6 +257,7 @@ def get_user_session(application, provider, index=None):
 
 
 def user(_app_context, _provider_type, _user_index=1, _register_workflows=False):
+    session = None
     try:
         user, session, user_info = get_user_session(_app_context.app,
                                                     _provider_type, index=_user_index)
@@ -285,6 +286,9 @@ def user(_app_context, _provider_type, _user_index=1, _register_workflows=False)
         logger.exception(e)
         raise RuntimeError("Parametrized fixture. "
                            "You need to pass a provider type as request param")
+    finally:
+        if session:
+            session.close()
 
 
 def _fake_callback_uri():
