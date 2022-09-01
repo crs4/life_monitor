@@ -156,8 +156,8 @@ def refresh_workflow_build(event: GithubEvent):
                         i.get_test_build(last_build_id)
                         i.test_suite.workflow_version.status
                         logger.info("Version %s updated... last build: %s", i.test_suite.workflow_version.version, last_build_id)
-                else:
-                    logger.warning("Version %s not in refs %r", i.test_suite.workflow_version.version, refs)
+                    else:
+                        logger.warning("Version %s not in refs %r", i.test_suite.workflow_version.version, refs)
             return f"Test instance related with resource '{workflow_resource}' updated", 200
         else:
             return "No build attached to the current event", 204
