@@ -81,18 +81,18 @@ class RepositoryTemplateWizard(Wizard):
     labels = ['config']
     issue = NotInitialisedRepositoryIssue
 
-    workflow_type = QuestionStep("Which type of workflow are going to host on this repository?",
+    workflow_type = QuestionStep("Which type of workflow are we going to host on this repository?",
                                  description="",
                                  options=valid_workflow_types)
-    workflow_title = QuestionStep("Choose a name for your workflow?",
+    workflow_title = QuestionStep("Choose a name for your workflow",
                                   when=lambda _: _.workflow_type.answer in supported_workflows)
-    workflow_description = QuestionStep("Type a description for your workflow?")
+    workflow_description = QuestionStep("Type a description for your workflow")
 
     workflow_template = UpdateStep("Repository initialisation",
-                                   description="Merge this PR to initialiase your Workflow Testing RO-Crate repository",
+                                   description="Merge this PR to initialise your Workflow Testing RO-Crate repository",
                                    callback=get_files)
     wizard_stop = QuestionStep("Unsupported workflow type",
-                               description="Your chosen workflow type is no supported at the moment",
+                               description="Your chosen workflow type is not supported at the moment",
                                when=lambda _: _.workflow_type.answer not in supported_workflows)
 
     steps = [workflow_type, wizard_stop, workflow_title, workflow_description, workflow_template]
