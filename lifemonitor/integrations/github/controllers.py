@@ -148,8 +148,10 @@ def refresh_workflow_build(event: GithubEvent):
 
             with cache.cache.transaction():
                 for i in instances:
-                    logger.warning("Checking version %s in refs %r", i.test_suite.workflow_version.version, refs)
+                    logger.warning("Checking version %s in refs %r", i.test_suite.workflow_version, refs)
                     workflow_version = i.test_suite.workflow_version
+                    if not workflow_version:
+                        raise RuntimeError("No workflow version associated with test instance %r", i)
                     if workflow_version.version in refs or not workflow_version.has_revision():
                         logger.warning("Version %s in refs %r", i.test_suite.workflow_version.version, refs)
                         last_build_id = f"{github_workflow_run.id}_{github_workflow_run.raw_data['run_attempt']}"
