@@ -25,7 +25,7 @@ import re
 from typing import (Any, Callable, Dict, List, Optional, OrderedDict, Tuple,
                     Type)
 
-from lifemonitor.cache import Timeout, cache_function, cached
+from lifemonitor.cache import Timeout, cache_function
 from lifemonitor.integrations.github.config import (DEFAULT_BASE_URL,
                                                     DEFAULT_PER_PAGE,
                                                     DEFAULT_TIMEOUT)
