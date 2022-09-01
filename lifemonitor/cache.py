@@ -519,7 +519,7 @@ def _process_cache_data(cache, transaction, key, unless, timeout,
                 logger.debug("Cache empty: getting value from the actual function...")
                 result = function(*args, **kwargs)
                 logger.debug("Checking unless function: %r", unless)
-                if unless is None or unless is False or callable(unless) and not unless(*args[1:], result=result, **kwargs):
+                if unless is None or unless is False or callable(unless) and not unless(*args, _value_to_cache=result, **kwargs):
                     writer.set(key, result, timeout=timeout)
                 else:
                     logger.debug("Don't set value in cache due to unless=%r",
