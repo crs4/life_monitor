@@ -167,7 +167,7 @@ def create_pull_request_from_github_issue(repo: InstallationGithubWorkflowReposi
         pr = find_pull_request_by_title(repo, issue.id)
         if pr and update_comment:
             issue.create_comment(update_comment)
-        head = __prepare_pr_head__(repo, identifier, files, allow_update=allow_update, 
+        head = __prepare_pr_head__(repo, identifier, files, allow_update=allow_update,
                                    commit_message=f"Fix '{issue.title}'")
         logger.debug("HEAD: %r -> %r", head, repo)
         if not pr:
