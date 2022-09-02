@@ -39,18 +39,8 @@ def handle_event(event):
     logger.debug("Installation: %r", installation)
 
     repositories = installation.get_repos()
-    logger.debug("Repositories: %r", repositories)
-
-    repo_info = event.repository_reference
-    logger.debug("Repo reference: %r", repo_info)
-
-    repo = repo_info.repository
-    logger.debug("Repository: %r", repo)
-
-    logger.debug("Ref: %r", repo.ref)
-    logger.debug("Refs: %r", repo.git_refs_url)
-    logger.debug("Tree: %r", repo.trees_url)
-    logger.debug("Commit: %r", repo.rev)
+    for r in repositories:
+        logger.debug("Processing repo: %r", r)
 
     event_handler = get_event_handler(e.type)
     logger.debug("Event handler: %r", event_handler)
