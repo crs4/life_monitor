@@ -135,11 +135,13 @@ def check(config, repository, output_path=None):
 @issues_group.command(help="Test an issue type")
 @click.argument('issue_file', type=click.Path(exists=True))
 @click.option('-c', '--issue-class', type=str, multiple=True, default=None, )
+@click.option('-w', '--write', is_flag=True, help="Write proposed changes.")
 @repository_arg
 @output_path_arg
 @click.pass_obj
 @with_appcontext
-def test(config, issue_file, issue_class, repository, output_path=None):
+def test(config, issue_file, issue_class, write, repository, output_path=None):
+    proposed_files = []
     try:
         logger.debug("issue classes: %r", issue_class)
         init_output_path(output_path=output_path)
@@ -167,18 +169,27 @@ def test(config, issue_file, issue_class, repository, output_path=None):
             if issue_passed:
                 issues.append(issue)
         detected_issues = [_.name for _ in issues]
+
         for issue in issues_list:
             if issue.name not in detected_issues:
                 status = Text("Passed", style="green bold")
             else:
                 status = Text("Failed", style="red bold")
+            issue_files = [_.path for _ in issue.get_changes(repository)]
             table.add_row(issue.get_identifier(), issue.name, status,
-                          ", ".join([_.path for _ in issue.get_changes(repository)]),
+                          ", ".join(issue_files),
                           ", ".join(issue.labels))
+            proposed_files.extend(issue_files)
         console.print(table)
     except Exception as e:
         logger.exception(e)
         error_console.print(str(e))
+    finally:
+        logger.debug("Write: %r -> %r", write, proposed_files)
+        if not write and proposed_files:
+            for f in proposed_files:
+                logger.debug("Deleting %s", f)
+                os.remove(f)
 
 
 @issues_group.command(help="Generate a skeleton class for an issue type")
