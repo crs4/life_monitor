@@ -82,7 +82,8 @@ def find_pull_request_by_title(repo: Repository, title: str) -> PullRequest:
 
 
 def __prepare_pr_head__(repo: InstallationGithubWorkflowRepository,
-                        identifier: str, files: List[RepositoryFile], allow_update: bool = True):
+                        identifier: str, files: List[RepositoryFile],
+                        commit_message: str = None, allow_update: bool = True):
     assert isinstance(repo, Repository)
 
     try:
@@ -145,7 +146,7 @@ def __prepare_pr_head__(repo: InstallationGithubWorkflowRepository,
                 logger.warning("No parent tree found")
             tree = repo.create_git_tree(git_elements, base_tree=base_tree)
             parent = repo.get_git_commit(sha=branch.commit.sha)
-            commit = repo.create_git_commit("Initialise workflow repository", tree, [parent])
+            commit = repo.create_git_commit(commit_message or "Update workflow repository", tree, [parent])
             branch_ref.edit(sha=commit.sha)
         return head
     except KeyError as e:
@@ -166,7 +167,8 @@ def create_pull_request_from_github_issue(repo: InstallationGithubWorkflowReposi
         pr = find_pull_request_by_title(repo, issue.id)
         if pr and update_comment:
             issue.create_comment(update_comment)
-        head = __prepare_pr_head__(repo, identifier, files, allow_update=allow_update)
+        head = __prepare_pr_head__(repo, identifier, files, allow_update=allow_update, 
+                                   commit_message=f"Fix '{issue.title}'")
         logger.debug("HEAD: %r -> %r", head, repo)
         if not pr:
             if create_comment:
