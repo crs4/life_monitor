@@ -133,7 +133,9 @@ class GithubEvent():
 
     @property
     def installation(self) -> LifeMonitorInstallation:
-        return self.application.get_installation(self.installation_id)
+        installation = self.application.get_installation(self.installation_id)
+        logger.debug("Loaded installation: %r", installation)
+        return installation
 
     @property
     def repository_reference(self) -> GithubRepositoryReference:
@@ -152,9 +154,13 @@ class GithubEvent():
         else:
             for repo_info in repos:
                 try:
-                    repo: GithubWorkflowRepository = self.installation.get_repo(repo_info['full_name'])
-                    logger.debug("Got repo: %r", repo)
-                    result.append(GithubRepositoryReference(self, repo))
+                    installation = self.installation
+                    if installation:
+                        repo: GithubWorkflowRepository = self.installation.get_repo(repo_info['full_name'])
+                        logger.debug("Got repo: %r", repo)
+                        result.append(GithubRepositoryReference(self, repo))
+                    else:
+                        logger.warning("Unable to load installation %r", self.installation_id)
                 except Exception as e:
                     logger.warning("Unable to load data of repo: %r", repo)
                     if logger.isEnabledFor(logging.DEBUG):
@@ -170,9 +176,13 @@ class GithubEvent():
         else:
             for repo_info in repos:
                 try:
-                    repo: GithubWorkflowRepository = self.installation.get_repo(repo_info['full_name'])
-                    logger.debug("Got repo: %r", repo)
-                    result.append(GithubRepositoryReference(self, repo))
+                    installation = self.installation
+                    if installation:
+                        repo: GithubWorkflowRepository = self.installation.get_repo(repo_info['full_name'])
+                        logger.debug("Got repo: %r", repo)
+                        result.append(GithubRepositoryReference(self, repo))
+                    else:
+                        logger.warning("Unable to load installation %r", self.installation_id)
                 except Exception as e:
                     logger.warning("Unable to load data of repo: %r", repo_info)
                     if logger.isEnabledFor(logging.DEBUG):
