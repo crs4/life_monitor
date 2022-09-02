@@ -21,10 +21,11 @@ class Scheduler(APScheduler):
     def __init__(self, scheduler=None, app=None):
         super().__init__(scheduler, app)
         self._not_scheduled_jobs: Dict[str, dramatiq.Actor] = {}
-        self.add_listener(self._on_event)
+        if logger.isEnabledFor(logging.DEBUG):
+            self.add_listener(self._on_event)
 
     def _on_event(self, event: events.JobEvent):
-        logger.error("Event: %r", event)
+        logger.debug("Event: %r", event)
         logger.debug("List of current jobs: %r", self.get_jobs())
         logger.debug("List of deferred jobs: %r", self._not_scheduled_jobs)
         if event.code in [events.EVENT_JOB_EXECUTED, events.EVENT_JOB_ERROR]:

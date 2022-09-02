@@ -226,7 +226,7 @@ class GithubEvent():
         return cls(data.get('headers', {}), data.get('data', {}))
 
     def to_dict(self) -> Dict:
-        logger.error("Headers: %r", self._headers)
+        logger.debug("Headers: %r", self._headers)
         return {
             'headers': {k: v for k, v in self._headers.items()},
             'data': self._raw_data
@@ -238,7 +238,7 @@ class GithubEvent():
         return cls(raw_data.get('headers', {}), raw_data.get('data', {}))
 
     def to_json(self) -> str:
-        logger.error("Headers: %r", self._headers)
+        logger.debug("Headers: %r", self._headers)
         return json.dumps(self.to_dict())
 
 

@@ -16,6 +16,7 @@ logger.info("Importing task definitions")
 @schedule(name="ping", queue_name="github")
 def ping(name: str = "Unknown"):
     logger.info(f"Pong, {name}")
+    return "pong"
 
 
 @schedule(name='githubEventHandler', queue_name="github", options={'max_retries': 0, 'max_age': TASK_EXPIRATION_TIME})
