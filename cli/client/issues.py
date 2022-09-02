@@ -25,6 +25,7 @@ import sys
 
 import click
 from cli.client.utils import get_repository, init_output_path
+from flask.cli import with_appcontext
 from lifemonitor.api.models.issues import (WorkflowRepositoryIssue,
                                            find_issue_types, load_issue)
 from lifemonitor.utils import to_snake_case
@@ -127,6 +128,7 @@ def check(config, repository, output_path=None):
         console.print(table)
 
     except Exception as e:
+        logger.exception(e)
         error_console.print(str(e))
 
 
@@ -136,6 +138,7 @@ def check(config, repository, output_path=None):
 @repository_arg
 @output_path_arg
 @click.pass_obj
+@with_appcontext
 def test(config, issue_file, issue_class, repository, output_path=None):
     try:
         logger.debug("issue classes: %r", issue_class)
