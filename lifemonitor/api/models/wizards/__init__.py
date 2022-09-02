@@ -96,7 +96,7 @@ class Wizard():
         return self._steps
 
     def get_step_index(self, step) -> int:
-        logger.error("Current list of steps: %r", self._steps)
+        logger.debug("Current list of steps: %r", self._steps)
         try:
             return self._steps.index(step)
         except Exception as e:

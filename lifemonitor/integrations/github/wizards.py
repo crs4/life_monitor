@@ -60,7 +60,7 @@ class GithubWizard(Wizard):
         # try to find the step for this event
         comments = [c for c in issue.get_comments() if c.user.login == event.application.bot]
         for cm in reversed(comments):
-            logger.error("Comment user: %r %r", cm.user, event.application.bot)
+            logger.debug("Comment user: %r %r", cm.user, event.application.bot)
             logger.debug("Comment %r: %r", cm, cm.body)
             step = wizard.find_step(cm.body)
             if step:
