@@ -85,7 +85,7 @@ def test_fetch_token_on_token_expired(check_token, user_identity):
     time.sleep(1)
     fetched_token = user_identity.fetch_token()
     logger.debug("Fetched token: %r", fetched_token)
-    check_token.assert_called_once()
+    assert check_token.call_count == 3, "Unexpected number of call for method 'to_be_refreshed'"
     assert fetched_token != current_token, "DB and fetched tokens should not be equal"
     assert fetched_token['created_at'] > current_token['created_at'], \
         "Refreshed token should be more recent"
