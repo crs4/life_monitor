@@ -68,7 +68,7 @@ def test_fetch_token_call_on_as_http_header(fetch_token_method, user_identity):
 
 
 @patch("lifemonitor.auth.oauth2.client.models.OAuth2Token.to_be_refreshed")
-def test_fetch_token_on_token_not_expired(check_token, user_identity):
+def test_fetch_token_on_token_not_expired(app_context, check_token, user_identity):
     logger.debug(user_identity)
     current_token = user_identity.token
     logger.debug("Current token: %r", current_token)
