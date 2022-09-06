@@ -34,6 +34,7 @@ from authlib.oauth2.rfc6749 import OAuth2Token as OAuth2TokenBase
 from flask import current_app
 from flask_login import current_user
 from lifemonitor.auth import models
+from lifemonitor.cache import Timeout
 from lifemonitor.db import db
 from lifemonitor.exceptions import (EntityNotFoundException,
                                     LifeMonitorException,
@@ -169,6 +170,7 @@ class OAuthIdentity(models.ExternalServiceAccessAuthorization, ModelMixin):
             if registry_token and registry_token['scope'] == token['scope'] and registry_token['access_token'] == self._token['access_token']:
                 self.user.registry_settings.set_token(self.provider.client_name, token)
         self._token = token
+        logger.debug("Token updated: %r", token)
 
     def fetch_token(self):
         # enable dynamic refresh only if the identity
@@ -190,7 +192,7 @@ class OAuthIdentity(models.ExternalServiceAccessAuthorization, ModelMixin):
     def refresh_token(self):
         logger.debug("Refresh the token requested...")
         if self.token.to_be_refreshed():
-            with self.cache.lock(str(self), timeout=0):
+            with self.cache.lock(str(self), timeout=Timeout.NONE):
                 if self.token.to_be_refreshed():
                     self.token = self.provider.refresh_token(self.token)
                     self.save()
