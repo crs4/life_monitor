@@ -203,8 +203,12 @@ def installation_repositories(event: GithubEvent):
                         __check_for_issues_and_register__(repo_info, settings,
                                                           event.sender.user.registry_settings, True)
 
-        elif event.action == 'removed':
-            logger.debug("App uninstalled from repositories: %r", event.repositories_removed)
+        elif event.action == 'deleted':
+            installation = event.installation
+            logger.debug("App Installation: %r", installation)
+
+            repositories = event.repositories_removed
+            logger.debug("App installed on Repositories: %r", repositories)
 
     except Exception as e:
         logger.error(str(e))
@@ -654,7 +658,9 @@ __event_handlers__ = {
 
 
 def get_event_handler(event_type: str) -> Callable:
-    return __event_handlers__.get(event_type, None)
+    handler = __event_handlers__.get(event_type, None)
+    logger.debug("Dispatching event %r to handler %r", event_type, handler)
+    return handler
 
 
 # Integration Blueprint

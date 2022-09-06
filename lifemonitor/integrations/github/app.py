@@ -177,7 +177,7 @@ class LifeMonitorGithubApp(GithubApp):
         return self.__installations__.map
 
     def _load_installations(self):
-        logger.warning("Loading installations...")
+        logger.debug("Loading installations...")
         self.__installations__.map = {}
         app_client = self.app_client_session()
         try:
@@ -187,7 +187,7 @@ class LifeMonitorGithubApp(GithubApp):
                     if i['id'] not in self.__installations__.map:
                         self.__installations__.map[i['id']] = LifeMonitorInstallation(self, i, requester=self._requester)
             self.__installations__.loaded = True
-            logger.warning("Loading installations... DONE")
+            logger.debug("Loading installations... DONE")
         finally:
             app_client.close()
 

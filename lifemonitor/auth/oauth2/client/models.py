@@ -34,18 +34,17 @@ from authlib.oauth2.rfc6749 import OAuth2Token as OAuth2TokenBase
 from flask import current_app
 from flask_login import current_user
 from lifemonitor.auth import models
+from lifemonitor.cache import Timeout
 from lifemonitor.db import db
 from lifemonitor.exceptions import (EntityNotFoundException,
                                     LifeMonitorException,
                                     NotAuthorizedException)
 from lifemonitor.models import JSON, ModelMixin
-from sqlalchemy import DateTime
-from sqlalchemy import inspect
+from lifemonitor.utils import to_snake_case
+from sqlalchemy import DateTime, inspect
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy.orm.exc import NoResultFound
-
-from lifemonitor.utils import to_snake_case
 
 logger = logging.getLogger(__name__)
 
@@ -171,6 +170,7 @@ class OAuthIdentity(models.ExternalServiceAccessAuthorization, ModelMixin):
             if registry_token and registry_token['scope'] == token['scope'] and registry_token['access_token'] == self._token['access_token']:
                 self.user.registry_settings.set_token(self.provider.client_name, token)
         self._token = token
+        logger.debug("Token updated: %r", token)
 
     def fetch_token(self):
         # enable dynamic refresh only if the identity
@@ -190,10 +190,17 @@ class OAuthIdentity(models.ExternalServiceAccessAuthorization, ModelMixin):
         return self.token
 
     def refresh_token(self):
-        logger.debug("Trying to refresh the token...")
-        self.token = self.provider.refresh_token(self.token)
-        self.save()
-        logger.debug("User token updated")
+        logger.debug("Refresh token requested...")
+        if self.token.to_be_refreshed():
+            with self.cache.lock(str(self), timeout=Timeout.NONE):
+                if self.token.to_be_refreshed():
+                    self.token = self.provider.refresh_token(self.token)
+                    self.save()
+                    logger.debug("User token refreshed")
+                else:
+                    logger.debug("Refresh token not required: token updated in the meanwhile")
+        else:
+            logger.debug("Refresh User token not required")
         logger.debug("Using token %r", self.token)
 
     @property

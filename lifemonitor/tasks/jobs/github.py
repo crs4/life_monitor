@@ -33,28 +33,25 @@ def handle_event(event):
 
     event = e
     logger.debug("Push event: %r", event)
-    logger.debug("Event ref: %r", event.repository_reference.branch or event.repository_reference.tag)
+    try:
+        logger.debug("Event ref: %r", event.repository_reference.branch or event.repository_reference.tag)
+        installation = event.installation
+        logger.debug("Installation: %r", installation)
+        repositories = installation.get_repos()
+        for r in repositories:
+            logger.debug("Processing repo: %r", r)
+    except Exception as e:
+        logger.debug(e)
 
-    installation = event.installation
-    logger.debug("Installation: %r", installation)
-
-    repositories = installation.get_repos()
-    logger.debug("Repositories: %r", repositories)
-
-    repo_info = event.repository_reference
-    logger.debug("Repo reference: %r", repo_info)
-
-    repo = repo_info.repository
-    logger.debug("Repository: %r", repo)
-
-    logger.debug("Ref: %r", repo.ref)
-    logger.debug("Refs: %r", repo.git_refs_url)
-    logger.debug("Tree: %r", repo.trees_url)
-    logger.debug("Commit: %r", repo.rev)
-
-    event_handler = get_event_handler(e.type)
+    # Dispatch event to the proper handler
+    event_handler = get_event_handler(event.type)
     logger.debug("Event handler: %r", event_handler)
     if event_handler:
-        return event_handler(e)
+        try:
+            return event_handler(event)
+        except Exception as e:
+            logger.error(e)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.exception(e)
 
-    logger.warning("No handler for GitHub event: %r", e.type)
+    logger.warning("No handler for GitHub event: %r", event.type)

@@ -151,25 +151,3 @@ Define mount points shared by some pods.
 {{- end -}}
 {{- end -}}
 {{- end -}}
-
-
-{{/*
-Define command to mirror (cluster) local backup to a remote site via SFTP
-*/}}
-{{- define "backup.remote.command" -}}
-{{- if and .Values.backup.remote .Values.backup.remote.enabled }}
-{{- if eq (.Values.backup.remote.protocol | lower) "sftp" }}
-{{- printf "lftp -c \"open -u %s,%s sftp://%s; mirror -e -R /var/data/backup %s \"" 
-    .Values.backup.remote.user .Values.backup.remote.password 
-    .Values.backup.remote.host .Values.backup.remote.path
-}}
-{{- else if eq (.Values.backup.remote.protocol | lower) "ftps" }}
-{{- printf "lftp -c \"%s %s open -u %s,%s ftp://%s; mirror -e -R /var/data/backup %s \"" 
-    "set ftp:ssl-auth TLS; set ftp:ssl-force true;"
-    "set ftp:ssl-protect-list yes; set ftp:ssl-protect-data yes;"
-    .Values.backup.remote.user .Values.backup.remote.password 
-    .Values.backup.remote.host .Values.backup.remote.path
-}}
-{{- end }}
-{{- end }}
-{{- end }}

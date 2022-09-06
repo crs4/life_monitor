@@ -181,7 +181,7 @@ class GithubApiWrapper(github.Github):
         pool_size=None,
     ):
         super().__init__(login_or_token, password, jwt, base_url, timeout,
-                         user_agent, per_page, verify, retry, pool_size)
+                         user_agent, per_page, verify, retry, pool_size)  # type: ignore
         self.__requester = CachedGithubRequester(
             login_or_token,
             password,
@@ -193,7 +193,7 @@ class GithubApiWrapper(github.Github):
             verify,
             retry,
             pool_size,
-        )
+        )  # type: ignore
 
 
 def __cache_request_value__(requester, verb: str, url: str, *args,
