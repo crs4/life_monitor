@@ -190,13 +190,13 @@ class OAuthIdentity(models.ExternalServiceAccessAuthorization, ModelMixin):
         return self.token
 
     def refresh_token(self):
-        logger.debug("Refresh the token requested...")
+        logger.debug("Refresh token requested...")
         if self.token.to_be_refreshed():
             with self.cache.lock(str(self), timeout=Timeout.NONE):
                 if self.token.to_be_refreshed():
                     self.token = self.provider.refresh_token(self.token)
                     self.save()
-                    logger.debug("User token updated")
+                    logger.debug("User token refreshed")
                 else:
                     logger.debug("Refresh token not required: token updated in the meanwhile")
         else:

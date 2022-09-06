@@ -68,7 +68,7 @@ def test_fetch_token_call_on_as_http_header(fetch_token_method, user_identity):
 
 
 @patch("lifemonitor.auth.oauth2.client.models.OAuth2Token.to_be_refreshed")
-def test_fetch_token_on_token_not_expired(app_context, check_token, user_identity):
+def test_fetch_token_on_token_not_expired(check_token, app_context, user_identity):
     logger.debug(user_identity)
     current_token = user_identity.token
     logger.debug("Current token: %r", current_token)
@@ -80,7 +80,7 @@ def test_fetch_token_on_token_not_expired(app_context, check_token, user_identit
 
 
 @patch("lifemonitor.auth.oauth2.client.models.OAuth2Token.to_be_refreshed")
-def test_fetch_token_on_token_expired(check_token, user_identity):
+def test_fetch_token_on_token_expired(check_token, redis_cache, user_identity):
     logger.debug(user_identity)
     current_token = user_identity.token
     logger.debug("Current token: %r", current_token)
@@ -161,5 +161,5 @@ def test_fetch_token_multi_threaded(app_context, redis_cache, user_identity: OAu
     logger.debug("Updated token: %r", updated_token)
     # check that every thread updates the token
     for t in range(number_of_threads - 1):
-        logger.debug(f"Tokens updated by thread '{t}' and '{t+1}' should be different", results[t]['result'][0], results[t + 1]['result'][0])
+        logger.debug(f"Tokens updated by thread '{t}' ({results[t]['result'][0]}) and '{t+1} ({results[t + 1]['result'][0]})' should be different")
         assert results[t]['result'][0] != results[t + 1]['result'][0], f"Tokens updated by thread '{t}' and '{t+1}' should be different"
