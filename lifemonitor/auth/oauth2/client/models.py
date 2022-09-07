@@ -43,6 +43,7 @@ from lifemonitor.models import JSON, ModelMixin
 from lifemonitor.utils import to_snake_case
 from sqlalchemy import DateTime, inspect
 from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy.orm.exc import NoResultFound
 
@@ -161,6 +162,7 @@ class OAuthIdentity(models.ExternalServiceAccessAuthorization, ModelMixin):
 
     @property
     def token(self) -> OAuth2Token:
+        # wrap token data in a token model
         return OAuth2Token(self._token)
 
     @token.setter
@@ -170,14 +172,15 @@ class OAuthIdentity(models.ExternalServiceAccessAuthorization, ModelMixin):
             if registry_token and registry_token['scope'] == token['scope'] and registry_token['access_token'] == self._token['access_token']:
                 self.user.registry_settings.set_token(self.provider.client_name, token)
         self._token = token
+        flag_modified(self, '_token')
         logger.debug("Token updated: %r", token)
 
     def fetch_token(self):
         # enable dynamic refresh only if the identity
         # has been already stored in the database
         if inspect(self).persistent:
-            # fetch up to date identity data
-            self.refresh()
+            # fetch current token from database
+            self.refresh(attribute_names=['_token'])
             # reference to the token associated with the identity instance
             token = self.token
             # the token should be refreshed
@@ -193,6 +196,8 @@ class OAuthIdentity(models.ExternalServiceAccessAuthorization, ModelMixin):
         logger.debug("Refresh token requested...")
         if self.token.to_be_refreshed():
             with self.cache.lock(str(self), timeout=Timeout.NONE):
+                # fetch current token from database
+                self.refresh(attribute_names=['_token'])
                 if self.token.to_be_refreshed():
                     self.token = self.provider.refresh_token(self.token)
                     self.save()
@@ -201,7 +206,7 @@ class OAuthIdentity(models.ExternalServiceAccessAuthorization, ModelMixin):
                     logger.debug("Refresh token not required: token updated in the meanwhile")
         else:
             logger.debug("Refresh User token not required")
-        logger.debug("Using token %r", self.token)
+        logger.debug("Using token %r", self._token)
 
     @property
     def user_info(self):
