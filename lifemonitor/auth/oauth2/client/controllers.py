@@ -177,6 +177,15 @@ class AuthorizatonHandler:
                 if identity.user:
                     identity.save()
                     login_user(identity.user)
+                    # update the registry token if registry integration has been enabled by the user
+                    if identity.user and identity.user.registry_settings:
+                        r_token = identity.user.registry_settings.get_token(provider.name)
+                        logger.error("User registry token: %r", r_token)
+                        if r_token and r_token['scope'] != token['scope']:
+                            logger.debug("Trying to update the registry token...")
+                            return redirect(f'/oauth2/login/{provider.name}?scope=read+write')
+                        else:
+                            logger.debug("We don't need to update the registry token...")
                 else:
                     # If the user is not logged in and the token is unlinked,
                     # create a new local user account and log that account in.
@@ -217,6 +226,9 @@ class AuthorizatonHandler:
                 identity.user = current_user
                 identity.save()
                 flash(f"Your account has successfully been linked to your <b>{identity.provider.name}</b> identity.")
+
+            # flush db session
+            db.session.flush()
 
             # Determine the right next hop
             next_url = NextRouteRegistry.pop()

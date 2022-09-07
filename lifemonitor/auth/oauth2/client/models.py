@@ -162,14 +162,14 @@ class OAuthIdentity(models.ExternalServiceAccessAuthorization, ModelMixin):
 
     @property
     def token(self) -> OAuth2Token:
-        # wrap token data in a token model
+        # wrap token data into a model object
         return OAuth2Token(self._token)
 
     @token.setter
     def token(self, token: dict):
         if self.user:
             registry_token = self.user.registry_settings.get_token(self.provider.client_name)
-            if registry_token and registry_token['scope'] == token['scope'] and registry_token['access_token'] == self._token['access_token']:
+            if registry_token and registry_token['scope'] == token['scope']:
                 self.user.registry_settings.set_token(self.provider.client_name, token)
         self._token = token
         flag_modified(self, '_token')

@@ -126,7 +126,7 @@ def update_user_profile_token(app, user_identity: OAuthIdentity, results: List, 
 
 
 def test_fetch_token_multi_threaded(app_context, redis_cache, user_identity: OAuthIdentity):
-    # update token as expired
+    # make the token expired
     logger.debug(user_identity)
     token = user_identity._token
     token['expires_at'] = time.time()
