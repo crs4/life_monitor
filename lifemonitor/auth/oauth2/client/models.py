@@ -180,7 +180,7 @@ class OAuthIdentity(models.ExternalServiceAccessAuthorization, ModelMixin):
 
     @property
     def tokens(self) -> Dict[str, Dict]:
-        return {k: OAuth2Token(v, provider=self.provider) for k, v in self._tokens.items()}
+        return {k: OAuth2Token(v, provider=self.provider) for k, v in self._tokens.items() if k != '__default__'}
 
     def set_token(self, token: Dict, scope: Optional[str] = None):
         if not self._tokens:
@@ -196,8 +196,12 @@ class OAuthIdentity(models.ExternalServiceAccessAuthorization, ModelMixin):
     def get_token(self, scope: Optional[str] = None):
         if not self._tokens or (scope and scope not in self._tokens):
             return None
-        token = self._tokens[scope] if (scope and scope in self._tokens) \
-            else self._tokens[next(iter(self._tokens))]
+        if scope and scope in self._tokens:
+            token = self._tokens[scope]
+        elif '__default__' in self._tokens:
+            token = self._tokens[self._tokens['__default__']]
+        else:
+            token = self._tokens[next(iter(self._tokens))]
         # wrap token data into a model object
         return OAuth2Token(token, provider=self.provider)
 
