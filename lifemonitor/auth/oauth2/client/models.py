@@ -58,12 +58,13 @@ class OAuthIdentityNotFoundException(EntityNotFoundException):
 
 class OAuth2Token(OAuth2TokenBase):
 
-    def __init__(self, params):
+    def __init__(self, params, provider: Optional[OAuth2IdentityProvider] = None):
         if params.get('expires_at'):
             params['expires_at'] = int(params['expires_at'])
         elif params.get('expires_in') and params.get('created_at'):
             params['expires_at'] = int(params['created_at']) + \
                 int(params['expires_in'])
+        self.provider = provider
         super().__init__(params)
 
     def is_expired(self):
@@ -90,6 +91,15 @@ class OAuth2Token(OAuth2TokenBase):
 
     def can_be_refreshed(self) -> bool:
         return self.get('refresh_token', None) is not None
+
+    def refresh(self):
+        if not self.provider:
+            raise RuntimeError("Unknown token provider")
+        token = self.provider.refresh_token(self)
+        logger.debug("Refreshed TOKEN: %r", token)
+        assert token, "Token not refreshed"
+        for k, v in token.items():
+            self[k] = v
 
 
 class OAuthUserProfile:
