@@ -194,7 +194,7 @@ class OAuthIdentity(models.ExternalServiceAccessAuthorization, ModelMixin):
         logger.debug("Token updated: %r", token)
 
     def get_token(self, scope: Optional[str] = None):
-        if not self._tokens or (scope and not scope in self._tokens):
+        if not self._tokens or (scope and scope not in self._tokens):
             return None
         token = self._tokens[scope] if (scope and scope in self._tokens) \
             else self._tokens[next(iter(self._tokens))]
