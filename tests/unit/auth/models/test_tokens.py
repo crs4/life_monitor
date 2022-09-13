@@ -99,7 +99,7 @@ def test_fetch_token_on_token_expired(check_token, redis_cache, user_identity):
 def test_fetch_token_on_not_refreshable_token_expired(token_property, user_identity):
     logger.debug(user_identity)
     # remove the refresh token from the current token
-    token = user_identity._token
+    token = user_identity.get_token()
     token['expires_at'] = token['created_at']
     del token['refresh_token']
     token = OAuth2Token(token)
@@ -120,7 +120,7 @@ def update_user_profile_token(app, user_identity: OAuthIdentity, results: List, 
         # try to refresh the token
         user_identity.refresh_token()
         logger.info("Thread data before: %r", results)
-        results[index]['result'].append(user_identity._token)
+        results[index]['result'].append(user_identity._tokens)
         logger.info("Thread data after: %r", results)
         logger.info("Thread %r finished", index)
 
@@ -128,7 +128,7 @@ def update_user_profile_token(app, user_identity: OAuthIdentity, results: List, 
 def test_fetch_token_multi_threaded(app_context, redis_cache, user_identity: OAuthIdentity):
     # make the token expired
     logger.debug(user_identity)
-    token = user_identity._token
+    token = user_identity.get_token()
     token['expires_at'] = time.time()
     user_identity.token = token
     user_identity.save()
@@ -156,7 +156,7 @@ def test_fetch_token_multi_threaded(app_context, redis_cache, user_identity: OAu
     time.sleep(2)
     # reload user identity
     db.session.refresh(user_identity)
-    updated_token = user_identity._token
+    updated_token = user_identity._tokens
     assert updated_token != token, "The token should be refreshed"
     logger.debug("Intial token: %r", token)
     logger.debug("Updated token: %r", updated_token)
