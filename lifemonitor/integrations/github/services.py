@@ -196,7 +196,7 @@ def register_repository_workflow(repository_reference: GithubRepositoryReference
 
 def delete_repository_workflow_version(repository_reference: GithubRepositoryReference,
                                        registries: List[str] = None) -> Dict:
-    logger.error("Deleting Repository ref: %r", repository_reference)
+    logger.debug("Deleting Repository ref: %r", repository_reference)
     # set a reference to LifeMonitorService
     lm = LifeMonitor.get_instance()
     # set a reference to the github repo
