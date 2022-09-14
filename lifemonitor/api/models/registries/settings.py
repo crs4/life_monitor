@@ -21,7 +21,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from lifemonitor.auth import User
 from lifemonitor.auth.oauth2.client.models import OAuth2Token
@@ -35,7 +35,7 @@ class RegistrySettings():
 
     def __init__(self, user: User) -> None:
         self.user = user
-        self._raw_settings = self.user.settings.get('registry_settings', None)
+        self._raw_settings: Dict[str, Dict] = self.user.settings.get('registry_settings', None)
         if not self._raw_settings:
             self._raw_settings = {}
             self.user.settings['registry_settings'] = self._raw_settings
@@ -44,19 +44,30 @@ class RegistrySettings():
         logger.debug("Current user: %r (token: %r)", self.user, getattr(self.user, "settings", None))
         flag_modified(self.user, 'settings')
 
-    def get_token(self, registry: str) -> OAuth2Token:
-        token = self._raw_settings[registry].get('token', None) if registry in self._raw_settings else None
-        return OAuth2Token(token) if token else None
+    def get_token(self, registry: str) -> Optional[OAuth2Token]:
+        try:
+            token_scope = self._raw_settings[registry]['token_scope']
+            logger.debug(f"Token scope for registry '{registry}': {token_scope}")
+            user_identity = self.user.oauth_identity[registry]
+            logger.debug(f"User identity related to registry '{registry}': {user_identity}")
+            return OAuth2Token(user_identity.get_token(token_scope))
+        except KeyError as e:
+            logger.debug(e)
+            return None
 
     def set_token(self, registry: str, token: Dict):
         if registry not in self._raw_settings:
             raise ValueError(f"Registry {registry} not found")
-        self._raw_settings[registry]['token'] = token
-        self.__update_settings__()
+        self._raw_settings[registry]['token_scope'] = token['scope']
+        try:
+            self.user.oauth_identity[registry].set_token(token, scope=token['scope'])
+            self.__update_settings__()
+        except KeyError:
+            raise ValueError("No user identity associated with the registry %s" % registry)
 
     @property
     def registries(self) -> List[str]:
-        return self._raw_settings.keys()
+        return self._raw_settings.keys()  # type: ignore
 
     @registries.setter
     def registries(self, registries: List[str]) -> List[str]:

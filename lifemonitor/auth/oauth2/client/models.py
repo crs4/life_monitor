@@ -24,7 +24,7 @@ import logging
 import time
 from datetime import datetime
 from importlib import import_module
-from typing import List
+from typing import Dict, List, Optional
 from urllib.parse import urljoin
 
 import requests
@@ -43,6 +43,7 @@ from lifemonitor.models import JSON, ModelMixin
 from lifemonitor.utils import to_snake_case
 from sqlalchemy import DateTime, inspect
 from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy.orm.exc import NoResultFound
 
@@ -57,12 +58,13 @@ class OAuthIdentityNotFoundException(EntityNotFoundException):
 
 class OAuth2Token(OAuth2TokenBase):
 
-    def __init__(self, params):
+    def __init__(self, params, provider: Optional[OAuth2IdentityProvider] = None):
         if params.get('expires_at'):
             params['expires_at'] = int(params['expires_at'])
         elif params.get('expires_in') and params.get('created_at'):
             params['expires_at'] = int(params['created_at']) + \
                 int(params['expires_in'])
+        self.provider = provider
         super().__init__(params)
 
     def is_expired(self):
@@ -89,6 +91,15 @@ class OAuth2Token(OAuth2TokenBase):
 
     def can_be_refreshed(self) -> bool:
         return self.get('refresh_token', None) is not None
+
+    def refresh(self):
+        if not self.provider:
+            raise RuntimeError("Unknown token provider")
+        token = self.provider.refresh_token(self)
+        logger.debug("Refreshed TOKEN: %r", token)
+        assert token, "Token not refreshed"
+        for k, v in token.items():
+            self[k] = v
 
 
 class OAuthUserProfile:
@@ -123,7 +134,7 @@ class OAuthIdentity(models.ExternalServiceAccessAuthorization, ModelMixin):
     provider_user_id = db.Column(db.String(256), nullable=False)
     provider_id = db.Column(db.Integer, db.ForeignKey("oauth2_identity_provider.id"), nullable=False)
     created_at = db.Column(DateTime, default=datetime.utcnow, nullable=False)
-    _token = db.Column("token", JSON, nullable=True)
+    _tokens = db.Column("tokens", JSON, nullable=True)
     _user_info = None
     provider: OAuth2IdentityProvider = db.relationship("OAuth2IdentityProvider", uselist=False, back_populates="identities")
     user: models.User = db.relationship(
@@ -160,48 +171,73 @@ class OAuthIdentity(models.ExternalServiceAccessAuthorization, ModelMixin):
         return f"{self.provider.name}_{self.provider_user_id}"
 
     @property
-    def token(self) -> OAuth2Token:
-        return OAuth2Token(self._token)
+    def token(self) -> Optional[OAuth2Token]:
+        return self.get_token()
 
     @token.setter
     def token(self, token: dict):
-        if self.user:
-            registry_token = self.user.registry_settings.get_token(self.provider.client_name)
-            if registry_token and registry_token['scope'] == token['scope'] and registry_token['access_token'] == self._token['access_token']:
-                self.user.registry_settings.set_token(self.provider.client_name, token)
-        self._token = token
+        self.set_token(token)
+
+    @property
+    def tokens(self) -> Dict[str, Dict]:
+        return {k: OAuth2Token(v, provider=self.provider) for k, v in self._tokens.items() if k != '__default__'}
+
+    def set_token(self, token: Dict, scope: Optional[str] = None):
+        if not self._tokens:
+            self._tokens = {}
+        if scope:
+            assert scope == token['scope'], "'scope' param doesn't match the token scope"
+        else:
+            scope = token['scope']
+        self._tokens[scope] = token
+        flag_modified(self, '_tokens')
         logger.debug("Token updated: %r", token)
 
-    def fetch_token(self):
+    def get_token(self, scope: Optional[str] = None):
+        if not self._tokens or (scope and scope not in self._tokens):
+            return None
+        if scope and scope in self._tokens:
+            token = self._tokens[scope]
+        elif '__default__' in self._tokens:
+            token = self._tokens[self._tokens['__default__']]
+        else:
+            token = self._tokens[next(iter(self._tokens))]
+        # wrap token data into a model object
+        return OAuth2Token(token, provider=self.provider)
+
+    def fetch_token(self, scope: Optional[str] = None):
         # enable dynamic refresh only if the identity
         # has been already stored in the database
         if inspect(self).persistent:
-            # fetch up to date identity data
-            self.refresh()
+            # fetch current token from database
+            self.refresh(attribute_names=['_tokens'])
             # reference to the token associated with the identity instance
-            token = self.token
+            token = self.get_token(scope=scope)
             # the token should be refreshed
             # if it is expired or close to expire (i.e., n secs before expiration)
             if token.to_be_refreshed():
                 if not token.can_be_refreshed():
                     logger.debug("The token should be refreshed but no refresh token is associated with the token")
                 else:
-                    self.refresh_token()
+                    self.refresh_token(token)
         return self.token
 
-    def refresh_token(self):
+    def refresh_token(self, token: OAuth2Token = None):
         logger.debug("Refresh token requested...")
-        if self.token.to_be_refreshed():
+        token = token or self.token
+        if token and token.to_be_refreshed():
             with self.cache.lock(str(self), timeout=Timeout.NONE):
-                if self.token.to_be_refreshed():
-                    self.token = self.provider.refresh_token(self.token)
+                # fetch current token from database
+                self.refresh(attribute_names=['_tokens'])
+                if token.to_be_refreshed():
+                    self.token = self.provider.refresh_token(token)
                     self.save()
                     logger.debug("User token refreshed")
                 else:
                     logger.debug("Refresh token not required: token updated in the meanwhile")
         else:
             logger.debug("Refresh User token not required")
-        logger.debug("Using token %r", self.token)
+        logger.debug("Using token %r", self._tokens)
 
     @property
     def user_info(self):

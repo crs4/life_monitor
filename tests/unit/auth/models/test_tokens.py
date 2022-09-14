@@ -21,6 +21,7 @@
 import logging
 import threading
 import time
+from random import randint
 from typing import List
 from unittest.mock import PropertyMock, patch
 
@@ -98,7 +99,7 @@ def test_fetch_token_on_token_expired(check_token, redis_cache, user_identity):
 def test_fetch_token_on_not_refreshable_token_expired(token_property, user_identity):
     logger.debug(user_identity)
     # remove the refresh token from the current token
-    token = user_identity._token
+    token = user_identity.get_token()
     token['expires_at'] = token['created_at']
     del token['refresh_token']
     token = OAuth2Token(token)
@@ -112,25 +113,25 @@ def test_fetch_token_on_not_refreshable_token_expired(token_property, user_ident
 
 def update_user_profile_token(app, user_identity: OAuthIdentity, results: List, index: int):
     with app.app_context():
+        # wait for a random number of seconds
+        time.sleep(randint(1, 5))
         # reload user identity
         user_identity = OAuthIdentity.find_by_provider_user_id(user_identity.provider_user_id, user_identity.provider.name)
-        # get token
-        token = user_identity._token
-        # Force token expiration
-        app.config['OAUTH2_REFRESH_TOKEN_BEFORE_EXPIRATION'] = 0
-        token['expires_at'] = time.time()
         # try to refresh the token
         user_identity.refresh_token()
         logger.info("Thread data before: %r", results)
-        results[index]['result'].append(user_identity._token)
+        results[index]['result'].append(user_identity._tokens)
         logger.info("Thread data after: %r", results)
-        logger.info("Thread %r finished", index, )
+        logger.info("Thread %r finished", index)
 
 
 def test_fetch_token_multi_threaded(app_context, redis_cache, user_identity: OAuthIdentity):
-    # set the
+    # make the token expired
     logger.debug(user_identity)
-    token = user_identity._token
+    token = user_identity.get_token()
+    token['expires_at'] = time.time()
+    user_identity.token = token
+    user_identity.save()
 
     # set up threads
     results = []
@@ -155,11 +156,18 @@ def test_fetch_token_multi_threaded(app_context, redis_cache, user_identity: OAu
     time.sleep(2)
     # reload user identity
     db.session.refresh(user_identity)
-    updated_token = user_identity._token
+    updated_token = user_identity._tokens
     assert updated_token != token, "The token should be refreshed"
     logger.debug("Intial token: %r", token)
     logger.debug("Updated token: %r", updated_token)
-    # check that every thread updates the token
-    for t in range(number_of_threads - 1):
-        logger.debug(f"Tokens updated by thread '{t}' ({results[t]['result'][0]}) and '{t+1} ({results[t + 1]['result'][0]})' should be different")
-        assert results[t]['result'][0] != results[t + 1]['result'][0], f"Tokens updated by thread '{t}' and '{t+1}' should be different"
+    # Check tokens read by threads
+    update_thread = None
+    for t in results:
+        # check which thread update the token
+        if not update_thread:
+            if t['result'][0] == updated_token:
+                update_thread = t['index']
+                logger.debug(f"Token updated by thread {update_thread}")
+        # Check thread token
+        logger.debug(f"Token on thread {t['index']} = {t['result'][0]}")
+        assert t['result'][0] == updated_token, f"Unexpected token for thread {t['index']}"
