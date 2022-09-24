@@ -148,6 +148,21 @@ class RemoteStorage():
                         raise RuntimeError(e)
 
     @check_config
+    def upload_folder(self, local_path: str, remote_path: Optional[str] = None, skip_existing: bool = False):
+        for root, _, files in os.walk(local_path):
+            for f in files:
+                local_file_path = os.path.join(root, f)
+                remote_file_path = local_file_path.replace(local_path.strip('/'), remote_path.strip('/') if remote_path else '')
+                with cache.lock(remote_file_path, timeout=Timeout.NONE):
+                    if not skip_existing or not self.exists(remote_file_path):
+                        try:
+                            self._get_bucket().upload_file(local_file_path, remote_file_path)
+                        except Exception as e:
+                            if logger.isEnabledFor(logging.DEBUG):
+                                logger.exception(e)
+                            raise RuntimeError(e)
+
+    @check_config
     def delete_folder(self, remote_path: str) -> bool:
         try:
             self._get_bucket().objects.filter(Prefix=remote_path).delete()
