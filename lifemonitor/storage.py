@@ -138,7 +138,7 @@ class RemoteStorage():
     @check_config
     def put_file(self, local_path: str, remote_path: str):
         if not self.exists(remote_path):
-            with cache.lock(remote_path, timeout=Timeout.NONE) as lock:
+            with cache.lock(remote_path, timeout=Timeout.NONE):
                 if not self.exists(remote_path):
                     try:
                         self._get_bucket().upload_file(local_path, remote_path)
