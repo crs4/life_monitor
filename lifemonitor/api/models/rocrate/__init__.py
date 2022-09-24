@@ -41,7 +41,9 @@ from lifemonitor.auth.models import (ExternalServiceAuthorizationHeader,
                                      HostingService, Resource)
 from lifemonitor.config import BaseConfig
 from lifemonitor.models import JSON
+from lifemonitor.storage import RemoteStorage
 from lifemonitor.utils import download_url, get_current_ref
+from sqlalchemy import inspect
 from sqlalchemy.ext.hybrid import hybrid_property
 
 from rocrate import rocrate
@@ -61,8 +63,8 @@ class ROCrate(Resource):
     _local_path = db.Column("local_path", db.String, nullable=True)
     _metadata_loaded = False
     _repository: repositories.WorkflowRepository = None
-
     __crate_reader__: WorkflowRepositoryMetadata = None
+    __storage: RemoteStorage = None  # type: ignore
 
     __mapper_args__ = {
         'polymorphic_identity': 'ro_crate',
@@ -73,8 +75,14 @@ class ROCrate(Resource):
                  version=None, hosting_service=None,
                  repository: repositories.WorkflowRepository = None) -> None:
         super().__init__(uri, uuid=uuid, name=name, version=version)
-        self.hosting_service = hosting_service
+        self.hosting_service = hosting_service  # type: ignore
         self._repository: repositories.WorkflowRepository = repository
+
+    @property
+    def _storage(self) -> RemoteStorage:
+        if not self.__storage:
+            self.__storage = RemoteStorage()
+        return self.__storage
 
     @property
     def local_path(self):
@@ -91,6 +99,15 @@ class ROCrate(Resource):
             os.makedirs(base_path, exist_ok=True)
             self._local_path = os.path.join(base_path, f"{self.uuid}.zip")
         return self._local_path
+
+    def _get_storage_path(self, local_path: str) -> str:
+        assert local_path, "local_path should not be empty"
+        root_path = current_app.config.get('DATA_WORKFLOWS', '/data_workflows')
+        return local_path.replace(f"{root_path}/", '')
+
+    @property
+    def storage_path(self) -> str:
+        return self._get_storage_path(self.local_path)
 
     @property
     def revision(self) -> Optional[GithubRepositoryRevision]:
@@ -129,13 +146,32 @@ class ROCrate(Resource):
 
     @property
     def repository(self) -> repositories.WorkflowRepository:
+        logger.debug("Getting repository object bound to the ROCrate %r", self)
         if not self.uri:
             raise lm_exceptions.IllegalStateException("URI (roc_link) not set")
         if not self._repository:
+            logger.debug("Initializing repository object bound to the ROCrate %r", self)
             # download the RO-Crate if it is not locally stored
             ref = None
             if not os.path.exists(self.local_path):
-                _, ref, _ = self.download_from_source(self.local_path)
+                logger.debug(f"{self.local_path} archive of {self} not found locally!!!")
+
+                # download the workflow ROCrate and store it into the remote storage
+                if not inspect(self).persistent or not self._storage.exists(self._get_storage_path(self.local_path)):
+                    # if not self._storage.enabled or not self._storage.exists(self._get_storage_path(self.local_path)):
+                    try:
+                        _, ref, _ = self.download_from_source(self.local_path)
+                        logger.debug(f"RO-Crate downloaded from {self.uri} to {self.storage_path}!")
+                        self._storage.put_file_as_job(self.local_path, self._get_storage_path(self.local_path))
+                        logger.debug(f"Scheduled job to store {self.storage_path} into the remote storage!")
+                    except Exception as e:
+                        logger.exception(e)
+                else:
+                    # download the RO-Crate archive from the remote storage
+                    logger.warning(f"Getting path {self.storage_path} from remote storage!!!")
+                    self._storage.get_file(self._get_storage_path(self.local_path), self.local_path)
+                    logger.warning(f"Getting path {self.storage_path} from remote storage.... DONE!!!")
+
             # instantiate a local ROCrate repository
             if self._is_github_crate_(self.uri):
                 authorizations = self.authorizations + [None]
