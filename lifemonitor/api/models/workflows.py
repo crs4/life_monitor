@@ -32,6 +32,7 @@ from lifemonitor.api.models.rocrate import ROCrate
 from lifemonitor.auth.models import (HostingService, Permission, Resource,
                                      Subscription, User)
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
+from lifemonitor.storage import RemoteStorage
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm.collections import (MappedCollection,
@@ -68,6 +69,10 @@ class Workflow(Resource):
         return '<Workflow ({}), name: {}>'.format(
             self.uuid, self.name)
 
+    @property
+    def _storage(self) -> RemoteStorage:
+        return RemoteStorage()
+
     @hybrid_property
     def external_id(self):
         r = self.uri.replace(self.external_ns, "")
@@ -100,6 +105,15 @@ class Workflow(Resource):
             .filter(models.WorkflowVersion.workflow_id == self.id)\
             .filter(Permission.user_id == user.id)\
             .all()
+
+    def delete(self):
+        super().delete()
+        try:
+            self._storage.delete_folder(str(self.uuid))
+        except Exception as e:
+            logger.error(f"Error when deleting ROCrate folder {self.workflow.uuid}")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.exception(e)
 
     def check_health(self) -> dict:
         health = {'healthy': True, 'issues': []}
@@ -215,6 +229,10 @@ class WorkflowVersion(ROCrate):
             self.uuid, self.version, self.name, self.roc_link)
 
     @property
+    def _storage(self) -> RemoteStorage:
+        return RemoteStorage()
+
+    @property
     def previous_version(self) -> WorkflowVersion:
         previous = None
         for v in self.workflow.versions.values():
@@ -327,6 +345,12 @@ class WorkflowVersion(ROCrate):
             workflow = self.workflow
             self.workflow.remove_version(self)
             workflow.save()
+            try:
+                self._storage.delete_file(self.storage_path)
+            except Exception as e:
+                logger.error(f"Error when deleting rocrate archive @ {self.storage_path}")
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.exception(e)
         else:
             self.workflow.delete()
 
