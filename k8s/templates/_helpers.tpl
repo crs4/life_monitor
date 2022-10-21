@@ -140,8 +140,10 @@ Define mount points shared by some pods.
 - name: lifemonitor-settings
   mountPath: "/lm/settings.conf"
   subPath: settings.conf
+{{- if not .Values.remoteStorage.enabled }}
 - name: lifemonitor-data
   mountPath: "/var/data/lm"
+{{- end -}}
 {{- if .Values.integrations -}}
 {{- range $k, $v := .Values.integrations }}
 {{- if $v.private_key }}
