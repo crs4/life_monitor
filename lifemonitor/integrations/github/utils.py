@@ -46,22 +46,6 @@ from ...api.models.wizards import (IOHandler, QuestionStep, Step, UpdateStep,
 logger = logging.getLogger(__name__)
 
 
-def match_ref(ref: str, refs: List[str]) -> str:
-    if not ref:
-        return None
-    for v in refs:
-        pattern = rf"^({v})$".replace('*', "[a-zA-Z0-9-_/]+")
-        try:
-            logger.debug("Searching match for %s (pattern: %s)", ref, pattern)
-            match = re.match(pattern, ref)
-            if match:
-                logger.debug("Match found: %r", match)
-                return (match.group(0), pattern.replace("[a-zA-Z0-9-_/]+", '*').strip('^()$'))
-        except Exception:
-            logger.debug("Unable to find a match for %s (pattern: %s)", ref, pattern)
-    return None
-
-
 def crate_branch(repo: Repository, branch_name: str, rev: str = None) -> GitRef:
     head = repo.get_commit(rev or repo.rev or 'HEAD')
     logger.debug("HEAD commit: %r", head.sha)

@@ -42,10 +42,11 @@ from lifemonitor.integrations.github.issues import GithubIssue
 from lifemonitor.integrations.github.notifications import \
     GithubWorkflowVersionNotification
 from lifemonitor.integrations.github.settings import GithubUserSettings
-from lifemonitor.integrations.github.utils import delete_branch, match_ref
+from lifemonitor.integrations.github.utils import delete_branch
 from lifemonitor.integrations.github.wizards import GithubWizard
 from lifemonitor.tasks import Scheduler
-from lifemonitor.utils import bool_from_string, get_git_repo_revision
+from lifemonitor.utils import (bool_from_string, get_git_repo_revision,
+                               match_ref)
 
 from github.PullRequest import PullRequest
 

@@ -40,7 +40,7 @@ import zipfile
 from datetime import datetime
 from importlib import import_module
 from os.path import basename, dirname, isfile, join
-from typing import Dict, List, Type
+from typing import Dict, List, Optional, Tuple, Type
 
 import flask
 import networkx as nx
@@ -215,6 +215,22 @@ def validate_url(url: str) -> bool:
 
 def get_last_update(path: str):
     return time.ctime(max(os.stat(root).st_mtime for root, _, _ in os.walk(path)))
+
+
+def match_ref(ref: str, refs: List[str]) -> Optional[Tuple[str, str]]:
+    if not ref:
+        return None
+    for v in refs:
+        pattern = rf"^({v})$".replace('*', "[a-zA-Z0-9-_/]+")
+        try:
+            logger.debug("Searching match for %s (pattern: %s)", ref, pattern)
+            match = re.match(pattern, ref)
+            if match:
+                logger.debug("Match found: %r", match)
+                return (match.group(0), pattern.replace("[a-zA-Z0-9-_/]+", '*').strip('^()$'))
+        except Exception:
+            logger.debug("Unable to find a match for %s (pattern: %s)", ref, pattern)
+    return None
 
 
 def load_modules(path: str = None, include: List[str] = None, exclude: List[str] = None) -> Dict[str, Type]:

@@ -26,6 +26,7 @@ from typing import Dict, List
 
 import lifemonitor.api.models as models
 import yaml
+from lifemonitor.utils import match_ref
 
 from .files import RepositoryFile, TemplateRepositoryFile
 
