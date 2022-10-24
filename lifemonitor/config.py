@@ -28,6 +28,8 @@ from typing import List, Type
 import dotenv
 from flask import current_app
 
+from lifemonitor.utils import get_external_server_url
+
 from .db import db_uri
 
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -61,7 +63,7 @@ def load_proxy_entries(config=None):
     pattern = re.compile(r'PROXY_(.+)_URL')
     result = {}
     try:
-        result['default'] = {'name': 'default', 'url': f"https://{config['SERVER_NAME']}"}
+        result['default'] = {'name': 'default', 'url': get_external_server_url()}
     except KeyError:
         pass
     for k in config:
