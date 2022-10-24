@@ -310,6 +310,10 @@ def __forward_event__(event: GithubEvent) -> Optional[Dict]:
     logger.debug("Repository: %r", repo)
 
     config: WorkflowRepositoryConfig = repo.config
+    if not config:
+        logger.debug("No config file found")
+        return None
+
     logger.error("Workflow repository config: %r", config._raw_data)
 
     ref = repo_info.branch or repo_info.tag
