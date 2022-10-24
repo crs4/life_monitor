@@ -21,10 +21,12 @@
 import configparser
 import logging
 import os
+import re
 from logging.config import dictConfig
 from typing import List, Type
 
 import dotenv
+from flask import current_app
 
 from .db import db_uri
 
@@ -51,6 +53,30 @@ def load_settings(config=None):
         result.update(dotenv.dotenv_values(dotenv_path=file_path))
     if config.CONFIG_NAME in ('testingSupport', 'testing'):
         result.update(test_settings)
+    return result
+
+
+def load_proxy_entries(config=None):
+    config = config or current_app.config
+    pattern = re.compile(r'PROXY_(.+)_URL')
+    result = {}
+    try:
+        result['default'] = {'name': 'default', 'url': f"https://{config['SERVER_NAME']}"}
+    except KeyError:
+        pass
+    for k in config:
+        service_match = pattern.match(k)
+        if service_match:
+            try:
+                service_name = service_match.group(1)
+                service_url = config[f"PROXY_{service_name}_URL"]
+                logger.info(f"Read proxy entry '{service_name.lower()}': {service_url}")
+                result[service_name.lower()] = {
+                    'name': service_name.lower(),
+                    'url': service_url
+                }
+            except (KeyError, IndexError) as e:
+                logger.error(f"Error when reading entry '{service_match}': {str(e)}")
     return result
 
 
