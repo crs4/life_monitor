@@ -18,7 +18,7 @@ storageClass: &storageClass "-"
 
 remoteStorage:
   enabled: false
-  s3_endpoint_url: 'https://your-s3-storage-url'
+  s3_endpoint_url: "https://your-s3-storage-url"
   s3_access_key: <YOUR_ACCESS_KEY>
   s3_secret_key: <YOUR_SECRET_KEY>
 
