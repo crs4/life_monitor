@@ -91,6 +91,13 @@ cache:
     workflow: 1800
     build: 84600
 
+proxy:
+  instances: []
+  # - name: production
+  #   url: https://api.lifemonitor.eu
+  # - name: development
+  #   url: https://api.dev.lifemonitor.eu
+
 # Email settings
 mail:
   server: ""
