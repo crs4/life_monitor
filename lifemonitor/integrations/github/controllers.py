@@ -347,7 +347,7 @@ def __forward_event__(event: GithubEvent) -> Optional[Dict]:
         else:
             logger.debug("No settings found for ref: %s", ref)
 
-    # Fallback to the default/current LifeMonitor instance
+    # Fall back to the default/current LifeMonitor instance
     logger.warning("Using default lifemonitor: %s", default_instance_info)
     return None
 
