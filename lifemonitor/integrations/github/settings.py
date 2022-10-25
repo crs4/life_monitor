@@ -23,7 +23,7 @@ from __future__ import annotations
 from typing import List
 
 from lifemonitor.auth.models import User
-from lifemonitor.integrations.github.utils import match_ref
+from lifemonitor.utils import match_ref
 from sqlalchemy.orm.attributes import flag_modified
 
 

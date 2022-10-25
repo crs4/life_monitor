@@ -21,6 +21,7 @@
 import logging
 import threading
 import time
+from datetime import datetime
 from random import randint
 from typing import List
 from unittest.mock import PropertyMock, patch
@@ -117,10 +118,19 @@ def update_user_profile_token(app, user_identity: OAuthIdentity, results: List, 
         time.sleep(randint(1, 5))
         # reload user identity
         user_identity = OAuthIdentity.find_by_provider_user_id(user_identity.provider_user_id, user_identity.provider.name)
+        # token before refresh
+        old_token = user_identity._tokens
+        logger.debug(f"Old token of thread {index}: {old_token}")
         # try to refresh the token
         user_identity.refresh_token()
+        # updated token
+        updated_token = user_identity._tokens
+        logger.debug(f"Refreshed token of thread {index}: {updated_token}")
+        updater_thread = False
+        if old_token != updated_token:
+            updater_thread = True
         logger.info("Thread data before: %r", results)
-        results[index]['result'].append(user_identity._tokens)
+        results[index]['result'].extend((user_identity._tokens, datetime.now(), updater_thread))
         logger.info("Thread data after: %r", results)
         logger.info("Thread %r finished", index)
 
@@ -162,12 +172,22 @@ def test_fetch_token_multi_threaded(app_context, redis_cache, user_identity: OAu
     logger.debug("Updated token: %r", updated_token)
     # Check tokens read by threads
     update_thread = None
+    update_time = None
     for t in results:
         # check which thread update the token
+        logger.debug("Checking thread: %r", t)
         if not update_thread:
-            if t['result'][0] == updated_token:
+            if t['result'][2]:
                 update_thread = t['index']
+                update_time = t['result'][1]
                 logger.debug(f"Token updated by thread {update_thread}")
-        # Check thread token
+    assert update_time, "datetime of token update not found"
+
+    # Check thread token
+    for t in results:
+        logger.debug(f"List of tokens for thread {t['index']}: {t['result']}")
         logger.debug(f"Token on thread {t['index']} = {t['result'][0]}")
-        assert t['result'][0] == updated_token, f"Unexpected token for thread {t['index']}"
+        if t['result'][0] == updated_token:
+            assert t['result'][1] >= update_time, f"End time for thread {t['index']} should be equal or greater than {update_time}"
+        else:
+            assert t['result'][1] < update_time, f"End time for thread {t['index']} should be equal or greater than {update_time}"

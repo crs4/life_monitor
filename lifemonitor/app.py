@@ -75,6 +75,8 @@ def create_app(env=None, settings=None, init_app=True, worker=False, load_jobs=T
         app.config.from_envvar("FLASK_APP_CONFIG_FILE")
     # set worker flag
     app.config['WORKER'] = worker
+    # append proxy settings
+    app.config['PROXY_ENTRIES'] = config.load_proxy_entries(app.config)
 
     # initialize the application
     if init_app:

@@ -18,7 +18,7 @@ storageClass: &storageClass "-"
 
 remoteStorage:
   enabled: false
-  s3_endpoint_url: 'https://your-s3-storage-url'
+  s3_endpoint_url: "https://your-s3-storage-url"
   s3_access_key: <YOUR_ACCESS_KEY>
   s3_secret_key: <YOUR_SECRET_KEY>
 
@@ -90,6 +90,13 @@ cache:
     session: 3600
     workflow: 1800
     build: 84600
+
+proxy:
+  instances: []
+  # - name: production
+  #   url: https://api.lifemonitor.eu
+  # - name: development
+  #   url: https://api.dev.lifemonitor.eu
 
 # Email settings
 mail:

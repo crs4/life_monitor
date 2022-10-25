@@ -21,14 +21,17 @@
 from __future__ import annotations
 
 import logging
+import os
 from tempfile import TemporaryDirectory
-from typing import Callable, Dict, List, Union
+from typing import Callable, Dict, List, Optional, Union
 
+import requests
 from flask import Blueprint, Flask, current_app, request
 from lifemonitor import cache
 from lifemonitor.api import serializers
 from lifemonitor.api.models import WorkflowRegistry
 from lifemonitor.api.models.registries.settings import RegistrySettings
+from lifemonitor.api.models.repositories.config import WorkflowRepositoryConfig
 from lifemonitor.api.models.repositories.github import GithubWorkflowRepository
 from lifemonitor.api.models.testsuites.testinstance import TestInstance
 from lifemonitor.api.models.wizards import QuestionStep, UpdateStep
@@ -42,10 +45,11 @@ from lifemonitor.integrations.github.issues import GithubIssue
 from lifemonitor.integrations.github.notifications import \
     GithubWorkflowVersionNotification
 from lifemonitor.integrations.github.settings import GithubUserSettings
-from lifemonitor.integrations.github.utils import delete_branch, match_ref
+from lifemonitor.integrations.github.utils import delete_branch
 from lifemonitor.integrations.github.wizards import GithubWizard
 from lifemonitor.tasks import Scheduler
-from lifemonitor.utils import bool_from_string, get_git_repo_revision
+from lifemonitor.utils import (bool_from_string, get_git_repo_revision,
+                               match_ref)
 
 from github.PullRequest import PullRequest
 
@@ -296,6 +300,56 @@ def __skip_branch_or_tag__(repo_info: GithubRepositoryReference,
         if user_settings.all_branches or user_settings.is_valid_branch(repo_info.branch):
             return False
     return True
+
+
+def __forward_event__(event: GithubEvent) -> Optional[Dict]:
+    repo_info = event.repository_reference
+    logger.debug("Repo reference: %r", repo_info)
+
+    repo: GithubWorkflowRepository = repo_info.repository
+    logger.debug("Repository: %r", repo)
+
+    config: WorkflowRepositoryConfig = repo.config
+    if not config:
+        logger.debug("No config file found")
+        return None
+
+    logger.error("Workflow repository config: %r", config._raw_data)
+
+    ref = repo_info.branch or repo_info.tag
+    logger.error("Ref: %s", ref)
+
+    ref_settings = repo.config.get_ref_settings(ref)
+    logger.warning("Repo ref settings: %r", ref_settings)
+
+    default_instance_info = current_app.config['PROXY_ENTRIES']['default']
+    logger.debug("Default LM instance: %r", default_instance_info)
+
+    if ref_settings:
+        lm_instance_name = ref_settings.get('lifemonitor_instance', None)
+        if lm_instance_name:
+            lm_instance_info = current_app.config['PROXY_ENTRIES'][lm_instance_name]
+            assert lm_instance_info, "Undefined instance info"
+            if lm_instance_info['url'] != default_instance_info['url']:
+                logger.warning("Using LM instance: %r", lm_instance_info)
+                redirect_url = os.path.join(lm_instance_info['url'], 'integrations/github')
+                logger.debug("Redirecting to: %r", redirect_url)
+                response = requests.request(
+                    method=request.method,
+                    url=redirect_url,
+                    headers={key: value for (key, value) in request.headers if key != 'Host'},
+                    data=request.get_data(),
+                    cookies=request.cookies,
+                    allow_redirects=False,
+                    stream=True)
+                logger.debug("Respose: %r", response.content)
+                return lm_instance_info
+        else:
+            logger.debug("No settings found for ref: %s", ref)
+
+    # Fall back to the default/current LifeMonitor instance
+    logger.warning("Using default lifemonitor: %s", default_instance_info)
+    return None
 
 
 def __check_for_issues_and_register__(repo_info: GithubRepositoryReference,
@@ -699,6 +753,11 @@ def handle_event():
     logger.debug("Signature valid?: %r", valid)
     if not valid:
         return "Signature Invalid", 401
+
+    # Forward request to another LifeMonitor instance if required
+    forwarded_to = __forward_event__(event)
+    if forwarded_to:
+        return f"Event forwarded to LifeMonitor instance '{forwarded_to['name']}' (url: {forwarded_to['url']})"
 
     # Submit event to an async handler
     event_handler = __event_handlers__.get(event.type, None)

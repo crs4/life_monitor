@@ -22,10 +22,11 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import lifemonitor.api.models as models
 import yaml
+from lifemonitor.utils import match_ref
 
 from .files import RepositoryFile, TemplateRepositoryFile
 
@@ -95,6 +96,16 @@ class WorkflowRepositoryConfig(RepositoryFile):
         if on_push and refs:
             return [_ for ref in refs.split(",") for _ in on_push.get(ref, [])]
         return []
+
+    def _get_ref_settings(self, ref: str, ref_type: str) -> Optional[Dict]:
+        ref_pattern = match_ref(ref, self.branches if ref_type == 'branch' else self.tags)
+        if not ref_pattern:
+            return None
+        logger.debug(f"ref {ref} matched with pattern {ref_pattern}")
+        return next((r for r in self._raw_data['push']['branches' if ref_type == 'branch' else 'tags'] if r["name"] == ref_pattern[1]), None)
+
+    def get_ref_settings(self, ref: str) -> Optional[Dict]:
+        return self._get_ref_settings(ref, 'branch') or self._get_ref_settings(ref, 'tag') or None
 
     @property
     def registries(self) -> List[models.WorkflowRegistry]:
