@@ -391,7 +391,7 @@ def enable_registry_sync():
             logger.debug("Updated token: %r", registry_user_identity.token)
             assert registry_user_identity, f"No identity found for user of registry {registry.name}"
             assert registry_user_identity.token, f"No token found for user of registry {registry.name}"
-            settings.set_token(registry.client_name, registry_user_identity.token)
+            settings.set_token(registry.client_name, registry_user_identity.tokens['read write'])
             current_user.save()
             flash(f"Integration with registry \"{registry.name}\" enabled", category="success")
             return redirect(url_for('auth.profile', currentView='registrySettingsTab'))
