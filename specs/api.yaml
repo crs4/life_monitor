@@ -916,6 +916,7 @@ paths:
         - AuthorizationCodeFlow: ["workflow.read"]
         - RegistryClientCredentials: ["workflow.read"]
         - RegistryCodeFlow: ["workflow.read"]
+        - {}
       parameters:
         - $ref: "#/components/parameters/wf_uuid"
         - $ref: "#/components/parameters/wf_version"
