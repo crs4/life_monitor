@@ -755,9 +755,13 @@ def handle_event():
         return "Signature Invalid", 401
 
     # Forward request to another LifeMonitor instance if required
-    forwarded_to = __forward_event__(event)
-    if forwarded_to:
-        return f"Event forwarded to LifeMonitor instance '{forwarded_to['name']}' (url: {forwarded_to['url']})"
+    try:
+        forwarded_to = __forward_event__(event)
+        if forwarded_to:
+            return f"Event forwarded to LifeMonitor instance '{forwarded_to['name']}' (url: {forwarded_to['url']})"
+    except Exception as e:
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(e)
 
     # Submit event to an async handler
     event_handler = __event_handlers__.get(event.type, None)
