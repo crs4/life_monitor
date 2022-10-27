@@ -99,6 +99,7 @@ def get(config, issue_number):
 @repository_arg
 @output_path_arg
 @click.pass_obj
+@with_appcontext
 def check(config, repository, output_path=None):
     try:
         init_output_path(output_path=output_path)
