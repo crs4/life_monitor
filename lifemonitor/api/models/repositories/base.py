@@ -76,6 +76,65 @@ class WorkflowRepository():
                 return None
         return self._metadata
 
+    @property
+    def _remote_parser(self) -> giturlparse.GitUrlParsed:
+        try:
+            r = git.Repo(self.local_path)
+            remote = next((x for x in r.remotes if x.name == 'origin'), r.remotes[0])
+            assert remote, "Unable to find a Git remote"
+            return giturlparse.parse(remote.url)
+        except Exception as e:
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.exception(e)
+            raise LifeMonitorException(f"Not valid workflow repository: {e}")
+
+    @property
+    def name(self) -> str:
+        if not self._name:
+            try:
+                self._name = self._remote_parser.name
+            except Exception as e:
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.exception(e)
+                raise LifeMonitorException(f"Not valid workflow repository: {e}")
+        assert self._name, "Unable to detect repository name"
+        return self._name
+
+    @property
+    def full_name(self) -> str:
+        try:
+            parser = self._remote_parser
+            return f"{parser.owner}/{parser.name}"
+        except Exception as e:
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.exception(e)
+            raise LifeMonitorException(f"Not valid workflow repository: {e}")
+
+    @property
+    def url(self) -> str:
+        if not self._url:
+            try:
+                self._url = self._remote_parser.url2https
+            except Exception as e:
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.exception(e)
+                raise LifeMonitorException(f"Not valid workflow repository: {e}")
+        assert self._url, "Unable to detect repository url"
+        return self._url
+
+    @property
+    def license(self) -> Optional[str]:
+        if not self._license:
+            try:
+                parser = self._remote_parser
+                if parser.host == 'github.com':
+                    l_info = requests.get(f"https://api.github.com/repos/{self.full_name}/license")
+                    self._license = l_info.json()['license']['spdx_id']
+            except Exception as e:
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.error(e)
+        return self._license
+
     @abstractclassmethod
     def find_file_by_pattern(self, search: str, path: str = '.') -> RepositoryFile:
         pass

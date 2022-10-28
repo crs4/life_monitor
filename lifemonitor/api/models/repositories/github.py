@@ -27,8 +27,9 @@ import re
 import shutil
 import tempfile
 from datetime import timedelta
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
+import giturlparse
 from lifemonitor.api.models.repositories.base import (
     WorkflowRepository, WorkflowRepositoryMetadata)
 from lifemonitor.api.models.repositories.config import WorkflowRepositoryConfig
@@ -36,7 +37,7 @@ from lifemonitor.api.models.repositories.files import (RepositoryFile,
                                                        WorkflowFile)
 from lifemonitor.api.models.repositories.local import LocalWorkflowRepository
 from lifemonitor.config import BaseConfig
-from lifemonitor.exceptions import IllegalStateException
+from lifemonitor.exceptions import IllegalStateException, LifeMonitorException
 from lifemonitor.utils import (checkout_ref, clone_repo, get_current_ref,
                                get_git_repo_revision)
 
@@ -158,8 +159,9 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
     def __init__(self, requester: Requester,
                  headers: Dict[str, Union[str, int]],
                  attributes: Dict[str, Any], completed: bool,
-                 ref: str = None, rev: str = None,
-                 local_path: str = None, auto_cleanup: bool = True) -> None:
+                 ref: Optional[str] = None, rev: Optional[str] = None,
+                 name: Optional[str] = None, license: Optional[str] = None,
+                 local_path: Optional[str] = None, auto_cleanup: bool = True) -> None:
         super().__init__(requester, headers, attributes, completed)
         self._ref = ref
         self.rev = rev
@@ -168,6 +170,8 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
         self._local_repo: LocalWorkflowRepository = None
         self._local_path = local_path
         self._config = None
+        self._name = name
+        self._license = license
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__} bound to {self.url} (ref: {self.ref}, rev: {self.rev})"
@@ -183,6 +187,19 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
 
     def checkout_ref(self, ref: str, token: str = None, branch_name: str = None) -> bool:
         return checkout_ref(self.local_path, ref, auth_token=token, branch_name=branch_name)
+
+    @property
+    def url(self) -> str:
+        return self.html_url
+
+    @property
+    def _remote_parser(self) -> giturlparse.GitUrlParsed:
+        try:
+            return giturlparse.parse(self.url)
+        except Exception as e:
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.exception(e)
+            raise LifeMonitorException(f"Not valid workflow repository: {e}")
 
     @property
     def ref(self) -> str:
