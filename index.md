@@ -18,13 +18,13 @@ testing and test monitoring.
 The project's main goals are to:
 
 * Serve as a central aggregation point for workflow test statuses and outputs
-  from various testing services (e.g., [Travis CI](https://travis-ci.org/),
-  [GitHub Actions](https://docs.github.com/en/actions),
-  [Jenkins](https://www.jenkins.io/), etc.).
+  from various testing services (e.g., [GitHub
+  Actions](https://docs.github.com/en/actions),
+  [Jenkins](https://www.jenkins.io/), [Travis CI](https://travis-ci.org/),
+  etc.).
 * Facilitate the periodic automated execution of workflow tests.
 * Integrate with [WorkflowHub](https://about.workflowhub.eu/).
 * Assist in test suite creation and workflow maintenance.
-
 
 ## Road map
 
@@ -56,17 +56,17 @@ Here is our planned development road map.
 
 
 #### Spring 2022
-  - [ ] GitHub app
-  - [ ] Semi-automated workflow registration with GH app
-  - [ ] Automated workflow update with GH app
-  - [ ] Semi-automated configuration of GitHub Actions for workflow testing
+  - [x] GitHub app
+  - [x] Semi-automated workflow registration with GH app
+  - [x] Automated workflow update with GH app
 
 
 #### Summer 2022
-  - [ ] Programmable periodic test execution
+  - [x] Programmable periodic test execution
 
 
 #### Fall 2022
+  - [ ] Semi-automated configuration of GitHub Actions for workflow testing
   - [ ] LS-AAI support
 
 
