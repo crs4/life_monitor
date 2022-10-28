@@ -48,10 +48,16 @@ class WorkflowRepository():
 
     def __init__(self, local_path: Optional[str] = None,
                  url: Optional[str] = None,
+                 name: Optional[str] = None,
+                 license: Optional[str] = None,
+                 exclude: Optional[List[str]] = None) -> None:
         self._local_path = local_path
         self._metadata = None
         self.exclude = exclude or DEFAULT_IGNORED_FILES
         self._config = None
+        self._url = url
+        self._name = name
+        self._license = license
 
     @property
     def local_path(self) -> str:
