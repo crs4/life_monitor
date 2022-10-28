@@ -189,13 +189,13 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
         return checkout_ref(self.local_path, ref, auth_token=token, branch_name=branch_name)
 
     @property
-    def url(self) -> str:
+    def https_url(self) -> str:
         return self.html_url
 
     @property
     def _remote_parser(self) -> giturlparse.GitUrlParsed:
         try:
-            return giturlparse.parse(self.url)
+            return giturlparse.parse(self.https_url)
         except Exception as e:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.exception(e)

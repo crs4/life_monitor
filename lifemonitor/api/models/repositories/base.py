@@ -114,7 +114,7 @@ class WorkflowRepository():
             raise LifeMonitorException(f"Not valid workflow repository: {e}")
 
     @property
-    def url(self) -> str:
+    def https_url(self) -> str:
         if not self._url:
             try:
                 self._url = self._remote_parser.url2https
@@ -244,7 +244,7 @@ class WorkflowRepository():
                                       workflow_version=workflow_version,
                                       local_repo_path=self.local_path,
                                       license=license or self.license,
-                                      repo_url=repo_url or self.url, **kwargs)
+                                      repo_url=repo_url or self.https_url, **kwargs)
             self._metadata = WorkflowRepositoryMetadata(self, init=False, exclude=self.exclude,
                                                         local_path=self._local_path)
         except Exception as e:
