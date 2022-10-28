@@ -21,7 +21,7 @@
 
 import logging
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -36,7 +36,11 @@ def generate_crate(workflow_type: str,
                    workflow_name: str,
                    workflow_version: str,
                    local_repo_path: str,
-                   repo_url: str = None, license: str = "MIT", **kwargs):
+                   repo_url: Optional[str],
+                   license: Optional[str] = "MIT",
+                   ci_workflow: Optional[str] = "main.yml",
+                   lang_version: Optional[str] = None,
+                   **kwargs):
     make_crate = get_crate_generator(workflow_type)
     if not make_crate:
         m = "Unable to find a generator for the workflow type '%s'" % workflow_type
@@ -52,8 +56,8 @@ def generate_crate(workflow_type: str,
         "wf_name": workflow_name,
         "wf_version": workflow_version,
         "license": license,
-        "ci_workflow": kwargs.get('ci_workflow', 'main.yml'),
-        "lang_version": kwargs.get('lan_version', '0.6.5')
+        "ci_workflow": ci_workflow,
+        "lang_version": lang_version
     }
     logger.warning("Config: %r", cfg)
     crate = make_crate(**cfg)
