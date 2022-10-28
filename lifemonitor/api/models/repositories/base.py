@@ -27,11 +27,14 @@ import logging
 import os
 from abc import abstractclassmethod
 from datetime import datetime
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
+import git
+import giturlparse
 import lifemonitor.api.models.issues as issues
+import requests
 from lifemonitor.api.models.repositories.config import WorkflowRepositoryConfig
-from lifemonitor.exceptions import IllegalStateException
+from lifemonitor.exceptions import IllegalStateException, LifeMonitorException
 from lifemonitor.test_metadata import get_roc_suites, get_workflow_authors
 from lifemonitor.utils import to_camel_case
 from rocrate.rocrate import Metadata, ROCrate
@@ -224,9 +227,11 @@ class WorkflowRepository():
         return self.__compare__(self.files, repo.files, exclude=exclude)
 
     def generate_metadata(self,
-                          workflow_name: str = None,
+                          workflow_name: Optional[str] = None,
                           workflow_version: str = "main",
-                          license: str = "MIT", **kwargs) -> WorkflowRepositoryMetadata:
+                          license: Optional[str] = None,
+                          repo_url: Optional[str] = None,
+                          **kwargs) -> WorkflowRepositoryMetadata:
         workflow = self.find_workflow()
         if not workflow:
             raise IllegalStateException("No workflow found", instance=self)
@@ -235,8 +240,11 @@ class WorkflowRepository():
         try:
             from ..rocrate import generators
             generators.generate_crate(workflow_type,
-                                      workflow_name=workflow_name, workflow_version=workflow_version,
-                                      local_repo_path=self.local_path, license=license, **kwargs)
+                                      workflow_name=workflow_name or self.name,
+                                      workflow_version=workflow_version,
+                                      local_repo_path=self.local_path,
+                                      license=license or self.license,
+                                      repo_url=repo_url or self.url, **kwargs)
             self._metadata = WorkflowRepositoryMetadata(self, init=False, exclude=self.exclude,
                                                         local_path=self._local_path)
         except Exception as e:
