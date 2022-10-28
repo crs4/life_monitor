@@ -46,7 +46,8 @@ DEFAULT_IGNORED_FILES = ['.git']
 
 class WorkflowRepository():
 
-    def __init__(self, local_path: str = None, exclude: List[str] = None) -> None:
+    def __init__(self, local_path: Optional[str] = None,
+                 url: Optional[str] = None,
         self._local_path = local_path
         self._metadata = None
         self.exclude = exclude or DEFAULT_IGNORED_FILES
