@@ -27,11 +27,14 @@ import logging
 import os
 from abc import abstractclassmethod
 from datetime import datetime
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
+import git
+import giturlparse
 import lifemonitor.api.models.issues as issues
+import requests
 from lifemonitor.api.models.repositories.config import WorkflowRepositoryConfig
-from lifemonitor.exceptions import IllegalStateException
+from lifemonitor.exceptions import IllegalStateException, LifeMonitorException
 from lifemonitor.test_metadata import get_roc_suites, get_workflow_authors
 from lifemonitor.utils import to_camel_case
 from rocrate.rocrate import Metadata, ROCrate
@@ -46,11 +49,18 @@ DEFAULT_IGNORED_FILES = ['.git']
 
 class WorkflowRepository():
 
-    def __init__(self, local_path: str = None, exclude: List[str] = None) -> None:
+    def __init__(self, local_path: Optional[str] = None,
+                 url: Optional[str] = None,
+                 name: Optional[str] = None,
+                 license: Optional[str] = None,
+                 exclude: Optional[List[str]] = None) -> None:
         self._local_path = local_path
         self._metadata = None
         self.exclude = exclude or DEFAULT_IGNORED_FILES
         self._config = None
+        self._url = url
+        self._name = name
+        self._license = license
 
     @property
     def local_path(self) -> str:
@@ -68,6 +78,65 @@ class WorkflowRepository():
             except ValueError:
                 return None
         return self._metadata
+
+    @property
+    def _remote_parser(self) -> giturlparse.GitUrlParsed:
+        try:
+            r = git.Repo(self.local_path)
+            remote = next((x for x in r.remotes if x.name == 'origin'), r.remotes[0])
+            assert remote, "Unable to find a Git remote"
+            return giturlparse.parse(remote.url)
+        except Exception as e:
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.exception(e)
+            raise LifeMonitorException(f"Not valid workflow repository: {e}")
+
+    @property
+    def name(self) -> str:
+        if not self._name:
+            try:
+                self._name = self._remote_parser.name
+            except Exception as e:
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.exception(e)
+                raise LifeMonitorException(f"Not valid workflow repository: {e}")
+        assert self._name, "Unable to detect repository name"
+        return self._name
+
+    @property
+    def full_name(self) -> str:
+        try:
+            parser = self._remote_parser
+            return f"{parser.owner}/{parser.name}"
+        except Exception as e:
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.exception(e)
+            raise LifeMonitorException(f"Not valid workflow repository: {e}")
+
+    @property
+    def https_url(self) -> str:
+        if not self._url:
+            try:
+                self._url = self._remote_parser.url2https.replace('.git', '')
+            except Exception as e:
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.exception(e)
+                raise LifeMonitorException(f"Not valid workflow repository: {e}")
+        assert self._url, "Unable to detect repository url"
+        return self._url
+
+    @property
+    def license(self) -> Optional[str]:
+        if not self._license:
+            try:
+                parser = self._remote_parser
+                if parser.host == 'github.com':
+                    l_info = requests.get(f"https://api.github.com/repos/{self.full_name}/license")
+                    self._license = l_info.json()['license']['spdx_id']
+            except Exception as e:
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.error(e)
+        return self._license
 
     @abstractclassmethod
     def find_file_by_pattern(self, search: str, path: str = '.') -> RepositoryFile:
@@ -158,9 +227,11 @@ class WorkflowRepository():
         return self.__compare__(self.files, repo.files, exclude=exclude)
 
     def generate_metadata(self,
-                          workflow_name: str = None,
+                          workflow_name: Optional[str] = None,
                           workflow_version: str = "main",
-                          license: str = "MIT", **kwargs) -> WorkflowRepositoryMetadata:
+                          license: Optional[str] = None,
+                          repo_url: Optional[str] = None,
+                          **kwargs) -> WorkflowRepositoryMetadata:
         workflow = self.find_workflow()
         if not workflow:
             raise IllegalStateException("No workflow found", instance=self)
@@ -169,8 +240,11 @@ class WorkflowRepository():
         try:
             from ..rocrate import generators
             generators.generate_crate(workflow_type,
-                                      workflow_name=workflow_name, workflow_version=workflow_version,
-                                      local_repo_path=self.local_path, license=license, **kwargs)
+                                      workflow_name=workflow_name or self.name,
+                                      workflow_version=workflow_version,
+                                      local_repo_path=self.local_path,
+                                      license=license or self.license,
+                                      repo_url=repo_url or self.https_url, **kwargs)
             self._metadata = WorkflowRepositoryMetadata(self, init=False, exclude=self.exclude,
                                                         local_path=self._local_path)
         except Exception as e:
