@@ -34,7 +34,7 @@ RUN curl -fsSL get.nextflow.io | bash
 WORKDIR /lm
 
 # Copy utility scripts
-COPY --chown=root:root \
+COPY \
     docker/wait-for-postgres.sh \
     docker/wait-for-redis.sh \
     docker/lm_entrypoint.sh \
@@ -77,16 +77,11 @@ COPY --chown=lm:lm lifemonitor /lm/lifemonitor
 COPY --chown=lm:lm migrations /lm/migrations
 COPY --chown=lm:lm cli /lm/cli
 
-# Set software and build number
-ARG SW_VERSION
-ARG BUILD_NUMBER
-ENV LM_SW_VERSION=${SW_VERSION}
-ENV LM_BUILD_NUMBER=${BUILD_NUMBER}
-
 ##################################################################
 ## Node Stage
 ##################################################################
 FROM node:14.16.0-alpine3.12 as node
+
 
 RUN mkdir -p /static && apk add --no-cache bash
 WORKDIR /static/src
@@ -103,5 +98,11 @@ RUN npm run production
 ## Target Stage
 ##################################################################
 FROM base as target
+
+# Set software and build number
+ARG SW_VERSION
+ARG BUILD_NUMBER
+ENV LM_SW_VERSION=$SW_VERSION
+ENV LM_BUILD_NUMBER=$BUILD_NUMBER
 
 COPY --from=node --chown=lm:lm /static/dist /lm/lifemonitor/static/dist

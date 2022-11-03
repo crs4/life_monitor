@@ -8,7 +8,19 @@ on:
       - "**"
     tags:
       - "*.*.*"
+    paths:
+      - "**"
+      - "!docs/**"
+      - "!examples/**"
+      - "!interaction_experiments/**"
+      - "!k8s/**"
   pull_request:
+    paths:
+      - "**"
+      - "!docs/**"
+      - "!examples/**"
+      - "!interaction_experiments/**"
+      - "!k8s/**"
 
 env:
   TERM: xterm
@@ -18,16 +30,16 @@ env:
 jobs:
   # Verifies pep8, pyflakes and circular complexity
   flake8:
-    name: Check Flake8 (python ${{ matrix.python-version }})
+    name: Lint Python Code (Flake8) (python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: [3.7]
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Python v${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install flake8
@@ -37,16 +49,16 @@ jobs:
 
   # Validate OpenAPI specs
   openapi_specs:
-    name: Check OpenAPI Specs (python ${{ matrix.python-version }})
+    name: Lint OpenAPI Specs (python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: [3.7]
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Python v${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install OpenAPI Spec Validator
@@ -54,32 +66,46 @@ jobs:
       - name: Run checks
         run: openapi-spec-validator specs/api.yaml
 
-  # Build, Test and Push Docker image
-  tests:
-    name: Build, Test and Push Docker image
+  build:
+    name: "Build, Test and Push Docker Image"
     runs-on: ubuntu-latest
     needs: [flake8, openapi_specs]
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - name: "List Docker images"
+        run: "docker images"
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Generate certificates
+        run: make certs
+      # So now you can use Actions' own caching!
+      - name: Cache Docker layers
+        uses: actions/cache@v3
         with:
-          python-version: "3.7"
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
       - name: "Set software version"
         run: |
           git fetch --unshallow
           sw_version=$(python3 -c 'import lifemonitor; print(lifemonitor.__version__)')
+          echo "Current Software Version: ${sw_version}"
           echo "SOFTWARE_VERSION=${sw_version}" >> $GITHUB_ENV
           echo "SOFTWARE_VERSION_AS_DOCKER_TAG=$( echo ${sw_version} | tr + _ )" >> $GITHUB_ENV
       # Set Docker image
-      - name: Set up Docker repository
-        run: echo "DOCKERHUB_REPO=$( if [[ -n $USER_REPO ]]; then echo $USER_REPO; else echo $GITHUB_REPOSITORY; fi )" >> $GITHUB_ENV
-        env:
-          USER_REPO: ${{ secrets.DOCKERHUB_REPO }}
-      # Extract Docker metadata
+      - name: Set Docker repository
+        run: |
+          echo "DOCKERHUB_REPO=$( if [[ -n "${{ secrets.DOCKERHUB_REPO }}" ]]; then 
+          echo "${{ secrets.DOCKERHUB_REPO }}"; 
+          else echo "${{ github.repository_owner }}/lifemonitor"; fi )" >> $GITHUB_ENV
+      # Extract Docker metadata and set labels and tags
       - name: Extract Docker metadata
         id: docker_meta
-        uses: docker/metadata-action@v3
+        uses: docker/metadata-action@v4
         with:
           images: ${{ env.DOCKERHUB_REPO }}
           tags: |
@@ -92,33 +118,33 @@ jobs:
             type=sha
           labels: |
             org.opencontainers.image.version=${{ env.SOFTWARE_VERSION }}.build${{ github.run_number }}
-      # Set up Docker tags
-      - name: Set up Docker tags
-        run: |
-          IFS=$'\n'      # Change IFS to new line
-          tags=($TAGS)   # split to array
-          echo "DOCKER_TAGS=$(printf "'%s' " "${tags[@]}")" >> $GITHUB_ENV
-        env:
-          TAGS: ${{ steps.docker_meta.outputs.tags }}
-      # Set up Docker labels
-      - name: Set up Docker labels
-        run: |
-          sw_version=$(python3 -c 'import lifemonitor; print(lifemonitor.__version__)')
-          IFS=$'\n'      # Change IFS to new line
-          labels=($LABELS) # split to array $names
-          echo "DOCKER_LABELS=$(printf "'%s' " "${labels[@]}")" >> $GITHUB_ENV
-        env:
-          LABELS: ${{ steps.docker_meta.outputs.labels }}
-      # Build Docker image
+      # Build and tag LifeMonitor Docker image
       - name: Build Docker image
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          file: docker/lifemonitor.Dockerfile
+          tags: ${{ steps.docker_meta.outputs.tags }}
+          labels: ${{ steps.docker_meta.outputs.labels }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new
+          load: true
+          build-args: |
+            SW_VERSION=${{ env.SOFTWARE_VERSION }}
+            BUILD_NUMBER=${{ github.run_number }}
+      - name: Update cache
         run: |
-          TAGS=${DOCKER_TAGS} LABELS=${DOCKER_LABELS} \
-          SW_VERSION=${SOFTWARE_VERSION}.build${{ github.run_number }} \
-          BUILD_NUMBER=${{ github.run_number }} \
-          make lifemonitor
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
       # Setup testing environment
       - name: Set up testing environment
-        run: TAGS=${DOCKER_TAGS} LABELS=${DOCKER_LABELS} make start-testing
+        # Tag the latest built image as `crs4/lifemonitor:latest`
+        # which is the default used by `make run-tests` to run tests
+        run: |
+          docker images ;
+          docker tag ${{ env.DOCKERHUB_REPO }}:${{ env.SOFTWARE_VERSION_AS_DOCKER_TAG }} crs4/lifemonitor:latest ;
+          docker images ;
+          SKIP_BUILD=1 SW_VERSION=${{ env.SOFTWARE_VERSION }} BUILD_NUMBER=${{ github.run_number }} make start-testing
         env:
           TRAVIS_TESTING_SERVICE_URL: ${{ secrets.TRAVIS_TESTING_SERVICE_URL }}
           TRAVIS_TESTING_SERVICE_TOKEN: ${{ secrets.TRAVIS_TESTING_SERVICE_TOKEN }}
@@ -128,7 +154,7 @@ jobs:
           GH_TESTING_SERVICE_TYPE: github
       # Run tests
       - name: Run tests
-        run: TAGS=${DOCKER_TAGS} LABELS=${DOCKER_LABELS} make run-tests
+        run: SKIP_BUILD=1 SW_VERSION=${{ env.SOFTWARE_VERSION }} BUILD_NUMBER=${{ github.run_number }} make run-tests
         env:
           TRAVIS_TESTING_SERVICE_URL: ${{ secrets.TRAVIS_TESTING_SERVICE_URL }}
           TRAVIS_TESTING_SERVICE_TOKEN: ${{ secrets.TRAVIS_TESTING_SERVICE_TOKEN }}
@@ -139,22 +165,25 @@ jobs:
       # Teardown testing environment
       - name: Teardown testing environment
         run: make down
-      # DockerHub Login
-      - name: Login to DockerHub
-        uses: docker/login-action@v1
+      # Log in to DockerHub
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
         if: ${{ env.ENABLE_DOCKER_PUSH == 'true' }}
         with:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      # Push Docker image
-      - name: Push Docker image
+      # Push LifeMonitor Docker image
+      - name: Build and push
+        uses: docker/build-push-action@v3
         if: ${{ env.ENABLE_DOCKER_PUSH == 'true' }}
-        run: |
-          for t in ${TAGS}; do
-              docker push ${t}
-          done
-        env:
-          TAGS: ${{ steps.docker_meta.outputs.tags }}
-      # Clean up
-      - name: Clean up working environment
-        run: make clean
+        with:
+          context: .
+          file: docker/lifemonitor.Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.docker_meta.outputs.tags }}
+          labels: ${{ steps.docker_meta.outputs.labels }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          build-args: |
+            SW_VERSION=${{ env.SOFTWARE_VERSION }}
+            BUILD_NUMBER=${{ github.run_number }}

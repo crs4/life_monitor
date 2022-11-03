@@ -34,6 +34,12 @@ ifeq ($(DOCKER_BUILDKIT),1)
 	endif
 endif
 
+# set flag to skip build
+skip_build_opt := 0
+ifeq ($(SKIP_BUILD),1)
+	skip_build_opt := 1
+endif
+
 # set the build number
 sw_version_arg :=
 ifdef SW_VERSION
@@ -112,17 +118,19 @@ certs:
 	fi
 
 lifemonitor: docker/lifemonitor.Dockerfile certs app.py gunicorn.conf.py ## Build LifeMonitor Docker image
-	@printf "\n$(bold)Building LifeMonitor Docker image...$(reset)\n" ; \
-	$(build_kit) docker $(build_cmd) $(cache_from_opt) $(cache_to_opt) \
-		  ${sw_version_arg} ${build_number_arg} \
-		  ${tags_opt} ${labels_opt} ${platforms_opt} \
-		  -f docker/lifemonitor.Dockerfile -t crs4/lifemonitor . ;\
-	printf "$(done)\n"
+	@if [[ $(skip_build_opt) == 1 ]]; then \
+		printf "\n$(yellow)WARNING: $(bold)Skip build of LifeMonitor Docker image !!! $(reset)\n" ; \
+	else \
+		printf "\n$(bold)Building LifeMonitor Docker image...$(reset)\n" ; \
+		$(build_kit) docker $(build_cmd) $(cache_from_opt) $(cache_to_opt) \
+			${sw_version_arg} ${build_number_arg} ${tags_opt} ${labels_opt} ${platforms_opt} \
+			-f docker/lifemonitor.Dockerfile -t crs4/lifemonitor . ;\
+		printf "$(done)\n" ; \
+	fi
 
 smeeio:
 	@printf "\n$(bold)Building smee.io Docker image...$(reset)\n" ; \
 	$(build_kit) docker $(build_cmd) $(cache_from_opt) $(cache_to_opt) \
-		  ${sw_version_arg} ${build_number_arg} \
 		  ${tags_opt} ${labels_opt} ${platforms_opt} \
 		  -f docker/smee.io.Dockerfile -t crs4/smeeio . ;\
 	printf "$(done)\n"

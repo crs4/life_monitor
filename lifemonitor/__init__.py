@@ -30,11 +30,6 @@ def get_version():
         # if LM_SW_VERSION is not defined on the environment,
         # try to extract the software version from git metadata
         version = get_versions()['version']
-        # try to read the LM_BUILD_NUMBER from the environment
-        # and append it to the version tag
-        build_number = os.environ.get("LM_BUILD_NUMBER", None)
-        if build_number:
-            version = f"{version}.build{build_number}"
         # if no tag can be extracted from git metadata,
         # try to use the git branch name to tag the software version
         branch, rc = run_command(["git"], ["branch", "--show-current"],
@@ -43,6 +38,12 @@ def get_version():
             # tag the version using the branch (normalized through removing '/' char)
             branch = branch.replace('/', '-')
             version = re.sub(r'(untagged)(\.1)?', branch, version)
+
+    # try to read the LM_BUILD_NUMBER from the environment
+    # and append it to the version tag
+    build_number = os.environ.get("LM_BUILD_NUMBER", None)
+    if build_number and version:
+        version = f"{version}.build{build_number}"
 
     return version
 
