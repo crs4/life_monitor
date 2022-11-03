@@ -131,7 +131,6 @@ lifemonitor: docker/lifemonitor.Dockerfile certs app.py gunicorn.conf.py ## Buil
 smeeio:
 	@printf "\n$(bold)Building smee.io Docker image...$(reset)\n" ; \
 	$(build_kit) docker $(build_cmd) $(cache_from_opt) $(cache_to_opt) \
-		  ${sw_version_arg} ${build_number_arg} \
 		  ${tags_opt} ${labels_opt} ${platforms_opt} \
 		  -f docker/smee.io.Dockerfile -t crs4/smeeio . ;\
 	printf "$(done)\n"
