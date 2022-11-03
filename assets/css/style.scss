@@ -188,3 +188,26 @@ p img {
     text-align: center;
     font-weight: bold;
 }
+
+div.page-toc {
+    font-size: 0.9em;
+    background: whitesmoke;
+    color: black;
+    text-align: left;
+    border: black;
+    float: right;
+    clear: right;
+    padding: 5px;
+    margin-top: 1em;
+    max-width: 40%;
+}
+
+// The outer-most ul generated for the TOC does not have a class assigned.
+div.page-toc > ul {
+  padding-left: 20px;
+}
+
+ul.page-toc {
+  padding-left: 20px;
+}
+

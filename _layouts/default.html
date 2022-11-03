@@ -41,6 +41,7 @@
                 </ul>
                 {% endif %}
             </div>
+ 
             <div class="toc">
                 <div class="toc-title text-center">
                     <i class="fa-regular fa-books"></i>Documentation
@@ -99,9 +100,16 @@
                     Go to LM
                 </button>
             </div>
+            <div class="page-toc" style="">
+                <div class="toc-title">
+                    Table of Contents
+                </div>
+                {% include toc.html html=content item_class="page-toc" submenu_class="page-toc" %}
+            </div>
+
             {% if page.category != "index"%}
             {% endif %}
-            {{ content }}            
+            {{ content }}
         </div>
     </div>
     <!-- <script src="{{ " /assets/js/scale.fix.js" | relative_url }}"></script> -->
