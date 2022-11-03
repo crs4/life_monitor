@@ -26,8 +26,6 @@ env:
   TERM: xterm
   # enable Docker push only if the required secrets are defined
   ENABLE_DOCKER_PUSH: ${{ secrets.DOCKERHUB_USER != null && secrets.DOCKERHUB_TOKEN != null }}
-  TEST_TAG: kikkomep/lifemonitor:test
-  LATEST_TAG: kikkomep/lifemonitor:test
 
 jobs:
   # Verifies pep8, pyflakes and circular complexity
