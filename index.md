@@ -26,6 +26,24 @@ The project's main goals are to:
 * Integrate with [WorkflowHub](https://about.workflowhub.eu/).
 * Assist in test suite creation and workflow maintenance.
 
+## Getting Started
+
+1. Install the [LifeMonitor GitHub app](https://github.com/apps/lifemonitor) on
+   your workflow's repository;
+2. Done?
+
+The LifeMonitor app will analyze the repository and give further instructions
+through Pull Requests and/or Issues.
+
+Is the GitHub app is not an option?  You can still use LM’s test monitoring and
+periodic test execution features. Follow [the instructions on configuring test
+monitoring](./lm_test_monitoring) to register the workflow with the workflow
+LifeMonitor.
+
+If you still don't have tests for your workflow or you haven't created an
+automated testing pipeline, see [our page on general workflow testing
+tips](./reference_general_workflow_testing_tips).
+
 ## Road map
 
 Here is our planned development road map.
