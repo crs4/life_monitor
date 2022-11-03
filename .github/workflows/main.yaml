@@ -100,9 +100,10 @@ jobs:
           echo "SOFTWARE_VERSION_AS_DOCKER_TAG=$( echo ${sw_version} | tr + _ )" >> $GITHUB_ENV
       # Set Docker image
       - name: Set Docker repository
-        run: echo "DOCKERHUB_REPO=$( if [[ -n $USER_REPO ]]; then echo $USER_REPO; else echo $GITHUB_REPOSITORY; fi )" >> $GITHUB_ENV
-        env:
-          USER_REPO: ${{ secrets.DOCKERHUB_REPO }}
+        run: |
+          echo "DOCKERHUB_REPO=$( if [[ -n "${{ secrets.DOCKERHUB_REPO }}" ]]; then 
+          echo "${{ secrets.DOCKERHUB_REPO }}"; 
+          else echo "${{ github.repository_owner }}/lifemonitor"; fi )" >> $GITHUB_ENV
       # Extract Docker metadata and set labels and tags
       - name: Extract Docker metadata
         id: docker_meta
@@ -142,8 +143,10 @@ jobs:
         # Tag the latest built image as `crs4/lifemonitor:latest`
         # which is the default used by `make run-tests` to run tests
         run: |
-          docker tag $USER_REPO:${{ env.SOFTWARE_VERSION_AS_DOCKER_TAG }} crs4/lifemonitor:latest
-          SW_VERSION="${{ env.SOFTWARE_VERSION }}" make start-testing
+          docker images ;
+          docker tag ${{ env.DOCKERHUB_REPO }}:${{ env.SOFTWARE_VERSION_AS_DOCKER_TAG }} crs4/lifemonitor:latest ;
+          docker images ;
+          SKIP_BUILD=1 SW_VERSION=${{ env.SOFTWARE_VERSION }} BUILD_NUMBER=${{ github.run_number }} make start-testing
         env:
           TRAVIS_TESTING_SERVICE_URL: ${{ secrets.TRAVIS_TESTING_SERVICE_URL }}
           TRAVIS_TESTING_SERVICE_TOKEN: ${{ secrets.TRAVIS_TESTING_SERVICE_TOKEN }}
@@ -151,10 +154,9 @@ jobs:
           GH_TESTING_SERVICE_URL: ${{ secrets.GH_TESTING_SERVICE_URL }}
           GH_TESTING_SERVICE_TOKEN: ${{ secrets.GH_TESTING_SERVICE_TOKEN }}
           GH_TESTING_SERVICE_TYPE: github
-          USER_REPO: ${{ secrets.DOCKERHUB_REPO }}
       # Run tests
       - name: Run tests
-        run: SW_VERSION=${{ env.SOFTWARE_VERSION }} make run-tests
+        run: SKIP_BUILD=1 SW_VERSION=${{ env.SOFTWARE_VERSION }} BUILD_NUMBER=${{ github.run_number }} make run-tests
         env:
           TRAVIS_TESTING_SERVICE_URL: ${{ secrets.TRAVIS_TESTING_SERVICE_URL }}
           TRAVIS_TESTING_SERVICE_TOKEN: ${{ secrets.TRAVIS_TESTING_SERVICE_TOKEN }}
@@ -185,4 +187,3 @@ jobs:
           build-args: |
             SW_VERSION=${{ env.SOFTWARE_VERSION }}
             BUILD_NUMBER=${{ github.run_number }}
-

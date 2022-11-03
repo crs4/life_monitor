@@ -190,4 +190,4 @@ def test_fetch_token_multi_threaded(app_context, redis_cache, user_identity: OAu
         if t['result'][0] == updated_token:
             assert t['result'][1] >= update_time, f"End time for thread {t['index']} should be equal or greater than {update_time}"
         else:
-            assert t['result'][1] < update_time, f"End time for thread {t['index']} should be equal or greater than {update_time}"
+            assert t['result'][1] <= update_time, f"End time for thread {t['index']} should be equal or smaller than {update_time}"
