@@ -30,10 +30,13 @@ The project's main goals are to:
 
 1. Install the [LifeMonitor GitHub app](https://github.com/apps/lifemonitor) on
    your workflow's repository;
-2. Done?
+2. Profit!
 
 The LifeMonitor app will analyze the repository and give further instructions
-through Pull Requests and/or Issues.
+through Pull Requests and/or Issues.  See the
+[page](lm_wft_best_practices_github_app) describing the LM GitHub app and LM's
+support for workflow sustainability best practices for information on what it
+does and how it can be configured.
 
 Is the GitHub app is not an option?  You can still use LM’s test monitoring and
 periodic test execution features. Follow [the instructions on configuring test
