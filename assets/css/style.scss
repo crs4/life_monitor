@@ -213,9 +213,21 @@ div.row.page-toc > div.toc-title {
     text-align: center;
 }
 
-div.row.page-toc > div.toc-content {
+div.row.page-toc > div.col-12.toc-content {
     margin: 0;
-    padding: 0;
+    padding: 0;    
+}
+
+body > div.row > div.section.col-sm-12.ml-auto.col-md-9 > div > div.col-md-3.text-center > div.row.page-toc > div.col-12.toc-content{
+    max-height: 80vh;
+    overflow-y: scroll;
+    padding-right: 17px;
+    box-sizing: 17px;
+}
+
+div.row.page-toc > div.toc-content::-webkit-scrollbar {
+    width: 0px;
+    background: transparent; /* make scrollbar transparent */ 
 }
 
 // The outer-most ul generated for the TOC does not have a class assigned.
