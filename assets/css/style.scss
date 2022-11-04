@@ -146,32 +146,10 @@ p img {
     text-align: center;
 }
 
-.toc {
-    text-align: left;
-    color: whitesmoke;
-    margin: 60px auto;
-    width: 100%;
-}
-
-/*.toc ul {
-    list-style-type: none;
-    padding: 0;
-    margin: 0;
-}*/
-
-.toc a {
-    color: whitesmoke
-}
-
-.toc .toc-title {
-    font-size: large;
-    font-weight: bold;
-    margin: 40px 0 10px;
-    color: hsl(180, 63%, 33%);
-}
-
-.toc a:hover {
-    color: hsl(180, 63%, 33%);
+.signin-button-container{
+    position: -webkit-sticky;
+    position: sticky; 
+    top: 50px;
 }
 
 .signin-button {
@@ -188,3 +166,78 @@ p img {
     text-align: center;
     font-weight: bold;
 }
+
+.toc .toc-title {
+    font-size: large;
+    font-weight: bold;
+    margin: 40px 0 10px;
+    color: hsl(180, 63%, 33%);
+}
+
+.toc {
+    text-align: left;
+    color: whitesmoke;
+    margin: 60px auto;
+    width: 100%;
+}
+
+.toc a {
+    color: whitesmoke
+}
+
+.toc a:hover {
+    color: hsl(180, 63%, 33%);    
+}
+
+div.page-toc {
+    font-size: 0.9em;
+    background: whitesmoke;
+    color: #003333;
+    text-align: left;
+    border-color: #003333;
+    // border-style: solid;
+    border-width: thin;
+    clear: left right;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    position: -webkit-sticky;
+    position: sticky; 
+    top: 120px;
+}
+
+div.row.page-toc > div.toc-title {
+    font-size: 1.1em;
+    font-weight: bold;    
+    padding: 20px 18px 20px;
+    text-align: center;
+}
+
+div.row.page-toc > div.col-12.toc-content {
+    margin: 0;
+    padding: 0;    
+}
+
+body > div.row > div.section.col-sm-12.ml-auto.col-md-9 > div > div.col-md-3.text-center > div.row.page-toc > div.col-12.toc-content{
+    max-height: 80vh;
+    overflow-y: scroll;
+    padding-right: 17px;
+    box-sizing: 17px;
+}
+
+div.row.page-toc > div.toc-content::-webkit-scrollbar {
+    width: 0px;
+    background: transparent; /* make scrollbar transparent */ 
+}
+
+// The outer-most ul generated for the TOC does not have a class assigned.
+div.row.page-toc > div.col-12.toc-content > ul {
+  padding-left: 20px;
+  margin-left: 0;
+  padding-bottom: 30%;
+}
+
+ul.page-toc-item {
+  padding-left: 20px;
+}
+
