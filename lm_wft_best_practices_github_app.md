@@ -65,3 +65,56 @@ can change in time as the development of LM moves forward.
 
 ### Configuration File
 
+In addition to the [global GitHub integration
+settings](https://api.lifemonitor.eu/profile?currentView=githubSettingsTab), the
+LifeMonitor GitHub app looks for a configuration file called `lifemonitor.yaml`
+at the base of the repository.  In that file you can customize the behaviour of
+the bot for the specific repository; naturally the settings in the file override
+the global settings in the LM web app.
+
+You can see a full example configuration file here: [`lifemonitor.yaml`](./lifemonitor.yaml).
+
+#### Configuration keys
+
+Base configuration settings:
+
+| Property | Description | Type | Default |
+|----------|-------------|------|---------|
+| name: | Name of the workflow to be shown in LifeMonitor | string | Name in RO-Crate; repository name |
+| public: | Workflow visibility. Public workflows and their tests status can be seen by everyone on the LM web site | boolean | ? |
+| issues.check: | Enable repository checks | boolean | set in global settings |
+| issues.include: | Validations to activate | array of strings | all validations |
+| issues.exclude: | Validations to deactivate | array of strings | empty |
+
+Branch and tag monitoring: branches and tags to be monitored for new workflow
+versions are specified through the `push.branches` and `push.tags` properties.
+Each of these takes an array of objects with the following properties.
+
+* `name`: Glob pattern matching a branch or tag name.
+* `update_registries`: Array of names of registries to update when a new
+    workflow version is available. Recognized registries are listed at the
+    endpoint `<https://api.lifemontor.eu/registries>.
+* `enable_notifications`:  
+* `lifemonitor_instance`:  Which LM instance to notify (default: "production";
+    can be set to "development").
+
+By default, the `main` branch is monitored.
+
+Here is an example:
+
+```yaml
+push:
+  branches:
+    - name: "main"
+      update_registries: []
+      enable_notifications: true
+  tags:
+    - name: "v*.*.*"
+      update_registries: ["wfhub"]
+      enable_notifications: true
+```
+
+### Checks/validations
+
+You can see the list of validations active in LifeMonitor at
+<https://api.lifemonitor.eu/workflows/issues>.
