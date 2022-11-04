@@ -94,22 +94,34 @@
             </div>
         </div>
         <div class="section col-sm-12 ml-auto col-md-9">
-            <div class="float-right">
-                <button class="btn btn-lg signin-button" role="button" onclick="location.href=getWebAppURL()">
-                    <img class="mr-2" src="images/signin.svg" height="25px">
-                    Go to LM
-                </button>
-            </div>
-            <div class="page-toc" style="">
-                <div class="toc-title">
-                    Table of Contents
+            <div class="row">
+                <div class="col-md-9">
+                    {% if page.category != "index"%}
+                {% endif %}
+                {{ content }}
                 </div>
-                {% include toc.html html=content item_class="page-toc" submenu_class="page-toc" %}
+                
+                <div class="col-md-3 text-center">
+                    <div class="row mx-auto text-center signin-button-container">
+                        <button class="btn btn-lg signin-button w-100" role="button" onclick="location.href=getWebAppURL()">
+                            <img class="mr-2" src="images/signin.svg" height="25px">
+                            Go to LM
+                        </button>
+                    </div>
+                    
+                    <div class="row page-toc">
+                        
+                        <div class="col-12 toc-title">
+                            Table of Contents
+                        </div>
+                        <div class="col-12 toc-content">
+                        {% include toc.html html=content item_class="page-toc-item" submenu_class="page-toc-item" %}
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            {% if page.category != "index"%}
-            {% endif %}
-            {{ content }}
+            
         </div>
     </div>
     <!-- <script src="{{ " /assets/js/scale.fix.js" | relative_url }}"></script> -->
