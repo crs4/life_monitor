@@ -17,8 +17,8 @@ periodic workflow testing](./lm_test_monitoring).
 ## Supported workflow managers
 
 LifeMonitor is currently striving to support
-[Galaxy](https://galaxyproject.org/) and
-[Snakemake](https://snakemake.readthedocs.io/en/stable/) workflows.
+[**Galaxy**](https://galaxyproject.org/) and
+[**Snakemake**](https://snakemake.readthedocs.io/en/stable/) workflows.
 
 [Contributions](https://github.com/crs4/life_monitor/pulls) to help us support
 other workflow systems are more than welcome!
@@ -49,19 +49,24 @@ can change in time as the development of LM moves forward.
 
 1. Navigate to the [LifeMonitor GitHub app management
    page](https://github.com/apps/lifemonitor).
-2. Click the "Install" button;
+2. Click the **Install** button;
     ![LM App Install button](./images/lm_gh_app_install_button_with_arrow.png)
 3. Pick the repository where you want to install the app.
     * Pick the account or organization that owns the repository;
-    * Select one or more repositories using the form, the click "Install &
-      authorize".
+    * Select one or more repositories using the form, the click **Install &
+      authorize**.
 4. If it's the first time you install the app, the process will take you to the
-   LifeMonitor web site to configure the GitHub integration settings.
+   LifeMonitor web site to configure the GitHub integration settings (see image
+   below).
     * To fully enable the GitHub app, make sure "Issue Checks" are enabled.
     * Set the default branches and tags that the app should consider as "new
       releases".
     * All the global settings can be overridden in the [repository-specific
       configuration file](#configuration-file).
+
+**Recommended settings**:
+![LM app GitHub integration settings](./images/lm_gh_integration_settings.png)
+
 
 ### Configuration File
 
@@ -111,6 +116,27 @@ push:
   tags:
     - name: "v*.*.*"
       update_registries: ["wfhub"]
+      enable_notifications: true
+```
+
+### Example configuration
+
+Here's an example configuration for a workflow that is:
+
+* publicly visible on LifeMonitor;
+* where releases are marked as git tags with names like `v1.0.0`;
+* and new releases are registered with both WorkflowHub and LifeMonitor.
+
+```yaml
+public: True
+
+issues:
+  check: true
+
+push:
+  tags:
+    - name: "v*.*.*"
+      update_registries: [wfhub]
       enable_notifications: true
 ```
 
