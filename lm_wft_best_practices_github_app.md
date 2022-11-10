@@ -1,4 +1,4 @@
-# Support for best practices - LifeMonitor GitHub App
+# LifeMonitor GitHub App to Support Best Practices
 
 The workflow LifeMonitor supports the application of workflow sustainability
 best practices.  Much of this revolves around following *community-accepted
@@ -10,13 +10,21 @@ detected and interested people notified: for workflow authors, it gives them the
 opportunity to fix the workflow and keep it useful; for potential workflow
 re-users, it reassures them that the workflow works and is maintained.
 
-LifeMonitor supports the application of repository best practices through [its
-GitHub App](#the-lifemonitor-github-app), while the LifeMonitor service [supports
-periodic workflow testing](./lm_test_monitoring).
+LifeMonitor mainly supports the application of repository best practices through
+[its GitHub App](#the-lifemonitor-github-app), while the LifeMonitor service
+[supports periodic workflow testing](./lm_test_monitoring).
+
+## Supported repositories
+
+Using the GitHub app requires that your workflow be hosted in a GitHub
+repository; on the other hand, the test monitoring functionality can be used
+with any [compatible testing
+service](./lm_test_monitoring#compatible-testing-services) accessible from
+the LM server.
 
 ## Supported workflow managers
 
-LifeMonitor is currently striving to support
+LifeMonitor is currently focussing on support for
 [**Galaxy**](https://galaxyproject.org/) and
 [**Snakemake**](https://snakemake.readthedocs.io/en/stable/) workflows.
 
@@ -66,7 +74,6 @@ can change in time as the development of LM moves forward.
 
 **Recommended settings**:
 ![LM app GitHub integration settings](./images/lm_gh_integration_settings.png)
-
 
 ### Configuration File
 

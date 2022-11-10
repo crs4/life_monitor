@@ -9,32 +9,6 @@ There are several ways you can interact with LifeMonitor:
 Under the hood, all of the above access the service via the API. Most API
 calls require authentication, so the first thing to do is create an account.
 
-
-## Create an account and authenticate
-
-Point your browser to the LifeMonitor API endpoint <https://api.lifemonitor.eu/>.
-
-:bulb: If you just want to play around or get familiar with the API, use the dev
-instance of LifeMonitor (replace <https://api.lifemonitor.eu> with
-<https://api.dev.lifemonitor.eu> throughout these instructions and examples).
-
-:warning: Please note that the dev instance is meant for testing / development and
-could be wiped out at any time with no warning.
-
-<img alt="LM login page" src="images/lm_login_page.png" width="600" />
-
-Click on the "**Log in**" button.
-
-You can log in directly with an existing account from one of the supported
-external identity providers, like GitHub or WorkflowHub (use the
-appropriate buttons for this).
-
-Alternatively you can click on "Sign Up" and follow the registration procedure
-to create an LM-specific account.
-
-<img alt="LM Sign In form" src="images/lm_sign_in_form.png" width="400" />
-
-
 ## Start Life Monitoring
 
 How to interact with LifeMonitor depends on your tech level and what you want
