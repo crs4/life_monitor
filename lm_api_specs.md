@@ -17,16 +17,15 @@ The LM API is designed with _two types_ of **clients** in mind:
    Registry Client) may in turn register on your behalf the workflow's tests with
    LifeMonitor.
 
-
 <img alt="LifeMonitor client types" src="images/lm_clients.png" width="900" />
 
 The authorisation mechanisms available for clients are:
 
 * **API key**, which can be used to implement generic clients;
 * **OAuth2 Client Credentials**, only available for trusted workflow registries
-  (see *RegistryClientCredentials*);
+  (see _RegistryClientCredentials_);
 * **OAuth2 Authorization Code**, available for both generic clients (see
-  *AuthorizationCodeFlow*) and registry clients (see *RegistryCodeFlow*).
+  _AuthorizationCodeFlow_) and registry clients (see _RegistryCodeFlow_).
 
 Clients can query API endpoints according to the authorisation mechanism they
 adopt.  There are in fact resources which are "contextual" to the actor which
@@ -34,16 +33,21 @@ the client is acting on behalf of and the type of "impersonated" actor is
 determined by the authorisation grant in use. Examples of contextual resources
 are:
 
-- `/users/current/*`, which assume an authenticated _user_ and thus can be
+* `/users/current/*`, which assume an authenticated _user_ and thus can be
   queried only by clients authorised through an _API key_, an OAuth2
 _AuthorizationCodeFlow_ or _RegistryCodeFlow_;
 
-- `/registries/current/*`, which assume an authenticated _registry_ and thus can
+* `/registries/current/*`, which assume an authenticated _registry_ and thus can
   be queried only by clients authorised through an OAuth2
 _RegistryClientCredentials_ or _RegistryCodeFlow_.
 
+## API examples
+
+The API specifications contain examples you can try out using your API key.
+Head over to <https://api.lifemonitor.eu/static/apidocs.html>.
+
 ## Links
 
-- [Getting started](getting_started)
-- [API documentation and examples](https://crs4.github.io/life_monitor/lm-openapi-rapidoc.html)
-- [YAML API specifications](https://github.com/crs4/life_monitor/tree/master/specs)
+* [How to authenticate Generic Clients](./authenticate-your-client)
+* [API documentation and examples](https://crs4.github.io/life_monitor/lm-openapi-rapidoc.html)
+* [YAML API specifications](https://github.com/crs4/life_monitor/tree/master/specs)

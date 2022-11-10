@@ -228,4 +228,4 @@ notifications](./images/lm_web_enable_email_notifications.png)
 
 ## Next steps
 
-Check the description on the [LifeMonitor dashboard](./web-app).
+Check the description on the [LifeMonitor dashboard](./lm_dashboard).
