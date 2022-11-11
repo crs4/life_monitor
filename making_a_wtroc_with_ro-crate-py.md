@@ -63,10 +63,7 @@ workflow. LifeMonitor supports monitoring test executions that run on [Travis
 CI](https://travis-ci.org/), [Jenkins](https://www.jenkins.io/) and [GitHub
 Actions](https://docs.github.com/en/actions). In this case, the (scientific)
 workflow is tested by a GitHub Actions workflow defined by
-[.github/workflows/main.yml](https://github.com/crs4/fair-crcc-send-data/blob/main/.github/workflows/main.yml)
-(note that the fact that we removed the `.github` directory from our local
-copy of the repository is not a problem, since we'll have to refer to the CI
-workflow via a remote URL).
+[.github/workflows/main.yml](https://github.com/crs4/fair-crcc-send-data/blob/main/.github/workflows/main.yml).
 
 First, create a test suite:
 

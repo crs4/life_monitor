@@ -35,28 +35,29 @@ instance could be wiped out at any time with no warning).
 
 1. Install the [LifeMonitor GitHub app](https://github.com/apps/lifemonitor) on
    your workflow's repository;
-2. Follow the installation process to enable LM issue checks;
+2. Follow the installation process to enable issue checks;
 3. Follow the instructions provided by the bot through pull requests and/or
    issues opened on your workflow repository to configure [test
-   monitoring](./lm_test_monitoring) and improve application of workflow
+   monitoring](./lm_test_monitoring) and improve the application of workflow
    sustainability best practices;
 4. Profit!
 
 Once installed, the LifeMonitor app can be configured to:
 
-* support the configuration of [test monitoring](./lm_test_monitoring) by the LM
-  service;
-* notify [WorkflowHub](https://about.workflowhub.eu/) and the
+* support the configuration of [test monitoring](./lm_test_monitoring) by the
+  LifeMonitor service;
+* notify [WorkflowHub](https://about.workflowhub.eu/) and
   [LifeMonitor](https://app.lifemonitor.eu/) about new workflow releases;
 * analyze the workflow through a series of checks to signal possible
-  improvements pertaining to best practices.
+  improvements pertaining to maintenance best practices.
 
-See the [page describing the LM GitHub app](lm_wft_best_practices_github_app)
-and for more detailed information on what it does and how it can be configured.
+See the
+[page describing the LifeMonitor GitHub app](lm_wft_best_practices_github_app)
+for more detailed information on what it does and how it can be configured.
 
-Is the GitHub app is not an option?  You can still use LM’s test monitoring and
-periodic test execution features. Follow [the instructions on configuring test
-monitoring](./lm_test_monitoring).
+If you don't want to install the GitHub app, you can still use LifeMonitor’s
+test monitoring and periodic test execution features. Follow [the instructions
+on configuring test monitoring](./lm_test_monitoring).
 
 If you still don't have tests for your workflow or you haven't created an
 automated testing pipeline, see [our page on general workflow testing

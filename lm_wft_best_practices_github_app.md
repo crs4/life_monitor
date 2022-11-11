@@ -1,7 +1,7 @@
-# LifeMonitor GitHub App to Support Best Practices
+# The LifeMonitor GitHub app
 
-The workflow LifeMonitor supports the application of workflow sustainability
-best practices.  Much of this revolves around following *community-accepted
+LifeMonitor supports the application of workflow sustainability
+**best practices**.  Much of this revolves around following *community-accepted
 conventions* for your specific workflow type and implementing *periodic workflow
 testing*. Following conventions allows existing computational tools to understand
 your workflow and its metadata. On the other hand, periodic workflow testing
@@ -11,25 +11,20 @@ opportunity to fix the workflow and keep it useful; for potential workflow
 re-users, it reassures them that the workflow works and is maintained.
 
 LifeMonitor mainly supports the application of repository best practices through
-[its GitHub App](#the-lifemonitor-github-app), while the LifeMonitor service
+its [GitHub app](#the-lifemonitor-github-app), while the LifeMonitor *service*
 [supports periodic workflow testing](./lm_test_monitoring).
 
 ## Supported repositories
 
-Using the GitHub app requires that your workflow be hosted in a GitHub
+To use the GitHub app, your workflow must be hosted in a GitHub
 repository; on the other hand, the test monitoring functionality can be used
 with any [compatible testing
 service](./lm_test_monitoring#compatible-testing-services) accessible from
-the LM server.
+the LifeMonitor server. Supported best-practice repository layouts include:
 
-## Supported workflow managers
-
-LifeMonitor is currently focussing on support for
-[**Galaxy**](https://galaxyproject.org/) and
-[**Snakemake**](https://snakemake.readthedocs.io/en/stable/) workflows.
-
-[Contributions](https://github.com/crs4/life_monitor/pulls) to help us support
-other workflow systems are more than welcome!
+* [IWC](https://github.com/galaxyproject/iwc) ([Galaxy](https://galaxyproject.org/))
+* [snakemake-workflows](https://github.com/snakemake-workflows/docs) ([Snakemake](https://snakemake.readthedocs.io/en/stable/))
+* [nf-core](https://nf-co.re/) ([Nextflow](https://www.nextflow.io/))
 
 ## The LifeMonitor GitHub App
 
@@ -41,17 +36,17 @@ following things.
 * Suggests pull requests to make changes or additions to bring the workflow
   repository closer to conforming to best practices.
 * Opens issues to let you know about problems detected by the checks:
-  * you can converse with the LM bot through the issues, to provide
+  * you can interact with the LifeMonitor bot through the issues, to provide
     information or issue commands.
 * Registers new releases/versions of the workflow with both the [LifeMonitor
   service](https://app.lifemonitor.eu/) and the
   [WorkflowHub](https://workflowhub.eu/) workflow registry.
 
-Naturally, all these actions can enabled or disabled in the [app configuration
+All these actions can enabled or disabled in the [app configuration
 file](#configuration-file).
 
 Exactly which checks are applied depends on the type of workflow you have and
-can change in time as the development of LM moves forward.
+can change in time as the development of LifeMonitor moves forward.
 
 ### Installation
 
@@ -81,8 +76,8 @@ In addition to the [global GitHub integration
 settings](https://api.lifemonitor.eu/profile?currentView=githubSettingsTab), the
 LifeMonitor GitHub app looks for a configuration file called `lifemonitor.yaml`
 at the base of the repository.  In that file you can customize the behaviour of
-the bot for the specific repository; naturally the settings in the file override
-the global settings in the LM web app.
+the bot for the specific repository; settings in the file override
+the global settings in the LifeMonitor web app.
 
 You can see a full example configuration file here: [`lifemonitor.yaml`](./lifemonitor.yaml).
 
@@ -93,22 +88,22 @@ Base configuration settings:
 | Property | Description | Type | Default |
 |----------|-------------|------|---------|
 | name: | Name of the workflow to be shown in LifeMonitor | string | Name in RO-Crate; repository name |
-| public: | Workflow visibility. Public workflows and their tests status can be seen by everyone on the LM web site | boolean | ? |
+| public: | Workflow visibility. Public workflows and their tests status can be seen by everyone on the LifeMonitor web site | boolean | ? |
 | issues.check: | Enable repository checks | boolean | set in global settings |
 | issues.include: | Validations to activate | array of strings | all validations |
 | issues.exclude: | Validations to deactivate | array of strings | empty |
 
-Branch and tag monitoring: branches and tags to be monitored for new workflow
+Branches and tags to be monitored for new workflow
 versions are specified through the `push.branches` and `push.tags` properties.
 Each of these takes an array of objects with the following properties.
 
 * `name`: Glob pattern matching a branch or tag name.
 * `update_registries`: Array of names of registries to update when a new
     workflow version is available. Recognized registries are listed at the
-    endpoint `<https://api.lifemontor.eu/registries>.
+    endpoint <https://api.lifemonitor.eu/registries>.
 * `enable_notifications`:  
-* `lifemonitor_instance`:  Which LM instance to notify (default: "production";
-    can be set to "development").
+* `lifemonitor_instance`: Which LifeMonitor instance to notify (default:
+  "production"; can be set to "development").
 
 By default, the `main` branch is monitored.
 

@@ -9,21 +9,21 @@ The LifeMonitor service can be configured to:
 
 ![LM monitored workflows](./images/lm_web_workflows.png)
 
-Thus, using LM implies that you have created tests for your workflow and that
-you have created an automated pipeline to execute them using a [compatible
-testing service](#compatible-testing-services).  If you're not this far yet with
-your workflow, you can have a look at our [generating workflow testing
-tips](./reference_general_workflow_testing_tips).
+Thus, using LifeMonitor implies that you have created tests for your workflow
+and that you have created an automated pipeline to execute them using a
+[compatible testing service](#compatible-testing-services).  If you're not
+this far yet with your workflow, you can have a look at our [generating
+workflow testing tips](./reference_general_workflow_testing_tips).
 
 ## Compatible Testing Services
 
 LifeMonitor currently supports monitoring tests that run on [GitHub
-Actions](https://docs.github.com/en/actions) and
-[Jenkins](https://www.jenkins.io/).
+Actions](https://docs.github.com/en/actions),
+[Jenkins](https://www.jenkins.io/) and [Travis CI](https://www.travis-ci.com/).
 
-## Registering your workflow through the LM GitHub app
+## Registering your workflow through the LifeMonitor GitHub app
 
-The [LM GitHub
+The [LifeMonitor GitHub
 app](./lm_wft_best_practices_github_app#the-lifemonitor-github-app) can
 automatically register your workflow testing pipeline with the LifeMonitor
 service.
@@ -38,32 +38,33 @@ workflow](#manually-registering-your-workflow).
 
 ## Manually registering your workflow
 
-If required, you can manually register your workflow's test pipeline(s) with the
-LM service (e.g., if your workflow repository is not on GitHub, or you need to
-support a custom repository layout).
+If required, you can manually register your workflow's test pipeline(s) with
+the LifeMonitor service (e.g., if your workflow repository is not on GitHub,
+or you need to support a custom repository layout).
 
 ### Key Concepts
 
 Manually registering your workflow testing pipeline requires creating a
 [Workflow Testing
-RO-Crate](https://www.lifemonitor.eu/workflow_testing_ro_crate) (WTROC) file that
-captures the required metadata (e.g., where do the tests run?). The WTROC is a
-specialization of a [Workflow
+RO-Crate](https://www.lifemonitor.eu/workflow_testing_ro_crate) (WTROC) file
+that captures the required metadata (e.g., where do the tests run?). The WTROC
+is a specialization of a [Workflow
 RO-Crate](https://about.workflowhub.eu/Workflow-RO-Crate/).  You can find an
 in-depth description on its [dedicated
 page](https://www.lifemonitor.eu/workflow_testing_ro_crate).
 
 Not all entities defined by the WTROC profile are required, though the more
-metadata you include the better you will be able to use LM's functionality
-(i.e., some things can't work if you don't provide the required metadata). The
-LifeMonitor requires the definition of at least the following entities.
+metadata you include the better you will be able to use LifeMonitor's
+functionality (i.e., some things can't work if you don't provide the required
+metadata).  LifeMonitor requires the definition of at least the following
+entities:
 
-* Main Workflow: the workflow which is being tested.
-* TestSuite: a set of tests for the workflow.
-* TestService: a software service on which the testing pipeline runs (e.g.,
+* Main workflow: the workflow which is being tested.
+* Test suite: a set of tests for the workflow.
+* Test service: a software service on which the testing pipeline runs (e.g.,
   GitHub Actions, your institutional Jenkins installation, etc.).
-* TestInstance: a specific testing pipeline which runs a TestSuite on a specific
-  TestService -- i.e., an instantiation of a TestSuite.
+* Test instance: a specific testing pipeline which runs a test suite on a
+  specific test service -- i.e., an instantiation of a test suite.
 
 ```mermaid
 erDiagram
@@ -75,15 +76,14 @@ erDiagram
 ### Instructions
 
 * Create a [Workflow Testing
-  RO-crate](https://www.lifemonitor.eu/workflow_testing_ro_crate) file. Various
+  RO-crate](https://www.lifemonitor.eu/workflow_testing_ro_crate). Various
   tools can support you in this. We have a [short
   tutorial](./making_a_wtroc_with_ro-crate-py) on how to do this with
-  [ro-crate-py
-  CLI](https://github.com/ResearchObject/ro-crate-py#command-line-interface).
-* Your RO-crate must define a Test Instance pointing the build service you
-  configured (which, in turn, requires you specify the Test Service.
+  [ro-crate-py](https://github.com/ResearchObject/ro-crate-py#command-line-interface).
+* Your RO-Crate must define a test instance pointing to the build service you
+  configured (which, in turn, requires you specify the test service).
 
-At this point, you will have to get your RO-Crate to the LifeMonitor.
+At this point, you have to submit your RO-Crate to LifeMonitor.
 
 Navigate to the [LifeMonitor dashboard](https://app.lifemonitor.eu/dashboard)
 and **make sure you are signed in**. If you're not signed in, click the "Sign
@@ -96,15 +96,16 @@ Once you're signed in, click on the "+ add" button just above the workflow list
 
 ![Adding a workflow to be monitored](./images/lm_web_add_workflow.png)
 
-At this point you'll have a few **options**:
+At this point you have a few **options**:
 
-1. Directly upload the Workflow Testing RO-crate you created.
-2. Upload the WTROC somewhere (e.g., your workflow repository) and provide LM
-   with a URL through which it can download it.
-3. First register your workflow with the WorkflowHub or WorkflowHub-dev, using
-   the WTROC you created.  You'll then be able to select the workflow from a
-   drop-down list.  In most cases this is the best option as it allows LM to
-   update the WorkflowHub entry when it detects new workflow releases.
+1. Directly upload the Workflow Testing RO-Crate you created.
+2. Upload the WTROC somewhere (e.g., your workflow repository) and provide
+   LifeMonitor with a URL through which it can download it.
+3. First register your workflow with WorkflowHub or WorkflowHub-dev, using the
+   WTROC you created.  You'll then be able to select the workflow from a
+   drop-down list.  In most cases this is the best option as it allows
+   LifeMonitor to update the WorkflowHub entry when it detects new workflow
+   releases.
 
 :warning: If registering your workflow from the WorkflowHub registry, you
 should authenticate with both LifeMonitor and WorkflowHub with the same
@@ -144,18 +145,18 @@ be used to access the archive.
 #### Registration via workflow registry (i.e., WorkflowHub)
 
 By selecting the "Registry Workflow" option you can register your workflow after
-having already registered it with the WorkflowHub (or other compatible
+having already registered it with WorkflowHub (or other compatible
 registries).
 
-In most cases, this is the best approach as it allows LM to connect its workflow
-entry to the WorkflowHub record. This lets LM query WorkflowHub for metadata
-and, should you decide to install the [LM GitHub
-app](lm_wft_best_practices_github_app) in the future, it allows LM to be
+In most cases, this is the best approach as it allows LifeMonitor to connect its workflow
+entry to the WorkflowHub record. This lets LifeMonitor query WorkflowHub for metadata
+and, should you decide to install the [LifeMonitor GitHub
+app](lm_wft_best_practices_github_app) in the future, it allows LifeMonitor to be
 configured to update the WorkflowHub entry when it detects new workflow releases
-in your repository (but, if you installed the LM GitHub app from the start it
+in your repository; if you installed the LifeMonitor GitHub app from the start, on the other hand, it
 could also take care of registering your workflow with WorkflowHub).
 
-If your workflow is not registered in the WorkflowHub yet, follow [these
+If your workflow is not registered in WorkflowHub yet, follow [these
 instructions](https://about.workflowhub.eu/Registering-an-existing-Workflow-RO-Crate/)
 to submit it.
 
@@ -228,4 +229,4 @@ notifications](./images/lm_web_enable_email_notifications.png)
 
 ## Next steps
 
-Check the description on the [LifeMonitor dashboard](./lm_dashboard).
+Check the description of the [LifeMonitor dashboard](./lm_dashboard).
