@@ -406,6 +406,13 @@ class Cache(object):
         logger.debug("Current cache data: %r", data is not None)
         return pickle.loads(data) if data is not None else data
 
+    def delete(self, key: str, prefix: str = CACHE_PREFIX):
+        logger.debug(f"Deleting key: {key}")
+        if self.cache_enabled:
+            logger.debug("Redis backend detected!")
+            logger.debug(f"Pattern: {prefix}{key}")
+            self.backend.delete(self._make_key(key, prefix=prefix))
+
     def delete_keys(self, pattern: str, prefix: str = CACHE_PREFIX):
         logger.debug(f"Deleting keys by pattern: {pattern}")
         if self.cache_enabled:
