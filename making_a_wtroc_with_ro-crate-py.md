@@ -1,9 +1,25 @@
 # Making a Workflow Testing RO-Crate
 
 In order to have your workflow monitored by LifeMonitor, you need to package
-it as a [Workflow Testing RO-Crate](workflow_testing_ro_crate): you can do
-that with the [ro-crate-py](https://github.com/ResearchObject/ro-crate-py)
-Python package. Set up a Python virtual environment and install ro-crate-py:
+it as a [Workflow Testing RO-Crate](workflow_testing_ro_crate) (WTROC). If you
+have a Galaxy, Snakemake or Nextflow workflow that follows community best
+practices, the easiest way to generate a WTROC for it is to use
+[repo2rocrate](https://github.com/crs4/repo2rocrate). Example:
+
+```bash
+git clone https://github.com/nf-core/rnaseq
+repo2rocrate -r rnaseq/ -o rnaseq.crate.zip
+```
+
+See repo2rocrate's documentation at the above link for more information.
+
+
+## Using ro-crate-py
+
+If your workflow type is not supported by repo2rocrate, or you can't conform
+to community best practices for some reason, you can generate a WTROC with
+[ro-crate-py](https://github.com/ResearchObject/ro-crate-py). Set up a Python
+virtual environment and install ro-crate-py:
 
 ```bash
 python3 -m venv venv
