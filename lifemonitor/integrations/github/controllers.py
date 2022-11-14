@@ -729,7 +729,7 @@ blueprint = Blueprint("github_integration", __name__,
 
 
 @authorized
-@blueprint.route("/integrations/github/installation/new", methods=("GET",))
+@blueprint.route("/integrations/github/installations/new", methods=("GET",))
 def handle_registration_new():
     # get a reference to the LifeMonitor Github App
     gh_app = LifeMonitorGithubApp.get_instance()
@@ -742,7 +742,7 @@ def handle_registration_new():
     return redirect(f'https://github.com/apps/{gh_app.name}/installations/new?state={state_id}')
 
 
-@blueprint.route("/integrations/github/installation/callback", methods=("GET",))
+@blueprint.route("/integrations/github/installations/callback", methods=("GET",))
 @login_required
 def handle_registration_callback():
     logger.debug(request.args)
