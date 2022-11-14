@@ -77,9 +77,8 @@ erDiagram
 
 * Create a [Workflow Testing
   RO-crate](https://www.lifemonitor.eu/workflow_testing_ro_crate). Various
-  tools can support you in this. We have a [short
-  tutorial](./making_a_wtroc_with_ro-crate-py) on how to do this with
-  [ro-crate-py](https://github.com/ResearchObject/ro-crate-py#command-line-interface).
+  tools can support you in this -- see [Making a Workflow Testing
+  RO-Crate](./making_a_wtroc).
 * Your RO-Crate must define a test instance pointing to the build service you
   configured (which, in turn, requires you specify the test service).
 
