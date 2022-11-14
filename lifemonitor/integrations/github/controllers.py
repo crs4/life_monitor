@@ -22,11 +22,14 @@ from __future__ import annotations
 
 import logging
 import os
+import uuid
 from tempfile import TemporaryDirectory
-from typing import Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import requests
-from flask import Blueprint, Flask, current_app, request
+from flask import (Blueprint, Flask, current_app, redirect, render_template,
+                   request)
+from flask_login import login_required
 from lifemonitor import cache
 from lifemonitor.api import serializers
 from lifemonitor.api.models import WorkflowRegistry
@@ -722,6 +725,19 @@ blueprint = Blueprint("github_integration", __name__,
                       template_folder='templates',
                       static_folder="static", static_url_path='/static')
 
+
+@authorized
+@blueprint.route("/integrations/github/installation/new", methods=("GET",))
+def handle_registration_new():
+    # get a reference to the LifeMonitor Github App
+    gh_app = LifeMonitorGithubApp.get_instance()
+    # build the current state
+    state_id = uuid.uuid4()
+    # state: Dict[str, Any] = _get_state()
+    # save the created state on cache
+    # cache.cache.set(f"{state_id}", state)
+    # redirect to Github App registration endpoint
+    return redirect(f'https://github.com/apps/{gh_app.name}/installations/new?state={state_id}')
 
 @blueprint.route("/integrations/github", methods=("POST",))
 def handle_event():
