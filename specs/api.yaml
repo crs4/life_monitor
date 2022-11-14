@@ -1834,6 +1834,11 @@ components:
           nullable: false
           description: "Identifier of the issue type in 'snake case' format"
           example: "missing_workflow_file"
+        description:
+          type: string
+          nullable: true
+          description: "A description for the issue type"
+          example: "No workflow found on this repository."
         depends_on:
           type: array
           nullable: true
