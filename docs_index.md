@@ -89,15 +89,14 @@
 * [LifeMonitor API Specs](lm_api_specs.md)
 * [LifeMonitor CLI](restish-cli.md)
 * [LifeMonitor Dashboard](lm_dashboard.md)
-* [LifeMonitor GitHub App to Support Best Practices](lm_wft_best_practices_github_app.md)
+* [LifeMonitor Dashboard](lm_dashboard.md)
 * [LifeMonitor Test Monitoring](lm_test_monitoring.md)
 * [LifeMonitor-specific features and requirements](workflow_testing_ro_crate.md)
 * [Links](lm_api_specs.md)
-* [LM Dashboard](lm_dashboard.md)
 
 ## M
 
-* [Making a Workflow Testing RO-Crate](making_a_wtroc_with_ro-crate-py.md)
+* [Making a Workflow Testing RO-Crate](making_a_wtroc.md)
 * [Manually registering your workflow](lm_test_monitoring.md)
 * [More registration arguments](restish-cli-register-workflow.md)
 
@@ -125,7 +124,7 @@
 * [Register and query a workflow with the LifeMonitor CLI](restish-cli-register-workflow.md)
 * [Registering the workflow](restish-cli-register-workflow.md)
 * [Registering your OAuth2 client with LifeMonitor](authenticate-your-client.md)
-* [Registering your workflow through the LM GitHub app](lm_test_monitoring.md)
+* [Registering your workflow through the LifeMonitor GitHub app](lm_test_monitoring.md)
 * [Registration via direct WTROC upload](lm_test_monitoring.md)
 * [Registration via remote WTROC download](lm_test_monitoring.md)
 * [Registration via workflow registry (i.e., WorkflowHub)](lm_test_monitoring.md)
@@ -145,7 +144,6 @@
 * [Subscribing to workflows](lm_dashboard.md)
 * [Summary table](lm_dashboard.md)
 * [Supported repositories](lm_wft_best_practices_github_app.md)
-* [Supported workflow managers](lm_wft_best_practices_github_app.md)
 
 ## T
 
@@ -157,12 +155,14 @@
 * [Test service](workflow_testing_ro_crate.md)
 * [Test service types](workflow_testing_ro_crate.md)
 * [Test suite](workflow_testing_ro_crate.md)
+* [The LifeMonitor GitHub app](lm_wft_best_practices_github_app.md)
 * [The LifeMonitor GitHub App](lm_wft_best_practices_github_app.md)
 
 ## U
 
 * [Use an external identity provider](create_an_account.md)
 * [Using a server name other than](lm_admin_guide.md)
+* [Using ro-crate-py](making_a_wtroc.md)
 
 ## W
 
