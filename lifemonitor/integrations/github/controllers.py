@@ -30,6 +30,8 @@ import requests
 from flask import (Blueprint, Flask, current_app, redirect, render_template,
                    request)
 from flask_login import login_required
+from github.PullRequest import PullRequest
+
 from lifemonitor import cache
 from lifemonitor.api import serializers
 from lifemonitor.api.models import WorkflowRegistry
@@ -39,7 +41,9 @@ from lifemonitor.api.models.repositories.github import GithubWorkflowRepository
 from lifemonitor.api.models.testsuites.testinstance import TestInstance
 from lifemonitor.api.models.wizards import QuestionStep, UpdateStep
 from lifemonitor.api.models.workflows import WorkflowVersion
+from lifemonitor.auth.models import User
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
+from lifemonitor.auth.services import authorized, current_user
 from lifemonitor.integrations.github import pull_requests
 from lifemonitor.integrations.github.app import LifeMonitorGithubApp
 from lifemonitor.integrations.github.events import (GithubEvent,
@@ -53,8 +57,6 @@ from lifemonitor.integrations.github.wizards import GithubWizard
 from lifemonitor.tasks import Scheduler
 from lifemonitor.utils import (bool_from_string, get_git_repo_revision,
                                match_ref)
-
-from github.PullRequest import PullRequest
 
 from . import services
 
