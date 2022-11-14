@@ -1,6 +1,10 @@
 
 import logging
 
+from apscheduler.triggers.cron import CronTrigger
+
+from lifemonitor.auth.models import User
+from lifemonitor.integrations.github import LifeMonitorGithubApp
 from lifemonitor.integrations.github.controllers import get_event_handler
 from lifemonitor.integrations.github.events import GithubEvent
 
@@ -55,3 +59,20 @@ def handle_event(event):
                 logger.exception(e)
 
     logger.warning("No handler for GitHub event: %r", event.type)
+
+
+@schedule(trigger=CronTrigger(minute=0, hour=4),
+          queue_name='github', options={'max_retries': 0, 'max_age': TASK_EXPIRATION_TIME})
+def check_installations():
+    gh_app = LifeMonitorGithubApp.get_instance()
+    installations = [str(_.id) for _ in gh_app.installations]
+    logger.debug("Installations: %r", installations)
+    for u in User.all():
+        for i in u.github_settings.installations:
+            installation_id = str(i['info']['id'])
+            if installation_id not in installations:
+                u.github_settings.remove_installation(installation_id)
+                logger.info(f"Installation {installation_id} removed from account of user '{u.id}'")
+            else:
+                logger.debug(f"Installation {installation_id} still alive")
+        u.save()
