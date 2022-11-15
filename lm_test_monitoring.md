@@ -66,12 +66,12 @@ entities:
 * Test instance: a specific testing pipeline which runs a test suite on a
   specific test service -- i.e., an instantiation of a test suite.
 
-```mermaid
+<pre class="mermaid">
 erDiagram
-  Workflow ||--o{ TestSuite
-  TestSuite ||--o{ TestInstance : has a
-  TestInstance --|| TestService : runs on
-```
+    TestSuite }o--|| Main-Workflow : tests
+    TestInstance }o--|| TestSuite : executes
+    TestInstance }o--|| TestService : "runs on"
+</pre>
 
 ### Instructions
 
