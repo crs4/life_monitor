@@ -39,5 +39,8 @@ jobs:
           git config --global user.name "github-bot"
           git config --global user.email "username@users.noreply.github.com"
           git add docs_index.md
-          git commit -m "Generated docs index"
-          git push 
+          # if there are no changes to the index, don't try to commit
+          if [[ -n "$(git status --porcelain)" ]]; then
+            git commit -m "Generated docs index"
+            git push 
+          fi
