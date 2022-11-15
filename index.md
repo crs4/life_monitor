@@ -22,9 +22,46 @@ The project's main goals are to:
   Actions](https://docs.github.com/en/actions),
   [Jenkins](https://www.jenkins.io/), [Travis CI](https://travis-ci.org/),
   etc.).
-* Facilitate the periodic automated execution of workflow tests.
+* Facilitate the application of workflow best practices, including periodic
+  automated execution of workflow tests.
 * Integrate with [WorkflowHub](https://about.workflowhub.eu/).
 * Assist in test suite creation and workflow maintenance.
+
+## Quick Start
+
+:bulb: If you just want to play around or get familiar with the API, use the
+[dev instance of LifeMonitor](https://app.dev.lifemonitor.eu) (note that the dev
+instance could be wiped out at any time with no warning).
+
+1. Install the [LifeMonitor GitHub app](https://github.com/apps/lifemonitor) on
+   your workflow's repository;
+2. Follow the installation process to enable issue checks;
+3. Follow the instructions provided by the bot through pull requests and/or
+   issues opened on your workflow repository to configure [test
+   monitoring](./lm_test_monitoring) and improve the application of workflow
+   sustainability best practices;
+4. Profit!
+
+Once installed, the LifeMonitor app can be configured to:
+
+* support the configuration of [test monitoring](./lm_test_monitoring) by the
+  LifeMonitor service;
+* notify [WorkflowHub](https://about.workflowhub.eu/) and
+  [LifeMonitor](https://app.lifemonitor.eu/) about new workflow releases;
+* analyze the workflow through a series of checks to signal possible
+  improvements pertaining to maintenance best practices.
+
+See the
+[page describing the LifeMonitor GitHub app](lm_wft_best_practices_github_app)
+for more detailed information on what it does and how it can be configured.
+
+If you don't want to install the GitHub app, you can still use LifeMonitor’s
+test monitoring and periodic test execution features. Follow [the instructions
+on configuring test monitoring](./lm_test_monitoring).
+
+If you still don't have tests for your workflow or you haven't created an
+automated testing pipeline, see [our page on general workflow testing
+tips](./reference_general_workflow_testing_tips).
 
 ## Road map
 

@@ -19,16 +19,15 @@ of each call's section for a list of authentication methods compatible with
 that call (if there's nothing there, then the call does not require
 authentication).
 
-
 ## OAuth2
 
 LifeMonitor supports [OAuth2 Authorization
 Code](https://www.oauth.com/oauth2-servers/server-side-apps/authorization-code)
-authentication.  All API calls
-compatible with this authentication scheme are visible in the [API specs](https://api.lifemonitor.eu/static/apidocs.html) with the authentication scheme *OAuth (AuthorizationCodeFlow)*.
+authentication.  All API calls compatible with this authentication scheme are
+visible in the [API specs](https://api.lifemonitor.eu/static/apidocs.html) with
+the authentication scheme *OAuth (AuthorizationCodeFlow)*.
 
 To use OAuth2 with LifeMonitor, you have to register your client first.
-
 
 ### Registering your OAuth2 client with LifeMonitor
 

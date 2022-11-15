@@ -1,2 +1,11 @@
 <!--favicon here -->
 <link rel="shortcut icon" type="image/x-icon" href="{{ '/images/favicon.png' | relative_url }}">
+
+<!--
+Deploy the mermaid-js library. The content of any <div> or <pre> with
+class="mermaid" will be processed as mermaid code.
+-->
+<script type="module">
+  import mermaid from 'https://unpkg.com/mermaid@9/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: true });
+</script>
