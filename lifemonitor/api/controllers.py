@@ -24,7 +24,7 @@ import tempfile
 import connexion
 import lifemonitor.exceptions as lm_exceptions
 import werkzeug
-from flask import Response, request
+from flask import Response, request, render_template
 from lifemonitor.api import models, serializers
 from lifemonitor.api.services import LifeMonitor
 from lifemonitor.auth import (EventType, authorized, current_registry,
@@ -572,8 +572,12 @@ def workflows_delete(wf_uuid):
 
 
 @cached(timeout=Timeout.REQUEST)
-def workflows_get_issue_types():
-    return serializers.ListOfWorkflowIssueTypesSchema().dump(models.WorkflowRepositoryIssue.all())
+def workflows_get_issue_types(format="json", back=None):
+    issues = serializers.ListOfWorkflowIssueTypesSchema().dump(models.WorkflowRepositoryIssue.all())
+    if format == 'html':
+        return Response(render_template("api/issues.j2", issues=issues['items'], back_param=back),
+                        mimetype="text/html", status=200)
+    return issues
 
 
 @cached(timeout=Timeout.REQUEST)
