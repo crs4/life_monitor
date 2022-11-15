@@ -145,11 +145,12 @@ class GithubUserSettings():
         return data
 
     def remove_installation(self, installation_id: str):
-        del self._raw_settings['installations'][str(installation_id)]
-        flag_modified(self.user, 'settings')
+        if "installations" in self._raw_settings:
+            del self._raw_settings['installations'][str(installation_id)]
+            flag_modified(self.user, 'settings')
 
     def get_installation(self, installation_id: str) -> Dict[str, Any]:
-        return self._raw_settings['installations'].get(str(installation_id), None)
+        return self._installations.get(str(installation_id), None)
 
     def add_installation_repository(self, installation_id: str, repo_fullname: str, repository_info: Dict[str, Any]):
         inst = self.get_installation(str(installation_id))
