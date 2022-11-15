@@ -572,12 +572,17 @@ def workflows_delete(wf_uuid):
 
 
 @cached(timeout=Timeout.REQUEST)
-def workflows_get_issue_types(format="json", back=None):
-    issues = serializers.ListOfWorkflowIssueTypesSchema().dump(models.WorkflowRepositoryIssue.all())
-    if format == 'html':
-        return Response(render_template("api/issues.j2", issues=issues['items'], back_param=back),
-                        mimetype="text/html", status=200)
-    return issues
+def workflows_get_issue_types():
+    return serializers.ListOfWorkflowIssueTypesSchema().dump(models.WorkflowRepositoryIssue.all())
+
+
+@cached(timeout=Timeout.REQUEST)
+def workflows_get_issue_types_as_html(back=None):
+    return Response(
+        render_template(
+            "api/issues.j2", back_param=back,
+            issues=serializers.ListOfWorkflowIssueTypesSchema().dump(models.WorkflowRepositoryIssue.all())['items']),
+        mimetype="text/html", status=200)
 
 
 @cached(timeout=Timeout.REQUEST)
