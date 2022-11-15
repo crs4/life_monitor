@@ -109,13 +109,13 @@ class WorkflowIssueTypeSchema(ResourceMetadataSchema):
     identifier = fields.String(attribute="identifier")
     name = fields.String(attribute="name")
     labels = fields.Method("get_labels")
-    depends_on = fields.String(attribute="get_depends_on")
+    depends_on = fields.Method("get_depends_on")
 
     def get_labels(self, issue: WorkflowRepositoryIssue):
         return issue.labels
 
     def get_depends_on(self, issue: WorkflowRepositoryIssue):
-        return [_.identifier for _ in issue.depends_on] if issue.depends_on else []
+        return [_.get_identifier() for _ in issue.depends_on] if issue.depends_on else []
 
 
 class ListOfWorkflowIssueTypesSchema(ListOfItems):
