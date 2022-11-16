@@ -110,6 +110,7 @@ class WorkflowIssueTypeSchema(ResourceMetadataSchema):
     name = fields.String(attribute="name")
     labels = fields.Method("get_labels")
     depends_on = fields.Method("get_depends_on")
+    description = fields.String(attribute="description")
 
     def get_labels(self, issue: WorkflowRepositoryIssue):
         return issue.labels
