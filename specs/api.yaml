@@ -655,6 +655,35 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ListOfIssues"
+
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /workflows/issues.html:
+    get:
+      summary: List issue types
+      description: "Get information about the specified workflow"
+      x-openapi-router-controller: lifemonitor.api.controllers
+      operationId: "workflows_get_issue_types_as_html"
+      tags: ["Workflows"]
+      security:
+        - {}
+      parameters:
+        - $ref: "#/components/parameters/back"
+      responses:
+        "200":
+          description: >
+            List of issue types.
+          content:
+            text/html:
+              schema:
+                type: string
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -1622,6 +1651,25 @@ components:
         type: string
       required: true
       example: 123e4567-e89b-12d3-a456-426614174000
+    format:
+      name: "format"
+      in: query
+      schema:
+        type: string
+        enum: [json, html]
+      # default: 'json' # not supported yet
+      description: |
+        `json` to get a JSON object; 
+        'html' to render the list of issues on a formatted HTML page
+      example: "html"
+    back:
+      name: "back"
+      in: query
+      schema:
+        type: string
+      description: |
+        A callback URL
+      example: "https://lifemonitor.eu"
 
   responses:
     NotFound:
