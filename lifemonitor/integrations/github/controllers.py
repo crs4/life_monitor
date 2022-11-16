@@ -22,11 +22,16 @@ from __future__ import annotations
 
 import logging
 import os
+import uuid
 from tempfile import TemporaryDirectory
-from typing import Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import requests
-from flask import Blueprint, Flask, current_app, request
+from flask import (Blueprint, Flask, current_app, redirect, render_template,
+                   request)
+from flask_login import login_required
+from github.PullRequest import PullRequest
+
 from lifemonitor import cache
 from lifemonitor.api import serializers
 from lifemonitor.api.models import WorkflowRegistry
@@ -36,7 +41,9 @@ from lifemonitor.api.models.repositories.github import GithubWorkflowRepository
 from lifemonitor.api.models.testsuites.testinstance import TestInstance
 from lifemonitor.api.models.wizards import QuestionStep, UpdateStep
 from lifemonitor.api.models.workflows import WorkflowVersion
+from lifemonitor.auth.models import User
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
+from lifemonitor.auth.services import authorized, current_user
 from lifemonitor.integrations.github import pull_requests
 from lifemonitor.integrations.github.app import LifeMonitorGithubApp
 from lifemonitor.integrations.github.events import (GithubEvent,
@@ -50,8 +57,6 @@ from lifemonitor.integrations.github.wizards import GithubWizard
 from lifemonitor.tasks import Scheduler
 from lifemonitor.utils import (bool_from_string, get_git_repo_revision,
                                match_ref)
-
-from github.PullRequest import PullRequest
 
 from . import services
 
@@ -721,6 +726,89 @@ def get_event_handler(event_type: str) -> Callable:
 blueprint = Blueprint("github_integration", __name__,
                       template_folder='templates',
                       static_folder="static", static_url_path='/static')
+
+
+@authorized
+@blueprint.route("/integrations/github/installations/new", methods=("GET",))
+def handle_registration_new():
+    # get a reference to the LifeMonitor Github App
+    gh_app = LifeMonitorGithubApp.get_instance()
+    # build the current state
+    state_id = uuid.uuid4()
+    # state: Dict[str, Any] = _get_state()
+    # save the created state on cache
+    # cache.cache.set(f"{state_id}", state)
+    # redirect to Github App registration endpoint
+    return redirect(f'https://github.com/apps/{gh_app.name}/installations/new?state={state_id}')
+
+
+@blueprint.route("/integrations/github/installations/callback", methods=("GET",))
+@login_required
+def handle_registration_callback():
+    logger.debug(request.args)
+    installation_id = request.args.get('installation_id', type=str)
+    if not installation_id:
+        return "Bad request: missing parameter 'installation_id'", 400
+    setup_action = request.args.get('setup_action')
+    if not setup_action:
+        return "Bad request: missing parameter 'setup_action", 400
+    # not used yet
+    state = request.args.get('state', None)
+    logger.debug("Callback state: %r", state)
+
+    # get a reference to the LifeMonitor Github App
+    gh_app = LifeMonitorGithubApp.get_instance()
+    installation = gh_app.get_installation(int(installation_id))
+    assert installation, "Installation not found"
+    installation_repositories = {r.full_name: r.raw_data for r in installation.get_repos()}
+    logger.debug("Installation repositories: %r", installation_repositories)
+
+    logger.debug("Current user: %r", current_user)
+    assert not current_user.is_anonymous  # type: ignore
+    user: User = current_user  # type: ignore
+
+    settings = GithubUserSettings(user) \
+        if not user.github_settings else user.github_settings
+
+    user_installation = settings.get_installation(installation_id)
+    logger.debug(user_installation)
+    user_installation_repositories = settings.get_installation_repositories(installation_id)
+    logger.debug("User installation repos: %r", user_installation_repositories)
+
+    # compute list of repositories added/removed
+    logger.debug("Installation found on user settings")
+    added_repos: Dict[str, Any] = {k: v for k, v in installation_repositories.items() if k not in user_installation_repositories}
+    logger.debug("Added repositories: %r", added_repos)
+    existing_repos: Dict[str, Any] = {r: v for r, v in user_installation_repositories.items() if r in installation_repositories}
+    logger.debug("Existing repositories: %r", existing_repos)
+    removed_repos: Dict[str, Any] = {k: v for k, v in user_installation_repositories.items() if k not in installation_repositories}
+    logger.debug("Removed repositories: %r", removed_repos)
+
+    if setup_action == 'delete':
+        settings.remove_installation(installation_id)
+        logger.debug(f"Installation {installation_id} removed")
+        assert settings.get_installation(installation_id) is None, "Installation not removed"
+
+    else:
+        # creating or updating an installation
+        if not user_installation:
+            logger.debug(f"Installation {installation_id} not associated to the user account")
+            settings.add_installation(installation_id, installation.raw_data)
+
+        for r, v in added_repos.items():
+            settings.add_installation_repository(installation_id, r, v)
+            logger.debug(f"Repo {r} added to installation {installation_id}")
+        for r in removed_repos:
+            settings.remove_installation_repository(installation_id, r)
+            logger.debug(f"Repo {r} removed from installation {installation_id}")
+
+    # update user settings
+    user.save()
+
+    return render_template('github_integration/registration.j2',
+                           installation=installation.raw_data, webapp_url=current_app.config['WEBAPP_URL'],
+                           installation_repositories=settings.get_installation_repositories(installation_id).values(),
+                           added_repos=added_repos.keys(), removed_repos=removed_repos.values())
 
 
 @blueprint.route("/integrations/github", methods=("POST",))

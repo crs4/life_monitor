@@ -1,0 +1,145 @@
+{% extends 'auth/base.j2' %}
+{% import 'auth/macros.j2' as macros %}
+
+{% block body_class %} login-page {% endblock %}
+{% block body_style %} height: auto; {% endblock %}
+
+{% block body %}
+
+<div class="mx-5" style="margin-top: 10%;">
+  <div class="text-center align-middle h-100 my-auto">
+    <div class="row h-100 my-auto align-items-center">
+      <div class="col-3">
+        <img style="width: 8em;" {% if config.get('ENV')=='production' %}
+          src="{{ url_for('auth.static', filename='img/logo/lm/LifeMonitorLogo.png') }}" {% else %}
+          src="{{ url_for('auth.static', filename='img/logo/lm/LifeMonitorLogo-dev.png') }}" {% endif %}
+          alt="LifeMonitor Logo" class="" />
+      </div>
+      <div class="col-2">
+        ---------
+      </div>
+      <div class="col-2 text-center" style="width: 100%;">
+        <img src="{{ installation.account.avatar_url }}" style="width: 60px;">
+        <div class="text-center" style="text-align: center;">
+
+          <div style="font-size: 0.6em; margin-bottom: -5px;">GitHub Account</div>
+          <div>
+            <a class="mt-1 p-0" style="font-weight: bold;" href="{{ installation.account.html_url }}" target="_blank">
+              {{ installation.account.login }}
+            </a>
+          </div>
+        </div>
+      </div>
+      <div class="col-2">
+        -----------
+      </div>
+      <div class="col-3">
+        <img style="width: 9em;" src="{{ url_for('auth.static', filename='img/logo/providers/github.png') }}" />
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Main content -->
+<div class="container-sm">
+  <div class="card card-primary card-outline mx-5 my-4 p-5">
+    <h3 class="text-center p-0 m-0" style="color: #133233">
+      <span
+        style="font-style: italic; font-family: Baskerville,Baskerville Old Face,Hoefler Text,Garamond,Times New Roman,serif;">Life</span>
+      <span class="small" style="font-size: 75%; margin: 0 -5px 0 -5px;">-</span>
+      <span style="font-weight: bold; font-family: Gill Sans,Gill Sans MT,Calibri,sans-serif;">Monitor</span>
+      GitHub App installed!<br />
+    </h3>
+
+    <!-- added repositories -->
+    {% if installation_repositories %}
+    <h5 class="mt-5 text-bold">Grant access to:</h5>
+
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th style="width: 5px"></th>
+          <th>Repository</th>
+          <th style="width: 100px"></th>
+          <th style="width: 120px"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in installation_repositories %}
+        <tr>
+          <td><i class="fab fa-github mr-1"></i></td>
+          <td>
+            {% if r.full_name in added_repos %}
+            <span class="font-italic text-bold">{{r.full_name}}</span>
+            <span style="font-variant: small-caps;">[new]</span>
+            {% else %}
+            <span>
+              {{r.full_name}}
+            </span>
+            {% endif %}
+          </td>
+          <td></td>
+          <td>
+            <a href="{{r.html_url}}" target="_blank">
+              <i class="far fa-folder-open mx-2"></i>              
+            </a>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+
+
+    <!-- removed repositories -->
+    {% if removed_repos %}
+    <h5 class="mt-5 text-bold">Revoked access to:</h5>
+
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th style="width: 5px"></th>
+          <th>Repository</th>
+          <th style="width: 100px"></th>
+          <th style="width: 120px"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in removed_repos %}
+        <tr>
+          <td><i class="fab fa-github mr-1"></i></td>
+          <td>{{r.full_name}}</td>
+          <td></td>
+          <td>
+            <a href="{{r.html_url}}" target="_blank">
+              <i class="far fa-folder-open mx-2"></i>              
+            </a>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+
+    <div class="container-sm text-center p-4 mt-5">
+      <div class="form-group pt-5 text-center d-inline">
+        <a type="button" href="{{webapp_url}}" target="_blank"
+          class="btn btn-primary text-bold" style="width: 175px">
+          Dashboard
+        </a>
+      </div>
+
+      <div class="form-group pt-5 text-center d-inline">
+        <a type="button" class="btn btn-primary text-bold" style="width: 175px"
+          href="/profile?currentView=githubSettingsTab" target="_blank">Settings</a>
+      </div>
+
+      <div class="form-group pt-5 text-center d-inline">
+        <a type="button" href="https://github.com/settings/installations/{{installation.id}}"
+          class="btn btn-primary text-bold" style="width: 175px" target="_blank">Manage</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+{% endblock body %}

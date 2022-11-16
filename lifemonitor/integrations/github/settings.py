@@ -20,11 +20,16 @@
 
 from __future__ import annotations
 
-from typing import List
+import logging
+from typing import Any, Dict, List
+
+from sqlalchemy.orm.attributes import flag_modified
 
 from lifemonitor.auth.models import User
 from lifemonitor.utils import match_ref
-from sqlalchemy.orm.attributes import flag_modified
+
+# Config a module level logger
+logger = logging.getLogger(__name__)
 
 
 class GithubUserSettings():
@@ -36,12 +41,13 @@ class GithubUserSettings():
         "all_tags": True,
         "branches": ["main"],
         "tags": ["v*.*.*"],
-        "registries": []
+        "registries": [],
+        "installations": {}
     }
 
     def __init__(self, user: User) -> None:
         self.user = user
-        self._raw_settings = self.user.settings.get('github_settings', None)
+        self._raw_settings: Dict[str, Any] = self.user.settings.get('github_settings', None)  # type: ignore
         if not self._raw_settings:
             self._raw_settings = self.DEFAULTS.copy()
             self.user.settings['github_settings'] = self._raw_settings
@@ -116,6 +122,52 @@ class GithubUserSettings():
 
     def is_valid_tag(self, tag: str) -> bool:
         return match_ref(tag, self.tags)
+
+    @property
+    def installations(self) -> List[Dict[str, Any]]:
+        result = self._raw_settings.get('installations', None)
+        return list(result.values()) if result else []
+
+    @property
+    def _installations(self) -> Dict[str, Any]:
+        if "installations" not in self._raw_settings:
+            self._raw_settings["installations"] = {}
+        return self._raw_settings["installations"]
+
+    def add_installation(self, installation_id: str, info: Dict[str, Any]) -> Dict[str, Any]:
+        data = {
+            "id": installation_id,
+            "info": info,
+            "repositories": {}
+        }
+        self._installations[str(installation_id)] = data
+        flag_modified(self.user, 'settings')
+        return data
+
+    def remove_installation(self, installation_id: str):
+        if "installations" in self._raw_settings:
+            del self._raw_settings['installations'][str(installation_id)]
+            flag_modified(self.user, 'settings')
+
+    def get_installation(self, installation_id: str) -> Dict[str, Any]:
+        return self._installations.get(str(installation_id), None)
+
+    def add_installation_repository(self, installation_id: str, repo_fullname: str, repository_info: Dict[str, Any]):
+        inst = self.get_installation(str(installation_id))
+        assert inst, f"Unable to find installation '{installation_id}'"
+        inst['repositories'][repo_fullname] = repository_info
+        flag_modified(self.user, 'settings')
+
+    def remove_installation_repository(self, installation_id: str, repo_fullname: str):
+        inst = self.get_installation(installation_id)
+        assert inst, f"Unable to find installation '{installation_id}'"
+        del inst['repositories'][repo_fullname]
+        flag_modified(self.user, 'settings')
+
+    def get_installation_repositories(self, installation_id: str) -> Dict[str, Any]:
+        inst = self.get_installation(installation_id)
+        logger.debug("Installation: %r", inst)
+        return {k: v for k, v in inst['repositories'].items()} if inst else {}
 
     @property
     def registries(self) -> List[str]:
