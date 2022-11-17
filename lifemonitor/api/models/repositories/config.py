@@ -55,7 +55,7 @@ class WorkflowRepositoryConfig(RepositoryFile):
             p = f"{repo_path}/{head}lifemonitor.{ext}"
             if os.path.isfile(p):
                 return p
-        return None # file not found
+        return None  # file not found
 
     def load(self) -> dict:
         return yaml.safe_load(self.get_content())

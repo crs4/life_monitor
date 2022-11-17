@@ -19,11 +19,10 @@
 # SOFTWARE.
 
 import logging
-import os
 
 import pytest
+
 from lifemonitor.api.models.issues.general.repo_layout import MissingWorkflowFile
-from lifemonitor.api.models.repositories import ZippedWorkflowRepository
 from lifemonitor.api.models.repositories.local import LocalWorkflowRepository
 
 logger = logging.getLogger(__name__)

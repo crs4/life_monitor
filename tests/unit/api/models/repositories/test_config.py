@@ -23,8 +23,6 @@ from pathlib import Path
 
 import pytest
 
-from lifemonitor.api.models import repositories
-from lifemonitor.api.models.repositories import ZippedWorkflowRepository
 from lifemonitor.api.models.repositories.local import LocalWorkflowRepository
 from lifemonitor.api.models.repositories.config import WorkflowRepositoryConfig
 
@@ -39,7 +37,7 @@ issues:
 """
 
 
-def test_finding_config_file(repository : LocalWorkflowRepository):
+def test_finding_config_file(repository: LocalWorkflowRepository):
     with pytest.raises(ValueError):
         cfg = WorkflowRepositoryConfig(repository.local_path)
 
