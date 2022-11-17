@@ -29,7 +29,8 @@ import shutil
 import tempfile
 import zipfile
 from io import BytesIO
-from typing import List
+from pathlib import Path
+from typing import List, Optional
 
 from lifemonitor.api.models.repositories.base import (
     WorkflowRepository, WorkflowRepositoryMetadata)
@@ -120,34 +121,45 @@ class LocalWorkflowRepository(WorkflowRepository):
         return None
 
 
-class ZippedWorkflowRepository(LocalWorkflowRepository):
+class TemporaryLocalWorkflowRepository(LocalWorkflowRepository):
 
-    def __init__(self, archive_path: str, exclude: List[str] = None, auto_cleanup: bool = True) -> None:
-        local_path = tempfile.mkdtemp(dir=BaseConfig.BASE_TEMP_FOLDER)
-        extract_zip(archive_path, local_path)
-        super().__init__(local_path=local_path, exclude=exclude)
-        self.archive_path = archive_path
+    def __init__(self,
+                 local_path: Optional[str] = None,
+                 exclude: Optional[List[str]] = None,
+                 auto_cleanup: bool = True) -> None:
         self.auto_cleanup = auto_cleanup
-        logger.debug("Local path: %r", self.local_path)
+        super().__init__(local_path, exclude)
+
+    def cleanup(self) -> None:
+        logger.debug("Cleaning temp extraction folder of zipped repository @ %s ...", self.local_path)
+        shutil.rmtree(self.local_path, ignore_errors=True)
 
     def __del__(self):
         if self.auto_cleanup:
-            logger.debug(f"Cleaning temp extraction folder of zipped repository @ {self.local_path} .... ")
-            shutil.rmtree(self.local_path, ignore_errors=True)
-            logger.debug(f"Cleaning temp extraction folder of zipped repository @ {self.local_path} .... ")
+            self.cleanup()
         else:
             logger.warning("Auto clean up disabled for repo: %r", self)
 
 
-class Base64WorkflowRepository(LocalWorkflowRepository):
+class ZippedWorkflowRepository(TemporaryLocalWorkflowRepository):
+
+    def __init__(self, archive_path: str | Path, exclude: Optional[List[str]] = None, auto_cleanup: bool = True) -> None:
+        local_path = tempfile.mkdtemp(dir=BaseConfig.BASE_TEMP_FOLDER)
+        super().__init__(local_path=local_path, exclude=exclude, auto_cleanup=auto_cleanup)
+        extract_zip(archive_path, local_path)
+        self.archive_path = archive_path
+        logger.debug("Local path: %r", self.local_path)
+
+
+class Base64WorkflowRepository(TemporaryLocalWorkflowRepository):
 
     def __init__(self, base64_rocrate: str) -> None:
+        local_path = tempfile.mkdtemp(dir=BaseConfig.BASE_TEMP_FOLDER)
+        super().__init__(local_path, auto_cleanup=True)
         try:
             rocrate = base64.b64decode(base64_rocrate)
-            local_path = tempfile.mkdtemp(dir=BaseConfig.BASE_TEMP_FOLDER)
             zip_file = zipfile.ZipFile(BytesIO(rocrate))
             zip_file.extractall(local_path)
-            super().__init__(local_path)
         except (zipfile.BadZipFile, zipfile.LargeZipFile) as e:
             msg = "RO-crate has bad zip format"
             logger.error(msg + ": %s", e)
@@ -155,8 +167,3 @@ class Base64WorkflowRepository(LocalWorkflowRepository):
         except Exception as e:
             logger.debug(e)
             raise DecodeROCrateException(detail=str(e))
-
-    def __del__(self):
-        logger.debug(f"Cleaning temp extraction folder of base64 repository @ {self.local_path} .... ")
-        shutil.rmtree(self.local_path, ignore_errors=True)
-        logger.debug(f"Cleaning temp extraction folder of base64 repository @ {self.local_path} .... ")
