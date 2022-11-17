@@ -152,34 +152,35 @@ def find_issue_types(path: Optional[str] = None) -> List[Type[WorkflowRepository
     errors = []
     issues = {}
     g = nx.DiGraph()
-    current_path = path or os.path.dirname(__file__)
-    for dirpath, dirnames, filenames in os.walk(current_path):
-        base_path = dirpath.replace(f"{current_path}/", '')
-        for dirname in [d for d in dirnames if d not in ['__pycache__']]:
-            base_module = '{}.{}'.format(__name__, os.path.join(base_path, dirname).replace('/', '.'))
-            modules_files = glob.glob(os.path.join(dirpath, dirname, "*.py"))
-            logger.debug(modules_files)
-            modules = ['{}.{}'.format(base_module, os.path.basename(f)[:-3])
-                       for f in modules_files if os.path.isfile(f) and not f.endswith('__init__.py')]
-            for m in modules:
-                try:
-                    mod = import_module(m)
-                    for _, obj in inspect.getmembers(mod):
-                        if inspect.isclass(obj) \
-                            and inspect.getmodule(obj) == mod \
-                            and obj != WorkflowRepositoryIssue \
-                                and issubclass(obj, WorkflowRepositoryIssue):
-                            issues[obj.__name__] = obj
-                            dependencies = getattr(obj, 'depends_on', None)
-                            if not dependencies or len(dependencies) == 0:
-                                g.add_edge('r', obj.__name__)
-                            else:
-                                for dep in dependencies:
-                                    g.add_edge(dep.__name__, obj.__name__)
-                except ModuleNotFoundError as e:
-                    logger.exception(e)
-                    logger.error("ModuleNotFoundError: Unable to load module %s", m)
-                    errors.append(m)
+    base_path = Path(path) if path else Path(__file__).parent
+
+    module_files = (f for f in base_path.glob('**/*.py')
+                    if f.is_file() and f.name != '__init__.py')
+    module_names = ['.' + str(m_file.relative_to(base_path).with_suffix('')).replace('/', '.')
+                    for m_file in module_files]
+
+    for m in module_names:
+        try:
+            # import relative to current module
+            mod = import_module(m, __name__)
+            logger.debug("Successfully imported check module %s", m)
+
+            for _, obj in inspect.getmembers(mod):
+                if inspect.isclass(obj) \
+                    and inspect.getmodule(obj) == mod \
+                    and obj != WorkflowRepositoryIssue \
+                        and issubclass(obj, WorkflowRepositoryIssue):
+                    issues[obj.__name__] = obj
+                    dependencies = getattr(obj, 'depends_on', None)
+                    if not dependencies or len(dependencies) == 0:
+                        g.add_edge('r', obj.__name__)
+                    else:
+                        for dep in dependencies:
+                            g.add_edge(dep.__name__, obj.__name__)
+        except ModuleNotFoundError as e:
+            logger.exception(e)
+            logger.error("ModuleNotFoundError: Unable to load module %s", m)
+            errors.append(m)
     if len(errors) > 0:
         logger.error("** There were some errors loading application modules.**")
         if logger.isEnabledFor(logging.DEBUG):
