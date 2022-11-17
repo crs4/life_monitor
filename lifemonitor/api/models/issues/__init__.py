@@ -27,7 +27,8 @@ import logging
 import os
 from hashlib import sha1
 from importlib import import_module
-from typing import List, Type
+from pathlib import Path
+from typing import List, Optional, Type
 
 import networkx as nx
 from lifemonitor.api.models import repositories
@@ -85,14 +86,14 @@ class WorkflowRepositoryIssue():
         return self._changes
 
     def has_changes(self) -> bool:
-        return self._changes and len(self._changes) > 0
+        return bool(self._changes) and len(self._changes) > 0
 
     @classmethod
     def get_identifier(cls) -> str:
         return cls.to_string(cls)
 
     @classmethod
-    def to_string(cls, issue_type) -> str:
+    def to_string(cls, issue_type: WorkflowRepositoryIssue | Type[WorkflowRepositoryIssue]) -> str:
         class_name = None
         if isinstance(issue_type, WorkflowRepositoryIssue):
             class_name = issue_type.__class__.__name__
@@ -104,20 +105,20 @@ class WorkflowRepositoryIssue():
         return to_snake_case(class_name)
 
     @classmethod
-    def from_string(cls, issue_name: str) -> WorkflowRepositoryIssue:
+    def from_string(cls, issue_name: str) -> Type[WorkflowRepositoryIssue] | None:
         for issue in cls.types():
             if issue.name == issue_name:
                 return issue
         return None
 
     @classmethod
-    def all(cls) -> List[WorkflowRepositoryIssue]:
+    def all(cls) -> List[Type[WorkflowRepositoryIssue]]:
         if not cls.__issues__:
             cls.__issues__ = find_issue_types()
         return [_() for _ in cls.__issues__]
 
     @classmethod
-    def types(cls) -> Type[WorkflowRepositoryIssue]:
+    def types(cls) -> List[Type[WorkflowRepositoryIssue]]:
         if not cls.__issues__:
             cls.__issues__ = find_issue_types()
         return cls.__issues__
@@ -131,7 +132,7 @@ class WorkflowRepositoryIssue():
                                     description=description, depends_on=depends_on, labels=labels)
 
 
-def load_issue(issue_file) -> List[WorkflowRepositoryIssue]:
+def load_issue(issue_file) -> List[Type[WorkflowRepositoryIssue]]:
     issues = {}
     base_module = '{}'.format(os.path.join(os.path.dirname(issue_file)).replace('/', '.'))
     m = '{}.{}'.format(base_module, os.path.basename(issue_file)[:-3])
@@ -145,7 +146,7 @@ def load_issue(issue_file) -> List[WorkflowRepositoryIssue]:
     return issues.values()
 
 
-def find_issue_types(path: str = None) -> List[WorkflowRepositoryIssue]:
+def find_issue_types(path: Optional[str] = None) -> List[Type[WorkflowRepositoryIssue]]:
     errors = []
     issues = {}
     g = nx.DiGraph()
