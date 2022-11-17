@@ -30,18 +30,6 @@ logger = logging.getLogger(__name__)
 
 
 @pytest.fixture
-def crates_path() -> str:
-    return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'crates')
-
-
-@pytest.fixture
-def repository(crates_path) -> LocalWorkflowRepository:
-    repo = ZippedWorkflowRepository(
-        os.path.join(crates_path, 'ro-crate-galaxy-sortchangecase.crate.zip'))
-    return repo
-
-
-@pytest.fixture
 def issue() -> MissingWorkflowFile:
     return MissingWorkflowFile()
 
