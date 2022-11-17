@@ -47,7 +47,9 @@ logger = logging.getLogger(__name__)
 
 class LocalWorkflowRepository(WorkflowRepository):
 
-    def __init__(self, local_path: str = None, exclude: List[str] = None) -> None:
+    def __init__(self,
+                 local_path: Optional[str] = None,
+                 exclude: Optional[List[str]] = None) -> None:
         super().__init__(local_path, exclude)
         self._transient_files = {'add': {}, 'remove': {}}
 
@@ -104,11 +106,11 @@ class LocalWorkflowRepository(WorkflowRepository):
             if self._file_key_(self._metadata.repository_file) not in self._transient_files['remove'] \
             else None
 
-    def find_file_by_pattern(self, search: str, path: str = None) -> RepositoryFile:
+    def find_file_by_pattern(self, search: str, path: Optional[str] = None) -> RepositoryFile:
         logger.warning("Searching file: %r %r", search, path)
         return next((f for f in self.files if re.search(search, f.name) and (not path or f.dir == path or f.dir == f"./{path}")), None)
 
-    def find_file_by_name(self, name: str, path: str = None) -> RepositoryFile:
+    def find_file_by_name(self, name: str, path: Optional[str] = None) -> RepositoryFile:
         logger.warning("Searching file: %r %r", name, path)
         return next((f for f in self.files if f.name == name and (not path or f.path == path or f.dir == f"./{path}")), None)
 
