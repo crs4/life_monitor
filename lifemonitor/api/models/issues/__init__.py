@@ -102,7 +102,9 @@ class WorkflowRepositoryIssue():
                 raise ValueError("Invalid issue type")
             class_name = issue_type.__name__
         logger.debug("Class Name: %r", class_name)
-        return to_snake_case(class_name)
+        # Get the parent package name (we use the package as a category)
+        tail_package = issue_type.__module__.rsplit('.', 1)[-1]
+        return f"{tail_package}.{class_name}"
 
     @classmethod
     def from_string(cls, issue_name: str) -> Type[WorkflowRepositoryIssue] | None:
