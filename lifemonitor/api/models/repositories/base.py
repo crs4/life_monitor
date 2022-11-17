@@ -258,11 +258,11 @@ class WorkflowRepository():
 
     @property
     def config(self) -> WorkflowRepositoryConfig:
-        if not self._config:
-            if not os.path.exists(os.path.join(self.local_path, WorkflowRepositoryConfig.FILENAME)):
-                return None
-            else:
+        if self._config is None:
+            try:
                 self._config = WorkflowRepositoryConfig(self.local_path)
+            except ValueError:
+                pass
         return self._config
 
     def generate_config(self, ignore_existing=False) -> WorkflowFile:
