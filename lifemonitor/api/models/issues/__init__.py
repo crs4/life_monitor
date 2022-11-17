@@ -21,7 +21,6 @@
 from __future__ import annotations
 
 import abc
-import glob
 import inspect
 import logging
 import os
@@ -32,7 +31,6 @@ from typing import List, Optional, Type
 
 import networkx as nx
 from lifemonitor.api.models import repositories
-from lifemonitor.utils import to_snake_case
 
 # set module level logger
 logger = logging.getLogger(__name__)

@@ -41,5 +41,3 @@ class MissingLMConfigFile(WorkflowRepositoryIssue):
             self.add_change(config)
             return True
         return False
-
-
