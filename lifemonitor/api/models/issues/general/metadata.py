@@ -23,9 +23,8 @@ from __future__ import annotations
 import logging
 
 from lifemonitor.api.models.issues import WorkflowRepositoryIssue
-from lifemonitor.api.models.issues.common.files.missing import \
-    MissingMetadataFile, MissingConfigFile
 from lifemonitor.api.models.repositories import WorkflowRepository
+from .repo_layout import MissingROCrateFile, MissingLMConfigFile
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -35,7 +34,7 @@ class MissingWorkflowName(WorkflowRepositoryIssue):
     name = "Missing property name for Workflow RO-Crate"
     description = "No name defined for this workflow. <br>You can set the workflow name on the `ro-crate-metadata.yaml` or `lifemonitor.yaml` file"
     labels = ['invalid', 'bug']
-    depends_on = [MissingConfigFile, MissingMetadataFile]
+    depends_on = [MissingLMConfigFile, MissingROCrateFile]
 
     def check(self, repo: WorkflowRepository) -> bool:
         if repo.config.workflow_name:

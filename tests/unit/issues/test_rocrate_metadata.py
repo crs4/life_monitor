@@ -21,8 +21,7 @@
 import logging
 
 import pytest
-from lifemonitor.api.models.issues.common.files.missing import \
-    MissingMetadataFile
+from lifemonitor.api.models.issues.general.metadata import MissingROCrateFile
 from lifemonitor.api.models.repositories import GithubWorkflowRepository
 
 logger = logging.getLogger(__name__)
@@ -36,11 +35,11 @@ def repository() -> GithubWorkflowRepository:
 
 
 @pytest.fixture
-def issue() -> MissingMetadataFile:
-    return MissingMetadataFile()
+def issue() -> MissingROCrateFile:
+    return MissingROCrateFile()
 
 
-def test_check_true(repository: GithubWorkflowRepository, issue: MissingMetadataFile):
+def test_check_true(repository: GithubWorkflowRepository, issue: MissingROCrateFile):
     logger.debug("Workflow RO-Crate: %r", repository)
 
     # detect workflow metadata
@@ -53,7 +52,7 @@ def test_check_true(repository: GithubWorkflowRepository, issue: MissingMetadata
     assert result is False, "Workflow RO-Crate should have the workflow file"
 
 
-def test_check_false(repository: GithubWorkflowRepository, issue: MissingMetadataFile):
+def test_check_false(repository: GithubWorkflowRepository, issue: MissingROCrateFile):
     logger.debug("Workflow RO-Crate: %r", repository)
 
     # detect workflow file

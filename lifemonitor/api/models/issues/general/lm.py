@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2022 CRS4
+# Copyright (c) 2020-2021 CRS4
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -23,19 +23,23 @@ from __future__ import annotations
 import logging
 
 from lifemonitor.api.models.issues import WorkflowRepositoryIssue
-from lifemonitor.api.models.issues.common.files.missing import \
-    MissingMetadataFile
 from lifemonitor.api.models.repositories import WorkflowRepository
 
 # set module level logger
 logger = logging.getLogger(__name__)
 
 
-class OutdatedMetadataFile(WorkflowRepositoryIssue):
-    name = "RO-Crate metadata outdated"
-    description = "The <code>ro-crate-metadata.json</code> needs to be updated."
-    labels = ['invalid', 'bug']
-    depends_on = [MissingMetadataFile]
+class MissingLMConfigFile(WorkflowRepositoryIssue):
+    name = "Missing LifeMonitor configuration file"
+    description = "No <code>lifemonitor.yaml</code> configuration file found on this repository.<br>"\
+        "The <code>lifemonitor.yaml</code> should be placed on the root of this repository."
+    labels = ['config', 'enhancement']
 
     def check(self, repo: WorkflowRepository) -> bool:
+        if repo.config is None:
+            config = repo.generate_config()
+            self.add_change(config)
+            return True
         return False
+
+
