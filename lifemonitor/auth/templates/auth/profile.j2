@@ -139,6 +139,21 @@
 
   // Initialize tooltips
   $('[data-bs-toggle="tooltip"]').tooltip();
+  $('[data-toggle="tooltip"]').tooltip({});
+
+  // Initialize dynamic tooltips
+  $("[tooltip-on] >> input").on('enabled', function () {
+    const container = $(this).closest("[tooltip-on]");
+    if(container){
+      container.attr('data-original-title', container.attr('tooltip-off'));
+    }
+  });
+  $("[tooltip-off] >> input").on('disabled', function () {
+    const container = $(this).closest("[tooltip-off]");
+    if(container){
+      container.attr('data-original-title', container.attr('tooltip-on'));
+    }
+  });
 
   // Initialize input selector with search box
   $('.selectpicker').select2();

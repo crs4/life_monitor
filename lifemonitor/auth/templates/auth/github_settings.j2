@@ -7,6 +7,14 @@
     </div>
 
     <div class="card-body">
+        <div class="form-text text-muted p0 mb-4">
+            The following settings apply to all repositories
+            where you have installed the LifeMonitor app.
+            You can override them for specific repositories
+            as explained in the
+            <a href="https://lifemonitor.eu/lm_wft_best_practices_github_app#configuration-file">
+                configuration guide</a>.
+        </div>
         <!-- Branches to track -->
         <div class="mb-1">
             <label for="{{githubSettingsForm.all_branches.name}}">Repository Branches:</label>
@@ -17,18 +25,28 @@
         </small>
         <div class="form-group row">
             <div class="col-1">
-                <div class="checkbox">
-                    <input type="checkbox" name="{{githubSettingsForm.all_branches.name}}" data-on="all"
-                        onchange="toggleInputField('{{githubSettingsForm.branches.name}}')"
-                        value="{{githubSettingsForm.all_branches.data}}"
-                        data-off='<i class="fas fa-angle-double-right"></i>' data-toggle="toggle" {% if
-                        githubSettingsForm.all_branches.data %}checked{% endif%}>
+                {% set ba_on = "Toggle off to enable the GitHub App only on some branches of your repositories" %}
+                {% set ba_off = "Toggle on to enable the GitHub App on all your repository branches" %}
+                <div class="checkbox" data-toggle="tooltip" data-placement="top" tooltip-on="{{ba_on}}"
+                    tooltip-off="{{ba_off}}" title="{{ ba_on if githubSettingsForm.all_branches.data else ba_off }}">
+                    <input id="all_branches" type="checkbox" name="{{githubSettingsForm.all_branches.name}}"
+                        onchange="toggleInputField('{{githubSettingsForm.all_branches.name}}', '{{githubSettingsForm.branches.name}}')"
+                        value="{{githubSettingsForm.all_branches.data}}" data-toggle="toggle" data-on="on"
+                        data-off='<i class="fas fa-angle-double-right"></i>' {% if githubSettingsForm.all_branches.data
+                        %}checked{% endif%}>
                 </div>
+                <small class="form-text text-muted my-2 mx-0">
+                    all branches
+                </small>
             </div>
             <div class="col-11">
                 <div class="">
                     {{ macros.render_custom_field(githubSettingsForm.branches, class="ml-5",
-                    disabled=githubSettingsForm.all_branches.data) }}
+                    disabled=githubSettingsForm.all_branches.data,
+                    tooltip_on="List branches separated by comma. Toggle on 'all branches' on the left to enable the
+                    GitHub App on all repository branches",
+                    tooltip_off="Double click to edit the list of repository branches",
+                    tooltipPlacement="bottom")}}
                 </div>
             </div>
         </div>
@@ -43,18 +61,28 @@
         </small>
         <div class="form-group row">
             <div class="col-1">
-                <div class="checkbox">
+                {% set ta_on = "Toggle off to enable the GitHub App only on some tags of your repositories" %}
+                {% set ta_off = "Toggle on to enable the GitHub App on all repository tags" %}
+                <div class="checkbox" data-toggle="tooltip" data-placement="top" tooltip-on="{{ta_on}}"
+                    tooltip-off="{{ta_off}}" title="{{ ta_on if githubSettingsForm.all_tags.data else ta_off }}">
                     <input type="checkbox" name="{{githubSettingsForm.all_tags.name}}"
                         value="{{githubSettingsForm.all_tags.data}}"
-                        onchange="toggleInputField('{{githubSettingsForm.tags.name}}')" data-toggle="toggle" {% if
-                        githubSettingsForm.all_tags.data %}checked{% endif%} data-on="all"
+                        onchange="toggleInputField('{{githubSettingsForm.all_tags.name}}', '{{githubSettingsForm.tags.name}}')"
+                        data-toggle="toggle" {% if githubSettingsForm.all_tags.data %}checked{% endif%} data-on="all"
                         data-off='<i class="fas fa-angle-double-right"></i>'>
+                    <small class="form-text text-muted my-2 mx-1">
+                        all tags
+                    </small>
                 </div>
             </div>
             <div class="col-11">
                 <div class="">
                     {{ macros.render_custom_field(githubSettingsForm.tags, class="ml-5",
-                    disabled=githubSettingsForm.all_tags.data) }}
+                    disabled=githubSettingsForm.all_tags.data,
+                    tooltip_on="List tags separated by comma. Toggle on 'all tags' on the left to enable the
+                    GitHub App on all repository tags",
+                    tooltip_off="Double click to edit the list of repository tags",
+                    tooltipPlacement="bottom") }}
                 </div>
             </div>
         </div>
@@ -65,8 +93,13 @@
         </div>
         <div class="form-group row">
             <div class="col-1">
-                <div class="checkbox">
+                {% set checks_on = "Toggle off to disable checks on your repositories" %}
+                {% set checks_off = "Toggle on to check for issues on your repositories" %}
+                <div class="checkbox" data-toggle="tooltip" data-placement="top" tooltip-on="{{checks_on}}"
+                    tooltip-off="{{checks_off}}"
+                    title="{{ checks_on if githubSettingsForm.check_issues.data else checks_off }}">
                     <input type="checkbox" name="{{githubSettingsForm.check_issues.name}}"
+                        onchange="toggleInputField('{{githubSettingsForm.check_issues.name}}', '')"
                         value="{{githubSettingsForm.check_issues.data}}" data-toggle="toggle" {% if
                         githubSettingsForm.check_issues.data %}checked{% endif%} data-on="on" data-off='off'>
                 </div>
@@ -89,10 +122,44 @@
 </form>
 
 <script>
-    function toggleInputField(fieldName) {
-        const el = $("input[name=" + fieldName + "]");
-        if (el) {
-            el.prop("disabled", !el.prop('disabled'));
+
+    var initTriggers = false;
+
+    function toggleInputField(toggleFieldName, dataFieldName) {
+        var toggleFieldElement = $("input[name=" + toggleFieldName + "]");
+        if (!toggleFieldElement) return;
+        var disabled = !toggleFieldElement.prop('checked');
+        updateFieldTooltip(toggleFieldElement, disabled);
+        // update data field element
+        if (!dataFieldName) return;
+        var dataFieldElement = $("input[name=" + dataFieldName + "]");
+        if (dataFieldElement) {
+            dataFieldElement.prop("disabled", !disabled).change();
+            updateFieldTooltip(dataFieldElement, !disabled);
         }
     }
+
+    function updateFieldTooltip(el, disabled) {
+        var parent = el.closest("[data-toggle=tooltip]");
+        console.log(parent);
+        if (parent) {
+            parent.attr('data-original-title', parent.attr(disabled ? 'tooltip-off' : 'tooltip-on'));
+        }
+    }
+
+    function onInputFieldEnabled(fieldName) {
+        $('#' + fieldName).on('enabled', () => {
+            var checkbox = $(`input[name=all_${fieldName}]`);
+            console.log(fieldName, checkbox);
+            if (checkbox) {
+                checkbox.prop('checked', false).change();
+            }
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        onInputFieldEnabled('branches');
+        onInputFieldEnabled('tags');
+    });
+
 </script>
