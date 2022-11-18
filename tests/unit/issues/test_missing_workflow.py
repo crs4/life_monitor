@@ -19,26 +19,13 @@
 # SOFTWARE.
 
 import logging
-import os
 
 import pytest
+
 from lifemonitor.api.models.issues.general.repo_layout import MissingWorkflowFile
-from lifemonitor.api.models.repositories import ZippedWorkflowRepository
 from lifemonitor.api.models.repositories.local import LocalWorkflowRepository
 
 logger = logging.getLogger(__name__)
-
-
-@pytest.fixture
-def crates_path() -> str:
-    return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'crates')
-
-
-@pytest.fixture
-def repository(crates_path) -> LocalWorkflowRepository:
-    repo = ZippedWorkflowRepository(
-        os.path.join(crates_path, 'ro-crate-galaxy-sortchangecase.crate.zip'))
-    return repo
 
 
 @pytest.fixture

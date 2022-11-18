@@ -28,6 +28,8 @@ import shutil
 import string
 import uuid
 from collections.abc import Iterable
+from pathlib import Path
+from typing import Generator
 from unittest.mock import MagicMock
 
 import lifemonitor.db as lm_db
@@ -35,6 +37,8 @@ import pytest
 from lifemonitor import auth
 from lifemonitor.api.models import (TestingService, TestingServiceTokenManager,
                                     TestSuite, User)
+from lifemonitor.api.models.repositories import ZippedWorkflowRepository
+from lifemonitor.api.models.repositories import LocalWorkflowRepository
 from lifemonitor.api.services import LifeMonitor
 from lifemonitor.cache import cache, clear_cache
 from lifemonitor.utils import ClassManager, extract_zip
@@ -472,3 +476,13 @@ def mock_registry():
 @pytest.fixture
 def tmpdir(tmpdir):
     return pathlib.Path(tmpdir)
+
+
+@pytest.fixture
+def repository() -> Generator[LocalWorkflowRepository, None, None]:
+    crate_path = Path(__file__).parent / 'crates' / 'ro-crate-galaxy-sortchangecase.crate.zip'
+    repo = ZippedWorkflowRepository(crate_path)
+    try:
+        yield repo
+    finally:
+        repo.cleanup()

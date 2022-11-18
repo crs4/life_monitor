@@ -20,8 +20,10 @@
 
 from __future__ import annotations
 
+import itertools as it
 import logging
 import os
+import os.path
 from typing import Dict, List, Optional
 
 import lifemonitor.api.models as models
@@ -36,11 +38,27 @@ logger = logging.getLogger(__name__)
 
 class WorkflowRepositoryConfig(RepositoryFile):
 
-    FILENAME = "lifemonitor.yaml"
+    __BASE_FILENAME__ = "lifemonitor"
+    DEFAULT_FILENAME = f".{__BASE_FILENAME__}.yaml"
+    TEMPLATE_FILENAME = f"{__BASE_FILENAME__}.yaml.j2"
 
-    def __init__(self, path: str) -> None:
-        super().__init__(path, name=self.FILENAME, type='yaml')
-        self.__raw_data = None
+    def __init__(self, repo_path: str) -> None:
+        config_file = self._search_for_config_file(repo_path)
+        if config_file:
+            super().__init__(repo_path, name=config_file, type='yaml')
+            self.__raw_data = None
+        else:
+            logger.debug("Cannot find configuration file in repository %s", repo_path)
+            raise ValueError("cannot find configuration file in repository")
+
+    @classmethod
+    def _search_for_config_file(cls, repo_path: str) -> Optional[str]:
+        for head, ext in it.product(('', '.'), ('yml', 'yaml')):
+            filename = f"{head}{cls.__BASE_FILENAME__}.{ext}"
+            p = f"{repo_path}/{filename}"
+            if os.path.isfile(p):
+                return filename
+        return None  # file not found
 
     def load(self) -> dict:
         return yaml.safe_load(self.get_content())
@@ -156,11 +174,11 @@ class WorkflowRepositoryConfig(RepositoryFile):
 
     @classmethod
     def new(cls, repository_path: str, workflow_title: str = "Workflow RO-Crate", public: bool = False, main_branch: str = "main") -> WorkflowRepositoryConfig:
-        tmpl = TemplateRepositoryFile(repository_path="lifemonitor/templates/repositories/base", name=f"{cls.FILENAME}.j2")
+        tmpl = TemplateRepositoryFile(repository_path="lifemonitor/templates/repositories/base", name=cls.TEMPLATE_FILENAME)
         registries = models.WorkflowRegistry.all()
         issue_types = models.WorkflowRepositoryIssue.all()
         os.makedirs(repository_path, exist_ok=True)
         tmpl.write(workflow_title=workflow_title, main_branch=main_branch, public=public,
                    issues=issue_types, registries=registries,
-                   output_file_path=os.path.join(repository_path, cls.FILENAME))
-        return cls(path=repository_path)
+                   output_file_path=os.path.join(repository_path, cls.DEFAULT_FILENAME))
+        return cls(repo_path=repository_path)
