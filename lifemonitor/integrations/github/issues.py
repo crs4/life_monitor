@@ -123,7 +123,8 @@ def create_issue(repo: Repository, issue: Union[str, issues.WorkflowRepositoryIs
     try:
         return repo.create_issue(
             title=issue.name,
-            body=issue.description,
+            body=f"""<b>Issue ID:</b> <code>{issue.get_identifier()}</code><br><br>"""
+                 f"""<b>Description:</b><br>{issue.description}""",
             labels=get_labels_from_strings(repo, issue.labels)
         )
     except KeyError as e:
