@@ -46,7 +46,7 @@ class WorkflowRepositoryTemplate(WorkflowRepository):
         if not local_path:
             local_path = tempfile.NamedTemporaryFile(dir='/tmp').name
         super().__init__(local_path, exclude=exclude)
-        self.name = name
+        self._name = name
         self._files = None
         self._data = data or {}
         self._dirty = True
@@ -119,7 +119,7 @@ class WorkflowRepositoryTemplate(WorkflowRepository):
         opts.update({
             'root': target_path,
         })
-        repo.generate_metadata(**self.data)
+        repo.generate_metadata(**opts)
         return repo
 
     def generate_metadata(self) -> WorkflowRepositoryMetadata:
