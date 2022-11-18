@@ -21,17 +21,16 @@
 from __future__ import annotations
 
 import abc
-import glob
 import inspect
 import logging
 import os
 from hashlib import sha1
 from importlib import import_module
-from typing import List, Type
+from pathlib import Path
+from typing import List, Optional, Type
 
 import networkx as nx
 from lifemonitor.api.models import repositories
-from lifemonitor.utils import to_snake_case
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -85,14 +84,14 @@ class WorkflowRepositoryIssue():
         return self._changes
 
     def has_changes(self) -> bool:
-        return self._changes and len(self._changes) > 0
+        return bool(self._changes) and len(self._changes) > 0
 
     @classmethod
     def get_identifier(cls) -> str:
         return cls.to_string(cls)
 
     @classmethod
-    def to_string(cls, issue_type) -> str:
+    def to_string(cls, issue_type: WorkflowRepositoryIssue | Type[WorkflowRepositoryIssue]) -> str:
         class_name = None
         if isinstance(issue_type, WorkflowRepositoryIssue):
             class_name = issue_type.__class__.__name__
@@ -101,23 +100,25 @@ class WorkflowRepositoryIssue():
                 raise ValueError("Invalid issue type")
             class_name = issue_type.__name__
         logger.debug("Class Name: %r", class_name)
-        return to_snake_case(class_name)
+        # Get the parent package name (we use the package as a category)
+        tail_package = issue_type.__module__.rsplit('.', 1)[-1]
+        return f"{tail_package}.{class_name}"
 
     @classmethod
-    def from_string(cls, issue_name: str) -> WorkflowRepositoryIssue:
+    def from_string(cls, issue_name: str) -> Type[WorkflowRepositoryIssue] | None:
         for issue in cls.types():
             if issue.name == issue_name:
                 return issue
         return None
 
     @classmethod
-    def all(cls) -> List[WorkflowRepositoryIssue]:
+    def all(cls) -> List[Type[WorkflowRepositoryIssue]]:
         if not cls.__issues__:
             cls.__issues__ = find_issue_types()
         return [_() for _ in cls.__issues__]
 
     @classmethod
-    def types(cls) -> Type[WorkflowRepositoryIssue]:
+    def types(cls) -> List[Type[WorkflowRepositoryIssue]]:
         if not cls.__issues__:
             cls.__issues__ = find_issue_types()
         return cls.__issues__
@@ -131,7 +132,7 @@ class WorkflowRepositoryIssue():
                                     description=description, depends_on=depends_on, labels=labels)
 
 
-def load_issue(issue_file) -> List[WorkflowRepositoryIssue]:
+def load_issue(issue_file) -> List[Type[WorkflowRepositoryIssue]]:
     issues = {}
     base_module = '{}'.format(os.path.join(os.path.dirname(issue_file)).replace('/', '.'))
     m = '{}.{}'.format(base_module, os.path.basename(issue_file)[:-3])
@@ -145,38 +146,39 @@ def load_issue(issue_file) -> List[WorkflowRepositoryIssue]:
     return issues.values()
 
 
-def find_issue_types(path: str = None) -> List[WorkflowRepositoryIssue]:
+def find_issue_types(path: Optional[str] = None) -> List[Type[WorkflowRepositoryIssue]]:
     errors = []
     issues = {}
     g = nx.DiGraph()
-    current_path = path or os.path.dirname(__file__)
-    for dirpath, dirnames, filenames in os.walk(current_path):
-        base_path = dirpath.replace(f"{current_path}/", '')
-        for dirname in [d for d in dirnames if d not in ['__pycache__']]:
-            base_module = '{}.{}'.format(__name__, os.path.join(base_path, dirname).replace('/', '.'))
-            modules_files = glob.glob(os.path.join(dirpath, dirname, "*.py"))
-            logger.debug(modules_files)
-            modules = ['{}.{}'.format(base_module, os.path.basename(f)[:-3])
-                       for f in modules_files if os.path.isfile(f) and not f.endswith('__init__.py')]
-            for m in modules:
-                try:
-                    mod = import_module(m)
-                    for _, obj in inspect.getmembers(mod):
-                        if inspect.isclass(obj) \
-                            and inspect.getmodule(obj) == mod \
-                            and obj != WorkflowRepositoryIssue \
-                                and issubclass(obj, WorkflowRepositoryIssue):
-                            issues[obj.__name__] = obj
-                            dependencies = getattr(obj, 'depends_on', None)
-                            if not dependencies or len(dependencies) == 0:
-                                g.add_edge('r', obj.__name__)
-                            else:
-                                for dep in dependencies:
-                                    g.add_edge(dep.__name__, obj.__name__)
-                except ModuleNotFoundError as e:
-                    logger.exception(e)
-                    logger.error("ModuleNotFoundError: Unable to load module %s", m)
-                    errors.append(m)
+    base_path = Path(path) if path else Path(__file__).parent
+
+    module_files = (f for f in base_path.glob('**/*.py')
+                    if f.is_file() and f.name != '__init__.py')
+    module_names = ['.' + str(m_file.relative_to(base_path).with_suffix('')).replace('/', '.')
+                    for m_file in module_files]
+
+    for m in module_names:
+        try:
+            # import relative to current module
+            mod = import_module(m, __name__)
+            logger.debug("Successfully imported check module %s", m)
+
+            for _, obj in inspect.getmembers(mod):
+                if inspect.isclass(obj) \
+                    and inspect.getmodule(obj) == mod \
+                    and obj != WorkflowRepositoryIssue \
+                        and issubclass(obj, WorkflowRepositoryIssue):
+                    issues[obj.__name__] = obj
+                    dependencies = getattr(obj, 'depends_on', None)
+                    if not dependencies or len(dependencies) == 0:
+                        g.add_edge('r', obj.__name__)
+                    else:
+                        for dep in dependencies:
+                            g.add_edge(dep.__name__, obj.__name__)
+        except ModuleNotFoundError as e:
+            logger.exception(e)
+            logger.error("ModuleNotFoundError: Unable to load module %s", m)
+            errors.append(m)
     if len(errors) > 0:
         logger.error("** There were some errors loading application modules.**")
         if logger.isEnabledFor(logging.DEBUG):

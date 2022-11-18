@@ -68,7 +68,7 @@ def list(config):
     for idx in range(1, len(issues_list) + 1):
         i = issues_list[idx - 1]
         table.add_row(str(idx), i.get_identifier(), i.name,
-                      Syntax(i.description, "html"), ", ".join([_.__name__ for _ in i.depends_on]), ", ".join(i.labels))
+                      Syntax(i.description, "html"), ", ".join([_.get_identifier() for _ in i.depends_on]), ", ".join(i.labels))
     console.print(table)
 
 

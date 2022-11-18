@@ -145,8 +145,9 @@ def to_snake_case(camel_str) -> str:
     :param camel_str:
     :return:
     """
-    pattern = re.compile(r'(?<!^)(?=[A-Z])')
-    return pattern.sub('_', "".join(camel_str.split())).lower()
+    # pattern = re.compile(r'(?<!^)(?=[A-Z])')
+    # return pattern.sub('_', "".join(camel_str.split())).lower()
+    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', camel_str).lower()
 
 
 def to_kebab_case(camel_str) -> str:
