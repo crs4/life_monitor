@@ -112,6 +112,7 @@
 {% if tooltip_on and not disabled %} title="{{tooltip_on}}" {%endif%}
 {% if tooltip_off and disabled %} title="{{tooltip_off}}" {%endif%}
 data-toggle="tooltip" data-placement="{{tooltipPlacement}}">
+          {%if onfocusout%}onfocusout="{{onfocusout}}"{%endif%}
           {% if value %}value="{{value}}"{% elif field.data %}value="{{field.data}}"{% endif %}
           class="form-control {% if field.errors %} is-invalid {% endif %}"
           placeholder="{{field.name.capitalize().replace('_', ' ')}}"
