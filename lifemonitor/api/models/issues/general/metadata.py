@@ -24,7 +24,8 @@ import logging
 
 from lifemonitor.api.models.issues import WorkflowRepositoryIssue
 from lifemonitor.api.models.repositories import WorkflowRepository
-from .repo_layout import MissingROCrateFile, MissingLMConfigFile
+
+from .repo_layout import RepositoryNotInitialised
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -34,11 +35,11 @@ class MissingWorkflowName(WorkflowRepositoryIssue):
     name = "Missing property name for Workflow RO-Crate"
     description = "No name defined for this workflow. <br>You can set the workflow name on the `ro-crate-metadata.yaml` or `lifemonitor.yaml` file"
     labels = ['invalid', 'bug']
-    depends_on = [MissingLMConfigFile, MissingROCrateFile]
+    depends_on = [RepositoryNotInitialised]
 
     def check(self, repo: WorkflowRepository) -> bool:
         if repo.config.workflow_name:
             return False
-        if repo.metadata.main_entity_name:
+        if repo.metadata and repo.metadata.main_entity_name:
             return False
         return True
