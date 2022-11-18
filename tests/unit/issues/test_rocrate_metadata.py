@@ -21,7 +21,7 @@
 import logging
 
 import pytest
-from lifemonitor.api.models.issues.general.metadata import MissingROCrateFile
+from lifemonitor.api.models.issues.general.repo_layout import MissingROCrateFile
 from lifemonitor.api.models.repositories import GithubWorkflowRepository
 
 logger = logging.getLogger(__name__)
