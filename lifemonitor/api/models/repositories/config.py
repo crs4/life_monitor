@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 
 class WorkflowRepositoryConfig(RepositoryFile):
 
-    TEMPLATE_FILENAME = "lifemonitor.yaml.j2"
+    __BASE_FILENAME__ = "lifemonitor"
 
     def __init__(self, repo_path: str) -> None:
         config_file = self._search_for_config_file(repo_path)
@@ -52,9 +52,10 @@ class WorkflowRepositoryConfig(RepositoryFile):
     @classmethod
     def _search_for_config_file(cls, repo_path: str) -> Optional[str]:
         for head, ext in it.product(('', '.'), ('yml', 'yaml')):
-            p = f"{repo_path}/{head}lifemonitor.{ext}"
+            filename = f"{head}{cls.__BASE_FILENAME__}.{ext}"
+            p = f"{repo_path}/{filename}"
             if os.path.isfile(p):
-                return p
+                return filename
         return None  # file not found
 
     def load(self) -> dict:
