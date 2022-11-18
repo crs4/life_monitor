@@ -102,11 +102,16 @@
 {%- endmacro %}
 
 
-{% macro render_custom_field(field, value=None, class="", caption=None, disabled=False) -%}
-<div class="form-group mb-2 {{class}}">
-  <div class="input-group">
-    <input type="{{ field.name if field.name != 'repeat_password' else 'password' }}"
-          name="{{ field.name }}"
+{% macro render_custom_field(
+          field, value=None, class="", 
+          caption=None, disabled=False, onfocusout=False, ondbclick=False,
+          tooltip_on=None, tooltip_off=None, tooltipPlacement='top') -%}
+<div class="form-group mb-2 {{class}}" 
+{% if tooltip_on %} tooltip-on="{{tooltip_on}}" {%endif%} 
+{% if tooltip_off %} tooltip-off="{{tooltip_off}}" {%endif%}
+{% if tooltip_on and not disabled %} title="{{tooltip_on}}" {%endif%}
+{% if tooltip_off and disabled %} title="{{tooltip_off}}" {%endif%}
+data-toggle="tooltip" data-placement="{{tooltipPlacement}}">
           {% if value %}value="{{value}}"{% elif field.data %}value="{{field.data}}"{% endif %}
           class="form-control {% if field.errors %} is-invalid {% endif %}"
           placeholder="{{field.name.capitalize().replace('_', ' ')}}"
