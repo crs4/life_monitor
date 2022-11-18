@@ -39,6 +39,8 @@ logger = logging.getLogger(__name__)
 class WorkflowRepositoryConfig(RepositoryFile):
 
     __BASE_FILENAME__ = "lifemonitor"
+    DEFAULT_FILENAME = f".{__BASE_FILENAME__}.yaml"
+    TEMPLATE_FILENAME = f"{__BASE_FILENAME__}.yaml.j2"
 
     def __init__(self, repo_path: str) -> None:
         config_file = self._search_for_config_file(repo_path)
@@ -178,5 +180,5 @@ class WorkflowRepositoryConfig(RepositoryFile):
         os.makedirs(repository_path, exist_ok=True)
         tmpl.write(workflow_title=workflow_title, main_branch=main_branch, public=public,
                    issues=issue_types, registries=registries,
-                   output_file_path=os.path.join(repository_path, cls.TEMPLATE_FILENAME))
-        return cls(path=repository_path)
+                   output_file_path=os.path.join(repository_path, cls.DEFAULT_FILENAME))
+        return cls(repo_path=repository_path)
