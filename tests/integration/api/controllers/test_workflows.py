@@ -199,7 +199,7 @@ def test_get_workflows_scope(app_client, client_auth_method,
     if client_auth_method == ClientAuthenticationMethod.CLIENT_CREDENTIALS:
         assert len(user2_workflows) == len(user1_workflows), "Unexpected number of workflows"
     else:
-        assert len(user2_workflows) == 2, "Unexpected number of workflows"
+        assert len(user2_workflows) == 1, "Unexpected number of workflows"
         assert len(user2_workflows) < len(user1_workflows), "Unexpected number of workflows"
 
 

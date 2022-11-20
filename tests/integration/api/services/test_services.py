@@ -73,6 +73,7 @@ def test_workflow_registration_same_workflow_by_different_users(app_client, user
         w = utils.pick_workflow(user, "sort-and-change-case")
         w['name'] = f"{user['user'].username}_Workflow"
         w['version'] = str(count)
+        w['public'] = True
         logger.debug("Registering workflow: %r", w['uuid'])
         _, workflow = utils.register_workflow(user, w)
         assert workflow is not None, "workflow must be not None"
@@ -178,7 +179,7 @@ def test_get_workflows_scope(user1, user2):
     user1_workflows = lm.get_user_workflows(user1["user"])
     user2_workflows = lm.get_user_workflows(user2["user"])
 
-    assert len(user2_workflows) == 2, "Unexpected number of workflows"
+    assert len(user2_workflows) == 1, "Unexpected number of workflows"
     assert len(user2_workflows) < len(user1_workflows), "Unexpected number of workflows"
 
 
