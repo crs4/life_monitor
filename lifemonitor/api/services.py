@@ -534,7 +534,7 @@ class LifeMonitor:
             if svc.get_user(user.id):
                 try:
                     workflows.extend([w for w in svc.get_user_workflows(user)
-                                      if w not in workflows])
+                                      if w not in workflows and w.public])
                 except lm_exceptions.NotAuthorizedException as e:
                     logger.debug(e)
         return workflows
