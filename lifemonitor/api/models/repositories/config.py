@@ -40,7 +40,7 @@ class WorkflowRepositoryConfig(RepositoryFile):
 
     __BASE_FILENAME__ = "lifemonitor"
     DEFAULT_FILENAME = f".{__BASE_FILENAME__}.yaml"
-    TEMPLATE_FILENAME = f"{__BASE_FILENAME__}.yaml.j2"
+    TEMPLATE_FILENAME = f"{DEFAULT_FILENAME}.j2"
 
     def __init__(self, repo_path: str) -> None:
         config_file = self._search_for_config_file(repo_path)
