@@ -131,8 +131,8 @@ class WorkflowRepositoryTemplate(WorkflowRepository):
         self._metadata.write(self._local_path)
         return self._metadata
 
-    def write(self, target_path: str):
-        super().write(target_path)
+    def write(self, target_path: str, overwrite: bool = False):
+        super().write(target_path, overwrite=overwrite)
         # rename files according to best practices
         if self.name == "galaxy":
             os.rename(os.path.join(target_path, 'workflow.ga'),
