@@ -108,8 +108,8 @@
 
 ## O
 
-* [OAuth2](authenticate-your-client.md)
 * [OAuth2](lm_admin_guide.md)
+* [OAuth2](authenticate-your-client.md)
 
 ## Q
 
