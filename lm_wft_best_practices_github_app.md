@@ -145,4 +145,4 @@ push:
 ### Checks/validations
 
 You can see the list of validations active in LifeMonitor at
-<https://api.lifemonitor.eu/workflows/issues>.
+<https://api.lifemonitor.eu/workflows/issues.html>.
