@@ -189,7 +189,7 @@ that they might be solved, thus extending the useful life of the workflow.</p>
 </div>
     <div class="app-desc">More information: <a href="https://openapi-generator.tech">https://openapi-generator.tech</a></div>
     <div class="app-desc">Contact Info: <a href="team@openapitools.org">team@openapitools.org</a></div>
-    <div class="app-desc">Version: 0.7.3</div>
+    <div class="app-desc">Version: 0.8.0</div>
     <div class="app-desc">BasePath:</div>
     <div class="license-info">All rights reserved</div>
     <div class="license-url">http://apache.org/licenses/LICENSE-2.0.html</div>
@@ -256,11 +256,15 @@ that they might be solved, thus extending the useful life of the workflow.</p>
   </ul>
   <h4><a href="#Workflows">Workflows</a></h4>
   <ul>
-  <li><a href="#workflowsDelete"><code><span class="http-method">delete</span> /workflows/{wf_uuid}/versions/{wf_version}</code></a></li>
+  <li><a href="#workflowsDelete"><code><span class="http-method">delete</span> /workflows/{wf_uuid}</code></a></li>
+  <li><a href="#workflowsDeleteVersion"><code><span class="http-method">delete</span> /workflows/{wf_uuid}/versions/{wf_version}</code></a></li>
   <li><a href="#workflowsGet"><code><span class="http-method">get</span> /workflows</code></a></li>
+  <li><a href="#workflowsGetIssueTypes"><code><span class="http-method">get</span> /workflows/issues</code></a></li>
+  <li><a href="#workflowsGetIssueTypesAsHtml"><code><span class="http-method">get</span> /workflows/issues.html</code></a></li>
   <li><a href="#workflowsGetLatestVersionById"><code><span class="http-method">get</span> /workflows/{wf_uuid}</code></a></li>
   <li><a href="#workflowsGetStatus"><code><span class="http-method">get</span> /workflows/{wf_uuid}/status</code></a></li>
   <li><a href="#workflowsGetSuites"><code><span class="http-method">get</span> /workflows/{wf_uuid}/suites</code></a></li>
+  <li><a href="#workflowsGetVersionById"><code><span class="http-method">get</span> /workflows/{wf_uuid}/versions/{wf_version}</code></a></li>
   <li><a href="#workflowsGetVersionsById"><code><span class="http-method">get</span> /workflows/{wf_uuid}/versions</code></a></li>
   <li><a href="#workflowsPut"><code><span class="http-method">put</span> /workflows/{wf_uuid}</code></a></li>
   <li><a href="#workflowsRocrateDownload"><code><span class="http-method">get</span> /workflows/{wf_uuid}/rocrate/{wf_version}/download</code></a></li>
@@ -411,7 +415,9 @@ LifeMonitor by the current (authenticated) user.</div>
 
     <h3 class="field-label">Query parameters</h3>
     <div class="field-items">
-      <div class="param">status (optional)</div>
+      <div class="param">versions (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include the list of versions of each workflow default: null </div><div class="param">status (optional)</div>
 
       <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include a summary of the workflow status default: null </div>
     </div>  <!-- field-items -->
@@ -546,11 +552,13 @@ current (authenticated) user</div>
     <div class="example-data-content-type">Content-Type: application/json</div>
     <pre class="example"><code>{
   "items" : [ {
-    "name" : "workflowhub_dev",
+    "identifier" : "workflowhub_dev",
+    "name" : "WorkflowHub Dev",
     "uuid" : "aa16c6a9-571f-4a62-976f-60ea514ad2c1",
     "uri" : "https://dev.workflowhub.eu/"
   }, {
-    "name" : "workflowhub_dev",
+    "identifier" : "workflowhub_dev",
+    "name" : "WorkflowHub Dev",
     "uuid" : "aa16c6a9-571f-4a62-976f-60ea514ad2c1",
     "uri" : "https://dev.workflowhub.eu/"
   } ]
@@ -613,7 +621,8 @@ current (authenticated) user</div>
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
     <pre class="example"><code>{
-  "name" : "workflowhub_dev",
+  "identifier" : "workflowhub_dev",
+  "name" : "WorkflowHub Dev",
   "uuid" : "aa16c6a9-571f-4a62-976f-60ea514ad2c1",
   "uri" : "https://dev.workflowhub.eu/"
 }</code></pre>
@@ -728,7 +737,9 @@ OAuth2 clients can use this endpoint.</p>
 
     <h3 class="field-label">Query parameters</h3>
     <div class="field-items">
-      <div class="param">status (optional)</div>
+      <div class="param">versions (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include the list of versions of each workflow default: null </div><div class="param">status (optional)</div>
 
       <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include a summary of the workflow status default: null </div>
     </div>  <!-- field-items -->
@@ -854,7 +865,9 @@ OAuth2 clients can use this endpoint.</p>
 
     <h3 class="field-label">Query parameters</h3>
     <div class="field-items">
-      <div class="param">status (optional)</div>
+      <div class="param">versions (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include the list of versions of each workflow default: null </div><div class="param">status (optional)</div>
 
       <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include a summary of the workflow status default: null </div>
     </div>  <!-- field-items -->
@@ -985,7 +998,8 @@ OAuth2 clients can use this endpoint.</p>
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
     <pre class="example"><code>{
-  "name" : "workflowhub_dev",
+  "identifier" : "workflowhub_dev",
+  "name" : "WorkflowHub Dev",
   "uuid" : "aa16c6a9-571f-4a62-976f-60ea514ad2c1",
   "uri" : "https://dev.workflowhub.eu/"
 }</code></pre>
@@ -1379,6 +1393,14 @@ OAuth2 clients can use this endpoint.</p>
 
 
 
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">status (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include the suite status default: false </div><div class="param">latest_builds (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include the latest builds which contribute to the suite status default: false </div>
+    </div>  <!-- field-items -->
 
 
     <h3 class="field-label">Return type</h3>
@@ -1391,34 +1413,7 @@ OAuth2 clients can use this endpoint.</p>
 
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
-    <pre class="example"><code>{
-  "roc_suite" : "#test1",
-  "instances" : [ {
-    "managed" : false,
-    "name" : "test_instance_1",
-    "service" : {
-      "type" : "travis",
-      "url" : "https://travis-ci.org/"
-    },
-    "resource" : "github/seek4science/seek"
-  }, {
-    "managed" : false,
-    "name" : "test_instance_1",
-    "service" : {
-      "type" : "travis",
-      "url" : "https://travis-ci.org/"
-    },
-    "resource" : "github/seek4science/seek"
-  } ],
-  "name" : "Workflow Test Suite",
-  "definition" : {
-    "test_engine" : {
-      "type" : "planemo",
-      "version" : ">=0.70"
-    }
-  },
-  "uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c"
-}</code></pre>
+    <pre class="example"><code>null</code></pre>
 
     <h3 class="field-label">Produces</h3>
     This API call produces the following media types according to the <span class="header">Accept</span> request header;
@@ -1548,45 +1543,7 @@ OAuth2 clients can use this endpoint.</p>
 
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
-    <pre class="example"><code>{
-  "reason" : "reason",
-  "latest_builds" : [ {
-    "duration" : 2648,
-    "instance" : {
-      "managed" : false,
-      "name" : "test_instance_1",
-      "service" : {
-        "type" : "travis",
-        "url" : "https://travis-ci.org/"
-      },
-      "resource" : "github/seek4science/seek"
-    },
-    "build_id" : "167444",
-    "links" : {
-      "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
-    },
-    "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
-    "timestamp" : "1616427012"
-  }, {
-    "duration" : 2648,
-    "instance" : {
-      "managed" : false,
-      "name" : "test_instance_1",
-      "service" : {
-        "type" : "travis",
-        "url" : "https://travis-ci.org/"
-      },
-      "resource" : "github/seek4science/seek"
-    },
-    "build_id" : "167444",
-    "links" : {
-      "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
-    },
-    "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
-    "timestamp" : "1616427012"
-  } ],
-  "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c"
-}</code></pre>
+    <pre class="example"><code>null</code></pre>
 
     <h3 class="field-label">Produces</h3>
     This API call produces the following media types according to the <span class="header">Accept</span> request header;
@@ -2300,7 +2257,9 @@ through the service's API).</li>
     <div class="field-items">
       <div class="param">status (optional)</div>
 
-      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include a summary of the workflow status default: null </div><div class="param">subscriptions (optional)</div>
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include a summary of the workflow status default: null </div><div class="param">versions (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include the list of versions of each workflow default: null </div><div class="param">subscriptions (optional)</div>
 
       <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include subscribed workflows default: null </div>
     </div>  <!-- field-items -->
@@ -2405,8 +2364,56 @@ through the service's API).</li>
   <div class="method"><a name="workflowsDelete"/>
     <div class="method-path">
     <a class="up" href="#__Methods">Up</a>
+    <pre class="delete"><code class="huge"><span class="http-method">delete</span> /workflows/{wf_uuid}</code></pre></div>
+    <div class="method-summary">Delete a workflow (<span class="nickname">workflowsDelete</span>)</div>
+    <div class="method-notes">Delete the specified workflow and all its versions</div>
+
+    <h3 class="field-label">Path parameters</h3>
+    <div class="field-items">
+      <div class="param">wf_uuid (required)</div>
+
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Universal unique identifier of the workflow default: null </div>
+    </div>  <!-- field-items -->
+
+
+
+
+
+
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">204</h4>
+    Deleted
+        <a href="#"></a>
+    <h4 class="field-label">400</h4>
+    The request is malformed
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">403</h4>
+    Forbidden
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Resource not found
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="workflowsDeleteVersion"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
     <pre class="delete"><code class="huge"><span class="http-method">delete</span> /workflows/{wf_uuid}/versions/{wf_version}</code></pre></div>
-    <div class="method-summary">Delete a workflow version (<span class="nickname">workflowsDelete</span>)</div>
+    <div class="method-summary">Delete a workflow version (<span class="nickname">workflowsDeleteVersion</span>)</div>
     <div class="method-notes">Delete the specified version of the specified workflow</div>
 
     <h3 class="field-label">Path parameters</h3>
@@ -2467,7 +2474,9 @@ through the service's API).</li>
     <div class="field-items">
       <div class="param">status (optional)</div>
 
-      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include a summary of the workflow status default: null </div>
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include a summary of the workflow status default: null </div><div class="param">versions (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include the list of versions of each workflow default: null </div>
     </div>  <!-- field-items -->
 
 
@@ -2498,6 +2507,124 @@ through the service's API).</li>
         <a href="#ListOfWorkflow">ListOfWorkflow</a>
     <h4 class="field-label">401</h4>
     Unauthorized
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="workflowsGetIssueTypes"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /workflows/issues</code></pre></div>
+    <div class="method-summary">List issue types (<span class="nickname">workflowsGetIssueTypes</span>)</div>
+    <div class="method-notes">Get information about the specified workflow</div>
+
+
+
+
+
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#ListOfIssues">ListOfIssues</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "items" : [ {
+    "identifier" : "missing_workflow_file",
+    "depends_on" : [ "missing_configuration_file" ],
+    "name" : "Missing workflow file",
+    "description" : "No workflow found on this repository.",
+    "labels" : [ "bug", "enhancement" ]
+  }, {
+    "identifier" : "missing_workflow_file",
+    "depends_on" : [ "missing_configuration_file" ],
+    "name" : "Missing workflow file",
+    "description" : "No workflow found on this repository.",
+    "labels" : [ "bug", "enhancement" ]
+  } ]
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    List of issue types.
+        <a href="#ListOfIssues">ListOfIssues</a>
+    <h4 class="field-label">400</h4>
+    The request is malformed
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">403</h4>
+    Forbidden
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Resource not found
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="workflowsGetIssueTypesAsHtml"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /workflows/issues.html</code></pre></div>
+    <div class="method-summary">List issue types (<span class="nickname">workflowsGetIssueTypesAsHtml</span>)</div>
+    <div class="method-notes">Get information about the specified workflow</div>
+
+
+
+
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">back (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; A callback URL default: null </div>
+    </div>  <!-- field-items -->
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      
+      String
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>text/html</code></li>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    List of issue types.
+        <a href="#String">String</a>
+    <h4 class="field-label">400</h4>
+    The request is malformed
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">403</h4>
+    Forbidden
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Resource not found
         <a href="#Error">Error</a>
   </div> <!-- method -->
   <hr/>
@@ -2648,7 +2775,11 @@ through the service's API).</li>
     <div class="field-items">
       <div class="param">version (optional)</div>
 
-      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Workflow version default: latest </div>
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Workflow version default: latest </div><div class="param">status (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include the suite status default: false </div><div class="param">latest_builds (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include the latest builds which contribute to the suite status default: false </div>
     </div>  <!-- field-items -->
 
 
@@ -2663,61 +2794,7 @@ through the service's API).</li>
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
     <pre class="example"><code>{
-  "items" : [ {
-    "roc_suite" : "#test1",
-    "instances" : [ {
-      "managed" : false,
-      "name" : "test_instance_1",
-      "service" : {
-        "type" : "travis",
-        "url" : "https://travis-ci.org/"
-      },
-      "resource" : "github/seek4science/seek"
-    }, {
-      "managed" : false,
-      "name" : "test_instance_1",
-      "service" : {
-        "type" : "travis",
-        "url" : "https://travis-ci.org/"
-      },
-      "resource" : "github/seek4science/seek"
-    } ],
-    "name" : "Workflow Test Suite",
-    "definition" : {
-      "test_engine" : {
-        "type" : "planemo",
-        "version" : ">=0.70"
-      }
-    },
-    "uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c"
-  }, {
-    "roc_suite" : "#test1",
-    "instances" : [ {
-      "managed" : false,
-      "name" : "test_instance_1",
-      "service" : {
-        "type" : "travis",
-        "url" : "https://travis-ci.org/"
-      },
-      "resource" : "github/seek4science/seek"
-    }, {
-      "managed" : false,
-      "name" : "test_instance_1",
-      "service" : {
-        "type" : "travis",
-        "url" : "https://travis-ci.org/"
-      },
-      "resource" : "github/seek4science/seek"
-    } ],
-    "name" : "Workflow Test Suite",
-    "definition" : {
-      "test_engine" : {
-        "type" : "planemo",
-        "version" : ">=0.70"
-      }
-    },
-    "uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c"
-  } ]
+  "items" : [ null, null ]
 }</code></pre>
 
     <h3 class="field-label">Produces</h3>
@@ -2731,6 +2808,70 @@ through the service's API).</li>
     <h4 class="field-label">200</h4>
     List of test suites associated with the specified workflow and workflow version
         <a href="#ListOfTestSuite">ListOfTestSuite</a>
+    <h4 class="field-label">400</h4>
+    The request is malformed
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">403</h4>
+    Forbidden
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Resource not found
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="workflowsGetVersionById"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /workflows/{wf_uuid}/versions/{wf_version}</code></pre></div>
+    <div class="method-summary">Get a workflow version (<span class="nickname">workflowsGetVersionById</span>)</div>
+    <div class="method-notes">Get information of the specified workflow version</div>
+
+    <h3 class="field-label">Path parameters</h3>
+    <div class="field-items">
+      <div class="param">wf_uuid (required)</div>
+
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Universal unique identifier of the workflow default: null </div><div class="param">wf_version (required)</div>
+
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Workflow version default: null </div>
+    </div>  <!-- field-items -->
+
+
+
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">ro_crate (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include the RO-Crate metadata of the workflow default: false </div>
+    </div>  <!-- field-items -->
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#WorkflowVersionDetails">WorkflowVersionDetails</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>null</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    A Workflow object for the version of the specified workflow.
+        <a href="#WorkflowVersionDetails">WorkflowVersionDetails</a>
     <h4 class="field-label">400</h4>
     The request is malformed
         <a href="#Error">Error</a>
@@ -2823,7 +2964,7 @@ through the service's API).</li>
 
     <h3 class="field-label">Request body</h3>
     <div class="field-items">
-      <div class="param">workflows_put_request <a href="#workflows_put_request">workflows_put_request</a> (required)</div>
+      <div class="param">WorkflowBase <a href="#WorkflowBase">WorkflowBase</a> (required)</div>
 
       <div class="param-desc"><span class="param-type">Body Parameter</span> &mdash;  </div>
 
@@ -3034,6 +3175,7 @@ RO-Crate specifcation is available at https://www.researchobject.org/ro-crate/.
   <h3>Table of Contents</h3>
   <ol>
     <li><a href="#AggregateTestStatus"><code>AggregateTestStatus</code> - </a></li>
+    <li><a href="#Author"><code>Author</code> - </a></li>
     <li><a href="#Build"><code>Build</code> - </a></li>
     <li><a href="#BuildStatus"><code>BuildStatus</code> - </a></li>
     <li><a href="#BuildSummary"><code>BuildSummary</code> - </a></li>
@@ -3044,7 +3186,9 @@ RO-Crate specifcation is available at https://www.researchobject.org/ro-crate/.
     <li><a href="#GenericWorkflowVersion_allOf"><code>GenericWorkflowVersion_allOf</code> - </a></li>
     <li><a href="#IdentityProvider"><code>IdentityProvider</code> - </a></li>
     <li><a href="#IdentityProviderType"><code>IdentityProviderType</code> - </a></li>
+    <li><a href="#Issue"><code>Issue</code> - </a></li>
     <li><a href="#ListOfBuildSummary"><code>ListOfBuildSummary</code> - </a></li>
+    <li><a href="#ListOfIssues"><code>ListOfIssues</code> - </a></li>
     <li><a href="#ListOfNotifications"><code>ListOfNotifications</code> - </a></li>
     <li><a href="#ListOfRegistries"><code>ListOfRegistries</code> - </a></li>
     <li><a href="#ListOfRegistryWorkflows"><code>ListOfRegistryWorkflows</code> - </a></li>
@@ -3071,9 +3215,12 @@ RO-Crate specifcation is available at https://www.researchobject.org/ro-crate/.
     <li><a href="#RegistryWorkflowVersion_allOf"><code>RegistryWorkflowVersion_allOf</code> - </a></li>
     <li><a href="#RegistryWorkflow_allOf"><code>RegistryWorkflow_allOf</code> - </a></li>
     <li><a href="#RoCrateLinkWorkflowVersion"><code>RoCrateLinkWorkflowVersion</code> - </a></li>
+    <li><a href="#RoCrateLinkWorkflowVersionBase"><code>RoCrateLinkWorkflowVersionBase</code> - </a></li>
+    <li><a href="#RoCrateLinkWorkflowVersionBase_allOf"><code>RoCrateLinkWorkflowVersionBase_allOf</code> - </a></li>
     <li><a href="#RoCrateLinkWorkflowVersion_allOf"><code>RoCrateLinkWorkflowVersion_allOf</code> - </a></li>
     <li><a href="#RoCrateWorkflowVersion"><code>RoCrateWorkflowVersion</code> - </a></li>
-    <li><a href="#RoCrateWorkflowVersion_allOf"><code>RoCrateWorkflowVersion_allOf</code> - </a></li>
+    <li><a href="#RoCrateWorkflowVersionBase"><code>RoCrateWorkflowVersionBase</code> - </a></li>
+    <li><a href="#RoCrateWorkflowVersionBase_allOf"><code>RoCrateWorkflowVersionBase_allOf</code> - </a></li>
     <li><a href="#Subscription"><code>Subscription</code> - </a></li>
     <li><a href="#Subscription_resource"><code>Subscription_resource</code> - </a></li>
     <li><a href="#TestInstance"><code>TestInstance</code> - </a></li>
@@ -3084,6 +3231,9 @@ RO-Crate specifcation is available at https://www.researchobject.org/ro-crate/.
     <li><a href="#TestSuiteDefinition"><code>TestSuiteDefinition</code> - </a></li>
     <li><a href="#TestSuiteDefinition_test_engine"><code>TestSuiteDefinition_test_engine</code> - </a></li>
     <li><a href="#TestSuiteStatus"><code>TestSuiteStatus</code> - </a></li>
+    <li><a href="#TestSuiteStatusProperties"><code>TestSuiteStatusProperties</code> - </a></li>
+    <li><a href="#TestSuiteStatus_allOf"><code>TestSuiteStatus_allOf</code> - </a></li>
+    <li><a href="#TestSuite_allOf"><code>TestSuite_allOf</code> - </a></li>
     <li><a href="#TestingService"><code>TestingService</code> - </a></li>
     <li><a href="#TestingServiceType"><code>TestingServiceType</code> - </a></li>
     <li><a href="#User"><code>User</code> - </a></li>
@@ -3099,6 +3249,8 @@ RO-Crate specifcation is available at https://www.researchobject.org/ro-crate/.
     <li><a href="#WorkflowVersion"><code>WorkflowVersion</code> - </a></li>
     <li><a href="#WorkflowVersionBase"><code>WorkflowVersionBase</code> - </a></li>
     <li><a href="#WorkflowVersionBase_allOf"><code>WorkflowVersionBase_allOf</code> - </a></li>
+    <li><a href="#WorkflowVersionDetails"><code>WorkflowVersionDetails</code> - </a></li>
+    <li><a href="#WorkflowVersionDetails_allOf"><code>WorkflowVersionDetails_allOf</code> - </a></li>
     <li><a href="#WorkflowVersionMin"><code>WorkflowVersionMin</code> - </a></li>
     <li><a href="#WorkflowVersionStatus"><code>WorkflowVersionStatus</code> - </a></li>
     <li><a href="#WorkflowVersionStatus_allOf"><code>WorkflowVersionStatus_allOf</code> - </a></li>
@@ -3111,7 +3263,6 @@ RO-Crate specifcation is available at https://www.researchobject.org/ro-crate/.
     <li><a href="#user_workflows_post_request"><code>user_workflows_post_request</code> - </a></li>
     <li><a href="#workflows_get_versions_by_id_200_response"><code>workflows_get_versions_by_id_200_response</code> - </a></li>
     <li><a href="#workflows_get_versions_by_id_200_response_allOf"><code>workflows_get_versions_by_id_200_response_allOf</code> - </a></li>
-    <li><a href="#workflows_put_request"><code>workflows_put_request</code> - </a></li>
     <li><a href="#workflows_version_put_request"><code>workflows_version_put_request</code> - </a></li>
   </ol>
 
@@ -3120,6 +3271,14 @@ RO-Crate specifcation is available at https://www.researchobject.org/ro-crate/.
     <div class='model-description'></div>
     <div class="field-items">
           </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="Author"><code>Author</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'>A creator/author of the workflow</div>
+    <div class="field-items">
+      <div class="param">name </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Author's first and family name, if available </div>
+<div class="param">url (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A link to the author's page </div>
+    </div>  <!-- field-items -->
   </div>
   <div class="model">
     <h3><a name="Build"><code>Build</code> - </a> <a class="up" href="#__Models">Up</a></h3>
@@ -3191,13 +3350,13 @@ information if dereferenced. </div>
   </div>
   <div class="model">
     <h3><a name="GenericWorkflowVersion"><code>GenericWorkflowVersion</code> - </a> <a class="up" href="#__Models">Up</a></h3>
-    <div class='model-description'>A generic workflow version</div>
+    <div class='model-description'>Basic information about a workflow version</div>
     <div class="field-items">
       <div class="param">roc_link </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Link to the workflow RO-Crate </div>
 <div class="param">uuid (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Universal unique identifier of the workflow. </div>
 <div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A name for the workflow. If not provided, the RO-Crate dataset name is used as default. </div>
-<div class="param">version </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A string identifying the workflow version (e.g., 1.0) </div>
 <div class="param">public (optional)</div><div class="param-desc"><span class="param-type"><a href="#boolean">Boolean</a></span> <code>true</code> if the workflow is <b>public</b>; false otherwise (default <code>false</code>). </div>
+<div class="param">version (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A string identifying the workflow version (e.g., 1.0) </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
@@ -3225,10 +3384,28 @@ information if dereferenced. </div>
           </div>  <!-- field-items -->
   </div>
   <div class="model">
+    <h3><a name="Issue"><code>Issue</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'>A user subscription for a given resource (e.g., workflow).</div>
+    <div class="field-items">
+      <div class="param">name </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Name of the issue type </div>
+<div class="param">identifier </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Identifier of the issue type in 'snake case' format </div>
+<div class="param">description (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A description for the issue type </div>
+<div class="param">depends_on (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">array[String]</a></span> List of identifiers of issues which the issue depends on </div>
+<div class="param">labels (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">array[String]</a></span> List of labels for the issue type </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
     <h3><a name="ListOfBuildSummary"><code>ListOfBuildSummary</code> - </a> <a class="up" href="#__Models">Up</a></h3>
     <div class='model-description'></div>
     <div class="field-items">
       <div class="param">items </div><div class="param-desc"><span class="param-type"><a href="#BuildSummary">array[BuildSummary]</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="ListOfIssues"><code>ListOfIssues</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'>List of issue types</div>
+    <div class="field-items">
+      <div class="param">items </div><div class="param-desc"><span class="param-type"><a href="#Issue">array[Issue]</a></span>  </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
@@ -3296,6 +3473,7 @@ If not provided, it will be auto-generated by the system. </div>
 <div class="param">public (optional)</div><div class="param-desc"><span class="param-type"><a href="#boolean">Boolean</a></span> <code>true</code> if the workflow is <b>public</b>; false otherwise (default <code>false</code>). </div>
 <div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A name for the workflow. If not provided, the RO-Crate dataset name is used as default. </div>
 <div class="param">status (optional)</div><div class="param-desc"><span class="param-type"><a href="#ListOfWorkflow_items_inner_allOf_status">ListOfWorkflow_items_inner_allOf_status</a></span>  </div>
+<div class="param">versions (optional)</div><div class="param-desc"><span class="param-type"><a href="#WorkflowVersion">array[WorkflowVersion]</a></span>  </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
@@ -3303,6 +3481,7 @@ If not provided, it will be auto-generated by the system. </div>
     <div class='model-description'></div>
     <div class="field-items">
       <div class="param">status (optional)</div><div class="param-desc"><span class="param-type"><a href="#ListOfWorkflow_items_inner_allOf_status">ListOfWorkflow_items_inner_allOf_status</a></span>  </div>
+<div class="param">versions (optional)</div><div class="param-desc"><span class="param-type"><a href="#WorkflowVersion">array[WorkflowVersion]</a></span>  </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
@@ -3371,8 +3550,9 @@ metadata </div>
     <div class='model-description'>Workflow registry</div>
     <div class="field-items">
       <div class="param">uuid </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Universal unique identifier of the workflow registry </div>
-<div class="param">name </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> An alphanumeric string used to denote the registry.
+<div class="param">identifier (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> An alphanumeric string used to denote the registry.
 Only <code>_</code> and <code>-</code> are allowed, no spaces or other special characters. </div>
+<div class="param">name </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> The name of the registry </div>
 <div class="param">type (optional)</div><div class="param-desc"><span class="param-type"><a href="#RegistryType">RegistryType</a></span>  </div>
 <div class="param">uri </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> The URI of the registry </div>
     </div>  <!-- field-items -->
@@ -3388,6 +3568,7 @@ Only <code>_</code> and <code>-</code> are allowed, no spaces or other special c
     <div class='model-description'></div>
     <div class="field-items">
       <div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A name for the workflow. If not provided, the RO-Crate dataset name is used as default. </div>
+<div class="param">public (optional)</div><div class="param-desc"><span class="param-type"><a href="#boolean">Boolean</a></span> <code>true</code> if the workflow is <b>public</b>; false otherwise (default <code>false</code>). </div>
 <div class="param">identifier (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> The identifier of the workflow on the registry </div>
 <div class="param">registry (optional)</div><div class="param-desc"><span class="param-type"><a href="#Registry">Registry</a></span>  </div>
 <div class="param">latest_version (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> The workflow identifier on the registry </div>
@@ -3399,6 +3580,7 @@ Only <code>_</code> and <code>-</code> are allowed, no spaces or other special c
     <div class='model-description'></div>
     <div class="field-items">
       <div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A name for the workflow. If not provided, the RO-Crate dataset name is used as default. </div>
+<div class="param">public (optional)</div><div class="param-desc"><span class="param-type"><a href="#boolean">Boolean</a></span> <code>true</code> if the workflow is <b>public</b>; false otherwise (default <code>false</code>). </div>
 <div class="param">identifier (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> The identifier of the workflow on the registry </div>
 <div class="param">registry (optional)</div><div class="param-desc"><span class="param-type"><a href="#Registry">Registry</a></span>  </div>
     </div>  <!-- field-items -->
@@ -3417,8 +3599,8 @@ Only <code>_</code> and <code>-</code> are allowed, no spaces or other special c
     <div class="field-items">
       <div class="param">identifier </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> The identifier of the workflow on the registry </div>
 <div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A name for the workflow. If not provided, the RO-Crate dataset name is used as default. </div>
-<div class="param">version </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A string identifying the workflow version (e.g., 1.0) </div>
 <div class="param">public (optional)</div><div class="param-desc"><span class="param-type"><a href="#boolean">Boolean</a></span> <code>true</code> if the workflow is <b>public</b>; false otherwise (default <code>false</code>). </div>
+<div class="param">version (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A string identifying the workflow version (e.g., 1.0) </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
@@ -3438,10 +3620,10 @@ Only <code>_</code> and <code>-</code> are allowed, no spaces or other special c
   </div>
   <div class="model">
     <h3><a name="RoCrateLinkWorkflowVersion"><code>RoCrateLinkWorkflowVersion</code> - </a> <a class="up" href="#__Models">Up</a></h3>
-    <div class='model-description'>A generic workflow version</div>
+    <div class='model-description'></div>
     <div class="field-items">
-      <div class="param">roc_link </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Link to the workflow RO-Crate </div>
-<div class="param">uuid (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Universal unique identifier of the workflow. </div>
+      <div class="param">uuid (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Universal unique identifier of the workflow. </div>
+<div class="param">roc_link </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Link to the workflow RO-Crate </div>
 <div class="param">authorization (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> <p>An optional authorization header.</p>
 <p>The <code>authorization</code> parameter might be required to download
 the RO-Crate containing the workflow if it is not directly
@@ -3449,41 +3631,72 @@ accessible to the user for download
 (e.g., <code>authorization: &quot;ApiKey 1234567890&quot;</code>).</p>
  </div>
 <div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A name for the workflow. If not provided, the RO-Crate dataset name is used as default. </div>
-<div class="param">version </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A string identifying the workflow version (e.g., 1.0) </div>
 <div class="param">public (optional)</div><div class="param-desc"><span class="param-type"><a href="#boolean">Boolean</a></span> <code>true</code> if the workflow is <b>public</b>; false otherwise (default <code>false</code>). </div>
+<div class="param">version </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A string identifying the workflow version (e.g., 1.0) </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="RoCrateLinkWorkflowVersionBase"><code>RoCrateLinkWorkflowVersionBase</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'>A generic workflow version from an exteranl RO-Crate</div>
+    <div class="field-items">
+      <div class="param">roc_link </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Link to the workflow RO-Crate </div>
+<div class="param">authorization (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> <p>An optional authorization header.</p>
+<p>The <code>authorization</code> parameter might be required to download
+the RO-Crate containing the workflow if it is not directly
+accessible to the user for download
+(e.g., <code>authorization: &quot;ApiKey 1234567890&quot;</code>).</p>
+ </div>
+<div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A name for the workflow. If not provided, the RO-Crate dataset name is used as default. </div>
+<div class="param">public (optional)</div><div class="param-desc"><span class="param-type"><a href="#boolean">Boolean</a></span> <code>true</code> if the workflow is <b>public</b>; false otherwise (default <code>false</code>). </div>
+<div class="param">version (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A string identifying the workflow version (e.g., 1.0) </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="RoCrateLinkWorkflowVersionBase_allOf"><code>RoCrateLinkWorkflowVersionBase_allOf</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">roc_link </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Link to the workflow RO-Crate </div>
+<div class="param">authorization (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> <p>An optional authorization header.</p>
+<p>The <code>authorization</code> parameter might be required to download
+the RO-Crate containing the workflow if it is not directly
+accessible to the user for download
+(e.g., <code>authorization: &quot;ApiKey 1234567890&quot;</code>).</p>
+ </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
     <h3><a name="RoCrateLinkWorkflowVersion_allOf"><code>RoCrateLinkWorkflowVersion_allOf</code> - </a> <a class="up" href="#__Models">Up</a></h3>
     <div class='model-description'></div>
     <div class="field-items">
-      <div class="param">roc_link </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Link to the workflow RO-Crate </div>
-<div class="param">uuid (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Universal unique identifier of the workflow. </div>
-<div class="param">authorization (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> <p>An optional authorization header.</p>
-<p>The <code>authorization</code> parameter might be required to download
-the RO-Crate containing the workflow if it is not directly
-accessible to the user for download
-(e.g., <code>authorization: &quot;ApiKey 1234567890&quot;</code>).</p>
- </div>
+      <div class="param">uuid (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Universal unique identifier of the workflow. </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
     <h3><a name="RoCrateWorkflowVersion"><code>RoCrateWorkflowVersion</code> - </a> <a class="up" href="#__Models">Up</a></h3>
-    <div class='model-description'>A generic workflow version</div>
+    <div class='model-description'></div>
     <div class="field-items">
-      <div class="param">rocrate </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Base64 encoding of the RO-Crate archive format: base64</div>
-<div class="param">uuid (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Universal unique identifier of the workflow. </div>
+      <div class="param">uuid (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Universal unique identifier of the workflow. </div>
+<div class="param">rocrate </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Base64 encoding of the RO-Crate archive format: base64</div>
 <div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A name for the workflow. If not provided, the RO-Crate dataset name is used as default. </div>
-<div class="param">version </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A string identifying the workflow version (e.g., 1.0) </div>
 <div class="param">public (optional)</div><div class="param-desc"><span class="param-type"><a href="#boolean">Boolean</a></span> <code>true</code> if the workflow is <b>public</b>; false otherwise (default <code>false</code>). </div>
+<div class="param">version </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A string identifying the workflow version (e.g., 1.0) </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
-    <h3><a name="RoCrateWorkflowVersion_allOf"><code>RoCrateWorkflowVersion_allOf</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <h3><a name="RoCrateWorkflowVersionBase"><code>RoCrateWorkflowVersionBase</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'>A generic workflow version from an embedded (base64 encoded) <strong>RO-Crate</strong></div>
+    <div class="field-items">
+      <div class="param">rocrate </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Base64 encoding of the RO-Crate archive format: base64</div>
+<div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A name for the workflow. If not provided, the RO-Crate dataset name is used as default. </div>
+<div class="param">public (optional)</div><div class="param-desc"><span class="param-type"><a href="#boolean">Boolean</a></span> <code>true</code> if the workflow is <b>public</b>; false otherwise (default <code>false</code>). </div>
+<div class="param">version (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A string identifying the workflow version (e.g., 1.0) </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="RoCrateWorkflowVersionBase_allOf"><code>RoCrateWorkflowVersionBase_allOf</code> - </a> <a class="up" href="#__Models">Up</a></h3>
     <div class='model-description'></div>
     <div class="field-items">
       <div class="param">rocrate </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Base64 encoding of the RO-Crate archive format: base64</div>
-<div class="param">uuid (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Universal unique identifier of the workflow. </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
@@ -3557,6 +3770,9 @@ from a Workflow RO-Crate </div>
 <div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A name for the test suite. </div>
 <div class="param">definition (optional)</div><div class="param-desc"><span class="param-type"><a href="#TestSuiteDefinition">TestSuiteDefinition</a></span>  </div>
 <div class="param">instances </div><div class="param-desc"><span class="param-type"><a href="#TestInstance">array[TestInstance]</a></span>  </div>
+<div class="param">status (optional)</div><div class="param-desc"><span class="param-type"><a href="#AggregateTestStatus">AggregateTestStatus</a></span>  </div>
+<div class="param">latest_builds (optional)</div><div class="param-desc"><span class="param-type"><a href="#BuildSummary">array[BuildSummary]</a></span>  </div>
+<div class="param">reason (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Reason why the status is unavailable </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
@@ -3579,9 +3795,36 @@ from a Workflow RO-Crate </div>
     <div class='model-description'></div>
     <div class="field-items">
       <div class="param">suite_uuid </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Universal unique identifier of the test suite </div>
-<div class="param">status </div><div class="param-desc"><span class="param-type"><a href="#AggregateTestStatus">AggregateTestStatus</a></span>  </div>
+<div class="param">status (optional)</div><div class="param-desc"><span class="param-type"><a href="#AggregateTestStatus">AggregateTestStatus</a></span>  </div>
 <div class="param">latest_builds (optional)</div><div class="param-desc"><span class="param-type"><a href="#BuildSummary">array[BuildSummary]</a></span>  </div>
 <div class="param">reason (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Reason why the status is unavailable </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="TestSuiteStatusProperties"><code>TestSuiteStatusProperties</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">status (optional)</div><div class="param-desc"><span class="param-type"><a href="#AggregateTestStatus">AggregateTestStatus</a></span>  </div>
+<div class="param">latest_builds (optional)</div><div class="param-desc"><span class="param-type"><a href="#BuildSummary">array[BuildSummary]</a></span>  </div>
+<div class="param">reason (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Reason why the status is unavailable </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="TestSuiteStatus_allOf"><code>TestSuiteStatus_allOf</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">suite_uuid </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Universal unique identifier of the test suite </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="TestSuite_allOf"><code>TestSuite_allOf</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">uuid </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Universal unique identifier of the test suite </div>
+<div class="param">roc_suite (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> RO-Crate identifier of the TestSuite </div>
+<div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A name for the test suite. </div>
+<div class="param">definition (optional)</div><div class="param-desc"><span class="param-type"><a href="#TestSuiteDefinition">TestSuiteDefinition</a></span>  </div>
+<div class="param">instances </div><div class="param-desc"><span class="param-type"><a href="#TestInstance">array[TestInstance]</a></span>  </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
@@ -3647,9 +3890,10 @@ If not provided, it will be auto-generated by the system. </div>
   </div>
   <div class="model">
     <h3><a name="WorkflowBase"><code>WorkflowBase</code> - </a> <a class="up" href="#__Models">Up</a></h3>
-    <div class='model-description'>Generic workflow</div>
+    <div class='model-description'>Basic information about a workflow</div>
     <div class="field-items">
       <div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A name for the workflow. If not provided, the RO-Crate dataset name is used as default. </div>
+<div class="param">public (optional)</div><div class="param-desc"><span class="param-type"><a href="#boolean">Boolean</a></span> <code>true</code> if the workflow is <b>public</b>; false otherwise (default <code>false</code>). </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
@@ -3661,17 +3905,15 @@ If not provided, it will be auto-generated by the system. </div>
 <div class="param">public (optional)</div><div class="param-desc"><span class="param-type"><a href="#boolean">Boolean</a></span> <code>true</code> if the workflow is <b>public</b>; false otherwise (default <code>false</code>). </div>
 <div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A name for the workflow. If not provided, the RO-Crate dataset name is used as default. </div>
 <div class="param">version </div><div class="param-desc"><span class="param-type"><a href="#WorkflowVersion">WorkflowVersion</a></span>  </div>
+<div class="param">registries (optional)</div><div class="param-desc"><span class="param-type"><a href="#Registry">array[Registry]</a></span>  </div>
 <div class="param">previous_versions (optional)</div><div class="param-desc"><span class="param-type"><a href="#WorkflowVersionMin">array[WorkflowVersionMin]</a></span>  </div>
-<div class="param">registry (optional)</div><div class="param-desc"><span class="param-type"><a href="#Registry">Registry</a></span>  </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
     <h3><a name="WorkflowDetails_allOf"><code>WorkflowDetails_allOf</code> - </a> <a class="up" href="#__Models">Up</a></h3>
     <div class='model-description'></div>
     <div class="field-items">
-      <div class="param">version </div><div class="param-desc"><span class="param-type"><a href="#WorkflowVersion">WorkflowVersion</a></span>  </div>
-<div class="param">previous_versions (optional)</div><div class="param-desc"><span class="param-type"><a href="#WorkflowVersionMin">array[WorkflowVersionMin]</a></span>  </div>
-<div class="param">registry (optional)</div><div class="param-desc"><span class="param-type"><a href="#Registry">Registry</a></span>  </div>
+      <div class="param">previous_versions (optional)</div><div class="param-desc"><span class="param-type"><a href="#WorkflowVersionMin">array[WorkflowVersionMin]</a></span>  </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
@@ -3709,6 +3951,7 @@ If not provided, it will be auto-generated by the system. </div>
 <div class="param">is_latest (optional)</div><div class="param-desc"><span class="param-type"><a href="#boolean">Boolean</a></span> <code>true</code> if the workflow version is the latest,
 <code>false</code> otherwise. </div>
 <div class="param">submitter (optional)</div><div class="param-desc"><span class="param-type"><a href="#User">User</a></span>  </div>
+<div class="param">authors (optional)</div><div class="param-desc"><span class="param-type"><a href="#Author">array[Author]</a></span> List of authors/creators of the workflow </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
@@ -3716,16 +3959,35 @@ If not provided, it will be auto-generated by the system. </div>
     <div class='model-description'></div>
     <div class="field-items">
       <div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A name for the workflow. If not provided, the RO-Crate dataset name is used as default. </div>
-<div class="param">version </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A string identifying the workflow version (e.g., 1.0) </div>
 <div class="param">public (optional)</div><div class="param-desc"><span class="param-type"><a href="#boolean">Boolean</a></span> <code>true</code> if the workflow is <b>public</b>; false otherwise (default <code>false</code>). </div>
+<div class="param">version (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A string identifying the workflow version (e.g., 1.0) </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
     <h3><a name="WorkflowVersionBase_allOf"><code>WorkflowVersionBase_allOf</code> - </a> <a class="up" href="#__Models">Up</a></h3>
-    <div class='model-description'>Base workflow version</div>
+    <div class='model-description'>Basic information about a workflow version</div>
     <div class="field-items">
-      <div class="param">version </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A string identifying the workflow version (e.g., 1.0) </div>
+      <div class="param">version (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A string identifying the workflow version (e.g., 1.0) </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="WorkflowVersionDetails"><code>WorkflowVersionDetails</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">uuid </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Universal unique identifier of the workflow.
+If not provided, it will be auto-generated by the system. </div>
 <div class="param">public (optional)</div><div class="param-desc"><span class="param-type"><a href="#boolean">Boolean</a></span> <code>true</code> if the workflow is <b>public</b>; false otherwise (default <code>false</code>). </div>
+<div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A name for the workflow. If not provided, the RO-Crate dataset name is used as default. </div>
+<div class="param">version </div><div class="param-desc"><span class="param-type"><a href="#WorkflowVersion">WorkflowVersion</a></span>  </div>
+<div class="param">registries (optional)</div><div class="param-desc"><span class="param-type"><a href="#Registry">array[Registry]</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="WorkflowVersionDetails_allOf"><code>WorkflowVersionDetails_allOf</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">version </div><div class="param-desc"><span class="param-type"><a href="#WorkflowVersion">WorkflowVersion</a></span>  </div>
+<div class="param">registries (optional)</div><div class="param-desc"><span class="param-type"><a href="#Registry">array[Registry]</a></span>  </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
@@ -3768,6 +4030,7 @@ If not provided, it will be auto-generated by the system. </div>
 <div class="param">is_latest (optional)</div><div class="param-desc"><span class="param-type"><a href="#boolean">Boolean</a></span> <code>true</code> if the workflow version is the latest,
 <code>false</code> otherwise. </div>
 <div class="param">submitter (optional)</div><div class="param-desc"><span class="param-type"><a href="#User">User</a></span>  </div>
+<div class="param">authors (optional)</div><div class="param-desc"><span class="param-type"><a href="#Author">array[Author]</a></span> List of authors/creators of the workflow </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
@@ -3790,11 +4053,11 @@ If not provided, it will be auto-generated by the system. </div>
     <h3><a name="registry_workflows_post_request"><code>registry_workflows_post_request</code> - </a> <a class="up" href="#__Models">Up</a></h3>
     <div class='model-description'></div>
     <div class="field-items">
-      <div class="param">rocrate </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Base64 encoding of the RO-Crate archive format: base64</div>
-<div class="param">uuid (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Universal unique identifier of the workflow. </div>
+      <div class="param">uuid (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Universal unique identifier of the workflow. </div>
+<div class="param">rocrate </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Base64 encoding of the RO-Crate archive format: base64</div>
 <div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A name for the workflow. If not provided, the RO-Crate dataset name is used as default. </div>
-<div class="param">version </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A string identifying the workflow version (e.g., 1.0) </div>
 <div class="param">public (optional)</div><div class="param-desc"><span class="param-type"><a href="#boolean">Boolean</a></span> <code>true</code> if the workflow is <b>public</b>; false otherwise (default <code>false</code>). </div>
+<div class="param">version </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A string identifying the workflow version (e.g., 1.0) </div>
 <div class="param">roc_link </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Link to the workflow RO-Crate </div>
 <div class="param">authorization (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> <p>An optional authorization header.</p>
 <p>The <code>authorization</code> parameter might be required to download
@@ -3823,8 +4086,8 @@ accessible to the user for download
     <h3><a name="user_workflows_post_request"><code>user_workflows_post_request</code> - </a> <a class="up" href="#__Models">Up</a></h3>
     <div class='model-description'></div>
     <div class="field-items">
-      <div class="param">roc_link </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Link to the workflow RO-Crate </div>
-<div class="param">uuid (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Universal unique identifier of the workflow. </div>
+      <div class="param">uuid (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Universal unique identifier of the workflow. </div>
+<div class="param">roc_link </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Link to the workflow RO-Crate </div>
 <div class="param">authorization (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> <p>An optional authorization header.</p>
 <p>The <code>authorization</code> parameter might be required to download
 the RO-Crate containing the workflow if it is not directly
@@ -3832,8 +4095,8 @@ accessible to the user for download
 (e.g., <code>authorization: &quot;ApiKey 1234567890&quot;</code>).</p>
  </div>
 <div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A name for the workflow. If not provided, the RO-Crate dataset name is used as default. </div>
-<div class="param">version </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A string identifying the workflow version (e.g., 1.0) </div>
 <div class="param">public (optional)</div><div class="param-desc"><span class="param-type"><a href="#boolean">Boolean</a></span> <code>true</code> if the workflow is <b>public</b>; false otherwise (default <code>false</code>). </div>
+<div class="param">version </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A string identifying the workflow version (e.g., 1.0) </div>
 <div class="param">rocrate </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Base64 encoding of the RO-Crate archive format: base64</div>
     </div>  <!-- field-items -->
   </div>
@@ -3854,19 +4117,20 @@ accessible to the user for download
     </div>  <!-- field-items -->
   </div>
   <div class="model">
-    <h3><a name="workflows_put_request"><code>workflows_put_request</code> - </a> <a class="up" href="#__Models">Up</a></h3>
-    <div class='model-description'></div>
-    <div class="field-items">
-      <div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A name for the workflow. If not provided, the RO-Crate dataset name is used as default. </div>
-<div class="param">public (optional)</div><div class="param-desc"><span class="param-type"><a href="#boolean">Boolean</a></span> <code>true</code> if the workflow is <b>public</b>; false otherwise (default <code>false</code>). </div>
-    </div>  <!-- field-items -->
-  </div>
-  <div class="model">
     <h3><a name="workflows_version_put_request"><code>workflows_version_put_request</code> - </a> <a class="up" href="#__Models">Up</a></h3>
     <div class='model-description'></div>
     <div class="field-items">
-      <div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A name for the workflow version. If not provided, the RO-Crate dataset name is used as default. </div>
-<div class="param">version (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Workflow version </div>
+      <div class="param">rocrate </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Base64 encoding of the RO-Crate archive format: base64</div>
+<div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A name for the workflow. If not provided, the RO-Crate dataset name is used as default. </div>
+<div class="param">public (optional)</div><div class="param-desc"><span class="param-type"><a href="#boolean">Boolean</a></span> <code>true</code> if the workflow is <b>public</b>; false otherwise (default <code>false</code>). </div>
+<div class="param">version (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A string identifying the workflow version (e.g., 1.0) </div>
+<div class="param">roc_link </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Link to the workflow RO-Crate </div>
+<div class="param">authorization (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> <p>An optional authorization header.</p>
+<p>The <code>authorization</code> parameter might be required to download
+the RO-Crate containing the workflow if it is not directly
+accessible to the user for download
+(e.g., <code>authorization: &quot;ApiKey 1234567890&quot;</code>).</p>
+ </div>
     </div>  <!-- field-items -->
   </div>
   </body>
