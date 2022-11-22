@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2021 CRS4
+# Copyright (c) 2020-2022 CRS4
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -77,8 +77,9 @@ class RegisterForm(FlaskForm):
                 if not identity else identity.user
             if not identity:
                 user.password = self.password.data
-            else:
+            elif identity.user_info.get("picture", None):
                 user.picture = identity.user_info["picture"]
+            user.username = self.username.data
             db.session.add(user)
             db.session.commit()
             return user

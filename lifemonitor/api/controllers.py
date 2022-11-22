@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2021 CRS4
+# Copyright (c) 2020-2022 CRS4
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -18,16 +18,14 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import base64
 import logging
-import os
 import tempfile
 
 import connexion
 import lifemonitor.exceptions as lm_exceptions
 import werkzeug
-from flask import Response, request
-from lifemonitor.api import serializers
+from flask import Response, request, render_template
+from lifemonitor.api import models, serializers
 from lifemonitor.api.services import LifeMonitor
 from lifemonitor.auth import (EventType, authorized, current_registry,
                               current_user)
@@ -91,7 +89,7 @@ def registry_index_workflow(registry_uuid, registry_workflow_identifier):
     workflow = registry.get_index_workflow(current_user, registry_workflow_identifier)
     if not workflow:
         return lm_exceptions.report_problem(404, "Not Found",
-                                            detail=messages.workflow_not_found.format(registry_workflow_identifier, 'latest'))
+                                            detail=messages.workflow_version_not_found.format(registry_workflow_identifier, 'latest'))
     return serializers.RegistryIndexItemSchema().dump(workflow)
 
 
@@ -106,19 +104,19 @@ def workflow_registries_get_current():
 
 
 @cached(timeout=Timeout.REQUEST)
-def workflows_get(status=False):
+def workflows_get(status=False, versions=False):
     workflows = lm.get_public_workflows()
     if current_user and not current_user.is_anonymous:
         workflows.extend(lm.get_user_workflows(current_user))
     elif current_registry:
         workflows.extend(lm.get_registry_workflows(current_registry))
     logger.debug("workflows_get. Got %s workflows (user: %s)", len(workflows), current_user)
-    return serializers.ListOfWorkflows(workflow_status=status).dump(
+    return serializers.ListOfWorkflows(workflow_status=status, workflow_versions=versions).dump(
         list(dict.fromkeys(workflows))
     )
 
 
-def _get_workflow_or_problem(wf_uuid, wf_version=None):
+def __get_workflow_version__(wf_uuid, wf_version=None) -> models.WorkflowVersion:
     try:
         wf = None
         try:
@@ -131,23 +129,24 @@ def _get_workflow_or_problem(wf_uuid, wf_version=None):
             elif current_registry:
                 wf = lm.get_registry_workflow_version(current_registry, wf_uuid, wf_version)
             else:
-                return lm_exceptions.report_problem(403, "Forbidden",
-                                                    detail=messages.no_user_in_session)
+                raise lm_exceptions.Forbidden(detail=messages.no_user_in_session)
         if wf is None:
-            return lm_exceptions.report_problem(404, "Not Found",
-                                                detail=messages.workflow_not_found.format(wf_uuid, wf_version))
+            raise lm_exceptions.EntityNotFoundException(
+                models.WorkflowVersion,
+                detail=messages.workflow_version_not_found.format(wf_uuid, wf_version))
         return wf
     except lm_exceptions.EntityNotFoundException as e:
-        return lm_exceptions.report_problem(404, "Not Found", extra_info={"exception": str(e)},
-                                            detail=messages.workflow_not_found.format(wf_uuid, wf_version))
+        raise lm_exceptions.EntityNotFoundException(models.WorkflowVersion,
+                                                    extra_info={"exception": str(e)},
+                                                    detail=messages.workflow_version_not_found.format(wf_uuid, wf_version))
     except lm_exceptions.NotAuthorizedException as e:
-        return lm_exceptions.report_problem(403, "Forbidden", extra_info={"exception": str(e)},
-                                            detail=messages.unauthorized_workflow_access.format(wf_uuid))
+        raise lm_exceptions.Forbidden(extra_info={"exception": str(e)},
+                                      detail=messages.unauthorized_workflow_access.format(wf_uuid))
 
 
 @cached(timeout=Timeout.REQUEST)
 def workflows_get_by_id(wf_uuid, wf_version):
-    response = _get_workflow_or_problem(wf_uuid, wf_version)
+    response = __get_workflow_version__(wf_uuid, wf_version)
     return response if isinstance(response, Response) \
         else serializers.WorkflowVersionSchema(subscriptionsOf=[current_user]
                                                if not current_user.is_anonymous
@@ -156,7 +155,7 @@ def workflows_get_by_id(wf_uuid, wf_version):
 
 @cached(timeout=Timeout.REQUEST)
 def workflows_get_latest_version_by_id(wf_uuid, previous_versions=False, ro_crate=False):
-    response = _get_workflow_or_problem(wf_uuid, None)
+    response = __get_workflow_version__(wf_uuid, None)
     exclude = ['previous_versions'] if not previous_versions else []
     logger.debug("Previous versions: %r", exclude)
     return response if isinstance(response, Response) \
@@ -166,8 +165,19 @@ def workflows_get_latest_version_by_id(wf_uuid, previous_versions=False, ro_crat
 
 
 @cached(timeout=Timeout.REQUEST)
+def workflows_get_version_by_id(wf_uuid, wf_version, ro_crate=False):
+    response = __get_workflow_version__(wf_uuid, wf_version)
+    exclude = ['previous_versions']
+    logger.debug("Previous versions: %r", exclude)
+    return response if isinstance(response, Response) \
+        else serializers.LatestWorkflowVersionSchema(
+            exclude=exclude, rocrate_metadata=ro_crate,
+            subscriptionsOf=[current_user] if not current_user.is_anonymous else None).dump(response)
+
+
+@cached(timeout=Timeout.REQUEST)
 def workflows_get_versions_by_id(wf_uuid):
-    response = _get_workflow_or_problem(wf_uuid, None)
+    response = __get_workflow_version__(wf_uuid, None)
     return response if isinstance(response, Response) \
         else serializers.ListOfWorkflowVersions().dump(response.workflow)
 
@@ -175,14 +185,14 @@ def workflows_get_versions_by_id(wf_uuid):
 @cached(timeout=Timeout.REQUEST)
 def workflows_get_status(wf_uuid):
     wf_version = request.args.get('version', 'latest').lower()
-    response = _get_workflow_or_problem(wf_uuid, wf_version)
+    response = __get_workflow_version__(wf_uuid, wf_version)
     return response if isinstance(response, Response) \
         else serializers.WorkflowStatusSchema().dump(response)
 
 
 @cached(timeout=Timeout.REQUEST)
 def workflows_rocrate_metadata(wf_uuid, wf_version):
-    response = _get_workflow_or_problem(wf_uuid, wf_version)
+    response = __get_workflow_version__(wf_uuid, wf_version)
     if isinstance(response, Response):
         return response
     return response.crate_metadata
@@ -190,7 +200,7 @@ def workflows_rocrate_metadata(wf_uuid, wf_version):
 
 @cached(timeout=Timeout.WORKFLOW, client_scope=False)
 def workflows_rocrate_download(wf_uuid, wf_version):
-    response = _get_workflow_or_problem(wf_uuid, wf_version)
+    response = __get_workflow_version__(wf_uuid, wf_version)
     if isinstance(response, Response):
         return response
 
@@ -209,10 +219,10 @@ def workflows_rocrate_download(wf_uuid, wf_version):
 
 @authorized
 @cached(timeout=Timeout.REQUEST)
-def registry_workflows_get(status=False):
+def registry_workflows_get(status=False, versions=False):
     workflows = lm.get_registry_workflows(current_registry)
     logger.debug("workflows_get. Got %s workflows (registry: %s)", len(workflows), current_registry)
-    return serializers.ListOfWorkflows(workflow_status=status).dump(workflows)
+    return serializers.ListOfWorkflows(workflow_status=status, workflow_versions=versions).dump(workflows)
 
 
 @authorized
@@ -225,14 +235,14 @@ def registry_workflows_post(body):
 
 @authorized
 @cached(timeout=Timeout.REQUEST)
-def registry_user_workflows_get(user_id, status=False):
+def registry_user_workflows_get(user_id, status=False, versions=False):
     if not current_registry:
         return lm_exceptions.report_problem(401, "Unauthorized", detail=messages.no_registry_found)
     try:
         identity = lm.find_registry_user_identity(current_registry, external_id=user_id)
         workflows = lm.get_user_registry_workflows(identity.user, current_registry)
         logger.debug("registry_user_workflows_get. Got %s workflows (user: %s)", len(workflows), current_user)
-        return serializers.ListOfWorkflows(workflow_status=status).dump(workflows)
+        return serializers.ListOfWorkflows(workflow_status=status, workflow_versions=versions).dump(workflows)
     except OAuthIdentityNotFoundException:
         return lm_exceptions.report_problem(401, "Unauthorized",
                                             detail=messages.no_user_oauth_identity_on_registry
@@ -249,12 +259,13 @@ def registry_user_workflows_post(user_id, body):
 
 @authorized
 @cached(timeout=Timeout.REQUEST)
-def user_workflows_get(status=False, subscriptions=False):
+def user_workflows_get(status=False, subscriptions=False, versions=False):
     if not current_user or current_user.is_anonymous:
         return lm_exceptions.report_problem(401, "Unauthorized", detail=messages.no_user_in_session)
     workflows = lm.get_user_workflows(current_user, include_subscriptions=subscriptions)
     logger.debug("user_workflows_get. Got %s workflows (user: %s)", len(workflows), current_user)
     return serializers.ListOfWorkflows(workflow_status=status,
+                                       workflow_versions=versions,
                                        subscriptionsOf=[current_user]
                                        if subscriptions else None).dump(workflows)
 
@@ -269,9 +280,9 @@ def user_workflows_post(body):
 
 @authorized
 def user_workflow_subscribe(wf_uuid):
-    response = _get_workflow_or_problem(wf_uuid)
-    if isinstance(response, Response):
-        return response
+    response = __get_workflow_version__(wf_uuid)
+    # if isinstance(response, Response):
+    #     return response
     subscribed = current_user.is_subscribed_to(response.workflow)
     subscription = lm.subscribe_user_resource(current_user, response.workflow)
     logger.debug("Created new subscription: %r", subscription)
@@ -284,7 +295,7 @@ def user_workflow_subscribe(wf_uuid):
 
 @authorized
 def user_workflow_subscribe_events(wf_uuid, body):
-    workflow_version = _get_workflow_or_problem(wf_uuid)
+    workflow_version = __get_workflow_version__(wf_uuid)
 
     if body is None or not isinstance(body, list):
         return lm_exceptions.report_problem(400, "Bad request",
@@ -311,9 +322,9 @@ def user_workflow_subscribe_events(wf_uuid, body):
 
 @authorized
 def user_workflow_unsubscribe(wf_uuid):
-    response = _get_workflow_or_problem(wf_uuid)
-    if isinstance(response, Response):
-        return response
+    response = __get_workflow_version__(wf_uuid)
+    # if isinstance(response, Response):
+    #     return response
     subscription = lm.unsubscribe_user_resource(current_user, response.workflow)
     logger.debug("Delete subscription: %r", subscription)
     clear_cache()
@@ -322,7 +333,7 @@ def user_workflow_unsubscribe(wf_uuid):
 
 @authorized
 @cached(timeout=Timeout.REQUEST)
-def user_registry_workflows_get(registry_uuid, status=False):
+def user_registry_workflows_get(registry_uuid, status=False, versions=False):
     if not current_user or current_user.is_anonymous:
         return lm_exceptions.report_problem(401, "Unauthorized", detail=messages.no_user_in_session)
     logger.debug("Registry UUID: %r", registry_uuid)
@@ -330,7 +341,7 @@ def user_registry_workflows_get(registry_uuid, status=False):
         registry = lm.get_workflow_registry_by_uuid(registry_uuid)
         workflows = lm.get_user_registry_workflows(current_user, registry)
         logger.debug("workflows_get. Got %s workflows (user: %s)", len(workflows), current_user)
-        return serializers.ListOfWorkflows(workflow_status=status).dump(workflows)
+        return serializers.ListOfWorkflows(workflow_status=status, workflow_versions=versions).dump(workflows)
     except lm_exceptions.EntityNotFoundException:
         return lm_exceptions.report_problem(404, "Not Found",
                                             detail=messages.no_registry_found.format(registry_uuid))
@@ -349,43 +360,30 @@ def user_registry_workflows_post(registry_uuid, body):
                                             detail=messages.no_registry_found.format(registry_uuid))
 
 
-@authorized
-def workflows_post(body, _registry=None, _submitter_id=None):
+def __check_submitter_and_registry__(body, _registry=None, _submitter_id=None, _check_identifier=True):
     registry = _registry or current_registry._get_current_object()
     if registry and 'registry' in body:
-        return lm_exceptions.report_problem(400, "Bad request",
-                                            detail=messages.unexpected_registry_uri)
+        raise lm_exceptions.BadRequestException(detail=messages.unexpected_registry_uri)
+        # return lm_exceptions.report_problem(400, "Bad request",
+        #                                     detail=messages.unexpected_registry_uri)
     if not registry and 'registry' in body:
         registry_ref = body.get('registry', None)
         try:
             registry = lm.get_workflow_registry_by_generic_reference(registry_ref)
         except lm_exceptions.EntityNotFoundException:
-            return lm_exceptions.report_problem(404, "Not Found",
-                                                detail=messages.no_registry_found.format(registry_ref))
-    if registry:
+            raise lm_exceptions.EntityNotFoundException(
+                models.WorkflowRegistry, entity_id=registry_ref,
+                detail=messages.no_registry_found.format(registry_ref))
+            # return lm_exceptions.report_problem(404, "Not Found",
+            #                                     detail=messages.no_registry_found.format(registry_ref))
+    if registry and _check_identifier:
         # at least one between 'uuid' or 'identifier' must be provided to
         # associate this workflow record with its identity in the registry
         if not body.get('uuid', None) and not body.get('identifier', None):
-            return lm_exceptions.report_problem(400, "Bad Request", extra_info={"missing input": "uuid or identifier"},
-                                                detail=messages.input_data_missing)
-
-    roc_link = body.get('roc_link', None)
-    encoded_rocrate = body.get('rocrate', None)
-    if not registry and not roc_link and not encoded_rocrate:
-        return lm_exceptions.report_problem(400, "Bad Request", extra_info={"missing input": "roc_link OR rocrate"},
-                                            detail=messages.input_data_missing)
-
-    temp_rocrate_file = None
-    if encoded_rocrate:
-        try:
-            rocrate = base64.b64decode(encoded_rocrate)
-            temp_rocrate_file = tempfile.NamedTemporaryFile(delete=False, prefix="/tmp/")
-            temp_rocrate_file.write(rocrate)
-            roc_link = f"tmp://{temp_rocrate_file.name}"
-            logger.debug("ROCrate written to %r", temp_rocrate_file.name)
-        except Exception as e:
-            return lm_exceptions.report_problem(400, "Bad Request", extra_info={"exception": str(e)},
-                                                detail=messages.decode_ro_crate_error)
+            # return lm_exceptions.report_problem(400, "Bad Request", extra_info={"missing input": "uuid or identifier"},
+            #                                     detail=messages.input_data_missing)
+            raise lm_exceptions.BadRequestException(detail=messages.input_data_missing,
+                                                    extra_info={"missing input": "uuid or identifier"})
 
     submitter = current_user if current_user and not current_user.is_anonymous else None
     if not submitter:
@@ -398,15 +396,34 @@ def workflows_post(body, _registry=None, _submitter_id=None):
                                                           external_id=submitter_id)
                 submitter = identity.user
         except KeyError:
-            return lm_exceptions.report_problem(400, "Bad request",
-                                                detail=messages.no_submitter_id_provided)
+            # return lm_exceptions.report_problem(400, "Bad request",
+            #                                     detail=messages.no_submitter_id_provided)
+            raise lm_exceptions.BadRequestException(detail=messages.no_submitter_id_provided)
         except OAuthIdentityNotFoundException:
-            return lm_exceptions.report_problem(401, "Unauthorized",
-                                                detail=messages.no_user_oauth_identity_on_registry
-                                                .format(submitter_id or current_user.id, registry.name))
+            # return lm_exceptions.report_problem(401, "Unauthorized",
+            #                                     detail=messages.no_user_oauth_identity_on_registry
+            #                                     .format(submitter_id or current_user.id, registry.name))
+            raise lm_exceptions.NotAuthorizedException(
+                detail=messages.no_user_oauth_identity_on_registry
+                .format(submitter_id or current_user.id, registry.name)
+            )
+    return registry, submitter
+
+
+@authorized
+def workflows_post(body, _registry=None, _submitter_id=None):
+    # check if there exists a submitter and/or a registry in the current request
+    registry, submitter = __check_submitter_and_registry__(body, _registry, _submitter_id)
+    # extract roc_link or rocrate from the request
+    roc_link = body.get('roc_link', None)
+    encoded_rocrate = body.get('rocrate', None)
+    if not registry and not roc_link and not encoded_rocrate:
+        return lm_exceptions.report_problem(400, "Bad Request", extra_info={"missing input": "roc_link OR rocrate"},
+                                            detail=messages.input_data_missing)
+    # register workflow through the 'lm' service
     try:
         w = lm.register_workflow(
-            roc_link=roc_link,
+            rocrate_or_link=roc_link or encoded_rocrate,
             workflow_submitter=submitter,
             workflow_version=body['version'],
             workflow_uuid=body.get('uuid', None),
@@ -427,7 +444,7 @@ def workflows_post(body, _registry=None, _submitter_id=None):
                                             detail=messages.invalid_ro_crate)
     except lm_exceptions.NotValidROCrateException as e:
         return lm_exceptions.report_problem(400, "Bad Request", extra_info={"exception": str(e)},
-                                            detail=messages.invalid_ro_crate)
+                                            detail=f"{messages.invalid_ro_crate}: {e.detail}")
     except lm_exceptions.NotAuthorizedException as e:
         return lm_exceptions.report_problem(403, "Forbidden", extra_info={"exception": str(e)},
                                             detail=messages.not_authorized_registry_access.format(registry.name)
@@ -443,47 +460,78 @@ def workflows_post(body, _registry=None, _submitter_id=None):
     except Exception as e:
         logger.exception(e)
         raise lm_exceptions.LifeMonitorException(title="Internal Error", detail=str(e))
-    finally:
-        if roc_link and roc_link.startswith("tmp://"):
-            try:
-                os.remove(roc_link.replace('tmp://', ''))
-            except Exception as e:
-                logger.error("Error deleting temp rocrate: %r", str(e))
 
 
 @authorized
 def workflows_put(wf_uuid, body):
-    logger.debug("PUT called for workflow (%s)", wf_uuid)
-    wv = _get_workflow_or_problem(wf_uuid, None)
-    if isinstance(wv, Response):
-        return wv
-    wv.workflow.name = body.get('name', wv.workflow.name)
-    wv.workflow.public = body.get('public', wv.workflow.public)
-    wv.workflow.save()
-    clear_cache()
+    logger.debug(f"PUT called for workflow {wf_uuid} (basic info)")
+    # get a reference to the workflow version to be updated
+    workflow_version = __get_workflow_version__(wf_uuid)
+    # update basic information aboud the specified workflow
+    workflow_version.workflow.name = body.get('name', workflow_version.workflow.name)
+    workflow_version.workflow.public = body.get('public', workflow_version.workflow.public)
+    workflow_version.workflow.save()
     return connexion.NoContent, 204
 
 
 @authorized
 def workflows_version_put(wf_uuid, wf_version, body):
-    logger.debug("PUT called for workflow version (%s)", wf_uuid)
-    wv = _get_workflow_or_problem(wf_uuid, wf_version)
-    if isinstance(wv, Response):
-        return wv
-    wv.name = body.get('name', wv.name)
-    wv.version = body.get('version', wv.version)
-    wv.save()
-    clear_cache()
-    return connexion.NoContent, 204
+    logger.debug(f"PUT called for workflow {wf_uuid} (version {wf_version})")
+    # get a reference to the workflow version to be updated
+    workflow_version = __get_workflow_version__(wf_uuid, wf_version)
+    # check if there exists a submitter and/or a registry in the current request
+    registry, submitter = __check_submitter_and_registry__(body, _check_identifier=False)
+    # registry workflows cannot be updated through roc_link or rocrate
+    # (roc_link and rocrate will be ignored by the 'lm' service)
+    rocrate_or_link = body.get('roc_link', None) or body.get('rocrate', None)
+    if len(workflow_version.registries) > 0 and rocrate_or_link is not None:
+        raise lm_exceptions.Forbidden(detail=messages.forbidden_roclink_or_rocrate_for_registry_workflows)
+    # perform the update through the service
+    try:
+        updated_workflow_version = lm.update_workflow(
+            submitter,
+            wf_uuid, workflow_version.version,
+            name=body.get('name', workflow_version.workflow.name),
+            new_version_label=body.get('version', None),
+            public=body.get('public', workflow_version.workflow.public),
+            rocrate_or_link=rocrate_or_link,
+            authorization=body.get('authorization', None)
+        )
+        clear_cache()
+        if updated_workflow_version.uuid != workflow_version.uuid:
+            return {'uuid': str(updated_workflow_version.workflow.uuid),
+                    'wf_version': updated_workflow_version.version,
+                    'name': updated_workflow_version.name}, 201
+        return connexion.NoContent, 204
+
+    except KeyError as e:
+        return lm_exceptions.report_problem(400, "Bad Request", extra_info={"exception": str(e)},
+                                            detail=messages.input_data_missing)
+    except lm_exceptions.DownloadException as e:
+        return lm_exceptions.report_problem(400, "Bad Request", extra_info={"exception": str(e)},
+                                            detail=messages.invalid_ro_crate)
+    except lm_exceptions.NotValidROCrateException as e:
+        return lm_exceptions.report_problem(400, "Bad Request", extra_info={"exception": str(e)},
+                                            detail=messages.invalid_ro_crate)
+    except lm_exceptions.NotAuthorizedException as e:
+        return lm_exceptions.report_problem(403, "Forbidden", extra_info={"exception": str(e)},
+                                            detail=messages.not_authorized_registry_access.format(registry.name)
+                                            if registry else messages.not_authorized_workflow_access)
+    except lm_exceptions.LifeMonitorException:
+        # Catch and re-raise to avoid the last catch-all exception handler
+        raise
+    except Exception as e:
+        logger.exception(e)
+        raise lm_exceptions.LifeMonitorException(title="Internal Error", detail=str(e))
 
 
 @authorized
-def workflows_delete(wf_uuid, wf_version):
+def workflows_delete_version(wf_uuid, wf_version):
     try:
         if current_user and not current_user.is_anonymous:
-            lm.deregister_user_workflow(wf_uuid, wf_version, current_user)
+            lm.deregister_user_workflow_version(wf_uuid, wf_version, current_user)
         elif current_registry:
-            lm.deregister_registry_workflow(wf_uuid, wf_version, current_registry)
+            lm.deregister_registry_workflow_version(wf_uuid, wf_version, current_registry)
         else:
             return lm_exceptions.report_problem(403, "Forbidden",
                                                 detail=messages.no_user_in_session)
@@ -493,7 +541,30 @@ def workflows_delete(wf_uuid, wf_version):
         return lm_exceptions.report_problem(401, "Unauthorized", extra_info={"exception": str(e)})
     except lm_exceptions.EntityNotFoundException as e:
         return lm_exceptions.report_problem(404, "Not Found", extra_info={"exception": str(e.detail)},
-                                            detail=messages.workflow_not_found.format(wf_uuid, wf_version))
+                                            detail=messages.workflow_version_not_found.format(wf_uuid, wf_version))
+    except lm_exceptions.NotAuthorizedException as e:
+        return lm_exceptions.report_problem(403, "Forbidden", extra_info={"exception": str(e)})
+    except Exception as e:
+        raise lm_exceptions.LifeMonitorException(title="Internal Error", detail=str(e))
+
+
+@authorized
+def workflows_delete(wf_uuid):
+    try:
+        if current_user and not current_user.is_anonymous:
+            lm.deregister_user_workflow(wf_uuid, current_user)
+        elif current_registry:
+            lm.deregister_registry_workflow(wf_uuid, current_registry)
+        else:
+            return lm_exceptions.report_problem(403, "Forbidden",
+                                                detail=messages.no_user_in_session)
+        clear_cache()
+        return connexion.NoContent, 204
+    except OAuthIdentityNotFoundException as e:
+        return lm_exceptions.report_problem(401, "Unauthorized", extra_info={"exception": str(e)})
+    except lm_exceptions.EntityNotFoundException as e:
+        return lm_exceptions.report_problem(404, "Not Found", extra_info={"exception": str(e.detail)},
+                                            detail=messages.workflow_version_not_found.format(wf_uuid))
     except lm_exceptions.NotAuthorizedException as e:
         return lm_exceptions.report_problem(403, "Forbidden", extra_info={"exception": str(e)})
     except Exception as e:
@@ -501,10 +572,26 @@ def workflows_delete(wf_uuid, wf_version):
 
 
 @cached(timeout=Timeout.REQUEST)
-def workflows_get_suites(wf_uuid, version='latest'):
-    response = _get_workflow_or_problem(wf_uuid, version)
-    return response if isinstance(response, Response) \
-        else serializers.ListOfSuites().dump(response.test_suites)
+def workflows_get_issue_types():
+    return serializers.ListOfWorkflowIssueTypesSchema().dump(models.WorkflowRepositoryIssue.all())
+
+
+@cached(timeout=Timeout.REQUEST)
+def workflows_get_issue_types_as_html(back=None):
+    return Response(
+        render_template(
+            "api/issues.j2", back_param=back,
+            issues=serializers.ListOfWorkflowIssueTypesSchema().dump(models.WorkflowRepositoryIssue.all())['items']),
+        mimetype="text/html", status=200)
+
+
+@cached(timeout=Timeout.REQUEST)
+def workflows_get_suites(wf_uuid, version='latest', status: bool = False, latest_builds: bool = False):
+    workflow_version = __get_workflow_version__(wf_uuid, version)
+    logger.debug("GET suites of workflow version: %r", workflow_version)
+    return serializers.ListOfSuites(
+        status=status, latest_builds=latest_builds
+    ).dump(workflow_version.test_suites)
 
 
 def _get_suite_or_problem(suite_uuid):
@@ -514,7 +601,7 @@ def _get_suite_or_problem(suite_uuid):
             return lm_exceptions.report_problem(404, "Not Found",
                                                 detail=messages.suite_not_found.format(suite_uuid))
 
-        response = _get_workflow_or_problem(suite.workflow_version.workflow.uuid,
+        response = __get_workflow_version__(suite.workflow_version.workflow.uuid,
                                             suite.workflow_version.version)
         if isinstance(response, Response):
             if response.status_code == 404:
@@ -536,10 +623,10 @@ def _get_suite_or_problem(suite_uuid):
 
 
 @cached(timeout=Timeout.REQUEST)
-def suites_get_by_uuid(suite_uuid):
+def suites_get_by_uuid(suite_uuid, status: bool = False, latest_builds: bool = False):
     response = _get_suite_or_problem(suite_uuid)
     return response if isinstance(response, Response) \
-        else serializers.SuiteSchema().dump(response)
+        else serializers.SuiteSchema(status=status, latest_builds=latest_builds).dump(response)
 
 
 @cached(timeout=Timeout.REQUEST)
@@ -730,6 +817,8 @@ def instances_builds_get_by_id(instance_uuid, build_id):
                             detail=messages.instance_build_not_found.format(build_id, instance_uuid))
     except lm_exceptions.RateLimitExceededException as e:
         return lm_exceptions.report_problem(403, e.title, detail=e.detail)
+    except lm_exceptions.BadRequestException as e:
+        return lm_exceptions.report_problem(400, e.title, detail=e.detail)
     except Exception as e:
         return lm_exceptions.report_problem(500, "Internal Error", extra_info={"exception": str(e)})
 

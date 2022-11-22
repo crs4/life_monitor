@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2021 CRS4
+# Copyright (c) 2020-2022 CRS4
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -30,7 +30,7 @@ from .rocrate import ROCrate
 from .status import Status, AggregateTestStatus, WorkflowStatus, SuiteStatus
 
 # 'registries' package
-from .registries import RegistryWorkflow, WorkflowRegistry, WorkflowRegistryClient
+from .registries import RegistryWorkflow, WorkflowRegistry, WorkflowRegistryClient, RegistrySettings
 
 # 'workflows' package
 from .workflows import Workflow, WorkflowVersion
@@ -40,6 +40,9 @@ from .testsuites import TestSuite, TestInstance, ManagedTestInstance, BuildStatu
 
 # notifications
 from .notifications import WorkflowStatusNotification
+
+# issues
+from .issues import WorkflowRepositoryIssue
 
 # 'testing_services'
 from .services import TestingService, \
@@ -76,7 +79,9 @@ __all__ = [
     "WorkflowStatus",
     "WorkflowStatusNotification",
     "WorkflowVersion",
+    "WorkflowRepositoryIssue",
     "RegistryWorkflow",
+    "RegistrySettings"
 ]
 
 # set module level logger

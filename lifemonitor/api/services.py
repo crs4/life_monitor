@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2021 CRS4
+# Copyright (c) 2020-2022 CRS4
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -26,13 +26,14 @@ from typing import List, Optional, Union
 
 import lifemonitor.exceptions as lm_exceptions
 from lifemonitor.api import models
-from lifemonitor.auth.models import (EventType, ExternalServiceAuthorizationHeader,
-                                     Notification, Permission, Resource,
-                                     RoleType, Subscription, User)
+from lifemonitor.auth.models import (EventType,
+                                     ExternalServiceAuthorizationHeader,
+                                     HostingService, Notification, Permission,
+                                     Resource, RoleType, Subscription, User)
 from lifemonitor.auth.oauth2.client import providers
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 from lifemonitor.auth.oauth2.server import server
-from lifemonitor.utils import OpenApiSpecs
+from lifemonitor.utils import OpenApiSpecs, ROCrateLinkContext, to_snake_case
 
 logger = logging.getLogger()
 
@@ -87,7 +88,7 @@ class LifeMonitor:
                 w = cls._find_and_check_shared_workflow_version(user, uuid, version=version)
 
         if w is None:
-            raise lm_exceptions.EntityNotFoundException(models.WorkflowVersion, f"{uuid}_{version}")
+            raise lm_exceptions.EntityNotFoundException(models.WorkflowVersion, entity_id=f"{uuid}_{version}")
         # Check whether the user can access the workflow.
         # As a general rule, we grant user access to the workflow
         #   1. if the user belongs to the owners group
@@ -97,23 +98,40 @@ class LifeMonitor:
             # if the user is not the submitter
             # and the workflow is associated with a registry
             # then we try to check whether the user is allowed to view the workflow
-            if w.hosting_service is None or \
-                    isinstance(w.hosting_service, models.WorkflowRegistry) and w.workflow not in w.hosting_service.get_user_workflows(user):
+            if len(w.registries) == 0:
                 raise lm_exceptions.NotAuthorizedException(f"User {user.username} is not allowed to access workflow")
+            for registry in w.registries:
+                if w.workflow in registry.get_user_workflows(user):
+                    return w
+            raise lm_exceptions.NotAuthorizedException(f"User {user.username} is not allowed to access workflow")
         return w
 
     @classmethod
-    def register_workflow(cls, roc_link, workflow_submitter: User, workflow_version,
+    def register_workflow(cls, rocrate_or_link, workflow_submitter: User, workflow_version,
                           workflow_uuid=None, workflow_identifier=None,
                           workflow_registry: Optional[models.WorkflowRegistry] = None,
                           authorization=None, name=None, public=False):
-        # find or create a user workflow
+
+        # reference to the workflow
         w = None
+        # find or create a user workflow
         if workflow_registry:
+            # if clients do not provide identifier or uuid and
+            # the workflow is associated with a workflow registry,
+            # the reuse the identifier and uuid provided by the workflow registry
+            if not workflow_uuid and workflow_identifier:
+                workflow_uuid = workflow_registry.get_external_uuid(workflow_identifier, workflow_version, workflow_submitter)
+            if not workflow_identifier and workflow_uuid:
+                workflow_identifier = workflow_registry.get_external_id(workflow_uuid, workflow_version, workflow_submitter)
+            # find or create a user workflow
             if workflow_uuid:
                 w = workflow_registry.get_workflow(workflow_uuid)
             else:
                 w = workflow_registry.get_workflow(workflow_identifier)
+            # check user permissions
+            if workflow_submitter and w and \
+                    w not in workflow_registry.get_user_workflows(workflow_submitter):
+                raise lm_exceptions.NotAuthorizedException()
         else:
             w = models.Workflow.get_user_workflow(workflow_submitter, workflow_uuid)
         if not w:
@@ -126,70 +144,195 @@ class LifeMonitor:
 
         if str(workflow_version) in w.versions:
             raise lm_exceptions.WorkflowVersionConflictException(workflow_uuid, workflow_version)
-        if not roc_link:
-            if not workflow_registry:
-                raise ValueError("Missing ROC link")
+
+        with ROCrateLinkContext(rocrate_or_link) as roc_link:
+            if not roc_link:
+                if not workflow_registry:
+                    raise ValueError("Missing ROC link")
+                else:
+                    roc_link = workflow_registry.get_rocrate_external_link(workflow_identifier, workflow_version)
+
+            # register workflow version
+            wv = w.add_version(workflow_version, roc_link, workflow_submitter, name=name)
+
+            # associate workflow version to the workflow registry
+            if workflow_registry:
+                workflow_registry.add_workflow_version(wv, workflow_identifier, workflow_version)
+
+            # set permissions
+            if workflow_submitter:
+                wv.permissions.append(Permission(user=workflow_submitter, roles=[RoleType.owner]))
+                # automatically register submitter's subscription to workflow events
+                workflow_submitter.subscribe(w)
+            if authorization:
+                auth = ExternalServiceAuthorizationHeader(workflow_submitter, header=authorization)
+                auth.resources.append(wv)
+
+            if name is None:
+                if wv.workflow_name is None:
+                    raise lm_exceptions.LifeMonitorException(title="Missing attribute 'name'",
+                                                             detail="Attribute 'name' is not defined and it cannot be retrieved \
+                                                            from the workflow RO-Crate (name of 'mainEntity' not found)",
+                                                             status=400)
+                w.name = wv.workflow_name
+                wv.name = wv.workflow_name
+
+            # set workflow visibility
+            w.public = public
+
+            # set hosting service
+            hosting_service = None
+            if wv.based_on:
+                hosting_service = HostingService.from_url(wv.based_on)
+            elif workflow_registry:
+                hosting_service = workflow_registry
+            if hosting_service:
+                wv.hosting_service = hosting_service
+
+            # parse roc_metadata and register suites and instances
+            try:
+                if wv.roc_suites:
+                    for _, raw_suite in wv.roc_suites.items():
+                        cls._init_test_suite_from_json(wv, workflow_submitter, raw_suite)
+            except KeyError as e:
+                raise lm_exceptions.SpecificationNotValidException(f"Missing property: {e}")
+            w.save()
+            return wv
+
+    @classmethod
+    def update_workflow(cls, workflow_submitter: User,
+                        workflow_uuid: str, workflow_version: str,
+                        name=None, new_version_label: str = None, public=False,
+                        rocrate_or_link: str = None,
+                        authorization=None) -> models.WorkflowVersion:
+
+        # get reference to the current workflow version
+        wv: models.WorkflowVersion = cls.get_user_workflow_version(workflow_submitter, workflow_uuid, workflow_version)
+        w: models.Workflow = wv.workflow
+        registry_workflow_version = list(wv.registry_workflow_versions.values())[0] if len(wv.registry_workflow_versions) > 0 else None
+        workflow_registry: models.WorkflowRegistry = registry_workflow_version.registry if registry_workflow_version else None
+        # compute the roc_link
+        if rocrate_or_link is None:
+            # reuse the original roc_link used to submit the workflow
+            rocrate_or_link = wv.uri
+            logger.debug("Reusing original ROC link: %r", rocrate_or_link)
+        else:
+            # if an rocrate or link is provided, the workflow version will be replaced
+            logger.debug("New roc_link or RO-crate detected: %r", rocrate_or_link)
+
+        with ROCrateLinkContext(rocrate_or_link) as roc_link:
+            # if roc_link is not None:
+            auth = None
+            if authorization:
+                auth = ExternalServiceAuthorizationHeader(workflow_submitter, header=authorization)
+            # check for changes
+            rocrate_changes = wv.check_for_changes(roc_link, extra_auth=auth)
+            logger.debug(f"Detected changes wrt '{roc_link}': {rocrate_changes}")
+            missing_left, missing_right, differences = rocrate_changes
+            if len(missing_left) > 0 or len(missing_right) > 0 or len(differences) > 0:
+                # remove old workflow version
+                w.remove_version(wv)
+                # create a new workflow version to replace the old one
+                wv = w.add_version(workflow_version, roc_link, workflow_submitter, name=name)
+                if workflow_submitter:
+                    wv.permissions.append(Permission(user=workflow_submitter, roles=[RoleType.owner]))
+                    # automatically register submitter's subscription to workflow events
+                    workflow_submitter.subscribe(w)
+                if auth:
+                    auth.resources.append(wv)
+                # set hosting service
+                hosting_service = None
+                if wv.based_on:
+                    hosting_service = HostingService.from_url(wv.based_on)
+                elif workflow_registry:
+                    hosting_service = workflow_registry
+                if hosting_service:
+                    wv.hosting_service = hosting_service
+                # parse roc_metadata and register suites and instances
+                try:
+                    if wv.roc_suites:
+                        for _, raw_suite in wv.roc_suites.items():
+                            cls._init_test_suite_from_json(wv, workflow_submitter, raw_suite)
+                except KeyError as e:
+                    raise lm_exceptions.SpecificationNotValidException(f"Missing property: {e}")
             else:
-                roc_link = workflow_registry.get_rocrate_external_link(w.external_id, workflow_version)
+                logger.debug("No changes detected in the ROCrate")
 
-        wv = w.add_version(workflow_version, roc_link, workflow_submitter,
-                           name=name, hosting_service=workflow_registry)
-
-        if workflow_submitter:
-            wv.permissions.append(Permission(user=workflow_submitter, roles=[RoleType.owner]))
-            # automatically register submitter's subscription to workflow events
-            workflow_submitter.subscribe(w)
-        if authorization:
-            auth = ExternalServiceAuthorizationHeader(workflow_submitter, header=authorization)
-            auth.resources.append(wv)
-
+        # update name
         if name is None:
-            if wv.workflow_name is None:
+            if wv.workflow_name is None and w.name is None:
                 raise lm_exceptions.LifeMonitorException(title="Missing attribute 'name'",
                                                          detail="Attribute 'name' is not defined and it cannot be retrieved \
-                                                         from the workflow RO-Crate (name of 'mainEntity' not found)",
+                                                        from the workflow RO-Crate (name of 'mainEntity' not found)",
                                                          status=400)
-            w.name = wv.workflow_name
-            wv.name = wv.workflow_name
-
-        # set workflow visibility
-        w.public = public
-
-        # parse roc_metadata and register suites and instances
-        try:
-            if wv.roc_suites:
-                for _, raw_suite in wv.roc_suites.items():
-                    cls._init_test_suite_from_json(wv, workflow_submitter, raw_suite)
-        except KeyError as e:
-            raise lm_exceptions.SpecificationNotValidException(f"Missing property: {e}")
+            w.name = wv.workflow_name if wv.workflow_name else w.name
+        else:
+            w.name = name
+            wv.name = name
+        # update version label
+        if new_version_label is not None:
+            wv.version = new_version_label
+        # update visibility
+        if public is not None:
+            w.public = public
+        # store the new version
         w.save()
         return wv
 
     @classmethod
-    def deregister_user_workflow(cls, workflow_uuid, workflow_version, user: User):
+    def deregister_user_workflow_version(cls, workflow_uuid, workflow_version, user: User):
         workflow = cls._find_and_check_workflow_version(user, workflow_uuid, workflow_version)
         logger.debug("WorkflowVersion to delete: %r", workflow)
         if not workflow:
-            raise lm_exceptions.EntityNotFoundException(models.WorkflowVersion, (workflow_uuid, workflow_version))
+            raise lm_exceptions.EntityNotFoundException(models.WorkflowVersion, entity_id=(workflow_uuid, workflow_version))
         if workflow.submitter != user:
             raise lm_exceptions.NotAuthorizedException("Only the workflow submitter can delete the workflow")
         workflow.delete()
         logger.debug("Deleted workflow wf_uuid: %r - version: %r", workflow_uuid, workflow_version)
         return workflow_uuid, workflow_version
 
+    @classmethod
+    def deregister_user_workflow(cls, workflow_uuid, user: User):
+        workflow_version = cls._find_and_check_workflow_version(user, workflow_uuid)
+        logger.debug("Latest WorkflowVersion %r", workflow_version)
+        if not workflow_version:
+            raise lm_exceptions.EntityNotFoundException(models.WorkflowVersion, entity_id=(workflow_uuid, workflow_version))
+        workflow = workflow_version.workflow
+        if len(workflow.get_user_versions(user)) == 0:
+            raise lm_exceptions.NotAuthorizedException("Only the workflow submitter can delete the workflow")
+        workflow.delete()
+        logger.debug("Deleted workflow: %r", workflow)
+        return workflow_uuid
+
     @staticmethod
-    def deregister_registry_workflow(workflow_uuid, workflow_version, registry: models.WorkflowRegistry):
+    def deregister_registry_workflow_version(workflow_uuid, workflow_version, registry: models.WorkflowRegistry):
         workflow = registry.get_workflow(workflow_uuid)
         if not workflow:
-            raise lm_exceptions.EntityNotFoundException(models.WorkflowVersion, (workflow_uuid, workflow_version))
-        logger.debug("WorkflowVersion to delete: %r", workflow)
+            raise lm_exceptions.EntityNotFoundException(models.Workflow, (workflow_uuid, workflow_version))
+        logger.debug("Found workflow: %r", workflow)
         try:
             workflow_version = workflow.versions[workflow_version]
-            workflow.delete()
+            logger.debug("WorkflowVersion to delete: %r", workflow)
+            if not workflow_version:
+                raise lm_exceptions.EntityNotFoundException(models.WorkflowVersion, (workflow_uuid, workflow_version))
+            workflow_version.delete()
             logger.debug("Deleted workflow wf_uuid: %r - version: %r", workflow_uuid, workflow_version)
             return workflow_uuid, workflow_version
         except KeyError:
             raise lm_exceptions.EntityNotFoundException(models.WorkflowVersion, (workflow_uuid, workflow_version))
+
+    @staticmethod
+    def deregister_registry_workflow(workflow_uuid, registry: models.WorkflowRegistry):
+        workflow = registry.get_workflow(workflow_uuid)
+        if not workflow:
+            raise lm_exceptions.EntityNotFoundException(models.WorkflowVersion, workflow_uuid)
+        try:
+            logger.debug("Workflow to delete: %r", workflow)
+            workflow.delete()
+            logger.debug("Deleted workflow wf_uuid: %r", workflow_uuid)
+            return workflow_uuid
+        except KeyError:
+            raise lm_exceptions.EntityNotFoundException(models.WorkflowVersion, workflow_uuid)
 
     @staticmethod
     def _init_test_suite_from_json(wv: models.WorkflowVersion, submitter: models.User, raw_suite):
@@ -346,7 +489,7 @@ class LifeMonitor:
     @staticmethod
     def get_workflow_registry_by_name(registry_name) -> models.WorkflowRegistry:
         try:
-            r = models.WorkflowRegistry.find_by_name(registry_name)
+            r = models.WorkflowRegistry.find_by_client_name(registry_name)
             if not r:
                 raise lm_exceptions.EntityNotFoundException(models.WorkflowRegistry, registry_name)
             return r
@@ -367,7 +510,7 @@ class LifeMonitor:
 
     @staticmethod
     def get_registry_workflow(registry: models.WorkflowRegistry) -> models.Workflow:
-        return registry.registered_workflow_versions
+        return registry.workflow_versions
 
     @staticmethod
     def get_registry_workflow_versions(registry: models.WorkflowRegistry, uuid) -> List[models.WorkflowVersion]:
@@ -391,7 +534,7 @@ class LifeMonitor:
             if svc.get_user(user.id):
                 try:
                     workflows.extend([w for w in svc.get_user_workflows(user)
-                                      if w not in workflows])
+                                      if w not in workflows and w.public])
                 except lm_exceptions.NotAuthorizedException as e:
                     logger.debug(e)
         return workflows
@@ -446,7 +589,8 @@ class LifeMonitor:
 
     @staticmethod
     def add_workflow_registry(type, name,
-                              client_id, client_secret, client_auth_method="client_secret_post",
+                              client_id, client_secret, client_name: str = None,
+                              client_auth_method="client_secret_post",
                               api_base_url=None, redirect_uris=None) -> models.WorkflowRegistry:
         try:
             # At the moment client_credentials of registries
@@ -454,11 +598,13 @@ class LifeMonitor:
             user = User.find_by_username("admin")
             if not user:
                 raise lm_exceptions.EntityNotFoundException(User, entity_id="admin")
+            client_name = client_name or to_snake_case(name)
             registry_scopes = " ".join(OpenApiSpecs.get_instance().registry_scopes.keys())
             server_credentials = providers.new_instance(provider_type=type,
                                                         name=name,
                                                         client_id=client_id,
                                                         client_secret=client_secret,
+                                                        client_name=client_name,
                                                         api_base_url=api_base_url)
             client_credentials = \
                 server.create_client(user, name, server_credentials.api_base_url,
@@ -469,16 +615,17 @@ class LifeMonitor:
                                      if isinstance(redirect_uris, str)
                                      else redirect_uris,
                                      client_auth_method, commit=False)
-            registry = models.WorkflowRegistry.new_instance(type, client_credentials, server_credentials)
+            registry = models.WorkflowRegistry.new_instance(type, client_credentials, server_credentials, name=name)
             registry.save()
-            logger.debug(f"WorkflowRegistry '{name}' (type: {type})' created: {registry}")
+            logger.debug(f"WorkflowRegistry '{name}' (type: {type}, client_name: {client_name})' created: {registry}")
             return registry
         except providers.OAuth2ProviderNotSupportedException as e:
             raise lm_exceptions.WorkflowRegistryNotSupportedException(exception=e)
 
     @staticmethod
     def update_workflow_registry(uuid, name=None,
-                                 client_id=None, client_secret=None, client_auth_method=None,
+                                 client_id=None, client_secret=None,
+                                 client_name=None, client_auth_method=None,
                                  api_base_url=None, redirect_uris=None) -> models.WorkflowRegistry:
         try:
             registry = models.WorkflowRegistry.find_by_uuid(uuid)
@@ -486,6 +633,8 @@ class LifeMonitor:
                 raise lm_exceptions.EntityNotFoundException(models.WorkflowRegistry, entity_id=uuid)
             if name:
                 registry.set_name(name)
+            if client_name:
+                registry.set_client_name(client_name)
             if api_base_url is not None:
                 registry.set_uri(api_base_url)
             registry.update_client(client_id=client_id, client_secret=client_secret,

@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2021 CRS4
+# Copyright (c) 2020-2022 CRS4
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -58,6 +58,12 @@ class LifeMonitorException(Exception):
 
     def to_json(self):
         return serializers.ProblemDetailsSchema().dumps(self)
+
+
+class BadRequestException(LifeMonitorException):
+
+    def __init__(self, title="Bad Request", detail=None, type="about:blank", instance=None, **kwargs):
+        super().__init__(title, detail, type, 400, instance, **kwargs)
 
 
 class NotImplementedException(LifeMonitorException):
@@ -150,6 +156,14 @@ class NotValidROCrateException(LifeMonitorException):
                          detail=detail, status=status, **kwargs)
 
 
+class DecodeROCrateException(LifeMonitorException):
+
+    def __init__(self, detail="Unable to decode RO Crate",
+                 type="about:blank", status=400, instance=None, **kwargs):
+        super().__init__(title="Bad request",
+                         detail=detail, status=status, **kwargs)
+
+
 class WorkflowRegistryNotSupportedException(LifeMonitorException):
 
     def __init__(self, detail="Workflow Registry not supported",
@@ -191,7 +205,8 @@ class IllegalStateException(LifeMonitorException):
 def handle_exception(e: Exception):
     """Return JSON instead of HTML for HTTP errors."""
     # start with the correct headers and status code from the error
-    logger.exception(e)
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.exception(e)
     if isinstance(e, LifeMonitorException):
         return Response(response=e.to_json(),
                         status=e.status,

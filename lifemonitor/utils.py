@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2021 CRS4
+# Copyright (c) 2020-2022 CRS4
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -23,6 +23,7 @@ import base64
 import ftplib
 import functools
 import glob
+import inspect
 import json
 import logging
 import os
@@ -32,19 +33,23 @@ import shutil
 import socket
 import string
 import tempfile
+import time
 import urllib
 import uuid
 import zipfile
 from datetime import datetime
 from importlib import import_module
 from os.path import basename, dirname, isfile, join
-from typing import List
+from typing import Dict, List, Optional, Tuple, Type
 
 import flask
+import networkx as nx
+import pygit2
 import requests
 import yaml
 from dateutil import parser
 
+from . import config
 from . import exceptions as lm_exceptions
 
 logger = logging.getLogger()
@@ -115,6 +120,16 @@ def uuid_param(uuid_value) -> uuid.UUID:
     return uuid_value
 
 
+def walk(path, topdown=True, onerror=None, followlinks=False, exclude=None):
+    exclude = frozenset(exclude or [])
+    for root, dirs, files in os.walk(path, topdown=topdown, onerror=onerror, followlinks=followlinks):
+        if exclude:
+            dirs[:] = [_ for _ in dirs if _ not in exclude]
+            files[:] = [_ for _ in files if _ not in exclude]
+
+        yield root, dirs, files
+
+
 def to_camel_case(snake_str) -> str:
     """
     Convert snake_case string to a camel_case string
@@ -122,6 +137,27 @@ def to_camel_case(snake_str) -> str:
     :return:
     """
     return ''.join(x.title() for x in snake_str.split('_'))
+
+
+def to_snake_case(camel_str) -> str:
+    """
+    Convert camel_case string to a snake_case string
+    :param camel_str:
+    :return:
+    """
+    # pattern = re.compile(r'(?<!^)(?=[A-Z])')
+    # return pattern.sub('_', "".join(camel_str.split())).lower()
+    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', camel_str).lower()
+
+
+def to_kebab_case(camel_str) -> str:
+    """
+    Convert camel_case string to a kebab_case string
+    :param camel_str:
+    :return:
+    """
+    pattern = re.compile(r'(?<!^)(?=[A-Z])')
+    return pattern.sub('-', "".join(camel_str.split())).lower()
 
 
 def sizeof_fmt(num, suffix='B'):
@@ -168,6 +204,172 @@ def get_external_server_url():
     except RuntimeError as e:
         logger.warning(str(e))
     return get_base_url() if not external_server_url else external_server_url
+
+
+def validate_url(url: str) -> bool:
+    try:
+        result = urllib.parse.urlparse(url)
+        return all([result.scheme, result.netloc])
+    except Exception:
+        return False
+
+
+def get_last_update(path: str):
+    return time.ctime(max(os.stat(root).st_mtime for root, _, _ in os.walk(path)))
+
+
+def match_ref(ref: str, refs: List[str]) -> Optional[Tuple[str, str]]:
+    if not ref:
+        return None
+    for v in refs:
+        pattern = rf"^({v})$".replace('*', "[a-zA-Z0-9-_/]+")
+        try:
+            logger.debug("Searching match for %s (pattern: %s)", ref, pattern)
+            match = re.match(pattern, ref)
+            if match:
+                logger.debug("Match found: %r", match)
+                return (match.group(0), pattern.replace("[a-zA-Z0-9-_/]+", '*').strip('^()$'))
+        except Exception:
+            logger.debug("Unable to find a match for %s (pattern: %s)", ref, pattern)
+    return None
+
+
+def load_modules(path: str = None, include: List[str] = None, exclude: List[str] = None) -> Dict[str, Type]:
+    errors = []
+
+    logger.debug("Include modules: %r", include)
+    logger.debug("Exclude modules: %r", exclude)
+
+    loaded_modules = {}
+    current_path = path or os.path.dirname(__file__)
+    for dirpath, _, _ in os.walk(current_path):
+        # computer subpackage modules
+        modules_files = [f for f in glob.glob(os.path.join(dirpath, "*.py")) if os.path.isfile(f) and not f.endswith('__init__.py')]
+        logger.debug("Module files: %r", modules_files)
+
+        for f in modules_files:
+            module_name = os.path.basename(f)[:-3]
+            logger.debug("Checking module: %r", module_name)
+            logger.debug(include and (module_name not in include))
+            fully_qualified_module_name = '{}.{}'.format('lifemonitor.tasks.jobs', module_name)
+            if (include and (module_name not in include)) or (exclude and (module_name in exclude)):
+                logger.warning("Skipping module '%s'", fully_qualified_module_name)
+                continue
+            # load subclasses of T from detected modules
+            try:
+                loaded_modules[fully_qualified_module_name] = import_module(fully_qualified_module_name)
+            except ModuleNotFoundError as e:
+                logger.exception(e)
+                logger.error("ModuleNotFoundError: Unable to load module %s", fully_qualified_module_name)
+                errors.append(fully_qualified_module_name)
+    if len(errors) > 0:
+        logger.error("** There were some errors loading application modules.**")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.error("** Unable to load types from %s", ", ".join(errors))
+    logger.debug("Loaded modules: %r", loaded_modules)
+    return loaded_modules
+
+
+def find_types(T: Type, path: str = None) -> Dict[str, Type]:
+    errors = []
+    types = {}
+    g = nx.DiGraph()
+    root_path = os.path.abspath(os.path.dirname(f"{__file__}/../../"))
+    # current_path = path or os.path.dirname(__file__)
+    base_path = os.path.abspath(path or os.path.dirname(__file__))
+    logger.debug("Base path: %r", base_path)
+
+    # base module
+    base_module_relative_path = base_path.replace(f"{root_path}/", '')
+    logger.debug("Base module relative path: %r", base_module_relative_path)
+    base_module = base_module_relative_path.replace('/', '.')
+    logger.debug("Base module: %r", base_module)
+
+    for dirpath, _, _ in os.walk(base_path):
+        # compute path and name of current subpackage
+        current_relative_path = dirpath.replace(f"{root_path}/", '')
+        current_package = current_relative_path.replace('/', '.')
+        # computer subpackage modules
+        modules_files = glob.glob(os.path.join(dirpath, "*.py"))
+        logger.debug("Module files: %r", modules_files)
+        modules = ['{}.{}'.format(current_package, os.path.basename(f)[:-3])
+                   for f in modules_files if os.path.isfile(f) and not f.endswith('__init__.py')]
+        # load subclasses of T from detected modules
+        for m in modules:
+            try:
+                mod = import_module(m)
+                for _, obj in inspect.getmembers(mod):
+                    if inspect.isclass(obj) \
+                        and inspect.getmodule(obj) == mod \
+                        and obj != T \
+                            and issubclass(obj, T):
+                        types[obj.__name__] = obj
+                        dependencies = getattr(obj, 'depends_on', None)
+                        if not dependencies or len(dependencies) == 0:
+                            g.add_edge('r', obj.__name__)
+                        else:
+                            for dep in dependencies:
+                                g.add_edge(dep.__name__, obj.__name__)
+            except ModuleNotFoundError as e:
+                logger.exception(e)
+                logger.error("ModuleNotFoundError: Unable to load module %s", m)
+                errors.append(m)
+
+    logger.debug("Values: %r", types)
+    if len(errors) > 0:
+        logger.error("** There were some errors loading application modules.**")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.error("** Unable to load types from %s", ", ".join(errors))
+    logger.debug("Types: %r", [_.__name__ for _ in types.values()])
+    sorted_types = {_: types[_] for _ in nx.dfs_preorder_nodes(g, source='r') if _ != 'r'}
+    logger.debug("Sorted types: %r", [_ for _ in sorted_types])
+    return sorted_types
+
+
+class ROCrateLinkContext(object):
+
+    def __init__(self, rocrate_or_link: str):
+        self.rocrate_or_link = rocrate_or_link
+        self._local_path = None
+
+    def __enter__(self):
+        # Returns a roc_link.
+        # If the input is an encoded rocrate, it will be decoded,
+        # written into a local file and a local roc_link will be returned.
+        logger.debug("Entering ROCrateLinkContext: %r", self.rocrate_or_link)
+        if validate_url(self.rocrate_or_link):
+            logger.debug("RO Crate param is a link: %r", self.rocrate_or_link)
+            return self.rocrate_or_link
+        if self.rocrate_or_link:
+            if os.path.isdir(self.rocrate_or_link) or os.path.isfile(self.rocrate_or_link):
+                return self.rocrate_or_link
+            try:
+                rocrate = base64.b64decode(self.rocrate_or_link)
+                temp_rocrate_file = tempfile.NamedTemporaryFile(delete=False,
+                                                                dir=config.BaseConfig.BASE_TEMP_FOLDER,
+                                                                prefix="base64-rocrate")
+                temp_rocrate_file.write(rocrate)
+                local_roc_link = f"tmp://{temp_rocrate_file.name}"
+                logger.debug("ROCrate written to %r", temp_rocrate_file.name)
+                logger.debug("Local roc_link: %r", local_roc_link)
+                self._local_path = temp_rocrate_file
+                return local_roc_link
+            except Exception as e:
+                logger.debug(e)
+                raise lm_exceptions.DecodeROCrateException(detail=str(e))
+        logger.debug("RO Crate link is undefined!!!")
+        return None
+
+    def __exit__(self, type, value, traceback):
+        logger.debug("Exiting ROCrateLinkContext...")
+        if self._local_path:
+            try:
+                os.remove(self._local_path)
+                logger.debug("Temporary file removed: %r", self._local_path)
+            except Exception as e:
+                logger.error("Error deleting temp rocrate: %r", str(e))
+        else:
+            logger.debug("Nothing to remove: local path is %r", self._local_path)
 
 
 def _download_from_remote(url, output_stream, authorization=None):
@@ -222,25 +424,35 @@ def download_url(url: str, target_path: str = None, authorization: str = None) -
             with open(target_path, 'wb') as fd:
                 _download_from_remote(url, fd, authorization)
             logger.info("Fetched %s of data from %s",
-                        sizeof_fmt(os.path.getsize(target_path)),
-                        url)
+                        sizeof_fmt(os.path.getsize(target_path)), url)
     except urllib.error.URLError as e:
-        logger.exception(e)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.exception(e)
         raise \
             lm_exceptions.DownloadException(
                 detail=f"Error downloading from {url}",
                 status=400,
                 original_error=str(e))
     except requests.exceptions.HTTPError as e:
-        logger.exception(e)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.exception(e)
         raise \
             lm_exceptions.DownloadException(
                 detail=f"Error downloading from {url}",
                 status=e.response.status_code,
                 original_error=str(e))
+    except requests.exceptions.ConnectionError as e:
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.exception(e)
+        raise \
+            lm_exceptions.DownloadException(
+                detail=f"Unable to establish connection to {url}",
+                status=404,
+                original_error=str(e))
     except IOError as e:
         # requests raised on an exception as we were trying to download.
-        logger.exception(e)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.exception(e)
         raise \
             lm_exceptions.DownloadException(
                 detail=f"Error downloading from {url}",
@@ -254,7 +466,7 @@ def extract_zip(archive_path, target_path=None):
     logger.debug("Target path: %r", target_path)
     try:
         if not target_path:
-            target_path = tempfile.mkdtemp()
+            target_path = tempfile.mkdtemp(dir=config.BaseConfig.BASE_TEMP_FOLDER)
         with zipfile.ZipFile(archive_path, "r") as zip_ref:
             zip_ref.extractall(target_path)
         return target_path
@@ -264,9 +476,137 @@ def extract_zip(archive_path, target_path=None):
         raise lm_exceptions.NotValidROCrateException(detail=msg, original_error=str(e))
 
 
+def _make_git_credentials_callback(token: str = None):
+    return pygit2.RemoteCallbacks(pygit2.UserPass('x-access-token', token)) if token else None
+
+
+def clone_repo(url: str, ref: str = None, target_path: str = None, auth_token: str = None,
+               remote_url: str = None, remote_branch: str = None, remote_user_token: str = None):
+    try:
+        logger.warning("Local CLONE: %r - %r", url, ref)
+        local_path = target_path
+        if not local_path:
+            local_path = tempfile.TemporaryDirectory(dir=config.BaseConfig.BASE_TEMP_FOLDER).name
+        user_credentials = _make_git_credentials_callback(auth_token)
+        clone = pygit2.clone_repository(url, local_path, callbacks=user_credentials)
+        if ref is not None:
+            for ref_name in [ref, ref.replace('refs/heads', 'refs/remotes/origin')]:
+                try:
+                    if ref == "HEAD" or ref == 'refs/remotes/origin/HEAD':
+                        clone.checkout_head()
+                    else:
+                        ref_obj = clone.lookup_reference(ref_name)
+                        clone.checkout(ref_obj)
+                    break
+                except KeyError:
+                    logger.debug(f"Invalid repo reference: unable to find the reference {ref} on the repo {url}")
+        if remote_url:
+            user_credentials = _make_git_credentials_callback(remote_user_token)
+            remote = clone.create_remote("remote", url=remote_url)
+            remote.push([f'+{ref}:refs/heads/{remote_branch}'], callbacks=user_credentials)
+        return local_path
+    except pygit2.errors.GitError as e:
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.exception(e)
+        if 'authentication' in str(e):
+            raise lm_exceptions.NotAuthorizedException("Token authorization not valid")
+        raise lm_exceptions.DownloadException(detail=str(e))
+    finally:
+        logger.debug("Clean up clone local path: %r %r .....", target_path, local_path)
+        if target_path is None:
+            logger.debug("Deleting clone local path: %r %r", target_path, local_path)
+            shutil.rmtree(local_path, ignore_errors=True)
+        logger.debug("Clean up clone local path: %r %r ..... DONE", target_path, local_path)
+
+
+def checkout_ref(repo_path: str, ref: str, auth_token: str = None, branch_name: str = None):
+    try:
+        clone = pygit2.Repository(repo_path)
+        if ref is not None:
+            try:
+                if "HEAD" in ref:
+                    clone.checkout_head()
+                else:
+                    ref_obj = clone.lookup_reference(ref)
+                    clone.checkout(ref_obj)
+            except KeyError:
+                logger.debug(f"Invalid repo reference: unable to find the reference {ref} on the repo {repo_path}")
+        if branch_name:
+            branch_ref = f'refs/heads/{branch_name}'
+            clone.branches.create(branch_name, clone.head.peel())
+            ref_obj = clone.lookup_reference(branch_ref)
+            clone.checkout(ref_obj)
+        return repo_path
+    except pygit2.errors.GitError as e:
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.exception(e)
+        if 'authentication' in str(e):
+            raise lm_exceptions.NotAuthorizedException("Token authorization not valid")
+        raise lm_exceptions.DownloadException(detail=str(e))
+
+
+def get_current_ref(local_repo_path: str) -> str:
+    assert os.path.isdir(local_repo_path), "Path should be a folder"
+    repo = pygit2.Repository(local_repo_path)
+    return repo.head.name
+
+
+def detect_ref_type(ref: str) -> str:
+    # TODO: to be extended
+    ref_map = {
+        "refs/tags": "tag",
+        "refs/pull": "pull_request"
+    }
+    return next((v for k, v in ref_map.items() if k in ref), "branch")
+
+
+def find_refs_by_commit(repo: pygit2.Repository, commit: str):
+    refs = []
+    for ref_name in repo.references:
+        ref = repo.lookup_reference(ref_name)
+        if ref.target == commit:
+            refs.append({
+                'shorthand': ref.shorthand,
+                'ref': ref.name,
+                'type': detect_ref_type(ref.name)
+            })
+    return refs
+
+
+def find_commit_info(repo: pygit2.Repository, commit=None, ref=None) -> pygit2.Object:
+    assert isinstance(repo, pygit2.Repository), repo
+    for c in repo.walk(ref or repo.head.target):
+        if not commit or c.hex == commit or str(c.hex) == str(commit):
+            return c
+    return None
+
+
+def get_git_repo_revision(local_repo_path: str, commit: str = None) -> Dict:
+    assert os.path.isdir(local_repo_path), "Path should be a folder"
+    repo = pygit2.Repository(local_repo_path)
+    last_commit = find_commit_info(repo, commit)
+    refs = find_refs_by_commit(repo, repo.head.target)
+    assert isinstance(last_commit, pygit2.Object), "Unable to find the last repo commit"
+    return {
+        "sha": repo.head.target,
+        "created": datetime.fromtimestamp(last_commit.commit_time),
+        "refs": refs,
+        "type": detect_ref_type(repo.head.name),
+        "remotes": [_.url for _ in repo.remotes]
+    }
+
+
 def load_test_definition_filename(filename):
     with open(filename) as f:
         return json.load(f)
+
+
+def compare_json(obj1, obj2) -> bool:
+    json1 = json.dumps(obj1, sort_keys=True)
+    json2 = json.dumps(obj2, sort_keys=True)
+    result = json1 == json2
+    logger.debug("The two JSON objects are different")
+    return result
 
 
 def generate_username(user_info, salt_length=4):
@@ -336,6 +676,10 @@ class OpenApiSpecs(object):
     @property
     def version(self):
         return self.specs['info']['version']
+
+    @property
+    def description(self):
+        return self.specs['info']['description']
 
     @property
     def components(self):

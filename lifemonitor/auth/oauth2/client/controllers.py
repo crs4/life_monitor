@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2021 CRS4
+# Copyright (c) 2020-2022 CRS4
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -86,7 +86,7 @@ def create_blueprint(merge_identity_view):
 
     @blueprint.route('/login/<name>')
     @next_route_aware
-    def login(name):
+    def login(name, scope: str = None):
         # we allow dynamic reconfiguration of the oauth2registry
         # when app is configured in dev or testing mode
         if current_app.config['ENV'] in ("testing", "testingSupport", "development"):
@@ -97,8 +97,35 @@ def create_blueprint(merge_identity_view):
         redirect_uri = url_for('.authorize', name=name, _external=True)
         conf_key = '{}_AUTHORIZE_PARAMS'.format(name.upper())
         params = current_app.config.get(conf_key, {})
+        scope = scope or request.args.get('scope')
+        if scope:
+            params.update({'scope': scope})
         return remote.authorize_redirect(redirect_uri, **params)
 
+    @blueprint.route('/logout/<name>')
+    @next_route_aware
+    def logout(name: str):
+        try:
+            # we allow dynamic reconfiguration of the oauth2registry
+            # when app is configured in dev or testing mode
+            provider = OAuth2IdentityProvider.find_by_client_name(name)
+            if provider is None:
+                abort(404)
+            # unlink identity
+            del current_user.oauth_identity[provider.client_name]
+            current_user.save()
+            flash(f"\"{provider.name}\" identity unlinked from you account.", category="success")
+        except Exception as e:
+            message = f"Unable to unlink identity '{provider.name}' of user {current_user}"
+            logger.error(message)
+            flash(message, category="error")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.exception(e)
+
+        # Determine the right next hop
+        next_url = NextRouteRegistry.pop()
+        return redirect(next_url, code=307) if next_url \
+            else RequestHelper.response() or redirect('/', code=302)
     return blueprint
 
 
@@ -114,7 +141,7 @@ class AuthorizatonHandler:
         # avoid autoflush in this session
         with db.session.no_autoflush:
             try:
-                p = OAuth2IdentityProvider.find(provider.name)
+                p = OAuth2IdentityProvider.find_by_client_name(provider.name)
                 logger.debug("Provider found: %r", p)
             except exceptions.EntityNotFoundException:
                 try:
@@ -150,6 +177,15 @@ class AuthorizatonHandler:
                 if identity.user:
                     identity.save()
                     login_user(identity.user)
+                    # # update the registry token if registry integration has been enabled by the user
+                    # if identity.user and identity.user.registry_settings:
+                    #     r_token = identity.user.registry_settings.get_token(provider.name)
+                    #     logger.error("User registry token: %r", r_token)
+                    #     if r_token and r_token['scope'] != token['scope']:
+                    #         logger.debug("Trying to update the registry token...")
+                    #         return redirect(f'/oauth2/login/{provider.name}?scope=read+write')
+                    #     else:
+                    #         logger.debug("We don't need to update the registry token...")
                 else:
                     # If the user is not logged in and the token is unlinked,
                     # create a new local user account and log that account in.
@@ -177,23 +213,30 @@ class AuthorizatonHandler:
                         # to finalize the registration
                         return redirect(url_for('auth.register_identity'))
             else:
+                logger.debug("User not anonymous!")
                 if identity.user:
                     # If the user is logged in and the token is linked, check if these
                     # accounts are the same!
                     if current_user != identity.user:
                         # Account collision! Ask user if they want to merge accounts.
                         return redirect(url_for(self.merge_view,
-                                                provider=identity.provider,
+                                                provider=identity.provider.client_name,
                                                 username=identity.user.username))
                 # If the user is logged in and the token is unlinked or linked yet,
                 # link the token to the current user
-                identity.user = current_user
+                else:
+                    identity.user = current_user
                 identity.save()
-                flash(f"Your account has successfully been linked to the identity {identity}.")
+                flash(f"Your account has successfully been linked to your <b>{identity.provider.name}</b> identity.")
+
+            # flush db session
+            db.session.commit()
+            db.session.flush()
+            logger.debug("Identity flushed")
 
             # Determine the right next hop
             next_url = NextRouteRegistry.pop()
-            flash(f"Logged with your \"{provider.name.capitalize()}\" identity.", category="success")
+            flash(f"Logged with your <b>\"{identity.provider.name}\"</b> identity.", category="success")
             return redirect(next_url, code=307) if next_url \
                 else RequestHelper.response() or redirect('/', code=302)
 

@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2021 CRS4
+# Copyright (c) 2020-2022 CRS4
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -105,6 +105,9 @@ class TestInstance(db.Model, ModelMixin):
     def last_test_build(self):
         return self.get_last_test_build()
 
+    def start_test_build(self):
+        return self.testing_service.start_test_build(self)
+
     @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True)
     def get_last_test_build(self):
         builds = self.get_test_builds(limit=10)
@@ -114,8 +117,7 @@ class TestInstance(db.Model, ModelMixin):
     def get_test_builds(self, limit=10):
         return self.testing_service.get_test_builds(self, limit=limit)
 
-    @cached(timeout=Timeout.BUILD, client_scope=False, transactional_update=True,
-            unless=lambda b: b.status in [models.BuildStatus.RUNNING, models.BuildStatus.WAITING])
+    @cached(timeout=Timeout.BUILD, client_scope=False, transactional_update=True)
     def get_test_build(self, build_number):
         return self.testing_service.get_test_build(self, build_number)
 
@@ -137,6 +139,10 @@ class TestInstance(db.Model, ModelMixin):
     @classmethod
     def find_by_uuid(cls, uuid) -> TestInstance:
         return cls.query.get(uuid)
+
+    @classmethod
+    def find_by_resource(cls, resource: str) -> List[TestInstance]:
+        return cls.query.filter(cls.resource == resource).all()
 
 
 class ManagedTestInstance(TestInstance):

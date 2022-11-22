@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2021 CRS4
+# Copyright (c) 2020-2022 CRS4
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -24,11 +24,13 @@ import uuid
 import pytest
 
 from tests import utils
+from tests.conftest_helpers import get_github_token
 from tests.conftest_types import ClientAuthenticationMethod
 
 logger = logging.getLogger()
 
 
+@pytest.mark.skipif(not get_github_token(), reason="Github token not set")
 @pytest.mark.parametrize("client_auth_method", [
     ClientAuthenticationMethod.API_KEY,
 ], indirect=True)

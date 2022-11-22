@@ -1,0 +1,22 @@
+#########################################
+#### Main entrypoint of the workflow ####
+#########################################
+
+##### set minimum snakemake version #####
+from snakemake.utils import min_version
+min_version("6.5.0")
+
+#### load rules #####
+include: "rules/common.smk"
+
+#### configure environment ####
+# configfile: "config/default.yaml"
+
+#### Main target rule ####
+rule all:
+    conda:
+        "envs/default.yaml"
+    log:
+        "logs/hello.log"
+    script:
+        "scripts/hello.py"

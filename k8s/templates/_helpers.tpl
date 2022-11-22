@@ -98,6 +98,8 @@ Define environment variables shared by some pods.
   value: "{{ .Values.redis.auth.password }}"
 - name: WORKER_PROCESSES
   value: "{{ .Values.worker.processes }}"
+- name: WORKER_THREADS
+  value: "{{ .Values.worker.threads }}"
 - name: LIFEMONITOR_TLS_KEY
   value: "/lm/certs/tls.key"
 - name: LIFEMONITOR_TLS_CERT
@@ -117,6 +119,15 @@ Define volumes shared by some pods.
 - name: lifemonitor-data
   persistentVolumeClaim:
     claimName: data-{{- .Release.Name -}}-workflows
+{{- if .Values.integrations -}}
+{{- range $k, $v := .Values.integrations }}
+{{- if $v.private_key }}
+- name: lifemonitor-{{ $k }}-key
+  secret:
+    secretName: {{ $v.private_key.secret }}
+{{- end -}}
+{{- end -}}
+{{- end -}}
 {{- end -}}
 
 {{/*
@@ -129,28 +140,16 @@ Define mount points shared by some pods.
 - name: lifemonitor-settings
   mountPath: "/lm/settings.conf"
   subPath: settings.conf
+{{- if not .Values.remoteStorage.enabled }}
 - name: lifemonitor-data
   mountPath: "/var/data/lm"
 {{- end -}}
-
-
-{{/*
-Define command to mirror (cluster) local backup to a remote site via SFTP
-*/}}
-{{- define "backup.remote.command" -}}
-{{- if and .Values.backup.remote .Values.backup.remote.enabled }}
-{{- if eq (.Values.backup.remote.protocol | lower) "sftp" }}
-{{- printf "lftp -c \"open -u %s,%s sftp://%s; mirror -e -R /var/data/backup %s \"" 
-    .Values.backup.remote.user .Values.backup.remote.password 
-    .Values.backup.remote.host .Values.backup.remote.path
-}}
-{{- else if eq (.Values.backup.remote.protocol | lower) "ftps" }}
-{{- printf "lftp -c \"%s %s open -u %s,%s ftp://%s; mirror -e -R /var/data/backup %s \"" 
-    "set ftp:ssl-auth TLS; set ftp:ssl-force true;"
-    "set ftp:ssl-protect-list yes; set ftp:ssl-protect-data yes;"
-    .Values.backup.remote.user .Values.backup.remote.password 
-    .Values.backup.remote.host .Values.backup.remote.path
-}}
-{{- end }}
-{{- end }}
-{{- end }}
+{{- if .Values.integrations -}}
+{{- range $k, $v := .Values.integrations }}
+{{- if $v.private_key }}
+- name: lifemonitor-{{ $k }}-key
+  mountPath: "/lm/integrations/{{ $k | lower }}"
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}

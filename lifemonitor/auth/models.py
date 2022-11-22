@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2021 CRS4
+# Copyright (c) 2020-2022 CRS4
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -27,11 +27,13 @@ import json
 import logging
 import random
 import string
+import urllib
 import uuid as _uuid
 from enum import Enum
 from typing import List
 
 from authlib.integrations.sqla_oauth2 import OAuth2TokenMixin
+from flask import current_app
 from flask_bcrypt import check_password_hash, generate_password_hash
 from flask_login import AnonymousUserMixin, UserMixin
 from lifemonitor import exceptions as lm_exceptions
@@ -39,8 +41,10 @@ from lifemonitor import utils as lm_utils
 from lifemonitor.db import db
 from lifemonitor.models import JSON, UUID, IntegerSet, ModelMixin
 from sqlalchemy import null
+from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.ext.mutable import MutableSet
+from sqlalchemy.orm.exc import NoResultFound
 
 # Set the module level logger
 logger = logging.getLogger(__name__)
@@ -59,7 +63,7 @@ class Anonymous(AnonymousUserMixin):
 
 
 class User(db.Model, UserMixin):
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column("id", db.Integer, primary_key=True)
     username = db.Column(db.String(256), unique=True, nullable=False)
     password_hash = db.Column(db.LargeBinary, nullable=True)
     picture = db.Column(db.String(), nullable=True)
@@ -79,10 +83,12 @@ class User(db.Model, UserMixin):
     notifications: List[UserNotification] = db.relationship("UserNotification",
                                                             back_populates="user",
                                                             cascade="all, delete-orphan")
+    settings = db.Column("settings", JSON, nullable=False)
 
     def __init__(self, username=None) -> None:
         super().__init__()
         self.username = username
+        self.settings = {}
 
     def get_user_id(self):
         return self.id
@@ -254,6 +260,14 @@ class User(db.Model, UserMixin):
         db.session.add(self)
         db.session.commit()
 
+    def delete(self):
+        for wf in self.workflows.values():
+            for w in wf:
+                if w.submitter.id == self.id:
+                    w.delete()
+        db.session.delete(self)
+        db.session.commit()
+
     def to_dict(self):
         return {
             "id": self.id,
@@ -324,6 +338,8 @@ class EventType(Enum):
     BUILD_FAILED = 1
     BUILD_RECOVERED = 2
     UNCONFIGURED_EMAIL = 3
+    GITHUB_WORKFLOW_VERSION = 4
+    GITHUB_WORKFLOW_ISSUE = 5
 
     @classmethod
     def all(cls):
@@ -388,8 +404,8 @@ class Resource(db.Model, ModelMixin):
         self.uuid = uuid
 
     def __repr__(self):
-        return '<Resource {}: {} -> {} (type={}))>'.format(
-            self.id, self.uuid, self.uri, self.type)
+        return '<{} {}: {} -> uri={} (type={}))>'.format(
+            self.__class__.__name__, self.id, self.uuid, self.uri, self.type)
 
     @hybrid_property
     def authorizations(self):
@@ -613,6 +629,17 @@ class HostingService(Resource):
 
     id = db.Column(db.Integer, db.ForeignKey(Resource.id), primary_key=True)
 
+    _client_id = db.Column("client_id", db.Integer, db.ForeignKey('oauth2_client.id', ondelete='CASCADE'))
+    _server_id = db.Column("server_id", db.Integer, db.ForeignKey('oauth2_identity_provider.id', ondelete='CASCADE'))
+    client_credentials = db.relationship("Client", uselist=False, cascade="all, delete")
+    server_credentials = db.relationship("OAuth2IdentityProvider",
+                                         uselist=False, cascade="all, delete",
+                                         foreign_keys=[_server_id],
+                                         backref="workflow_registry")
+    client_id = association_proxy('client_credentials', 'client_id')
+
+    _client = None
+
     __mapper_args__ = {
         'polymorphic_identity': 'hosting_service'
     }
@@ -628,6 +655,159 @@ class HostingService(Resource):
     @abc.abstractmethod
     def get_rocrate_external_link(self, external_id: str, version: str) -> str:
         pass
+
+    @property
+    def client_name(self) -> str:
+        return self.get_client_name()
+
+    def set_name(self, name):
+        self.name = name
+        if self.server_credentials:
+            self.server_credentials.name = name
+
+    def set_client_name(self, client_name: str):
+        if self.server_credentials:
+            self.server_credentials.client_name = client_name
+
+    def get_client_name(self) -> str:
+        return self.server_credentials.client_name if self.server_credentials else None
+
+    def set_uri(self, uri):
+        self.uri = uri
+        if self.server_credentials:
+            self.server_credentials.api_resource.uri = uri
+        if self.client_credentials:
+            self.client_credentials.api_base_url = uri
+
+    def update_client(self, client_id=None, client_secret=None,
+                      redirect_uris=None, client_auth_method=None):
+        if client_id:
+            self.server_credentials.client_id = client_id
+        if client_secret:
+            self.server_credentials.client_secret = client_secret
+        if redirect_uris:
+            self.client_credentials.redirect_uris = redirect_uris
+        if client_auth_method:
+            self.client_credentials.auth_method = client_auth_method
+
+    def find_crates_by_uri(self, uri: str, version: str = None) -> List[Resource]:
+        result = []
+        for crate in self.ro_crates:
+            logger.debug("Checking RO-Crate: %r (%r)", crate, crate.based_on)
+            if crate.based_on == uri and (not version or crate.version == version):
+                result.append(crate)
+        return result
+
+    @classmethod
+    def find_by_uri(cls, uri) -> HostingService:
+        try:
+            return cls.query.filter(cls.uri == uri).one()
+        except NoResultFound as e:
+            logger.debug(e)
+            return None
+        except Exception as e:
+            raise lm_exceptions.LifeMonitorException(detail=str(e), stack=str(e))
+
+    @classmethod
+    def find_by_provider_id(cls, server_id) -> HostingService:
+        try:
+            return cls.query.filter(server_id == server_id).one()
+        except NoResultFound as e:
+            logger.debug(e)
+            return None
+        except Exception as e:
+            raise lm_exceptions.LifeMonitorException(detail=str(e), stack=str(e))
+
+    @classmethod
+    def find_by_provider_name(cls, name: str) -> List[HostingService]:
+        try:
+            from lifemonitor.auth.oauth2.client.models import \
+                OAuth2IdentityProvider
+            return cls.query.join(OAuth2IdentityProvider, OAuth2IdentityProvider.id == cls._server_id)\
+                .filter(OAuth2IdentityProvider.name == name).all()
+        except NoResultFound as e:
+            logger.debug(e)
+            return None
+        except Exception as e:
+            raise lm_exceptions.LifeMonitorException(detail=str(e), stack=str(e))
+
+    @classmethod
+    def find_by_provider_client_name(cls, name: str) -> HostingService:
+        try:
+            from lifemonitor.auth.oauth2.client.models import \
+                OAuth2IdentityProvider
+            return cls.query.join(OAuth2IdentityProvider, OAuth2IdentityProvider.id == cls._server_id)\
+                .filter(OAuth2IdentityProvider.client_name == name).one()
+        except NoResultFound as e:
+            logger.debug(e)
+            return None
+        except Exception as e:
+            raise lm_exceptions.LifeMonitorException(detail=str(e), stack=str(e))
+
+    @classmethod
+    def find_by_client_id(cls, client_id) -> HostingService:
+        try:
+            return cls.query.filter(cls.client_id == client_id).one()
+        except NoResultFound as e:
+            logger.debug(e)
+            return None
+        except Exception as e:
+            raise lm_exceptions.LifeMonitorException(detail=str(e), stack=str(e))
+
+    @classmethod
+    def from_url(cls, url: str, api_url: str = None) -> HostingService:
+        instance = None
+        try:
+            from lifemonitor.auth.oauth2.client.models import \
+                OAuth2IdentityProvider
+            from lifemonitor.auth.oauth2.client.services import (
+                config_oauth2_registry, oauth2_registry)
+            p_url = urllib.parse.urlparse(url)
+            uri = f"{p_url.scheme}://{p_url.netloc}"  # it doesn't discriminate between subdomains
+            instance = HostingService.find_by_uri(uri)
+            if not instance:
+                instance = HostingService(uri)
+            if not instance.server_credentials:
+                # Set a reasonable URL if not provided
+                if not api_url:
+                    if p_url.netloc == 'github.com':
+                        api_url = 'https://api.github.com'
+                    else:
+                        # try with the 'api' prefix
+                        api_url = f"{p_url.scheme}://api.{p_url.netloc}"
+                        logger.debug("API url: %r", api_url)
+                # Try to find existing OAuth2IdentityProvider
+                server_credentials = None
+                for a_uri in (api_url, uri):
+                    try:
+                        logger.debug("Searching with uri: %r", a_uri)
+                        server_credentials = \
+                            OAuth2IdentityProvider.find_by_api_url(a_uri)
+                        break
+                    except lm_exceptions.EntityNotFoundException:
+                        logger.warning(f"No identity provider associated with the hosting service '{a_uri}'")
+                # If server_credentials do not exist, try to initialize them
+                # using info from the OAuth2Registry
+                if not server_credentials:
+                    config_oauth2_registry(current_app)
+                    for a_uri in (api_url, uri):
+                        client_info = oauth2_registry.find_client_by_uri(a_uri)
+                        if client_info:
+                            try:
+                                server_credentials = OAuth2IdentityProvider.find_by_name(client_info.name)
+                            except lm_exceptions.EntityNotFoundException as e:
+                                logger.debug(e)
+                            finally:
+                                if not server_credentials:
+                                    server_credentials = OAuth2IdentityProvider(client_info.name, **client_info.OAUTH_APP_CONFIG)
+                                break
+                instance.server_credentials = server_credentials
+                instance.save()
+        except Exception as e:
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.exception(e)
+            raise lm_exceptions.LifeMonitorException(detail=str(e))
+        return instance
 
 
 class RoleType:
@@ -699,6 +879,22 @@ class ExternalServiceAuthorizationHeader(ExternalServiceAccessAuthorization):
     def __init__(self, user, header) -> None:
         super().__init__(user)
         self.header = header
+
+    def _get_header_parts(self):
+        parts = self.header.split(' ')
+        if len(parts) == 2:
+            return parts
+        if len(parts) == 1:
+            return None, parts[0]
+        return None, None
+
+    @property
+    def auth_type(self) -> str:
+        return self._get_header_parts()[0]
+
+    @property
+    def auth_token(self) -> str:
+        return self._get_header_parts()[1]
 
     def as_http_header(self):
         return self.header

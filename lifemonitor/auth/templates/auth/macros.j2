@@ -25,6 +25,8 @@
       <div>{{message}}</div>
     </div>
 </div>
+{% else %}
+<div>&nbsp;</div>
 {% endif %}
 {%- endmacro %}
 
@@ -100,15 +102,34 @@
 {%- endmacro %}
 
 
-{% macro render_custom_field(field, value=None, class="") -%}
-<div class="form-group {{class}}">
-  <div class="input-group mb-3">
-    <input type="{{ field.name if field.name != 'repeat_password' else 'password' }}"
-          name="{{ field.name }}"
-          {% if value %}value="{{value}}"{% endif %}
+{% macro render_custom_field(
+          field, value=None, class="", 
+          caption=None, disabled=False, onfocusout=False, ondbclick=False,
+          tooltip_on=None, tooltip_off=None, tooltipPlacement='top') -%}
+<div class="form-group mb-2 {{class}}" 
+{% if tooltip_on %} tooltip-on="{{tooltip_on}}" {%endif%} 
+{% if tooltip_off %} tooltip-off="{{tooltip_off}}" {%endif%}
+{% if tooltip_on and not disabled %} title="{{tooltip_on}}" {%endif%}
+{% if tooltip_off and disabled %} title="{{tooltip_off}}" {%endif%}
+data-toggle="tooltip" data-placement="{{tooltipPlacement}}">
+  <div id="{{field.name}}-container" class="input-group">
+    <input id="{{field.name}}" type="{{ field.name if field.name != 'repeat_password' else 'password' }}"
+          name="{{ field.name }}" 
+          {%if onfocusout%}onfocusout="{{onfocusout}}"{%endif%}
+          {% if value %}value="{{value}}"{% elif field.data %}value="{{field.data}}"{% endif %}
           class="form-control {% if field.errors %} is-invalid {% endif %}"
           placeholder="{{field.name.capitalize().replace('_', ' ')}}"
-          aria-invalid="true">
+          aria-invalid="true" {%if disabled%}disabled{%endif%}>
+    <script>
+      var container = document.getElementById("{{field.name}}-container");
+      container.addEventListener("dblclick", event => {
+        var field = $("#{{field.name}}");
+        if(field){
+          field.prop('disabled', false);
+          field.trigger(field.prop('disabled') ? 'disabled' : 'enabled');     
+        }
+      });      
+    </script>
     <div class="input-group-append">
       <div class="input-group-text">
         {% if field.name == 'username' %}
@@ -119,6 +140,10 @@
         <span class="fas fa-key"></span>
         {% elif field.name == 'repeat_password' %}
         <span class="fas fa-unlock-alt"></span>
+        {% elif 'branch' in field.name %}
+        <span class="fas fa-code-branch"></span>
+        {% elif 'tag' in field.name %}
+        <span class="fas fa-tags"></span>
         {% endif %}
       </div>
     </div>
@@ -128,21 +153,24 @@
           <span class="error">{{ error }}</span>
         {% endfor %}
       {% endif %}
-    </div>
-  </div>
+    </div>    
+  </div>  
+  <div class="form-text text-muted">
+      <small>{{ field.description }}</small>
+  </div>  
 </div>
 {%- endmacro %}
 
 
 
 {% macro render_provider_fa_icon(provider, color="white") -%}
-{% if provider.name == "github" %}
+{% if provider.client_name == "github" %}
 <i class="fab fa-github mr-2"></i>
 {% elif provider.type == "seek" %}
 {% if color == "white" %}
-<img style="width: 1.5em;"src="{{ url_for('auth.static', filename='img/logo/wfhub/workflowhub-128.png') }}" />
+<img style="width: 1.5em; margin-right: 5px;" src="{{ url_for('auth.static', filename='img/logo/wfhub/workflowhub-128.png') }}" />
 {% else %}
-<img style="width: 1em;"src="{{ url_for('auth.static', filename='img/logo/wfhub/workflowhub-128-black.png') }}" />
+<img style="width: 1em; margin-right: 5px;" src="{{ url_for('auth.static', filename='img/logo/wfhub/workflowhub-128-black.png') }}" />
 {% endif %}
 {% elif provider.type == "google" %}
 <i class="fab fa-google mr-2"></i>
@@ -151,10 +179,10 @@
 
 
 {% macro render_provider_logo(provider) -%}
-{% if provider.name == "github" %}
+{% if provider.client_name == "github" %}
 <img style="width: 8em;" src="{{ url_for('auth.static', filename='img/logo/providers/github.png') }}" />
 {% elif provider.type == "seek" %}
-<img style="width: 7em; margin-top: -10px;" src="{{ url_for('auth.static', filename='img/logo/providers/workflowhub.svg') }}" />
+<img style="width: 7em; margin-top: -10px; margin-right: 5px;" src="{{ url_for('auth.static', filename='img/logo/providers/workflowhub.svg') }}" />
 {% elif provider.type == "google" %}
 <img style="width: 8em; margin-top: -10px;" src="{{ url_for('auth.static', filename='img/logo/providers/google.png') }}" />
 {% endif %}
@@ -162,7 +190,7 @@
 
 
 {% macro render_provider_btn_class(provider) -%}
-{% if provider.name == "github" %}
+{% if provider.client_name == "github" %}
 btn-dark
 {% elif provider.type == "seek" %}
 btn-primary
@@ -172,13 +200,13 @@ btn-red
 {%- endmacro %}
 
 {% macro render_provider_signin_button(provider) -%}
-<a href="/oauth2/login/{{provider.name}}" class="btn btn-block {{render_provider_btn_class(provider)}}">
-  {{render_provider_fa_icon(provider)}} Sign in using {{provider.name.capitalize()}}
+<a href="/oauth2/login/{{provider.client_name}}" class="btn btn-block {{render_provider_btn_class(provider)}}">
+  {{render_provider_fa_icon(provider)}} Sign in with <b>{{provider.name}}</b>
 </a>
 {%- endmacro %}
 
 {% macro render_provider_signup_button(provider) -%}
-<a href="/oauth2/login/{{provider.name}}" class="btn btn-block {{render_provider_btn_class(provider)}}">
-  {{render_provider_fa_icon(provider)}} Sign up using {{provider.name.capitalize()}}
+<a href="/oauth2/login/{{provider.client_name}}" class="btn btn-block {{render_provider_btn_class(provider)}}">
+  {{render_provider_fa_icon(provider)}} Sign up with <b>{{provider.name}}</b>
 </a>
 {%- endmacro %}

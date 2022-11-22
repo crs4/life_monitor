@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2021 CRS4
+# Copyright (c) 2020-2022 CRS4
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -126,11 +126,12 @@ class ResourceSchema(ResourceMetadataSchema):
 class ListOfItems(ResourceMetadataSchema):
     __envelope__ = {"single": None, "many": None}
     __item_scheme__ = None
+    __exclude__ = ('meta',)
 
     items = fields.Method("get_items")
 
     def get_items(self, obj):
-        return [self.__item_scheme__(self_link=False, exclude=("meta",), many=False).dump(_) for _ in obj] \
+        return [self.__item_scheme__(self_link=False, exclude=self.__exclude__, many=False).dump(_) for _ in obj] \
             if self.__item_scheme__ else None
 
 

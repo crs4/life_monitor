@@ -34,6 +34,12 @@ ifeq ($(DOCKER_BUILDKIT),1)
 	endif
 endif
 
+# set flag to skip build
+skip_build_opt := 0
+ifeq ($(SKIP_BUILD),1)
+	skip_build_opt := 1
+endif
+
 # set the build number
 sw_version_arg :=
 ifdef SW_VERSION
@@ -75,7 +81,7 @@ endif
 
 all: images
 
-images: lifemonitor
+images: lifemonitor smeeio
 
 compose-files: docker-compose.base.yml \
 	docker-compose.prod.yml \
@@ -111,12 +117,22 @@ certs:
 	  echo "$(yellow)WARNING: Using existing JWT keys $(reset)" ; \
 	fi
 
-lifemonitor: docker/lifemonitor.Dockerfile certs app.py gunicorn.conf.py
-	@printf "\n$(bold)Building LifeMonitor Docker image...$(reset)\n" ; \
+lifemonitor: docker/lifemonitor.Dockerfile certs app.py gunicorn.conf.py ## Build LifeMonitor Docker image
+	@if [[ $(skip_build_opt) == 1 ]]; then \
+		printf "\n$(yellow)WARNING: $(bold)Skip build of LifeMonitor Docker image !!! $(reset)\n" ; \
+	else \
+		printf "\n$(bold)Building LifeMonitor Docker image...$(reset)\n" ; \
+		$(build_kit) docker $(build_cmd) $(cache_from_opt) $(cache_to_opt) \
+			${sw_version_arg} ${build_number_arg} ${tags_opt} ${labels_opt} ${platforms_opt} \
+			-f docker/lifemonitor.Dockerfile -t crs4/lifemonitor . ;\
+		printf "$(done)\n" ; \
+	fi
+
+smeeio:
+	@printf "\n$(bold)Building smee.io Docker image...$(reset)\n" ; \
 	$(build_kit) docker $(build_cmd) $(cache_from_opt) $(cache_to_opt) \
-		  ${sw_version_arg} ${build_number_arg} \
 		  ${tags_opt} ${labels_opt} ${platforms_opt} \
-		  -f docker/lifemonitor.Dockerfile -t crs4/lifemonitor . ;\
+		  -f docker/smee.io.Dockerfile -t crs4/smeeio . ;\
 	printf "$(done)\n"
 
 webserver:
@@ -164,7 +180,7 @@ start-dev: images compose-files ## Start LifeMonitor in a Development environmen
 	               -f docker-compose.base.yml \
 				   -f docker-compose.dev.yml \
 				   config)" > docker-compose.yml \
-	&& docker-compose -f docker-compose.yml up -d redis db init lm worker ;\
+	&& docker-compose -f docker-compose.yml up -d redis db dev_proxy github_event_proxy init lm worker ;\
 	printf "$(done)\n"
 
 start-testing: compose-files aux_images ro_crates images ## Start LifeMonitor in a Testing environment
@@ -259,7 +275,7 @@ stop-dev: compose-files ## Stop all services in the Develop Environment
 	USER_UID=$$(id -u) USER_GID=$$(id -g) \
 	docker-compose -f docker-compose.base.yml \
 				   -f docker-compose.dev.yml \
-				   stop init lm db redis worker; \
+				   stop init lm db github_event_proxy dev_proxy redis worker; \
 	printf "$(done)\n"
 
 stop: compose-files ## Stop all the services in the Production Environment
@@ -313,7 +329,7 @@ clean: ## Clean up the working environment (i.e., running services, network, vol
 help: ## Show help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-.PHONY: all images aux_images certs lifemonitor ro_crates webserver \
+.PHONY: all images aux_images certs lifemonitor smeeio ro_crates webserver \
 		start start-dev start-testing start-nginx start-aux-services \
 		run-tests tests \
 		stop-aux-services stop-nginx stop-testing \

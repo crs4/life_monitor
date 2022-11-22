@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2021 CRS4
+# Copyright (c) 2020-2022 CRS4
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -255,7 +255,7 @@ def test_subscribed_workflow_by_user(app_client, client_auth_method,
     user2_workflows = json.loads(r.data.decode())['items']
     for i in user2_workflows:
         assert i['name'] != valid_workflow, f"'{valid_workflow}' should not in user2 workflow list"
-    assert len(user2_workflows) == 2, "Unexpected number of workflows for user2"
+    assert len(user2_workflows) == 1, "Unexpected number of workflows for user2"
 
     # user2 subscribes to 'sort-and-change-case-travis' workflow
     # workflow = lm.get_workflow(wdata['uuid'])
@@ -296,7 +296,7 @@ def test_subscribed_workflow_by_user(app_client, client_auth_method,
     user2_workflows = rj['items']
     for w in user2_workflows:
         logger.info("Workflow %r", w['name'])
-    assert len(user2_workflows) == 3, "Unexpected number of workflows for user2"
+    assert len(user2_workflows) == 2, "Unexpected number of workflows for user2"
     assert list(filter(lambda x: x['name'] == valid_workflow, user2_workflows)), "Subscribed workflow not found"
 
     # get workflows of user2 - do not include subscribed workflows
@@ -307,5 +307,5 @@ def test_subscribed_workflow_by_user(app_client, client_auth_method,
     rj = json.loads(r.data.decode())
     assert 'items' in rj, "Invalid response format"
     user2_workflows = rj['items']
-    assert len(user2_workflows) == 2, "Unexpected number of workflows for user2"
+    assert len(user2_workflows) == 1, "Unexpected number of workflows for user2"
     assert list(filter(lambda x: x['name'] != valid_workflow, user2_workflows)), "Subscribed workflow should be included"

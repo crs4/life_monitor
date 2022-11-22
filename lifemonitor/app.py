@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2021 CRS4
+# Copyright (c) 2020-2022 CRS4
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -28,21 +28,22 @@ from flask_migrate import Migrate
 
 import lifemonitor.config as config
 from lifemonitor import __version__ as version
+from lifemonitor.integrations import init_integrations
 from lifemonitor.routes import register_routes
-from lifemonitor.tasks.task_queue import init_task_queue
+from lifemonitor.tasks import init_task_queues
 
 from . import commands
-from .mail import init_mail
 from .cache import init_cache
 from .db import db
 from .exceptions import handle_exception
+from .mail import init_mail
 from .serializers import ma
 
 # set module level logger
 logger = logging.getLogger(__name__)
 
 
-def create_app(env=None, settings=None, init_app=True, worker=False, **kwargs):
+def create_app(env=None, settings=None, init_app=True, worker=False, load_jobs=True, **kwargs):
     """
     App factory method
     :param env:
@@ -74,11 +75,13 @@ def create_app(env=None, settings=None, init_app=True, worker=False, **kwargs):
         app.config.from_envvar("FLASK_APP_CONFIG_FILE")
     # set worker flag
     app.config['WORKER'] = worker
+    # append proxy settings
+    app.config['PROXY_ENTRIES'] = config.load_proxy_entries(app.config)
 
     # initialize the application
     if init_app:
         with app.app_context() as ctx:
-            initialize_app(app, ctx)
+            initialize_app(app, ctx, load_jobs=load_jobs)
 
     # append routes to check app health
     @app.route("/health")
@@ -114,7 +117,9 @@ def create_app(env=None, settings=None, init_app=True, worker=False, **kwargs):
     return app
 
 
-def initialize_app(app, app_context, prom_registry=None):
+def initialize_app(app: Flask, app_context, prom_registry=None, load_jobs: bool = True):
+    # init tmp folder
+    os.makedirs(app.config.get('BASE_TEMP_FOLDER'), exist_ok=True)
     # configure logging
     config.configure_logging(app)
     # configure app DB
@@ -127,12 +132,14 @@ def initialize_app(app, app_context, prom_registry=None):
     ma.init_app(app)
     # configure app routes
     register_routes(app)
-    # register commands
-    commands.register_commands(app)
     # init scheduler/worker for async tasks
-    init_task_queue(app)
+    init_task_queues(app, load_jobs=load_jobs)
     # init mail system
     init_mail(app)
+    # initialize integrations
+    init_integrations(app)
+    # register commands
+    commands.register_commands(app)
 
     # configure prometheus exporter
     # must be configured after the routes are registered

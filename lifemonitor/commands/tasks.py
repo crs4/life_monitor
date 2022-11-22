@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2021 CRS4
+# Copyright (c) 2020-2022 CRS4
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -40,7 +40,7 @@ def reset():
     Reset task-queue status
     """
     from lifemonitor.cache import clear_cache
-    from lifemonitor.tasks.task_queue import REDIS_NAMESPACE
+    from lifemonitor.tasks.config import REDIS_NAMESPACE
     try:
         clear_cache(client_scope=False, prefix=REDIS_NAMESPACE)
     except Exception as e:

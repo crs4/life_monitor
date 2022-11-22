@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2021 CRS4
+# Copyright (c) 2020-2022 CRS4
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -28,7 +28,6 @@ from collections.abc import Mapping
 from pathlib import Path
 
 import yaml
-
 
 YamlLoader = getattr(yaml, "CLoader", getattr(yaml, "Loader"))
 

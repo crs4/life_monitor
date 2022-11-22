@@ -1,6 +1,4 @@
-#!/usr/bin/env python3
-
-# Copyright (c) 2022 CRS4
+# Copyright (c) 2020-2022 CRS4
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -20,12 +18,12 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from app import application
+from __future__ import annotations
+
+from datetime import timedelta
 
 
-def main():
-    application.cli.main()
-
-
-if __name__ == '__main__':
-    main()
+DEFAULT_BASE_URL = "https://api.github.com"
+DEFAULT_TIMEOUT = 15
+DEFAULT_PER_PAGE = 30
+DEFAULT_TOKEN_EXPIRATION = timedelta(seconds=60)

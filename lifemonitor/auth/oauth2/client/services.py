@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2021 CRS4
+# Copyright (c) 2020-2022 CRS4
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -47,9 +47,14 @@ def get_providers(skip_registration: bool = False):
         providers.append(GitHub)
     # set workflow registries as oauth providers
     if db_initialized():
-        logger.debug("Getting dynamic providers...")
-        providers.extend(Seek.all())
-        logger.debug("Getting providers: %r ... DONE", providers)
+        try:
+            logger.debug("Getting dynamic providers...")
+            providers.extend(Seek.all())
+            logger.debug("Getting providers: %r ... DONE", providers)
+        except Exception as e:
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.exception(e)
+            logger.warning("Unable to dynamically load oauth providers")
     # The current implementation doesn't support dynamic registration of WorkflowRegistries
     # The following a simple workaround to detect and reconfigure the oauth2registry
     # when the number of workflow registries changes
@@ -88,7 +93,7 @@ def merge_users(merge_from: User, merge_into: User, provider: str):
 
 def save_current_user_identity(identity: OAuthIdentity):
     session["oauth2_username"] = identity.user.username if identity else None
-    session["oauth2_provider_name"] = identity.provider.name if identity else None
+    session["oauth2_provider_name"] = identity.provider.client_name if identity else None
     session["oauth2_user_info"] = identity.user_info if identity else None
     session["oauth2_user_token"] = identity.token if identity else None
     logger.debug("User identity temporary save: %r", identity)
@@ -99,7 +104,7 @@ def get_current_user_identity():
         provider_name = session.get("oauth2_provider_name")
         user_info = session.get("oauth2_user_info")
         token = session.get("oauth2_user_token")
-        p = OAuth2IdentityProvider.find(provider_name)
+        p = OAuth2IdentityProvider.find_by_client_name(provider_name)
         logger.debug("Provider found: %r", p)
         identity = OAuthIdentity(
             provider=p,

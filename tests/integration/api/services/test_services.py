@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2021 CRS4
+# Copyright (c) 2020-2022 CRS4
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -73,6 +73,7 @@ def test_workflow_registration_same_workflow_by_different_users(app_client, user
         w = utils.pick_workflow(user, "sort-and-change-case")
         w['name'] = f"{user['user'].username}_Workflow"
         w['version'] = str(count)
+        w['public'] = True
         logger.debug("Registering workflow: %r", w['uuid'])
         _, workflow = utils.register_workflow(user, w)
         assert workflow is not None, "workflow must be not None"
@@ -96,8 +97,8 @@ def test_workflow_registration_same_workflow_by_different_users(app_client, user
         logger.debug("Registry: %r", r)
         registry_workflows = lm.get_registry_workflows(r)
         assert len(registry_workflows) == 1, "Unexpected number of workflows"
-        assert len(r.registered_workflow_versions) == (count - 1), "Unexpected number of workflows versions"
-        logger.debug(r.registered_workflow_versions)
+        assert len(r.workflow_versions) == (count - 1), "Unexpected number of workflows versions"
+        logger.debug(r.workflow_versions)
 
     workflows_user1 = lm.get_user_workflows(user1['user'])
     workflows_user2 = lm.get_user_workflows(user2['user'])
@@ -178,7 +179,7 @@ def test_get_workflows_scope(user1, user2):
     user1_workflows = lm.get_user_workflows(user1["user"])
     user2_workflows = lm.get_user_workflows(user2["user"])
 
-    assert len(user2_workflows) == 2, "Unexpected number of workflows"
+    assert len(user2_workflows) == 1, "Unexpected number of workflows"
     assert len(user2_workflows) < len(user1_workflows), "Unexpected number of workflows"
 
 
@@ -219,7 +220,7 @@ def test_workflow_registration_not_allowed_user(app_client, user1, user2):
     assert workflow['name'] not in [_['name'] for _ in user2['workflows']], \
         f"The workflow '{workflow['name']}' should not be visible to user2"
     # user2 should not be allowed to register the workflow
-    with pytest.raises(lm_exceptions.NotAuthorizedException):
+    with pytest.raises(lm_exceptions.EntityNotFoundException):
         w, workflow = utils.register_workflow(user2, workflow)
 
 
@@ -239,24 +240,37 @@ def test_workflow_serialization_no_instances(app_client, user1):
     logger.debug(data)
 
 
-def test_workflow_deregistration(app_client, user1, valid_workflow):
+def test_workflow_version_deregistration(app_client, user1, valid_workflow):
     lm = LifeMonitor.get_instance()
     # pick and register one workflow
     wf_data, workflow = utils.pick_and_register_workflow(user1, valid_workflow)
     # current number of workflows
     number_of_workflows = len(models.WorkflowVersion.all())
-    lm.deregister_user_workflow(wf_data['uuid'], wf_data['version'], user1["user"])
+    lm.deregister_user_workflow_version(wf_data['uuid'], wf_data['version'], user1["user"])
     assert len(models.WorkflowVersion.all()) == number_of_workflows - 1, "Unexpected number of workflows"
     # try to find
     w = models.WorkflowVersion.get_user_workflow_version(user1["user"], wf_data['uuid'], wf_data['version'])
     assert w is None, "Workflow must not be in the DB"
 
 
-def test_workflow_deregistration_exception(app_client, user1, random_workflow_id):
+def test_workflow_version_deregistration_exception(app_client, user1, random_workflow_id):
     with pytest.raises(lm_exceptions.EntityNotFoundException):
-        LifeMonitor.get_instance().deregister_user_workflow(random_workflow_id['uuid'],
-                                                            random_workflow_id['version'],
-                                                            user1['user'])
+        LifeMonitor.get_instance().deregister_user_workflow_version(random_workflow_id['uuid'],
+                                                                    random_workflow_id['version'],
+                                                                    user1['user'])
+
+
+def test_workflow_deregistration(app_client, user1, valid_workflow):
+    lm = LifeMonitor.get_instance()
+    # pick and register one workflow
+    wf_data, workflow = utils.pick_and_register_workflow(user1, valid_workflow)
+    # current number of workflows
+    number_of_workflows = len(models.WorkflowVersion.all())
+    lm.deregister_user_workflow(wf_data['uuid'], user1["user"])
+    assert len(models.WorkflowVersion.all()) == number_of_workflows - 1, "Unexpected number of workflows"
+    # try to find
+    w = models.WorkflowVersion.get_user_workflow_version(user1["user"], wf_data['uuid'], wf_data['version'])
+    assert w is None, "Workflow must not be in the DB"
 
 
 def test_suite_registration(app_client, user1, test_suite_metadata, valid_workflow):

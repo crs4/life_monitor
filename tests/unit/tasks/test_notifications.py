@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2021 CRS4
+# Copyright (c) 2020-2022 CRS4
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -44,7 +44,7 @@ def test_unconfigured_email_notification(mail, app_settings, app_context, user1)
     assert len(notifications) == 0, "Unexpected number of notifications"
 
     # Check email configuration
-    from lifemonitor.tasks.tasks import check_email_configuration, send_email_notifications
+    from lifemonitor.tasks.jobs.notifications import check_email_configuration, send_email_notifications
     check_email_configuration()
 
     # Check if notification for user1 and admin has been generated

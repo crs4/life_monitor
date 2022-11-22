@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2021 CRS4
+# Copyright (c) 2020-2022 CRS4
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -257,6 +257,7 @@ def get_user_session(application, provider, index=None):
 
 
 def user(_app_context, _provider_type, _user_index=1, _register_workflows=False):
+    session = None
     try:
         user, session, user_info = get_user_session(_app_context.app,
                                                     _provider_type, index=_user_index)
@@ -285,6 +286,9 @@ def user(_app_context, _provider_type, _user_index=1, _register_workflows=False)
         logger.exception(e)
         raise RuntimeError("Parametrized fixture. "
                            "You need to pass a provider type as request param")
+    finally:
+        if session:
+            session.close()
 
 
 def _fake_callback_uri():
@@ -438,8 +442,8 @@ def create_client_credentials_registry(_app_settings, _admin_user, name='seek'):
             redirect_uris=_fake_callback_uri())
 
 
-def get_registry(_app_settings, _admin_user):
-    registry = WorkflowRegistry.find_by_name("seek")
+def get_registry(_app_settings, _admin_user) -> WorkflowRegistry:
+    registry = WorkflowRegistry.find_by_client_name("seek")
     if registry is None:
         registry = create_client_credentials_registry(_app_settings, _admin_user)
     return registry

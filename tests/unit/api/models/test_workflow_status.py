@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2021 CRS4
+# Copyright (c) 2020-2022 CRS4
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -36,7 +36,7 @@ def workflow():
     # uuid=None, name=None,
     # hosting_service: models.WorkflowRegistry = None
     return models.WorkflowVersion(MagicMock(), "https://link", "1", MagicMock(),
-                                  uuid.uuid4(), "Mock workflow version", MagicMock())
+                                  uuid.uuid4(), "Mock workflow version")
 
 
 @pytest.fixture
@@ -49,7 +49,11 @@ def suite(error_description, request):
     number_of_passing = request.param[0]
     number_of_failing = request.param[1]
     number_of_errors = request.param[2]
-
+    number_of_transient = 0
+    try:
+        number_of_transient = request.param[3]
+    except Exception:
+        pass
     suite = MagicMock()
     suite.test_instances = []
     for i in [True] * number_of_passing + \
@@ -60,10 +64,18 @@ def suite(error_description, request):
         test_instance.testing_service = MagicMock()
         test_instance.last_test_build = MagicMock()
         if i is None:
+            test_instance.last_test_build.status = "error"
             test_instance.last_test_build.is_successful.side_effect = \
                 lm_exceptions.TestingServiceException(error_description)
         else:
+            test_instance.last_test_build.status = "passed" if i else "failed"
             test_instance.last_test_build.is_successful.return_value = i
+        test_instance.get_test_builds.return_value = [test_instance.last_test_build]
+        if number_of_transient > 0:
+            transient_state_build = MagicMock()
+            transient_state_build.status = "waiting"
+            transient_state_build.is_successful.return_value = False
+            test_instance.get_test_builds.return_value += [transient_state_build] * number_of_transient
     return suite
 
 
@@ -155,6 +167,25 @@ def test_status_only_one_build_passing(workflow, suite):
     assert len(status.latest_builds) == 1, "The number of builds should be 1"
 
 
+@pytest.mark.parametrize("suite", [(1, 0, 0, 2)], indirect=True)
+def test_status_only_one_build_passing_with_two_transient_builds(workflow, suite):
+    assert len(workflow.test_suites) == 0, "Number of suites different from 0"
+    assert len(suite.test_instances) == 1, "Unexpected number of test instances"
+    status = workflow.status
+    assert isinstance(status, models.WorkflowStatus), "Invalid status type"
+    assert status.aggregated_status == models.AggregateTestStatus.NOT_AVAILABLE, \
+        f"The actual workflow status should be {models.AggregateTestStatus.NOT_AVAILABLE}"
+
+    workflow.test_suites.append(suite)
+    test_instance = suite.test_instances[0]
+    assert len(test_instance.get_test_builds()) == 3, "Unexpected number of test instances"
+    status = workflow.status
+    assert isinstance(status, models.WorkflowStatus), "Invalid status type"
+    assert status.aggregated_status == models.AggregateTestStatus.ALL_PASSING, \
+        f"The actual workflow status should be {models.AggregateTestStatus.ALL_PASSING}"
+    assert len(status.latest_builds) == 1, "The number of builds should be 1"
+
+
 @pytest.mark.parametrize("suite", [(0, 1, 0)], indirect=True)
 def test_status_only_one_build_failing(workflow, suite):
     assert len(workflow.test_suites) == 0, "Number of suites different from 0"
@@ -166,6 +197,25 @@ def test_status_only_one_build_failing(workflow, suite):
     workflow.test_suites.append(suite)
     logger.debug("Adding suite: %r", suite)
     status = workflow.status
+    assert status.aggregated_status == models.AggregateTestStatus.ALL_FAILING, \
+        f"The actual workflow status should be {models.AggregateTestStatus.ALL_FAILING}"
+    assert len(status.latest_builds) == 1, "The number of builds should be 1"
+
+
+@pytest.mark.parametrize("suite", [(0, 1, 0, 2)], indirect=True)
+def test_status_only_one_build_failing_with_two_transient_builds(workflow, suite):
+    assert len(workflow.test_suites) == 0, "Number of suites different from 0"
+    assert len(suite.test_instances) == 1, "Unexpected number of test instances"
+    status = workflow.status
+    assert isinstance(status, models.WorkflowStatus), "Invalid status type"
+    assert status.aggregated_status == models.AggregateTestStatus.NOT_AVAILABLE, \
+        f"The actual workflow status should be {models.AggregateTestStatus.NOT_AVAILABLE}"
+
+    workflow.test_suites.append(suite)
+    test_instance = suite.test_instances[0]
+    assert len(test_instance.get_test_builds()) == 3, "Unexpected number of test instances"
+    status = workflow.status
+    assert isinstance(status, models.WorkflowStatus), "Invalid status type"
     assert status.aggregated_status == models.AggregateTestStatus.ALL_FAILING, \
         f"The actual workflow status should be {models.AggregateTestStatus.ALL_FAILING}"
     assert len(status.latest_builds) == 1, "The number of builds should be 1"

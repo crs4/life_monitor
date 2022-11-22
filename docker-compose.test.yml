@@ -10,7 +10,7 @@ services:
     restart: "no"
     entrypoint: /bin/bash
     command: |
-      -c "wait-for-postgres.sh && ./lm-admin.py db init && /usr/local/bin/lm_entrypoint.sh"
+      -c "wait-for-postgres.sh && ./lm-admin db init && /usr/local/bin/lm_entrypoint.sh"
     environment:
       - "FLASK_ENV=testingSupport"
       - "HOME=/lm"
@@ -23,9 +23,12 @@ services:
       - "TRAVIS_TESTING_SERVICE_URL=${TRAVIS_TESTING_SERVICE_URL}"
       - "TRAVIS_TESTING_SERVICE_TOKEN=${TRAVIS_TESTING_SERVICE_TOKEN}"
       - "TRAVIS_TESTING_SERVICE_TYPE=travis"
-      - "GITHUB_TESTING_SERVICE_URL=${GH_TESTING_SERVICE_URL}"
+      - "GITHUB_TESTING_SERVICE_URL=https://github.com"
       - "GITHUB_TESTING_SERVICE_TOKEN=${GH_TESTING_SERVICE_TOKEN}"
       - "GITHUB_TESTING_SERVICE_TYPE=github"
+      - "GITHUB_API_TESTING_SERVICE_URL=https://api.github.com"
+      - "GITHUB_API_TESTING_SERVICE_TOKEN=${GH_TESTING_SERVICE_TOKEN}"
+      - "GITHUB_API_TESTING_SERVICE_TYPE=github"
     volumes:
       - "./:/lm"
       - "./certs:/certs:ro"

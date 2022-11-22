@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2021 CRS4
+# Copyright (c) 2020-2022 CRS4
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -181,6 +181,9 @@ class TestingService(db.Model, ModelMixin):
         raise lm_exceptions.NotImplementedException()
 
     def get_test_builds(self, test_instance: models.TestInstance, limit: int = 10) -> list:
+        raise lm_exceptions.NotImplementedException()
+
+    def start_test_build(self, test_instance: models.TestInstance) -> bool:
         raise lm_exceptions.NotImplementedException()
 
     def get_test_builds_as_dict(self, test_instance: models.TestInstance, test_output) -> Dict[str, Any]:

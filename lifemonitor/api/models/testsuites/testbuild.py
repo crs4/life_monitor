@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2021 CRS4
+# Copyright (c) 2020-2022 CRS4
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -60,6 +60,9 @@ class TestBuild(ABC, CacheMixin):
 
     def is_successful(self):
         return self.result == TestBuild.Result.SUCCESS
+
+    def is_failed(self) -> bool:
+        return self.result == TestBuild.Result.FAILED
 
     @property
     @abstractmethod

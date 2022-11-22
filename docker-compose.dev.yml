@@ -14,11 +14,12 @@ services:
       # rather than HTTPS. Setting this environment variable will prevent this error from being raised.
       # This is mostly useful for local testing, or automated tests. Never set this variable in production.
       - "AUTHLIB_INSECURE_TRANSPORT=1"
+      - "SERVER_NAME=lm:8000"
     volumes:
       - "./:/lm"
       - "/lm/lifemonitor/static/dist"
     ports:
-      - "8000:8000"
+      - "8000"
 
   init:
     user: "${USER_UID}:${USER_GID}"
@@ -31,3 +32,48 @@ services:
       - "HOME=/lm"
     volumes:
       - "./:/lm"
+
+  worker:
+    user: "${USER_UID}:${USER_GID}"
+    volumes:
+      - "./:/lm"
+      - "/lm/lifemonitor/static/dist"
+
+  dev_proxy:
+    image: bitnami/nginx:1.19-debian-10
+    depends_on:
+      - "lm"
+    ports:
+      - "8000:8443"
+    restart: "always"
+    healthcheck:
+      test: >
+        /bin/sh -c "http_code=$$(curl --insecure https://dev_proxy:8443/health -s -w %{http_code}); if [ $${http_code} -eq 502 ]; then exit 1; fi;"
+      interval: "2s"
+      retries: 3
+      timeout: "1s"
+    networks:
+      - life_monitor
+    volumes:
+      - "./certs:/nginx/certs:ro"
+      - "./docker/nginx.dev.conf:/opt/bitnami/nginx/conf/server_blocks/lm.conf:ro"
+
+  github_event_proxy:
+    image: crs4/smeeio
+    restart: "always"
+    command: |
+      sh -c "smee --url https://smee.io/$$GITHUB_INTEGRATION_EVENTS_CHANNEL --target https://dev_proxy:8443/integrations/github"
+    depends_on:
+      - "db"
+      - "init"
+    env_file:
+      - settings.conf
+    environment:
+      - "FLASK_ENV=development"
+      - "SMEE_TARGET=https://lm:8000/integrations/github"
+      - "NODE_EXTRA_CA_CERTS=/certs/ca.key"
+      - "NODE_TLS_REJECT_UNAUTHORIZED=0"
+    volumes:
+      - "./certs:/certs:ro"
+    networks:
+      - life_monitor

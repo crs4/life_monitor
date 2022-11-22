@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2021 CRS4
+# Copyright (c) 2020-2022 CRS4
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -21,10 +21,12 @@
 import configparser
 import logging
 import os
+import re
 from logging.config import dictConfig
 from typing import List, Type
 
 import dotenv
+from flask import current_app
 
 from .db import db_uri
 
@@ -44,11 +46,38 @@ def load_settings(config=None):
     if config.CONFIG_NAME in ('development', 'testing', 'testingSupport'):
         test_settings = dotenv.dotenv_values(dotenv_path=TestingConfig.SETTINGS_FILE)
         if not config.TESTING:
-            result.update(test_settings)
+            for k, v in test_settings.items():
+                if not hasattr(config, k):
+                    result[k] = v
     if os.path.exists(file_path):
         result.update(dotenv.dotenv_values(dotenv_path=file_path))
     if config.CONFIG_NAME in ('testingSupport', 'testing'):
         result.update(test_settings)
+    return result
+
+
+def load_proxy_entries(config=None):
+    config = config or current_app.config
+    pattern = re.compile(r'PROXY_(.+)_URL')
+    result = {}
+    try:
+        from .utils import get_external_server_url
+        result['default'] = {'name': 'default', 'url': get_external_server_url()}
+    except KeyError:
+        pass
+    for k in config:
+        service_match = pattern.match(k)
+        if service_match:
+            try:
+                service_name = service_match.group(1)
+                service_url = config[f"PROXY_{service_name}_URL"]
+                logger.info(f"Read proxy entry '{service_name.lower()}': {service_url}")
+                result[service_name.lower()] = {
+                    'name': service_name.lower(),
+                    'url': service_url
+                }
+            except (KeyError, IndexError) as e:
+                logger.error(f"Error when reading entry '{service_match}': {str(e)}")
     return result
 
 
@@ -57,9 +86,12 @@ class BaseConfig:
     SETTINGS_FILE = "settings.conf"
     USE_MOCK_EQUIVALENCY = False
     DEBUG = False
+    # Initialize SERVER_NAME from env
+    SERVER_NAME = os.environ.get('SERVER_NAME', None)
+    # Initialize LOG_LEVEL from env
     LOG_LEVEL = os.environ.get('LOG_LEVEL', 'DEBUG' if DEBUG else 'INFO')
     # Add a random secret (required to enable HTTP sessions)
-    SECRET_KEY = os.urandom(24)
+    SECRET_KEY = os.getenv("SECRET_KEY", os.urandom(24))
     # FSADeprecationWarning: SQLALCHEMY_TRACK_MODIFICATIONS adds significant
     # overhead and will be disabled by default in the future.  Set it to True
     # or False to suppress this warning.
@@ -78,10 +110,15 @@ class BaseConfig:
     # Default Cache Settings
     CACHE_TYPE = "flask_caching.backends.simplecache.SimpleCache"
     CACHE_DEFAULT_TIMEOUT = 60
+    # Default Temp folder
+    BASE_TEMP_FOLDER = '/tmp/lifemonitor'
     # Workflow Data Folder
     DATA_WORKFLOWS = "./data"
     # Base URL of the LifeMonitor web app associated with this back-end instance
     WEBAPP_URL = "https://app.lifemonitor.eu"
+    # Enable/disable integrations
+    ENABLE_GITHUB_INTEGRATION = False
+    ENABLE_REGISTRY_INTEGRATION = False
 
 
 class DevelopmentConfig(BaseConfig):
@@ -111,7 +148,7 @@ class TestingConfig(BaseConfig):
     # SQLALCHEMY_DATABASE_URI = "sqlite:///{0}/app-test.db".format(basedir)
     # CACHE_TYPE = "flask_caching.backends.nullcache.NullCache"
     CACHE_TYPE = "flask_caching.backends.rediscache.RedisCache"
-    DATA_WORKFLOWS = "/tmp/lm_tests_data"
+    DATA_WORKFLOWS = f"{BaseConfig.BASE_TEMP_FOLDER}/lm_tests_data"
 
 
 class TestingSupportConfig(TestingConfig):
@@ -119,7 +156,7 @@ class TestingSupportConfig(TestingConfig):
     DEBUG = True
     TESTING = False
     LOG_LEVEL = "DEBUG"
-    DATA_WORKFLOWS = "/tmp/lm_tests_data"
+    DATA_WORKFLOWS = f"{BaseConfig.BASE_TEMP_FOLDER}/lm_tests_data"
 
 
 _EXPORT_CONFIGS: List[Type[BaseConfig]] = [
@@ -237,12 +274,15 @@ def configure_logging(app):
         level_value = logging.INFO
         error = True
 
+    log_format = f'[{COLOR_SEQ % (90)}%(asctime)s{RESET_SEQ}] %(levelname)s in %(module)s: {COLOR_SEQ % (90)}%(message)s{RESET_SEQ}'
+    if level_value == logging.DEBUG:
+        log_format = f'[{COLOR_SEQ % (90)}%(asctime)s{RESET_SEQ}] %(levelname)s in %(module)s::%(funcName)s @ line: %(lineno)s: {COLOR_SEQ % (90)}%(message)s{RESET_SEQ}'
+
     dictConfig({
         'version': 1,
         'formatters': {'default': {
             '()': ColorFormatter,
-            'format':
-                f'[{COLOR_SEQ % (90)}%(asctime)s{RESET_SEQ}] %(levelname)s in %(module)s: {COLOR_SEQ % (90)}%(message)s{RESET_SEQ}',
+            'format': log_format,
         }},
         'filters': {
             'myfilter': {

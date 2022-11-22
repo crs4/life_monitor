@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2021 CRS4
+# Copyright (c) 2020-2022 CRS4
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -22,20 +22,20 @@ import logging
 
 import connexion
 import flask
-from flask import flash, redirect, render_template, request, session, url_for
+from flask import current_app, flash, redirect, render_template, request, session, url_for
 from flask_login import login_required, login_user, logout_user
 from lifemonitor.cache import Timeout, cached, clear_cache
 from lifemonitor.utils import (NextRouteRegistry, next_route_aware,
                                split_by_crlf)
 
 from .. import exceptions
-from ..utils import OpenApiSpecs
+from ..utils import OpenApiSpecs, boolean_value
 from . import serializers
 from .forms import (EmailForm, LoginForm, NotificationsForm, Oauth2ClientForm,
                     RegisterForm, SetPasswordForm)
 from .models import db
 from .oauth2.client.services import (get_current_user_identity, get_providers,
-                                     merge_users, save_current_user_identity)
+                                     save_current_user_identity)
 from .oauth2.server.services import server
 from .services import (authorized, current_registry, current_user,
                        delete_api_key, generate_new_api_key, login_manager)
@@ -163,7 +163,7 @@ def index():
 
 @blueprint.route("/profile", methods=("GET",))
 def profile(form=None, passwordForm=None, currentView=None,
-            emailForm=None, notificationsForm=None):
+            emailForm=None, notificationsForm=None, githubSettingsForm=None, registrySettingsForm=None):
     currentView = currentView or request.args.get("currentView", 'accountsTab')
     logger.debug(OpenApiSpecs.get_instance().authorization_code_scopes)
     back_param = request.args.get('back', None)
@@ -175,11 +175,18 @@ def profile(form=None, passwordForm=None, currentView=None,
         logger.debug("Getting back param from session")
         back_param = back_param or session.get('lm_back_param', False)
         logger.debug("detected back param: %s", back_param)
+    from lifemonitor.api.models.registries.forms import RegistrySettingsForm
+    from lifemonitor.integrations.github.forms import GithubSettingsForm
+    logger.warning("Request args: %r", request.args)
     return render_template("auth/profile.j2",
                            passwordForm=passwordForm or SetPasswordForm(),
                            emailForm=emailForm or EmailForm(),
                            notificationsForm=notificationsForm or NotificationsForm(),
+                           enableGithubAppIntegration=boolean_value(current_app.config['ENABLE_GITHUB_INTEGRATION']),
+                           enableRegistryIntegration=boolean_value(current_app.config['ENABLE_REGISTRY_INTEGRATION']),
                            oauth2ClientForm=form or Oauth2ClientForm(),
+                           githubSettingsForm=githubSettingsForm or GithubSettingsForm.from_model(current_user),
+                           registrySettingsForm=registrySettingsForm or RegistrySettingsForm.from_model(current_user),
                            providers=get_providers(), currentView=currentView,
                            oauth2_generic_client_scopes=OpenApiSpecs.get_instance().authorization_code_scopes,
                            back_param=back_param)
@@ -248,6 +255,17 @@ def logout():
     logout_user()
     session.pop('_flashes', None)
     flash("You have logged out", category="success")
+    NextRouteRegistry.clear()
+    return redirect(url_for("auth.index"))
+
+
+@blueprint.route("/delete_account", methods=("POST",))
+@login_required
+def delete_account():
+    current_user.delete()
+    session.pop('_flashes', None)
+    flash("Your account has been deleted", category="success")
+    logout_user()
     NextRouteRegistry.clear()
     return redirect(url_for("auth.index"))
 
@@ -336,26 +354,108 @@ def update_notifications_switch():
     return redirect(url_for("auth.profile", notificationsForm=form, currentView='notificationsTab'))
 
 
+@blueprint.route("/update_github_settings", methods=("GET", "POST"))
+@login_required
+def update_github_settings():
+    logger.debug("Updating Github Settings")
+    from lifemonitor.integrations.github.forms import GithubSettingsForm
+    form = GithubSettingsForm()
+    if not form.validate_on_submit():
+        return redirect(url_for('auth.profile', githubSettingsForm=form, currentView='githubSettingsTab'))
+    form.update_model(current_user)
+    current_user.save()
+    return redirect(url_for('auth.profile', currentView='githubSettingsTab'))
+
+
+@blueprint.route("/enable_registry_sync", methods=("GET", "POST",))
+@login_required
+def enable_registry_sync():
+    logger.debug("Enabling Registry Sync")
+    if request.method == "GET":
+        registry_name = request.values.get("s", None)
+        logger.debug("Enabling Registry Sync: %r", registry_name)
+        if not registry_name:  # or not current_user.check_secret(registry_name, secret_hash):
+            flash("Invalid request: registry cannot be enabled", category="error")
+            return redirect(url_for('auth.profile', currentView='registrySettingsTab'))
+        else:
+            logger.debug("Registry to add: %r", registry_name)
+            logger.debug(request.remote_addr)
+            from lifemonitor.api.models import WorkflowRegistry
+            registry = WorkflowRegistry.find_by_client_name(registry_name)
+            if not registry:
+                flash("Invalid request: registry not found", category="error")
+                return redirect(url_for('auth.profile', currentView='registrySettingsTab'))
+            settings = current_user.registry_settings
+            settings.add_registry(registry_name)
+            registry_user_identity = current_user.oauth_identity[registry.client_name]
+            logger.debug("Updated token: %r", registry_user_identity.token)
+            assert registry_user_identity, f"No identity found for user of registry {registry.name}"
+            assert registry_user_identity.token, f"No token found for user of registry {registry.name}"
+            settings.set_token(registry.client_name, registry_user_identity.tokens['read write'])
+            current_user.save()
+            flash(f"Integration with registry \"{registry.name}\" enabled", category="success")
+            return redirect(url_for('auth.profile', currentView='registrySettingsTab'))
+
+    elif request.method == "POST":
+        from lifemonitor.api.models.registries.forms import \
+            RegistrySettingsForm
+        form = RegistrySettingsForm()
+        if form.validate_on_submit():
+            registry_name = request.values.get("registry", None)
+            return redirect(f'/oauth2/login/{registry_name}?scope=read+write&next=/enable_registry_sync?s={registry_name}')
+        else:
+            logger.debug("Form validation failed")
+            flash("Invalid request", category="error")
+    # set a fallback redirect
+    return redirect(url_for('auth.profile', currentView='registrySettingsTab'))
+
+
+@blueprint.route("/disable_registry_sync", methods=("POST",))
+@login_required
+def disable_registry_sync():
+    from lifemonitor.api.models.registries.forms import RegistrySettingsForm
+    registry_name = request.values.get("registry", None)
+    logger.debug("Disabling sync for registry: %r", registry_name)
+    form = RegistrySettingsForm()
+    settings = current_user.registry_settings
+    if form.validate_on_submit():
+        from lifemonitor.api.models import WorkflowRegistry
+        registry = WorkflowRegistry.find_by_client_name(registry_name)
+        if not registry:
+            flash("Invalid request: registry not found", category="error")
+            return redirect(url_for('auth.profile', currentView='registrySettingsTab'))
+        settings.remove_registry(registry_name)
+        current_user.save()
+        flash(f"Integration with registry \"{registry.name}\" disabled", category="success")
+    return redirect(url_for('auth.profile', currentView='registrySettingsTab'))
+
+
 @blueprint.route("/merge", methods=("GET", "POST"))
 @login_required
 def merge():
-    form = LoginForm(data={
-        "username": request.args.get("username"),
-        "provider": request.args.get("provider")})
-    if form.validate_on_submit():
-        user = form.get_user()
-        if user:
-            if user != current_user:
-                merge_users(current_user, user, request.args.get("provider"))
-                flash(
-                    "User {username} has been merged into your account".format(
-                        username=user.username
-                    )
-                )
-                return redirect(url_for("auth.index"))
-            else:
-                form.username.errors.append("Cannot merge with yourself")
-    return render_template("auth/merge.j2", form=form)
+    username = request.args.get("username")
+    provider = request.args.get("provider")
+    flash(f"Your <b>{provider}</b> identity is already linked to the username "
+          f"<b>{username}</b> and cannot be merged to <b>{current_user.username}</b>",
+          category="warning")
+    return redirect(url_for('auth.profile'))
+    # form = LoginForm(data={
+    #     "username": username,
+    #     "provider": provider})
+    # if form.validate_on_submit():
+    #     user = form.get_user()
+    #     if user:
+    #         if user != current_user:
+    #             merge_users(current_user, user, request.args.get("provider"))
+    #             flash(
+    #                 "User {username} has been merged into your account".format(
+    #                     username=user.username
+    #                 )
+    #             )
+    #             return redirect(url_for("auth.index"))
+    #         else:
+    #             form.username.errors.append("Cannot merge with yourself")
+    # return render_template("auth/merge.j2", form=form)
 
 
 @blueprint.route("/create_apikey", methods=("POST",))

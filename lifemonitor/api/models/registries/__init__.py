@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2021 CRS4
+# Copyright (c) 2020-2022 CRS4
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -20,10 +20,12 @@
 
 from __future__ import annotations
 
-from lifemonitor.utils import ClassManager
 from .registry import RegistryWorkflow, WorkflowRegistry, WorkflowRegistryClient
+from .settings import RegistrySettings
 
+# load registry classes
+__loaded_registries__ = [
+    RegistryWorkflow, WorkflowRegistry, WorkflowRegistryClient
+] + WorkflowRegistry.registry_types.get_classes()
 
-__all__ = [RegistryWorkflow, WorkflowRegistry, WorkflowRegistryClient] + \
-    ClassManager('lifemonitor.api.models.registries',
-                 class_suffix="WorkflowRegistry", skip=["registry"], lazy=False).get_classes()
+__all__ = [RegistrySettings.__name__].extend([_.__name__ for _ in __loaded_registries__])

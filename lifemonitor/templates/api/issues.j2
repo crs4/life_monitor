@@ -1,0 +1,82 @@
+{% extends 'auth/base.j2' %}
+{% import 'auth/macros.j2' as macros %}
+
+{% block body_class %} login-page {% endblock %}
+
+{% block body_style %}
+height: auto;  
+padding: 20px;
+{% endblock %}
+
+
+{% block body %}
+
+    {{ macros.render_logo(style="max-width: 300px;", class="img-fluid logo text-center mx-5 mt-5") }}
+
+    <div class="font-weight-lighter mt-5 text-primary mb-4 text-center"
+      style="font-size: 2.5rem; line-height: 20px; width: 100%;">
+        <div class="text-center align-items-center">
+            <!--<div style="width: 34px; height: 100%; margin: auto;">
+                <i class="fas fa-exclamation-circle fa-lg"></i>
+            </div>-->
+            <div>Supported Checks</div>
+            <div class="float-right px-2 mt-n5">
+                <a href="/openapi.html" title="LifeMonitor API Explorer" target="_blank">                    
+                    <div class="col-12 text-center font-weight-light">
+                        <img src="{{ url_for('auth.static', filename='img/logo/openapi-custom-colors.svg') }}" width="90px">    
+                        <div class="ml-n4  text-center">
+                            <div class="mt-n1" style="font-family: 'Montserrat', sans-serif;">
+                                <div class="font-weight-bold" style="font-size: 1.2rem;">
+                                    <span class="m-1" style="letter-spacing: 2px; font-variant:">API</span>
+                                </div>
+                            </div>
+                            <div class="mt-n2" style="font-size: 0.8rem; margin-left: -2px;">explorer</div>
+                        </div>
+                    </div>                    
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main content -->
+    <div class="container-fluid">
+
+        <!-- Back param -->
+        <div class="clearfix">
+            {% if back_param %}
+
+            <a href="{{ back_param }}" itle="Go back" >
+                <i class="fas fa-caret-left mx-1"></i>     
+                back
+            </a>
+            {% endif %}
+        </div>
+
+        <div class="card card-primary card-outline">
+            
+            <div class="card-body">                
+                {% for i in issues %}
+                    <div class="list-group-item list-group-item-action"  style="background: #1f8787; color: white;"
+                         data-toggle="collapse" href="#{{i.identifier}}" role="button" 
+                         aria-expanded="false" aria-controls="{{i.identifier}}" aria-pressed="false">
+                         <b>{{loop.index}}: {{ i.name }}</b>
+                    </div>
+                    <div class="collapse show" id="{{i.identifier}}">
+                        
+                        <div class="card card-body">
+                            <ul class="px-0" style="list-style-type: none;">
+                                <li><b>ID:</b> {{i.identifier}}</li>                                
+                                <li><b>Labels:</b> {{ i.labels | join(", ") }}</li>
+                                <li><b>Depends on:</b> {{ i.depends_on|join(", ") or "None"}}</li>
+                            </ul>
+                            <b>Description</b> 
+                            <div class="d-inline">{{ i.description|safe|join('')}}</div>
+                        </div>
+                    </div>
+                {% endfor %}                
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+<!-- body block -->

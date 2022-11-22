@@ -1,0 +1,82 @@
+<!-- Modal -->
+<div class="modal fade" id="inputDialog" tabindex="-1" role="dialog" aria-labelledby="inputDialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div id="inputDialogTitleContainer" class="modal-header text-center m-auto">
+                <h5 id="inputDialogTitle" class="modal-title" [innerHTML]="title"></h5>
+            </div>
+            <div class="modal-body">
+
+                <button id="inputDialogClosePane" type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+
+                <div id="inputDialogIconContainer" class="text-center p-5 text-primary">
+                    <i id="inputDialogIcon" class="{{iconClass}} {{iconClassSize}}"></i>
+                </div>
+
+                <div id="inputDialogImageContainer" class="text-center p-5 text-primary">
+                    <img id="inputDialogImage" src="{{iconImage}}" width="{{iconImageSize}}">
+                </div>
+
+                <div class="text-center">
+                    <h2 id="inputDialogQuestion" clas="font-weight-light" [innerHTML]="question"></h2>
+                    <h6 id="inputDialogDescription" class="text-muted mt-5" [innerHTML]="description"></h6>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="col-md-12 text-center p-2">
+                    <button id="inputDialogCancel" type="button" class="btn btn-secondary btn-lg m-1"
+                        data-dismiss="modal" style="width: 125px;" [innerHTML]="cancelText">
+                    </button>
+                    <button id="inputDialogConfirm" type="button" class="btn btn-primary btn-lg m-1"
+                        style="width: 125px;" [innerHTML]="confirmText">
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+
+    function showInputDialog(options) {
+        options = options || {};
+        $('#inputDialogTitle').html(options.title || '');
+        if (!options.title) { $('#inputDialogTitleContainer').hide(); }
+
+        // Set icon class if defined
+        $('#inputDialogIcon').attr('class', `${options.iconClass} ${options.iconSize || 'fa-5x'}`);
+        if (!options.iconClass) { $('#inputDialogIconContainer').hide(); }
+
+        // Set image if defined
+        $('#inputDialogImage').attr('src', options.image === 'logo' ? 'static/img/logo/lm/LifeMonitorLogo.png' : options.image);
+        $('#inputDialogImage').attr('width', options.imageWidth || 180);
+        $('#inputDialogImage').attr('length', options.imageLength);
+        if (!options.image) { $('#inputDialogImageContainer').hide(); }
+
+        // Set question
+        $('#inputDialogQuestion').html(options.question);
+        // Set description
+        $('#inputDialogDescription').html(options.description);
+
+        // controls
+        $('#inputDialogClosePane').hide();
+        $('#inputDialogConfirm').html(options.confirmText);
+        if (!options.confirmText) $('#inputDialogConfirm').hide();
+        $('#inputDialogConfirm').attr("class", `btn ${options.confirmButtonClass || 'btn-primary'} btn-lg m-1`);
+        $('#inputDialogCancel').html(options.cancelText || "Close");
+        $('#inputDialogCancel').attr("class", `btn ${options.cancelButtonClass || 'btn-secondary'} btn-lg m-1`);
+
+        // set onConfirm callback
+        if (options.onConfirm) {
+            $('#inputDialogConfirm').on('click', () => {
+                options.onConfirm();
+            });
+        }
+
+        // open dialog
+        $('#inputDialog').modal('show');
+    };
+
+</script>

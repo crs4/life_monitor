@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2021 CRS4
+# Copyright (c) 2020-2022 CRS4
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -71,8 +71,12 @@ class Status:
                 status = AggregateTestStatus.SOME_PASSING
         return status
 
-    @staticmethod
-    def check_status(suites):
+    @classmethod
+    def _skip_build(cls, test_build) -> bool:
+        return not test_build or test_build.status not in ["passed", "failed", "error"]
+
+    @classmethod
+    def check_status(cls, suites):
         status = AggregateTestStatus.NOT_AVAILABLE
         latest_builds = []
         availability_issues = []
@@ -97,8 +101,17 @@ class Status:
                             "issue": messages.no_build_found_for_instance.format(test_instance)
                         })
                     else:
+                        # Search the latest completed build
+                        for latest_build in test_instance.get_test_builds():
+                            logger.debug("Checking build %r: %r", latest_build, latest_build.status)
+                            if not cls._skip_build(latest_build):
+                                break
+                        # add build to the set of latest builds
                         latest_builds.append(latest_build)
-                        status = WorkflowStatus._update_status(status, latest_build.is_successful())
+                        # Update aggregated status using the latest completed build
+                        logger.debug("Latest build found: %r", latest_build)
+                        if not cls._skip_build(latest_build):
+                            status = cls._update_status(status, latest_build.is_successful())
                 except lm_exceptions.TestingServiceException as e:
                     availability_issues.append({
                         "service": test_instance.testing_service.url,

@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2021 CRS4
+# Copyright (c) 2020-2022 CRS4
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -33,7 +33,8 @@ not_authorized_workflow_access = "User not authorized to get workflow data"
 input_data_missing = "One or more input data are missing"
 decode_ro_crate_error = "Unable to decode the RO Crate: it should be encoded using base64"
 invalid_ro_crate = "RO Crate processing exception"
-workflow_not_found = "Workflow '{}' (ver.{}) not found"
+workflow_not_found = "Workflow '{}' not found"
+workflow_version_not_found = "Workflow '{}' (ver.{}) not found"
 workflow_version_conflict = "Workflow '{}' (ver.{}) already exists"
 suite_not_found = "Suite '{}' not found"
 instance_not_found = "Test instance '{}' not found"
@@ -58,3 +59,4 @@ invalid_log_offset = "Invalid offset: it should be a positive integer"
 invalid_log_limit = "Invalid limit: it should be a positive integer"
 invalid_event_type = "Invalid event type. Accepted values are {}"
 notification_not_found = "Notification '{}' not found"
+forbidden_roclink_or_rocrate_for_registry_workflows = "Registry workflows cannot be updated through external roc_link or rocrate"
