@@ -42,8 +42,8 @@ following things.
   service](https://app.lifemonitor.eu/) and the
   [WorkflowHub](https://workflowhub.eu/) workflow registry.
 
-All these actions can enabled or disabled in the [app configuration
-file](#configuration-file).
+The default settings for these actions can enabled or disabled through the app
+configuration (see below).
 
 Exactly which checks are applied depends on the type of workflow you have and
 can change in time as the development of LifeMonitor moves forward.
@@ -54,21 +54,28 @@ can change in time as the development of LifeMonitor moves forward.
    page](https://github.com/apps/lifemonitor).
 2. Click the **Install** button;
     ![LM App Install button](./images/lm_gh_app_install_button_with_arrow.png)
-3. Pick the repository where you want to install the app.
+3. **Pick the repository** where you want to install the app.
     * Pick the account or organization that owns the repository;
     * Select one or more repositories using the form, the click **Install &
       authorize**.
 4. If it's the first time you install the app, the process will take you to the
-   LifeMonitor web site to configure the GitHub integration settings (see image
+   LifeMonitor web site to **configure the GitHub integration settings** (see image
    below).
     * To fully enable the GitHub app, make sure "Issue Checks" are enabled.
     * Set the default branches and tags that the app should consider as "new
       releases".
     * All the global settings can be overridden in the [repository-specific
       configuration file](#configuration-file).
-
-**Recommended settings**:
+    * **Recommended settings**:
 ![LM app GitHub integration settings](./images/lm_gh_integration_settings.png)
+
+5. [Optional] Enable **automatic upload to the [WorkflowHub](https://workflowhub.eu/)**
+   registry.
+     * Turn on registry integration in the [configuration page](https://api.lifemonitor.eu/profile?currentView=registrySettingsTab)
+     * The LM app will then upload your new workflow releases automatically.
+     * The settings from step 4 will be used to identify new releases.
+![LM enable WorkflowHub
+integration](./images/lm_web_enable_workflowhub_integration.png)
 
 ### Configuration File
 
