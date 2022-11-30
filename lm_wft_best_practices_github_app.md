@@ -71,7 +71,9 @@ can change in time as the development of LifeMonitor moves forward.
 
 5. [Optional] Enable **automatic upload to the [WorkflowHub](https://workflowhub.eu/)**
    registry.
-     * Turn on registry integration in the [configuration page](https://api.lifemonitor.eu/profile?currentView=registrySettingsTab)
+     * Turn on registry integration in the [configuration page](https://api.lifemonitor.eu/profile?currentView=registrySettingsTab).
+       * If necessary, LifeMonitor will guide you through the process to [connect
+         your WorkflowHub account to your LifeMonitor account](./faq#which-external-accounts-are-linked-with-my-lifemonitor-account).
      * The LM app will then upload your new workflow releases automatically.
      * The settings from step 4 will be used to identify new releases.
 ![LM enable WorkflowHub
