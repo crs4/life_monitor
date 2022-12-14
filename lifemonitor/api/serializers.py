@@ -452,7 +452,7 @@ class WorkflowVersionListItem(WorkflowSchema):
         try:
             result = {
                 "aggregate_test_status": workflow.latest_version.status.aggregated_status,
-                "latest_build": self.get_latest_build(workflow)
+                "latest_builds": self.get_latest_builds(workflow)
             }
             reason = format_availability_issues(workflow.latest_version.status)
             if reason:
@@ -488,12 +488,13 @@ class WorkflowVersionListItem(WorkflowSchema):
                 logger.exception(e)
             return None
 
-    def get_latest_build(self, workflow):
+    def get_latest_builds(self, workflow):
         try:
             latest_builds = workflow.latest_version.status.latest_builds
+            builds = []
             if latest_builds and len(latest_builds) > 0:
-                return BuildSummarySchema(exclude=('meta', 'links')).dump(latest_builds[0])
-            return None
+                builds.append(BuildSummarySchema(exclude=('meta', 'links')).dump(latest_builds[0]))
+            return builds
         except Exception as e:
             logger.debug(e)
             return None
