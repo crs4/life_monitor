@@ -621,7 +621,7 @@ class SuiteStatusSchema(ResourceMetadataSchema):
         model = models.TestSuite
 
     suite_uuid = fields.String(attribute="uuid")
-    status = fields.Method("get_aggregated_status")
+    aggregate_test_status = fields.Method("get_aggregate_status")
     latest_builds = fields.Method("get_builds")
     reason = fields.Method("get_reason")
     _errors = []
@@ -643,7 +643,7 @@ class SuiteStatusSchema(ResourceMetadataSchema):
         except Exception as e:
             return str(e)
 
-    def get_aggregated_status(self, suite):
+    def get_aggregate_status(self, suite):
         try:
             return suite.status.aggregated_status
         except Exception as e:

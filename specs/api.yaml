@@ -2578,7 +2578,7 @@ components:
     TestSuiteStatusProperties:
       type: object
       properties:
-        status:
+        aggregate_test_status:
           $ref: "#/components/schemas/AggregateTestStatus"
         latest_builds:
           type: array
