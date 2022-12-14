@@ -2424,9 +2424,11 @@ components:
                     properties:
                       aggregate_test_status:
                         $ref: "#/components/schemas/AggregateTestStatus"
-                      latest_build:
-                        description: "The most recent build on some test instance"
-                        $ref: "#/components/schemas/BuildSummary"
+                      latest_builds:
+                        description: "The most recent builds on some test instances"
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/BuildSummary"                          
                         nullable: true
                   versions:
                     nullable: true
