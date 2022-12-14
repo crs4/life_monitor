@@ -1049,7 +1049,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WorkflowStatus"
+                $ref: "#/components/schemas/WorkflowVersionStatus"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -2456,52 +2456,6 @@ components:
           required:
             - items
 
-    WorkflowStatus:
-      allOf:
-        - $ref: "#/components/schemas/Workflow"
-        - type: object
-          properties:
-            version:
-              $ref: "#/components/schemas/WorkflowVersion"
-            aggregate_test_status:
-              $ref: "#/components/schemas/AggregateTestStatus"
-            latest_builds:
-              description: "Latest builds, one for each test instance"
-              type: array
-              items:
-                $ref: "#/components/schemas/BuildSummary"
-            reason:
-              description: "Reason why the status is unavailable"
-              type: string
-              nullable: true
-          required:
-            - aggregate_test_status
-            - version
-
-    WorkflowVersionStatus:
-      allOf:
-        - type: object
-          properties:
-            version:
-              $ref: "#/components/schemas/WorkflowVersion"
-            workflow:
-              $ref: "#/components/schemas/Workflow"
-            aggregate_test_status:
-              $ref: "#/components/schemas/AggregateTestStatus"
-            latest_builds:
-              description: "Latest builds, one for each test instance"
-              type: array
-              items:
-                $ref: "#/components/schemas/BuildSummary"
-            reason:
-              description: "Reason why the status is unavailable"
-              type: string
-              nullable: true
-          required:
-            - version
-            - workflow
-            - aggregate_test_status
-
     AggregateTestStatus:
       type: string
       enum:
@@ -2509,6 +2463,34 @@ components:
         - "some_passing"
         - "all_failing"
         - "not_available"
+
+    EntityTestStatus:
+      type: object
+      properties:
+        aggregate_test_status:
+          $ref: "#/components/schemas/AggregateTestStatus"
+        latest_builds:
+          description: "Latest builds, one for each test instance"
+          type: array
+          items:
+            $ref: "#/components/schemas/BuildSummary"
+        reason:
+          description: "Reason why the status is unavailable"
+          type: string
+          nullable: true
+
+    WorkflowVersionStatus:
+      allOf:
+        - $ref: "#/components/schemas/Workflow"
+        - $ref: "#/components/schemas/EntityTestStatus"
+          required:
+            - aggregate_test_status
+        - type: object
+          properties:
+            version:
+              $ref: "#/components/schemas/WorkflowVersion"
+          required:
+            - version
 
     WorkflowTestingROCrate:
       type: object
@@ -2563,7 +2545,7 @@ components:
           required:
             - uuid
             - instances
-        - $ref: "#/components/schemas/TestSuiteStatusProperties"
+        - $ref: "#/components/schemas/EntityTestStatus"
 
     ListOfTestSuite:
       type: object
@@ -2575,21 +2557,6 @@ components:
       required:
         - items
 
-    TestSuiteStatusProperties:
-      type: object
-      properties:
-        aggregate_test_status:
-          $ref: "#/components/schemas/AggregateTestStatus"
-        latest_builds:
-          type: array
-          items:
-            $ref: "#/components/schemas/BuildSummary"
-        reason:
-          description: Reason why the status is unavailable
-          type: string
-          example: "Unreachable testing service"
-          nullable: true
-
     TestSuiteStatus:
       allOf:
         - type: object
@@ -2600,9 +2567,7 @@ components:
               example: e3208b02-69b6-4e32-a3dc-b93967d30e2c
           required:
             - suite_uuid
-        - $ref: "#/components/schemas/TestSuiteStatusProperties"
-          required:
-            - aggregate_test_status
+        - $ref: "#/components/schemas/EntityTestStatus"
 
     BuildStatus:
       type: string
