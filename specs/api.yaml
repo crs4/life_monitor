@@ -2602,7 +2602,7 @@ components:
             - suite_uuid
         - $ref: "#/components/schemas/TestSuiteStatusProperties"
           required:
-            - status
+            - aggregate_test_status
 
     BuildStatus:
       type: string
