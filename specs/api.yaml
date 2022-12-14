@@ -2428,7 +2428,7 @@ components:
                         description: "The most recent builds on some test instances"
                         type: array
                         items:
-                          $ref: "#/components/schemas/BuildSummary"                          
+                          $ref: "#/components/schemas/BuildSummary"
                         nullable: true
                   versions:
                     nullable: true
