@@ -56,6 +56,48 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  /integrations/github/config/validate:
+    post:
+      tags: ["GitHub Integration"]
+      x-openapi-router-controller: lifemonitor.schemas.controller
+      operationId: "validate"
+      summary: "Validate config file"
+      description: |
+        Validate a `lifemonitor.yaml` config file according to the according to the
+        [/integrations/github/config/schema.json](/integrations/github/config/schema.json) schema.
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              description: A YAML configuration file
+              type: string
+              format: binary
+      responses:
+        "200":
+          description: The JSON schema
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:
+                    type: boolean
+                    description: |
+                      `true` if the config file is valid; 
+                      `false` if the file is not valid
+                  message:
+                    type: string
+                    description: A short error message
+                  error:
+                    type: string
+                    description: /
+                      Detailed error description
+                required:
+                  - valid
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
   /registries:
     get:
       tags: ["Registries"]

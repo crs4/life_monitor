@@ -17,3 +17,8 @@ def lifemonitor_json():
     with open('lifemonitor/schemas/lifemonitor.json') as f:
         return jsonify(json.load(f))
 
+
+def validate():
+    data = yaml.unsafe_load(request.data)
+    logger.debug("Data: %r", data)
+    return ConfigFileValidator.validate(data).to_dict()
