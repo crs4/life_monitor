@@ -33,8 +33,29 @@ tags:
     description: Operations related to test instances
   - name: Registry Client Operations
     description: Operations reserved to registry clients
+  - name: GitHub Integration
+    description: Resources related to the GitHub integration
 
 paths:
+  /integrations/github/config/schema.json:
+    get:
+      tags: ["GitHub Integration"]
+      x-openapi-router-controller: lifemonitor.schemas.controller
+      operationId: "lifemonitor_json"
+      summary: "JSON Schema of lifemonitor.json"
+      description: "JSON Schema for the `lifemonitor.json` config file"
+      responses:
+        "200":
+          description: The JSON schema
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   /registries:
     get:
       tags: ["Registries"]
