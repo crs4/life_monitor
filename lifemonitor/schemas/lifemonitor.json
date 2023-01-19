@@ -1,0 +1,92 @@
+{
+  "$schema": "http://json-schema.org/schema#",
+  "$id": "https://api.lifemonitor.eu/config/schemas.json",
+  "title": "LifeMonitor Configuration File",
+  "type": "object",
+  "properties": {
+    "workflow_name": {
+      "description": "worfklow name (override name defined on the RO-Crate metadata)",
+      "type": "string",
+      "minLength": 1
+    },
+    "public": {
+      "description": "worfklow visibility",
+      "type": "boolean",
+      "default": false
+    },
+    "issues": {
+      "type": "object",
+      "properties": {
+        "check": {
+          "description": "Enable/Disable issue checker. The list of issue types can be found @ <LIFEMONITOR_API_URL>/workflows/issues (e.g., https://api.lifemonitor.eu/workflows/issues)",
+          "type": "boolean"
+        },
+        "include": {
+          "description": "csv of issues to check (all included by default)",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "exclude": {
+          "description": "csv of issues to ignore (none ignored by default)",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "push": {
+      "type": "object",
+      "minimum": 1,
+      "properties": {
+        "branches": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/push_ref"
+          }
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/push_ref"
+          }
+        }
+      }
+    }
+  },
+  "required": [],
+  "definitions": {
+    "push_ref": {
+      "description": "",
+      "type": "object",
+      "properties": {
+        "name": {
+          "description": "",
+          "type": "string",
+          "minLength": 1
+        },
+        "update_registries": {
+          "description": "",
+          "type": "array",
+          "item": {
+            "type": "string"
+          },
+          "default": []
+        },
+        "enable_notifications": {
+          "description": "",
+          "type": "boolean",
+          "default": "true"
+        },
+        "lifemonitor_instance": {
+          "description": "",
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": ["name"]
+    }
+  }
+}
