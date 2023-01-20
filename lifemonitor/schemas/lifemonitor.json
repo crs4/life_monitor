@@ -35,7 +35,8 @@
             "type": "string"
           }
         }
-      }
+      },
+      "additionalProperties": false
     },
     "push": {
       "type": "object",
@@ -53,7 +54,8 @@
             "$ref": "#/definitions/push_ref"
           }
         }
-      }
+      },
+      "additionalProperties": false
     }
   },
   "required": [],
@@ -86,7 +88,9 @@
           "minLength": 1
         }
       },
-      "required": ["name"]
+      "required": ["name"],
+      "additionalProperties": false
     }
-  }
+  },
+  "additionalProperties": false
 }
