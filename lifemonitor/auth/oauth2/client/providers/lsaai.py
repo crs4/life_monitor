@@ -69,7 +69,7 @@ class LsAAI:
     }
 
     def __repr__(self) -> str:
-        return f"LSAAI Provider"
+        return "LSAAI Provider"
 
     @staticmethod
     def normalize_userinfo(client, data):
