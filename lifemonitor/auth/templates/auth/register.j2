@@ -58,9 +58,18 @@
         <div class="social-auth-links text-center mb-3">        
           <p class="text-bold">- OR -</p>
           {% for p in providers %}
+            {% if p.client_name != 'lsaai' %}
             {{ macros.render_provider_signup_button(p) }}          
+            {% endif %}
           {% endfor %}
-        </div>      
+        </div>
+        <div class="social-auth-links text-center mt-4">
+          <p>- OR -</p>
+          <a href="/oauth2/login/lsaai" class="btn btn-block">
+            Sign up with <b>LifeScience</b>
+            <img src="{{ url_for('auth.static', filename='img/logo/providers/lsaai-register.png')}}" style="max-width: 100%;"/>
+          </a>
+        </div>
       {% endif %}
 
       <p></p>
