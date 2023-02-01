@@ -26,15 +26,18 @@ logger = logging.getLogger(__name__)
 
 
 def normalize_userinfo(client, data):
-    logger.debug(data)
+    logger.debug("LSAAI Data: %r", data)
+    preferred_username = data.get('eduperson_principal_name')[0].replace('@lifescience-ri.eu', '') \
+        if 'eduperson_principal_namex' in data and len(data['eduperson_principal_name']) > 0 \
+        else data['name'].replace(' ', '')
     params = {
-        'sub': str(data['id']),
+        'sub': str(data['sub']),
         'name': data['name'],
         'email': data.get('email'),
-        'preferred_username': data['login'],
-        'profile': data['html_url'],
-        'picture': data['avatar_url'],
-        'website': data.get('blog'),
+        'preferred_username': preferred_username
+        # 'profile': data['html_url'],
+        # 'picture': data['avatar_url'],
+        # 'website': data.get('blog'),
     }
 
     # The email can be be None despite the scope being 'user:email'.
@@ -63,9 +66,10 @@ class LsAAI:
         'api_base_url': 'https://proxy.aai.lifescience-ri.eu',
         'access_token_url': 'https://proxy.aai.lifescience-ri.eu/OIDC/token',
         'authorize_url': 'https://proxy.aai.lifescience-ri.eu/saml2sp/OIDC/authorization',
-        'client_kwargs': {'scope': 'profile email orcid'},
+        'client_kwargs': {'scope': 'openid profile email orcid eduperson_principal_name'},
         'userinfo_endpoint': 'https://proxy.aai.lifescience-ri.eu/OIDC/userinfo',
         'userinfo_compliance_fix': normalize_userinfo,
+        'server_metadata_url': 'https://proxy.aai.lifescience-ri.eu/.well-known/openid-configuration'
     }
 
     def __repr__(self) -> str:
