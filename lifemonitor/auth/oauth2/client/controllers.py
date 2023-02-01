@@ -74,11 +74,11 @@ def create_blueprint(merge_identity_view):
             else:
                 # handle failed
                 return _handle_authorize(remote, None, None)
-            if 'id_token' in token:
-                user_info = remote.parse_id_token(token)
-            else:
-                remote.token = token
-                user_info = remote.userinfo(token=token)
+            # if 'id_token' in token:
+            #     user_info = remote.parse_id_token(token)
+            # else:
+            remote.token = token
+            user_info = remote.userinfo(token=token)
             return _handle_authorize(remote, token, user_info)
         except OAuthError as e:
             logger.debug(e)
