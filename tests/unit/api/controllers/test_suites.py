@@ -146,7 +146,7 @@ def test_get_suite_status_by_user(m, request_context, no_cache, mock_user):
     m.get_suite.assert_called_once()
     assert isinstance(response, dict), "Unexpected result type"
     logger.debug("The response: %r", response)
-    for p in ["latest_builds", "suite_uuid", "status"]:
+    for p in ["latest_builds", "suite_uuid", "aggregate_test_status"]:
         assert p in response, f"Property {p} not found on response"
 
 
@@ -168,9 +168,9 @@ def test_get_suite_status_by_user_rate_limit_exceeded(lm, mock_user, rate_limit_
     response = controllers.suites_get_status(suite.uuid)
     lm.get_suite.assert_called_once()
     logger.info(response)
-    for p in ["latest_builds", "suite_uuid", "status"]:
+    for p in ["latest_builds", "suite_uuid", "aggregate_test_status"]:
         assert p in response, f"Property {p} not found on response"
-    assert response['status'] == 'not_available'
+    assert response['aggregate_test_status'] == 'not_available'
 
 
 @patch("lifemonitor.api.controllers.lm")
@@ -194,7 +194,7 @@ def test_get_suite_status_by_registry(m, request_context, no_cache, mock_registr
     m.get_registry_workflow_version.assert_called_once()
     assert isinstance(response, dict), "Unexpected result type"
     logger.debug("The response: %r", response)
-    for p in ["latest_builds", "suite_uuid", "status"]:
+    for p in ["latest_builds", "suite_uuid", "aggregate_test_status"]:
         assert p in response, f"Property {p} not found on response"
 
 
@@ -215,9 +215,9 @@ def test_get_suite_status_by_registry_rate_limit_exceeded(lm, request_context, m
     response = controllers.suites_get_status(suite.uuid)
     lm.get_suite.assert_called_once()
     logger.info(response)
-    for p in ["latest_builds", "suite_uuid", "status"]:
+    for p in ["latest_builds", "suite_uuid", "aggregate_test_status"]:
         assert p in response, f"Property {p} not found on response"
-    assert response['status'] == 'not_available'
+    assert response['aggregate_test_status'] == 'not_available'
 
 
 @patch("lifemonitor.api.controllers.lm")

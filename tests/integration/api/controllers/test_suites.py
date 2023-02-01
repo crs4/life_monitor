@@ -77,7 +77,7 @@ def test_get_suite_status(app_client, client_auth_method, user1, user1_auth, val
     logger.debug("Response data: %r", data)
     # redundant check: the validation is performed by the connexion framework
     assert data['suite_uuid'] == str(suite.uuid), "Invalid UUID"
-    for p in ["status", "latest_builds"]:
+    for p in ["aggregate_test_status", "latest_builds"]:
         assert p in data, f"Missing required property {p}"
 
 

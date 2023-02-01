@@ -452,7 +452,7 @@ class WorkflowVersionListItem(WorkflowSchema):
         try:
             result = {
                 "aggregate_test_status": workflow.latest_version.status.aggregated_status,
-                "latest_build": self.get_latest_build(workflow)
+                "latest_builds": self.get_latest_builds(workflow)
             }
             reason = format_availability_issues(workflow.latest_version.status)
             if reason:
@@ -488,12 +488,13 @@ class WorkflowVersionListItem(WorkflowSchema):
                 logger.exception(e)
             return None
 
-    def get_latest_build(self, workflow):
+    def get_latest_builds(self, workflow):
         try:
             latest_builds = workflow.latest_version.status.latest_builds
+            builds = []
             if latest_builds and len(latest_builds) > 0:
-                return BuildSummarySchema(exclude=('meta', 'links')).dump(latest_builds[0])
-            return None
+                builds.append(BuildSummarySchema(exclude=('meta', 'links')).dump(latest_builds[0]))
+            return builds
         except Exception as e:
             logger.debug(e)
             return None
@@ -553,7 +554,7 @@ class SuiteSchema(ResourceMetadataSchema):
     definition = fields.Method("get_definition")
     instances = fields.Nested(TestInstanceSchema(self_link=False, exclude=('meta',)),
                               attribute="test_instances", many=True)
-    status = fields.Method("get_status")
+    aggregate_test_status = fields.Method("get_status")
     latest_builds = fields.Method("get_latest_builds")
 
     def __init__(self, *args, self_link: bool = True,
@@ -568,9 +569,11 @@ class SuiteSchema(ResourceMetadataSchema):
 
     def get_status(self, obj):
         try:
-            return SuiteStatusSchema(only=('status',)).dump(obj)['status'] if self.status else None
-        except Exception:
+            return SuiteStatusSchema(only=('aggregate_test_status',)).dump(obj)['aggregate_test_status'] if self.status else None
+        except Exception as e:
             logger.warning("Unable to extract status for suite: %r", obj)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.exception(e)
             return None
 
     def get_latest_builds(self, obj):
@@ -602,7 +605,7 @@ class ListOfSuites(ListOfItems):
     def get_items(self, obj):
         exclude = ['meta', 'links']
         if not self.status:
-            exclude.append('status')
+            exclude.append('aggregate_test_status')
         if not self.latest_builds:
             exclude.append('latest_builds')
         return [self.__item_scheme__(
@@ -620,7 +623,7 @@ class SuiteStatusSchema(ResourceMetadataSchema):
         model = models.TestSuite
 
     suite_uuid = fields.String(attribute="uuid")
-    status = fields.Method("get_aggregated_status")
+    aggregate_test_status = fields.Method("get_aggregate_status")
     latest_builds = fields.Method("get_builds")
     reason = fields.Method("get_reason")
     _errors = []
@@ -642,7 +645,7 @@ class SuiteStatusSchema(ResourceMetadataSchema):
         except Exception as e:
             return str(e)
 
-    def get_aggregated_status(self, suite):
+    def get_aggregate_status(self, suite):
         try:
             return suite.status.aggregated_status
         except Exception as e:
