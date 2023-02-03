@@ -38,6 +38,7 @@ oauth2_registry = OAuth2Registry.get_instance()
 
 def get_providers(skip_registration: bool = False):
     from .providers.github import GitHub
+    from .providers.lsaai import LsAAI
     from .providers.seek import Seek
     providers = []
     logger.debug("Preparing list of providers...")
@@ -45,6 +46,9 @@ def get_providers(skip_registration: bool = False):
     if current_app.config.get('GITHUB_CLIENT_ID', None) \
             and current_app.config.get('GITHUB_CLIENT_SECRET', None):
         providers.append(GitHub)
+    if current_app.config.get('LSAAI_CLIENT_ID', None) \
+            and current_app.config.get('LSAAI_CLIENT_SECRET', None):
+        providers.append(LsAAI)
     # set workflow registries as oauth providers
     if db_initialized():
         try:
