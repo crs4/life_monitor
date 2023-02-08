@@ -218,7 +218,7 @@ btn-info
 {%- endmacro %}
 
 {% macro render_provider_signin_button(provider) -%}
-<a href="/oauth2/login/{{provider.client_name}}" class="btn btn-block {{render_provider_btn_class(provider)}}">
+<a href="/oauth2/login/{{provider.client_name}}?action=sign-in" class="btn btn-block {{render_provider_btn_class(provider)}}">
   {{render_provider_fa_icon(provider)}} Sign in with <b>{{provider.name}}</b>
 </a>
 {%- endmacro %}

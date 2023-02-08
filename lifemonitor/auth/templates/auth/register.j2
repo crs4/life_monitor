@@ -1,11 +1,11 @@
 {% extends 'auth/base.j2' %}
 {% import 'auth/macros.j2' as macros %}
 
-{% block body_class %} sidebar-mini sidebar-open login-page {% endblock %}
+{% block body_class %} sidebar-mini sidebar-open login-page h-100 {% endblock %}
 
 {% block body %}
 
-<div class="login-box">
+<div class="login-box" style="height: auto;">
  
   {{ macros.render_logo(class="login-logo", style="width: auto") }}
   
@@ -73,10 +73,17 @@
       {% endif %}
 
       <p></p>
-      <p class="mb-0 text-center">
-        Do you have an account?
-        <a href="{{ url_for("auth.login") }}" class="text-center">Sign In</a>
+      {% if not identity %}
+      <p class="mb-0 text-center pt-3 p-2">
+        <div class="h6 login-msg text-center text-bold">Already have an account? </div>
+        <div class="text-center">
+          Rather than creating a new account, we strongly recommend 
+          that you <a href="{{ url_for("auth.login") }}" class="text-center">Sign In</a>
+          with your existing credentials and link your new identity 
+          <a href="{{ url_for("auth.profile") }}">from the account configuration page</a>        
+        </div>
       </p>
+      {% endif %}
     </div>
   </div>
 </div>

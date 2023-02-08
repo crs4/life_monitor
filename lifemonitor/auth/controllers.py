@@ -197,6 +197,7 @@ def register():
     if flask.request.method == "GET":
         # properly intialize/clear the session before the registration
         flask.session["confirm_user_details"] = True
+        flask.session["sign_in"] = False
         save_current_user_identity(None)
     with db.session.no_autoflush:
         form = RegisterForm()
@@ -209,6 +210,20 @@ def register():
                 return redirect(url_for("auth.index"))
         return render_template("auth/register.j2", form=form,
                                action='/register', providers=get_providers())
+
+
+@blueprint.route("/identity_not_found", methods=("GET", "POST"))
+def identity_not_found():
+    identity = get_current_user_identity()
+    logger.debug("Current provider identity: %r", identity)
+    if not identity or not identity.user:
+        flash("Unable to register the user")
+        return redirect('/login')
+    form = RegisterForm()
+    user = identity.user
+    return render_template("auth/identity_not_found.j2", form=form,
+                           action='/register_identity' if flask.session.get('sign_in', False) else '/register',
+                           identity=identity, user=user, providers=get_providers())
 
 
 @blueprint.route("/register_identity", methods=("GET", "POST"))
@@ -239,6 +254,7 @@ def register_identity():
 def login():
     form = LoginForm()
     flask.session["confirm_user_details"] = True
+    flask.session["sign_in"] = True
     if form.validate_on_submit():
         user = form.get_user()
         if user:

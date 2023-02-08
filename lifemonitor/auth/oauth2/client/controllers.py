@@ -94,6 +94,9 @@ def create_blueprint(merge_identity_view):
         remote = oauth2_registry.create_client(name)
         if remote is None:
             abort(404)
+        action = request.args.get('action', False)
+        if action and action == 'sign-in':
+            session['sign_in'] = True
         redirect_uri = url_for('.authorize', name=name, _external=True)
         conf_key = '{}_AUTHORIZE_PARAMS'.format(name.upper())
         params = current_app.config.get(conf_key, {})
@@ -169,6 +172,17 @@ class AuthorizatonHandler:
                         provider_user_id=user_info.sub,
                         token=token,
                     )
+                save_current_user_identity(identity)
+                try:
+                    if session['sign_in']:
+                        return redirect('/identity_not_found')
+                except KeyError:
+                    pass
+            finally:
+                try:
+                    session.pop('sign_in')
+                except KeyError:
+                    pass
             # Now, figure out what to do with this token. There are 2x2 options:
             # user login state and token link state.
             if current_user.is_anonymous:
