@@ -142,6 +142,7 @@ class AuthorizatonHandler:
         logger.debug("Acquired token: %r", token)
         logger.debug("Acquired user_info: %r", user_info)
         # avoid autoflush in this session
+        db.session.rollback() # always start a new db session
         with db.session.no_autoflush:
             try:
                 p = OAuth2IdentityProvider.find_by_client_name(provider.name)
@@ -172,12 +173,12 @@ class AuthorizatonHandler:
                         provider_user_id=user_info.sub,
                         token=token,
                     )
-                save_current_user_identity(identity)
-                try:
-                    if session['sign_in']:
-                        return redirect('/identity_not_found')
-                except KeyError:
-                    pass
+                    save_current_user_identity(identity)
+                    try:
+                        if session['sign_in']:
+                            return redirect('/identity_not_found')
+                    except KeyError:
+                        pass
             finally:
                 try:
                     session.pop('sign_in')
