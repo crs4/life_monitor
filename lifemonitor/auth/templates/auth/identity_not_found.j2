@@ -41,10 +41,6 @@
 
       <form method="POST" action="{{action}}" >
         
-        {% if not identity %}
-        {{ macros.render_custom_field(form.password) }}
-        {{ macros.render_custom_field(form.repeat_password) }}
-        {% endif %}
         {{ form.hidden_tag() }}
 
         <div class="text-center mb-3 row">            
