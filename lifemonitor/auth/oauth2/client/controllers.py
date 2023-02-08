@@ -142,7 +142,6 @@ class AuthorizatonHandler:
         logger.debug("Acquired token: %r", token)
         logger.debug("Acquired user_info: %r", user_info)
         # avoid autoflush in this session
-        db.session.rollback() # always start a new db session
         with db.session.no_autoflush:
             try:
                 p = OAuth2IdentityProvider.find_by_client_name(provider.name)
@@ -166,24 +165,26 @@ class AuthorizatonHandler:
                 logger.debug("Update identity token: %r -> %r", identity.token, token)
             except OAuthIdentityNotFoundException:
                 logger.debug("Not found OAuth identity <%r,%r>", provider.name, user_info.sub)
-                with db.session.no_autoflush:
-                    identity = OAuthIdentity(
-                        provider=p,
-                        user_info=user_info.to_dict(),
-                        provider_user_id=user_info.sub,
-                        token=token,
-                    )
-                    save_current_user_identity(identity)
-                    try:
-                        if session['sign_in']:
-                            return redirect('/identity_not_found')
-                    except KeyError:
-                        pass
-            finally:
+                logger.debug("SignIn: %r", session.get('sign_in', False))
+                # with db.session.no_autoflush:
+                identity = OAuthIdentity(
+                    provider=p,
+                    user_info=user_info.to_dict(),
+                    provider_user_id=user_info.sub,
+                    token=token,
+                )
+                save_current_user_identity(identity)
                 try:
-                    session.pop('sign_in')
-                except KeyError:
-                    pass
+                    if session['sign_in']:
+                        return redirect('/identity_not_found')
+                except KeyError as e:
+                    logger.error(e)
+
+            try:
+                session.pop('sign_in', False)
+            except KeyError as e:
+                logger.debug(e)
+
             # Now, figure out what to do with this token. There are 2x2 options:
             # user login state and token link state.
             if current_user.is_anonymous:
