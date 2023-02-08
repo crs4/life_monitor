@@ -221,6 +221,9 @@ def identity_not_found():
         return redirect('/login')
     form = RegisterForm()
     user = identity.user
+    # workaround to force clean DB session
+    from lifemonitor.db import db
+    db.session.rollback()
     return render_template("auth/identity_not_found.j2", form=form,
                            action='/register_identity' if flask.session.get('sign_in', False) else '/register',
                            identity=identity, user=user, providers=get_providers())
@@ -253,6 +256,7 @@ def register_identity():
 @next_route_aware
 def login():
     form = LoginForm()
+    session.clear()
     flask.session["confirm_user_details"] = True
     flask.session["sign_in"] = True
     if form.validate_on_submit():
