@@ -1,0 +1,50 @@
+# worfklow name (override name defined on the RO-Crate metadata)
+# name: MyWorkflow
+# worfklow visibility
+public: False
+
+# Issue Checker Settings
+issues:
+  # Enable/Disable issue checker
+  # The list of issue types can be found @ <LIFEMONITOR_API_URL>/workflows/issues
+  # (e.g., https://api.lifemonitor.eu/workflows/issues)
+  check: true
+  # csv of issues to check (all included by default)
+  # include: [Template.MyIssue, lm.MissingLMConfigFile, repo_layout.RepositoryNotInitialised, metadata.MissingWorkflowName, repo_layout.MissingWorkflowFile, repo_layout.MissingROCrateFile, experimental.OutdatedROCrateFile, repo_layout.MissingROCrateWorkflowFile]
+  # csv of issues to ignore (none ignored by default)
+  # exclude: [Template.MyIssue, lm.MissingLMConfigFile, repo_layout.RepositoryNotInitialised, metadata.MissingWorkflowName, repo_layout.MissingWorkflowFile, repo_layout.MissingROCrateFile, experimental.OutdatedROCrateFile, repo_layout.MissingROCrateWorkflowFile]
+# Github Integration Settings
+push:
+  branches:
+    # Define the list of branches to watch
+    # - name: feature/XXX                   # wildcards can be used to specify branches (e.g., feature/*)
+    #   update_registries: ["wfhubdev"]     # available registries are listed
+    #                                       # by the endpoint `<lifemonitor_url>/registries`
+    #                                       # (e.g., https://api.lifemontor.eu/registries)
+    #   lifemonitor_instance: development   # uncomment to use the 'development' instance of LifeMonitor
+    #                                       # (the 'production' instance is used by default)
+    - name: "main"
+      update_registries: []
+      enable_notifications: true
+      # lifemonitor_instance: development
+    # - name: "develop"
+    #   update_registries: []
+    #   enable_notifications: true
+    #   lifemonitor_instance: development
+
+  tags:
+    # Define the list of tags to watch
+    # - name: v*.*.*                    # wildcards can be used to specify tags (e.g., feature/*)
+    #   update_registries: ["wfhub"]    # available registries are listed
+    #                                   # by the endpoint `<lifemonitor_url>/registries`
+    #                                   # (e.g., https://api.lifemontor.eu/registries)
+    #   lifemonitor_instance: development   # uncomment to use the 'development' instance of LifeMonitor
+    #                                       # (the 'production' instance is used by default)
+    - name: "v*.*.*"
+      update_registries: [wfhubdev, wfhubprod, seek]
+      enable_notifications: true
+      lifemonitor_instance: developmentx
+    - name: "ok"
+      update_registries: [wfhubdev, wfhubprod, seek]
+      enable_notifications: true
+      # lifemonitor_instance: development
