@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 
 @pytest.fixture
 def data() -> Dict:
-    with open(f'{__current_path__}/test_data.yaml', 'r') as f:
+    with open(f'{__current_path__}/data.yaml', 'r') as f:
         return yaml.unsafe_load(f)
 
 
