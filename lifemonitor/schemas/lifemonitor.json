@@ -72,7 +72,7 @@
         "update_registries": {
           "description": "",
           "type": "array",
-          "item": {
+          "items": {
             "type": "string"
           },
           "default": []
@@ -80,7 +80,7 @@
         "enable_notifications": {
           "description": "",
           "type": "boolean",
-          "default": "true"
+          "default": true
         },
         "lifemonitor_instance": {
           "description": "",
