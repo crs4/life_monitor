@@ -295,7 +295,7 @@ def __skip_branch_or_tag__(repo_info: GithubRepositoryReference,
     repo: GithubWorkflowRepository = repo_info.repository
     if repo.config:
         if not repo.config.is_valid:
-            return False;
+            return False
         if match_ref(repo_info.tag, repo.config.tags):
             return False
         if match_ref(repo_info.branch, repo.config.branches):
