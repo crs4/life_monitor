@@ -35,12 +35,20 @@ from rich.prompt import Prompt
 from rich.syntax import Syntax
 from rich.table import Table
 from rich.text import Text
+from rich.theme import Theme
 
 logger = logging.getLogger(__name__)
 
 issues_list = find_issue_types()
 
-console = Console()
+custom_theme = Theme({
+    "info": "dim cyan",
+    "warning": "magenta",
+    "error": "bold red"
+})
+
+
+console = Console(theme=custom_theme)
 error_console = Console(stderr=True, style="bold red")
 
 repository_arg = click.argument('repository', type=str, default=".")
@@ -127,7 +135,12 @@ def check(config, repository, output_path=None):
             table.add_row(issue.get_identifier(), issue.name, status,
                           ", ".join([_.path for _ in x.get_changes(repository)]) if x else "", ", ".join(issue.labels))
         console.print(table)
-
+        # show optional messages
+        console.print("\n\n")
+        for issue in result.issues:
+            for message in issue._messages:
+                console.print(f"[{message.type.value}]{message.type.name}:[/{message.type.value}] {message.text}")
+        console.print("\n\n")
     except Exception as e:
         logger.exception(e)
         error_console.print(str(e))
@@ -182,6 +195,13 @@ def test(config, issue_file, issue_class, write, repository, output_path=None):
                           ", ".join(issue.labels))
             proposed_files.extend(issue_files)
         console.print(table)
+
+        # show optional messages
+        console.print("\n\n")
+        for issue in issues:
+            for message in issue._messages:
+                console.print(f"[{message.type.value}]{message.type.name}:[/{message.type.value}] {message.text}")
+        console.print("\n\n")
     except Exception as e:
         logger.exception(e)
         error_console.print(str(e))
