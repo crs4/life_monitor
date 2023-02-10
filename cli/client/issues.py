@@ -25,7 +25,7 @@ import sys
 
 import click
 from cli.client.utils import get_repository, init_output_path
-from flask.cli import with_appcontext
+# from flask.cli import with_appcontext
 from lifemonitor.api.models.issues import (WorkflowRepositoryIssue,
                                            find_issue_types, load_issue)
 from lifemonitor.utils import to_snake_case
@@ -107,7 +107,7 @@ def get(config, issue_number):
 @repository_arg
 @output_path_arg
 @click.pass_obj
-@with_appcontext
+# @with_appcontext
 def check(config, repository, output_path=None):
     try:
         init_output_path(output_path=output_path)
@@ -153,7 +153,7 @@ def check(config, repository, output_path=None):
 @repository_arg
 @output_path_arg
 @click.pass_obj
-@with_appcontext
+# @with_appcontext
 def test(config, issue_file, issue_class, write, repository, output_path=None):
     proposed_files = []
     try:
@@ -161,10 +161,10 @@ def test(config, issue_file, issue_class, write, repository, output_path=None):
         init_output_path(output_path=output_path)
         logger.debug(issue_file)
         repo = get_repository(repository, local_path=output_path)
-        file_issues = load_issue(issue_file)
-        logger.debug("File issues: %r", [_.name for _ in file_issues])
-        issues_list = [_() for _ in file_issues if not issue_class or _.__name__ in issue_class]
-        logger.debug("Issue: %r", issues_list)
+        issues_types = load_issue(issue_file)
+        logger.debug("Types of issues: %r", [_ for _ in issues_types])
+        issues_list = [_() for _ in issues_types if not issue_class or _.__name__ in issue_class]
+        logger.debug("List of issues: %r", issues_list)
         logger.debug("Repository: %r", repo)
         # Configure Table
         table = Table(title=f"Check Issue Report of Repo [bold]{repository}[/bold]",
