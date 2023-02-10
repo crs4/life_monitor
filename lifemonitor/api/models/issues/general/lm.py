@@ -46,8 +46,8 @@ class MissingLMConfigFile(WorkflowRepositoryIssue):
 
 class InvalidConfigFile(WorkflowRepositoryIssue):
 
-    name = "<code>lifemonitor.yaml</code> not valid"
-    description = "The LifeMonitor configuration <code>lifemonitor.yaml</code> configuration file found on this repository.<br>"
+    name = "Invalid LifeMonitor configuration file"
+    description = "The LifeMonitor configuration <code>.lifemonitor.yaml</code> configuration file found on this repository.<br>"
     labels = ['config', 'enhancement']
     depends_on = [MissingLMConfigFile]
 
