@@ -26,8 +26,11 @@ import os
 import os.path
 from typing import Dict, List, Optional
 
-import lifemonitor.api.models as models
 import yaml
+
+import lifemonitor.api.models as models
+from lifemonitor.schemas.validators import (ConfigFileValidator,
+                                            ValidationResult)
 from lifemonitor.utils import match_ref
 
 from .files import RepositoryFile, TemplateRepositoryFile
@@ -71,6 +74,17 @@ class WorkflowRepositoryConfig(RepositoryFile):
             except Exception:
                 self.__raw_data = {}
         return self.__raw_data
+
+    @property
+    def is_valid(self) -> bool:
+        try:
+            result: ValidationResult = ConfigFileValidator.validate(self.load())
+            return result.valid
+        except Exception:
+            return False
+
+    def validate(self) -> ValidationResult:
+        return ConfigFileValidator.validate(self.load())
 
     @property
     def workflow_name(self) -> str:
