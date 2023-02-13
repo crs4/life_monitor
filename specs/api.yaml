@@ -21,8 +21,8 @@ servers:
       Version 0.9.0-dev of API.
 
 tags:
-  - name: Registries
-    description: Operations related to workflow registries (e.g., WorkflowHub)
+  - name: GitHub Integration
+    description: Resources related to the GitHub integration
   - name: Users
     description: Operations related to users
   - name: Workflows
@@ -31,10 +31,10 @@ tags:
     description: Operations related to test suites
   - name: Test Instances
     description: Operations related to test instances
+  - name: Registries
+    description: Operations related to workflow registries (e.g., WorkflowHub)
   - name: Registry Client Operations
     description: Operations reserved to registry clients
-  - name: GitHub Integration
-    description: Resources related to the GitHub integration
 
 paths:
   /integrations/github/config/schema.json:
@@ -86,13 +86,25 @@ paths:
                     description: |
                       `true` if the config file is valid; 
                       `false` if the file is not valid
-                  message:
-                    type: string
-                    description: A short error message
-                  error:
-                    type: string
-                    description: /
-                      Detailed error description
+                oneOf:
+                  - properties:
+                      data:
+                        type: object
+                        description: Validated configuration, complete with default values.
+                    required:
+                      - data
+                  - properties:
+                      message:
+                        type: string
+                        description: A short error message
+                      error:
+                        type: string
+                        description: /
+                          Detailed error description
+                    required:
+                      - message
+                      - error
+
                 required:
                   - valid
         "400":
@@ -2186,7 +2198,6 @@ components:
         #   writeOnly: true
         #   description: |
         #     An optional authorization header.
-
         #     The `authorization` parameter might be required to download
         #     the RO-Crate containing the workflow if it is not directly
         #     accessible to the user for download
