@@ -206,6 +206,10 @@ def get_external_server_url():
     return get_base_url() if not external_server_url else external_server_url
 
 
+def get_validation_schema_url():
+    return f"{get_external_server_url()}/integrations/github/config/schema.json"
+
+
 def validate_url(url: str) -> bool:
     try:
         result = urllib.parse.urlparse(url)
