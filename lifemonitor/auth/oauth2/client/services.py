@@ -38,6 +38,7 @@ oauth2_registry = OAuth2Registry.get_instance()
 
 def get_providers(skip_registration: bool = False):
     from .providers.github import GitHub
+    from .providers.lsaai import LsAAI
     from .providers.seek import Seek
     providers = []
     logger.debug("Preparing list of providers...")
@@ -45,6 +46,9 @@ def get_providers(skip_registration: bool = False):
     if current_app.config.get('GITHUB_CLIENT_ID', None) \
             and current_app.config.get('GITHUB_CLIENT_SECRET', None):
         providers.append(GitHub)
+    if current_app.config.get('LSAAI_CLIENT_ID', None) \
+            and current_app.config.get('LSAAI_CLIENT_SECRET', None):
+        providers.append(LsAAI)
     # set workflow registries as oauth providers
     if db_initialized():
         try:
@@ -92,7 +96,9 @@ def merge_users(merge_from: User, merge_into: User, provider: str):
 
 
 def save_current_user_identity(identity: OAuthIdentity):
-    session["oauth2_username"] = identity.user.username if identity else None
+    session["oauth2_username"] = identity.user.username \
+        if identity and identity.user \
+        else identity.user_info["preferred_username"] if identity and identity.user_info else None
     session["oauth2_provider_name"] = identity.provider.client_name if identity else None
     session["oauth2_user_info"] = identity.user_info if identity else None
     session["oauth2_user_token"] = identity.token if identity else None
