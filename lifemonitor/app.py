@@ -22,12 +22,13 @@ import logging
 import os
 import time
 
-from flask import Flask, jsonify, redirect, request
+from flask import Flask, jsonify, redirect, render_template, request, url_for
 from flask_cors import CORS
 from flask_migrate import Migrate
 
 import lifemonitor.config as config
 from lifemonitor import __version__ as version
+from lifemonitor.auth.services import current_user
 from lifemonitor.integrations import init_integrations
 from lifemonitor.routes import register_routes
 from lifemonitor.tasks import init_task_queues
@@ -80,6 +81,12 @@ def create_app(env=None, settings=None, init_app=True, worker=False, load_jobs=T
     if init_app:
         with app.app_context() as ctx:
             initialize_app(app, ctx, load_jobs=load_jobs)
+
+    @app.route("/")
+    def index():
+        if not current_user.is_authenticated:
+            return render_template("index.j2")
+        return redirect(url_for('auth.index'))
 
     # append routes to check app health
     @app.route("/health")
