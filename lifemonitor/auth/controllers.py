@@ -44,8 +44,9 @@ from .services import (authorized, current_registry, current_user,
 logger = logging.getLogger(__name__)
 
 blueprint = flask.Blueprint("auth", __name__,
+                            url_prefix="/account",
                             template_folder='templates',
-                            static_folder="static", static_url_path='/static')
+                            static_folder="static", static_url_path='../static')
 
 # Set the login view
 login_manager.login_view = "auth.login"
