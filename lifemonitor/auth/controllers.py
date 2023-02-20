@@ -159,7 +159,7 @@ def get_registry_user(user_id):
 
 @blueprint.route("/", methods=("GET",))
 def index():
-    return redirect(url_for('auth.profile'))
+    return redirect(url_for('auth.profile', back=request.args.get('back', False)))
 
 
 @blueprint.route("/profile", methods=("GET",))

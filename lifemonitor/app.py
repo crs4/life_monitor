@@ -88,6 +88,10 @@ def create_app(env=None, settings=None, init_app=True, worker=False, load_jobs=T
             return render_template("index.j2")
         return redirect(url_for('auth.index'))
 
+    @app.route("/profile")
+    def profile():
+        return redirect(url_for('auth.index', back=request.args.get('back', False)))
+
     # append routes to check app health
     @app.route("/health")
     def health():
