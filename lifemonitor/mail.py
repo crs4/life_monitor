@@ -56,7 +56,7 @@ def send_email_validation_message(user: User):
     if user is None or user.is_anonymous:
         logger.warning("An authenticated user is required")
     with mail.connect() as conn:
-        confirmation_address = f"{get_external_server_url()}/validate_email?code={user.email_verification_code}"
+        confirmation_address = f"{get_external_server_url()}/account/validate_email?code={user.email_verification_code}"
         logo = Base64Encoder.encode_file('lifemonitor/static/img/logo/lm/LifeMonitorLogo.png')
         msg = Message(
             'Confirm your email address',

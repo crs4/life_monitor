@@ -176,7 +176,7 @@ class AuthorizatonHandler:
                 save_current_user_identity(identity)
                 try:
                     if session['sign_in']:
-                        return redirect('/identity_not_found')
+                        return redirect(url_for("auth.identity_not_found"))
                 except KeyError as e:
                     logger.error(e)
 

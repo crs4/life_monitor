@@ -210,7 +210,7 @@ def register():
                 clear_cache()
                 return redirect(url_for("auth.index"))
         return render_template("auth/register.j2", form=form,
-                               action='/register', providers=get_providers())
+                               action=url_for('auth.register'), providers=get_providers())
 
 
 @blueprint.route("/identity_not_found", methods=("GET", "POST"))
@@ -219,14 +219,14 @@ def identity_not_found():
     logger.debug("Current provider identity: %r", identity)
     if not identity or not identity.user:
         flash("Unable to register the user")
-        return redirect('/login')
+        return redirect(url_for("auth.login"))
     form = RegisterForm()
     user = identity.user
     # workaround to force clean DB session
     from lifemonitor.db import db
     db.session.rollback()
     return render_template("auth/identity_not_found.j2", form=form,
-                           action='/register_identity' if flask.session.get('sign_in', False) else '/register',
+                           action=url_for('auth.register_identity') if flask.session.get('sign_in', False) else url_for('auth.register'),
                            identity=identity, user=user, providers=get_providers())
 
 
@@ -249,7 +249,7 @@ def register_identity():
                 flash("Account created", category="success")
                 clear_cache()
                 return redirect(url_for("auth.index"))
-        return render_template("auth/register.j2", form=form, action='/register_identity',
+        return render_template("auth/register.j2", form=form, action=url_for('auth.register'),
                                identity=identity, user=user, providers=get_providers())
 
 
@@ -266,7 +266,7 @@ def login():
             login_user(user)
             session.pop('_flashes', None)
             flash("You have logged in", category="success")
-            return redirect(NextRouteRegistry.pop(url_for("auth.index")))
+            return redirect(NextRouteRegistry.pop(url_for("auth.profile")))
     return render_template("auth/login.j2", form=form, providers=get_providers())
 
 
@@ -277,7 +277,7 @@ def logout():
     session.pop('_flashes', None)
     flash("You have logged out", category="success")
     NextRouteRegistry.clear()
-    return redirect(url_for("auth.index"))
+    return redirect('/')
 
 
 @blueprint.route("/delete_account", methods=("POST",))
@@ -423,7 +423,7 @@ def enable_registry_sync():
         form = RegistrySettingsForm()
         if form.validate_on_submit():
             registry_name = request.values.get("registry", None)
-            return redirect(f'/oauth2/login/{registry_name}?scope=read+write&next=/enable_registry_sync?s={registry_name}')
+            return redirect(f'/oauth2/login/{registry_name}?scope=read+write&next=/account/enable_registry_sync?s={registry_name}')
         else:
             logger.debug("Form validation failed")
             flash("Invalid request", category="error")
