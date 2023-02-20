@@ -257,7 +257,6 @@ def register_identity():
 @next_route_aware
 def login():
     form = LoginForm()
-    session.clear()
     flask.session["confirm_user_details"] = True
     flask.session["sign_in"] = True
     if form.validate_on_submit():
