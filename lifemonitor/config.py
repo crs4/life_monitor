@@ -22,6 +22,7 @@ import configparser
 import logging
 import os
 import re
+from base64 import b64encode
 from logging.config import dictConfig
 from typing import List, Type
 
@@ -91,7 +92,9 @@ class BaseConfig:
     # Initialize LOG_LEVEL from env
     LOG_LEVEL = os.environ.get('LOG_LEVEL', 'DEBUG' if DEBUG else 'INFO')
     # Add a random secret (required to enable HTTP sessions)
-    SECRET_KEY = os.getenv("SECRET_KEY", os.urandom(24))
+    SECRET_KEY = os.getenv("SECRET_KEY", b64encode(os.urandom(24)).decode('utf-8'))
+    WTF_CSRF_ENABLED = True
+    WTF_CSRF_SECRET_KEY = SECRET_KEY
     # FSADeprecationWarning: SQLALCHEMY_TRACK_MODIFICATIONS adds significant
     # overhead and will be disabled by default in the future.  Set it to True
     # or False to suppress this warning.
