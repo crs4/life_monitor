@@ -63,8 +63,6 @@ def create_app(env=None, settings=None, init_app=True, worker=False, load_jobs=T
     flask_app_instance_path = getattr(app_config, "FLASK_APP_INSTANCE_PATH", None)
     # create Flask app instance
     app = Flask(__name__, instance_relative_config=True, instance_path=flask_app_instance_path, **kwargs)
-    # enable CORS
-    CORS(app)
     # register handler for app specific exception
     app.register_error_handler(Exception, handle_exception)
     # set config object
@@ -120,6 +118,8 @@ def create_app(env=None, settings=None, init_app=True, worker=False, load_jobs=T
 def initialize_app(app: Flask, app_context, prom_registry=None, load_jobs: bool = True):
     # init tmp folder
     os.makedirs(app.config.get('BASE_TEMP_FOLDER'), exist_ok=True)
+    # enable CORS
+    CORS(app, expose_headers=["Content-Type", "X-CSRFToken"], supports_credentials=True)
     # configure logging
     config.configure_logging(app)
     # configure app DB
