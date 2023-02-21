@@ -27,10 +27,10 @@ from flask_cors import CORS
 from flask_migrate import Migrate
 
 import lifemonitor.config as config
-from lifemonitor import __version__ as version
 from lifemonitor.auth.services import current_user
 from lifemonitor.integrations import init_integrations
 from lifemonitor.routes import register_routes
+from lifemonitor.metrics import init_metrics
 from lifemonitor.tasks import init_task_queues
 
 from . import commands
@@ -148,25 +148,7 @@ def initialize_app(app: Flask, app_context, prom_registry=None, load_jobs: bool 
     # init mail system
     init_mail(app)
     # initialize integrations
-    init_integrations(app)
+    # initialize metrics engine
+    init_metrics(app, prom_registry)
     # register commands
     commands.register_commands(app)
-
-    # configure prometheus exporter
-    # must be configured after the routes are registered
-    metrics_class = None
-    if os.environ.get('FLASK_ENV') == 'production':
-        if 'PROMETHEUS_MULTIPROC_DIR' in os.environ:
-            from prometheus_flask_exporter.multiprocess import \
-                GunicornPrometheusMetrics
-            metrics_class = GunicornPrometheusMetrics
-        else:
-            logger.warning("Unable to start multiprocess prometheus exporter: 'PROMETHEUS_MULTIPROC_DIR' not set."
-                           "Metrics will be exposed through the `/metrics` endpoint.")
-    if not metrics_class:
-        from prometheus_flask_exporter import PrometheusMetrics
-        metrics_class = PrometheusMetrics
-
-    metrics = metrics_class(app, defaults_prefix='lm', registry=prom_registry)
-    metrics.info('app_info', "LifeMonitor service", version=version)
-    app.metrics = metrics
