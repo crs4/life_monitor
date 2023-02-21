@@ -13,7 +13,7 @@ function log() {
   printf "%s [worker_entrypoint] %s\n" "$(date +"%F %T")" "${*}" >&2
 }
 
-DEBUG="${DEBUG:-0}"
+# DEBUG="${DEBUG:-0}"
 FLASK_ENV="${FLASK_ENV:-production}"
 if [[ "${FLASK_ENV}" == "development" ]]; then
   DEBUG="${DEBUG:-1}"
@@ -63,13 +63,12 @@ fi
 
 # Start worker processes/threads
 while : ; do
-  /opt/homebrew/bin/dramatiq \
+  /usr/local/bin/dramatiq \
     ${verbose:-} \
     ${watch:-} \
     ${processes:-} \
     ${threads:-} \
-    lifemonitor.tasks.worker:broker lifemonitor.tasks 
-    #${queues}
+    lifemonitor.tasks.worker:broker lifemonitor.tasks ${queues}
   exit_code=$?
   if [[ $exit_code == 3 ]]; then
     log "dramatiq worker could not connect to message broker (exit code ${exit_code})" 
