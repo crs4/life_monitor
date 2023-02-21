@@ -33,18 +33,25 @@ from . import stats
 logger = logging.getLogger(__name__)
 
 
-def update_stats():
+def update_stats() -> bool:
     logger.debug("Updating global metrics...")
-    # number of users
-    users.set(stats.users())
-    # number of workflows
-    workflows.set(stats.workflows())
-    # number of workflow versions
-    workflow_versions.set(stats.workflow_versions())
-    # number of workflow registries
-    workflow_registries.set(stats.workflow_registries())
-    # number of workflow suites
-    workflow_suites.set(stats.workflow_suites())
-    # number of workflow test instances
-    workflow_test_instances.set(stats.workflow_test_instances())
-    logger.debug("Updating global metrics... DONE")
+    try:
+        # number of users
+        users.set(stats.users())
+        # number of workflows
+        workflows.set(stats.workflows())
+        # number of workflow versions
+        workflow_versions.set(stats.workflow_versions())
+        # number of workflow registries
+        workflow_registries.set(stats.workflow_registries())
+        # number of workflow suites
+        workflow_suites.set(stats.workflow_suites())
+        # number of workflow test instances
+        workflow_test_instances.set(stats.workflow_test_instances())
+        logger.debug("Updating global metrics... DONE")
+        return True
+    except Exception as e:
+        logger.warning("Unable to update metrics")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.exception(e)
+        return False
