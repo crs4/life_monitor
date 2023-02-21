@@ -148,6 +148,7 @@ def initialize_app(app: Flask, app_context, prom_registry=None, load_jobs: bool 
     # init mail system
     init_mail(app)
     # initialize integrations
+    init_integrations(app)
     # initialize metrics engine
     init_metrics(app, prom_registry)
     # register commands
