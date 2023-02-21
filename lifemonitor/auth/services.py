@@ -91,23 +91,31 @@ current_registry = LocalProxy(lambda: _current_registry())
 current_user = flask_login.current_user
 
 
+def is_user_or_registry_authenticated():
+    logger.debug(f"The current user: {current_user}")
+    logger.debug(f"The current registry: {current_registry}")
+    logger.debug(f"Request args: {request.args}")
+    # raise unauthorized if no user nor registry in session
+    if not current_registry and current_user.is_anonymous:
+        raise NotAuthorizedException(detail=messages.unauthorized_no_user_nor_registry)
+    # if there is a registry user in session
+    # check whether his token issued by the registry is valid
+    if current_registry and not current_user.is_anonymous:
+        if current_registry.name not in current_user.oauth_identity:
+            raise NotAuthorizedException(
+                detail=messages.unauthorized_user_without_registry_identity.format(current_registry.name),
+                authorization_url=url_for('oauth2provider.authorize',
+                                          name=current_registry.name, next=request.url))
+
+
 def authorized(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
-        logger.debug(f"The current user: {current_user}")
-        logger.debug(f"The current registry: {current_registry}")
-        logger.debug(f"Request args: {request.args}")
-        # raise unauthorized if no user nor registry in session
-        if not current_registry and current_user.is_anonymous:
-            raise NotAuthorizedException(detail=messages.unauthorized_no_user_nor_registry)
-        # if there is a registry user in session
-        # check whether his token issued by the registry is valid
-        if current_registry and not current_user.is_anonymous:
-            if current_registry.name not in current_user.oauth_identity:
-                raise NotAuthorizedException(
-                    detail=messages.unauthorized_user_without_registry_identity.format(current_registry.name),
-                    authorization_url=url_for('oauth2provider.authorize',
-                                              name=current_registry.name, next=request.url))
+        is_user_or_registry_authenticated()
+        return func(*args, **kwargs)
+    return wrapper
+
+
         return func(*args, **kwargs)
     return wrapper
 
