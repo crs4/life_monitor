@@ -116,6 +116,18 @@ def authorized(func):
     return wrapper
 
 
+def authorized_by_session_or_apikey(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        apiKey = request.headers.get('ApiKey', None)
+        if not apiKey:
+            authHeader = request.headers.get('Authorization', None)
+            if authHeader:
+                apiKey = authHeader.replace('ApiKey ', '')
+        if not apiKey:
+            raise NotAuthorizedException()
+        check_api_key(api_key=apiKey, required_scopes=())
+        is_user_or_registry_authenticated()
         return func(*args, **kwargs)
     return wrapper
 
