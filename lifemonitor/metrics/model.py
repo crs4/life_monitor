@@ -29,7 +29,7 @@ from prometheus_client import Gauge
 logger = logging.getLogger(__name__)
 
 # Set the global prefix for LifeMonitor metrics
-PREFIX = "lifemonitor"
+PREFIX = "lifemonitor_api"
 
 
 def get_metric_key(key: str) -> str:

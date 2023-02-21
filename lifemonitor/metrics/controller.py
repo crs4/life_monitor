@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 blueprint = Blueprint('metrics', __name__)
 
 
-def register_blueprint(app: Flask, url_prefix: str, metrics_prefix: str):
+def register_blueprint(app: Flask, url_prefix: str):
     app.register_blueprint(blueprint, url_prefix=url_prefix)
 
 

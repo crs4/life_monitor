@@ -36,9 +36,6 @@ logger = logging.getLogger(__name__)
 # Set the metrics endpoint
 __METRICS_ENDPOINT__ = "/metrics"
 
-# Set the global prefix for LifeMonitor metrics
-__METRICS_PREFIX__ = 'lifemonitor_api'
-
 # expose metrics class
 metrics: PrometheusMetrics = None
 
@@ -47,7 +44,7 @@ def init_metrics(app, prom_registry=None):
     global metrics
 
     # Register the '/metrics' endpoint
-    controller.register_blueprint(app, __METRICS_ENDPOINT__, __METRICS_PREFIX__)
+    controller.register_blueprint(app, __METRICS_ENDPOINT__)
 
     # configure prometheus exporter
     # must be configured after the routes are registered
@@ -63,14 +60,11 @@ def init_metrics(app, prom_registry=None):
     if not metrics_class:
         metrics_class = PrometheusMetrics
 
-    metrics = metrics_class(app, defaults_prefix=__METRICS_PREFIX__, registry=prom_registry, metrics_decorator=authorized_by_session_or_apikey)
+    metrics = metrics_class(app, defaults_prefix=model.PREFIX, registry=prom_registry, metrics_decorator=authorized_by_session_or_apikey)
     app.metrics = metrics
 
-    app_version = Info(f"{__METRICS_PREFIX__}_app_version", "LifeMonitor service version")
+    app_version = Info(f"{model.PREFIX}_app_version", "LifeMonitor service version")
     app_version.info({'version': version})
-
-    # Set prefix for lifemonitor metrics
-    model.PREFIX = __METRICS_PREFIX__
 
     # Initialize metrics
     services.update_stats()
