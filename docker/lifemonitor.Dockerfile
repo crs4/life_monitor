@@ -37,14 +37,16 @@ WORKDIR /lm
 COPY \
     docker/wait-for-postgres.sh \
     docker/wait-for-redis.sh \
+    docker/wait-for-file.sh \
     docker/lm_entrypoint.sh \
-    docker/worker_entrypoint.sh \
+    docker/worker_entrypoint.sh \    
     /usr/local/bin/
 
 # Update permissions and install optional certificates
 RUN chmod 755 \
       /usr/local/bin/wait-for-postgres.sh \
       /usr/local/bin/wait-for-redis.sh \
+      /usr/local/bin/wait-for-file.sh \
       /usr/local/bin/lm_entrypoint.sh \
       /usr/local/bin/worker_entrypoint.sh \
       /nextflow \
