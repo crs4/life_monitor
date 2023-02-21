@@ -39,7 +39,7 @@ COPY \
     docker/wait-for-redis.sh \
     docker/wait-for-file.sh \
     docker/lm_entrypoint.sh \
-    docker/worker_entrypoint.sh \    
+    docker/worker_entrypoint.sh \
     /usr/local/bin/
 
 # Update permissions and install optional certificates
