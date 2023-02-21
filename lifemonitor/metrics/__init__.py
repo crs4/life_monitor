@@ -21,14 +21,14 @@
 import logging
 import os
 
-from lifemonitor import __version__ as version
-
-from prometheus_client import Info, Gauge
+from prometheus_client import Info
 from prometheus_flask_exporter import PrometheusMetrics
-from lifemonitor.auth.services import authorized_by_session_or_apikey
 
 import lifemonitor.metrics.controller as controller
-import lifemonitor.metrics.model as stats
+from lifemonitor import __version__ as version
+from lifemonitor.auth.services import authorized_by_session_or_apikey
+
+from . import model, services
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
@@ -69,25 +69,8 @@ def init_metrics(app, prom_registry=None):
     app_version = Info(f"{__METRICS_PREFIX__}_app_version", "LifeMonitor service version")
     app_version.info({'version': version})
 
-    ######################################################################
-    # Expose individual counters through the global `/metrics` endpoint
-    ######################################################################
-    stats.PREFIX = __METRICS_PREFIX__
-    # number of users
-    users = Gauge(stats.get_metric_key('users'), "Number of users registered on the LifeMonitor instance", )
-    users.set(stats.users())
-    # number of workflows
-    workflows = Gauge(stats.get_metric_key('workflows'), "Number of workflows registered on the LifeMonitor instance")
-    workflows.set(stats.workflows())
-    # number of workflow versions
-    workflow_versions = Gauge(stats.get_metric_key('workflow_versions'), "Number of workflow versions registered on the LifeMonitor instance")
-    workflow_versions.set(stats.workflow_versions())
-    # number of workflow registries
-    workflow_registries = Gauge(stats.get_metric_key('workflow_registries'), "Number of workflow registries registered on the LifeMonitor instance")
-    workflow_registries.set(stats.workflow_registries())
-    # number of workflow suites
-    workflow_suites = Gauge(stats.get_metric_key('workflow_suites'), "Number of workflow suites registered on the LifeMonitor instance")
-    workflow_suites.set(stats.workflow_suites())
-    # number of workflow test instances
-    workflow_test_instances = Gauge(stats.get_metric_key('workflow_test_instances'), "Number of workflow test instances registered on the LifeMonitor instance")
-    workflow_test_instances.set(stats.workflow_test_instances())
+    # Set prefix for lifemonitor metrics
+    model.PREFIX = __METRICS_PREFIX__
+
+    # Initialize metrics
+    services.update_stats()

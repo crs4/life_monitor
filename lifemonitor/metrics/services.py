@@ -22,29 +22,29 @@ from __future__ import annotations
 
 import logging
 
-from prometheus_client import Gauge
+from .model import (users, workflow_registries,
+                    workflow_suites,
+                    workflow_test_instances,
+                    workflow_versions, workflows)
 
+from . import stats
 
-# initialize logger
+# initialise logger
 logger = logging.getLogger(__name__)
 
-# Set the global prefix for LifeMonitor metrics
-PREFIX = "lifemonitor"
 
-
-def get_metric_key(key: str) -> str:
-    return f"{PREFIX}_{key}"
-
-
-# number of users
-users = Gauge(get_metric_key('users'), "Number of users registered on the LifeMonitor instance", )
-# number of workflows
-workflows = Gauge(get_metric_key('workflows'), "Number of workflows registered on the LifeMonitor instance")
-# number of workflow versions
-workflow_versions = Gauge(get_metric_key('workflow_versions'), "Number of workflow versions registered on the LifeMonitor instance")
-# number of workflow registries
-workflow_registries = Gauge(get_metric_key('workflow_registries'), "Number of workflow registries registered on the LifeMonitor instance")
-# number of workflow suites
-workflow_suites = Gauge(get_metric_key('workflow_suites'), "Number of workflow suites registered on the LifeMonitor instance")
-# number of workflow test instances
-workflow_test_instances = Gauge(get_metric_key('workflow_test_instances'), "Number of workflow test instances registered on the LifeMonitor instance")
+def update_stats():
+    logger.debug("Updating global metrics...")
+    # number of users
+    users.set(stats.users())
+    # number of workflows
+    workflows.set(stats.workflows())
+    # number of workflow versions
+    workflow_versions.set(stats.workflow_versions())
+    # number of workflow registries
+    workflow_registries.set(stats.workflow_registries())
+    # number of workflow suites
+    workflow_suites.set(stats.workflow_suites())
+    # number of workflow test instances
+    workflow_test_instances.set(stats.workflow_test_instances())
+    logger.debug("Updating global metrics... DONE")

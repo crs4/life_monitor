@@ -22,29 +22,36 @@ from __future__ import annotations
 
 import logging
 
-from prometheus_client import Gauge
+from lifemonitor.api.models import (TestInstance, TestSuite, Workflow,
+                                    WorkflowRegistry, WorkflowVersion)
+from lifemonitor.auth.models import User
 
-
-# initialize logger
+#
 logger = logging.getLogger(__name__)
 
 # Set the global prefix for LifeMonitor metrics
 PREFIX = "lifemonitor"
 
 
-def get_metric_key(key: str) -> str:
-    return f"{PREFIX}_{key}"
+def users():
+    return len(User.all())
 
 
-# number of users
-users = Gauge(get_metric_key('users'), "Number of users registered on the LifeMonitor instance", )
-# number of workflows
-workflows = Gauge(get_metric_key('workflows'), "Number of workflows registered on the LifeMonitor instance")
-# number of workflow versions
-workflow_versions = Gauge(get_metric_key('workflow_versions'), "Number of workflow versions registered on the LifeMonitor instance")
-# number of workflow registries
-workflow_registries = Gauge(get_metric_key('workflow_registries'), "Number of workflow registries registered on the LifeMonitor instance")
-# number of workflow suites
-workflow_suites = Gauge(get_metric_key('workflow_suites'), "Number of workflow suites registered on the LifeMonitor instance")
-# number of workflow test instances
-workflow_test_instances = Gauge(get_metric_key('workflow_test_instances'), "Number of workflow test instances registered on the LifeMonitor instance")
+def workflows():
+    return len(Workflow.all())
+
+
+def workflow_versions():
+    return len(WorkflowVersion.all())
+
+
+def workflow_registries():
+    return len(WorkflowRegistry.all())
+
+
+def workflow_suites():
+    return len(TestSuite.all())
+
+
+def workflow_test_instances():
+    return len(TestInstance.all())
