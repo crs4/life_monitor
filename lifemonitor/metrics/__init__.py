@@ -42,6 +42,9 @@ metrics: PrometheusMetrics = None
 
 def init_metrics(app, prom_registry=None):
     global metrics
+    if metrics is not None:
+        logger.warning("Metrics engine already initialized")
+        return
 
     # Register the '/metrics' endpoint
     controller.register_blueprint(app, __METRICS_ENDPOINT__)
