@@ -40,7 +40,6 @@ def register_blueprint(app: Flask, url_prefix: str, metrics_prefix: str):
     app.register_blueprint(blueprint, url_prefix=url_prefix)
 
 
-
 @blueprint.route('/users', methods=('GET',))
 @authorized_by_session_or_apikey
 def users():
