@@ -25,7 +25,7 @@ from lifemonitor import __version__ as version
 
 from prometheus_client import Info, Gauge
 from prometheus_flask_exporter import PrometheusMetrics
-from lifemonitor.auth.services import authorized, authorized_by_session_or_apikey
+from lifemonitor.auth.services import authorized_by_session_or_apikey
 
 import lifemonitor.metrics.controller as controller
 import lifemonitor.metrics.model as stats
