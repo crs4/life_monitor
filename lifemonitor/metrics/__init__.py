@@ -52,14 +52,13 @@ def init_metrics(app, prom_registry=None):
     # configure prometheus exporter
     # must be configured after the routes are registered
     metrics_class = None
-    if os.environ.get('FLASK_ENV') == 'production':
-        if 'PROMETHEUS_MULTIPROC_DIR' in os.environ:
-            from prometheus_flask_exporter.multiprocess import \
-                GunicornPrometheusMetrics
-            metrics_class = GunicornPrometheusMetrics
-        else:
-            logger.warning("Unable to start multiprocess prometheus exporter: 'PROMETHEUS_MULTIPROC_DIR' not set."
-                           f"Metrics will be exposed through the `{__METRICS_ENDPOINT__}` endpoint.")
+    if 'PROMETHEUS_MULTIPROC_DIR' in os.environ:
+        from prometheus_flask_exporter.multiprocess import \
+            GunicornPrometheusMetrics
+        metrics_class = GunicornPrometheusMetrics
+    else:
+        logger.warning("Unable to start multiprocess prometheus exporter: 'PROMETHEUS_MULTIPROC_DIR' not set."
+                        f"Metrics will be exposed through the `{__METRICS_ENDPOINT__}` endpoint.")
     if not metrics_class:
         metrics_class = PrometheusMetrics
 
