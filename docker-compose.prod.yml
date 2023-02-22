@@ -30,9 +30,25 @@ services:
     environment:
       - "PROMETHEUS_MULTIPROC_DIR=$${PROMETHEUS_MULTIPROC_DIR}"
     
-    # Remember that this service is using its default configuration
-    # to access the database, so the settings must match the environment
-    # configuration set for db above.
+  metrics:
+    image: crs4/lifemonitor
+    entrypoint: lm-metrics-server 8001
+    restart: "always"
+    depends_on:
+      - "db"
+      - "init"
+    env_file: *env_file
     environment:
       - "PROMETHEUS_MULTIPROC_DIR=$${PROMETHEUS_MULTIPROC_DIR}"
-    
+      - "FLASK_ENV=production"
+      - "POSTGRESQL_HOST=db"
+      - "POSTGRESQL_PORT=5432"
+    volumes:
+      - "./certs:/certs:ro"
+      - "./instance:/lm/instance:ro"
+      - "./settings.conf:/lm/settings.conf:ro" # default settings
+      - "data_workflows:/var/data/lm"
+    ports:
+      - "8001:8001"
+    networks:
+      - life_monitor
