@@ -63,7 +63,7 @@ def init_metrics(app, prom_registry=None):
     if not metrics_class:
         metrics_class = PrometheusMetrics
 
-    metrics = metrics_class(app, defaults_prefix=model.PREFIX, registry=prom_registry, metrics_decorator=authorized_by_session_or_apikey)
+    metrics = metrics_class(app, defaults_prefix=model.PREFIX, registry=prom_registry)
     app.metrics = metrics
 
     app_version = Info(f"{model.PREFIX}_app_version", "LifeMonitor service version")
