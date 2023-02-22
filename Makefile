@@ -97,7 +97,7 @@ compose-files: docker-compose.base.yml \
 	docker-compose.dev.yml \
 	docker-compose.extra.yml \
 	docker-compose.test.yml \
-	docker-compose.prom.yml \
+	docker-compose.monitoring.yml \
 	settings.conf
 
 certs:
@@ -185,7 +185,7 @@ start: images compose-files metrics_folder ## Start LifeMonitor in a Production 
 			 $(docker_compose) $${base} \
 	               -f docker-compose.prod.yml \
 				   -f docker-compose.base.yml \
-				   -f docker-compose.prom.yml \
+				   -f docker-compose.monitoring.yml \
 				   config)" > docker-compose.yml \
 	&& $(docker_compose) -f docker-compose.yml up -d redis db init lm worker nginx metrics prometheus;\
 	printf "$(done)\n"
@@ -197,8 +197,9 @@ start-dev: images compose-files metrics_folder ## Start LifeMonitor in a Develop
 	         $(docker_compose) $${base} \
 	               -f docker-compose.base.yml \
 				   -f docker-compose.dev.yml \
+				   -f docker-compose.monitoring.yml \
 				   config)" > docker-compose.yml \
-	&& $(docker_compose) -f docker-compose.yml up -d redis db dev_proxy github_event_proxy metrics init lm worker ;\
+	&& $(docker_compose) -f docker-compose.yml up -d redis db dev_proxy github_event_proxy init lm worker metrics prometheus ;\
 	printf "$(done)\n"
 
 start-testing: compose-files aux_images ro_crates images metrics_folder ## Start LifeMonitor in a Testing environment
@@ -232,6 +233,14 @@ start-aux-services: aux_images ro_crates docker-compose.extra.yml ## Start auxil
 	echo "$$(USER_UID=$$(id -u) USER_GID=$$(id -g) \
 	      $(docker_compose) $${base} -f docker-compose.extra.yml config)" > docker-compose.yml \
 	      && $(docker_compose) up -d seek jenkins ; \
+	printf "$(done)\n"
+
+start-monitoring-services: lifemonitor docker-compose.monitoring.yml ## Start monitoring services (i.e., metrics exposition server, Promethues)
+	@printf "\n$(bold)Starting monitoring services...$(reset)\n" ; \
+	base=$$(if [[ -f "docker-compose.yml" ]]; then echo "-f docker-compose.yml"; fi) ; \
+	echo "$$(USER_UID=$$(id -u) USER_GID=$$(id -g) \
+	      $(docker_compose) $${base} -f docker-compose.monitoring.yml config)" > docker-compose.yml \
+	      && $(docker_compose) up -d metrics prometheus ; \
 	printf "$(done)\n"
 
 # start-jupyter: aux_images docker-compose.extra.yml ## Start jupyter service
@@ -268,6 +277,11 @@ stop-aux-services: docker-compose.extra.yml ## Stop all auxiliary services (i.e.
 	$(docker_compose) -f docker-compose.extra.yml --log-level ERROR stop ; \
 	printf "$(done)\n"
 
+stop-monitoring-services: docker-compose.monitoring.yml ## Stop all monitoring services (i.e., metrics exposition server, Promethues)
+	@echo "$(bold)Teardown monitoring services...$(reset)" ; \
+	$(docker_compose) -f docker-compose.monitoring.yml --log-level ERROR stop ; \
+	printf "$(done)\n"
+
 # stop-jupyter: docker-compose.jupyter.yml ## Stop jupyter service
 # 	@echo "$(bold)Stopping auxiliary services...$(reset)" ; \
 # 	$(docker_compose) -f docker-compose.jupyter.yml --log-level ERROR stop ; \
@@ -293,7 +307,7 @@ stop-dev: compose-files ## Stop all services in the Develop Environment
 	USER_UID=$$(id -u) USER_GID=$$(id -g) \
 	$(docker_compose) -f docker-compose.base.yml \
 				   -f docker-compose.dev.yml \
-				   stop init lm db github_event_proxy dev_proxy redis worker metrics ; \
+				   stop init lm db github_event_proxy dev_proxy redis worker metrics prometheus ; \
 	printf "$(done)\n"
 
 stop: compose-files ## Stop all the services in the Production Environment
@@ -301,8 +315,8 @@ stop: compose-files ## Stop all the services in the Production Environment
 	USER_UID=$$(id -u) USER_GID=$$(id -g) \
 	$(docker_compose) -f docker-compose.base.yml \
 				   -f docker-compose.prod.yml \
-				   -f docker-compose.prom.yml \
-				   --log-level ERROR stop init nginx lm db prometheus metrics redis worker; \
+				   -f docker-compose.monitoring.yml \
+				   --log-level ERROR stop init nginx lm db prometheus metrics redis worker ; \
 	printf "$(done)\n"
 
 stop-all: ## Stop all the services

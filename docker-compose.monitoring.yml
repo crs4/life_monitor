@@ -9,7 +9,5 @@ services:
       - "./prometheus.yml:/etc/prometheus/prometheus.yml"
     networks:
       - life_monitor
-
-networks:
-  life_monitor:
-    name: life_monitor
+  
+  metrics:
