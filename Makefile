@@ -176,7 +176,7 @@ start: images compose-files ## Start LifeMonitor in a Production environment
 				   -f docker-compose.base.yml \
 				   -f docker-compose.prom.yml \
 				   config)" > docker-compose.yml \
-	&& $(docker_compose) -f docker-compose.yml up -d redis db init lm worker nginx prometheus;\
+	&& $(docker_compose) -f docker-compose.yml up -d redis db init lm worker nginx metrics prometheus;\
 	printf "$(done)\n"
 
 start-dev: images compose-files ## Start LifeMonitor in a Development environment
@@ -291,7 +291,7 @@ stop: compose-files ## Stop all the services in the Production Environment
 	$(docker_compose) -f docker-compose.base.yml \
 				   -f docker-compose.prod.yml \
 				   -f docker-compose.prom.yml \
-				   --log-level ERROR stop init nginx lm db prometheus redis worker; \
+				   --log-level ERROR stop init nginx lm db prometheus metrics redis worker; \
 	printf "$(done)\n"
 
 stop-all: ## Stop all the services
