@@ -17,7 +17,9 @@ if [[ "${FLASK_ENV}" == "development" || "${FLASK_ENV}" == "testingSupport" ]]; 
   python "${HOME}/app.py"
 else
   if [[ -z ${PROMETHEUS_MULTIPROC_DIR} ]]; then
-    export PROMETHEUS_MULTIPROC_DIR=$(mktemp -d /tmp/lifemonitor_prometheus_multiproc_dir.XXXXXXXX)
+    metrics_base_path = "/tmp/lifemonitor/metrics"
+    mkdir -p ${metrics_base_path}
+    export PROMETHEUS_MULTIPROC_DIR=$(mktemp -d ${metrics_base_path}/backend.XXXXXXXX)
   fi
   gunicorn --workers "${GUNICORN_WORKERS}"  \
            --threads "${GUNICORN_THREADS}" \

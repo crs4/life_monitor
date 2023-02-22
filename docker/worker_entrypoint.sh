@@ -21,7 +21,9 @@ fi
 
 # Create a directory for the worker's prometheus client if it doesn't exist yet
 if [[ -z ${PROMETHEUS_MULTIPROC_DIR} ]]; then
-    export PROMETHEUS_MULTIPROC_DIR=$(mktemp -d /tmp/lifemonitor_prometheus_multiproc_dir.XXXXXXXX)
+  metrics_base_path = "/tmp/lifemonitor/metrics"
+  mkdir -p ${metrics_base_path}
+  export PROMETHEUS_MULTIPROC_DIR=$(mktemp -d ${metrics_base_path}/worker.XXXXXXXX)
 fi
 
 # dramatiq looks at the following two env variables
