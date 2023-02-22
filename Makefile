@@ -170,7 +170,7 @@ aux_images: tests/config/registries/seek/seek.Dockerfile certs
 start: images compose-files ## Start LifeMonitor in a Production environment
 	@printf "\n$(bold)Starting production services...$(reset)\n" ; \
 	base=$$(if [[ -f "docker-compose.yml" ]]; then echo "-f docker-compose.yml"; fi) ; \
-	echo "$$(USER_UID=$$(id -u) USER_GID=$$(id -g) \
+	echo "$$(USER_UID=$$(id -u) USER_GID=$$(id -g) $$(PROMETHEUS_MULTIPROC_DIR=$$(mktemp -d /tmp/lifemonitor_prometheus_multiproc_dir.XXXXXXXX)) \
 			 $(docker_compose) $${base} \
 	               -f docker-compose.prod.yml \
 				   -f docker-compose.base.yml \
