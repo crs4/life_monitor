@@ -37,7 +37,8 @@ services:
     depends_on:
       - "db"
       - "init"
-    env_file: *env_file
+    env_file:
+      - settings.conf
     environment:
       - "PROMETHEUS_MULTIPROC_DIR=$${PROMETHEUS_MULTIPROC_DIR}"
       - "FLASK_ENV=production"
