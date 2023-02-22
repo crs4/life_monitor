@@ -25,10 +25,13 @@ services:
   lm:
     environment:
       - "PROMETHEUS_MULTIPROC_DIR=$${PROMETHEUS_MULTIPROC_DIR}"
-
+    volumes:
+      - "$${PROMETHEUS_MULTIPROC_DIR}:$${PROMETHEUS_MULTIPROC_DIR}"
   worker:
     environment:
       - "PROMETHEUS_MULTIPROC_DIR=$${PROMETHEUS_MULTIPROC_DIR}"
+    volumes:
+      - "$${PROMETHEUS_MULTIPROC_DIR}:$${PROMETHEUS_MULTIPROC_DIR}"
     
   metrics:
     image: crs4/lifemonitor
@@ -49,6 +52,7 @@ services:
       - "./instance:/lm/instance:ro"
       - "./settings.conf:/lm/settings.conf:ro" # default settings
       - "data_workflows:/var/data/lm"
+      - "$${PROMETHEUS_MULTIPROC_DIR}:$${PROMETHEUS_MULTIPROC_DIR}"
     ports:
       - "8001:8001"
     networks:
