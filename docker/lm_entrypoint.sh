@@ -16,7 +16,9 @@ if [[ "${FLASK_ENV}" == "development" || "${FLASK_ENV}" == "testingSupport" ]]; 
   printf "Staring app in DEV mode (Flask built-in web server with auto reloading)"
   python "${HOME}/app.py"
 else
-  export PROMETHEUS_MULTIPROC_DIR=$(mktemp -d /tmp/lifemonitor_prometheus_multiproc_dir.XXXXXXXX)
+  if [[ -z ${PROMETHEUS_MULTIPROC_DIR} ]]; then
+    export PROMETHEUS_MULTIPROC_DIR=$(mktemp -d /tmp/lifemonitor_prometheus_multiproc_dir.XXXXXXXX)
+  fi
   gunicorn --workers "${GUNICORN_WORKERS}"  \
            --threads "${GUNICORN_THREADS}" \
            --config "${GUNICORN_CONF}" \
