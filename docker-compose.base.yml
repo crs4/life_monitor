@@ -35,12 +35,14 @@ services:
     environment:
       - "FLASK_ENV=production"
       - "POSTGRESQL_HOST=db"
-      - "POSTGRESQL_PORT=5432"
+      - "POSTGRESQL_PORT=5432"      
+      - "PROMETHEUS_MULTIPROC_DIR=/tmp/lifemonitor/metrics"
     volumes:
       - "./certs:/certs:ro"
       - "./instance:/lm/instance:ro"
       - "./settings.conf:/lm/settings.conf:ro" # default settings
       - "data_workflows:/var/data/lm"
+      - "/tmp/lifemonitor/metrics:/tmp/lifemonitor/metrics"
     networks:
       - life_monitor
 
@@ -83,15 +85,17 @@ services:
       - "init"
       - "redis"
     env_file: *env_file
+    environment:
+      - "PROMETHEUS_MULTIPROC_DIR=/tmp/lifemonitor/metrics"
     volumes:
       - "./certs:/certs:ro"
       - "./instance:/lm/instance:ro"
       - "./settings.conf:/lm/settings.conf:ro" # default settings
       - "data_workflows:/var/data/lm"
+      - "/tmp/lifemonitor/metrics:/tmp/lifemonitor/metrics"
     networks:
       - life_monitor
-
-
+  
   redis:
     image: bitnami/redis:6.2
     ports:
@@ -103,6 +107,32 @@ services:
       - life_monitor
     volumes:
       - "data_redis:/bitnami/redis/data"
+
+  metrics:
+    user: "${USER_UID}:${USER_GID}"
+    image: crs4/lifemonitor
+    entrypoint: python3 /lm/lm-metrics-server --port 8090
+    restart: "always"
+    depends_on:
+      - "db"
+      - "init"
+    env_file: *env_file
+    environment:
+      - "PROMETHEUS_MULTIPROC_DIR=/tmp/lifemonitor/metrics"
+      - "FLASK_ENV=production"
+      - "POSTGRESQL_HOST=db"
+      - "POSTGRESQL_PORT=5432"
+    volumes:
+      - "./certs:/certs:ro"
+      - "./instance:/lm/instance:ro"
+      - "./settings.conf:/lm/settings.conf:ro" # default settings
+      - "data_workflows:/var/data/lm"
+      - "/tmp/lifemonitor/metrics:/tmp/lifemonitor/metrics"
+    ports:
+      - "8090:8090"
+    networks:
+      - life_monitor
+
 
 volumes:
   data_db:

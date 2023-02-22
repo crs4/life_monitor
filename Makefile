@@ -84,6 +84,8 @@ ifdef PLATFORMS
 	platforms_opt := $(call get_opts,platforms,$(PLATFORMS))
 endif
 
+# set shared metrics folder
+metrics_folder := /tmp/lifemonitor/metrics
 
 
 all: images
@@ -122,6 +124,15 @@ certs:
 	  printf "\n$(done)\n"; \
 	else \
 	  echo "$(yellow)WARNING: Using existing JWT keys $(reset)" ; \
+	fi
+
+metrics_folder:
+	@if [[ -d $(metrics_folder) ]]; then \
+		rm -Rf $(metrics_folder)/* ; \
+		printf "\n$(yellow)WARNING: $(bold) Existing metrics folder cleaned up !!! $(reset)\n" ; \
+	else \
+		mkdir -p $(metrics_folder) ; \
+		printf "\n$(bold)Shared metrics folder created !!!$(reset)\n" ; \
 	fi
 
 lifemonitor: docker/lifemonitor.Dockerfile certs app.py gunicorn.conf.py ## Build LifeMonitor Docker image
@@ -167,10 +178,10 @@ aux_images: tests/config/registries/seek/seek.Dockerfile certs
 	       tests/config/registries/seek/ ; \
 	printf "$(done)\n"
 
-start: images compose-files ## Start LifeMonitor in a Production environment
+start: images compose-files metrics_folder ## Start LifeMonitor in a Production environment
 	@printf "\n$(bold)Starting production services...$(reset)\n" ; \
 	base=$$(if [[ -f "docker-compose.yml" ]]; then echo "-f docker-compose.yml"; fi) ; \
-	echo "$$(USER_UID=$$(id -u) USER_GID=$$(id -g) $$(PROMETHEUS_MULTIPROC_DIR=$$(mktemp -d /tmp/lifemonitor_prometheus_multiproc_dir.XXXXXXXX)) \
+	echo "$$(USER_UID=$$(id -u) USER_GID=$$(id -g) \
 			 $(docker_compose) $${base} \
 	               -f docker-compose.prod.yml \
 				   -f docker-compose.base.yml \
@@ -179,7 +190,7 @@ start: images compose-files ## Start LifeMonitor in a Production environment
 	&& $(docker_compose) -f docker-compose.yml up -d redis db init lm worker nginx metrics prometheus;\
 	printf "$(done)\n"
 
-start-dev: images compose-files ## Start LifeMonitor in a Development environment
+start-dev: images compose-files metrics_folder ## Start LifeMonitor in a Development environment
 	@printf "\n$(bold)Starting development services...$(reset)\n" ; \
 	base=$$(if [[ -f "docker-compose.yml" ]]; then echo "-f docker-compose.yml"; fi) ; \
 	echo "$$(USER_UID=$$(id -u) USER_GID=$$(id -g) \
@@ -187,10 +198,10 @@ start-dev: images compose-files ## Start LifeMonitor in a Development environmen
 	               -f docker-compose.base.yml \
 				   -f docker-compose.dev.yml \
 				   config)" > docker-compose.yml \
-	&& $(docker_compose) -f docker-compose.yml up -d redis db dev_proxy github_event_proxy init lm worker ;\
+	&& $(docker_compose) -f docker-compose.yml up -d redis db dev_proxy github_event_proxy metrics init lm worker ;\
 	printf "$(done)\n"
 
-start-testing: compose-files aux_images ro_crates images ## Start LifeMonitor in a Testing environment
+start-testing: compose-files aux_images ro_crates images metrics_folder ## Start LifeMonitor in a Testing environment
 	@printf "\n$(bold)Starting testing services...$(reset)\n" ; \
 	base=$$(if [[ -f "docker-compose.yml" ]]; then echo "-f docker-compose.yml"; fi) ; \
 	echo "$$(USER_UID=$$(id -u) USER_GID=$$(id -g) \
@@ -282,7 +293,7 @@ stop-dev: compose-files ## Stop all services in the Develop Environment
 	USER_UID=$$(id -u) USER_GID=$$(id -g) \
 	$(docker_compose) -f docker-compose.base.yml \
 				   -f docker-compose.dev.yml \
-				   stop init lm db github_event_proxy dev_proxy redis worker; \
+				   stop init lm db github_event_proxy dev_proxy redis worker metrics ; \
 	printf "$(done)\n"
 
 stop: compose-files ## Stop all the services in the Production Environment
@@ -336,7 +347,8 @@ clean: ## Clean up the working environment (i.e., running services, network, vol
 help: ## Show help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-.PHONY: all images aux_images certs lifemonitor smeeio ro_crates webserver \
+.PHONY: all images aux_images certs metrics_folder \
+		lifemonitor smeeio ro_crates webserver \
 		start start-dev start-testing start-nginx start-aux-services \
 		run-tests tests \
 		stop-aux-services stop-nginx stop-testing \
