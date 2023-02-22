@@ -11,3 +11,32 @@ services:
       - life_monitor
   
   metrics:
+    user: "${USER_UID}:${USER_GID}"
+    image: crs4/lifemonitor
+    entrypoint: python3 /lm/lm-metrics-server --debug --port 9091
+    restart: "always"
+    # depends_on:
+    #   - "db"
+    #   - "init"
+    env_file:
+      - settings.conf
+    environment:
+      - "PROMETHEUS_MULTIPROC_DIR=/tmp/lifemonitor/metrics"
+      - "FLASK_ENV=production"
+      - "POSTGRESQL_HOST=db"
+      - "POSTGRESQL_PORT=5432"
+    volumes:
+      - "./certs:/certs:ro"
+      - "./instance:/lm/instance:ro"
+      - "./settings.conf:/lm/settings.conf:ro" # default settings
+      # - "data_workflows:/var/data/lm"
+      - "/tmp/lifemonitor/metrics:/tmp/lifemonitor/metrics"
+    ports:
+      - "9091:9091"
+    networks:
+      - life_monitor
+
+
+networks:
+  life_monitor:
+    name: life_monitor
