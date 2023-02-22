@@ -21,3 +21,18 @@ services:
       - "./docker/nginx.conf:/opt/bitnami/nginx/conf/server_blocks/lm.conf:ro"
       - "data_static_files:/app/lifemonitor/static:ro"
       - "data_specs:/app/specs:ro"
+
+  lm:
+    environment:
+      - "PROMETHEUS_MULTIPROC_DIR=$${PROMETHEUS_MULTIPROC_DIR}"
+
+  worker:
+    environment:
+      - "PROMETHEUS_MULTIPROC_DIR=$${PROMETHEUS_MULTIPROC_DIR}"
+    
+    # Remember that this service is using its default configuration
+    # to access the database, so the settings must match the environment
+    # configuration set for db above.
+    environment:
+      - "PROMETHEUS_MULTIPROC_DIR=$${PROMETHEUS_MULTIPROC_DIR}"
+    
