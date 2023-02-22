@@ -21,7 +21,7 @@
 import logging
 import os
 
-from prometheus_client import Info
+from prometheus_client import CollectorRegistry, Info, multiprocess, start_http_server
 from prometheus_flask_exporter import PrometheusMetrics
 
 import lifemonitor.metrics.controller as controller
@@ -71,3 +71,19 @@ def init_metrics(app, prom_registry=None):
 
     # Initialize metrics
     services.update_stats()
+
+
+def start_metrics_server(port: int):
+    from threading import Event
+    logger.error("Starting Prometheus MultiProcess Metrics Server...")
+    if 'PROMETHEUS_MULTIPROC_DIR' in os.environ:
+        try:
+            prom_registry = CollectorRegistry()
+            multiprocess.MultiProcessCollector(prom_registry)
+            start_http_server(port, registry=prom_registry)
+            logger.info("Prometheus MultiProcess Metrics Server Started")
+            Event().wait()
+        except OSError as e:
+            logger.error("Unable to start Prometheus MultiProcess Metrics Server: %s", str(e))
+    else:
+        logger.warning("Unable to start multiprocess prometheus exporter: 'PROMETHEUS_MULTIPROC_DIR' not set.")
