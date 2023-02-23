@@ -79,3 +79,7 @@ services:
       - "./certs:/certs:ro"
     networks:
       - life_monitor
+
+  prometheus:
+    volumes:
+      - "./prometheus.dev.yml:/etc/prometheus/prometheus.yml"
