@@ -24,6 +24,7 @@ data
 lifemonitor/static/dist
 lifemonitor/static/src/node_modules
 docker-compose.yml
+.*docker-compose.yml
 utils/certs/data
 tests/config/data/crates/*.zip
 tests/config/registries/seek/data
