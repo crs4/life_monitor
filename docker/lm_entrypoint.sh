@@ -16,8 +16,9 @@ if [[ "${FLASK_ENV}" == "development" || "${FLASK_ENV}" == "testingSupport" ]]; 
   printf "Staring app in DEV mode (Flask built-in web server with auto reloading)"
   python "${HOME}/app.py"
 else
+  PROMETHEUS_MULTIPROC_DIR=${PROMETHEUS_MULTIPROC_DIR:-}
   if [[ -z ${PROMETHEUS_MULTIPROC_DIR} ]]; then
-    metrics_base_path = "/tmp/lifemonitor/metrics"
+    metrics_base_path="/tmp/lifemonitor/metrics"
     mkdir -p ${metrics_base_path}
     export PROMETHEUS_MULTIPROC_DIR=$(mktemp -d ${metrics_base_path}/backend.XXXXXXXX)
   fi

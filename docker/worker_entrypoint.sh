@@ -13,15 +13,16 @@ function log() {
   printf "%s [worker_entrypoint] %s\n" "$(date +"%F %T")" "${*}" >&2
 }
 
-DEBUG="${DEBUG:-0}"
+DEBUG="${DEBUG:-}"
 FLASK_ENV="${FLASK_ENV:-production}"
 if [[ "${FLASK_ENV}" == "development" ]]; then
   DEBUG="${DEBUG:-1}"
 fi
 
 # Create a directory for the worker's prometheus client if it doesn't exist yet
+PROMETHEUS_MULTIPROC_DIR=${PROMETHEUS_MULTIPROC_DIR:-}
 if [[ -z ${PROMETHEUS_MULTIPROC_DIR} ]]; then
-  metrics_base_path = "/tmp/lifemonitor/metrics"
+  metrics_base_path="/tmp/lifemonitor/metrics"
   mkdir -p ${metrics_base_path}
   export PROMETHEUS_MULTIPROC_DIR=$(mktemp -d ${metrics_base_path}/worker.XXXXXXXX)
 fi
