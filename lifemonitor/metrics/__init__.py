@@ -21,14 +21,17 @@
 import logging
 import os
 
-from prometheus_client import CollectorRegistry, Info, multiprocess, start_http_server
+from prometheus_client import (CollectorRegistry, Info, multiprocess,
+                               start_http_server)
 from prometheus_flask_exporter import PrometheusMetrics
 
 import lifemonitor.metrics.controller as controller
 from lifemonitor import __version__ as version
-from lifemonitor.auth.services import authorized_by_session_or_apikey
 
 from . import model, services
+
+# from lifemonitor.auth.services import authorized_by_session_or_apikey
+
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
@@ -52,13 +55,15 @@ def init_metrics(app, prom_registry=None):
     # configure prometheus exporter
     # must be configured after the routes are registered
     metrics_class = None
-    if 'PROMETHEUS_MULTIPROC_DIR' in os.environ:
-        from prometheus_flask_exporter.multiprocess import \
-            GunicornPrometheusMetrics
-        metrics_class = GunicornPrometheusMetrics
-    else:
-        logger.warning("Unable to start multiprocess prometheus exporter: 'PROMETHEUS_MULTIPROC_DIR' not set."
-                        f"Metrics will be exposed through the `{__METRICS_ENDPOINT__}` endpoint.")
+    if not app.config.get('WORKER', False) and os.environ.get('FLASK_ENV') == 'production':
+        if 'PROMETHEUS_MULTIPROC_DIR' in os.environ:
+            from prometheus_flask_exporter.multiprocess import \
+                GunicornPrometheusMetrics
+            metrics_class = GunicornPrometheusMetrics
+        else:
+            logger.warning("Unable to start multiprocess prometheus exporter: 'PROMETHEUS_MULTIPROC_DIR' not set."
+                           f"Metrics will be exposed through the `{__METRICS_ENDPOINT__}` endpoint.")
+
     if not metrics_class:
         metrics_class = PrometheusMetrics
 
