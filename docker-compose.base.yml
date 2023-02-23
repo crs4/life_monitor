@@ -84,9 +84,12 @@ services:
       - "db"
       - "init"
       - "redis"
+    user: "${USER_UID}:${USER_GID}"
     env_file: *env_file
     environment:
-      - "PROMETHEUS_MULTIPROC_DIR=/tmp/lifemonitor/metrics"
+      - "FLASK_ENV=production"
+      - "POSTGRESQL_HOST=db"
+      - "POSTGRESQL_PORT=5432"
     volumes:
       - "./certs:/certs:ro"
       - "./instance:/lm/instance:ro"

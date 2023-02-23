@@ -35,6 +35,8 @@ services:
 
   worker:
     user: "${USER_UID}:${USER_GID}"
+    environment:
+      - "FLASK_ENV=development"
     volumes:
       - "./:/lm"
       - "/lm/lifemonitor/static/dist"
