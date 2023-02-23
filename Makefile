@@ -235,14 +235,6 @@ start-aux-services: aux_images ro_crates docker-compose.extra.yml ## Start auxil
 	      && $(docker_compose) up -d seek jenkins ; \
 	printf "$(done)\n"
 
-start-monitoring-services: lifemonitor docker-compose.monitoring.yml ## Start monitoring services (i.e., metrics exposition server, Promethues)
-	@printf "\n$(bold)Starting monitoring services...$(reset)\n" ; \
-	base=$$(if [[ -f "docker-compose.yml" ]]; then echo "-f docker-compose.yml"; fi) ; \
-	echo "$$(USER_UID=$$(id -u) USER_GID=$$(id -g) \
-	      $(docker_compose) $${base} -f docker-compose.monitoring.yml config)" > docker-compose.yml \
-	      && $(docker_compose) up -d metrics prometheus ; \
-	printf "$(done)\n"
-
 # start-jupyter: aux_images docker-compose.extra.yml ## Start jupyter service
 # 	@printf "\n$(bold)Starting jupyter service...$(reset)\n" ; \
 # 	base=$$(if [[ -f "docker-compose.yml" ]]; then echo "-f docker-compose.yml"; fi) ; \
@@ -275,11 +267,6 @@ tests: start-testing ## CI utility to setup, run tests and teardown a testing en
 stop-aux-services: docker-compose.extra.yml ## Stop all auxiliary services (i.e., Jenkins, Seek)
 	@echo "$(bold)Teardown auxiliary services...$(reset)" ; \
 	$(docker_compose) -f docker-compose.extra.yml --log-level ERROR stop ; \
-	printf "$(done)\n"
-
-stop-monitoring-services: docker-compose.monitoring.yml ## Stop all monitoring services (i.e., metrics exposition server, Promethues)
-	@echo "$(bold)Teardown monitoring services...$(reset)" ; \
-	$(docker_compose) -f docker-compose.monitoring.yml --log-level ERROR stop ; \
 	printf "$(done)\n"
 
 # stop-jupyter: docker-compose.jupyter.yml ## Stop jupyter service
