@@ -31,18 +31,17 @@ services:
     depends_on:
       - "db"
       - "init"
+    user: "${USER_UID}:${USER_GID}"
     env_file: *env_file
     environment:
       - "FLASK_ENV=production"
       - "POSTGRESQL_HOST=db"
-      - "POSTGRESQL_PORT=5432"      
-      - "PROMETHEUS_MULTIPROC_DIR=/tmp/lifemonitor/metrics"
+      - "POSTGRESQL_PORT=5432"
     volumes:
       - "./certs:/certs:ro"
       - "./instance:/lm/instance:ro"
       - "./settings.conf:/lm/settings.conf:ro" # default settings
       - "data_workflows:/var/data/lm"
-      - "/tmp/lifemonitor/metrics:/tmp/lifemonitor/metrics"
     networks:
       - life_monitor
 
@@ -95,7 +94,6 @@ services:
       - "./instance:/lm/instance:ro"
       - "./settings.conf:/lm/settings.conf:ro" # default settings
       - "data_workflows:/var/data/lm"
-      - "/tmp/lifemonitor/metrics:/tmp/lifemonitor/metrics"
     networks:
       - life_monitor
   
