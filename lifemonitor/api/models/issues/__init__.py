@@ -24,16 +24,43 @@ import abc
 import inspect
 import logging
 import os
+from enum import Enum
 from hashlib import sha1
 from importlib import import_module
 from pathlib import Path
 from typing import List, Optional, Type
 
 import networkx as nx
+
 from lifemonitor.api.models import repositories
 
 # set module level logger
 logger = logging.getLogger(__name__)
+
+
+class IssueMessage:
+
+    class TYPE(Enum):
+        INFO = "info"
+        WARNING = "warning"
+        ERROR = "error"
+
+    def __init__(self, type: TYPE, text: str) -> None:
+        self._type = type
+        self._text = text
+
+    def __eq__(self, other):
+        if isinstance(other, IssueMessage):
+            return self.type == other.type and self.text == other.text
+        return False
+
+    @property
+    def type(self) -> TYPE:
+        return self._type
+
+    @property
+    def text(self) -> str:
+        return self._text
 
 
 class WorkflowRepositoryIssue():
@@ -47,6 +74,7 @@ class WorkflowRepositoryIssue():
 
     def __init__(self):
         self._changes = []
+        self._messages: List[IssueMessage] = []
 
     @property
     def id(self) -> str:
@@ -85,6 +113,18 @@ class WorkflowRepositoryIssue():
 
     def has_changes(self) -> bool:
         return bool(self._changes) and len(self._changes) > 0
+
+    def add_message(self, message: IssueMessage):
+        self._messages.append(message)
+
+    def remove_message(self, message: IssueMessage):
+        self._messages.remove(message)
+
+    def get_messages(self) -> List[IssueMessage]:
+        return self._messages
+
+    def has_messages(self) -> bool:
+        return len(self._messages) > 0
 
     @classmethod
     def get_identifier(cls) -> str:
@@ -134,8 +174,9 @@ class WorkflowRepositoryIssue():
 
 def load_issue(issue_file) -> List[Type[WorkflowRepositoryIssue]]:
     issues = {}
-    base_module = '{}'.format(os.path.join(os.path.dirname(issue_file)).replace('/', '.'))
+    base_module = '{}'.format(os.path.join(os.path.dirname(issue_file)).replace('./', '').replace('/', '.'))
     m = '{}.{}'.format(base_module, os.path.basename(issue_file)[:-3])
+    logger.debug("BaseModule: %r -- Module: %r" % (base_module, m))
     mod = import_module(m)
     for _, obj in inspect.getmembers(mod):
         if inspect.isclass(obj) \

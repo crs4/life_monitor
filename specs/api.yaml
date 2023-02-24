@@ -21,8 +21,8 @@ servers:
       Version 0.9.0-dev of API.
 
 tags:
-  - name: Registries
-    description: Operations related to workflow registries (e.g., WorkflowHub)
+  - name: GitHub Integration
+    description: Resources related to the GitHub integration
   - name: Users
     description: Operations related to users
   - name: Workflows
@@ -31,10 +31,85 @@ tags:
     description: Operations related to test suites
   - name: Test Instances
     description: Operations related to test instances
+  - name: Registries
+    description: Operations related to workflow registries (e.g., WorkflowHub)
   - name: Registry Client Operations
     description: Operations reserved to registry clients
 
 paths:
+  /integrations/github/config/schema.json:
+    get:
+      tags: ["GitHub Integration"]
+      x-openapi-router-controller: lifemonitor.schemas.controller
+      operationId: "lifemonitor_json"
+      summary: "JSON Schema of lifemonitor.json"
+      description: "JSON Schema for the `lifemonitor.json` config file"
+      responses:
+        "200":
+          description: The JSON schema
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /integrations/github/config/validate:
+    post:
+      tags: ["GitHub Integration"]
+      x-openapi-router-controller: lifemonitor.schemas.controller
+      operationId: "validate"
+      summary: "Validate config file"
+      description: |
+        Validate a `lifemonitor.yaml` config file according to the according to the
+        [/integrations/github/config/schema.json](/integrations/github/config/schema.json) schema.
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              description: A YAML configuration file
+              type: string
+              format: binary
+      responses:
+        "200":
+          description: The JSON schema
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:
+                    type: boolean
+                    description: |
+                      `true` if the config file is valid; 
+                      `false` if the file is not valid
+                oneOf:
+                  - properties:
+                      data:
+                        type: object
+                        description: Validated configuration, complete with default values.
+                    required:
+                      - data
+                  - properties:
+                      message:
+                        type: string
+                        description: A short error message
+                      error:
+                        type: string
+                        description: /
+                          Detailed error description
+                    required:
+                      - message
+                      - error
+
+                required:
+                  - valid
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
   /registries:
     get:
       tags: ["Registries"]
@@ -2123,7 +2198,6 @@ components:
         #   writeOnly: true
         #   description: |
         #     An optional authorization header.
-
         #     The `authorization` parameter might be required to download
         #     the RO-Crate containing the workflow if it is not directly
         #     accessible to the user for download

@@ -22,8 +22,10 @@ from __future__ import annotations
 
 import logging
 
-from lifemonitor.api.models.issues import WorkflowRepositoryIssue
+from lifemonitor.utils import get_validation_schema_url
+from lifemonitor.api.models.issues import IssueMessage, WorkflowRepositoryIssue
 from lifemonitor.api.models.repositories import WorkflowRepository
+from lifemonitor.schemas.validators import ValidationError, ValidationResult
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -40,4 +42,24 @@ class MissingLMConfigFile(WorkflowRepositoryIssue):
             config = repo.generate_config()
             self.add_change(config)
             return True
+        return False
+
+
+class InvalidConfigFile(WorkflowRepositoryIssue):
+
+    name = "Invalid LifeMonitor configuration file"
+    description = "The LifeMonitor configuration file found on this repository "\
+                  f"is not valid according to the schema " \
+                  f"<a href='{get_validation_schema_url()}'>{get_validation_schema_url()}</a>.<br>"
+    labels = ['config', 'invalid', 'enhancement']
+    depends_on = [MissingLMConfigFile]
+
+    def check(self, repo: WorkflowRepository) -> bool:
+        if repo.config is None:
+            return True
+        result: ValidationResult = repo.config.validate()
+        if not result.valid:
+            if isinstance(result, ValidationError):
+                self.add_message(IssueMessage(IssueMessage.TYPE.ERROR, result.error))
+                return True
         return False
