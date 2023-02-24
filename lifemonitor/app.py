@@ -22,12 +22,13 @@ import logging
 import os
 import time
 
-from flask import Flask, jsonify, redirect, request
+from flask import Flask, jsonify, redirect, render_template, request, url_for
 from flask_cors import CORS
 from flask_migrate import Migrate
 
 import lifemonitor.config as config
 from lifemonitor import __version__ as version
+from lifemonitor.auth.services import current_user
 from lifemonitor.integrations import init_integrations
 from lifemonitor.routes import register_routes
 from lifemonitor.tasks import init_task_queues
@@ -63,8 +64,6 @@ def create_app(env=None, settings=None, init_app=True, worker=False, load_jobs=T
     flask_app_instance_path = getattr(app_config, "FLASK_APP_INSTANCE_PATH", None)
     # create Flask app instance
     app = Flask(__name__, instance_relative_config=True, instance_path=flask_app_instance_path, **kwargs)
-    # enable CORS
-    CORS(app)
     # register handler for app specific exception
     app.register_error_handler(Exception, handle_exception)
     # set config object
@@ -82,6 +81,16 @@ def create_app(env=None, settings=None, init_app=True, worker=False, load_jobs=T
     if init_app:
         with app.app_context() as ctx:
             initialize_app(app, ctx, load_jobs=load_jobs)
+
+    @app.route("/")
+    def index():
+        if not current_user.is_authenticated:
+            return render_template("index.j2")
+        return redirect(url_for('auth.index'))
+
+    @app.route("/profile")
+    def profile():
+        return redirect(url_for('auth.index', back=request.args.get('back', False)))
 
     # append routes to check app health
     @app.route("/health")
@@ -120,6 +129,8 @@ def create_app(env=None, settings=None, init_app=True, worker=False, load_jobs=T
 def initialize_app(app: Flask, app_context, prom_registry=None, load_jobs: bool = True):
     # init tmp folder
     os.makedirs(app.config.get('BASE_TEMP_FOLDER'), exist_ok=True)
+    # enable CORS
+    CORS(app, expose_headers=["Content-Type", "X-CSRFToken"], supports_credentials=True)
     # configure logging
     config.configure_logging(app)
     # configure app DB
