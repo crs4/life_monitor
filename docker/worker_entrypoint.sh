@@ -72,13 +72,13 @@ fi
 
 # Start worker processes/threads
 while : ; do
-  /opt/homebrew/bin/dramatiq \
+  /usr/local/bin/dramatiq \
     ${verbose:-} \
     ${watch:-} \
     ${processes:-} \
     ${threads:-} \
-    lifemonitor.tasks.worker:broker lifemonitor.tasks 
-    # ${queues}
+    lifemonitor.tasks.worker:broker lifemonitor.tasks ${queues}
+  exit_code=$?
   exit_code=$?
   if [[ $exit_code == 3 ]]; then
     log "dramatiq worker could not connect to message broker (exit code ${exit_code})" 
