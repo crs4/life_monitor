@@ -49,3 +49,7 @@ wheel~=0.37.1
 Werkzeug~=2.2.3
 repo2rocrate~=0.1.1
 urllib3==1.26.11
+flask-socketio==5.3.2
+gevent-websocket==0.10.1
+eventlet==0.33.2
+uwsgi==2.0.21
