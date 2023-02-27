@@ -208,6 +208,7 @@ start-testing: compose-files aux_images ro_crates images reset_compose ## Start 
 	         $(docker_compose) $${base} \
                    -f docker-compose.extra.yml \
 				   -f docker-compose.base.yml \
+				   -f docker-compose.monitoring.yml \
 				   -f docker-compose.dev.yml \
 				   -f docker-compose.test.yml \
 				   config)" > docker-compose.yml \
@@ -258,6 +259,7 @@ tests: start-testing ## CI utility to setup, run tests and teardown a testing en
 	  	USER_UID=$$(id -u) USER_GID=$$(id -g) \
 		$(docker_compose) -f docker-compose.extra.yml \
 				   -f docker-compose.base.yml \
+				   -f docker-compose.monitoring.yml \
 				   -f docker-compose.dev.yml \
 				   -f docker-compose.test.yml \
 				   down ; \
