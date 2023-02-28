@@ -14,10 +14,20 @@ scrape_configs:
   static_configs:
   - targets:
     - lm:8000
+  scheme: https
+  tls_config:
+    insecure_skip_verify: true
 - job_name: lifemonitor_worker
   static_configs:
   - targets:
     - worker:9191
+- job_name: lifemonitor_websocket
+  static_configs:
+  - targets:
+    - websocket:8000
+  scheme: https
+  tls_config:
+    insecure_skip_verify: true
 # alerting:
 #   alertmanagers:
 #   - kubernetes_sd_configs:
