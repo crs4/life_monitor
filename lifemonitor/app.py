@@ -29,8 +29,8 @@ from flask_migrate import Migrate
 import lifemonitor.config as config
 from lifemonitor.auth.services import current_user
 from lifemonitor.integrations import init_integrations
-from lifemonitor.routes import register_routes
 from lifemonitor.metrics import init_metrics
+from lifemonitor.routes import register_routes
 from lifemonitor.tasks import init_task_queues
 
 from . import commands

@@ -30,9 +30,6 @@ from lifemonitor import __version__ as version
 
 from . import model, services
 
-# from lifemonitor.auth.services import authorized_by_session_or_apikey
-
-
 # Config a module level logger
 logger = logging.getLogger(__name__)
 
@@ -54,8 +51,8 @@ def init_metrics(app, prom_registry=None):
 
     # configure prometheus exporter
     # must be configured after the routes are registered
-    metrics_class = None
-    if not app.config.get('WORKER', False) and os.environ.get('FLASK_ENV') == 'production':
+    metrics_class = PrometheusMetrics
+    if app.config.get('GUNICORN_SERVER', False):
         if 'PROMETHEUS_MULTIPROC_DIR' in os.environ:
             from prometheus_flask_exporter.multiprocess import \
                 GunicornPrometheusMetrics
@@ -63,13 +60,13 @@ def init_metrics(app, prom_registry=None):
         else:
             logger.warning("Unable to start multiprocess prometheus exporter: 'PROMETHEUS_MULTIPROC_DIR' not set."
                            f"Metrics will be exposed through the `{__METRICS_ENDPOINT__}` endpoint.")
+    logger.warning("Configured class for metrics: %r", metrics_class)
 
-    if not metrics_class:
-        metrics_class = PrometheusMetrics
-
+    # init metrics
     metrics = metrics_class(app, defaults_prefix=model.PREFIX, registry=prom_registry)
     app.metrics = metrics
 
+    # update metrics with app_version
     app_version = Info(f"{model.PREFIX}_app_version", "LifeMonitor service version")
     app_version.info({'version': version})
 
@@ -79,7 +76,7 @@ def init_metrics(app, prom_registry=None):
 
 def start_metrics_server(port: int):
     from threading import Event
-    logger.error("Starting Prometheus MultiProcess Metrics Server...")
+    logger.info("Starting Prometheus MultiProcess Metrics Server...")
     if 'PROMETHEUS_MULTIPROC_DIR' in os.environ:
         try:
             prom_registry = CollectorRegistry()
