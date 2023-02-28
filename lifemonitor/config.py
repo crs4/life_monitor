@@ -29,6 +29,8 @@ from typing import List, Type
 import dotenv
 from flask import current_app
 
+from lifemonitor.utils import bool_from_string
+
 from .db import db_uri
 
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -110,6 +112,8 @@ class BaseConfig:
     # Disable the Flask APScheduler REST API, by default
     SCHEDULER_API_ENABLED = False
     WORKER = False
+    WEBSOCKET_SERVER = bool_from_string(os.environ.get("WEBSOCKET_SERVER", "false"))
+    GUNICORN_SERVER = bool_from_string(os.environ.get("GUNICORN_SERVER", "false"))
     # Default Cache Settings
     CACHE_TYPE = "flask_caching.backends.simplecache.SimpleCache"
     CACHE_DEFAULT_TIMEOUT = 60
