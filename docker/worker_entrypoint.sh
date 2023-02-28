@@ -13,6 +13,11 @@ function log() {
   printf "%s [worker_entrypoint] %s\n" "$(date +"%F %T")" "${*}" >&2
 }
 
+# wait for services
+wait-for-postgres.sh
+wait-for-redis.sh
+
+# set DEBUG flag
 DEBUG="${DEBUG:-}"
 FLASK_ENV="${FLASK_ENV:-production}"
 if [[ -z "${DEBUG}" && "${FLASK_ENV}" == "development" ]]; then
