@@ -31,12 +31,14 @@ services:
     depends_on:
       - "db"
       - "init"
+      - "redis"
     user: "${USER_UID}:${USER_GID}"
     env_file: *env_file
     environment:
       - "FLASK_ENV=production"
       - "POSTGRESQL_HOST=db"
       - "POSTGRESQL_PORT=5432"
+      - "WEBSOCKET_SERVER=false"
     volumes:
       - "./certs:/certs:ro"
       - "./instance:/lm/instance:ro"
@@ -89,6 +91,7 @@ services:
       - "FLASK_ENV=production"
       - "POSTGRESQL_HOST=db"
       - "POSTGRESQL_PORT=5432"
+      - "WEBSOCKET_SERVER=false"
     volumes:
       - "./certs:/certs:ro"
       - "./instance:/lm/instance:ro"
@@ -96,7 +99,34 @@ services:
       - "data_workflows:/var/data/lm"
     networks:
       - life_monitor
-  
+
+  ws_server:
+    image: crs4/lifemonitor
+    entrypoint: /usr/local/bin/ws_entrypoint.sh
+    restart: "always"
+    depends_on:
+      - "db"
+      - "init"
+      - "redis"
+    user: "${USER_UID}:${USER_GID}"
+    env_file: *env_file
+    environment:
+      - "FLASK_ENV=production"
+      - "WEBSOCKET_SERVER=true"
+      - "POSTGRESQL_HOST=db"
+      - "POSTGRESQL_PORT=5432"
+      - "LIFEMONITOR_TLS_KEY=/certs/lm.key"
+      - "LIFEMONITOR_TLS_CERT=/certs/lm.crt"
+    volumes:
+      - "./certs:/certs:ro"
+      - "./instance:/lm/instance:ro"
+      - "./settings.conf:/lm/settings.conf:ro" # default settings
+      - "data_workflows:/var/data/lm"
+    ports:
+      - "8001:8000"
+    networks:
+      - life_monitor
+
   redis:
     image: bitnami/redis:6.2
     ports:
@@ -109,13 +139,13 @@ services:
     volumes:
       - "data_redis:/bitnami/redis/data"
 
-
 volumes:
   data_db:
   data_static_files:
   data_specs:
   data_redis:
   data_workflows:
+
 
 networks:
   life_monitor:

@@ -84,9 +84,6 @@ ifdef PLATFORMS
 	platforms_opt := $(call get_opts,platforms,$(PLATFORMS))
 endif
 
-# set shared metrics folder
-metrics_folder := /tmp/lifemonitor/metrics
-
 
 all: images
 
@@ -185,7 +182,7 @@ start: images compose-files prod reset_compose ## Start LifeMonitor in a Product
 				   -f docker-compose.monitoring.yml \
 				   config)" > docker-compose.yml \
 	&& cp {,.prod.}docker-compose.yml \
-	&& $(docker_compose) -f docker-compose.yml up -d redis db init lm worker nginx prometheus;\
+	&& $(docker_compose) -f docker-compose.yml up -d redis db init lm worker ws_server nginx prometheus ;\
 	printf "$(done)\n"
 
 start-dev: images compose-files dev reset_compose ## Start LifeMonitor in a Development environment
@@ -198,7 +195,7 @@ start-dev: images compose-files dev reset_compose ## Start LifeMonitor in a Deve
 				   -f docker-compose.dev.yml \
 				   config)" > docker-compose.yml \
 	&& cp {,.dev.}docker-compose.yml \
-	&& $(docker_compose) -f docker-compose.yml up -d redis db dev_proxy github_event_proxy init lm worker prometheus ;\
+	&& $(docker_compose) -f docker-compose.yml up -d redis db dev_proxy github_event_proxy init lm worker ws_server prometheus ;\
 	printf "$(done)\n"
 
 start-testing: compose-files aux_images ro_crates images reset_compose ## Start LifeMonitor in a Testing environment
@@ -213,7 +210,7 @@ start-testing: compose-files aux_images ro_crates images reset_compose ## Start 
 				   -f docker-compose.test.yml \
 				   config)" > docker-compose.yml \
 	&& cp {,.test.}docker-compose.yml \
-	&& $(docker_compose) -f docker-compose.yml up -d db lmtests seek jenkins webserver worker ;\
+	&& $(docker_compose) -f docker-compose.yml up -d db lmtests seek jenkins webserver worker ws_server ;\
 	$(docker_compose) -f ./docker-compose.yml \
 		exec -T lmtests /bin/bash -c "tests/wait-for-it.sh seek:3000 -t 600"; \
 	printf "$(done)\n"
@@ -288,7 +285,7 @@ stop-testing: compose-files ## Stop all the services in the Testing Environment
 				   -f docker-compose.base.yml \
 				   -f docker-compose.dev.yml \
 				   -f docker-compose.test.yml \
-				   --log-level ERROR stop db lmtests seek jenkins webserver worker ; \
+				   --log-level ERROR stop db lmtests seek jenkins webserver worker ws_server ; \
 	printf "$(done)\n"
 
 stop-dev: compose-files ## Stop all services in the Develop Environment
@@ -296,7 +293,7 @@ stop-dev: compose-files ## Stop all services in the Develop Environment
 	USER_UID=$$(id -u) USER_GID=$$(id -g) \
 	$(docker_compose) -f docker-compose.base.yml \
 				   -f docker-compose.dev.yml \
-				   stop init lm db github_event_proxy dev_proxy redis worker metrics prometheus ; \
+				   stop init lm db github_event_proxy dev_proxy redis worker ws_server prometheus ; \
 	printf "$(done)\n"
 
 stop: compose-files ## Stop all the services in the Production Environment
@@ -305,7 +302,7 @@ stop: compose-files ## Stop all the services in the Production Environment
 	$(docker_compose) -f docker-compose.base.yml \
 				   -f docker-compose.prod.yml \
 				   -f docker-compose.monitoring.yml \
-				   --log-level ERROR stop init nginx lm db prometheus metrics redis worker ; \
+				   --log-level ERROR stop init nginx lm db prometheus redis worker ws_server ; \
 	printf "$(done)\n"
 
 stop-all: ## Stop all the services
