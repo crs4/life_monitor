@@ -18,66 +18,50 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import functools
 import logging
 import os
 import ssl
-from typing import Dict
-
-from flask_socketio import SocketIO, disconnect
 
 from lifemonitor.app import create_app
+from lifemonitor.utils import bool_from_string
 
+# initialise logger
 logger = logging.getLogger(__name__)
 
-# create an app instance
-application = create_app()
 
-if __name__ == '__main__':
-    """ Start development server"""
+# create an app instance
+application = create_app(init_app=True)
+
+
+def start_websocket_server():
+    from lifemonitor.ws import initialise_ws
+
+    # init SocketIO middleware
+    socketIO = initialise_ws(application)
+    # start app server with SocketIO server enabled
+    socketIO.run(application, host="0.0.0.0", port=8000,
+                 debug=False,
+                 keyfile=os.environ.get("LIFEMONITOR_TLS_KEY", './certs/lm.key'),
+                 certfile=os.environ.get("LIFEMONITOR_TLS_CERT", './certs/lm.crt'))
+
+
+def start_app_server():
+    """ Start Flask App"""
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
     context.load_cert_chain(
         os.environ.get("LIFEMONITOR_TLS_CERT", './certs/lm.crt'),
         os.environ.get("LIFEMONITOR_TLS_KEY", './certs/lm.key'))
+    application.run(host="0.0.0.0", port=8000, ssl_context=context)
 
-    # init SocketIO middleware
-    socketIO = SocketIO(application, cors_allowed_origins="*")
 
-    def authenticated_only(f):
-        @functools.wraps(f)
-        def wrapped(*args, **kwargs):
-            logger.debug("args: %r", args)
-            logger.debug("kwargs: %r", kwargs)
-            payload: Dict = args[0] if len(args) > 0 else None  # type: ignore
-            if 'token' not in payload:
-                logger.debug("Disconnecting...")
-                disconnect()
-            else:
-                logger.debug("Connection accepted....")
-                return f(payload)
-        return wrapped
+def start():
+    if bool_from_string(os.environ.get("WEBSOCKET_SERVER", True)):
+        logger.info("Starting App+WebSocket Server...")
+        start_websocket_server()
+    else:
+        logger.info("Starting App Server...")
+        start_app_server()
 
-    @socketIO.on('connect')
-    def connect(auth):
-        logger.debug("Connected: %r", auth)
-        return True
 
-    @socketIO.on('message')
-    def handle_message(data):
-        logger.error('received message: %r' % data)
-        from flask_socketio import emit
-        emit("server message", ({"data": 12}), namespace="/", broadcast=True)
-
-    from eventlet.green.OpenSSL import SSL
-
-    # insecure context, only for example purposes
-    context = SSL.Context(SSL.SSLv23_METHOD)
-    # Pass server's private key created
-    context.use_privatekey_file(os.environ.get("LIFEMONITOR_TLS_KEY", './certs/lm.key'))
-    # Pass self-signed certificate created
-    context.use_certificate_file(os.environ.get("LIFEMONITOR_TLS_CERT", './certs/lm.crt'))
-
-    # Start Flask App + SocketIO
-    socketIO.run(application, host="0.0.0.0", port=8000, debug=True,
-                 keyfile=os.environ.get("LIFEMONITOR_TLS_KEY", './certs/lm.key'),
-                 certfile=os.environ.get("LIFEMONITOR_TLS_CERT", './certs/lm.crt'))
+if __name__ == '__main__':
+    start()

@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 current_socket = None
 
 
-def initialise_socket(app: Flask) -> Optional[SocketIO]:
+def initialise_ws(app: Flask) -> Optional[SocketIO]:
     global current_socket
     socketIO = init_socket(app)
     if socketIO:
@@ -45,4 +45,4 @@ def initialise_socket(app: Flask) -> Optional[SocketIO]:
     return None
 
 
-__all__ = ['initialise_socket', 'run', 'current_socket']
+__all__ = ['initialise_ws', 'run', 'current_socket']
