@@ -40,6 +40,7 @@ COPY \
     docker/wait-for-file.sh \
     docker/lm_entrypoint.sh \
     docker/worker_entrypoint.sh \
+    docker/ws_entrypoint.sh \
     /usr/local/bin/
 
 # Update permissions and install optional certificates
@@ -49,6 +50,7 @@ RUN chmod 755 \
       /usr/local/bin/wait-for-file.sh \
       /usr/local/bin/lm_entrypoint.sh \
       /usr/local/bin/worker_entrypoint.sh \
+      /usr/local/bin/ws_entrypoint.sh \
       /nextflow \
     && certs=$(ls *.crt 2> /dev/null) \
     && mv *.crt /usr/local/share/ca-certificates/ \
