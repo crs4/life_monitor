@@ -9,6 +9,7 @@ import dramatiq
 from dramatiq.brokers.redis import RedisBroker
 from dramatiq.results import Results
 from dramatiq.results.backends.redis import RedisBackend
+
 from lifemonitor.tasks.scheduler import Scheduler
 
 from .jobs import load_job_modules
@@ -49,6 +50,10 @@ def init_task_queues(app, load_jobs: bool = True):
         or ('gunicorn' in command_line)
     # or ('dramatiq' in command_line)
 
+    if app.config.get("WEBSOCKET_SERVER", False):
+        logger.info("Init task queue disabled on SocketIO handler")
+        return
+
     # initialize task queue only if running the main Flask app
     # if not is_main_flask_app:
     #     logger.debug("Running a Flask command: skip task queue initialisation")
@@ -82,10 +87,13 @@ def init_task_queues(app, load_jobs: bool = True):
 
     # load jobs
     if load_jobs and app.config.get('ENV') not in ['testingSupport', 'testing']:
-        init_task_jobs()
+        init_task_jobs(app)
 
 
-def init_task_jobs(include: List[str] = None, exclude: List[str] = None):
-    logger.debug("Loading job modules...")
-    load_job_modules(include=include, exclude=exclude)
-    logger.debug("Loading job modules... DONE")
+def init_task_jobs(app, include: List[str] = None, exclude: List[str] = None):
+    if app.config.get("WEBSOCKET_SERVER", False):
+        logger.info("Init task queue disabled on SocketIO handler")
+    else:
+        logger.debug("Loading job modules...")
+        load_job_modules(include=include, exclude=exclude)
+        logger.debug("Loading job modules... DONE")
