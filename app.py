@@ -23,7 +23,7 @@ import os
 import ssl
 
 from lifemonitor.app import create_app
-from lifemonitor.utils import bool_from_string
+from lifemonitor.utils import boolean_value
 
 # initialise logger
 logger = logging.getLogger(__name__)
@@ -55,7 +55,7 @@ def start_app_server():
 
 
 def start():
-    if bool_from_string(os.environ.get("WEBSOCKET_SERVER", True)):
+    if boolean_value(os.environ.get("WEBSOCKET_SERVER", True)):
         logger.info("Starting App+WebSocket Server...")
         start_websocket_server()
     else:

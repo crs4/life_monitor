@@ -29,7 +29,7 @@ from typing import List, Type
 import dotenv
 from flask import current_app
 
-from lifemonitor.utils import bool_from_string
+from lifemonitor.utils import boolean_value
 
 from .db import db_uri
 
@@ -112,8 +112,8 @@ class BaseConfig:
     # Disable the Flask APScheduler REST API, by default
     SCHEDULER_API_ENABLED = False
     WORKER = False
-    WEBSOCKET_SERVER = bool_from_string(os.environ.get("WEBSOCKET_SERVER", "false"))
-    GUNICORN_SERVER = bool_from_string(os.environ.get("GUNICORN_SERVER", "false"))
+    WEBSOCKET_SERVER = boolean_value(os.environ.get("WEBSOCKET_SERVER", False))
+    GUNICORN_SERVER = boolean_value(os.environ.get("GUNICORN_SERVER", False))
     # Default Cache Settings
     CACHE_TYPE = "flask_caching.backends.simplecache.SimpleCache"
     CACHE_DEFAULT_TIMEOUT = 60
