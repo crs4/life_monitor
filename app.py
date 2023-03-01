@@ -40,7 +40,7 @@ def start_websocket_server():
     socketIO = initialise_ws(application)
     # start app server with SocketIO server enabled
     socketIO.run(application, host="0.0.0.0", port=8000,
-                 debug=False,
+                 debug=application.config.get("DEBUG", False),
                  keyfile=os.environ.get("LIFEMONITOR_TLS_KEY", './certs/lm.key'),
                  certfile=os.environ.get("LIFEMONITOR_TLS_CERT", './certs/lm.crt'))
 
@@ -51,7 +51,7 @@ def start_app_server():
     context.load_cert_chain(
         os.environ.get("LIFEMONITOR_TLS_CERT", './certs/lm.crt'),
         os.environ.get("LIFEMONITOR_TLS_KEY", './certs/lm.key'))
-    application.run(host="0.0.0.0", port=8000, ssl_context=context)
+    application.run(host="0.0.0.0", port=8000, ssl_context=context, debug=application.get("DEBUG", False))
 
 
 def start():
