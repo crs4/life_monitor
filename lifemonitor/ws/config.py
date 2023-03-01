@@ -22,6 +22,8 @@ import logging
 
 from flask_socketio import SocketIO
 
+from lifemonitor.utils import boolean_value
+
 # configure logger
 logger = logging.getLogger(__name__)
 
@@ -32,9 +34,9 @@ socketIO = None
 def init_socket(app, kwargs=None) -> SocketIO:
     global socketIO
     if not socketIO:
-        debug = app.config.get("DEBUG", False)
+        debug = boolean_value(app.config.get("DEBUG", False))
         socketIO = SocketIO(app=app, logger=debug,
-                            engineio_logger=debug, cors_allowed_origins=["*"])
+                            engineio_logger=debug, cors_allowed_origins="*")
         logger.info("SocketIO initialized")
         return socketIO
     else:
