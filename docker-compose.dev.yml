@@ -43,7 +43,7 @@ services:
       - "./:/lm"
       - "/lm/lifemonitor/static/dist"
 
-  websocket:
+  ws_server:
     user: "${USER_UID}:${USER_GID}"
     environment:
       - "FLASK_ENV=development"
