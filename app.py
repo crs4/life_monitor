@@ -50,12 +50,12 @@ def start_app_server():
     context.load_cert_chain(
         os.environ.get("LIFEMONITOR_TLS_CERT", './certs/lm.crt'),
         os.environ.get("LIFEMONITOR_TLS_KEY", './certs/lm.key'))
-    application.run(host="0.0.0.0", port=8000, ssl_context=context, debug=application.get("DEBUG", False))
+    application.run(host="0.0.0.0", port=8000, ssl_context=context, debug=application.config.get("DEBUG", False))
 
 
 def start():
     from lifemonitor.utils import boolean_value
-    if boolean_value(os.environ.get("WEBSOCKET_SERVER", True)):
+    if boolean_value(os.environ.get("WEBSOCKET_SERVER", True)) and "testing" not in application.config.get("ENV"):
         logger.info("Starting App+WebSocket Server...")
         start_websocket_server()
     else:
