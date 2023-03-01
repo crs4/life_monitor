@@ -29,8 +29,6 @@ from typing import List, Type
 import dotenv
 from flask import current_app
 
-from lifemonitor.utils import boolean_value
-
 from .db import db_uri
 
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -111,6 +109,8 @@ class BaseConfig:
     JWT_EXPIRATION_TIME = int(os.getenv("JWT_EXPIRATION_TIME", "3600"))
     # Disable the Flask APScheduler REST API, by default
     SCHEDULER_API_ENABLED = False
+    #
+    from lifemonitor.utils import boolean_value
     WORKER = False
     WEBSOCKET_SERVER = boolean_value(os.environ.get("WEBSOCKET_SERVER", False))
     GUNICORN_SERVER = boolean_value(os.environ.get("GUNICORN_SERVER", False))

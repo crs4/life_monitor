@@ -49,7 +49,6 @@ import requests
 import yaml
 from dateutil import parser
 
-from . import config
 from . import exceptions as lm_exceptions
 
 logger = logging.getLogger()
@@ -349,6 +348,7 @@ class ROCrateLinkContext(object):
                 return self.rocrate_or_link
             try:
                 rocrate = base64.b64decode(self.rocrate_or_link)
+                from . import config
                 temp_rocrate_file = tempfile.NamedTemporaryFile(delete=False,
                                                                 dir=config.BaseConfig.BASE_TEMP_FOLDER,
                                                                 prefix="base64-rocrate")
@@ -466,6 +466,7 @@ def download_url(url: str, target_path: str = None, authorization: str = None) -
 
 
 def extract_zip(archive_path, target_path=None):
+    from . import config
     logger.debug("Archive path: %r", archive_path)
     logger.debug("Target path: %r", target_path)
     try:
@@ -487,6 +488,7 @@ def _make_git_credentials_callback(token: str = None):
 def clone_repo(url: str, ref: str = None, target_path: str = None, auth_token: str = None,
                remote_url: str = None, remote_branch: str = None, remote_user_token: str = None):
     try:
+        from . import config
         logger.warning("Local CLONE: %r - %r", url, ref)
         local_path = target_path
         if not local_path:
