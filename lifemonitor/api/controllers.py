@@ -183,9 +183,8 @@ def workflows_get_versions_by_id(wf_uuid):
 
 
 @cached(timeout=Timeout.REQUEST)
-def workflows_get_status(wf_uuid):
-    wf_version = request.args.get('version', 'latest').lower()
-    response = __get_workflow_version__(wf_uuid, wf_version)
+def workflows_get_status(wf_uuid, version):
+    response = __get_workflow_version__(wf_uuid, version)
     return response if isinstance(response, Response) \
         else serializers.WorkflowStatusSchema().dump(response)
 
