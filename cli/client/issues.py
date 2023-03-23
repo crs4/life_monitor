@@ -52,7 +52,7 @@ console = Console(theme=custom_theme)
 error_console = Console(stderr=True, style="bold red")
 
 repository_arg = click.argument('repository', type=str, default=".")
-output_path_arg = click.option('-o', '--output-path', type=click.Path(file_okay=False), default=None)
+output_path_arg = click.argument('output-path', type=click.Path(file_okay=False))
 
 
 @click.group(name="issues", help="Tools to develop and check issue types")
@@ -108,11 +108,11 @@ def get(config, issue_number):
 @output_path_arg
 @click.pass_obj
 # @with_appcontext
-def check(config, repository, output_path=None):
+def check(config, repository, output_path):
     try:
         init_output_path(output_path=output_path)
         repo = get_repository(repository, local_path=output_path)
-        result = repo.check(repository)
+        result = repo.check()
         # Configure Table
         table = Table(title=f"Check Issue Report of Repo [bold]{repository}[/bold]",
                       style="bold", expand=True)
