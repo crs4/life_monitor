@@ -172,10 +172,10 @@ class WorkflowRepository():
         issue_graph = issues.get_issue_graph()
 
         visited = set()
-        queue = [i for i in issue_graph.neighbors('r')
+        queue = [i for i in issue_graph.neighbors(issues.ROOT_ISSUE)
                  if self._issue_name_included(i.__name__, include, exclude)]
         while queue:
-            issue_type = queue.pop(0)
+            issue_type = queue.pop()
             if issue_type not in visited:
                 issue = issue_type()
                 failed = issue.check(self)
