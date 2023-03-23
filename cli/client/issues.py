@@ -24,10 +24,12 @@ import os
 import sys
 
 import click
+import networkx as nx
 from cli.client.utils import get_repository, init_output_path
 # from flask.cli import with_appcontext
 from lifemonitor.api.models.issues import (WorkflowRepositoryIssue,
-                                           find_issue_types, load_issue)
+                                           find_issue_types, load_issue,
+                                           get_issue_graph, ROOT_ISSUE)
 from lifemonitor.utils import to_snake_case
 from rich.console import Console
 from rich.panel import Panel
@@ -112,7 +114,7 @@ def check(config, repository, output_path):
     try:
         init_output_path(output_path=output_path)
         repo = get_repository(repository, local_path=output_path)
-        result = repo.check()
+        result = repo.check(fail_fast=False)
         # Configure Table
         table = Table(title=f"Check Issue Report of Repo [bold]{repository}[/bold]",
                       style="bold", expand=True)
@@ -123,7 +125,10 @@ def check(config, repository, output_path):
         table.add_column("Tags", style="cyan", overflow="fold", justify="center")
         checked = [_.name for _ in result.checked]
         issues = [_.name for _ in result.issues]
-        for issue in issues_list:
+        issue_graph = get_issue_graph()
+        for issue in nx.traversal.bfs_tree(issue_graph, ROOT_ISSUE):
+            if issue == ROOT_ISSUE:
+                continue
             x = None
             if issue.name not in checked:
                 status = Text("Skipped", style="yellow bold")
