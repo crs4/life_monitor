@@ -24,7 +24,8 @@ import logging
 import os
 from typing import Dict, Optional
 
-from flask import render_template_string
+from jinja2 import Environment, FileSystemLoader, select_autoescape
+
 from lifemonitor import utils
 
 from .base import RepositoryFile
@@ -69,16 +70,17 @@ class TemplateRepositoryFile(RepositoryFile):
         data.update(kwargs)
         if (not self._content or refresh) and self.dir:
             is_template = self.template_file_path.endswith('.j2')
-            with open(self.template_file_path, 'rb' if binary_mode and not is_template else 'r') as f:
-                content = f.read()
-                if is_template:
-                    self._content = render_template_string(content,
-                                                           filename=self.name,
-                                                           workflow_snakecase_name=utils.to_snake_case(data.get('workflow_name', '')),
-                                                           workflow_kebabcase_name=utils.to_kebab_case(data.get('workflow_name', '')),
-                                                           **data) + '\n'
-                else:
-                    self._content = content
+            if is_template:
+                jinja_env = Environment(loader=FileSystemLoader("/", followlinks=True), autoescape=select_autoescape())
+                template = jinja_env.get_template(self.template_file_path.lstrip('/'))
+                self._content = template.render(filename=self.name,
+                                                workflow_snakecase_name=utils.to_snake_case(data.get('workflow_name', '')),
+                                                workflow_kebabcase_name=utils.to_kebab_case(data.get('workflow_name', '')),
+                                                **data) + '\n'
+            else:
+                with open(self.template_file_path, 'rb' if binary_mode and not is_template else 'r') as f:
+                    content = f.read()
+                self._content = content
         return self._content
 
     def write(self, binary_mode: bool = False, output_file_path: str = None, **kwargs):
