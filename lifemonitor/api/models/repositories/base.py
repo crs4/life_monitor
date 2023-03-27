@@ -32,7 +32,6 @@ from typing import Dict, List, Optional, Tuple
 import git
 import giturlparse
 import lifemonitor.api.models.issues as issues
-import networkx as nx
 import requests
 from lifemonitor.api.models.repositories.config import WorkflowRepositoryConfig
 from lifemonitor.exceptions import IllegalStateException, LifeMonitorException

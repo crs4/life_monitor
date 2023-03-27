@@ -39,6 +39,7 @@ logger = logging.getLogger(__name__)
 
 ROOT_ISSUE = 'r'
 
+
 class IssueMessage:
 
     class TYPE(Enum):
