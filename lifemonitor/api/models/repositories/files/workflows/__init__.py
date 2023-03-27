@@ -35,10 +35,10 @@ logger = logging.getLogger(__name__)
 
 class WorkflowFile(RepositoryFile):
 
-    __workflow_types__: Dict[str, Type] = None
+    __workflow_types__: Dict[str, Type] | None = None
 
-    def __init__(self, repository_path: str, name: str, type: str = None, dir: str = ".",
-                 content=None, raw_file: RepositoryFile = None) -> None:
+    def __init__(self, repository_path: str, name: str, type: str | None = None, dir: str = ".",
+                 content=None, raw_file: RepositoryFile | None = None) -> None:
         super().__init__(repository_path, name, type, dir, content)
         self._raw_file = raw_file
 
@@ -53,11 +53,11 @@ class WorkflowFile(RepositoryFile):
         return super().get_content(binary_mode=binary_mode)
 
     @property
-    def raw_file(self) -> RepositoryFile:
+    def raw_file(self) -> RepositoryFile | None:
         return self._raw_file
 
     @classmethod
-    def get_workflow_extensions(cls, workflow_type: str) -> Set[str]:
+    def get_workflow_extensions(cls, workflow_type: str) -> Set[str] | None:
         try:
             return {_[1] for _ in cls.__get_workflow_types__()[workflow_type].__get_file_patterns__()}
         except AttributeError:
@@ -78,13 +78,13 @@ class WorkflowFile(RepositoryFile):
                    dir=file.dir, content=file._content, raw_file=file)
 
     @classmethod
-    def __get_file_patterns__(cls, subtype: Type = None) -> Tuple[Tuple[str, str, str]]:
+    def __get_file_patterns__(cls, subtype: Type = None) -> Tuple[Tuple[str, str, str]] | None:
         return getattr(subtype or cls, "FILE_PATTERNS", None)
 
     @classmethod
-    def is_workflow(cls, file: RepositoryFile) -> WorkflowFile:
+    def is_workflow(cls, file: RepositoryFile) -> WorkflowFile | None:
         if not file:
-            return False
+            return None
 
         subtypes = (cls,)
         if cls == WorkflowFile:
@@ -104,7 +104,7 @@ class WorkflowFile(RepositoryFile):
                     if p_dir and p_dir != f_dir:
                         continue
                     return subtype.__from_file__(file)
-        return False
+        return None
 
     @classmethod
     def __get_workflow_types__(cls) -> Dict[str, Type]:
