@@ -25,6 +25,7 @@ import time
 from flask import Flask, jsonify, redirect, render_template, request, url_for
 from flask_cors import CORS
 from flask_migrate import Migrate
+from lifemonitor import redis
 
 import lifemonitor.config as config
 from lifemonitor.auth.services import current_user
@@ -133,6 +134,8 @@ def initialize_app(app: Flask, app_context, prom_registry=None, load_jobs: bool 
     CORS(app, expose_headers=["Content-Type", "X-CSRFToken"], supports_credentials=True)
     # configure logging
     config.configure_logging(app)
+    # init Redis connection
+    redis.init(app)
     # configure app DB
     db.init_app(app)
     # initialize Migration engine
