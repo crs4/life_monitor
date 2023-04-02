@@ -509,6 +509,8 @@ def workflows_put(wf_uuid, body):
     workflow_version.workflow.name = body.get('name', workflow_version.workflow.name)
     workflow_version.workflow.public = body.get('public', workflow_version.workflow.public)
     workflow_version.workflow.save()
+    clear_cache()
+    notify_workflow_version_updates([workflow_version], type='sync')
     return connexion.NoContent, 204
 
 
