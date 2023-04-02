@@ -54,6 +54,10 @@ def init_task_queues(app, load_jobs: bool = True):
         logger.info("Init task queue disabled on SocketIO handler")
         return
 
+    # register jobs controller
+    from .controller import blueprint
+    app.register_blueprint(blueprint)
+
     # initialize task queue only if running the main Flask app
     # if not is_main_flask_app:
     #     logger.debug("Running a Flask command: skip task queue initialisation")
