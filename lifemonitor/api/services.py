@@ -579,6 +579,10 @@ class LifeMonitor:
         return models.TestInstance.find_by_uuid(instance_uuid)
 
     @staticmethod
+    def get_user_by_id(user_id: str) -> User:
+        return User.find_by_id(user_id)
+
+    @staticmethod
     def find_registry_user_identity(registry: models.WorkflowRegistry,
                                     internal_id=None, external_id=None) -> OAuthIdentity:
         if not internal_id and not external_id:

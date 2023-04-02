@@ -278,6 +278,10 @@ class User(db.Model, UserMixin):
         }
 
     @classmethod
+    def find_by_id(cls, user_id):
+        return cls.query.filter(cls.id == user_id).first()
+
+    @classmethod
     def find_by_username(cls, username):
         return cls.query.filter(cls.username == username).first()
 
