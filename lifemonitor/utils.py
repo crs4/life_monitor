@@ -37,7 +37,7 @@ import time
 import urllib
 import uuid
 import zipfile
-from datetime import datetime
+from datetime import datetime, timezone
 from importlib import import_module
 from os.path import basename, dirname, isfile, join
 from typing import Dict, List, Optional, Tuple, Type
@@ -56,6 +56,11 @@ logger = logging.getLogger()
 
 def split_by_crlf(s):
     return [v for v in s.splitlines() if v]
+
+
+def datetime_as_timestamp_with_msecs(
+        d: datetime = datetime.now(timezone.utc)) -> int:
+    return int(d.timestamp() * 1000)
 
 
 def values_as_list(values, in_separator='\\s?,\\s?|\\s+'):
@@ -237,6 +242,36 @@ def match_ref(ref: str, refs: List[str]) -> Optional[Tuple[str, str]]:
     return None
 
 
+def notify_updates(workflows: List, type: str = 'sync', delay: int = 0):
+    from lifemonitor.ws import io
+    from datetime import timezone
+    io.publish_message({
+        "type": type,
+        "data": [{
+            'uuid': str(w["uuid"]),
+            'version': w["version"],
+            'lastUpdate': (w.get('lastUpdate', None) or datetime.now()).replace(tzinfo=timezone.utc).timestamp()
+        } for w in workflows]
+    }, delay=delay)
+
+
+def notify_workflow_version_updates(workflows: List, type: str = 'sync', delay: int = 0):
+    from lifemonitor.ws import io
+    from datetime import timezone
+    io.publish_message({
+        "type": type,
+        "data": [{
+            'uuid': str(w.workflow.uuid),
+            'version': w.version,
+            'lastUpdate':  # datetime.now(tz=timezone.utc).timestamp()
+            max(
+                w.modified.replace(tzinfo=timezone.utc).timestamp(),
+                w.workflow.modified.replace(tzinfo=timezone.utc).timestamp()
+            )
+        } for w in workflows]
+    }, delay=delay)
+
+
 def load_modules(path: str = None, include: List[str] = None, exclude: List[str] = None) -> Dict[str, Type]:
     errors = []
 
@@ -366,7 +401,7 @@ class ROCrateLinkContext(object):
 
     def __exit__(self, type, value, traceback):
         logger.debug("Exiting ROCrateLinkContext...")
-        if self._local_path:
+        if self._local_path and (isinstance(self._local_path, str) or isinstance(self._local_path, os.PathLike)):
             try:
                 os.remove(self._local_path)
                 logger.debug("Temporary file removed: %r", self._local_path)
