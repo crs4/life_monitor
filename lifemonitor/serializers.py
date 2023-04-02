@@ -38,6 +38,9 @@ class BaseSchema(ma.SQLAlchemySchema):
     __envelope__ = {"single": None, "many": None}
     __model__ = None
 
+    class Meta:
+        ordered = True
+
     @property
     def api_version(self):
         return lm_utils.OpenApiSpecs.get_instance().version
