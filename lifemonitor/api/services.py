@@ -695,3 +695,39 @@ class LifeMonitor:
                 return lm_exceptions.EntityNotFoundException(Notification, entity_id=n_uuid)
             user.notifications.remove(n)
         user.save()
+
+    @staticmethod
+    def list_workflow_updates(since: datetime = datetime.now) -> Dict[str, datetime]:
+        from lifemonitor.db import db
+        query = """
+            SELECT DISTINCT uuid, version, max(last_update) as last_update
+            FROM (
+                SELECT w.uuid AS uuid, r.version AS version, GREATEST(r.modified, w.modified) AS last_update
+                FROM resource AS r
+                JOIN workflow_version AS wv ON r.id = wv.id
+                JOIN resource AS w ON wv.workflow_id = w.id
+                WHERE r.type LIKE 'workflow_version'
+
+                UNION
+
+                SELECT w.uuid AS uuid, r.version AS version, t.last_builds_update AS last_update
+                FROM test_instance AS t
+                JOIN test_suite AS s ON t.test_suite_uuid = s.uuid
+                JOIN workflow_version AS wv ON s.workflow_version_id = wv.id
+                JOIN resource AS r ON r.id = wv.id
+                JOIN resource AS w ON wv.workflow_id = w.id
+            ) as X
+            GROUP BY X.uuid,X.version
+            ORDER BY last_update DESC
+            """
+        result: List = []
+        rs = db.session.execute(query)
+        for row in rs:
+            logger.debug("Row: %r", row)
+            result.append({
+                "uuid": str(row[0]),
+                "version": row[1],
+                "lastUpdate": row[2].replace(tzinfo=timezone.utc).timestamp()  # time.mktime(row[2].timetuple())
+                # "lastUpdate": int(row[2].timestamp() * 1000)
+            })
+        return result
