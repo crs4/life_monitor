@@ -33,6 +33,7 @@ from lifemonitor.auth.models import (EventType,
 from lifemonitor.auth.oauth2.client import providers
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 from lifemonitor.auth.oauth2.server import server
+from lifemonitor.tasks.models import Job
 from lifemonitor.utils import OpenApiSpecs, ROCrateLinkContext, to_snake_case
 
 logger = logging.getLogger()
@@ -150,13 +151,19 @@ class LifeMonitor:
                 if not workflow_registry:
                     raise ValueError("Missing ROC link")
                 else:
+                    if job:
+                        job.update_status('Getting workflow info from registry', save=True)
                     roc_link = workflow_registry.get_rocrate_external_link(workflow_identifier, workflow_version)
 
             # register workflow version
+            if job:
+                job.update_status('Adding workflow version', save=True)
             wv = w.add_version(workflow_version, roc_link, workflow_submitter, name=name)
 
             # associate workflow version to the workflow registry
             if workflow_registry:
+                if job:
+                    job.update_status('Associating workflow version to registry', save=True)
                 workflow_registry.add_workflow_version(wv, workflow_identifier, workflow_version)
 
             # set permissions
@@ -191,6 +198,8 @@ class LifeMonitor:
 
             # parse roc_metadata and register suites and instances
             try:
+                if job:
+                    job.update_status('Processing test suites', save=True)
                 if wv.roc_suites:
                     for _, raw_suite in wv.roc_suites.items():
                         cls._init_test_suite_from_json(wv, workflow_submitter, raw_suite)
