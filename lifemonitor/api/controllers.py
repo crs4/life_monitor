@@ -387,13 +387,17 @@ def __check_submitter_and_registry__(body, _registry=None, _submitter_id=None, _
     submitter = current_user if current_user and not current_user.is_anonymous else None
     if not submitter:
         try:
-            submitter_id = body.get('submitter_id', _submitter_id)
-            if submitter_id:
-                # Try to find the identity of the submitter
-                identity = lm.find_registry_user_identity(registry,
-                                                          internal_id=current_user.id,
-                                                          external_id=submitter_id)
-                submitter = identity.user
+            user_id = body.get('user_id', current_user.id if current_user else None)
+            if user_id:
+                submitter = lm.get_user_by_id(user_id)
+            if not submitter:
+                submitter_id = body.get('submitter_id', _submitter_id)
+                if submitter_id:
+                    # Try to find the identity of the submitter
+                    identity = lm.find_registry_user_identity(registry,
+                                                              internal_id=user_id,
+                                                              external_id=submitter_id)
+                    submitter = identity.user
         except KeyError:
             # return lm_exceptions.report_problem(400, "Bad request",
             #                                     detail=messages.no_submitter_id_provided)
@@ -409,8 +413,9 @@ def __check_submitter_and_registry__(body, _registry=None, _submitter_id=None, _
     return registry, submitter
 
 
-@authorized
-def workflows_post(body, _registry=None, _submitter_id=None):
+def workflows_post(body, _registry=None, _submitter_id=None,
+                   async_processing: bool | None = None, job: Job = None):
+    logger.warning("The current body: %r", body)
     # check if there exists a submitter and/or a registry in the current request
     registry, submitter = __check_submitter_and_registry__(body, _registry, _submitter_id)
     # extract roc_link or rocrate from the request
@@ -419,6 +424,38 @@ def workflows_post(body, _registry=None, _submitter_id=None):
     if not registry and not roc_link and not encoded_rocrate:
         return lm_exceptions.report_problem(400, "Bad Request", extra_info={"missing input": "roc_link OR rocrate"},
                                             detail=messages.input_data_missing)
+
+    # check whether to handle the registration asynchronously
+    async_processing = body.get('async', False) if async_processing is None else async_processing
+    if async_processing:
+        # collect registration data
+        registration_data = {
+            "submitter_id": submitter.id,
+            "user_id": submitter.id,
+            "version": body['version'],
+            "uuid": body.get('uuid', None),
+            "identifier": body.get('identifier', None),
+            "name": body.get('name', None),
+            "authorization": body.get('authorization', None),
+            "public": body.get('public', False)
+        }
+        if roc_link:
+            registration_data['roc_link'] = roc_link
+        if encoded_rocrate:
+            registration_data['rocrate'] = encoded_rocrate
+        if registry:
+            registration_data["registry"] = registry.name
+        # create async Job
+        job = Job(job_type='workflow_registration',  # job_name='register_workflow',
+                  status='waiting',
+                  listening_rooms=[str(registration_data['submitter_id'])])
+        job.update_data({
+            'data': registration_data
+        })
+        job.save()
+        job.submit(current_app, as_job_name='register_workflow')
+        return redirect(f'/jobs/status/{job.id}', code=302)
+
     # register workflow through the 'lm' service
     try:
         w = lm.register_workflow(
@@ -430,10 +467,12 @@ def workflows_post(body, _registry=None, _submitter_id=None):
             workflow_registry=registry,
             name=body.get('name', None),
             authorization=body.get('authorization', None),
-            public=body.get('public', False)
+            public=body.get('public', False),
+            job=job
         )
         logger.debug("workflows_post. Created workflow '%s' (ver.%s)", w.uuid, w.version)
         clear_cache()
+        notify_workflow_version_updates([w], type='sync', delay=2)
         return {'uuid': str(w.workflow.uuid), 'wf_version': w.version, 'name': w.name}, 201
     except KeyError as e:
         return lm_exceptions.report_problem(400, "Bad Request", extra_info={"exception": str(e)},
