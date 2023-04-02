@@ -20,6 +20,7 @@
 
 from __future__ import annotations
 
+import datetime
 import logging
 import uuid as _uuid
 from typing import List
@@ -46,6 +47,8 @@ class TestInstance(db.Model, ModelMixin):
     parameters = db.Column(JSON, nullable=True)
     submitter_id = db.Column(db.Integer,
                              db.ForeignKey(models.User.id), nullable=True)
+    last_builds_update = db.Column(db.DateTime, default=datetime.datetime.utcnow,
+                                   onupdate=datetime.datetime.utcnow)
     # configure relationships
     submitter = db.relationship("User", uselist=False)
     test_suite = db.relationship("TestSuite",
@@ -115,11 +118,17 @@ class TestInstance(db.Model, ModelMixin):
 
     @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True)
     def get_test_builds(self, limit=10):
-        return self.testing_service.get_test_builds(self, limit=limit)
+        try:
+            return self.testing_service.get_test_builds(self, limit=limit)
+        finally:
+            self.last_builds_updated()
 
     @cached(timeout=Timeout.BUILD, client_scope=False, transactional_update=True)
     def get_test_build(self, build_number):
         return self.testing_service.get_test_build(self, build_number)
+
+    def last_builds_updated(self, when=datetime.datetime.utcnow()):
+        self.last_builds_update = when
 
     def to_dict(self, test_build=False, test_output=False):
         data = {
