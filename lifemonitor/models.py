@@ -23,7 +23,7 @@ from __future__ import annotations
 import uuid
 from typing import List
 
-from sqlalchemy import VARCHAR, types
+from sqlalchemy import VARCHAR, types, inspect
 
 from lifemonitor.cache import CacheMixin
 from lifemonitor.db import db
@@ -38,9 +38,25 @@ class ModelMixin(CacheMixin):
         db.session.add(self)
         db.session.commit()
 
-    def delete(self):
-        db.session.delete(self)
-        db.session.commit()
+
+    def detach(self):
+        db.session.expunge(self)
+
+    @property
+    def _object_state(self):
+        return inspect(self)
+
+    def is_transient(self) -> bool:
+        return self._object_state.transient
+
+    def is_pending(self) -> bool:
+        return self._object_state.pending
+
+    def is_detached(self) -> bool:
+        return self._object_state.detached
+
+    def is_persistent(self) -> bool:
+        return self._object_state.persistent
 
     @classmethod
     def all(cls) -> List:
