@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import uuid
 from typing import List
+from datetime import datetime, timezone
 
 from sqlalchemy import VARCHAR, types, inspect
 
@@ -34,9 +35,23 @@ class ModelMixin(CacheMixin):
     def refresh(self, **kwargs):
         db.session.refresh(self, **kwargs)
 
+    def save(self, commit: bool = True, flush: bool = True):
         if hasattr(self, 'modified'):
             setattr(self, 'modified', datetime.now(tz=timezone.utc))
+        with db.session.begin_nested():
+            db.session.add(self)
+        if commit:
+            db.session.commit()
+        if flush:
+            db.session.flush()
 
+    def delete(self, commit: bool = True, flush: bool = True):
+        with db.session.begin_nested():
+            db.session.delete(self)
+        if commit:
+            db.session.commit()
+        if flush:
+            db.session.flush()
 
     def detach(self):
         db.session.expunge(self)
