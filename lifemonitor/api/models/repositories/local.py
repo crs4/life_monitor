@@ -37,7 +37,7 @@ from lifemonitor.api.models.repositories.base import (
 from lifemonitor.api.models.repositories.files import (RepositoryFile,
                                                        WorkflowFile)
 from lifemonitor.config import BaseConfig
-from lifemonitor.exceptions import (DecodeROCrateException,
+from lifemonitor.exceptions import (DecodeROCrateException, LifeMonitorException,
                                     NotValidROCrateException)
 from lifemonitor.utils import extract_zip, walk
 
@@ -148,9 +148,14 @@ class ZippedWorkflowRepository(TemporaryLocalWorkflowRepository):
     def __init__(self, archive_path: str | Path, exclude: Optional[List[str]] = None, auto_cleanup: bool = True) -> None:
         local_path = tempfile.mkdtemp(dir=BaseConfig.BASE_TEMP_FOLDER)
         super().__init__(local_path=local_path, exclude=exclude, auto_cleanup=auto_cleanup)
-        extract_zip(archive_path, local_path)
-        self.archive_path = archive_path
-        logger.debug("Local path: %r", self.local_path)
+        try:
+            extract_zip(archive_path, local_path)
+            self.archive_path = archive_path
+            logger.debug("Local path: %r", self.local_path)
+        except FileNotFoundError as e:
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.exception(e)
+            raise LifeMonitorException('Unable to process the Workflow ROCrate locally', detail=str(e), status=404)
 
 
 class Base64WorkflowRepository(TemporaryLocalWorkflowRepository):
