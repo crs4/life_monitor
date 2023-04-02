@@ -22,7 +22,10 @@ import functools
 import logging
 from typing import Dict
 
-from flask_socketio import disconnect, emit
+from flask import request
+from flask_socketio import disconnect, emit, join_room
+
+from lifemonitor.cache import cache
 
 from .config import socketIO
 
@@ -52,10 +55,26 @@ def authenticated_only(f):
 @socketIO.on('connect')
 def connect(auth):
     logger.info("Connected (%s)", "anonymous" if not auth else "authenticated")
-    emit('connected accepted', {})
+    emit('connection accepted', {})
+    currentSocketId = request.sid
+    logger.warning(f"Client connected with ID: {currentSocketId}")
+    logger.warning(f"Registered client {request.remote_addr} with clientId {request.sid}")
+
+
+@socketIO.on('disconnect')
+def on_disconnect():
+    logger.info("Disconnected %s", request.sid)
+    user_id = cache.get(request.sid)
+    if isinstance(user_id, str):
+        cache.delete(user_id)
+    cache.delete(request.sid)
 
 
 @socketIO.on('message')
-def handle_message(data):
-    logger.error('received message: %r' % data)
-    emit("server message", ({"data": 12}), namespace="/", broadcast=True)
+def handle_message(message):
+    logger.debug('received message: %r' % message)
+    # emit("message", {"type": "echo", "data": message})
+    if message['type'] == 'join':
+        logger.debug(f"Joining SID {request.sid} to room {message['data']['user']}")
+        join_room(str(message['data']['user']))
+        logger.warning(f"SID {request.sid} joined to room {message['data']['user']}")
