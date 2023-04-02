@@ -17,7 +17,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
+import os
 import logging
 
 from flask_socketio import SocketIO
@@ -31,13 +31,17 @@ logger = logging.getLogger(__name__)
 socketIO = None
 
 
-def init_socket(app, kwargs=None) -> SocketIO:
+def init_socket(app, **kwargs) -> SocketIO:
     global socketIO
     if not socketIO:
-        debug = boolean_value(app.config.get("DEBUG", False))
-        socketIO = SocketIO(app=app, logger=debug,
-                            engineio_logger=debug, cors_allowed_origins="*")
+        debug = boolean_value(app.config.get("DEBUG", os.environ.get("DEBUG", False)))
+        socketIO = SocketIO(app=app, logger=debug, async_mode='gevent',  # async_mode='eventlet',  # async_mode=kwargs.get('async_mode', None),
+                            # engineio_logger=debug,
+                            cors_allowed_origins="*")
         logger.info("SocketIO initialized")
+        # import eventlet
+        # eventlet.monkey_patch()
+        app.socketIO = socketIO
         return socketIO
     else:
         logger.warning("SocketIO initialisation skipped: already initialized")
