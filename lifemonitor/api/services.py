@@ -35,6 +35,7 @@ from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 from lifemonitor.auth.oauth2.server import server
 from lifemonitor.tasks.models import Job
 from lifemonitor.utils import OpenApiSpecs, ROCrateLinkContext, to_snake_case
+from lifemonitor.ws import io
 
 logger = logging.getLogger()
 
@@ -286,6 +287,18 @@ class LifeMonitor:
             w.public = public
         # store the new version
         w.save()
+
+        try:
+            logger.debug("Notifying workflow version update...")
+            io.publish_message({
+                "type": "sync",
+                "data": [{'uuid': w.uuid, "version": workflow_version, 'lastUpdate': w.modified.timestamp()}]
+            })
+            logger.debug("Notifying workflow version update... DONE")
+        except Exception as e:
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.exception(e)
+            logger.error(str(e))
         return wv
 
     @classmethod
