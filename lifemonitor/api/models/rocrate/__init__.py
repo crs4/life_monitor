@@ -155,22 +155,21 @@ class ROCrate(Resource):
             ref = None
             if not os.path.exists(self.local_path):
                 logger.debug(f"{self.local_path} archive of {self} not found locally!!!")
-
+                logger.debug("Remote storage enabled: %r", self._storage.enabled)
+                logger.debug("File exists on remote storage: %r", self._storage.exists(self._get_storage_path(self.local_path)))
                 # download the workflow ROCrate and store it into the remote storage
                 if not inspect(self).persistent or not self._storage.exists(self._get_storage_path(self.local_path)):
-                    # if not self._storage.enabled or not self._storage.exists(self._get_storage_path(self.local_path)):
-                    try:
-                        _, ref, _ = self.download_from_source(self.local_path)
-                        logger.debug(f"RO-Crate downloaded from {self.uri} to {self.storage_path}!")
+                    _, ref, _ = self.download_from_source(self.local_path)
+                    logger.debug(f"RO-Crate downloaded from {self.uri} to {self.storage_path}!")
+                    if self._storage.enabled and not self._storage.exists(self._get_storage_path(self.local_path)):
                         self._storage.put_file_as_job(self.local_path, self._get_storage_path(self.local_path))
                         logger.debug(f"Scheduled job to store {self.storage_path} into the remote storage!")
-                    except Exception as e:
-                        logger.exception(e)
                 else:
                     # download the RO-Crate archive from the remote storage
                     logger.warning(f"Getting path {self.storage_path} from remote storage!!!")
-                    self._storage.get_file(self._get_storage_path(self.local_path), self.local_path)
-                    logger.warning(f"Getting path {self.storage_path} from remote storage.... DONE!!!")
+                    if self._storage.enabled and not self._storage.exists(self._get_storage_path(self.local_path)):
+                        self._storage.get_file(self._get_storage_path(self.local_path), self.local_path)
+                        logger.warning(f"Getting path {self.storage_path} from remote storage.... DONE!!!")
 
             # instantiate a local ROCrate repository
             if self._is_github_crate_(self.uri):
