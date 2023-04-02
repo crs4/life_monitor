@@ -677,7 +677,7 @@ def issue_comment(event: GithubEvent):
                             with TemporaryDirectory(dir='/tmp') as target_path:
                                 pr = pull_requests.create_pull_request_from_github_issue(
                                     repo, next_step.id, issue,
-                                    next_step.get_files(repo, target_path=target_path), False,
+                                    next_step.get_files(repo, target_path=target_path), allow_update=False,
                                     create_comment=next_step.as_string())
                                 if not pr:
                                     logger.warning("Unable to create PR for issue: %r", issue)
