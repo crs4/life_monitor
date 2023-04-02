@@ -199,33 +199,52 @@ class ROCrate(Resource):
 
     @property
     def authors(self) -> List[Dict]:
-        return self._crate_reader.get_authors()
+        return self.get_authors()
 
-    def get_authors(self, suite_id: str = None) -> List[Dict]:
-        return self._crate_reader.get_authors(suite_id=suite_id)
+    def __get_attribute_from_crate_reader__(self,
+                                            attributeName: str, attributedType: str = 'method',
+                                            *args, **kwargs) -> object | None:
+        try:
+            attr = getattr(self._crate_reader, attributeName)
+            if attributedType == 'method':
+                return attr(*args, **kwargs)
+            else:
+                return attr
+        except lm_exceptions.NotValidROCrateException as e:
+            logger.warning("Unable to process ROCrate archive: %s", str(e))
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.exception(e)
+        except Exception as e:
+            logger.error(str(e))
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.exception(e)
+        return None
+
+    def get_authors(self, suite_id: str = None) -> List[Dict] | None:
+        return self.__get_attribute_from_crate_reader__('get_authors', suite_id=suite_id)
 
     @hybrid_property
     def roc_suites(self):
-        return self._crate_reader.get_roc_suites()
+        return self.__get_attribute_from_crate_reader__('get_roc_suites')
 
     def get_roc_suite(self, roc_suite_identifier):
-        return self._crate_reader.get_get_roc_suite(roc_suite_identifier)
+        return self.__get_attribute_from_crate_reader__('get_get_roc_suite', roc_suite_identifier)
 
     @property
-    def based_on(self) -> str:
-        return self._crate_reader.isBasedOn
+    def based_on(self) -> str | None:
+        return self.__get_attribute_from_crate_reader__('isBasedOn', attributedType='property')
 
     @property
     def based_on_link(self) -> str:
-        return self._crate_reader.isBasedOn
+        return self.__get_attribute_from_crate_reader__('isBasedOn', attributedType='property')
 
     @property
     def dataset_name(self):
-        return self._crate_reader.dataset_name
+        return self.__get_attribute_from_crate_reader__('dataset_name', attributedType='property')
 
     @property
     def main_entity_name(self):
-        return self._crate_reader.main_entity_name
+        return self.__get_attribute_from_crate_reader__('main_entity_name', attributedType='property')
 
     def _get_authorizations(self, extra_auth: ExternalServiceAuthorizationHeader = None):
         authorizations = []

@@ -188,15 +188,19 @@ class VersionDetailsSchema(BaseSchema):
                                     f"workflows/{obj.workflow.uuid}/rocrate/{obj.version}/download")
             }
         }
-        if obj.based_on:
-            rocrate['links']['based_on'] = obj.based_on
-        rocrate['links']['registries'] = {}
-        for r_name, rv in obj.registry_workflow_versions.items():
-            rocrate['links']['registries'][r_name] = rv.link
-        rocrate['metadata'] = obj.crate_metadata
-        if 'rocrate_metadata' in self.exclude or \
-                self.only and 'rocrate_metadata' not in self.only:
-            del rocrate['metadata']
+        try:
+            if obj.based_on:
+                rocrate['links']['based_on'] = obj.based_on
+            rocrate['links']['registries'] = {}
+            for r_name, rv in obj.registry_workflow_versions.items():
+                rocrate['links']['registries'][r_name] = rv.link
+            rocrate['metadata'] = obj.crate_metadata
+            if 'rocrate_metadata' in self.exclude or \
+                    self.only and 'rocrate_metadata' not in self.only:
+                del rocrate['metadata']
+        except Exception as e:
+            rocrate['unavailable'] = True
+            rocrate['unavailability_reason'] = str(e)
         return rocrate
 
     @post_dump
