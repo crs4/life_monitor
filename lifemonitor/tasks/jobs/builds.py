@@ -11,6 +11,7 @@ from lifemonitor.api.serializers import BuildSummarySchema
 from lifemonitor.auth.models import (EventType, Notification)
 from lifemonitor.cache import Timeout
 from lifemonitor.tasks.scheduler import TASK_EXPIRATION_TIME, schedule
+from lifemonitor.utils import notify_workflow_version_updates
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -72,16 +73,23 @@ def check_last_build():
                 for s in workflow_version.test_suites:
                     logger.info("Updating workflow: %r", w)
                     for i in s.test_instances:
+                        # old_builds = i.get_test_builds(limit=10)
                         with i.cache.transaction(str(i)):
                             builds = i.get_test_builds(limit=10)
                             logger.info("Updating latest builds: %r", builds)
                             for b in builds:
                                 logger.info("Updating build: %r", i.get_test_build(b.id))
+                            i.save(commit=False, flush=False)
+                            workflow_version.save()
+                            notify_workflow_version_updates([workflow_version], type='sync')
                             last_build = i.last_test_build
+                            logger.debug("Latest build: %r", last_build)
+
                             # check state transition
                             if last_build:
+                                logger.debug("Latest build status: %r", last_build.status)
                                 failed = last_build.status == BuildStatus.FAILED
-                                if len(builds) == 1 and failed or \
+                                if len(builds) == 1 or \
                                         builds[0].status in (BuildStatus.FAILED, BuildStatus.PASSED) and \
                                         builds[1].status in (BuildStatus.FAILED, BuildStatus.PASSED) and \
                                         len(builds) > 1 and builds[1].status != last_build.status:
@@ -95,6 +103,9 @@ def check_last_build():
                                             {'build': BuildSummarySchema(exclude_nested=False).dump(last_build)},
                                             users)
                                         n.save()
+                # save workflow version and notify updates
+                workflow_version.save()
+                notify_workflow_version_updates([workflow_version], type='sync')
         except Exception as e:
             logger.error("Error when executing task 'check_last_build': %s", str(e))
             if logger.isEnabledFor(logging.DEBUG):
