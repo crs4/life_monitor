@@ -21,8 +21,8 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime
-from typing import List, Optional, Union
+from datetime import datetime, timezone
+from typing import Dict, List, Optional, Union
 
 import lifemonitor.exceptions as lm_exceptions
 from lifemonitor.api import models
