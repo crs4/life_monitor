@@ -29,7 +29,7 @@ from ast import Dict
 from hashlib import sha1
 from importlib import import_module
 from posixpath import basename, dirname
-from typing import Callable, List, Optional
+from typing import Callable, List, Optional, Type
 
 from genericpath import isfile
 from lifemonitor.api.models.repositories.base import WorkflowRepository
@@ -44,22 +44,22 @@ logger = logging.getLogger(__name__)
 class Wizard():
 
     # map issue -> wizard
-    __wizards__: Dict = None
+    __wizards__: Optional[Dict] = None
 
     # main wizard attributes
     title: str = "Wizard"
     description: str = ""
     steps: List[Step] = []
-    issue: WorkflowRepositoryIssue = None
+    issue: Optional[Type] = None
 
     def __init__(self, issue: WorkflowRepositoryIssue,
-                 steps: List[Step] = None,
-                 io_handler: IOHandler = None):
+                 steps: Optional[List[Step]] = None,
+                 io_handler: Optional[IOHandler] = None):
         self.issue = issue
         self._io_handler = io_handler
-        self.current_step: Step = None
+        self.current_step: Optional[Step] = None
         self._steps_list = steps if steps else self.steps
-        self.__steps: List[Step] = None
+        self.__steps: Optional[List[Step]] = None
 
     @property
     def id(self) -> str:
@@ -76,7 +76,7 @@ class Wizard():
         return self.__steps
 
     @property
-    def io_handler(self) -> IOHandler:
+    def io_handler(self) -> Optional[IOHandler]:
         return self._io_handler
 
     @io_handler.setter
