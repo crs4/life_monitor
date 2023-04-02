@@ -32,6 +32,12 @@ from .config import socketIO
 # configure logger
 logger = logging.getLogger(__name__)
 
+
+class Message:
+    type: str
+    data: object
+
+
 # initialize SocketIO
 if not socketIO:
     raise RuntimeError("SocketIO not initialized yet")
@@ -78,3 +84,35 @@ def handle_message(message):
         logger.debug(f"Joining SID {request.sid} to room {message['data']['user']}")
         join_room(str(message['data']['user']))
         logger.warning(f"SID {request.sid} joined to room {message['data']['user']}")
+    elif message['type'] == 'SYNC':
+        emit("message", build_sync_message())
+
+
+# def broadcast_redis_message(serialised_message):
+#     logger.debug(f"New message from redis WS channel: {serialised_message}")
+#     if serialised_message:
+#         message = json.loads(serialised_message)
+#         socketIO.emit(message)
+#         logger.debug("Message broadcasted through SocketIO channel")
+
+
+def build_sync_message():
+    from flask import current_app
+
+    from lifemonitor.api.services import LifeMonitor
+    if current_app:
+        with current_app.app_context():
+            return {
+                "type": "sync",
+                "data": LifeMonitor.list_workflow_updates()
+            }
+    else:
+        return {
+            "type": "unknown"
+        }
+
+
+def update_workflow(retry=None):
+    logger.debug("Sending broadcast message")
+    socketIO.emit("message", build_sync_message())
+    logger.debug("Sending broadcast message: DONE")
