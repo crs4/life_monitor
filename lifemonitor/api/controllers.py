@@ -150,7 +150,7 @@ def workflows_get_by_id(wf_uuid, wf_version):
     return response if isinstance(response, Response) \
         else serializers.WorkflowVersionSchema(subscriptionsOf=[current_user]
                                                if not current_user.is_anonymous
-                                               else None).dump(response)
+                                               else None, rocrate_metadata=True).dump(response)
 
 
 @cached(timeout=Timeout.REQUEST)
