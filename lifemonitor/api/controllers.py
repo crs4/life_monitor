@@ -35,6 +35,7 @@ from lifemonitor.auth.oauth2.client.models import \
     OAuthIdentityNotFoundException
 from lifemonitor.cache import Timeout, cached, clear_cache
 from lifemonitor.lang import messages
+from lifemonitor.utils import notify_updates, notify_workflow_version_updates
 
 # Initialize a reference to the LifeMonitor instance
 lm = LifeMonitor.get_instance()
@@ -568,6 +569,8 @@ def workflows_version_put(wf_uuid, wf_version, body):
 @authorized
 def workflows_delete_version(wf_uuid, wf_version):
     try:
+        # get a reference to the workflow version to be updated
+        workflow_version = __get_workflow_version__(wf_uuid, wf_version=wf_version)
         if current_user and not current_user.is_anonymous:
             lm.deregister_user_workflow_version(wf_uuid, wf_version, current_user)
         elif current_registry:
@@ -576,6 +579,7 @@ def workflows_delete_version(wf_uuid, wf_version):
             return lm_exceptions.report_problem(403, "Forbidden",
                                                 detail=messages.no_user_in_session)
         clear_cache()
+        notify_workflow_version_updates([workflow_version], type='delete')
         return connexion.NoContent, 204
     except OAuthIdentityNotFoundException as e:
         return lm_exceptions.report_problem(401, "Unauthorized", extra_info={"exception": str(e)})
@@ -599,6 +603,7 @@ def workflows_delete(wf_uuid):
             return lm_exceptions.report_problem(403, "Forbidden",
                                                 detail=messages.no_user_in_session)
         clear_cache()
+        notify_updates([{'uuid': wf_uuid}], type='delete')
         return connexion.NoContent, 204
     except OAuthIdentityNotFoundException as e:
         return lm_exceptions.report_problem(401, "Unauthorized", extra_info={"exception": str(e)})
