@@ -20,7 +20,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-
 set -o nounset
 set -o errexit
 
@@ -28,6 +27,15 @@ export POSTGRESQL_USERNAME="${POSTGRESQL_USERNAME:-lm}"
 export POSTGRESQL_DATABASE="${POSTGRESQL_DATABASE:-lm}"
 export KEY=${LIFEMONITOR_TLS_KEY:-/certs/lm.key}
 export CERT=${LIFEMONITOR_TLS_CERT:-/certs/lm.crt}
+
+# set websocket server port
+export WEBSOCKET_SERVER_PORT=${WEBSOCKET_SERVER_PORT:-8001}
+
+# TODO: check if this flag is needed
+export WEBSOCKET_SERVER="false"
+
+# set switch to enable autoreload feature of gunicorn
+export WEBSOCKET_SERVER_ENV=${WEBSOCKET_SERVER_ENV:-production}
 
 # wait for services
 wait-for-postgres.sh
@@ -41,5 +49,13 @@ if [[ -z ${PROMETHEUS_MULTIPROC_DIR} ]]; then
   export PROMETHEUS_MULTIPROC_DIR=$(mktemp -d ${metrics_base_path}/websocket-server.XXXXXXXX)
 fi
 
-printf "Starting application\n" >&2
-python3 "app.py"
+# start gunicorn server
+export GUNICORN_SERVER="true"
+reload_opt=""
+if [[ "${WEBSOCKET_SERVER_ENV}" == "development" ]]; then reload_opt="--reload"; fi
+gunicorn -k geventwebsocket.gunicorn.workers.GeventWebSocketWorker --workers 1 \
+         ${reload_opt} \
+         --certfile="${CERT}" --keyfile="${KEY}" \
+         -b 0.0.0.0:${WEBSOCKET_SERVER_PORT} ws
+
+

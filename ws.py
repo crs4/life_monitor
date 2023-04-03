@@ -19,12 +19,9 @@
 # SOFTWARE.
 
 import logging
-import os
-import ssl
 
 from lifemonitor.app import create_app
 from lifemonitor.ws import initialise_ws
-
 from lifemonitor.ws.io import start_brodcaster
 
 # initialise logger
@@ -35,38 +32,3 @@ logger = logging.getLogger(__name__)
 application = create_app(init_app=True, load_jobs=False)
 socketIO = initialise_ws(application)
 start_brodcaster(application, max_age=5)  # use default ws_channel
-
-
-def start_websocket_server():
-    from lifemonitor.ws import initialise_ws
-
-    # init SocketIO middleware
-    socketIO = initialise_ws(application)
-    # start app server with SocketIO server enabled
-    socketIO.run(application, host="0.0.0.0", port=8000,
-                 keyfile=os.environ.get("LIFEMONITOR_TLS_KEY", './certs/lm.key'),
-                 certfile=os.environ.get("LIFEMONITOR_TLS_CERT", './certs/lm.crt'))
-
-
-def start_app_server():
-    """ Start Flask App"""
-    context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-    context.load_cert_chain(
-        os.environ.get("LIFEMONITOR_TLS_CERT", './certs/lm.crt'),
-        os.environ.get("LIFEMONITOR_TLS_KEY", './certs/lm.key'))
-    application.run(host="0.0.0.0", port=8000, ssl_context=context)
-
-
-def start():
-    from lifemonitor.utils import boolean_value
-    if boolean_value(os.environ.get("WEBSOCKET_SERVER", True)) \
-            and application.config.get("ENV") not in ("testing", "testingSupport"):
-        logger.info("Starting App+WebSocket Server...")
-        start_websocket_server()
-    else:
-        logger.info("Starting App Server...")
-        start_app_server()
-
-
-if __name__ == '__main__':
-    start()
