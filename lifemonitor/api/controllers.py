@@ -609,7 +609,7 @@ def workflows_delete(wf_uuid):
         return lm_exceptions.report_problem(401, "Unauthorized", extra_info={"exception": str(e)})
     except lm_exceptions.EntityNotFoundException as e:
         return lm_exceptions.report_problem(404, "Not Found", extra_info={"exception": str(e.detail)},
-                                            detail=messages.workflow_version_not_found.format(wf_uuid))
+                                            detail=messages.workflow_not_found.format(wf_uuid))
     except lm_exceptions.NotAuthorizedException as e:
         return lm_exceptions.report_problem(403, "Forbidden", extra_info={"exception": str(e)})
     except Exception as e:
