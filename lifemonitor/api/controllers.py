@@ -22,9 +22,10 @@ import logging
 import tempfile
 
 import connexion
-import lifemonitor.exceptions as lm_exceptions
 import werkzeug
-from flask import Response, request, render_template
+from flask import Response, current_app, redirect, render_template, request
+
+import lifemonitor.exceptions as lm_exceptions
 from lifemonitor.api import models, serializers
 from lifemonitor.api.services import LifeMonitor
 from lifemonitor.auth import (EventType, authorized, current_registry,
@@ -35,6 +36,7 @@ from lifemonitor.auth.oauth2.client.models import \
     OAuthIdentityNotFoundException
 from lifemonitor.cache import Timeout, cached, clear_cache
 from lifemonitor.lang import messages
+from lifemonitor.tasks.models import Job
 from lifemonitor.utils import notify_updates, notify_workflow_version_updates
 
 # Initialize a reference to the LifeMonitor instance
