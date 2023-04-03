@@ -249,7 +249,7 @@ def notify_updates(workflows: List, type: str = 'sync', delay: int = 0):
         "type": type,
         "data": [{
             'uuid': str(w["uuid"]),
-            'version': w["version"],
+            'version': w.get("version", None),
             'lastUpdate': (w.get('lastUpdate', None) or datetime.now()).replace(tzinfo=timezone.utc).timestamp()
         } for w in workflows]
     }, delay=delay)
