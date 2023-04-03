@@ -597,6 +597,8 @@ def workflows_delete_version(wf_uuid, wf_version):
 @authorized
 def workflows_delete(wf_uuid):
     try:
+        w = lm.get_workflow(wf_uuid)
+        versions = [{'uuid': wf_uuid, 'version': w.version} for w in w.versions.values()]
         if current_user and not current_user.is_anonymous:
             lm.deregister_user_workflow(wf_uuid, current_user)
         elif current_registry:
@@ -605,7 +607,7 @@ def workflows_delete(wf_uuid):
             return lm_exceptions.report_problem(403, "Forbidden",
                                                 detail=messages.no_user_in_session)
         clear_cache()
-        notify_updates([{'uuid': wf_uuid}], type='delete')
+        notify_updates(versions, type='delete')
         return connexion.NoContent, 204
     except OAuthIdentityNotFoundException as e:
         return lm_exceptions.report_problem(401, "Unauthorized", extra_info={"exception": str(e)})
@@ -636,9 +638,15 @@ def workflows_get_issue_types_as_html(back=None):
 def workflows_get_suites(wf_uuid, version='latest', status: bool = False, latest_builds: bool = False):
     workflow_version = __get_workflow_version__(wf_uuid, version)
     logger.debug("GET suites of workflow version: %r", workflow_version)
-    return serializers.ListOfSuites(
-        status=status, latest_builds=latest_builds
-    ).dump(workflow_version.test_suites)
+    try:
+        return serializers.ListOfSuites(
+            status=status, latest_builds=latest_builds
+        ).dump(workflow_version.test_suites)
+    finally:
+        if latest_builds:
+            for s in workflow_version.test_suites:
+                for i in s.test_instances:
+                    i.save()
 
 
 def _get_suite_or_problem(suite_uuid):
@@ -671,16 +679,48 @@ def _get_suite_or_problem(suite_uuid):
 
 @cached(timeout=Timeout.REQUEST)
 def suites_get_by_uuid(suite_uuid, status: bool = False, latest_builds: bool = False):
-    response = _get_suite_or_problem(suite_uuid)
-    return response if isinstance(response, Response) \
-        else serializers.SuiteSchema(status=status, latest_builds=latest_builds).dump(response)
+    suite = _get_suite_or_problem(suite_uuid)
+    try:
+        return suite if isinstance(suite, Response) \
+            else serializers.SuiteSchema(status=status, latest_builds=latest_builds).dump(suite)
+    except Exception as e:
+        return __handle_testing_service_error__(e, instance_uuid=suite_uuid,
+                                                message=messages.suite_status_unavailable.format(suite_uuid)
+                                                if isinstance(e, lm_exceptions.TestingServiceException) else str(e))
+    finally:
+        if suite and latest_builds:
+            for i in suite.test_instances:
+                i.save()
 
 
 @cached(timeout=Timeout.REQUEST)
 def suites_get_status(suite_uuid):
-    response = _get_suite_or_problem(suite_uuid)
-    return response if isinstance(response, Response) \
-        else serializers.SuiteStatusSchema().dump(response)
+    suite = _get_suite_or_problem(suite_uuid)
+    try:
+        return suite if isinstance(suite, Response) \
+            else serializers.SuiteStatusSchema().dump(suite)
+    except Exception as e:
+        return __handle_testing_service_error__(e, instance_uuid=suite_uuid,
+                                                message=messages.suite_status_unavailable.format(suite_uuid))
+    finally:
+        if suite:
+            for i in suite.test_instances:
+                i.save()
+
+
+def __handle_testing_service_error__(e: Exception, instance_uuid: str = None, message: str = None):
+    extra_info = {}
+    if isinstance(e, lm_exceptions.TestingServiceException):
+        extra_info['testing_service_error'] = {
+            "title": e.title,
+            "status": e.status,
+            "message": e.detail,
+        }
+    else:
+        extra_info["exception"] = str(e)
+    return lm_exceptions.report_problem(500, "Unavailable builds", instance=instance_uuid,
+                                        detail=message,
+                                        extra_info=extra_info)
 
 
 @cached(timeout=Timeout.REQUEST)
@@ -839,9 +879,25 @@ def instances_delete_by_id(instance_uuid):
 @cached(timeout=Timeout.REQUEST)
 def instances_get_builds(instance_uuid, limit):
     response = _get_instances_or_problem(instance_uuid)
-    logger.info("Number of builds to load: %r", limit)
-    return response if isinstance(response, Response) \
-        else serializers.ListOfTestBuildsSchema().dump(response.get_test_builds(limit=limit))
+    logger.debug("Number of builds to load: %r", limit)
+    try:
+        builds = response.get_test_builds(limit=limit)
+        response.save()
+        return response if isinstance(response, Response) \
+            else serializers.ListOfTestBuildsSchema().dump(builds)
+    except Exception as e:
+        extra_info = {}
+        if isinstance(e, lm_exceptions.TestingServiceException):
+            extra_info['testing_service_error'] = {
+                "title": e.title,
+                "status": e.status,
+                "message": e.detail,
+            }
+        else:
+            extra_info["exception"] = str(e)
+        return lm_exceptions.report_problem(500, "Unavailable builds", instance=instance_uuid,
+                                            detail=messages.instance_builds_unavailable.format(instance_uuid),
+                                            extra_info=extra_info)
 
 
 @cached(timeout=Timeout.REQUEST)
