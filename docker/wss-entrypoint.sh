@@ -35,7 +35,7 @@ export WEBSOCKET_SERVER_PORT=${WEBSOCKET_SERVER_PORT:-8001}
 export WEBSOCKET_SERVER="false"
 
 # set switch to enable autoreload feature of gunicorn
-export WEBSOCKET_SERVER_ENV=${WEBSOCKET_SERVER_ENV:-production}
+export WEBSOCKET_SERVER_ENV=${WEBSOCKET_SERVER_ENV:-${FLASK_ENV:-production}}
 
 # wait for services
 wait-for-postgres.sh

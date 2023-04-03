@@ -102,7 +102,7 @@ services:
 
   ws_server:
     image: crs4/lifemonitor
-    entrypoint: /usr/local/bin/ws_entrypoint.sh
+    entrypoint: /usr/local/bin/wss-entrypoint.sh
     restart: "always"
     depends_on:
       - "db"
