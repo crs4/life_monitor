@@ -189,8 +189,9 @@ def test_post_workflow_by_user_error_missing_input_data(m, request_context, mock
         "get_workflow_registry_by_uri should be used"
 
 
+@patch("lifemonitor.api.controllers.notify_workflow_version_updates")
 @patch("lifemonitor.api.controllers.lm")
-def test_post_workflow_by_user(m, request_context, mock_user):
+def test_post_workflow_by_user(m, notify_updates, request_context, mock_user):
     assert not auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_user == mock_user, "Unexpected user in session"
     assert not auth.current_registry, "Unexpected registry in session"
@@ -202,6 +203,7 @@ def test_post_workflow_by_user(m, request_context, mock_user):
         "roc_link": "https://registry.org/roc_crate/download"
     }
     m.get_workflow_registry_by_generic_reference.return_value = MagicMock()
+    notify_updates.return_value = None
     w = MagicMock()
     w.uuid = data['uuid']
     w.version = data['version']
@@ -241,10 +243,12 @@ def test_post_workflow_by_registry_error_submitter_not_found(m, request_context,
         "Unexpected error message"
 
 
+@patch("lifemonitor.api.controllers.notify_workflow_version_updates")
 @patch("lifemonitor.api.controllers.lm")
-def test_post_workflow_by_registry(m, request_context, mock_registry):
+def test_post_workflow_by_registry(m, notify_udpates, request_context, mock_registry):
     assert auth.current_user.is_anonymous, "Unexpected user in session"
     assert auth.current_registry, "Unexpected registry in session"
+    notify_udpates.return_value = None
     # add one fake workflow
     data = {
         "uuid": "1212121212121212",
