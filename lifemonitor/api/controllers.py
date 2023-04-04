@@ -417,8 +417,13 @@ def __check_submitter_and_registry__(body, _registry=None, _submitter_id=None, _
     return registry, submitter
 
 
-def workflows_post(body, _registry=None, _submitter_id=None,
-                   async_processing: Optional[bool] = None, job: Job = None):
+@authorized
+def workflows_post(*args, **kwargs):
+    return process_workflows_post(*args, **kwargs)
+
+
+def process_workflows_post(body, _registry=None, _submitter_id=None,
+                           async_processing: Optional[bool] = None, job: Job = None):
     logger.warning("The current body: %r", body)
     # check if there exists a submitter and/or a registry in the current request
     registry, submitter = __check_submitter_and_registry__(body, _registry, _submitter_id)
@@ -879,26 +884,30 @@ def instances_delete_by_id(instance_uuid):
 
 @cached(timeout=Timeout.REQUEST)
 def instances_get_builds(instance_uuid, limit):
+    # response = _get_instances_or_problem(instance_uuid)
+    # logger.debug("Number of builds to load: %r", limit)
+    # try:
+    #     builds = response.get_test_builds(limit=limit)
+    #     response.save()
+    #     return response if isinstance(response, Response) \
+    #         else serializers.ListOfTestBuildsSchema().dump(builds)
+    # except Exception as e:
+    #     extra_info = {}
+    #     if isinstance(e, lm_exceptions.TestingServiceException):
+    #         extra_info['testing_service_error'] = {
+    #             "title": e.title,
+    #             "status": e.status,
+    #             "message": e.detail,
+    #         }
+    #     else:
+    #         extra_info["exception"] = str(e)
+    #     return lm_exceptions.report_problem(500, "Unavailable builds", instance=instance_uuid,
+    #                                         detail=messages.instance_builds_unavailable.format(instance_uuid),
+    #                                         extra_info=extra_info)
     response = _get_instances_or_problem(instance_uuid)
-    logger.debug("Number of builds to load: %r", limit)
-    try:
-        builds = response.get_test_builds(limit=limit)
-        response.save()
-        return response if isinstance(response, Response) \
-            else serializers.ListOfTestBuildsSchema().dump(builds)
-    except Exception as e:
-        extra_info = {}
-        if isinstance(e, lm_exceptions.TestingServiceException):
-            extra_info['testing_service_error'] = {
-                "title": e.title,
-                "status": e.status,
-                "message": e.detail,
-            }
-        else:
-            extra_info["exception"] = str(e)
-        return lm_exceptions.report_problem(500, "Unavailable builds", instance=instance_uuid,
-                                            detail=messages.instance_builds_unavailable.format(instance_uuid),
-                                            extra_info=extra_info)
+    logger.info("Number of builds to load: %r", limit)
+    return response if isinstance(response, Response) \
+        else serializers.ListOfTestBuildsSchema().dump(response.get_test_builds(limit=limit))
 
 
 @cached(timeout=Timeout.REQUEST)

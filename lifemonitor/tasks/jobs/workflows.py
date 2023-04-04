@@ -4,7 +4,7 @@ import time
 
 from flask import Response
 
-from lifemonitor.api.controllers import workflows_post
+from lifemonitor.api.controllers import process_workflows_post
 from lifemonitor.exceptions import report_problem_from_exception
 
 from ..models import Job
@@ -24,7 +24,7 @@ def register_workflow(job_id: str, registration_data: object):
     time.sleep(2)
     # start registration
     try:
-        result = workflows_post(registration_data, async_processing=False, job=job)
+        result = process_workflows_post(registration_data, async_processing=False, job=job)
     except Exception as e:
         logger.exception(e)
         result = report_problem_from_exception(e)
