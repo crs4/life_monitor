@@ -19,8 +19,14 @@ spec:
       - name: lifemonitor-init
         image: {{ include "chart.lifemonitor.image" . }}
         imagePullPolicy: {{ .Values.lifemonitor.imagePullPolicy }}
-        command: ["/bin/sh","-c"]
-        args: ["wait-for-redis.sh && wait-for-postgres.sh && ./lm-admin db init && ./lm-admin task-queue reset"]
+        command:
+        - /bin/sh
+        - -c
+        - |
+          wait-for-redis.sh \
+          && wait-for-postgres.sh \
+          && ./lm-admin db init \
+          && ./lm-admin task-queue reset
         env:
         {{- include "lifemonitor.common-env" . | nindent 10 }}
         volumeMounts:
