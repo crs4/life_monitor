@@ -14,3 +14,25 @@ spec:
   selector:
     {{- include "chart.selectorLabels" . | nindent 4 }}
     app.kubernetes.io/component: backend
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "chart.fullname" . }}-wss
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.lifemonitor.service.type }}
+  ports:
+    - port: 8001
+      targetPort: 8001
+      protocol: TCP
+      name: wss
+  selector:
+    {{- include "chart.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: wss
+
+---
+
