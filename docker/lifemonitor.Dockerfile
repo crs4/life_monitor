@@ -75,7 +75,7 @@ RUN git config --global user.name "LifeMonitor[bot]" \
     && git config --global user.email "noreply@lifemonitor.eu"
 
 # Copy lifemonitor app
-COPY --chown=lm:lm app.py lm-metrics-server lm-admin lm gunicorn.conf.py /lm/
+COPY --chown=lm:lm app.py ws.py lm-metrics-server lm-admin lm gunicorn.conf.py /lm/
 COPY --chown=lm:lm specs /lm/specs
 COPY --chown=lm:lm lifemonitor /lm/lifemonitor
 COPY --chown=lm:lm migrations /lm/migrations
