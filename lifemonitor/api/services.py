@@ -201,7 +201,7 @@ class LifeMonitor:
             try:
                 if job:
                     job.update_status('Processing test suites', save=True)
-                if wv.roc_suites:
+                if wv.get_roc_suites():
                     for _, raw_suite in wv.roc_suites.items():
                         cls._init_test_suite_from_json(wv, workflow_submitter, raw_suite)
             except KeyError as e:

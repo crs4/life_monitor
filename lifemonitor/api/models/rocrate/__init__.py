@@ -202,6 +202,7 @@ class ROCrate(Resource):
 
     def __get_attribute_from_crate_reader__(self,
                                             attributeName: str, attributedType: str = 'method',
+                                            ignore_errors: bool = True,
                                             *args, **kwargs) -> object | None:
         try:
             attr = getattr(self._crate_reader, attributeName)
@@ -213,10 +214,14 @@ class ROCrate(Resource):
             logger.warning("Unable to process ROCrate archive: %s", str(e))
             if logger.isEnabledFor(logging.DEBUG):
                 logger.exception(e)
+            if not ignore_errors:
+                raise e
         except Exception as e:
             logger.error(str(e))
             if logger.isEnabledFor(logging.DEBUG):
                 logger.exception(e)
+            if not ignore_errors:
+                raise e
         return None
 
     def get_authors(self, suite_id: str = None) -> List[Dict] | None:
@@ -226,8 +231,11 @@ class ROCrate(Resource):
     def roc_suites(self):
         return self.__get_attribute_from_crate_reader__('get_roc_suites')
 
-    def get_roc_suite(self, roc_suite_identifier):
-        return self.__get_attribute_from_crate_reader__('get_get_roc_suite', roc_suite_identifier)
+    def get_roc_suites(self, ignore_errors: bool = False):
+        return self.__get_attribute_from_crate_reader__('get_roc_suites', ignore_errors=ignore_errors)
+
+    def get_roc_suite(self, roc_suite_identifier, ignore_errors: bool = False):
+        return self.__get_attribute_from_crate_reader__('get_get_roc_suite', roc_suite_identifier, ignore_errors=ignore_errors)
 
     @property
     def based_on(self) -> str | None:
