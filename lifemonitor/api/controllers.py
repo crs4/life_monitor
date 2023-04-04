@@ -453,7 +453,7 @@ def process_workflows_post(body, _registry=None, _submitter_id=None,
         if encoded_rocrate:
             registration_data['rocrate'] = encoded_rocrate
         if registry:
-            registration_data["registry"] = registry.name
+            registration_data["registry"] = registry.server_credentials.client_name
         # create async Job
         job = Job(job_type='workflow_registration',  # job_name='register_workflow',
                   status='waiting',
