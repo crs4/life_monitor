@@ -261,7 +261,6 @@ def notify_updates(workflows: List, type: str = 'sync', delay: int = 0):
 
 def notify_workflow_version_updates(workflows: List, type: str = 'sync', delay: int = 0):
     from lifemonitor.ws import io
-    from datetime import timezone
     io.publish_message({
         "type": type,
         "data": [{
