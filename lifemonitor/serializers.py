@@ -89,8 +89,18 @@ class MetadataSchema(BaseSchema):
     api_version = fields.Method("get_api_version")
     base_url = fields.Method("get_base_url")
     resource = fields.Method("get_self_path")
-    created = fields.DateTime(attribute='created')
-    modified = fields.DateTime(attribute='modified')
+    created = fields.Method("get_created")  # fields.DateTime(attribute='created', format='timestamp', tzinfo=pytz.utc)
+    modified = fields.Method("get_modified")  # fields.DateTime(attribute='modified', format='timestamp', tzinfo=pytz.utc)
+
+    def get_created(self, obj):
+        if hasattr(obj, 'created'):
+            return obj.created.timestamp()
+        return None
+
+    def get_modified(self, obj):
+        if hasattr(obj, 'modified'):
+            return obj.modified.timestamp()
+        return None
 
     def get_api_version(self, obj):
         return self.api_version

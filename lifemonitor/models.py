@@ -35,8 +35,8 @@ class ModelMixin(CacheMixin):
     def refresh(self, **kwargs):
         db.session.refresh(self, **kwargs)
 
-    def save(self, commit: bool = True, flush: bool = True):
-        if hasattr(self, 'modified'):
+    def save(self, commit: bool = True, flush: bool = True, update_modified: bool = True):
+        if hasattr(self, 'modified') and update_modified:
             setattr(self, 'modified', datetime.now(tz=timezone.utc))
         with db.session.begin_nested():
             db.session.add(self)

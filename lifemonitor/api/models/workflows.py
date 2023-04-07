@@ -340,6 +340,11 @@ class WorkflowVersion(ROCrate):
                                   for s in self.test_suites]
         return data
 
+    def save(self):
+        self.workflow.save(commit=False, flush=False)
+        self.modified = self.workflow.modified
+        super().save(update_modified=False)
+
     def delete(self):
         if len(self.workflow.versions) > 1:
             workflow = self.workflow

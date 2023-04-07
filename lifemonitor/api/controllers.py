@@ -482,7 +482,11 @@ def process_workflows_post(body, _registry=None, _submitter_id=None,
         logger.debug("workflows_post. Created workflow '%s' (ver.%s)", w.uuid, w.version)
         clear_cache()
         notify_workflow_version_updates([w], type='sync', delay=2)
-        return {'uuid': str(w.workflow.uuid), 'wf_version': w.version, 'name': w.name}, 201
+        return {'uuid': str(w.workflow.uuid), 'wf_version': w.version, 'name': w.name,
+                'meta': {
+                    'created': w.workflow.created.timestamp(),
+                    'modified': w.workflow.modified.timestamp()}
+                }, 201
     except KeyError as e:
         return lm_exceptions.report_problem(400, "Bad Request", extra_info={"exception": str(e)},
                                             detail=messages.input_data_missing)
@@ -517,10 +521,17 @@ def workflows_put(wf_uuid, body):
     # update basic information aboud the specified workflow
     workflow_version.workflow.name = body.get('name', workflow_version.workflow.name)
     workflow_version.workflow.public = body.get('public', workflow_version.workflow.public)
-    workflow_version.workflow.save()
+    # workflow_version.workflow.save()
+    workflow_version.save()
     clear_cache()
-    notify_workflow_version_updates([workflow_version], type='sync')
-    return connexion.NoContent, 204
+    notify_workflow_version_updates([workflow_version], type='sync', delay=2)
+    return {
+        'meta':
+            {
+                'created': workflow_version.created.timestamp(),
+                'modified': workflow_version.modified.timestamp()
+            }
+    }, 201
 
 
 @authorized
@@ -548,9 +559,15 @@ def workflows_version_put(wf_uuid, wf_version, body):
         )
         clear_cache()
         if updated_workflow_version.uuid != workflow_version.uuid:
-            return {'uuid': str(updated_workflow_version.workflow.uuid),
-                    'wf_version': updated_workflow_version.version,
-                    'name': updated_workflow_version.name}, 201
+            return {
+                'uuid': str(updated_workflow_version.workflow.uuid),
+                'wf_version': updated_workflow_version.version,
+                'name': updated_workflow_version.name,
+                'meta': {
+                    'created': updated_workflow_version.workflow.created.timestamp(),
+                    'modified': updated_workflow_version.workflow.modified.timestamp()
+                }
+            }, 201
         return connexion.NoContent, 204
 
     except KeyError as e:

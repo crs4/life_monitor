@@ -63,6 +63,10 @@ def datetime_as_timestamp_with_msecs(
     return int(d.timestamp() * 1000)
 
 
+def datetime_to_utc_unix_timestamp(dt: datetime) -> int:
+    return dt.replace(tzinfo=timezone.utc).timestamp()
+
+
 def values_as_list(values, in_separator='\\s?,\\s?|\\s+'):
     if not values:
         return []
@@ -250,7 +254,7 @@ def notify_updates(workflows: List, type: str = 'sync', delay: int = 0):
         "data": [{
             'uuid': str(w["uuid"]),
             'version': w.get("version", None),
-            'lastUpdate': (w.get('lastUpdate', None) or datetime.now()).replace(tzinfo=timezone.utc).timestamp()
+            'lastUpdate': (w.get('lastUpdate', None) or datetime.now(tzinfo=timezone.utc)).timestamp()
         } for w in workflows]
     }, delay=delay)
 
@@ -265,8 +269,8 @@ def notify_workflow_version_updates(workflows: List, type: str = 'sync', delay: 
             'version': w.version,
             'lastUpdate':  # datetime.now(tz=timezone.utc).timestamp()
             max(
-                w.modified.replace(tzinfo=timezone.utc).timestamp(),
-                w.workflow.modified.replace(tzinfo=timezone.utc).timestamp()
+                w.modified.timestamp(),
+                w.workflow.modified.timestamp()
             )
         } for w in workflows]
     }, delay=delay)
