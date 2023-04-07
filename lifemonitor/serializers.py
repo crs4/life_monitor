@@ -93,12 +93,12 @@ class MetadataSchema(BaseSchema):
     modified = fields.Method("get_modified")  # fields.DateTime(attribute='modified', format='timestamp', tzinfo=pytz.utc)
 
     def get_created(self, obj):
-        if hasattr(obj, 'created'):
+        if hasattr(obj, 'created') and obj.created:
             return obj.created.timestamp()
         return None
 
     def get_modified(self, obj):
-        if hasattr(obj, 'modified'):
+        if hasattr(obj, 'modified') and obj.modified:
             return obj.modified.timestamp()
         return None
 
