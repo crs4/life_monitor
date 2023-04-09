@@ -103,8 +103,10 @@ def build_sync_message():
     if current_app:
         with current_app.app_context():
             return {
-                "type": "sync",
-                "data": LifeMonitor.list_workflow_updates()
+                "payload": {
+                    "type": "sync",
+                    "data": LifeMonitor.list_workflow_updates()
+                }
             }
     else:
         return {
