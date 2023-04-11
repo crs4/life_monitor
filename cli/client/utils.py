@@ -40,15 +40,17 @@ def is_url(value):
         return False
 
 
-def get_repository(repository: str, local_path: str = None):
+def get_repository(repository: str, local_path: str):
     assert repository, repository
     if is_url(repository):
         remote_repo_url = repository
         if remote_repo_url.endswith('.git'):
-            return GithubWorkflowRepository.from_url(remote_repo_url, auto_cleanup=True, local_path=local_path)
+            return GithubWorkflowRepository.from_url(remote_repo_url, auto_cleanup=False, local_path=local_path)
     else:
-        return LocalWorkflowRepository(repository)
-    return ValueError("Repository type not supported")
+        local_copy_path = os.path.join(local_path, os.path.basename(repository))
+        shutil.copytree(repository, local_copy_path)
+        return LocalWorkflowRepository(local_copy_path)
+    raise ValueError("Repository type not supported")
 
 
 def init_output_path(output_path):

@@ -37,6 +37,8 @@ from lifemonitor.api.models import repositories
 # set module level logger
 logger = logging.getLogger(__name__)
 
+ROOT_ISSUE = 'r'
+
 
 class IssueMessage:
 
@@ -187,9 +189,8 @@ def load_issue(issue_file) -> List[Type[WorkflowRepositoryIssue]]:
     return issues.values()
 
 
-def find_issue_types(path: Optional[str] = None) -> List[Type[WorkflowRepositoryIssue]]:
+def get_issue_graph(path: Optional[str] = None) -> nx.DiGraph:
     errors = []
-    issues = {}
     g = nx.DiGraph()
     base_path = Path(path) if path else Path(__file__).parent
 
@@ -209,13 +210,12 @@ def find_issue_types(path: Optional[str] = None) -> List[Type[WorkflowRepository
                     and inspect.getmodule(obj) == mod \
                     and obj != WorkflowRepositoryIssue \
                         and issubclass(obj, WorkflowRepositoryIssue):
-                    issues[obj.__name__] = obj
                     dependencies = getattr(obj, 'depends_on', None)
                     if not dependencies or len(dependencies) == 0:
-                        g.add_edge('r', obj.__name__)
+                        g.add_edge(ROOT_ISSUE, obj)
                     else:
                         for dep in dependencies:
-                            g.add_edge(dep.__name__, obj.__name__)
+                            g.add_edge(dep, obj)
         except ModuleNotFoundError as e:
             logger.exception(e)
             logger.error("ModuleNotFoundError: Unable to load module %s", m)
@@ -224,10 +224,11 @@ def find_issue_types(path: Optional[str] = None) -> List[Type[WorkflowRepository
         logger.error("** There were some errors loading application modules.**")
         if logger.isEnabledFor(logging.DEBUG):
             logger.error("** Unable to load issues from %s", ", ".join(errors))
-    logger.debug("Issues: %r", [_.__name__ for _ in issues.values()])
-    sorted_issues = [issues[_] for _ in nx.dfs_preorder_nodes(g, source='r') if _ != 'r']
-    logger.debug("Sorted issues: %r", [_.__name__ for _ in sorted_issues])
-    return sorted_issues
+    return g
+
+
+def find_issue_types(path: Optional[str] = None) -> List[Type[WorkflowRepositoryIssue]]:
+    return [i for i in get_issue_graph(path).nodes if i != ROOT_ISSUE]
 
 
 __all__ = ["WorkflowRepositoryIssue"]

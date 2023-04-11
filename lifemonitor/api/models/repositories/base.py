@@ -153,28 +153,48 @@ class WorkflowRepository():
     def contains(self, file: RepositoryFile) -> bool:
         return self.__contains__(self.files, file)
 
+    @staticmethod
+    def _issue_name_included(issue_name: str,
+                             include_list: List[str] | None = None,
+                             exclude_list: List[str] | None = None) -> bool:
+        if include_list and (issue_name in [to_camel_case(_) for _ in include_list]):
+            return True
+
+        if exclude_list is None:
+            return True
+
+        return issue_name not in [to_camel_case(_) for _ in exclude_list]
+
     def check(self, fail_fast: bool = True,
               include=None, exclude=None) -> IssueCheckResult:
         found_issues = []
-        checked = []
-        for issue_type in issues.find_issue_types():
-            if (not exclude or issue_type.__name__ not in [to_camel_case(_) for _ in exclude]) or \
-                    (not include or issue_type.__name__ in [to_camel_case(_) for _ in include]):
+        issue_graph = issues.get_issue_graph()
+
+        visited = set()
+        queue = [i for i in issue_graph.neighbors(issues.ROOT_ISSUE)
+                 if self._issue_name_included(i.__name__, include, exclude)]
+        while queue:
+            issue_type = queue.pop()
+            if issue_type not in visited:
                 issue = issue_type()
-                to_be_solved = issue.check(self)
-                checked.append(issue)
-                if to_be_solved:
+                failed = issue.check(self)
+                visited.add(issue_type)
+                if not failed:
+                    neighbors = [i for i in issue_graph.neighbors(issue_type)
+                                 if self._issue_name_included(i.__name__, include, exclude)]
+                    queue.extend(neighbors)
+                else:
                     found_issues.append(issue)
                     if fail_fast:
                         break
-        return IssueCheckResult(self, checked, found_issues)
+        return IssueCheckResult(self, list(visited), found_issues)
 
     @classmethod
     def __contains__(cls, files, file) -> bool:
         return cls.__find_file__(files, file) is not None
 
     @classmethod
-    def __find_file__(cls, files, file) -> RepositoryFile:
+    def __find_file__(cls, files, file) -> RepositoryFile | None:
         for f in files:
             if f == file or (f.name == file.name and f.dir == file.dir):
                 return f

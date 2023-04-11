@@ -24,7 +24,6 @@ import logging
 
 from lifemonitor.api.models.issues import WorkflowRepositoryIssue
 from lifemonitor.api.models.repositories import WorkflowRepository
-from .lm import MissingLMConfigFile
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -34,7 +33,6 @@ class RepositoryNotInitialised(WorkflowRepositoryIssue):
     name = "Repository not intialised"
     description = "No workflow and crate metadata found on this repository."
     labels = ['invalid', 'enhancement', 'config']
-    depends_on = [MissingLMConfigFile]
 
     def check(self, repo: WorkflowRepository) -> bool:
         return repo.find_workflow() is None and repo.metadata is None
