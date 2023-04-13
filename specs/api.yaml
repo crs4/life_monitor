@@ -703,6 +703,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/wf_status"
         - $ref: "#/components/parameters/wf_versions"
+        - $ref: "#/components/parameters/wf_subscriptions"
       responses:
         "200":
           description: List of Workflows

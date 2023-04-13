@@ -108,14 +108,17 @@ def workflow_registries_get_current():
 
 
 @cached(timeout=Timeout.REQUEST)
-def workflows_get(status=False, versions=False):
+def workflows_get(status=False, versions=False, subscriptions=False, only_subscriptions=False):
     workflows = lm.get_public_workflows()
     if current_user and not current_user.is_anonymous:
-        workflows.extend(lm.get_user_workflows(current_user))
+        workflows.extend(lm.get_user_workflows(current_user,
+                                               include_subscriptions=subscriptions,
+                                               only_subscriptions=only_subscriptions))
     elif current_registry:
         workflows.extend(lm.get_registry_workflows(current_registry))
     logger.debug("workflows_get. Got %s workflows (user: %s)", len(workflows), current_user)
-    return serializers.ListOfWorkflows(workflow_status=status, workflow_versions=versions).dump(
+    return serializers.ListOfWorkflows(workflow_status=status, workflow_versions=versions,
+                                       subscriptionsOf=[current_user] if subscriptions else []).dump(
         list(dict.fromkeys(workflows))
     )
 
@@ -262,15 +265,16 @@ def registry_user_workflows_post(user_id, body):
 
 @authorized
 @cached(timeout=Timeout.REQUEST)
-def user_workflows_get(status=False, subscriptions=False, versions=False):
+def user_workflows_get(status=False, versions=False, subscriptions=False, only_subscriptions: bool = False):
     if not current_user or current_user.is_anonymous:
         return lm_exceptions.report_problem(401, "Unauthorized", detail=messages.no_user_in_session)
-    workflows = lm.get_user_workflows(current_user, include_subscriptions=subscriptions)
+    workflows = lm.get_user_workflows(current_user,
+                                      include_subscriptions=subscriptions,
+                                      only_subscriptions=only_subscriptions)
     logger.debug("user_workflows_get. Got %s workflows (user: %s)", len(workflows), current_user)
     return serializers.ListOfWorkflows(workflow_status=status,
                                        workflow_versions=versions,
-                                       subscriptionsOf=[current_user]
-                                       if subscriptions else None).dump(workflows)
+                                       subscriptionsOf=[current_user] if subscriptions else None).dump(workflows)
 
 
 @authorized

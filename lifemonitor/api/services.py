@@ -550,7 +550,13 @@ class LifeMonitor:
         return models.Workflow.get_public_workflows()
 
     @staticmethod
-    def get_user_workflows(user: User, include_subscriptions: bool = False) -> List[models.Workflow]:
+    def get_user_workflows(user: User,
+                           include_subscriptions: bool = False,
+                           only_subscriptions: bool = False) -> List[models.Workflow]:
+        if only_subscriptions:
+            return [_.resource for _ in user.subscriptions
+                    if _.resource.public or user in [p.user for p in _.resource.permissions]]
+
         workflows = [w for w in models.Workflow.get_user_workflows(user, include_subscriptions=include_subscriptions)]
         for svc in models.WorkflowRegistry.all():
             if svc.get_user(user.id):
