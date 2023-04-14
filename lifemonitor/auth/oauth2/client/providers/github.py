@@ -53,7 +53,7 @@ def normalize_userinfo(client, data):
 
 
 class GitHub:
-    name = 'Github'
+    name = 'GitHub'
     client_name = 'github'
     oauth_config = {
         'client_id': current_app.config.get('GITHUB_CLIENT_ID', None),
