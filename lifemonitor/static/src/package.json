@@ -59,7 +59,7 @@
         "jqvmap-novulnerability": "^1.5.1",
         "overlayscrollbars": "^1.13.1",
         "summernote": "^0.8.18",
-        "sweetalert2": "^10.15.6",
+        "sweetalert2": "~10.15.6",
         "tempusdominus-bootstrap-4": "^5.39.0",
         "tempusdominus-core": "^5.19.0",
         "toastr": "^2.1.4",
