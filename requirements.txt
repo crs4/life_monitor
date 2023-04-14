@@ -39,7 +39,7 @@ python-redis-lock~=3.7.0
 PyGithub==1.55
 PyYAML~=5.4.1
 pika~=1.2.0
-redis~=4.1.4
+redis~=4.4.4
 requests~=2.27.1
 snakemake==6.13.1
 networkx~=2.8.2
