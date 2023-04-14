@@ -56,7 +56,7 @@ def normalize_userinfo(client, data):
 
 
 class LsAAI:
-    name = 'Life Science'
+    name = 'LifeScience RI'
     client_name = 'lsaai'
     oauth_config = {
         'client_id': current_app.config.get('LSAAI_CLIENT_ID', None),
