@@ -33,7 +33,6 @@ def check_workflows():
         try:
             for v in w.versions.values():
                 with v.cache.transaction(str(v)):
-                    logger.info("Updating external link: %r", v.external_link)
                     u = v.submitter
                     with current_app.test_request_context():
                         try:
