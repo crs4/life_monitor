@@ -232,16 +232,15 @@ class GithubTestingService(TestingService):
             workflow_version = test_instance.test_suite.workflow_version
             logger.warning("Checking Workflow version: %r (previous: %r, next: %r)",
                            workflow_version, workflow_version.previous_version, workflow_version.next_version)
-            if not workflow_version.previous_version:
-                if not workflow_version.next_version:
-                    logger.debug("No previous version found, then no filter applied... Loading all available builds")
-                else:
-                    created = "<{}".format(workflow_version.next_version.created.isoformat())
-            elif not workflow_version.next_version:
-                created = ">={}".format(workflow_version.created.isoformat())
-            else:
+            if workflow_version.previous_version and workflow_version.next_version:
                 created = "{}..{}".format(workflow_version.created.isoformat(),
                                           workflow_version.next_version.created.isoformat())
+            elif workflow_version.previous_version:
+                created = ">={}".format(workflow_version.created.isoformat())
+            elif workflow_version.next_version:
+                created = "<{}".format(workflow_version.next_version.created.isoformat())
+            else:
+                logger.debug("No previous version found, then no filter applied... Loading all available builds")
         logger.debug("Fetching runs : %r - %r", branch, created)
         # return list(self.__get_gh_workflow_runs__(workflow, branch=branch, created=created))
         return list(itertools.islice(self.__get_gh_workflow_runs__(workflow, branch=branch, created=created), limit))
