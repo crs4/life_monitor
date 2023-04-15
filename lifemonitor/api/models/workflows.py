@@ -237,7 +237,9 @@ class WorkflowVersion(ROCrate):
         try:
             values = list(self.workflow.versions.values())
             self_index = values.index(self)
-            return values[self_index + delta_index]
+            index = self_index + delta_index
+            if index >= 0 and index < len(values):
+                return values[self_index + delta_index]
         except ValueError:
             message = f"{self} doesn't belong to the workflow {self.workflow}"
             logger.error(message)
