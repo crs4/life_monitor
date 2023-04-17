@@ -27,7 +27,7 @@ import logging
 import os
 from abc import abstractclassmethod
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Type
 
 import git
 import giturlparse
@@ -329,6 +329,15 @@ class IssueCheckResult:
 
     def found_issues(self) -> bool:
         return len(self.issues) > 0
+
+    def is_checked(self, issue: Type[issues.WorkflowRepositoryIssue] | issues.WorkflowRepositoryIssue) -> bool:
+        if issue and issue in self.checked:
+            return True
+        if isinstance(issue, issues.WorkflowRepositoryIssue):
+            for issue_type in self.checked:
+                if isinstance(issue, issue_type):
+                    return True
+        return False
 
     @property
     def solved(self) -> List[issues.WorkflowRepositoryIssue]:
