@@ -170,6 +170,7 @@ class WorkflowRepository():
         found_issues = []
         issue_graph = issues.get_issue_graph()
 
+        checked = set()
         visited = set()
         queue = [i for i in issue_graph.neighbors(issues.ROOT_ISSUE)
                  if self._issue_name_included(i.__name__, include, exclude)]
@@ -179,6 +180,7 @@ class WorkflowRepository():
                 issue = issue_type()
                 failed = issue.check(self)
                 visited.add(issue_type)
+                checked.add(issue)
                 if not failed:
                     neighbors = [i for i in issue_graph.neighbors(issue_type)
                                  if self._issue_name_included(i.__name__, include, exclude)]
@@ -187,7 +189,7 @@ class WorkflowRepository():
                     found_issues.append(issue)
                     if fail_fast:
                         break
-        return IssueCheckResult(self, list(visited), found_issues)
+        return IssueCheckResult(self, list(checked), found_issues)
 
     @classmethod
     def __contains__(cls, files, file) -> bool:
