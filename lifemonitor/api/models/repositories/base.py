@@ -235,7 +235,7 @@ class WorkflowRepository():
                     return True
 
     @classmethod
-    def __compare__(cls, left_files, right_files, exclude: List[str] = None):
+    def __compare__(cls, left_files, right_files, exclude: List[str] | None = None):
         missing_left = [_ for _ in right_files
                         if not cls.__contains__(left_files, _) and (not exclude or _.name not in exclude)]
         logger.debug("Missing Left: %r", missing_left)
@@ -252,9 +252,9 @@ class WorkflowRepository():
         logger.debug("Differences: %r", differences)
         return missing_left, missing_right, differences
 
-    def compare_to(self, repo: WorkflowRepository, exclude: List[str] = None) -> Tuple[List[RepositoryFile],
-                                                                                       List[RepositoryFile],
-                                                                                       List[Tuple[RepositoryFile, RepositoryFile]]]:
+    def compare_to(self, repo: WorkflowRepository, exclude: List[str] | None = None) -> Tuple[List[RepositoryFile],
+                                                                                              List[RepositoryFile],
+                                                                                              List[Tuple[RepositoryFile, RepositoryFile]]]:
         assert repo and isinstance(repo, WorkflowRepository), repo
         return self.__compare__(self.files, repo.files, exclude=exclude)
 
