@@ -35,7 +35,7 @@ class MissingLMConfigFile(WorkflowRepositoryIssue):
     name = "Missing LifeMonitor configuration file"
     description = "No <code>lifemonitor.yaml</code> configuration file found on this repository.<br>"\
         "The <code>lifemonitor.yaml</code> should be placed on the root of this repository."
-    labels = ['config', 'enhancement']
+    labels = ['lifemonitor']
 
     def check(self, repo: WorkflowRepository) -> bool:
         if repo.config is None:
@@ -51,7 +51,7 @@ class InvalidConfigFile(WorkflowRepositoryIssue):
     description = "The LifeMonitor configuration file found on this repository "\
                   f"is not valid according to the schema " \
                   f"<a href='{get_validation_schema_url()}'>{get_validation_schema_url()}</a>.<br>"
-    labels = ['config', 'invalid', 'enhancement']
+    labels = ['lifemonitor']
     depends_on = [MissingLMConfigFile]
 
     def check(self, repo: WorkflowRepository) -> bool:

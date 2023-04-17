@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 class MissingWorkflowName(WorkflowRepositoryIssue):
     name = "Missing workflow name in metadata"
     description = "No name defined for this workflow. <br>You can set the workflow name on the `ro-crate-metadata.yaml` or `lifemonitor.yaml` file"
-    labels = ['invalid', 'bug']
+    labels = ['metadata']
     depends_on = [RepositoryNotInitialised]
 
     def check(self, repo: WorkflowRepository) -> bool:
