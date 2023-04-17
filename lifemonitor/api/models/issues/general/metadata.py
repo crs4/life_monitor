@@ -38,7 +38,7 @@ class MissingWorkflowName(WorkflowRepositoryIssue):
     depends_on = [RepositoryNotInitialised]
 
     def check(self, repo: WorkflowRepository) -> bool:
-        if repo.config.workflow_name:
+        if repo.config and repo.config.workflow_name:
             return False
         if repo.metadata and repo.metadata.main_entity_name:
             return False
