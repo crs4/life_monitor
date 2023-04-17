@@ -213,13 +213,13 @@ class WorkflowRepository():
         if os.path.exists(f.path):
             fp = open(f.path, 'rb')
         else:
-            content = f.get_content(binary_mode=False)
+            content = f.get_content(binary_mode=True)
             if content:
-                content_str = content.encode()
+                logger.debug("Reading file content: %r", content.encode())
+                fp = io.BytesIO(content)
             else:
-                content_str = b""
-            logger.debug("Reading file content: %r", content_str if content else b"None")
-            fp = io.BytesIO(content_str)
+                logger.debug("Reading file content: %s", "<empty content>")
+                fp = io.BytesIO(b"")
         return fp
 
     @classmethod
