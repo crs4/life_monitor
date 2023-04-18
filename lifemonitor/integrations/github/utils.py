@@ -230,17 +230,22 @@ class CachedPaginatedList(PaginatedList):
                  list_item: str = "items",
                  transactional_update: Optional[bool | Callable] = False,
                  force_use_cache: Optional[bool | Callable] = False,
-                 unless: Optional[bool | Callable] = None) -> None:
+                 unless: Optional[bool | Callable] = None,
+                 limit_runs: int = None,
+                 limit_attempts: int = None) -> None:
         super().__init__(contentClass, requester, firstUrl, firstParams, headers, list_item)
         self.transaction_update = transactional_update
         self.unless = unless
         self.force_use_cache = force_use_cache
+        self.limit_runs = limit_runs
+        self.limit_attempts = limit_attempts
 
     def __process_item__(self, item):
 
         def _get_item_(item):
             logger.debug("Transaction update: %r", self.force_use_cache(item) if self.force_use_cache else False)
-            logger.debug("Status: %r", item.status)
+            logger.debug("Run Status: %r", item.status)
+            logger.debug("Run attempts: %r", item.raw_data['run_attempt'])
             return item
 
         logger.debug(f"Processing item: {item}")
@@ -258,9 +263,14 @@ class CachedPaginatedList(PaginatedList):
         return self.__process_item__(super().__getitem__(index))
 
     def __iter__(self):
-        items = []
+        runs_count = 0
+        attempts_count = 0
         for item in super().__iter__():
-            cached_item = self.__process_item__(item)
-            if cached_item:
-                items.append(cached_item)
-        yield from items
+            yield self.__process_item__(item)
+            logger.warning(f"limit: {self.limit_attempts}: {item.raw_data['run_attempt']}")
+            runs_count += 1
+            if self.limit_runs and runs_count >= self.limit_runs:
+                break
+            attempts_count += item.raw_data['run_attempt']
+            if self.limit_attempts and attempts_count >= self.limit_attempts:
+                break

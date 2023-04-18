@@ -164,7 +164,9 @@ class GithubTestingService(TestingService):
                                  workflow: github.Worflow.Workflow,
                                  branch=github.GithubObject.NotSet,
                                  status=github.GithubObject.NotSet,
-                                 created=github.GithubObject.NotSet):
+                                 created=github.GithubObject.NotSet,
+                                 limit_runs: int = 10,
+                                 limit_attempts: int = None):
         """
         Extends `Workflow.get_runs` to support `created` param
         """
@@ -184,14 +186,17 @@ class GithubTestingService(TestingService):
         if status is not github.GithubObject.NotSet:
             url_parameters["status"] = status
         logger.debug("Getting runs of workflow %r ... DONE", workflow)
-        # return github.PaginatedList.PaginatedList(
+        # return github.PaginatedList.PaginatedList( # Default pagination class
         return CachedPaginatedList(
             github.WorkflowRun.WorkflowRun,
             workflow._requester,
             f"{workflow.url}/runs",
             url_parameters,
             None,
+            transactional_update=True,
             list_item="workflow_runs",
+            limit_runs=limit_runs,
+            limit_attempts=limit_attempts
             force_use_cache=lambda r: r.status == GithubTestingService.GithubStatus.COMPLETED
         )
 
@@ -208,19 +213,20 @@ class GithubTestingService(TestingService):
     @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True)
     def __get_gh_workflow_run_attempts__(self,
                                          workflow_run: github.WorkflowRun.WorkflowRun,
-                                         limit: int = 10) -> List[github.WorkflowRun.WorkflowRun]:
+                                         limit: int = None) -> List[github.WorkflowRun.WorkflowRun]:
         result = []
         i = workflow_run.raw_data['run_attempt']
         while i >= 1:
             headers, data = self.__get_gh_workflow_run_attempt__(workflow_run, i)
             result.append(WorkflowRun(workflow_run._requester, headers, data, True))
             i -= 1
-            if len(result) == limit:
+            if limit and len(result) == limit:
                 break
         return result
 
     @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True)
-    def _get_gh_workflow_runs(self, workflow: Workflow.Workflow, test_instance: models.TestInstance, limit: int = 10) -> List:
+    def _get_gh_workflow_runs(self, workflow: Workflow.Workflow, test_instance: models.TestInstance,
+                              limit_runs: int = None, limit_attempts: int = 10) -> List:
         branch = github.GithubObject.NotSet
         created = github.GithubObject.NotSet
         try:
@@ -243,19 +249,24 @@ class GithubTestingService(TestingService):
                 logger.debug("No previous version found, then no filter applied... Loading all available builds")
         logger.debug("Fetching runs : %r - %r", branch, created)
         # return list(self.__get_gh_workflow_runs__(workflow, branch=branch, created=created))
-        return list(itertools.islice(self.__get_gh_workflow_runs__(workflow, branch=branch, created=created), limit))
+        # return list(itertools.islice(self.__get_gh_workflow_runs__(workflow, branch=branch, created=created), limit_runs))
+        return list(self.__get_gh_workflow_runs__(workflow, branch=branch, created=created,
+                                                  limit_runs=limit_runs, limit_attempts=limit_attempts))
 
     @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True)
     def _list_workflow_runs(self, test_instance: models.TestInstance,
                             status: str = None, limit: int = 10) -> Generator[github.WorkflowRun.WorkflowRun]:
         # get gh workflow
+        limit_runs = None
+        limit_attempts = 10
         workflow = self._get_gh_workflow_from_test_instance_resource(test_instance.resource)
         logger.debug("Retrieved workflow %s from github", workflow)
-        logger.warning("Workflow Runs Limit: %r", limit)
+        logger.warning("Workflow Runs Limit: %r", limit_runs)
+        logger.warning("Workflow Attempts Limit: %r", limit_attempts)
         logger.warning("Workflow Runs Status: %r", status)
 
         result = []
-        for run in self._get_gh_workflow_runs(workflow, test_instance, limit=limit):
+        for run in self._get_gh_workflow_runs(workflow, test_instance, limit_runs=limit_runs, limit_attempts=limit_attempts):
             logger.debug("Loading Github run ID %r", run.id)
             # The Workflow.get_runs method in the PyGithub API has a status argument
             # which in theory we could use to filter the runs that are retrieved to
@@ -268,14 +279,14 @@ class GithubTestingService(TestingService):
             # if status is None or run.status == status:
             logger.debug("Number of attempts of run ID %r: %r", run.id, run.raw_data['run_attempt'])
             if (limit is None or limit > 1) and run.raw_data['run_attempt'] > 1:
-                for attempt in self.__get_gh_workflow_run_attempts__(run, limit=limit - len(result)):
+                for attempt in self.__get_gh_workflow_run_attempts__(
+                        run, limit=(limit_attempts - len(result) if limit_attempts else None)):
                     if status is None or attempt.status == status:
                         result.append(attempt)
             else:
                 if status is None or run.status == status:
                     result.append(run)
-            if limit and len(result) == limit:
-                break
+
         result = result if len(result) == 1 else sorted(result, key=lambda x: x.updated_at, reverse=True)[:limit]
         for run in result:
             logger.debug("Run: %r --> %r -- %r", run, run.created_at, run.updated_at)
