@@ -197,7 +197,8 @@ class GithubTestingService(TestingService):
             list_item="workflow_runs",
             limit_runs=limit_runs,
             limit_attempts=limit_attempts
-            force_use_cache=lambda r: r.status == GithubTestingService.GithubStatus.COMPLETED
+            # disable force_use_cache: a run might be updated with new attempts even when its status is completed
+            # force_use_cache=lambda r: r.status == GithubTestingService.GithubStatus.COMPLETED and r.raw_data['run']
         )
 
     @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True,
