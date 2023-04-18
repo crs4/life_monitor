@@ -25,7 +25,7 @@ import inspect
 import logging
 import os
 from importlib import import_module
-from typing import Dict, List, Set, Tuple, Type
+from typing import Dict, List, Optional, Set, Tuple, Type
 
 from ..base import RepositoryFile
 
@@ -37,8 +37,8 @@ class WorkflowFile(RepositoryFile):
 
     __workflow_types__: Dict[str, Type] | None = None
 
-    def __init__(self, repository_path: str, name: str, type: str | None = None, dir: str = ".",
-                 content=None, raw_file: RepositoryFile | None = None) -> None:
+    def __init__(self, repository_path: str, name: str, type: Optional[str] = None, dir: str = ".",
+                 content=None, raw_file: Optional[RepositoryFile] = None) -> None:
         super().__init__(repository_path, name, type, dir, content)
         self._raw_file = raw_file
 

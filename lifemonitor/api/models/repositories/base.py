@@ -63,15 +63,15 @@ class WorkflowRepository():
         self._license = license
 
     @property
-    def local_path(self) -> str:
+    def local_path(self) -> Optional[str]:
         return self._local_path
 
     @property
     def files(self) -> List[RepositoryFile]:
-        pass
+        raise NotImplementedError()
 
     @property
-    def metadata(self) -> WorkflowRepositoryMetadata:
+    def metadata(self) -> Optional[WorkflowRepositoryMetadata]:
         if not self._metadata:
             try:
                 self._metadata = WorkflowRepositoryMetadata(self, init=False, exclude=self.exclude)
@@ -140,15 +140,15 @@ class WorkflowRepository():
 
     @abstractclassmethod
     def find_file_by_pattern(self, search: str, path: str = '.') -> RepositoryFile:
-        pass
+        raise NotImplementedError()
 
     @abstractclassmethod
     def find_file_by_name(self, name: str, path: str = '.') -> RepositoryFile:
-        pass
+        raise NotImplementedError()
 
     @abstractclassmethod
     def find_workflow(self) -> WorkflowFile:
-        pass
+        raise NotImplementedError()
 
     def contains(self, file: RepositoryFile) -> bool:
         return self.__contains__(self.files, file)
@@ -258,39 +258,9 @@ class WorkflowRepository():
         assert repo and isinstance(repo, WorkflowRepository), repo
         return self.__compare__(self.files, repo.files, exclude=exclude)
 
-    def generate_metadata(self,
-                          workflow_name: Optional[str] = None,
-                          workflow_version: str = "main",
-                          license: Optional[str] = None,
-                          repo_url: Optional[str] = None,
-                          **kwargs) -> WorkflowRepositoryMetadata:
-        workflow = self.find_workflow()
-        if not workflow:
-            raise IllegalStateException("No workflow found", instance=self)
-        workflow_type = workflow.type
-        logger.debug("Detected workflow type: %r", workflow_type)
-        try:
-            from ..rocrate import generators
-            generators.generate_crate(workflow_type,
-                                      workflow_name=workflow_name or self.name,
-                                      workflow_version=workflow_version,
-                                      local_repo_path=self.local_path,
-                                      license=license or self.license,
-                                      repo_url=repo_url or self.https_url, **kwargs)
-            self._metadata = WorkflowRepositoryMetadata(self, init=False, exclude=self.exclude,
-                                                        local_path=self._local_path)
-        except Exception as e:
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.exception(e)
-            self._metadata = WorkflowRepositoryMetadata(self, init=True, exclude=self.exclude,
-                                                        local_path=self._local_path)
-            self._metadata.write(self._local_path)
-        self.add_file(self._metadata.repository_file)
-        return self._metadata
-
     @property
-    def config(self) -> WorkflowRepositoryConfig:
-        if self._config is None:
+    def config(self) -> Optional[WorkflowRepositoryConfig]:
+        if self._config is None and self.local_path:
             try:
                 self._config = WorkflowRepositoryConfig(self.local_path)
             except ValueError:
@@ -299,10 +269,12 @@ class WorkflowRepository():
 
     def generate_config(self, ignore_existing=False,
                         workflow_title: Optional[str] = None,
-                        public: bool = False, main_branch: Optional[str] = None) -> WorkflowFile:
+                        public: bool = False, main_branch: Optional[str] = None) -> WorkflowRepositoryConfig:
         current_config = self.config
         if current_config and not ignore_existing:
             raise IllegalStateException("Config exists")
+        if not self.local_path:
+            raise IllegalStateException("local_path not defined. Can't generate WorkflowRepositoryConfig")
         self._config = WorkflowRepositoryConfig.new(self.local_path,
                                                     workflow_title=workflow_title if workflow_title is not None
                                                     else self.metadata.main_entity_name if self.metadata else None,
@@ -315,7 +287,7 @@ class WorkflowRepository():
             raise IllegalStateException(detail="Missing RO Crate metadata")
         return self.metadata.write_zip(target_path)
 
-    def write(self, target_path: str, overwrite: bool = False):
+    def write(self, target_path: str, overwrite: bool = False) -> None:
         for f in self.files:
             base_path = os.path.join(target_path, f.dir)
             file_path = os.path.join(base_path, f.name)
@@ -342,7 +314,7 @@ class IssueCheckResult:
         return f"Check repo {self.repo.local_path} @ {self.created} " \
             f"=> checks: {len(self.checked)}, issues: {len(self.issues)}"
 
-    def get_issue(self, issue_name: str) -> issues.WorkflowRepositoryIssue:
+    def get_issue(self, issue_name: str) -> Optional[issues.WorkflowRepositoryIssue]:
         return next((_ for _ in self.issues if _.name == issue_name), None)
 
     def found_issues(self) -> bool:
@@ -369,12 +341,12 @@ class WorkflowRepositoryMetadata(ROCrate):
     DEFAULT_METADATA_FILENAME = Metadata.BASENAME
 
     def __init__(self, repo: WorkflowRepository,
-                 local_path: str = None, gen_preview=False, init=False, exclude=None):
+                 local_path: Optional[str] = None, gen_preview=False, init=False, exclude=None):
         super().__init__(source=local_path or repo.local_path, gen_preview=gen_preview, init=init, exclude=exclude)
         self.repository = repo
         self._file = None
 
-    def get_workflow(self) -> WorkflowFile:
+    def get_workflow(self) -> Optional[WorkflowFile]:
         if self.mainEntity and self.mainEntity.id:
             lang = self.mainEntity.get("programmingLanguage", None)
             path, filename = os.path.split(self.mainEntity.id)

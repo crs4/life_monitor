@@ -187,7 +187,9 @@ class WorkflowRepositoryConfig(RepositoryFile):
         return self._get_refs('tags')
 
     @classmethod
-    def new(cls, repository_path: str, workflow_title: str = "Workflow RO-Crate", public: bool = False, main_branch: str = "main") -> WorkflowRepositoryConfig:
+    def new(cls, repository_path: str, workflow_title: Optional[str] = None, public: bool = False, main_branch: str = "main") -> WorkflowRepositoryConfig:
+        if workflow_title is None:
+            workflow_title = "Workflow RO-Crate"
         tmpl = TemplateRepositoryFile(repository_path="lifemonitor/templates/repositories/base", name=cls.TEMPLATE_FILENAME)
         registries = ["wfhub", "wfhubdev"]
         issue_types = models.WorkflowRepositoryIssue.all()

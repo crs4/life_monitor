@@ -23,7 +23,7 @@ from __future__ import annotations
 import logging
 import os
 import re
-from typing import Tuple
+from typing import Optional, Tuple
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -81,7 +81,7 @@ class RepositoryFile():
     def has_path(self, path) -> bool:
         return re.sub(r'\./?', '', self.dir) == re.sub(r'\./?', '', path)
 
-    def get_content(self, binary_mode: bool = False):
+    def get_content(self, binary_mode: bool = False) -> Optional[str | bytes]:
         if not self._content and self.dir:
             with open(f"{self.path}", 'rb' if binary_mode else 'r') as f:
                 return f.read()
