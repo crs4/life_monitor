@@ -355,7 +355,7 @@ class WorkflowRepositoryMetadata(ROCrate):
                     f"Internal error: trying to construct WorkflowFile but self.source is '{self.source}")
             lang = self.mainEntity.get("programmingLanguage", None)
             path, filename = os.path.split(self.mainEntity.id)
-            return WorkflowFile(self.source, filename,
+            return WorkflowFile(str(self.source), filename,
                                 type=lang.get("name", lang.id).lower() if lang else None,
                                 dir=path)
         return None
@@ -387,7 +387,7 @@ class WorkflowRepositoryMetadata(ROCrate):
     @property
     def local_path(self) -> str:
         logger.debug("SOURCE: %r - ID: %r", self.source, self.metadata.id)
-        return os.path.join(self.source, self.metadata.id)
+        return os.path.join(str(self.source), self.metadata.id)
 
     @property
     def repository_file(self) -> MetadataRepositoryFile:
