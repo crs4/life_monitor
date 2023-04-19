@@ -267,7 +267,7 @@ class CachedPaginatedList(PaginatedList):
         operator = start_date = end_date = None
         try:
             operator, start_date, end_date = parse_date_interval(self.created)
-            logger.error(f"operator={operator} start_date={start_date} end_date={end_date}")
+            logger.debug(f"operator={operator} start_date={start_date} end_date={end_date}")
         except ValueError:
             logger.warning("Unable to parse date interval: %r", self.created)
         logger.debug(f"Iterating over attempts: runs limit={self.limit}")
