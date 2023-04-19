@@ -20,7 +20,7 @@
 
 import itertools
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import List, Optional
 from unittest.mock import MagicMock
 

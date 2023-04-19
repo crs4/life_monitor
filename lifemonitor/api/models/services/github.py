@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Generator, List, Optional, Tuple
+from typing import List, Optional, Tuple
 from urllib.error import URLError
 from urllib.parse import urlparse
 
