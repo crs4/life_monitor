@@ -49,9 +49,9 @@ logger = logging.getLogger(__name__)
 class LocalWorkflowRepository(WorkflowRepository):
 
     def __init__(self,
-                 local_path: Optional[str] = None,
+                 local_path: str,
                  exclude: Optional[List[str]] = None) -> None:
-        super().__init__(local_path, exclude)
+        super().__init__(local_path, exclude=exclude)
         self._transient_files = {'add': {}, 'remove': {}}
 
     @classmethod
@@ -159,7 +159,7 @@ class LocalWorkflowRepository(WorkflowRepository):
 class TemporaryLocalWorkflowRepository(LocalWorkflowRepository):
 
     def __init__(self,
-                 local_path: Optional[str] = None,
+                 local_path: str,
                  exclude: Optional[List[str]] = None,
                  auto_cleanup: bool = True) -> None:
         self.auto_cleanup = auto_cleanup

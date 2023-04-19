@@ -32,7 +32,11 @@ logger = logging.getLogger(__name__)
 class RepositoryFile():
 
     def __init__(self, repository_path: str, name: str,
-                 type: str = None, dir: str = ".", content=None) -> None:
+                 type: Optional[str] = None, dir: str = ".", content=None) -> None:
+        if not repository_path:
+            raise ValueError("RepositoryPath constructed with empty repository_path")
+        if not name:
+            raise ValueError("RepositoryPath constructed with empty file name")
         self.repository_path = repository_path
         self.name = name
         self.dir = dir

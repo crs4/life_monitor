@@ -49,11 +49,13 @@ DEFAULT_IGNORED_FILES = ['.git']
 
 class WorkflowRepository():
 
-    def __init__(self, local_path: Optional[str] = None,
+    def __init__(self, local_path: str,
                  url: Optional[str] = None,
                  name: Optional[str] = None,
                  license: Optional[str] = None,
                  exclude: Optional[List[str]] = None) -> None:
+        if not local_path:
+            raise ValueError("empty local_path argument")
         self._local_path = local_path
         self._metadata = None
         self.exclude = exclude or DEFAULT_IGNORED_FILES
@@ -63,7 +65,7 @@ class WorkflowRepository():
         self._license = license
 
     @property
-    def local_path(self) -> Optional[str]:
+    def local_path(self) -> str:
         return self._local_path
 
     @property
