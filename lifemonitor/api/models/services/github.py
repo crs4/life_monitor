@@ -213,7 +213,7 @@ class GithubTestingService(TestingService):
     @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True)
     def __get_gh_workflow_run_attempts__(self,
                                          workflow_run: github.WorkflowRun.WorkflowRun,
-                                         limit: int = None) -> List[github.WorkflowRun.WorkflowRun]:
+                                         limit: Optional[int] = None) -> List[github.WorkflowRun.WorkflowRun]:
         result = []
         i = workflow_run.raw_data['run_attempt']
         while i >= 1:
@@ -225,8 +225,8 @@ class GithubTestingService(TestingService):
         return result
 
     @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True)
-    def _get_gh_workflow_runs(self, workflow: Workflow.Workflow, test_instance: models.TestInstance,
-                              limit_runs: int = None, limit_attempts: int = 10) -> List:
+    def __get_workflow_runs_iterator(self, workflow: Workflow.Workflow, test_instance: models.TestInstance,
+                                     limit: Optional[int] = None) -> CachedPaginatedList:
         branch = github.GithubObject.NotSet
         created = github.GithubObject.NotSet
         try:
@@ -234,10 +234,10 @@ class GithubTestingService(TestingService):
             assert branch, "Branch cannot be empty"
         except Exception:
             branch = github.GithubObject.NotSet
-            logger.warning("No revision associated with workflow version %r", workflow)
+            logger.debug("No revision associated with workflow version %r", workflow)
             workflow_version = test_instance.test_suite.workflow_version
-            logger.warning("Checking Workflow version: %r (previous: %r, next: %r)",
-                           workflow_version, workflow_version.previous_version, workflow_version.next_version)
+            logger.debug("Checking Workflow version: %r (previous: %r, next: %r)",
+                         workflow_version, workflow_version.previous_version, workflow_version.next_version)
             if workflow_version.previous_version and workflow_version.next_version:
                 created = "{}..{}".format(workflow_version.created.isoformat(),
                                           workflow_version.next_version.created.isoformat())
@@ -249,9 +249,8 @@ class GithubTestingService(TestingService):
                 logger.debug("No previous version found, then no filter applied... Loading all available builds")
         logger.debug("Fetching runs : %r - %r", branch, created)
         # return list(self.__get_gh_workflow_runs__(workflow, branch=branch, created=created))
-        # return list(itertools.islice(self.__get_gh_workflow_runs__(workflow, branch=branch, created=created), limit_runs))
-        return list(self.__get_gh_workflow_runs__(workflow, branch=branch, created=created,
-                                                  limit_runs=limit_runs, limit_attempts=limit_attempts))
+        # return list(itertools.islice(self.__get_gh_workflow_runs__(workflow, branch=branch, created=created), limit))
+        return self.__get_gh_workflow_runs__(workflow, branch=branch, created=created, limit=limit)
 
     @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True)
     def _list_workflow_runs(self, test_instance: models.TestInstance,
