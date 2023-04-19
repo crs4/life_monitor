@@ -295,6 +295,9 @@ class GithubTestingService(TestingService):
             else:
                 if status is None or run.status == status:
                     result.append(run)
+            # stop iteration if the limit is reached
+            if len(result) >= limit:
+                break
 
         for run in result:
             logger.debug("Run: %r --> %r -- %r", run, run.created_at, run.updated_at)
