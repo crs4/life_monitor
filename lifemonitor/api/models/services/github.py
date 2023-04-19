@@ -254,7 +254,15 @@ class GithubTestingService(TestingService):
 
     @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True)
     def _list_workflow_runs(self, test_instance: models.TestInstance,
-                            status: str = None, limit: int = 10) -> Generator[github.WorkflowRun.WorkflowRun]:
+                            status: Optional[str] = None, limit: int = 10) -> List[github.WorkflowRun.WorkflowRun]:
+        # get gh workflow
+        workflow = self._get_gh_workflow_from_test_instance_resource(test_instance.resource)
+        logger.debug("Retrieved workflow %s from github", workflow)
+        logger.debug("Workflow Runs Limit: %r", limit)
+        logger.debug("Workflow Runs Status: %r", status)
+
+        return list(self.__get_workflow_runs_iterator(workflow, test_instance, limit=limit))
+
         # get gh workflow
         limit_runs = None
         limit_attempts = 10
