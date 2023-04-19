@@ -20,7 +20,6 @@
 
 from __future__ import annotations
 
-import itertools
 import logging
 import re
 from typing import Generator, List, Optional, Tuple
@@ -376,9 +375,10 @@ class GithubTestingService(TestingService):
     def get_test_build_output(self, test_instance: models.TestInstance, build_number, offset_bytes=0, limit_bytes=131072):
         raise lm_exceptions.NotImplementedException(detail="not supported for GitHub test builds")
 
-    def start_test_build(self, test_instance: models.TestInstance) -> bool:
+    def start_test_build(self, test_instance: models.TestInstance, build_number: int = None) -> bool:
         try:
-            last_build = self.get_last_test_build(test_instance)
+            last_build = self.get_last_test_build(test_instance) \
+                if build_number is None else self.get_test_build(test_instance, build_number)
             assert last_build
             if last_build:
                 run: WorkflowRun = last_build._metadata
