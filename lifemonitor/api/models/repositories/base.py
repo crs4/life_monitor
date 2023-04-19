@@ -177,7 +177,12 @@ class WorkflowRepository():
             issue_type = queue.pop()
             if issue_type not in visited:
                 issue = issue_type()
-                failed = issue.check(self)
+                try:
+                    failed = issue.check(self)
+                except Exception as e:
+                    logger.error("Issue %s failed to run.  It raised an exception: %s",
+                                 issue_type.__name__, e)
+                    continue  # skip this issue by not marking it as visited (otherwise it shows as "passed")
                 visited.add(issue_type)
                 if not failed:
                     neighbors = [i for i in issue_graph.neighbors(issue_type)
@@ -206,8 +211,13 @@ class WorkflowRepository():
         if os.path.exists(f.path):
             fp = open(f.path, 'rb')
         else:
-            logger.debug("Reading file content: %r", f.get_content(binary_mode=False).encode())
-            fp = io.BytesIO(f.get_content(binary_mode=False).encode())
+            content = f.get_content(binary_mode=False)
+            if content:
+                content_str = content.encode()
+            else:
+                content_str = b""
+            logger.debug("Reading file content: %r", content_str if content else b"None")
+            fp = io.BytesIO(content_str)
         return fp
 
     @classmethod
