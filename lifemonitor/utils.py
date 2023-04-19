@@ -385,7 +385,7 @@ def isoformat_to_datetime(iso: str) -> datetime:
     """
     logger.debug(f"Conveting {iso}")
     return datetime.strptime(iso[:-1] if iso.endswith('Z') else iso, "%Y-%m-%dT%H:%M:%S")
-    
+
 
 def parse_date_interval(interval: str) -> Tuple[Literal['<=', '>=', '<', '>', '..'], Optional[datetime], datetime]:
     """Parse a date interval string.
