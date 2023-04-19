@@ -164,8 +164,7 @@ class GithubTestingService(TestingService):
                                  branch=github.GithubObject.NotSet,
                                  status=github.GithubObject.NotSet,
                                  created=github.GithubObject.NotSet,
-                                 limit_runs: int = 10,
-                                 limit_attempts: int = None):
+                                 limit: Optional[int] = None) -> CachedPaginatedList:
         """
         Extends `Workflow.get_runs` to support `created` param
         """
@@ -184,7 +183,10 @@ class GithubTestingService(TestingService):
             url_parameters["created"] = created
         if status is not github.GithubObject.NotSet:
             url_parameters["status"] = status
-        logger.debug("Getting runs of workflow %r ... DONE", workflow)
+        logger.debug("Getting runs of workflow %r - branch: %r", workflow, branch)
+        logger.debug("Getting runs of workflow %r - status: %r", workflow, status)
+        logger.debug("Getting runs of workflow %r - created: %r", workflow, created)
+        logger.debug("Getting runs of workflow %r - params: %r", workflow, url_parameters)
         # return github.PaginatedList.PaginatedList( # Default pagination class
         return CachedPaginatedList(
             github.WorkflowRun.WorkflowRun,
@@ -194,8 +196,7 @@ class GithubTestingService(TestingService):
             None,
             transactional_update=True,
             list_item="workflow_runs",
-            limit_runs=limit_runs,
-            limit_attempts=limit_attempts
+            limit=limit
             # disable force_use_cache: a run might be updated with new attempts even when its status is completed
             # force_use_cache=lambda r: r.status == GithubTestingService.GithubStatus.COMPLETED and r.raw_data['run']
         )
