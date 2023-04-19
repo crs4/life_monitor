@@ -27,7 +27,7 @@ import logging
 import os
 from abc import abstractclassmethod
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple, Type
+from typing import Any, Dict, List, Optional, Tuple
 
 import git
 import giturlparse
@@ -365,10 +365,11 @@ class WorkflowRepositoryMetadata(ROCrate):
     def dataset_name(self):
         return self.name
 
-    def get_roc_suites(self):
+    # TODO: the type of a roc_suite is probably better defined than "Any"
+    def get_roc_suites(self) -> Dict[str, Any] | None:
         return get_roc_suites(self)
 
-    def get_authors(self, suite_id: str = None) -> List[Dict]:
+    def get_authors(self, suite_id: Optional[str] = None) -> List[Dict]:
         return get_workflow_authors(self, suite_id=suite_id)
 
     def get_get_roc_suite(self, roc_suite_identifier):
@@ -401,5 +402,6 @@ class MetadataRepositoryFile(RepositoryFile):
                          WorkflowRepositoryMetadata.DEFAULT_METADATA_FILENAME, 'json', '.')
         self.metadata = metadata
 
-    def get_content(self, binary_mode: bool = False):
+    def get_content(self, binary_mode: bool = False) -> str:
+        # TODO: why parse a JSON string just to re-serialize it?
         return json.dumps(self.metadata.to_json(), indent=4, sort_keys=True)

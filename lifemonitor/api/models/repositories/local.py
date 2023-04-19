@@ -129,7 +129,7 @@ class LocalWorkflowRepository(WorkflowRepository):
         return self._metadata
 
     @property
-    def metadata(self) -> WorkflowRepositoryMetadata:
+    def metadata(self) -> Optional[WorkflowRepositoryMetadata]:
         if not self._metadata:
             try:
                 self._metadata = WorkflowRepositoryMetadata(self, init=False)
@@ -139,15 +139,15 @@ class LocalWorkflowRepository(WorkflowRepository):
             if self._file_key_(self._metadata.repository_file) not in self._transient_files['remove'] \
             else None
 
-    def find_file_by_pattern(self, search: str, path: Optional[str] = None) -> RepositoryFile:
+    def find_file_by_pattern(self, search: str, path: Optional[str] = None) -> Optional[RepositoryFile]:
         logger.warning("Searching file: %r %r", search, path)
         return next((f for f in self.files if re.search(search, f.name) and (not path or f.dir == path or f.dir == f"./{path}")), None)
 
-    def find_file_by_name(self, name: str, path: Optional[str] = None) -> RepositoryFile:
+    def find_file_by_name(self, name: str, path: Optional[str] = None) -> Optional[RepositoryFile]:
         logger.warning("Searching file: %r %r", name, path)
         return next((f for f in self.files if f.name == name and (not path or f.path == path or f.dir == f"./{path}")), None)
 
-    def find_workflow(self) -> WorkflowFile:
+    def find_workflow(self) -> Optional[WorkflowFile]:
         for file in self.files:
             wf = WorkflowFile.is_workflow(file)
             if wf:

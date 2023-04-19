@@ -24,7 +24,7 @@ import itertools as it
 import logging
 import os
 import os.path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import yaml
 
@@ -123,7 +123,7 @@ class WorkflowRepositoryConfig(RepositoryFile):
     def _get_push_data(self) -> Dict:
         return self._raw_data.get('push', None)
 
-    def _get_refs_list(self, refs="branches,tags") -> List:
+    def _get_refs_list(self, refs="branches,tags") -> List[Dict[str, Any]]:
         on_push = self._raw_data.get('push', None)
         if on_push and refs:
             return [_ for ref in refs.split(",") for _ in on_push.get(ref, [])]
@@ -171,7 +171,7 @@ class WorkflowRepositoryConfig(RepositoryFile):
     def get_branch_registries(self, branch: str) -> List[models.WorkflowRegistry]:
         return self.get_ref_registries('branches', branch)
 
-    def _get_refs(self, type: str) -> List[str]:
+    def _get_refs(self, type: str) -> Dict[str, Any]:
         result = {}
         for r in self._get_refs_list(type):
             if not result.get(r['name'], None):
@@ -179,11 +179,11 @@ class WorkflowRepositoryConfig(RepositoryFile):
         return result
 
     @property
-    def branches(self) -> List[str]:
+    def branches(self) -> Dict[str, Any]:
         return self._get_refs('branches')
 
     @property
-    def tags(self) -> List[str]:
+    def tags(self) -> Dict[str, Any]:
         return self._get_refs('tags')
 
     @classmethod

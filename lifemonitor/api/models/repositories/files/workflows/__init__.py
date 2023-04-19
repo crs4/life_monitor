@@ -57,7 +57,7 @@ class WorkflowFile(RepositoryFile):
         return self._raw_file
 
     @classmethod
-    def get_workflow_extensions(cls, workflow_type: str) -> Set[str] | None:
+    def get_workflow_extensions(cls, workflow_type: str) -> Optional[Set[str]]:
         try:
             return {_[1] for _ in cls.__get_workflow_types__()[workflow_type].__get_file_patterns__()}
         except AttributeError:
@@ -66,7 +66,7 @@ class WorkflowFile(RepositoryFile):
 
     @classmethod
     def get_types(cls) -> List[Type]:
-        return cls.__get_workflow_types__().values()
+        return list(cls.__get_workflow_types__().values())
 
     @classmethod
     def __type_name__(cls) -> str:
@@ -82,7 +82,7 @@ class WorkflowFile(RepositoryFile):
         return getattr(subtype or cls, "FILE_PATTERNS", None)
 
     @classmethod
-    def is_workflow(cls, file: RepositoryFile) -> WorkflowFile | None:
+    def is_workflow(cls, file: RepositoryFile) -> Optional[WorkflowFile]:
         if not file:
             return None
 

@@ -47,7 +47,7 @@ class RepositoryFile():
         return f"File {self.name} (dir: {self.dir})"
 
     @property
-    def type(self) -> str:
+    def type(self) -> Optional[str]:
         if not self._type and self.name:
             return self.get_type(self.name)
         return self._type
@@ -92,6 +92,6 @@ class RepositoryFile():
         return self._content
 
     @staticmethod
-    def get_type(filename: str) -> str:
+    def get_type(filename: str) -> Optional[str]:
         parts = os.path.splitext(filename) if filename else None
         return parts[1].replace('.', '') if parts and len(parts) > 0 else None

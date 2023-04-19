@@ -26,6 +26,7 @@ https://crs4.github.io/life_monitor/workflow_testing_ro_crate
 
 from collections.abc import Mapping
 from pathlib import Path
+from typing import Any, Dict
 
 import yaml
 
@@ -73,7 +74,7 @@ def read_planemo(fname):
     return rval
 
 
-def get_roc_suites(crate):
+def get_roc_suites(crate) -> Dict[str, Any] | None:
     """
     Generate a DTO of test suites
     extracted from a Workflow Test RO-Crate.
