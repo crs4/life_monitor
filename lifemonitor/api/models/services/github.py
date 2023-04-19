@@ -263,17 +263,17 @@ class GithubTestingService(TestingService):
 
         return list(self.__get_workflow_runs_iterator(workflow, test_instance, limit=limit))
 
+    @cached(timeout=Timeout.NONE, client_scope=False, transactional_update=True)
+    def _list_workflow_run_attempts(self, test_instance: models.TestInstance,
+                                    status: Optional[str] = None, limit: int = 10) -> List[github.WorkflowRun.WorkflowRun]:
         # get gh workflow
-        limit_runs = None
-        limit_attempts = 10
         workflow = self._get_gh_workflow_from_test_instance_resource(test_instance.resource)
         logger.debug("Retrieved workflow %s from github", workflow)
-        logger.warning("Workflow Runs Limit: %r", limit_runs)
-        logger.warning("Workflow Attempts Limit: %r", limit_attempts)
-        logger.warning("Workflow Runs Status: %r", status)
+        logger.debug("Workflow Runs Limit: %r", limit)
+        logger.debug("Workflow Runs Status: %r", status)
 
         result = []
-        for run in self._get_gh_workflow_runs(workflow, test_instance, limit_runs=limit_runs, limit_attempts=limit_attempts):
+        for run in self.__get_workflow_runs_iterator(workflow, test_instance):
             logger.debug("Loading Github run ID %r", run.id)
             # The Workflow.get_runs method in the PyGithub API has a status argument
             # which in theory we could use to filter the runs that are retrieved to
@@ -287,14 +287,14 @@ class GithubTestingService(TestingService):
             logger.debug("Number of attempts of run ID %r: %r", run.id, run.raw_data['run_attempt'])
             if (limit is None or limit > 1) and run.raw_data['run_attempt'] > 1:
                 for attempt in self.__get_gh_workflow_run_attempts__(
-                        run, limit=(limit_attempts - len(result) if limit_attempts else None)):
+                        run, limit=(limit - len(result) if limit else None)):
+                    logger.debug("Attempt: %r %r %r", attempt, status, attempt.status)
                     if status is None or attempt.status == status:
                         result.append(attempt)
             else:
                 if status is None or run.status == status:
                     result.append(run)
 
-        result = result if len(result) == 1 else sorted(result, key=lambda x: x.updated_at, reverse=True)[:limit]
         for run in result:
             logger.debug("Run: %r --> %r -- %r", run, run.created_at, run.updated_at)
         return result
@@ -302,7 +302,7 @@ class GithubTestingService(TestingService):
     def get_last_test_build(self, test_instance: models.TestInstance) -> Optional[GithubTestBuild]:
         try:
             logger.debug("Getting latest build...")
-            for run in self._list_workflow_runs(test_instance, status=self.GithubStatus.COMPLETED):
+            for run in self._list_workflow_run_attempts(test_instance, status=self.GithubStatus.COMPLETED):
                 return GithubTestBuild(self, test_instance, run)
             logger.debug("Getting latest build... DONE")
             return None
@@ -312,7 +312,7 @@ class GithubTestingService(TestingService):
     def get_last_passed_test_build(self, test_instance: models.TestInstance) -> Optional[GithubTestBuild]:
         try:
             logger.debug("Getting last passed build...")
-            for run in self._list_workflow_runs(test_instance, status=self.GithubStatus.COMPLETED):
+            for run in self._list_workflow_run_attempts(test_instance, status=self.GithubStatus.COMPLETED):
                 if run.conclusion == self.GithubConclusion.SUCCESS:
                     return GithubTestBuild(self, test_instance, run)
             return None
@@ -322,7 +322,7 @@ class GithubTestingService(TestingService):
     def get_last_failed_test_build(self, test_instance: models.TestInstance) -> Optional[GithubTestBuild]:
         try:
             logger.debug("Getting last failed build...")
-            for run in self._list_workflow_runs(test_instance, status=self.GithubStatus.COMPLETED):
+            for run in self._list_workflow_run_attempts(test_instance, status=self.GithubStatus.COMPLETED):
                 if run.conclusion == self.GithubConclusion.FAILURE:
                     return GithubTestBuild(self, test_instance, run)
             return None
@@ -333,7 +333,7 @@ class GithubTestingService(TestingService):
         try:
             logger.debug("Getting test builds...")
             return [GithubTestBuild(self, test_instance, run)
-                    for run in self._list_workflow_runs(test_instance, limit=limit)[:limit]]
+                    for run in self._list_workflow_run_attempts(test_instance, limit=limit)[:limit]]
         except GithubRateLimitExceededException as e:
             raise lm_exceptions.RateLimitExceededException(detail=str(e), instance=test_instance)
 
