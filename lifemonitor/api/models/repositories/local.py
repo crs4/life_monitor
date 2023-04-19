@@ -89,7 +89,7 @@ class LocalWorkflowRepository(WorkflowRepository):
                 os.remove(f.path)
         for f in self._transient_files['add'].values():
             logger.debug("Removing file: %r", f)
-            shutil.copy(f.path, RepositoryFile(self.local_path, f.name, f.type, f.dir))
+            shutil.copy(f.path, RepositoryFile(self.local_path, f.name, f.type, f.dir).path)
         self.reset()
 
     def reset(self):
