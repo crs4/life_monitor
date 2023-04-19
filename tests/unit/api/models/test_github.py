@@ -226,7 +226,7 @@ def test_get_runs_by_date(github_service: models.GithubTestingService, git_ref, 
     logger.debug("Runs: %r", runs)
 
     # get the latest n runs
-    n = round(len(runs) / 2) + 1
+    n = round(len(runs) / 2)
     nrun = runs[n]
     logger.debug("N=%d run: %r --> %r", n, nrun, nrun.created_at)
     for run in runs:
@@ -240,7 +240,7 @@ def test_get_runs_by_date(github_service: models.GithubTestingService, git_ref, 
                                 runs[0].created_at.isoformat()))]
     logger.debug("Runs after: %r --- num: %r", runs_after, len(runs_after))
     # check number of runs
-    assert len(runs_after) == (n + 1), "Unexpected number of runs"
+    assert len(runs_after) == (len(runs) - n), "Unexpected number of runs"
     # check run creation time
     for run in runs_after:
         logger.debug("Run: %r --> %r -- of array: %r", run, run.created_at, run in runs)
