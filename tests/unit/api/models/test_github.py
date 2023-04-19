@@ -24,12 +24,14 @@ from datetime import datetime, timedelta
 from typing import List, Optional
 from unittest.mock import MagicMock
 
-import lifemonitor.api.models as models
 import pytest
 from github.WorkflowRun import WorkflowRun
+
+import lifemonitor.api.models as models
 from lifemonitor.api.models.repositories.github import GithubWorkflowRepository
 from lifemonitor.cache import cache
 from tests.conftest_helpers import get_github_token
+from tests.unit.test_utils import SerializableMock
 
 logger = logging.getLogger(__name__)
 
@@ -87,17 +89,17 @@ def test_instance(request, git_ref, repo_full_name, test_workflow_resource):
     except Exception:
         pass
     # define a parametric revision
-    revision = MagicMock()
-    revision.main_ref = MagicMock()
+    revision = SerializableMock()
+    revision.main_ref = SerializableMock()
     revision.main_ref.shorthand = ref_value
     # define a test suite mock
-    test_suite = MagicMock()
-    test_suite.workflow_version = MagicMock()
+    test_suite = SerializableMock()
+    test_suite.workflow_version = SerializableMock()
     test_suite.workflow_version.version = revision.main_ref.shorthand
     test_suite.workflow_version.revision = revision if ref_value else None
     test_suite.workflow_version.repository = GithubWorkflowRepository(repo_full_name, ref=ref)
     # define a test_instance mock
-    instance = MagicMock()
+    instance = SerializableMock()
     instance.resource = test_resource
     instance.test_suite = test_suite
     return instance
