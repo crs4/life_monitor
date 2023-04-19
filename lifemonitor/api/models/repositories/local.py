@@ -106,6 +106,9 @@ class LocalWorkflowRepository(WorkflowRepository):
         if not workflow:
             raise IllegalStateException("No workflow found", instance=self)
         workflow_type = workflow.type
+        if not workflow_type:
+            raise IllegalStateException(
+                f"Can't generate crate. Unable to determine workflow type for {workflow}.")
         logger.debug("Detected workflow type: %r", workflow_type)
         if not self.local_path:
             raise IllegalStateException("Local path not set")

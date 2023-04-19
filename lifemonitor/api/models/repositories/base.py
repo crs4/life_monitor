@@ -58,7 +58,7 @@ class WorkflowRepository():
             raise ValueError("empty local_path argument")
         self._local_path = local_path
         self._metadata = None
-        self.exclude = exclude or DEFAULT_IGNORED_FILES
+        self.exclude = exclude if exclude is not None else DEFAULT_IGNORED_FILES
         self._config = None
         self._url = url
         self._name = name
@@ -350,6 +350,9 @@ class WorkflowRepositoryMetadata(ROCrate):
 
     def get_workflow(self) -> Optional[WorkflowFile]:
         if self.mainEntity and self.mainEntity.id:
+            if self.source is None:
+                raise IllegalStateException(
+                    f"Internal error: trying to construct WorkflowFile but self.source is '{self.source}")
             lang = self.mainEntity.get("programmingLanguage", None)
             path, filename = os.path.split(self.mainEntity.id)
             return WorkflowFile(self.source, filename,
@@ -372,11 +375,13 @@ class WorkflowRepositoryMetadata(ROCrate):
     def get_authors(self, suite_id: Optional[str] = None) -> List[Dict]:
         return get_workflow_authors(self, suite_id=suite_id)
 
-    def get_get_roc_suite(self, roc_suite_identifier):
-        try:
-            return self.get_roc_suites()[roc_suite_identifier]
-        except KeyError:
-            logger.warning("Unable to find the roc_suite with identifier: %r", roc_suite_identifier)
+    def get_get_roc_suite(self, roc_suite_identifier) -> Any:
+        suites = self.get_roc_suites()
+        if suites is not None:
+            try:
+                return suites[roc_suite_identifier]
+            except KeyError:
+                logger.warning("Unable to find the roc_suite with identifier: %r", roc_suite_identifier)
         return None
 
     @property
@@ -390,9 +395,13 @@ class WorkflowRepositoryMetadata(ROCrate):
             self._file = MetadataRepositoryFile(self)
         return self._file
 
-    def to_json(self) -> Dict:
+    def to_json(self) -> Optional[Dict[str, Any]]:
         file = self.repository.find_file_by_name(self.metadata.id)
-        return json.loads(file.get_content(binary_mode=False)) if file else None
+        if file:
+            text = file.get_content(binary_mode=False)
+            if text:
+                return json.loads(text)
+        return None
 
 
 class MetadataRepositoryFile(RepositoryFile):
