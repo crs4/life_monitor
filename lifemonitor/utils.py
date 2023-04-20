@@ -417,14 +417,12 @@ def parse_date_interval(interval: str) -> Tuple[Literal['<=', '>=', '<', '>', '.
     elif interval.startswith(">="):
         operator = ">="
         start_date = isoformat_to_datetime(interval[2:])
-        end_date = datetime.now()
     elif interval.startswith("<"):
         operator = "<"
         end_date = isoformat_to_datetime(interval[1:])
     elif interval.startswith(">"):
         operator = ">"
         start_date = isoformat_to_datetime(interval[1:])
-        end_date = datetime.now()
     elif ".." in interval:
         operator = ".."
         dates = interval.split("..")
