@@ -376,16 +376,13 @@ def datetime_to_isoformat(dt: datetime) -> str:
     return dt.isoformat(timespec="auto") + "Z"
 
 
-# generate a function to convert an ISO datetime string to a datetime
 def isoformat_to_datetime(iso: str) -> datetime:
     """Convert an ISO datetime string to a datetime.
 
     :param iso: The ISO datetime string to convert.
     :return: The ISO datetime string converted to a datetime.
     """
-    logger.debug(f"Converting {iso}")
-    from datetime import datetime
-
+    logger.debug(f"Converting {iso}")    
     date_format = "%Y-%m-%dT%H:%M:%S.%f" if "." in iso else "%Y-%m-%dT%H:%M:%S"
     logger.debug(f"Date format: {date_format}")
     date_str = iso[:-1] if iso.endswith('Z') else iso
