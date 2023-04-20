@@ -27,17 +27,18 @@ import logging
 import os
 from abc import abstractclassmethod
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Type
 
 import git
 import giturlparse
-import lifemonitor.api.models.issues as issues
 import requests
+from rocrate.rocrate import Metadata, ROCrate
+
+import lifemonitor.api.models.issues as issues
 from lifemonitor.api.models.repositories.config import WorkflowRepositoryConfig
 from lifemonitor.exceptions import IllegalStateException, LifeMonitorException
 from lifemonitor.test_metadata import get_roc_suites, get_workflow_authors
 from lifemonitor.utils import to_camel_case
-from rocrate.rocrate import Metadata, ROCrate
 
 from .files import RepositoryFile, WorkflowFile
 
