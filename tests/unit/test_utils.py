@@ -20,11 +20,11 @@
 
 import os
 import tempfile
-from unittest.mock import MagicMock, Mock
+
+import pytest
 
 import lifemonitor.exceptions as lm_exceptions
 import lifemonitor.utils as utils
-import pytest
 
 
 def test_download_url_404():
@@ -34,9 +34,6 @@ def test_download_url_404():
         assert excinfo.value.status == 404
 
 
-class SerializableMock(MagicMock):
-    def __reduce__(self):
-        return (Mock, ())
 
 
 def test_datetime_to_isoformat():
