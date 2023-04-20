@@ -84,11 +84,12 @@ def test_isoformat_to_datetime():
     # test with a datetime without microseconds and without Z and without seconds and without minutes and without hours and without day
     dt = datetime(2020, 1, 1)
     iso = "2020-01"
-    assert utils.isoformat_to_datetime(iso) == dt
+    pytest.raises(ValueError, utils.isoformat_to_datetime, iso)
 
     # test with a datetime without microseconds and without Z and without seconds and without minutes and without hours and without day and without month
     dt = datetime(2020, 1, 1)
     iso = "2020"
+    pytest.raises(ValueError, utils.isoformat_to_datetime, iso)
 
 
 def test_parse_date_interval():
@@ -109,7 +110,7 @@ def test_parse_date_interval():
     operator, start_date, end_date = utils.parse_date_interval(f">={iso}")
     assert operator == ">="
     assert start_date == dt
-    assert end_date == datetime.now()
+    assert end_date is None
 
     # test with a datetime with microseconds and operator <
     dt = datetime(2020, 1, 1, 0, 0, 0, 123456)
@@ -125,7 +126,7 @@ def test_parse_date_interval():
     operator, start_date, end_date = utils.parse_date_interval(f">{iso}")
     assert operator == ">"
     assert start_date == dt
-    assert end_date == datetime.now()
+    assert end_date is None
 
     # test with a datetime with microseconds and operator ..
     dt = datetime(2020, 1, 1, 0, 0, 0, 123456)
