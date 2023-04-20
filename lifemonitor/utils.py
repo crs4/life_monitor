@@ -382,12 +382,19 @@ def isoformat_to_datetime(iso: str) -> datetime:
     :param iso: The ISO datetime string to convert.
     :return: The ISO datetime string converted to a datetime.
     """
-    logger.debug(f"Converting {iso}")    
-    date_format = "%Y-%m-%dT%H:%M:%S.%f" if "." in iso else "%Y-%m-%dT%H:%M:%S"
-    logger.debug(f"Date format: {date_format}")
+    logger.debug(f"Converting {iso}")
     date_str = iso[:-1] if iso.endswith('Z') else iso
-    logger.debug(f"Date string to parse: {date_str}")
-    return datetime.strptime(date_str, date_format)
+    try:
+        return datetime.fromisoformat(date_str)
+    except ValueError:
+        logger.debug("Unable to convert datetime with 'datetime.fromisoformat'")
+    try:
+        date_format = "%Y-%m-%dT%H:%M:%S.%f" if "." in iso else "%Y-%m-%dT%H:%M:%S"
+        logger.debug(f"Date format: {date_format}")
+        logger.debug(f"Date string to parse: {date_str}")
+        return datetime.strptime(date_str, date_format)
+    except ValueError as e:
+        raise ValueError(f"Datetime string {iso} is not in ISO format") from e
 
 
 def parse_date_interval(interval: str) -> Tuple[Literal['<=', '>=', '<', '>', '..'], Optional[datetime], datetime]:
