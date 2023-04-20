@@ -29,11 +29,9 @@ import lifemonitor.utils as utils
 
 def test_download_url_404():
     with tempfile.TemporaryDirectory() as d:
-        with pytest.raises(lm_exceptions.DownloadException) as excinfo:
+        with pytest.raises(lm_exceptions.DownloadException) as exec_info:
             _ = utils.download_url('http://httpbin.org/status/404', os.path.join(d, 'get_404'))
-        assert excinfo.value.status == 404
-
-
+        assert exec_info.value.status == 404
 
 
 def test_datetime_to_isoformat():
@@ -100,7 +98,7 @@ def test_parse_date_interval():
     # test with a datetime with microseconds and operator <=
     dt = datetime(2020, 1, 1, 0, 0, 0, 123456)
     iso = "2020-01-01T00:00:00.123456Z"
-    operator, start_date, end_date = parse_date_interval(f"<={iso}")
+    operator, start_date, end_date = utils.parse_date_interval(f"<={iso}")
     assert operator == "<="
     assert start_date is None
     assert end_date == dt
@@ -108,7 +106,7 @@ def test_parse_date_interval():
     # test with a datetime with microseconds and operator >=
     dt = datetime(2020, 1, 1, 0, 0, 0, 123456)
     iso = "2020-01-01T00:00:00.123456Z"
-    operator, start_date, end_date = parse_date_interval(f">={iso}")
+    operator, start_date, end_date = utils.parse_date_interval(f">={iso}")
     assert operator == ">="
     assert start_date == dt
     assert end_date == datetime.now()
@@ -116,7 +114,7 @@ def test_parse_date_interval():
     # test with a datetime with microseconds and operator <
     dt = datetime(2020, 1, 1, 0, 0, 0, 123456)
     iso = "2020-01-01T00:00:00.123456Z"
-    operator, start_date, end_date = parse_date_interval(f"<{iso}")
+    operator, start_date, end_date = utils.parse_date_interval(f"<{iso}")
     assert operator == "<"
     assert start_date is None
     assert end_date == dt
@@ -124,7 +122,7 @@ def test_parse_date_interval():
     # test with a datetime with microseconds and operator >
     dt = datetime(2020, 1, 1, 0, 0, 0, 123456)
     iso = "2020-01-01T00:00:00.123456Z"
-    operator, start_date, end_date = parse_date_interval(f">{iso}")
+    operator, start_date, end_date = utils.parse_date_interval(f">{iso}")
     assert operator == ">"
     assert start_date == dt
     assert end_date == datetime.now()
@@ -132,7 +130,7 @@ def test_parse_date_interval():
     # test with a datetime with microseconds and operator ..
     dt = datetime(2020, 1, 1, 0, 0, 0, 123456)
     iso = "2020-01-01T00:00:00.123456Z"
-    operator, start_date, end_date = parse_date_interval(f"{iso}..{iso}")
+    operator, start_date, end_date = utils.parse_date_interval(f"{iso}..{iso}")
     assert operator == ".."
     assert start_date == dt
-    assert end_date ==
+    assert end_date == dt
