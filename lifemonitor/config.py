@@ -109,7 +109,11 @@ class BaseConfig:
     JWT_EXPIRATION_TIME = int(os.getenv("JWT_EXPIRATION_TIME", "3600"))
     # Disable the Flask APScheduler REST API, by default
     SCHEDULER_API_ENABLED = False
+    #
+    from lifemonitor.utils import boolean_value
     WORKER = False
+    WEBSOCKET_SERVER = boolean_value(os.environ.get("WEBSOCKET_SERVER", False))
+    GUNICORN_SERVER = boolean_value(os.environ.get("GUNICORN_SERVER", False))
     # Default Cache Settings
     CACHE_TYPE = "flask_caching.backends.simplecache.SimpleCache"
     CACHE_DEFAULT_TIMEOUT = 60

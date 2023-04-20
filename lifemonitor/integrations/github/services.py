@@ -50,8 +50,12 @@ def map_issues(check_result: IssueCheckResult):
     repo = check_result.repo
     for issue in check_result.checked:
         if issue in check_result.issues:
-            gh_issue = issues.find_issue(repo, issue)
-            logger.debug("Found existing gh issue: %r", gh_issue)
+            try:
+                gh_issue = issues.find_issue(repo, issue)
+            except ValueError as e:
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.exception(e)
+            logger.debug("Found issue on GitHub? ->> %r", gh_issue)
             if not gh_issue:
                 gh_issue = issues.create_issue(repo, issue)
                 logger.debug("Created a new GitHub issue: %r", gh_issue)
@@ -61,6 +65,7 @@ def map_issues(check_result: IssueCheckResult):
                 if issue.has_changes():
                     pull_requests.create_pull_request_from_github_issue(repo, issue.id, gh_issue, issue.get_changes(repo), allow_update=False)
         else:
+            logger.debug(f"Closing issue: {issue}")
             issues.close_issue(repo, issue)
 
 

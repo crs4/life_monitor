@@ -20,11 +20,13 @@
 
 import logging
 import tempfile
+from typing import Optional
 
 import connexion
-import lifemonitor.exceptions as lm_exceptions
 import werkzeug
-from flask import Response, request, render_template
+from flask import Response, current_app, redirect, render_template, request
+
+import lifemonitor.exceptions as lm_exceptions
 from lifemonitor.api import models, serializers
 from lifemonitor.api.services import LifeMonitor
 from lifemonitor.auth import (EventType, authorized, current_registry,
@@ -35,6 +37,8 @@ from lifemonitor.auth.oauth2.client.models import \
     OAuthIdentityNotFoundException
 from lifemonitor.cache import Timeout, cached, clear_cache
 from lifemonitor.lang import messages
+from lifemonitor.tasks.models import Job
+from lifemonitor.utils import notify_updates, notify_workflow_version_updates
 
 # Initialize a reference to the LifeMonitor instance
 lm = LifeMonitor.get_instance()
@@ -104,14 +108,17 @@ def workflow_registries_get_current():
 
 
 @cached(timeout=Timeout.REQUEST)
-def workflows_get(status=False, versions=False):
+def workflows_get(status=False, versions=False, subscriptions=False, only_subscriptions=False):
     workflows = lm.get_public_workflows()
     if current_user and not current_user.is_anonymous:
-        workflows.extend(lm.get_user_workflows(current_user))
+        workflows.extend(lm.get_user_workflows(current_user,
+                                               include_subscriptions=subscriptions,
+                                               only_subscriptions=only_subscriptions))
     elif current_registry:
         workflows.extend(lm.get_registry_workflows(current_registry))
     logger.debug("workflows_get. Got %s workflows (user: %s)", len(workflows), current_user)
-    return serializers.ListOfWorkflows(workflow_status=status, workflow_versions=versions).dump(
+    return serializers.ListOfWorkflows(workflow_status=status, workflow_versions=versions,
+                                       subscriptionsOf=[current_user] if subscriptions else []).dump(
         list(dict.fromkeys(workflows))
     )
 
@@ -150,7 +157,7 @@ def workflows_get_by_id(wf_uuid, wf_version):
     return response if isinstance(response, Response) \
         else serializers.WorkflowVersionSchema(subscriptionsOf=[current_user]
                                                if not current_user.is_anonymous
-                                               else None).dump(response)
+                                               else None, rocrate_metadata=True).dump(response)
 
 
 @cached(timeout=Timeout.REQUEST)
@@ -183,9 +190,8 @@ def workflows_get_versions_by_id(wf_uuid):
 
 
 @cached(timeout=Timeout.REQUEST)
-def workflows_get_status(wf_uuid):
-    wf_version = request.args.get('version', 'latest').lower()
-    response = __get_workflow_version__(wf_uuid, wf_version)
+def workflows_get_status(wf_uuid, version):
+    response = __get_workflow_version__(wf_uuid, version)
     return response if isinstance(response, Response) \
         else serializers.WorkflowStatusSchema().dump(response)
 
@@ -259,15 +265,16 @@ def registry_user_workflows_post(user_id, body):
 
 @authorized
 @cached(timeout=Timeout.REQUEST)
-def user_workflows_get(status=False, subscriptions=False, versions=False):
+def user_workflows_get(status=False, versions=False, subscriptions=False, only_subscriptions: bool = False):
     if not current_user or current_user.is_anonymous:
         return lm_exceptions.report_problem(401, "Unauthorized", detail=messages.no_user_in_session)
-    workflows = lm.get_user_workflows(current_user, include_subscriptions=subscriptions)
+    workflows = lm.get_user_workflows(current_user,
+                                      include_subscriptions=subscriptions,
+                                      only_subscriptions=only_subscriptions)
     logger.debug("user_workflows_get. Got %s workflows (user: %s)", len(workflows), current_user)
     return serializers.ListOfWorkflows(workflow_status=status,
                                        workflow_versions=versions,
-                                       subscriptionsOf=[current_user]
-                                       if subscriptions else None).dump(workflows)
+                                       subscriptionsOf=[current_user] if subscriptions else None).dump(workflows)
 
 
 @authorized
@@ -388,13 +395,17 @@ def __check_submitter_and_registry__(body, _registry=None, _submitter_id=None, _
     submitter = current_user if current_user and not current_user.is_anonymous else None
     if not submitter:
         try:
-            submitter_id = body.get('submitter_id', _submitter_id)
-            if submitter_id:
-                # Try to find the identity of the submitter
-                identity = lm.find_registry_user_identity(registry,
-                                                          internal_id=current_user.id,
-                                                          external_id=submitter_id)
-                submitter = identity.user
+            user_id = body.get('user_id', current_user.id if current_user else None)
+            if user_id:
+                submitter = lm.get_user_by_id(user_id)
+            if not submitter:
+                submitter_id = body.get('submitter_id', _submitter_id)
+                if submitter_id:
+                    # Try to find the identity of the submitter
+                    identity = lm.find_registry_user_identity(registry,
+                                                              internal_id=user_id,
+                                                              external_id=submitter_id)
+                    submitter = identity.user
         except KeyError:
             # return lm_exceptions.report_problem(400, "Bad request",
             #                                     detail=messages.no_submitter_id_provided)
@@ -411,7 +422,13 @@ def __check_submitter_and_registry__(body, _registry=None, _submitter_id=None, _
 
 
 @authorized
-def workflows_post(body, _registry=None, _submitter_id=None):
+def workflows_post(*args, **kwargs):
+    return process_workflows_post(*args, **kwargs)
+
+
+def process_workflows_post(body, _registry=None, _submitter_id=None,
+                           async_processing: Optional[bool] = None, job: Job = None):
+    logger.warning("The current body: %r", body)
     # check if there exists a submitter and/or a registry in the current request
     registry, submitter = __check_submitter_and_registry__(body, _registry, _submitter_id)
     # extract roc_link or rocrate from the request
@@ -420,6 +437,38 @@ def workflows_post(body, _registry=None, _submitter_id=None):
     if not registry and not roc_link and not encoded_rocrate:
         return lm_exceptions.report_problem(400, "Bad Request", extra_info={"missing input": "roc_link OR rocrate"},
                                             detail=messages.input_data_missing)
+
+    # check whether to handle the registration asynchronously
+    async_processing = body.get('async', False) if async_processing is None else async_processing
+    if async_processing:
+        # collect registration data
+        registration_data = {
+            "submitter_id": submitter.id,
+            "user_id": submitter.id,
+            "version": body['version'],
+            "uuid": body.get('uuid', None),
+            "identifier": body.get('identifier', None),
+            "name": body.get('name', None),
+            "authorization": body.get('authorization', None),
+            "public": body.get('public', False)
+        }
+        if roc_link:
+            registration_data['roc_link'] = roc_link
+        if encoded_rocrate:
+            registration_data['rocrate'] = encoded_rocrate
+        if registry:
+            registration_data["registry"] = registry.server_credentials.client_name
+        # create async Job
+        job = Job(job_type='workflow_registration',  # job_name='register_workflow',
+                  status='waiting',
+                  listening_rooms=[str(registration_data['submitter_id'])])
+        job.update_data({
+            'data': registration_data
+        })
+        job.save()
+        job.submit(current_app, as_job_name='register_workflow')
+        return redirect(f'/jobs/status/{job.id}', code=302)
+
     # register workflow through the 'lm' service
     try:
         w = lm.register_workflow(
@@ -431,11 +480,17 @@ def workflows_post(body, _registry=None, _submitter_id=None):
             workflow_registry=registry,
             name=body.get('name', None),
             authorization=body.get('authorization', None),
-            public=body.get('public', False)
+            public=body.get('public', False),
+            job=job
         )
         logger.debug("workflows_post. Created workflow '%s' (ver.%s)", w.uuid, w.version)
         clear_cache()
-        return {'uuid': str(w.workflow.uuid), 'wf_version': w.version, 'name': w.name}, 201
+        notify_workflow_version_updates([w], type='sync', delay=2)
+        return {'uuid': str(w.workflow.uuid), 'wf_version': w.version, 'name': w.name,
+                'meta': {
+                    'created': w.workflow.created.timestamp(),
+                    'modified': w.workflow.modified.timestamp()}
+                }, 201
     except KeyError as e:
         return lm_exceptions.report_problem(400, "Bad Request", extra_info={"exception": str(e)},
                                             detail=messages.input_data_missing)
@@ -470,8 +525,17 @@ def workflows_put(wf_uuid, body):
     # update basic information aboud the specified workflow
     workflow_version.workflow.name = body.get('name', workflow_version.workflow.name)
     workflow_version.workflow.public = body.get('public', workflow_version.workflow.public)
-    workflow_version.workflow.save()
-    return connexion.NoContent, 204
+    # workflow_version.workflow.save()
+    workflow_version.save()
+    clear_cache()
+    notify_workflow_version_updates([workflow_version], type='sync', delay=2)
+    return {
+        'meta':
+            {
+                'created': workflow_version.created.timestamp(),
+                'modified': workflow_version.modified.timestamp()
+            }
+    }, 201
 
 
 @authorized
@@ -499,9 +563,15 @@ def workflows_version_put(wf_uuid, wf_version, body):
         )
         clear_cache()
         if updated_workflow_version.uuid != workflow_version.uuid:
-            return {'uuid': str(updated_workflow_version.workflow.uuid),
-                    'wf_version': updated_workflow_version.version,
-                    'name': updated_workflow_version.name}, 201
+            return {
+                'uuid': str(updated_workflow_version.workflow.uuid),
+                'wf_version': updated_workflow_version.version,
+                'name': updated_workflow_version.name,
+                'meta': {
+                    'created': updated_workflow_version.workflow.created.timestamp(),
+                    'modified': updated_workflow_version.workflow.modified.timestamp()
+                }
+            }, 201
         return connexion.NoContent, 204
 
     except KeyError as e:
@@ -528,6 +598,8 @@ def workflows_version_put(wf_uuid, wf_version, body):
 @authorized
 def workflows_delete_version(wf_uuid, wf_version):
     try:
+        # get a reference to the workflow version to be updated
+        workflow_version = __get_workflow_version__(wf_uuid, wf_version=wf_version)
         if current_user and not current_user.is_anonymous:
             lm.deregister_user_workflow_version(wf_uuid, wf_version, current_user)
         elif current_registry:
@@ -536,6 +608,7 @@ def workflows_delete_version(wf_uuid, wf_version):
             return lm_exceptions.report_problem(403, "Forbidden",
                                                 detail=messages.no_user_in_session)
         clear_cache()
+        notify_workflow_version_updates([workflow_version], type='delete')
         return connexion.NoContent, 204
     except OAuthIdentityNotFoundException as e:
         return lm_exceptions.report_problem(401, "Unauthorized", extra_info={"exception": str(e)})
@@ -551,6 +624,8 @@ def workflows_delete_version(wf_uuid, wf_version):
 @authorized
 def workflows_delete(wf_uuid):
     try:
+        w = lm.get_workflow(wf_uuid)
+        versions = [{'uuid': wf_uuid, 'version': w.version} for w in w.versions.values()]
         if current_user and not current_user.is_anonymous:
             lm.deregister_user_workflow(wf_uuid, current_user)
         elif current_registry:
@@ -559,12 +634,13 @@ def workflows_delete(wf_uuid):
             return lm_exceptions.report_problem(403, "Forbidden",
                                                 detail=messages.no_user_in_session)
         clear_cache()
+        notify_updates(versions, type='delete')
         return connexion.NoContent, 204
     except OAuthIdentityNotFoundException as e:
         return lm_exceptions.report_problem(401, "Unauthorized", extra_info={"exception": str(e)})
     except lm_exceptions.EntityNotFoundException as e:
         return lm_exceptions.report_problem(404, "Not Found", extra_info={"exception": str(e.detail)},
-                                            detail=messages.workflow_version_not_found.format(wf_uuid))
+                                            detail=messages.workflow_not_found.format(wf_uuid))
     except lm_exceptions.NotAuthorizedException as e:
         return lm_exceptions.report_problem(403, "Forbidden", extra_info={"exception": str(e)})
     except Exception as e:
@@ -589,9 +665,15 @@ def workflows_get_issue_types_as_html(back=None):
 def workflows_get_suites(wf_uuid, version='latest', status: bool = False, latest_builds: bool = False):
     workflow_version = __get_workflow_version__(wf_uuid, version)
     logger.debug("GET suites of workflow version: %r", workflow_version)
-    return serializers.ListOfSuites(
-        status=status, latest_builds=latest_builds
-    ).dump(workflow_version.test_suites)
+    try:
+        return serializers.ListOfSuites(
+            status=status, latest_builds=latest_builds
+        ).dump(workflow_version.test_suites)
+    finally:
+        if latest_builds:
+            for s in workflow_version.test_suites:
+                for i in s.test_instances:
+                    i.save()
 
 
 def _get_suite_or_problem(suite_uuid):
@@ -624,16 +706,48 @@ def _get_suite_or_problem(suite_uuid):
 
 @cached(timeout=Timeout.REQUEST)
 def suites_get_by_uuid(suite_uuid, status: bool = False, latest_builds: bool = False):
-    response = _get_suite_or_problem(suite_uuid)
-    return response if isinstance(response, Response) \
-        else serializers.SuiteSchema(status=status, latest_builds=latest_builds).dump(response)
+    suite = _get_suite_or_problem(suite_uuid)
+    try:
+        return suite if isinstance(suite, Response) \
+            else serializers.SuiteSchema(status=status, latest_builds=latest_builds).dump(suite)
+    except Exception as e:
+        return __handle_testing_service_error__(e, instance_uuid=suite_uuid,
+                                                message=messages.suite_status_unavailable.format(suite_uuid)
+                                                if isinstance(e, lm_exceptions.TestingServiceException) else str(e))
+    finally:
+        if suite and latest_builds:
+            for i in suite.test_instances:
+                i.save()
 
 
 @cached(timeout=Timeout.REQUEST)
 def suites_get_status(suite_uuid):
-    response = _get_suite_or_problem(suite_uuid)
-    return response if isinstance(response, Response) \
-        else serializers.SuiteStatusSchema().dump(response)
+    suite = _get_suite_or_problem(suite_uuid)
+    try:
+        return suite if isinstance(suite, Response) \
+            else serializers.SuiteStatusSchema().dump(suite)
+    except Exception as e:
+        return __handle_testing_service_error__(e, instance_uuid=suite_uuid,
+                                                message=messages.suite_status_unavailable.format(suite_uuid))
+    finally:
+        if suite:
+            for i in suite.test_instances:
+                i.save()
+
+
+def __handle_testing_service_error__(e: Exception, instance_uuid: str = None, message: str = None):
+    extra_info = {}
+    if isinstance(e, lm_exceptions.TestingServiceException):
+        extra_info['testing_service_error'] = {
+            "title": e.title,
+            "status": e.status,
+            "message": e.detail,
+        }
+    else:
+        extra_info["exception"] = str(e)
+    return lm_exceptions.report_problem(500, "Unavailable builds", instance=instance_uuid,
+                                        detail=message,
+                                        extra_info=extra_info)
 
 
 @cached(timeout=Timeout.REQUEST)
@@ -791,6 +905,26 @@ def instances_delete_by_id(instance_uuid):
 
 @cached(timeout=Timeout.REQUEST)
 def instances_get_builds(instance_uuid, limit):
+    # response = _get_instances_or_problem(instance_uuid)
+    # logger.debug("Number of builds to load: %r", limit)
+    # try:
+    #     builds = response.get_test_builds(limit=limit)
+    #     response.save()
+    #     return response if isinstance(response, Response) \
+    #         else serializers.ListOfTestBuildsSchema().dump(builds)
+    # except Exception as e:
+    #     extra_info = {}
+    #     if isinstance(e, lm_exceptions.TestingServiceException):
+    #         extra_info['testing_service_error'] = {
+    #             "title": e.title,
+    #             "status": e.status,
+    #             "message": e.detail,
+    #         }
+    #     else:
+    #         extra_info["exception"] = str(e)
+    #     return lm_exceptions.report_problem(500, "Unavailable builds", instance=instance_uuid,
+    #                                         detail=messages.instance_builds_unavailable.format(instance_uuid),
+    #                                         extra_info=extra_info)
     response = _get_instances_or_problem(instance_uuid)
     logger.info("Number of builds to load: %r", limit)
     return response if isinstance(response, Response) \

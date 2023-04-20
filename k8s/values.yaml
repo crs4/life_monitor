@@ -209,11 +209,17 @@ worker:
   queues:
     - name: github
       # image: *lifemonitorImage
-    - name: heartbeat
+    # - name: heartbeat
       # image: *lifemonitorImage
     - name: notifications
       # image: *lifemonitorImage
     - name: builds
+      # image: *lifemonitorImage
+    - name: workflows
+      # image: *lifemonitorImage
+    # - name: metrics
+      # image: *lifemonitorImage
+    - name: ws
       # image: *lifemonitorImage
 
   podAnnotations: {}

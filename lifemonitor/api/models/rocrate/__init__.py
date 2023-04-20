@@ -155,22 +155,21 @@ class ROCrate(Resource):
             ref = None
             if not os.path.exists(self.local_path):
                 logger.debug(f"{self.local_path} archive of {self} not found locally!!!")
-
+                logger.debug("Remote storage enabled: %r", self._storage.enabled)
+                logger.debug("File exists on remote storage: %r", self._storage.exists(self._get_storage_path(self.local_path)))
                 # download the workflow ROCrate and store it into the remote storage
                 if not inspect(self).persistent or not self._storage.exists(self._get_storage_path(self.local_path)):
-                    # if not self._storage.enabled or not self._storage.exists(self._get_storage_path(self.local_path)):
-                    try:
-                        _, ref, _ = self.download_from_source(self.local_path)
-                        logger.debug(f"RO-Crate downloaded from {self.uri} to {self.storage_path}!")
+                    _, ref, _ = self.download_from_source(self.local_path)
+                    logger.debug(f"RO-Crate downloaded from {self.uri} to {self.storage_path}!")
+                    if self._storage.enabled and not self._storage.exists(self._get_storage_path(self.local_path)):
                         self._storage.put_file_as_job(self.local_path, self._get_storage_path(self.local_path))
                         logger.debug(f"Scheduled job to store {self.storage_path} into the remote storage!")
-                    except Exception as e:
-                        logger.exception(e)
                 else:
                     # download the RO-Crate archive from the remote storage
                     logger.warning(f"Getting path {self.storage_path} from remote storage!!!")
-                    self._storage.get_file(self._get_storage_path(self.local_path), self.local_path)
-                    logger.warning(f"Getting path {self.storage_path} from remote storage.... DONE!!!")
+                    if self._storage.enabled and not self._storage.exists(self._get_storage_path(self.local_path)):
+                        self._storage.get_file(self._get_storage_path(self.local_path), self.local_path)
+                        logger.warning(f"Getting path {self.storage_path} from remote storage.... DONE!!!")
 
             # instantiate a local ROCrate repository
             if self._is_github_crate_(self.uri):
@@ -199,33 +198,60 @@ class ROCrate(Resource):
 
     @property
     def authors(self) -> List[Dict]:
-        return self._crate_reader.get_authors()
+        return self.get_authors()
 
-    def get_authors(self, suite_id: str = None) -> List[Dict]:
-        return self._crate_reader.get_authors(suite_id=suite_id)
+    def __get_attribute_from_crate_reader__(self,
+                                            attributeName: str, attributedType: str = 'method',
+                                            ignore_errors: bool = True,
+                                            *args, **kwargs) -> object | None:
+        try:
+            attr = getattr(self._crate_reader, attributeName)
+            if attributedType == 'method':
+                return attr(*args, **kwargs)
+            else:
+                return attr
+        except lm_exceptions.NotValidROCrateException as e:
+            logger.warning("Unable to process ROCrate archive: %s", str(e))
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.exception(e)
+            if not ignore_errors:
+                raise e
+        except Exception as e:
+            logger.error(str(e))
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.exception(e)
+            if not ignore_errors:
+                raise e
+        return None
+
+    def get_authors(self, suite_id: str = None) -> List[Dict] | None:
+        return self.__get_attribute_from_crate_reader__('get_authors', suite_id=suite_id)
 
     @hybrid_property
     def roc_suites(self):
-        return self._crate_reader.get_roc_suites()
+        return self.__get_attribute_from_crate_reader__('get_roc_suites')
 
-    def get_roc_suite(self, roc_suite_identifier):
-        return self._crate_reader.get_get_roc_suite(roc_suite_identifier)
+    def get_roc_suites(self, ignore_errors: bool = False):
+        return self.__get_attribute_from_crate_reader__('get_roc_suites', ignore_errors=ignore_errors)
+
+    def get_roc_suite(self, roc_suite_identifier, ignore_errors: bool = False):
+        return self.__get_attribute_from_crate_reader__('get_get_roc_suite', roc_suite_identifier, ignore_errors=ignore_errors)
 
     @property
-    def based_on(self) -> str:
-        return self._crate_reader.isBasedOn
+    def based_on(self) -> str | None:
+        return self.__get_attribute_from_crate_reader__('isBasedOn', attributedType='property')
 
     @property
     def based_on_link(self) -> str:
-        return self._crate_reader.isBasedOn
+        return self.__get_attribute_from_crate_reader__('isBasedOn', attributedType='property')
 
     @property
     def dataset_name(self):
-        return self._crate_reader.dataset_name
+        return self.__get_attribute_from_crate_reader__('dataset_name', attributedType='property')
 
     @property
     def main_entity_name(self):
-        return self._crate_reader.main_entity_name
+        return self.__get_attribute_from_crate_reader__('main_entity_name', attributedType='property')
 
     def _get_authorizations(self, extra_auth: ExternalServiceAuthorizationHeader = None):
         authorizations = []

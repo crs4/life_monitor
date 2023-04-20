@@ -21,7 +21,7 @@
 from __future__ import annotations
 
 import logging
-from typing import List, Set, Union
+from typing import List, Optional, Set, Union
 
 import lifemonitor.api.models as models
 import lifemonitor.exceptions as lm_exceptions
@@ -91,7 +91,7 @@ class Workflow(Resource):
 
     @hybrid_property
     def latest_version(self) -> WorkflowVersion:
-        return max(self.versions.values(), key=lambda v: v.modified)
+        return max(self.versions.values(), key=lambda v: v.created)
 
     def add_version(self, version, uri, submitter: User, uuid=None, name=None):
         return WorkflowVersion(self, uri, version, submitter, uuid=uuid, name=name)
@@ -205,6 +205,7 @@ class WorkflowVersion(ROCrate):
         db.Column(db.Integer, db.ForeignKey("workflow.id"), nullable=False)
     workflow = db.relationship("Workflow", foreign_keys=[workflow_id], cascade="all",
                                backref=db.backref("versions", cascade="all, delete-orphan",
+                                                  order_by="desc(WorkflowVersion.created)",
                                                   collection_class=attribute_mapped_collection('version')))
     test_suites = db.relationship("TestSuite", back_populates="workflow_version",
                                   cascade="all, delete")
@@ -232,24 +233,28 @@ class WorkflowVersion(ROCrate):
     def _storage(self) -> RemoteStorage:
         return RemoteStorage()
 
-    @property
-    def previous_version(self) -> WorkflowVersion:
-        previous = None
-        for v in self.workflow.versions.values():
-            if v == self:
-                return previous
-            previous = v
+    def _get_relative_version(self, delta_index=1) -> Optional[WorkflowVersion]:
+        try:
+            values = list(self.workflow.versions.values())
+            self_index = values.index(self)
+            index = self_index + delta_index
+            if index >= 0 and index < len(values):
+                return values[self_index + delta_index]
+        except ValueError:
+            message = f"{self} doesn't belong to the workflow {self.workflow}"
+            logger.error(message)
+            raise lm_exceptions.LifeMonitorException('Value error', detail=message)
+        except IndexError:
+            pass
         return None
 
     @property
+    def previous_version(self) -> WorkflowVersion:
+        return self._get_relative_version(delta_index=1)
+
+    @property
     def next_version(self) -> WorkflowVersion:
-        found = False
-        for v in self.workflow.versions.values():
-            if v == self:
-                found = True
-            elif found:
-                return v
-        return None
+        return self._get_relative_version(delta_index=-1)
 
     def check_health(self) -> dict:
         health = {'healthy': True, 'issues': []}
@@ -301,11 +306,11 @@ class WorkflowVersion(ROCrate):
 
     @property
     def previous_versions(self) -> List[str]:
-        return [w.version for w in self.workflow.versions.values() if w != self and w.version < self.version]
+        return [w.version for w in self.workflow.versions.values() if w != self and w.created < self.created]
 
     @property
     def previous_workflow_versions(self) -> List[models.WorkflowVersion]:
-        return [w for w in self.workflow.versions.values() if w != self and w.version < self.version]
+        return [w for w in self.workflow.versions.values() if w != self and w.created < self.created]
 
     @property
     def status(self) -> models.WorkflowStatus:
@@ -339,6 +344,11 @@ class WorkflowVersion(ROCrate):
             data['test_suite'] = [s.to_dict(test_build=test_build, test_output=test_output)
                                   for s in self.test_suites]
         return data
+
+    def save(self):
+        self.workflow.save(commit=False, flush=False)
+        self.modified = self.workflow.modified
+        super().save(update_modified=False)
 
     def delete(self):
         if len(self.workflow.versions) > 1:

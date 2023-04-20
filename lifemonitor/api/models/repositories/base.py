@@ -27,7 +27,7 @@ import logging
 import os
 from abc import abstractclassmethod
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Type
 
 import git
 import giturlparse
@@ -170,6 +170,7 @@ class WorkflowRepository():
         found_issues = []
         issue_graph = issues.get_issue_graph()
 
+        checked = set()
         visited = set()
         queue = [i for i in issue_graph.neighbors(issues.ROOT_ISSUE)
                  if self._issue_name_included(i.__name__, include, exclude)]
@@ -184,6 +185,7 @@ class WorkflowRepository():
                                  issue_type.__name__, e)
                     continue  # skip this issue by not marking it as visited (otherwise it shows as "passed")
                 visited.add(issue_type)
+                checked.add(issue)
                 if not failed:
                     neighbors = [i for i in issue_graph.neighbors(issue_type)
                                  if self._issue_name_included(i.__name__, include, exclude)]
@@ -192,7 +194,7 @@ class WorkflowRepository():
                     found_issues.append(issue)
                     if fail_fast:
                         break
-        return IssueCheckResult(self, list(visited), found_issues)
+        return IssueCheckResult(self, list(checked), found_issues)
 
     @classmethod
     def __contains__(cls, files, file) -> bool:
@@ -339,6 +341,15 @@ class IssueCheckResult:
 
     def found_issues(self) -> bool:
         return len(self.issues) > 0
+
+    def is_checked(self, issue: Type[issues.WorkflowRepositoryIssue] | issues.WorkflowRepositoryIssue) -> bool:
+        if issue and issue in self.checked:
+            return True
+        if isinstance(issue, issues.WorkflowRepositoryIssue):
+            for issue_type in self.checked:
+                if isinstance(issue, issue_type):
+                    return True
+        return False
 
     @property
     def solved(self) -> List[issues.WorkflowRepositoryIssue]:

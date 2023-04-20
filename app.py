@@ -18,18 +18,27 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import logging
 import os
 import ssl
 
 from lifemonitor.app import create_app
 
-# create an app instance
-application = create_app()
+# initialise logger
+logger = logging.getLogger(__name__)
 
-if __name__ == '__main__':
-    """ Start development server"""
+# create an app instance
+application = create_app(init_app=True)
+
+
+def start_app_server():
+    """ Start Flask App"""
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
     context.load_cert_chain(
         os.environ.get("LIFEMONITOR_TLS_CERT", './certs/lm.crt'),
         os.environ.get("LIFEMONITOR_TLS_KEY", './certs/lm.key'))
     application.run(host="0.0.0.0", port=8000, ssl_context=context)
+
+
+if __name__ == '__main__':
+    start_app_server()

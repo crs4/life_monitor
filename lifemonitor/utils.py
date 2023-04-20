@@ -37,7 +37,7 @@ import time
 import urllib
 import uuid
 import zipfile
-from datetime import datetime
+from datetime import datetime, timezone
 from importlib import import_module
 from os.path import basename, dirname, isfile, join
 from typing import Dict, List, Optional, Tuple, Type
@@ -49,7 +49,6 @@ import requests
 import yaml
 from dateutil import parser
 
-from . import config
 from . import exceptions as lm_exceptions
 
 logger = logging.getLogger()
@@ -57,6 +56,15 @@ logger = logging.getLogger()
 
 def split_by_crlf(s):
     return [v for v in s.splitlines() if v]
+
+
+def datetime_as_timestamp_with_msecs(
+        d: datetime = datetime.now(timezone.utc)) -> int:
+    return int(d.timestamp() * 1000)
+
+
+def datetime_to_utc_unix_timestamp(dt: datetime) -> int:
+    return dt.replace(tzinfo=timezone.utc).timestamp()
 
 
 def values_as_list(values, in_separator='\\s?,\\s?|\\s+'):
@@ -238,6 +246,35 @@ def match_ref(ref: str, refs: List[str]) -> Optional[Tuple[str, str]]:
     return None
 
 
+def notify_updates(workflows: List, type: str = 'sync', delay: int = 0):
+    from lifemonitor.ws import io
+    from datetime import timezone
+    io.publish_message({
+        "type": type,
+        "data": [{
+            'uuid': str(w["uuid"]),
+            'version': w.get("version", None),
+            'lastUpdate': (w.get('lastUpdate', None) or datetime.now(tz=timezone.utc)).timestamp()
+        } for w in workflows]
+    }, delay=delay)
+
+
+def notify_workflow_version_updates(workflows: List, type: str = 'sync', delay: int = 0):
+    from lifemonitor.ws import io
+    io.publish_message({
+        "type": type,
+        "data": [{
+            'uuid': str(w.workflow.uuid),
+            'version': w.version,
+            'lastUpdate':  # datetime.now(tz=timezone.utc).timestamp()
+            max(
+                w.modified.timestamp(),
+                w.workflow.modified.timestamp()
+            )
+        } for w in workflows]
+    }, delay=delay)
+
+
 def load_modules(path: str = None, include: List[str] = None, exclude: List[str] = None) -> Dict[str, Type]:
     errors = []
 
@@ -349,6 +386,7 @@ class ROCrateLinkContext(object):
                 return self.rocrate_or_link
             try:
                 rocrate = base64.b64decode(self.rocrate_or_link)
+                from . import config
                 temp_rocrate_file = tempfile.NamedTemporaryFile(delete=False,
                                                                 dir=config.BaseConfig.BASE_TEMP_FOLDER,
                                                                 prefix="base64-rocrate")
@@ -366,7 +404,7 @@ class ROCrateLinkContext(object):
 
     def __exit__(self, type, value, traceback):
         logger.debug("Exiting ROCrateLinkContext...")
-        if self._local_path:
+        if self._local_path and (isinstance(self._local_path, str) or isinstance(self._local_path, os.PathLike)):
             try:
                 os.remove(self._local_path)
                 logger.debug("Temporary file removed: %r", self._local_path)
@@ -466,6 +504,7 @@ def download_url(url: str, target_path: str = None, authorization: str = None) -
 
 
 def extract_zip(archive_path, target_path=None):
+    from . import config
     logger.debug("Archive path: %r", archive_path)
     logger.debug("Target path: %r", target_path)
     try:
@@ -487,6 +526,7 @@ def _make_git_credentials_callback(token: str = None):
 def clone_repo(url: str, ref: str = None, target_path: str = None, auth_token: str = None,
                remote_url: str = None, remote_branch: str = None, remote_user_token: str = None):
     try:
+        from . import config
         logger.warning("Local CLONE: %r - %r", url, ref)
         local_path = target_path
         if not local_path:

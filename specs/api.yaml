@@ -3,7 +3,7 @@
 openapi: "3.0.0"
 
 info:
-  version: "0.9.0-dev"
+  version: "0.9.0"
   title: "Life Monitor API"
   description: |
     *Workflow sustainability service*
@@ -18,7 +18,7 @@ info:
 servers:
   - url: /
     description: >
-      Version 0.9.0-dev of API.
+      Version 0.9.0 of API.
 
 tags:
   - name: GitHub Integration
@@ -42,11 +42,11 @@ paths:
       tags: ["GitHub Integration"]
       x-openapi-router-controller: lifemonitor.schemas.controller
       operationId: "lifemonitor_json"
-      summary: "JSON Schema of lifemonitor.json"
-      description: "JSON Schema for the `lifemonitor.json` config file"
+      summary: "JSON Schema for the .lifemonitor.json configuration file"
+      description: "Return the JSON Schema for the `.lifemonitor.json` configuration file"
       responses:
         "200":
-          description: The JSON schema
+          description: The JSON schema for the `.lifemonitor.json` configuration file
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -63,8 +63,9 @@ paths:
       operationId: "validate"
       summary: "Validate config file"
       description: |
-        Validate a `lifemonitor.yaml` config file according to the according to the
-        [/integrations/github/config/schema.json](/integrations/github/config/schema.json) schema.
+        Validate an instance of `.lifemonitor.yaml` configuration file 
+        against the schema
+        [/integrations/github/config/schema.json](/integrations/github/config/schema.json).
       requestBody:
         required: true
         content:
@@ -75,7 +76,7 @@ paths:
               format: binary
       responses:
         "200":
-          description: The JSON schema
+          description: Validation result
           content:
             application/json:
               schema:
@@ -99,8 +100,7 @@ paths:
                         description: A short error message
                       error:
                         type: string
-                        description: /
-                          Detailed error description
+                        description: Detailed error description
                     required:
                       - message
                       - error
@@ -703,6 +703,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/wf_status"
         - $ref: "#/components/parameters/wf_versions"
+        - $ref: "#/components/parameters/wf_subscriptions"
       responses:
         "200":
           description: List of Workflows

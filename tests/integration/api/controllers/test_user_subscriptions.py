@@ -244,7 +244,7 @@ def test_subscribed_workflow_by_user(app_client, client_auth_method,
     r = app_client.put(
         f"/workflows/{wdata['uuid']}", json={'public': True}, headers=user1_auth
     )
-    assert r.status_code == 204, f"Error when trying to make workflow '{valid_workflow}' public"
+    assert r.status_code == 201, f"Error when trying to make workflow '{valid_workflow}' public"
 
     # get workflows of user2
     r = app_client.get(

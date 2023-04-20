@@ -21,8 +21,8 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime
-from typing import List, Optional, Union
+from datetime import datetime, timezone
+from typing import Dict, List, Optional, Union
 
 import lifemonitor.exceptions as lm_exceptions
 from lifemonitor.api import models
@@ -33,7 +33,9 @@ from lifemonitor.auth.models import (EventType,
 from lifemonitor.auth.oauth2.client import providers
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 from lifemonitor.auth.oauth2.server import server
+from lifemonitor.tasks.models import Job
 from lifemonitor.utils import OpenApiSpecs, ROCrateLinkContext, to_snake_case
+from lifemonitor.ws import io
 
 logger = logging.getLogger()
 
@@ -110,7 +112,7 @@ class LifeMonitor:
     def register_workflow(cls, rocrate_or_link, workflow_submitter: User, workflow_version,
                           workflow_uuid=None, workflow_identifier=None,
                           workflow_registry: Optional[models.WorkflowRegistry] = None,
-                          authorization=None, name=None, public=False):
+                          authorization=None, name=None, public=False, job: Job = None):
 
         # reference to the workflow
         w = None
@@ -150,13 +152,19 @@ class LifeMonitor:
                 if not workflow_registry:
                     raise ValueError("Missing ROC link")
                 else:
+                    if job:
+                        job.update_status('Getting workflow info from registry', save=True)
                     roc_link = workflow_registry.get_rocrate_external_link(workflow_identifier, workflow_version)
 
             # register workflow version
+            if job:
+                job.update_status('Adding workflow version', save=True)
             wv = w.add_version(workflow_version, roc_link, workflow_submitter, name=name)
 
             # associate workflow version to the workflow registry
             if workflow_registry:
+                if job:
+                    job.update_status('Associating workflow version to registry', save=True)
                 workflow_registry.add_workflow_version(wv, workflow_identifier, workflow_version)
 
             # set permissions
@@ -191,7 +199,9 @@ class LifeMonitor:
 
             # parse roc_metadata and register suites and instances
             try:
-                if wv.roc_suites:
+                if job:
+                    job.update_status('Processing test suites', save=True)
+                if wv.get_roc_suites():
                     for _, raw_suite in wv.roc_suites.items():
                         cls._init_test_suite_from_json(wv, workflow_submitter, raw_suite)
             except KeyError as e:
@@ -277,6 +287,18 @@ class LifeMonitor:
             w.public = public
         # store the new version
         w.save()
+
+        try:
+            logger.debug("Notifying workflow version update...")
+            io.publish_message({
+                "type": "sync",
+                "data": [{'uuid': w.uuid, "version": workflow_version, 'lastUpdate': w.modified.timestamp()}]
+            })
+            logger.debug("Notifying workflow version update... DONE")
+        except Exception as e:
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.exception(e)
+            logger.error(str(e))
         return wv
 
     @classmethod
@@ -528,7 +550,13 @@ class LifeMonitor:
         return models.Workflow.get_public_workflows()
 
     @staticmethod
-    def get_user_workflows(user: User, include_subscriptions: bool = False) -> List[models.Workflow]:
+    def get_user_workflows(user: User,
+                           include_subscriptions: bool = False,
+                           only_subscriptions: bool = False) -> List[models.Workflow]:
+        if only_subscriptions:
+            return [_.resource for _ in user.subscriptions
+                    if _.resource.public or user in [p.user for p in _.resource.permissions]]
+
         workflows = [w for w in models.Workflow.get_user_workflows(user, include_subscriptions=include_subscriptions)]
         for svc in models.WorkflowRegistry.all():
             if svc.get_user(user.id):
@@ -577,6 +605,10 @@ class LifeMonitor:
     @staticmethod
     def get_test_instance(instance_uuid) -> models.TestInstance:
         return models.TestInstance.find_by_uuid(instance_uuid)
+
+    @staticmethod
+    def get_user_by_id(user_id: str) -> User:
+        return User.find_by_id(user_id)
 
     @staticmethod
     def find_registry_user_identity(registry: models.WorkflowRegistry,
@@ -682,3 +714,39 @@ class LifeMonitor:
                 return lm_exceptions.EntityNotFoundException(Notification, entity_id=n_uuid)
             user.notifications.remove(n)
         user.save()
+
+    @staticmethod
+    def list_workflow_updates(since: datetime = datetime.now) -> Dict[str, datetime]:
+        from lifemonitor.db import db
+        query = """
+            SELECT DISTINCT uuid, version, max(last_update) as last_update
+            FROM (
+                SELECT w.uuid AS uuid, r.version AS version, GREATEST(r.modified, w.modified) AS last_update
+                FROM resource AS r
+                JOIN workflow_version AS wv ON r.id = wv.id
+                JOIN resource AS w ON wv.workflow_id = w.id
+                WHERE r.type LIKE 'workflow_version'
+
+                UNION
+
+                SELECT w.uuid AS uuid, r.version AS version, t.last_builds_update AS last_update
+                FROM test_instance AS t
+                JOIN test_suite AS s ON t.test_suite_uuid = s.uuid
+                JOIN workflow_version AS wv ON s.workflow_version_id = wv.id
+                JOIN resource AS r ON r.id = wv.id
+                JOIN resource AS w ON wv.workflow_id = w.id
+            ) as X
+            GROUP BY X.uuid,X.version
+            ORDER BY last_update DESC
+            """
+        result: List = []
+        rs = db.session.execute(query)
+        for row in rs:
+            logger.debug("Row: %r", row)
+            result.append({
+                "uuid": str(row[0]),
+                "version": row[1],
+                "lastUpdate": row[2].replace(tzinfo=timezone.utc).timestamp()  # time.mktime(row[2].timetuple())
+                # "lastUpdate": int(row[2].timestamp() * 1000)
+            })
+        return result

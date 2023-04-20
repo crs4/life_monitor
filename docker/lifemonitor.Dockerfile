@@ -37,16 +37,20 @@ WORKDIR /lm
 COPY \
     docker/wait-for-postgres.sh \
     docker/wait-for-redis.sh \
+    docker/wait-for-file.sh \
     docker/lm_entrypoint.sh \
     docker/worker_entrypoint.sh \
+    docker/wss-entrypoint.sh \
     /usr/local/bin/
 
 # Update permissions and install optional certificates
 RUN chmod 755 \
       /usr/local/bin/wait-for-postgres.sh \
       /usr/local/bin/wait-for-redis.sh \
+      /usr/local/bin/wait-for-file.sh \
       /usr/local/bin/lm_entrypoint.sh \
       /usr/local/bin/worker_entrypoint.sh \
+      /usr/local/bin/wss-entrypoint.sh \
       /nextflow \
     && certs=$(ls *.crt 2> /dev/null) \
     && mv *.crt /usr/local/share/ca-certificates/ \
@@ -71,7 +75,7 @@ RUN git config --global user.name "LifeMonitor[bot]" \
     && git config --global user.email "noreply@lifemonitor.eu"
 
 # Copy lifemonitor app
-COPY --chown=lm:lm app.py lm-admin lm gunicorn.conf.py /lm/
+COPY --chown=lm:lm app.py ws.py lm-metrics-server lm-admin lm gunicorn.conf.py /lm/
 COPY --chown=lm:lm specs /lm/specs
 COPY --chown=lm:lm lifemonitor /lm/lifemonitor
 COPY --chown=lm:lm migrations /lm/migrations
