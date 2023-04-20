@@ -37,10 +37,10 @@ import time
 import urllib
 import uuid
 import zipfile
-from datetime import datetime
+from datetime import datetime, timezone
 from importlib import import_module
 from os.path import basename, dirname, isfile, join
-from typing import Dict, List, Optional, Tuple, Type
+from typing import Dict, List, Literal, Optional, Tuple, Type
 
 import flask
 import networkx as nx
@@ -49,7 +49,6 @@ import requests
 import yaml
 from dateutil import parser
 
-from . import config
 from . import exceptions as lm_exceptions
 
 logger = logging.getLogger()
@@ -57,6 +56,15 @@ logger = logging.getLogger()
 
 def split_by_crlf(s):
     return [v for v in s.splitlines() if v]
+
+
+def datetime_as_timestamp_with_msecs(
+        d: datetime = datetime.now(timezone.utc)) -> int:
+    return int(d.timestamp() * 1000)
+
+
+def datetime_to_utc_unix_timestamp(dt: datetime) -> int:
+    return dt.replace(tzinfo=timezone.utc).timestamp()
 
 
 def values_as_list(values, in_separator='\\s?,\\s?|\\s+'):
@@ -206,6 +214,10 @@ def get_external_server_url():
     return get_base_url() if not external_server_url else external_server_url
 
 
+def get_validation_schema_url():
+    return f"{get_external_server_url()}/integrations/github/config/schema.json"
+
+
 def validate_url(url: str) -> bool:
     try:
         result = urllib.parse.urlparse(url)
@@ -232,6 +244,35 @@ def match_ref(ref: str, refs: List[str]) -> Optional[Tuple[str, str]]:
         except Exception:
             logger.debug("Unable to find a match for %s (pattern: %s)", ref, pattern)
     return None
+
+
+def notify_updates(workflows: List, type: str = 'sync', delay: int = 0):
+    from lifemonitor.ws import io
+    from datetime import timezone
+    io.publish_message({
+        "type": type,
+        "data": [{
+            'uuid': str(w["uuid"]),
+            'version': w.get("version", None),
+            'lastUpdate': (w.get('lastUpdate', None) or datetime.now(tz=timezone.utc)).timestamp()
+        } for w in workflows]
+    }, delay=delay)
+
+
+def notify_workflow_version_updates(workflows: List, type: str = 'sync', delay: int = 0):
+    from lifemonitor.ws import io
+    io.publish_message({
+        "type": type,
+        "data": [{
+            'uuid': str(w.workflow.uuid),
+            'version': w.version,
+            'lastUpdate':  # datetime.now(tz=timezone.utc).timestamp()
+            max(
+                w.modified.timestamp(),
+                w.workflow.modified.timestamp()
+            )
+        } for w in workflows]
+    }, delay=delay)
 
 
 def load_modules(path: str = None, include: List[str] = None, exclude: List[str] = None) -> Dict[str, Type]:
@@ -326,6 +367,74 @@ def find_types(T: Type, path: str = None) -> Dict[str, Type]:
     return sorted_types
 
 
+def datetime_to_isoformat(dt: datetime) -> str:
+    """Convert a datetime to ISO datetime format.
+
+    :param dt: The datetime to convert.
+    :return: The datetime converted to ISO format.
+    """
+    return dt.isoformat(timespec="auto") + "Z"
+
+
+def isoformat_to_datetime(iso: str) -> datetime:
+    """Convert an ISO datetime string to a datetime.
+
+    :param iso: The ISO datetime string to convert.
+    :return: The ISO datetime string converted to a datetime.
+    """
+    logger.debug(f"Converting {iso}")
+    date_str = iso[:-1] if iso.endswith('Z') else iso
+    try:
+        return datetime.fromisoformat(date_str)
+    except ValueError:
+        logger.debug("Unable to convert datetime with 'datetime.fromisoformat'")
+    try:
+        date_format = "%Y-%m-%dT%H:%M:%S.%f" if "." in iso else "%Y-%m-%dT%H:%M:%S"
+        logger.debug(f"Date format: {date_format}")
+        logger.debug(f"Date string to parse: {date_str}")
+        return datetime.strptime(date_str, date_format)
+    except ValueError as e:
+        raise ValueError(f"Datetime string {iso} is not in ISO format") from e
+
+
+def parse_date_interval(interval: str) -> Tuple[Literal['<=', '>=', '<', '>', '..'], Optional[datetime], datetime]:
+    """Parse a date interval string.
+
+    :param interval: The date interval string to parse. The format is
+        ``<operator><date>`` where ``<operator>`` is one of ``<``, ``>``, ``<=``,
+        ``>=`` and ``<date>`` is a date string in ISO format; or ``<date>..<date>``
+        where ``operator`` is ``..`` and ``<date>`` is a date string in ISO format.
+
+    :return: A tuple containing the operator, start date and end date.
+    :raises ValueError: If the date interval string is invalid.
+    """
+    if not interval:
+        raise ValueError("Invalid date interval: empty string")
+    start_date = end_date = operator = None
+    if interval.startswith("<="):
+        operator = "<="
+        end_date = isoformat_to_datetime(interval[2:])
+    elif interval.startswith(">="):
+        operator = ">="
+        start_date = isoformat_to_datetime(interval[2:])
+    elif interval.startswith("<"):
+        operator = "<"
+        end_date = isoformat_to_datetime(interval[1:])
+    elif interval.startswith(">"):
+        operator = ">"
+        start_date = isoformat_to_datetime(interval[1:])
+    elif ".." in interval:
+        operator = ".."
+        dates = interval.split("..")
+        if len(dates) != 2:
+            raise ValueError(f"Invalid date interval: {interval}")
+        start_date = isoformat_to_datetime(dates[0])
+        end_date = isoformat_to_datetime(dates[1])
+    else:
+        raise ValueError(f"Invalid date interval: {interval}")
+    return operator, start_date, end_date
+
+
 class ROCrateLinkContext(object):
 
     def __init__(self, rocrate_or_link: str):
@@ -345,6 +454,7 @@ class ROCrateLinkContext(object):
                 return self.rocrate_or_link
             try:
                 rocrate = base64.b64decode(self.rocrate_or_link)
+                from . import config
                 temp_rocrate_file = tempfile.NamedTemporaryFile(delete=False,
                                                                 dir=config.BaseConfig.BASE_TEMP_FOLDER,
                                                                 prefix="base64-rocrate")
@@ -362,7 +472,7 @@ class ROCrateLinkContext(object):
 
     def __exit__(self, type, value, traceback):
         logger.debug("Exiting ROCrateLinkContext...")
-        if self._local_path:
+        if self._local_path and (isinstance(self._local_path, str) or isinstance(self._local_path, os.PathLike)):
             try:
                 os.remove(self._local_path)
                 logger.debug("Temporary file removed: %r", self._local_path)
@@ -462,6 +572,7 @@ def download_url(url: str, target_path: str = None, authorization: str = None) -
 
 
 def extract_zip(archive_path, target_path=None):
+    from . import config
     logger.debug("Archive path: %r", archive_path)
     logger.debug("Target path: %r", target_path)
     try:
@@ -483,6 +594,7 @@ def _make_git_credentials_callback(token: str = None):
 def clone_repo(url: str, ref: str = None, target_path: str = None, auth_token: str = None,
                remote_url: str = None, remote_branch: str = None, remote_user_token: str = None):
     try:
+        from . import config
         logger.warning("Local CLONE: %r - %r", url, ref)
         local_path = target_path
         if not local_path:

@@ -93,6 +93,7 @@ class Status:
                 })
             for test_instance in suite.test_instances:
                 try:
+                    latest_test_builds = test_instance.get_test_builds(limit=10)
                     latest_build = test_instance.last_test_build
                     if latest_build is None:
                         availability_issues.append({
@@ -102,7 +103,7 @@ class Status:
                         })
                     else:
                         # Search the latest completed build
-                        for latest_build in test_instance.get_test_builds():
+                        for latest_build in latest_test_builds:
                             logger.debug("Checking build %r: %r", latest_build, latest_build.status)
                             if not cls._skip_build(latest_build):
                                 break

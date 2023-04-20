@@ -24,16 +24,45 @@ import abc
 import inspect
 import logging
 import os
+from enum import Enum
 from hashlib import sha1
 from importlib import import_module
 from pathlib import Path
 from typing import List, Optional, Type
 
 import networkx as nx
+
 from lifemonitor.api.models import repositories
 
 # set module level logger
 logger = logging.getLogger(__name__)
+
+ROOT_ISSUE = 'r'
+
+
+class IssueMessage:
+
+    class TYPE(Enum):
+        INFO = "info"
+        WARNING = "warning"
+        ERROR = "error"
+
+    def __init__(self, type: TYPE, text: str) -> None:
+        self._type = type
+        self._text = text
+
+    def __eq__(self, other):
+        if isinstance(other, IssueMessage):
+            return self.type == other.type and self.text == other.text
+        return False
+
+    @property
+    def type(self) -> TYPE:
+        return self._type
+
+    @property
+    def text(self) -> str:
+        return self._text
 
 
 class WorkflowRepositoryIssue():
@@ -47,6 +76,7 @@ class WorkflowRepositoryIssue():
 
     def __init__(self):
         self._changes = []
+        self._messages: List[IssueMessage] = []
 
     @property
     def id(self) -> str:
@@ -85,6 +115,18 @@ class WorkflowRepositoryIssue():
 
     def has_changes(self) -> bool:
         return bool(self._changes) and len(self._changes) > 0
+
+    def add_message(self, message: IssueMessage):
+        self._messages.append(message)
+
+    def remove_message(self, message: IssueMessage):
+        self._messages.remove(message)
+
+    def get_messages(self) -> List[IssueMessage]:
+        return self._messages
+
+    def has_messages(self) -> bool:
+        return len(self._messages) > 0
 
     @classmethod
     def get_identifier(cls) -> str:
@@ -134,8 +176,9 @@ class WorkflowRepositoryIssue():
 
 def load_issue(issue_file) -> List[Type[WorkflowRepositoryIssue]]:
     issues = {}
-    base_module = '{}'.format(os.path.join(os.path.dirname(issue_file)).replace('/', '.'))
+    base_module = '{}'.format(os.path.join(os.path.dirname(issue_file)).replace('./', '').replace('/', '.'))
     m = '{}.{}'.format(base_module, os.path.basename(issue_file)[:-3])
+    logger.debug("BaseModule: %r -- Module: %r" % (base_module, m))
     mod = import_module(m)
     for _, obj in inspect.getmembers(mod):
         if inspect.isclass(obj) \
@@ -146,9 +189,8 @@ def load_issue(issue_file) -> List[Type[WorkflowRepositoryIssue]]:
     return issues.values()
 
 
-def find_issue_types(path: Optional[str] = None) -> List[Type[WorkflowRepositoryIssue]]:
+def get_issue_graph(path: Optional[str] = None) -> nx.DiGraph:
     errors = []
-    issues = {}
     g = nx.DiGraph()
     base_path = Path(path) if path else Path(__file__).parent
 
@@ -168,13 +210,12 @@ def find_issue_types(path: Optional[str] = None) -> List[Type[WorkflowRepository
                     and inspect.getmodule(obj) == mod \
                     and obj != WorkflowRepositoryIssue \
                         and issubclass(obj, WorkflowRepositoryIssue):
-                    issues[obj.__name__] = obj
                     dependencies = getattr(obj, 'depends_on', None)
                     if not dependencies or len(dependencies) == 0:
-                        g.add_edge('r', obj.__name__)
+                        g.add_edge(ROOT_ISSUE, obj)
                     else:
                         for dep in dependencies:
-                            g.add_edge(dep.__name__, obj.__name__)
+                            g.add_edge(dep, obj)
         except ModuleNotFoundError as e:
             logger.exception(e)
             logger.error("ModuleNotFoundError: Unable to load module %s", m)
@@ -183,10 +224,11 @@ def find_issue_types(path: Optional[str] = None) -> List[Type[WorkflowRepository
         logger.error("** There were some errors loading application modules.**")
         if logger.isEnabledFor(logging.DEBUG):
             logger.error("** Unable to load issues from %s", ", ".join(errors))
-    logger.debug("Issues: %r", [_.__name__ for _ in issues.values()])
-    sorted_issues = [issues[_] for _ in nx.dfs_preorder_nodes(g, source='r') if _ != 'r']
-    logger.debug("Sorted issues: %r", [_.__name__ for _ in sorted_issues])
-    return sorted_issues
+    return g
+
+
+def find_issue_types(path: Optional[str] = None) -> List[Type[WorkflowRepositoryIssue]]:
+    return [i for i in get_issue_graph(path).nodes if i != ROOT_ISSUE]
 
 
 __all__ = ["WorkflowRepositoryIssue"]

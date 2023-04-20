@@ -1,5 +1,5 @@
-{% extends 'auth/base.j2' %}
-{% import 'auth/macros.j2' as macros %}
+{% extends 'base.j2' %}
+{% import 'macros.j2' as macros %}
 {% block body_class %} login-page {% endblock %}
 {% block body_style %}
   {% if current_user.is_authenticated %}

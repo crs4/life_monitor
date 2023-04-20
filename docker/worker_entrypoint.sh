@@ -13,18 +13,28 @@ function log() {
   printf "%s [worker_entrypoint] %s\n" "$(date +"%F %T")" "${*}" >&2
 }
 
-# DEBUG="${DEBUG:-0}"
+# wait for services
+wait-for-postgres.sh
+wait-for-redis.sh
+
+# set DEBUG flag
+DEBUG="${DEBUG:-}"
 FLASK_ENV="${FLASK_ENV:-production}"
-if [[ "${FLASK_ENV}" == "development" ]]; then
+if [[ -z "${DEBUG}" && "${FLASK_ENV}" == "development" ]]; then
   DEBUG="${DEBUG:-1}"
 fi
 
-# Create a directory for the worker's prometheus client.
-# We follow the instructions in the dramatiq documentation
-#    https://dramatiq.io/advanced.html#gotchas-with-prometheus
-export PROMETHEUS_MULTIPROC_DIR=$(mktemp -d /tmp/lm_dramatiq_prometheus_multiproc_dir.XXXXXXXX)
-rm -rf "${PROMETHEUS_MULTIPROC_DIR}/*"
+# Create a directory for the worker's prometheus client if it doesn't exist yet
+PROMETHEUS_MULTIPROC_DIR=${PROMETHEUS_MULTIPROC_DIR:-}
+if [[ -z ${PROMETHEUS_MULTIPROC_DIR} ]]; then
+  metrics_base_path="/tmp/lifemonitor/metrics"
+  mkdir -p ${metrics_base_path}
+  export PROMETHEUS_MULTIPROC_DIR=$(mktemp -d ${metrics_base_path}/worker.XXXXXXXX)
+fi
+
 # dramatiq looks at the following two env variables
+# ( instructions in the dramatiq documentation
+#   https://dramatiq.io/advanced.html#gotchas-with-prometheus )
 export prometheus_multiproc_dir="${PROMETHEUS_MULTIPROC_DIR}"
 export dramatiq_prom_db="${PROMETHEUS_MULTIPROC_DIR}"
 
@@ -32,8 +42,12 @@ log "Starting task queue worker container"
 debug_log "PROMETHEUS_MULTIPROC_DIR = ${PROMETHEUS_MULTIPROC_DIR}"
 
 if [[ -n "${DEBUG:-}" ]]; then
-  watch='--watch .'
   verbose='--verbose'
+  log "Debug Mode Enabled"
+fi
+
+if [[ ${FLASK_ENV} == "development" ]]; then
+  watch='--watch .'
   log "Worker watching source code directory"
 fi
 
@@ -69,6 +83,7 @@ while : ; do
     ${processes:-} \
     ${threads:-} \
     lifemonitor.tasks.worker:broker lifemonitor.tasks ${queues}
+  exit_code=$?
   exit_code=$?
   if [[ $exit_code == 3 ]]; then
     log "dramatiq worker could not connect to message broker (exit code ${exit_code})" 

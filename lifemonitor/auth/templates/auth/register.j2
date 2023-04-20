@@ -1,11 +1,11 @@
-{% extends 'auth/base.j2' %}
-{% import 'auth/macros.j2' as macros %}
+{% extends 'base.j2' %}
+{% import 'macros.j2' as macros %}
 
-{% block body_class %} sidebar-mini sidebar-open login-page {% endblock %}
+{% block body_class %} sidebar-mini sidebar-open login-page h-100 {% endblock %}
 
 {% block body %}
 
-<div class="login-box">
+<div class="login-box" style="height: auto;">
  
   {{ macros.render_logo(class="login-logo", style="width: auto") }}
   
@@ -16,7 +16,14 @@
       <h5 class="login-box-msg text-bold m-0">Sign Up</h5>
       {% else %}
       <div class="text-center">
-        <div class="small text-muted m-2">Signing up with</div>
+        <div class="small text-muted m-2">
+         <div>
+            Sign Up for <span style="font-style: italic; font-family: Baskerville,Baskerville Old Face,Hoefler Text,Garamond,Times New Roman,serif;">Life</span><span class="small" style="font-size: 75%; margin: 0 -1px 0 1px;">-</span><span style="font-weight: bold; font-family: Gill Sans,Gill Sans MT,Calibri,sans-serif;">Monitor</span>
+          </div>
+          <div class="m-n1">
+            using your identity provided by
+          </div>
+        </div>
         {{ macros.render_provider_logo(identity.provider) }}
         <h5 class="login-box-msg text-bold mt-4" style="font-weight: lighter; font-size: 1.6em;">
           Hi, {{ identity.user_info.name or identity.user_info.preferred_username }}!
@@ -58,16 +65,32 @@
         <div class="social-auth-links text-center mb-3">        
           <p class="text-bold">- OR -</p>
           {% for p in providers %}
+            {% if p.client_name != 'lsaai' %}
             {{ macros.render_provider_signup_button(p) }}          
+            {% endif %}
           {% endfor %}
-        </div>      
+        </div>
+        <div class="social-auth-links text-center mt-4">
+          <p class="text-bold">- OR -</p>
+          <a href="/oauth2/login/lsaai" class="btn btn-block">
+            Sign up with <b>LifeScience RI</b>
+            <img src="{{ url_for('auth.static', filename='img/logo/providers/lsaai-register.png')}}" style="max-width: 100%;"/>
+          </a>
+        </div>
       {% endif %}
 
       <p></p>
-      <p class="mb-0 text-center">
-        Do you have an account?
-        <a href="{{ url_for("auth.login") }}" class="text-center">Sign In</a>
+      {% if not identity %}
+      <p class="mb-0 text-center pt-3 p-2">
+        <div class="h6 login-msg text-center text-bold">Already have an account? </div>
+        <div class="text-center">
+          Rather than creating a new account, we strongly recommend 
+          that you <a href="{{ url_for("auth.login") }}" class="text-center">Sign In</a>
+          with your existing credentials and link your new identity 
+          <a href="{{ url_for("auth.profile") }}">from the account configuration page</a>        
+        </div>
       </p>
+      {% endif %}
     </div>
   </div>
 </div>

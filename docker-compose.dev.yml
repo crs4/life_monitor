@@ -35,6 +35,18 @@ services:
 
   worker:
     user: "${USER_UID}:${USER_GID}"
+    environment:
+      - "FLASK_ENV=development"
+      - "WORKER_PROCESSES=1"
+      - "WORKER_THREADS=1"
+    volumes:
+      - "./:/lm"
+      - "/lm/lifemonitor/static/dist"
+
+  ws_server:
+    user: "${USER_UID}:${USER_GID}"
+    environment:
+      - "FLASK_ENV=development"
     volumes:
       - "./:/lm"
       - "/lm/lifemonitor/static/dist"
@@ -42,6 +54,8 @@ services:
   dev_proxy:
     image: bitnami/nginx:1.19-debian-10
     depends_on:
+      - "db"
+      - "redis"
       - "lm"
     ports:
       - "8000:8443"
@@ -77,3 +91,7 @@ services:
       - "./certs:/certs:ro"
     networks:
       - life_monitor
+
+  prometheus:
+    volumes:
+      - "./prometheus.dev.yml:/etc/prometheus/prometheus.yml"

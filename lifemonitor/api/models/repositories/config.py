@@ -26,8 +26,11 @@ import os
 import os.path
 from typing import Dict, List, Optional
 
-import lifemonitor.api.models as models
 import yaml
+
+import lifemonitor.api.models as models
+from lifemonitor.schemas.validators import (ConfigFileValidator,
+                                            ValidationResult)
 from lifemonitor.utils import match_ref
 
 from .files import RepositoryFile, TemplateRepositoryFile
@@ -71,6 +74,17 @@ class WorkflowRepositoryConfig(RepositoryFile):
             except Exception:
                 self.__raw_data = {}
         return self.__raw_data
+
+    @property
+    def is_valid(self) -> bool:
+        try:
+            result: ValidationResult = ConfigFileValidator.validate(self.load())
+            return result.valid
+        except Exception:
+            return False
+
+    def validate(self) -> ValidationResult:
+        return ConfigFileValidator.validate(self.load())
 
     @property
     def workflow_name(self) -> str:
@@ -175,7 +189,7 @@ class WorkflowRepositoryConfig(RepositoryFile):
     @classmethod
     def new(cls, repository_path: str, workflow_title: str = "Workflow RO-Crate", public: bool = False, main_branch: str = "main") -> WorkflowRepositoryConfig:
         tmpl = TemplateRepositoryFile(repository_path="lifemonitor/templates/repositories/base", name=cls.TEMPLATE_FILENAME)
-        registries = models.WorkflowRegistry.all()
+        registries = ["wfhub", "wfhubdev"]
         issue_types = models.WorkflowRepositoryIssue.all()
         os.makedirs(repository_path, exist_ok=True)
         tmpl.write(workflow_title=workflow_title, main_branch=main_branch, public=public,

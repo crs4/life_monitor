@@ -1,0 +1,72 @@
+{% extends 'base.j2' %}
+{% import 'macros.j2' as macros %}
+
+{% block body_class %} sidebar-mini sidebar-open login-page h-100 {% endblock %}
+
+{% block body %}
+
+<div class="login-box" style="height: auto;">
+ 
+  {{ macros.render_logo(class="login-logo", style="width: auto") }}
+  
+  <div class="card card-primary card-outline shadow-lg p-1 mb-5 bg-white rounded">      
+
+    <div class="card-body login-card-body">
+      {% if not identity %}
+      <h5 class="login-box-msg text-bold m-0">Sign Up</h5>
+      {% else %}
+      <div class="text-center">
+        <div class="small text-muted m-2">
+          <div>
+            Sign Up for <span style="font-style: italic; font-family: Baskerville,Baskerville Old Face,Hoefler Text,Garamond,Times New Roman,serif;">Life</span><span class="small" style="font-size: 75%; margin: 0 -1px 0 1px;">-</span><span style="font-weight: bold; font-family: Gill Sans,Gill Sans MT,Calibri,sans-serif;">Monitor</span>
+          </div>
+          <div class="m-n1">
+            using your identity provided by
+          </div>
+        </div>
+        {{ macros.render_provider_logo(identity.provider) }}
+        <h5 class="login-box-msg text-bold mt-4" style="font-weight: lighter; font-size: 1.6em;">
+          Hi, {{ identity.user_info.name or identity.user_info.preferred_username }}!
+        </h5>
+
+        <div class="text-center">
+          Your <b>{{ identity.provider.name }}</b> identity is not registered on LifeMonitor.
+          <p class="pt-4">
+            If you already have an account, we strongly recommend 
+            that you <span class="text-center text-bold">Sign In</span>
+            with your existing credentials and link your new identity 
+            <a href="{{ url_for("auth.profile") }}">from the account configuration page</a>.            
+          </p>
+          <p class="text-bold">- OR -</p>
+          <p class="p-1 pb-4">
+            Click on <b>Register</b> to create a new account 
+            linked to your <b>{{ identity.provider.name }}</b> identity.
+          </p>
+        </div>
+      </div>      
+      {% endif %}
+
+      <form method="POST" action="{{action}}" >
+        
+        {{ form.hidden_tag() }}
+
+        <div class="text-center mb-3 row">            
+          <div class="col-6">
+            <a href="{{ url_for("auth.login") }}" class="btn btn-block btn-secondary">
+            Sign In
+            </a>          
+          </div>
+          <div class="col-6">
+          <a href="{{ url_for("auth.register_identity") }}" class="btn btn-block btn-primary">
+          <!--<button type="submit" class="btn btn-block btn-primary">-->
+            Register
+          <!--</button>-->
+          </a>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock body %}

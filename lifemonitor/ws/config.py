@@ -17,9 +17,32 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import os
+import logging
 
-from lifemonitor import app
+from flask_socketio import SocketIO
 
-if __name__ == '__main__':
-    """ Start development server"""
-    app.create_app().run(host="0.0.0.0", port=8000)
+from lifemonitor.utils import boolean_value
+
+# configure logger
+logger = logging.getLogger(__name__)
+
+# current SocketIO instance
+socketIO = None
+
+
+def init_socket(app, **kwargs) -> SocketIO:
+    global socketIO
+    if not socketIO:
+        debug = boolean_value(app.config.get("DEBUG", os.environ.get("DEBUG", False)))
+        socketIO = SocketIO(app=app, logger=debug, async_mode='gevent',  # async_mode='eventlet',  # async_mode=kwargs.get('async_mode', None),
+                            # engineio_logger=debug,
+                            cors_allowed_origins="*")
+        logger.info("SocketIO initialized")
+        # import eventlet
+        # eventlet.monkey_patch()
+        app.socketIO = socketIO
+        return socketIO
+    else:
+        logger.warning("SocketIO initialisation skipped: already initialized")
+        return None

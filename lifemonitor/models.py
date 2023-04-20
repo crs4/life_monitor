@@ -22,8 +22,9 @@ from __future__ import annotations
 
 import uuid
 from typing import List
+from datetime import datetime, timezone
 
-from sqlalchemy import VARCHAR, types
+from sqlalchemy import VARCHAR, types, inspect
 
 from lifemonitor.cache import CacheMixin
 from lifemonitor.db import db
@@ -34,13 +35,42 @@ class ModelMixin(CacheMixin):
     def refresh(self, **kwargs):
         db.session.refresh(self, **kwargs)
 
-    def save(self):
-        db.session.add(self)
-        db.session.commit()
+    def save(self, commit: bool = True, flush: bool = True, update_modified: bool = True):
+        if hasattr(self, 'modified') and update_modified:
+            setattr(self, 'modified', datetime.now(tz=timezone.utc))
+        with db.session.begin_nested():
+            db.session.add(self)
+        if commit:
+            db.session.commit()
+        if flush:
+            db.session.flush()
 
-    def delete(self):
-        db.session.delete(self)
-        db.session.commit()
+    def delete(self, commit: bool = True, flush: bool = True):
+        with db.session.begin_nested():
+            db.session.delete(self)
+        if commit:
+            db.session.commit()
+        if flush:
+            db.session.flush()
+
+    def detach(self):
+        db.session.expunge(self)
+
+    @property
+    def _object_state(self):
+        return inspect(self)
+
+    def is_transient(self) -> bool:
+        return self._object_state.transient
+
+    def is_pending(self) -> bool:
+        return self._object_state.pending
+
+    def is_detached(self) -> bool:
+        return self._object_state.detached
+
+    def is_persistent(self) -> bool:
+        return self._object_state.persistent
 
     @classmethod
     def all(cls) -> List:

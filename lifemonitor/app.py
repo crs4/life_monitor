@@ -22,13 +22,15 @@ import logging
 import os
 import time
 
-from flask import Flask, jsonify, redirect, request
+from flask import Flask, jsonify, redirect, render_template, request, url_for
 from flask_cors import CORS
 from flask_migrate import Migrate
+from lifemonitor import redis
 
 import lifemonitor.config as config
-from lifemonitor import __version__ as version
+from lifemonitor.auth.services import current_user
 from lifemonitor.integrations import init_integrations
+from lifemonitor.metrics import init_metrics
 from lifemonitor.routes import register_routes
 from lifemonitor.tasks import init_task_queues
 
@@ -63,8 +65,6 @@ def create_app(env=None, settings=None, init_app=True, worker=False, load_jobs=T
     flask_app_instance_path = getattr(app_config, "FLASK_APP_INSTANCE_PATH", None)
     # create Flask app instance
     app = Flask(__name__, instance_relative_config=True, instance_path=flask_app_instance_path, **kwargs)
-    # enable CORS
-    CORS(app)
     # register handler for app specific exception
     app.register_error_handler(Exception, handle_exception)
     # set config object
@@ -82,6 +82,16 @@ def create_app(env=None, settings=None, init_app=True, worker=False, load_jobs=T
     if init_app:
         with app.app_context() as ctx:
             initialize_app(app, ctx, load_jobs=load_jobs)
+
+    @app.route("/")
+    def index():
+        if not current_user.is_authenticated:
+            return render_template("index.j2")
+        return redirect(url_for('auth.index'))
+
+    @app.route("/profile")
+    def profile():
+        return redirect(url_for('auth.index', back=request.args.get('back', False)))
 
     # append routes to check app health
     @app.route("/health")
@@ -120,8 +130,12 @@ def create_app(env=None, settings=None, init_app=True, worker=False, load_jobs=T
 def initialize_app(app: Flask, app_context, prom_registry=None, load_jobs: bool = True):
     # init tmp folder
     os.makedirs(app.config.get('BASE_TEMP_FOLDER'), exist_ok=True)
+    # enable CORS
+    CORS(app, expose_headers=["Content-Type", "X-CSRFToken"], supports_credentials=True)
     # configure logging
     config.configure_logging(app)
+    # init Redis connection
+    redis.init(app)
     # configure app DB
     db.init_app(app)
     # initialize Migration engine
@@ -138,24 +152,7 @@ def initialize_app(app: Flask, app_context, prom_registry=None, load_jobs: bool 
     init_mail(app)
     # initialize integrations
     init_integrations(app)
+    # initialize metrics engine
+    init_metrics(app, prom_registry)
     # register commands
     commands.register_commands(app)
-
-    # configure prometheus exporter
-    # must be configured after the routes are registered
-    metrics_class = None
-    if os.environ.get('FLASK_ENV') == 'production':
-        if 'PROMETHEUS_MULTIPROC_DIR' in os.environ:
-            from prometheus_flask_exporter.multiprocess import \
-                GunicornPrometheusMetrics
-            metrics_class = GunicornPrometheusMetrics
-        else:
-            logger.warning("Unable to start multiprocess prometheus exporter: 'PROMETHEUS_MULTIPROC_DIR' not set."
-                           "Metrics will be exposed through the `/metrics` endpoint.")
-    if not metrics_class:
-        from prometheus_flask_exporter import PrometheusMetrics
-        metrics_class = PrometheusMetrics
-
-    metrics = metrics_class(app, defaults_prefix='lm', registry=prom_registry)
-    metrics.info('app_info', "LifeMonitor service", version=version)
-    app.metrics = metrics

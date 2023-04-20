@@ -294,6 +294,8 @@ def __skip_branch_or_tag__(repo_info: GithubRepositoryReference,
                            user_settings: GithubUserSettings):
     repo: GithubWorkflowRepository = repo_info.repository
     if repo.config:
+        if not repo.config.is_valid:
+            return False
         if match_ref(repo_info.tag, repo.config.tags):
             return False
         if match_ref(repo_info.branch, repo.config.branches):
@@ -675,7 +677,7 @@ def issue_comment(event: GithubEvent):
                             with TemporaryDirectory(dir='/tmp') as target_path:
                                 pr = pull_requests.create_pull_request_from_github_issue(
                                     repo, next_step.id, issue,
-                                    next_step.get_files(repo, target_path=target_path), False,
+                                    next_step.get_files(repo, target_path=target_path), allow_update=False,
                                     create_comment=next_step.as_string())
                                 if not pr:
                                     logger.warning("Unable to create PR for issue: %r", issue)

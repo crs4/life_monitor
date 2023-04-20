@@ -24,7 +24,6 @@ import logging
 
 from lifemonitor.api.models.issues import WorkflowRepositoryIssue
 from lifemonitor.api.models.repositories import WorkflowRepository
-from .lm import MissingLMConfigFile
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -33,8 +32,7 @@ logger = logging.getLogger(__name__)
 class RepositoryNotInitialised(WorkflowRepositoryIssue):
     name = "Repository not intialised"
     description = "No workflow and crate metadata found on this repository."
-    labels = ['invalid', 'enhancement', 'config']
-    depends_on = [MissingLMConfigFile]
+    labels = ['best-practices']
 
     def check(self, repo: WorkflowRepository) -> bool:
         return repo.find_workflow() is None and repo.metadata is None
@@ -44,7 +42,7 @@ class MissingWorkflowFile(WorkflowRepositoryIssue):
     name = "Missing workflow file"
     description = "No workflow found on this repository.<br>"\
         "You should place the workflow file (e.g., <code>.ga</code> file) according to the best practices ."
-    labels = ['invalid', 'bug']
+    labels = ['best-practices']
     depends_on = [RepositoryNotInitialised]
 
     def check(self, repo: WorkflowRepository) -> bool:
@@ -55,7 +53,7 @@ class MissingROCrateFile(WorkflowRepositoryIssue):
     name = "Missing RO-Crate metadata"
     description = "No <code>ro-crate-metadata.json</code> found on this repository.<br>"\
         "The <code>ro-crate-metadata.json</code> should be placed on the root of this repository."
-    labels = ['invalid', 'enhancement']
+    labels = ['metadata']
     depends_on = [MissingWorkflowFile]
 
     def check(self, repo: WorkflowRepository) -> bool:
@@ -69,7 +67,7 @@ class MissingROCrateFile(WorkflowRepositoryIssue):
 class MissingROCrateWorkflowFile(WorkflowRepositoryIssue):
     name = "Missing RO-Crate workflow file"
     description = "The workflow file declared on RO-Crate metadata is missing in this repository."
-    labels = ['invalid', 'bug']
+    labels = ['metadata']
     depends_on = [MissingROCrateFile]
 
     def check(self, repo: WorkflowRepository) -> bool:

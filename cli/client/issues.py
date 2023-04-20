@@ -24,10 +24,12 @@ import os
 import sys
 
 import click
+import networkx as nx
 from cli.client.utils import get_repository, init_output_path
-from flask.cli import with_appcontext
+# from flask.cli import with_appcontext
 from lifemonitor.api.models.issues import (WorkflowRepositoryIssue,
-                                           find_issue_types, load_issue)
+                                           find_issue_types, load_issue,
+                                           get_issue_graph, ROOT_ISSUE)
 from lifemonitor.utils import to_snake_case
 from rich.console import Console
 from rich.panel import Panel
@@ -35,16 +37,24 @@ from rich.prompt import Prompt
 from rich.syntax import Syntax
 from rich.table import Table
 from rich.text import Text
+from rich.theme import Theme
 
 logger = logging.getLogger(__name__)
 
 issues_list = find_issue_types()
 
-console = Console()
+custom_theme = Theme({
+    "info": "dim cyan",
+    "warning": "magenta",
+    "error": "bold red"
+})
+
+
+console = Console(theme=custom_theme)
 error_console = Console(stderr=True, style="bold red")
 
 repository_arg = click.argument('repository', type=str, default=".")
-output_path_arg = click.option('-o', '--output-path', type=click.Path(file_okay=False), default=None)
+output_path_arg = click.argument('output-path', type=click.Path(file_okay=False))
 
 
 @click.group(name="issues", help="Tools to develop and check issue types")
@@ -99,12 +109,12 @@ def get(config, issue_number):
 @repository_arg
 @output_path_arg
 @click.pass_obj
-@with_appcontext
-def check(config, repository, output_path=None):
+# @with_appcontext
+def check(config, repository, output_path):
     try:
         init_output_path(output_path=output_path)
         repo = get_repository(repository, local_path=output_path)
-        result = repo.check(repository)
+        result = repo.check(fail_fast=False)
         # Configure Table
         table = Table(title=f"Check Issue Report of Repo [bold]{repository}[/bold]",
                       style="bold", expand=True)
@@ -115,7 +125,10 @@ def check(config, repository, output_path=None):
         table.add_column("Tags", style="cyan", overflow="fold", justify="center")
         checked = [_.name for _ in result.checked]
         issues = [_.name for _ in result.issues]
-        for issue in issues_list:
+        issue_graph = get_issue_graph()
+        for issue in nx.traversal.bfs_tree(issue_graph, ROOT_ISSUE):
+            if issue == ROOT_ISSUE:
+                continue
             x = None
             if issue.name not in checked:
                 status = Text("Skipped", style="yellow bold")
@@ -127,7 +140,12 @@ def check(config, repository, output_path=None):
             table.add_row(issue.get_identifier(), issue.name, status,
                           ", ".join([_.path for _ in x.get_changes(repository)]) if x else "", ", ".join(issue.labels))
         console.print(table)
-
+        # show optional messages
+        console.print("\n\n")
+        for issue in result.issues:
+            for message in issue._messages:
+                console.print(f"[{message.type.value}]{message.type.name}:[/{message.type.value}] {message.text}")
+        console.print("\n\n")
     except Exception as e:
         logger.exception(e)
         error_console.print(str(e))
@@ -140,7 +158,7 @@ def check(config, repository, output_path=None):
 @repository_arg
 @output_path_arg
 @click.pass_obj
-@with_appcontext
+# @with_appcontext
 def test(config, issue_file, issue_class, write, repository, output_path=None):
     proposed_files = []
     try:
@@ -148,10 +166,10 @@ def test(config, issue_file, issue_class, write, repository, output_path=None):
         init_output_path(output_path=output_path)
         logger.debug(issue_file)
         repo = get_repository(repository, local_path=output_path)
-        file_issues = load_issue(issue_file)
-        logger.debug("File issues: %r", [_.name for _ in file_issues])
-        issues_list = [_() for _ in file_issues if not issue_class or _.__name__ in issue_class]
-        logger.debug("Issue: %r", issues_list)
+        issues_types = load_issue(issue_file)
+        logger.debug("Types of issues: %r", [_ for _ in issues_types])
+        issues_list = [_() for _ in issues_types if not issue_class or _.__name__ in issue_class]
+        logger.debug("List of issues: %r", issues_list)
         logger.debug("Repository: %r", repo)
         # Configure Table
         table = Table(title=f"Check Issue Report of Repo [bold]{repository}[/bold]",
@@ -182,6 +200,13 @@ def test(config, issue_file, issue_class, write, repository, output_path=None):
                           ", ".join(issue.labels))
             proposed_files.extend(issue_files)
         console.print(table)
+
+        # show optional messages
+        console.print("\n\n")
+        for issue in issues:
+            for message in issue._messages:
+                console.print(f"[{message.type.value}]{message.type.name}:[/{message.type.value}] {message.text}")
+        console.print("\n\n")
     except Exception as e:
         logger.exception(e)
         error_console.print(str(e))

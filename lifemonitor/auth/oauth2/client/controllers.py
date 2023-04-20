@@ -74,11 +74,11 @@ def create_blueprint(merge_identity_view):
             else:
                 # handle failed
                 return _handle_authorize(remote, None, None)
-            if 'id_token' in token:
-                user_info = remote.parse_id_token(token)
-            else:
-                remote.token = token
-                user_info = remote.userinfo(token=token)
+            # if 'id_token' in token:
+            #     user_info = remote.parse_id_token(token)
+            # else:
+            remote.token = token
+            user_info = remote.userinfo(token=token)
             return _handle_authorize(remote, token, user_info)
         except OAuthError as e:
             logger.debug(e)
@@ -94,6 +94,9 @@ def create_blueprint(merge_identity_view):
         remote = oauth2_registry.create_client(name)
         if remote is None:
             abort(404)
+        action = request.args.get('action', False)
+        if action and action == 'sign-in':
+            session['sign_in'] = True
         redirect_uri = url_for('.authorize', name=name, _external=True)
         conf_key = '{}_AUTHORIZE_PARAMS'.format(name.upper())
         params = current_app.config.get(conf_key, {})
@@ -162,13 +165,26 @@ class AuthorizatonHandler:
                 logger.debug("Update identity token: %r -> %r", identity.token, token)
             except OAuthIdentityNotFoundException:
                 logger.debug("Not found OAuth identity <%r,%r>", provider.name, user_info.sub)
-                with db.session.no_autoflush:
-                    identity = OAuthIdentity(
-                        provider=p,
-                        user_info=user_info.to_dict(),
-                        provider_user_id=user_info.sub,
-                        token=token,
-                    )
+                logger.debug("SignIn: %r", session.get('sign_in', False))
+                # with db.session.no_autoflush:
+                identity = OAuthIdentity(
+                    provider=p,
+                    user_info=user_info.to_dict(),
+                    provider_user_id=user_info.sub,
+                    token=token,
+                )
+                save_current_user_identity(identity)
+                try:
+                    if session['sign_in']:
+                        return redirect(url_for("auth.identity_not_found"))
+                except KeyError as e:
+                    logger.error(e)
+
+            try:
+                session.pop('sign_in', False)
+            except KeyError as e:
+                logger.debug(e)
+
             # Now, figure out what to do with this token. There are 2x2 options:
             # user login state and token link state.
             if current_user.is_anonymous:

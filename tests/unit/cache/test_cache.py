@@ -24,12 +24,13 @@ from multiprocessing import Manager, Process
 from time import sleep
 from unittest.mock import MagicMock
 
-import lifemonitor.api.models as models
 import pytest
+
+import lifemonitor.api.models as models
 from lifemonitor.cache import (IllegalStateException, Timeout, cache,
                                init_cache, make_cache_key)
 from tests import utils
-from tests.unit.test_utils import SerializableMock
+from tests.utils import SerializableMock
 
 logger = logging.getLogger(__name__)
 

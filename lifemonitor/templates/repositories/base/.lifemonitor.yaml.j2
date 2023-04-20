@@ -44,10 +44,10 @@ push:
     #   lifemonitor_instance: development   # uncomment to use the 'development' instance of LifeMonitor
     #                                       # (the 'production' instance is used by default)
     - name: "v*.*.*"
-      update_registries: [{{registries|join(', ', attribute="client_name")}}]
+      update_registries: [{{registries|join(', ')}}]
       enable_notifications: true
       # lifemonitor_instance: development
     - name: "*.*.*"
-      update_registries: [{{registries|join(', ', attribute="client_name")}}]
+      update_registries: [{{registries|join(', ')}}]
       enable_notifications: true
       # lifemonitor_instance: development

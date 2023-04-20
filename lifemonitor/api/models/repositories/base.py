@@ -27,7 +27,7 @@ import logging
 import os
 from abc import abstractclassmethod
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Type
 
 import git
 import giturlparse
@@ -153,28 +153,55 @@ class WorkflowRepository():
     def contains(self, file: RepositoryFile) -> bool:
         return self.__contains__(self.files, file)
 
+    @staticmethod
+    def _issue_name_included(issue_name: str,
+                             include_list: List[str] | None = None,
+                             exclude_list: List[str] | None = None) -> bool:
+        if include_list and (issue_name in [to_camel_case(_) for _ in include_list]):
+            return True
+
+        if exclude_list is None:
+            return True
+
+        return issue_name not in [to_camel_case(_) for _ in exclude_list]
+
     def check(self, fail_fast: bool = True,
               include=None, exclude=None) -> IssueCheckResult:
         found_issues = []
-        checked = []
-        for issue_type in issues.find_issue_types():
-            if (not exclude or issue_type.__name__ not in [to_camel_case(_) for _ in exclude]) or \
-                    (not include or issue_type.__name__ in [to_camel_case(_) for _ in include]):
+        issue_graph = issues.get_issue_graph()
+
+        checked = set()
+        visited = set()
+        queue = [i for i in issue_graph.neighbors(issues.ROOT_ISSUE)
+                 if self._issue_name_included(i.__name__, include, exclude)]
+        while queue:
+            issue_type = queue.pop()
+            if issue_type not in visited:
                 issue = issue_type()
-                to_be_solved = issue.check(self)
-                checked.append(issue)
-                if to_be_solved:
+                try:
+                    failed = issue.check(self)
+                except Exception as e:
+                    logger.error("Issue %s failed to run.  It raised an exception: %s",
+                                 issue_type.__name__, e)
+                    continue  # skip this issue by not marking it as visited (otherwise it shows as "passed")
+                visited.add(issue_type)
+                checked.add(issue)
+                if not failed:
+                    neighbors = [i for i in issue_graph.neighbors(issue_type)
+                                 if self._issue_name_included(i.__name__, include, exclude)]
+                    queue.extend(neighbors)
+                else:
                     found_issues.append(issue)
                     if fail_fast:
                         break
-        return IssueCheckResult(self, checked, found_issues)
+        return IssueCheckResult(self, list(checked), found_issues)
 
     @classmethod
     def __contains__(cls, files, file) -> bool:
         return cls.__find_file__(files, file) is not None
 
     @classmethod
-    def __find_file__(cls, files, file) -> RepositoryFile:
+    def __find_file__(cls, files, file) -> RepositoryFile | None:
         for f in files:
             if f == file or (f.name == file.name and f.dir == file.dir):
                 return f
@@ -186,8 +213,13 @@ class WorkflowRepository():
         if os.path.exists(f.path):
             fp = open(f.path, 'rb')
         else:
-            logger.debug("Reading file content: %r", f.get_content(binary_mode=False).encode())
-            fp = io.BytesIO(f.get_content(binary_mode=False).encode())
+            content = f.get_content(binary_mode=False)
+            if content:
+                content_str = content.encode()
+            else:
+                content_str = b""
+            logger.debug("Reading file content: %r", content_str if content else b"None")
+            fp = io.BytesIO(content_str)
         return fp
 
     @classmethod
@@ -309,6 +341,15 @@ class IssueCheckResult:
 
     def found_issues(self) -> bool:
         return len(self.issues) > 0
+
+    def is_checked(self, issue: Type[issues.WorkflowRepositoryIssue] | issues.WorkflowRepositoryIssue) -> bool:
+        if issue and issue in self.checked:
+            return True
+        if isinstance(issue, issues.WorkflowRepositoryIssue):
+            for issue_type in self.checked:
+                if isinstance(issue, issue_type):
+                    return True
+        return False
 
     @property
     def solved(self) -> List[issues.WorkflowRepositoryIssue]:

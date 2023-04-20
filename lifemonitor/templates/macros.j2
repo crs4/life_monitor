@@ -3,9 +3,9 @@
   <a {% if href %}href={{href}}{% endif %}>
     <img
       {% if config.get('ENV') == 'production' %}
-      src="{{ url_for('auth.static', filename='img/logo/lm/LifeMonitorLogo.png') }}"
+      src="{{ url_for('static', filename='img/logo/lm/LifeMonitorLogo.png') }}"
       {% else %}
-      src="{{ url_for('auth.static', filename='img/logo/lm/LifeMonitorLogo-dev.png') }}"
+      src="{{ url_for('static', filename='img/logo/lm/LifeMonitorLogo-dev.png') }}"
       {% endif %}
       alt="LifeMonitor Logo"
       class="img-fluid card-img-top"
@@ -168,24 +168,39 @@ data-toggle="tooltip" data-placement="{{tooltipPlacement}}">
 <i class="fab fa-github mr-2"></i>
 {% elif provider.type == "seek" %}
 {% if color == "white" %}
-<img style="width: 1.5em; margin-right: 5px;" src="{{ url_for('auth.static', filename='img/logo/wfhub/workflowhub-128.png') }}" />
+<img style="width: 1.5em; margin-right: 5px;" src="{{ url_for('static', filename='img/logo/wfhub/workflowhub-128.png') }}" />
 {% else %}
-<img style="width: 1em; margin-right: 5px;" src="{{ url_for('auth.static', filename='img/logo/wfhub/workflowhub-128-black.png') }}" />
+<img style="width: 1em; margin-right: 5px;" src="{{ url_for('static', filename='img/logo/wfhub/workflowhub-128-black.png') }}" />
 {% endif %}
 {% elif provider.type == "google" %}
 <i class="fab fa-google mr-2"></i>
+
+{% elif provider.client_name == "lsaai" %}
+{% if color == "white" %}
+<img style="width: 1.5em; margin-left: -5px;" src="{{ url_for('static', filename='img/logo/providers/lsaai-white.png') }}" />
+{% else %}
+<img style="width: 1.5em; margin-left: -5px;" src="{{ url_for('static', filename='img/logo/providers/lsaai-black.png') }}" />
+{% endif %}
 {% endif %}
 {%- endmacro %}
 
 
 {% macro render_provider_logo(provider) -%}
 {% if provider.client_name == "github" %}
-<img style="width: 8em;" src="{{ url_for('auth.static', filename='img/logo/providers/github.png') }}" />
+<img style="width: 8em;" src="{{ url_for('static', filename='img/logo/providers/github.png') }}" />
 {% elif provider.type == "seek" %}
-<img style="width: 7em; margin-top: -10px; margin-right: 5px;" src="{{ url_for('auth.static', filename='img/logo/providers/workflowhub.svg') }}" />
+<img style="width: 7em; margin-top: -10px; margin-right: 5px;" src="{{ url_for('static', filename='img/logo/providers/workflowhub.svg') }}" />
 {% elif provider.type == "google" %}
-<img style="width: 8em; margin-top: -10px;" src="{{ url_for('auth.static', filename='img/logo/providers/google.png') }}" />
+<img style="width: 8em; margin-top: -10px;" src="{{ url_for('static', filename='img/logo/providers/google.png') }}" />
+
+{% elif provider.client_name == "lsaai" %}
+{% if color == "white" %}
+<img style="width: 2em; margin-right: 5px;" src="{{ url_for('static', filename='img/logo/providers/lsaai-white.png') }}" />
+{% else %}
+<img style="width: 2em; margin-right: 5px;" src="{{ url_for('static', filename='img/logo/providers/lsaai-black.png') }}" />
 {% endif %}
+{% endif %}
+
 {%- endmacro %}
 
 
@@ -196,11 +211,14 @@ btn-dark
 btn-primary
 {% elif provider.type == "google" %}
 btn-red
+{% elif provider.client_name == "lsaai" %}
+btn-info
 {% endif %}
+
 {%- endmacro %}
 
 {% macro render_provider_signin_button(provider) -%}
-<a href="/oauth2/login/{{provider.client_name}}" class="btn btn-block {{render_provider_btn_class(provider)}}">
+<a href="/oauth2/login/{{provider.client_name}}?action=sign-in" class="btn btn-block {{render_provider_btn_class(provider)}}">
   {{render_provider_fa_icon(provider)}} Sign in with <b>{{provider.name}}</b>
 </a>
 {%- endmacro %}

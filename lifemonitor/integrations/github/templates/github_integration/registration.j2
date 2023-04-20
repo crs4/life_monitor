@@ -1,5 +1,5 @@
-{% extends 'auth/base.j2' %}
-{% import 'auth/macros.j2' as macros %}
+{% extends 'base.j2' %}
+{% import 'macros.j2' as macros %}
 
 {% block body_class %} login-page {% endblock %}
 {% block body_style %} height: auto; {% endblock %}
@@ -129,7 +129,7 @@
 
       <div class="form-group pt-5 text-center d-inline">
         <a type="button" class="btn btn-primary text-bold" style="width: 175px"
-          href="/profile?currentView=githubSettingsTab" target="_blank">Settings</a>
+          href="/account/profile?currentView=githubSettingsTab" target="_blank">Settings</a>
       </div>
 
       <div class="form-group pt-5 text-center d-inline">
