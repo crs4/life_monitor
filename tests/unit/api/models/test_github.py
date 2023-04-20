@@ -31,7 +31,7 @@ import lifemonitor.api.models as models
 from lifemonitor.api.models.repositories.github import GithubWorkflowRepository
 from lifemonitor.cache import cache
 from tests.conftest_helpers import get_github_token
-from tests.unit.test_utils import SerializableMock
+from tests.utils import SerializableMock
 
 logger = logging.getLogger(__name__)
 
