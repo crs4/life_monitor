@@ -40,7 +40,7 @@ import zipfile
 from datetime import datetime, timezone
 from importlib import import_module
 from os.path import basename, dirname, isfile, join
-from typing import Dict, List, Optional, Tuple, Type
+from typing import Dict, List, Literal, Optional, Tuple, Type
 
 import flask
 import networkx as nx
@@ -365,6 +365,74 @@ def find_types(T: Type, path: str = None) -> Dict[str, Type]:
     sorted_types = {_: types[_] for _ in nx.dfs_preorder_nodes(g, source='r') if _ != 'r'}
     logger.debug("Sorted types: %r", [_ for _ in sorted_types])
     return sorted_types
+
+
+def datetime_to_isoformat(dt: datetime) -> str:
+    """Convert a datetime to ISO datetime format.
+
+    :param dt: The datetime to convert.
+    :return: The datetime converted to ISO format.
+    """
+    return dt.isoformat(timespec="auto") + "Z"
+
+
+def isoformat_to_datetime(iso: str) -> datetime:
+    """Convert an ISO datetime string to a datetime.
+
+    :param iso: The ISO datetime string to convert.
+    :return: The ISO datetime string converted to a datetime.
+    """
+    logger.debug(f"Converting {iso}")
+    date_str = iso[:-1] if iso.endswith('Z') else iso
+    try:
+        return datetime.fromisoformat(date_str)
+    except ValueError:
+        logger.debug("Unable to convert datetime with 'datetime.fromisoformat'")
+    try:
+        date_format = "%Y-%m-%dT%H:%M:%S.%f" if "." in iso else "%Y-%m-%dT%H:%M:%S"
+        logger.debug(f"Date format: {date_format}")
+        logger.debug(f"Date string to parse: {date_str}")
+        return datetime.strptime(date_str, date_format)
+    except ValueError as e:
+        raise ValueError(f"Datetime string {iso} is not in ISO format") from e
+
+
+def parse_date_interval(interval: str) -> Tuple[Literal['<=', '>=', '<', '>', '..'], Optional[datetime], datetime]:
+    """Parse a date interval string.
+
+    :param interval: The date interval string to parse. The format is
+        ``<operator><date>`` where ``<operator>`` is one of ``<``, ``>``, ``<=``,
+        ``>=`` and ``<date>`` is a date string in ISO format; or ``<date>..<date>``
+        where ``operator`` is ``..`` and ``<date>`` is a date string in ISO format.
+
+    :return: A tuple containing the operator, start date and end date.
+    :raises ValueError: If the date interval string is invalid.
+    """
+    if not interval:
+        raise ValueError("Invalid date interval: empty string")
+    start_date = end_date = operator = None
+    if interval.startswith("<="):
+        operator = "<="
+        end_date = isoformat_to_datetime(interval[2:])
+    elif interval.startswith(">="):
+        operator = ">="
+        start_date = isoformat_to_datetime(interval[2:])
+    elif interval.startswith("<"):
+        operator = "<"
+        end_date = isoformat_to_datetime(interval[1:])
+    elif interval.startswith(">"):
+        operator = ">"
+        start_date = isoformat_to_datetime(interval[1:])
+    elif ".." in interval:
+        operator = ".."
+        dates = interval.split("..")
+        if len(dates) != 2:
+            raise ValueError(f"Invalid date interval: {interval}")
+        start_date = isoformat_to_datetime(dates[0])
+        end_date = isoformat_to_datetime(dates[1])
+    else:
+        raise ValueError(f"Invalid date interval: {interval}")
+    return operator, start_date, end_date
 
 
 class ROCrateLinkContext(object):

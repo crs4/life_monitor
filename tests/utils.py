@@ -19,6 +19,7 @@
 # SOFTWARE.
 
 import logging
+from unittest.mock import MagicMock, Mock
 
 import lifemonitor.db as lm_db
 from lifemonitor.api import models
@@ -151,3 +152,8 @@ def not_shared_workflows(user1, user2, skip=None):
 
 def get_workflow_data(wf_uuid):
     return LifeMonitor.get_instance().get_workflow(wf_uuid)
+
+
+class SerializableMock(MagicMock):
+    def __reduce__(self):
+        return (Mock, ())
