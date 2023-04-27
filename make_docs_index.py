@@ -8,6 +8,7 @@ from typing import Generator, Iterable
 
 import mistletoe as md
 
+
 def parse_args(args=None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Create an index page for all markdown content in a directory")
@@ -46,13 +47,16 @@ class HeadingEntry:
         self._text = text.strip()
 
     @property
-    def text(self): return self._text
+    def text(self):
+        return self._text
 
     @property
-    def level(self): return self._level
+    def level(self):
+        return self._level
 
     @property
-    def path(self): return self._path
+    def path(self):
+        return self._path
 
 
 def parse_file(md_file: Path) -> Iterable[HeadingEntry]:
@@ -66,7 +70,7 @@ def parse_file(md_file: Path) -> Iterable[HeadingEntry]:
 def write_output(base_dir: Path,
                  headings: Iterable[HeadingEntry],
                  index_filename: str,
-                 title: str="Documentation Index") -> None:
+                 title: str = "Documentation Index") -> None:
     # this implementation doesn't work well with non-ASCII text
     def make_group_name(entry: HeadingEntry) -> str:
         first_char = entry.text[0]
@@ -77,7 +81,7 @@ def write_output(base_dir: Path,
     def make_sort_key(entry: HeadingEntry) -> str:
         if entry.text[0].isalpha():
             return entry.text.casefold()
-        return '~' # last printable character in ASCII
+        return '~'  # last printable character in ASCII
 
     def make_link(target: Path) -> str:
         return str(target.relative_to(base_dir))
@@ -104,10 +108,10 @@ def write_output(base_dir: Path,
 def find_markdown_files(base_dir: Path, skip_items: Iterable) -> Generator[Path, None, None]:
     for path in base_dir.iterdir():
         if path.name[0] not in ('.', '_') and path.resolve() not in skip_items:
-           if path.is_file() and path.suffix == '.md':
-               yield path
-           if path.is_dir():
-               yield from find_markdown_files(path, skip_items)
+            if path.is_file() and path.suffix == '.md':
+                yield path
+            if path.is_dir():
+                yield from find_markdown_files(path, skip_items)
 
 
 def main(args=None):
