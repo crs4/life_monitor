@@ -114,5 +114,14 @@
         }
     },
     "annotation": "",
-    "a_galaxy_workflow": "true"
+    "a_galaxy_workflow": "true",
+    "creator": [
+        {
+            "class": "Person",
+            "identifier": "https://orcid.org/0000-0001-8271-5429",
+            "name": "Simone Leo"
+        }
+    ],
+    "license": "MIT",
+    "release": "0.1"
 }
