@@ -15,17 +15,19 @@
         <label for="{{registrySettingsForm.registries.name}}">Workflow Registries:</label>
     </div>    
 
+    <!-- table header -->
     <div class="row my-4">
         <div class="col-4 text-bold offset-1">Registry Name</div>        
         <div class="col-5 text-bold">Registry URL</div>
-        <div class="col-2 text-bold"> Registry Type</div>
-        
+        <div class="col-2 text-bold"> Registry Type</div>        
     </div>
+
+    <!-- table body -->
     {% for registry in registrySettingsForm.available_registries %}
     <div class="form-group row">
         <div class="col-1">
             <div class="checkbox">
-                {% set registry_enabled = registry.client_name in registrySettingsForm.registries.data %}          
+                {% set registry_enabled = registry.client_name in registrySettingsForm.registries.data.split(',') %}    
                 <form method="POST" id="form-{{registry.client_name}}" 
                     action="{{ url_for('auth.disable_registry_sync') if registry_enabled else url_for('auth.enable_registry_sync') }}">
                     {{ registrySettingsForm.csrf_token() }}                        
