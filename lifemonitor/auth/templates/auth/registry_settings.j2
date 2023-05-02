@@ -57,7 +57,7 @@
                     <input type="checkbox" id="i-registry-{{ registry.client_name }}" name="registry-{{ registry.client_name }}"
                         value="{{'true' if registry_enabled else 'false'}}"                
                         data-toggle="toggle" {% if registry_enabled %}checked{% endif%}
-                        data-off='<i class="fas fa-power-off"></i>' onchange="handleClick('{{ registry.client_name }}')">
+                        data-off='<span class="mr-1 p-0">Off</span>' onchange="handleClick('{{ registry.client_name }}')">
                 </form>
             </div>
         </div>
