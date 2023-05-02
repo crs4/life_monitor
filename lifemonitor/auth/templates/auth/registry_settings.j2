@@ -22,6 +22,26 @@
         <div class="col-2 text-bold"> Registry Type</div>        
     </div>
 
+    <script>
+        function handleClick(iId) {            
+            const el = $("#i-registry-" + iId);            
+            if(el){
+                const enabled = el.val();
+                const toggleClass= enabled === "true" ? "toggle-off" : "toggle-on";
+                const newState = $(el.siblings()[0].children).siblings("." + toggleClass)
+                newState.css('background', "var(--eosc-yellow)");
+                newState.html("<i class='fas fa-sync-alt'></i>");
+            }else{
+                console.debug("Unable to find element with id: " + iId);
+            }
+            // submit form
+            setTimeout(() => {
+                $('#form-' + iId).submit();
+            }, 1000);
+            
+        }
+    </script>
+
     <!-- table body -->
     {% for registry in registrySettingsForm.available_registries %}
     <div class="form-group row">
@@ -34,10 +54,10 @@
                     <input type="hidden" name="{{registrySettingsForm.action.name}}" 
                             value="{{'remove' if registry_enabled else 'false'}}" />
                     <input type="hidden" name="{{registrySettingsForm.registry.name}}" value="{{ registry.client_name }}" />
-                    <input type="checkbox" name="registry-{{ registry.client_name }}"
+                    <input type="checkbox" id="i-registry-{{ registry.client_name }}" name="registry-{{ registry.client_name }}"
                         value="{{'true' if registry_enabled else 'false'}}"                
-                        data-toggle="toggle" {% if registry_enabled %}checked{% endif%} onclick="alert()"
-                        data-off='<i class="fas fa-power-off"></i>' onchange="$('#form-{{registry.client_name}}').submit();">
+                        data-toggle="toggle" {% if registry_enabled %}checked{% endif%}
+                        data-off='<i class="fas fa-power-off"></i>' onchange="handleClick('{{ registry.client_name }}')">
                 </form>
             </div>
         </div>
