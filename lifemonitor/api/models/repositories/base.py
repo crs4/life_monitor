@@ -301,7 +301,10 @@ class WorkflowRepository():
         current_config = self.config
         if current_config and not ignore_existing:
             raise IllegalStateException("Config exists")
-        self._config = WorkflowRepositoryConfig.new(self.local_path, workflow_title=self.metadata.main_entity_name if self.metadata else None)
+        self._config = WorkflowRepositoryConfig.new(self.local_path,
+                                                    workflow_title=self.metadata.main_entity_name if self.metadata else None,
+                                                    main_branch=self.default_branch,
+                                                    public=self.public)
         return self._config
 
     def write_zip(self, target_path: str):
