@@ -174,3 +174,20 @@ class Base64WorkflowRepository(TemporaryLocalWorkflowRepository):
         except Exception as e:
             logger.debug(e)
             raise DecodeROCrateException(detail=str(e))
+
+
+class LocalGitRepository(LocalWorkflowRepository):
+
+    def __init__(self, local_path: str | None = None, exclude: List[str] | None = None) -> None:
+        super().__init__(local_path, exclude)
+        assert self.is_git_repo(self.local_path), f"Local path {local_path} is not a git repository"
+
+    @property
+    def main_branch(self) -> str:
+        from git import Repo
+        repo = Repo(self.local_path)
+        return repo.active_branch.name
+
+    @staticmethod
+    def is_git_repo(local_path: str) -> bool:
+        return os.path.isdir(os.path.join(local_path, '.git'))
