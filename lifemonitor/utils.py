@@ -229,7 +229,7 @@ def validate_url(url: str) -> bool:
 
 
 @cached(client_scope=False)
-def is_service_alive(url: str, timeout: int = 5) -> bool:
+def is_service_alive(url: str, timeout: int = 2) -> bool:
     try:
         response = requests.get(url, timeout=timeout)
         if response.status_code == 200:
