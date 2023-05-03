@@ -327,7 +327,7 @@ class ROCrate(Resource):
             # try either with authorization header and without authorization
             for authorization in self._get_authorizations(extra_auth=extra_auth):
                 try:
-                    git_url = self._is_github_crate_(uri)
+                    git_url = self._get_normalized_github_url_(uri)
                     if git_url:
                         token = None
                         if authorization and isinstance(authorization, ExternalServiceAuthorizationHeader):
