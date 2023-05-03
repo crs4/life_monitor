@@ -47,6 +47,22 @@ from ...api.models.wizards import (IOHandler, QuestionStep, Step, UpdateStep,
 logger = logging.getLogger(__name__)
 
 
+def is_github_url(url):
+    """
+    Returns True if the given URL is a GitHub URL, False otherwise.
+    """
+    pattern = r"^https?://(www\.)?github\.com/.*$"
+    return bool(re.match(pattern, url))
+
+
+def normalized_github_url(url):
+    if not is_github_url(url):
+        return None
+    if not url.endswith('.git'):
+        url += '.git'
+    return url
+
+
 def crate_branch(repo: Repository, branch_name: str, rev: str = None) -> GitRef:
     head = repo.get_commit(rev or repo.rev or 'HEAD')
     logger.debug("HEAD commit: %r", head.sha)

@@ -28,9 +28,13 @@ import uuid as _uuid
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-import lifemonitor.exceptions as lm_exceptions
 from flask import current_app
 from github.GithubException import GithubException, RateLimitExceededException
+from rocrate import rocrate
+from sqlalchemy import inspect
+from sqlalchemy.ext.hybrid import hybrid_property
+
+import lifemonitor.exceptions as lm_exceptions
 from lifemonitor.api.models import db, repositories
 from lifemonitor.api.models.repositories.base import (
     WorkflowRepository, WorkflowRepositoryMetadata)
@@ -43,10 +47,6 @@ from lifemonitor.config import BaseConfig
 from lifemonitor.models import JSON
 from lifemonitor.storage import RemoteStorage
 from lifemonitor.utils import download_url, get_current_ref
-from sqlalchemy import inspect
-from sqlalchemy.ext.hybrid import hybrid_property
-
-from rocrate import rocrate
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -111,7 +111,7 @@ class ROCrate(Resource):
 
     @property
     def revision(self) -> Optional[GithubRepositoryRevision]:
-        if self._is_github_crate_(self.uri) and isinstance(self.repository, GithubWorkflowRepository):
+        if self._get_normalized_github_url_(self.uri) and isinstance(self.repository, GithubWorkflowRepository):
             return self.repository.get_revision(self.version)
         return None
 
@@ -172,7 +172,7 @@ class ROCrate(Resource):
                         logger.warning(f"Getting path {self.storage_path} from remote storage.... DONE!!!")
 
             # instantiate a local ROCrate repository
-            if self._is_github_crate_(self.uri):
+            if self._get_normalized_github_url_(self.uri):
                 authorizations = self.authorizations + [None]
                 token = None
                 for authorization in authorizations:
@@ -192,8 +192,13 @@ class ROCrate(Resource):
                 self._repository = repositories.ZippedWorkflowRepository(self.local_path)
 
             # set metadata
-            self._metadata = self._repository.metadata.to_json()
-            self._metadata_loaded = True
+            try:
+                self._metadata = self._repository.metadata.to_json()
+                self._metadata_loaded = True
+            except Exception as e:
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.exception(e)
+                raise lm_exceptions.NotValidROCrateException("Unable to load ROCrate metadata")
         return self._repository
 
     @property
@@ -215,13 +220,13 @@ class ROCrate(Resource):
             if logger.isEnabledFor(logging.DEBUG):
                 logger.exception(e)
             if not ignore_errors:
-                raise e
+                raise
         except Exception as e:
             logger.error(str(e))
             if logger.isEnabledFor(logging.DEBUG):
                 logger.exception(e)
             if not ignore_errors:
-                raise e
+                raise
         return None
 
     def get_authors(self, suite_id: str = None) -> List[Dict] | None:
@@ -284,14 +289,9 @@ class ROCrate(Resource):
         return (tmpdir_path / 'rocrate.zip').as_posix()
 
     @staticmethod
-    def _is_github_crate_(uri: str) -> str:
-        # FIXME: replace with a better detection mechanism
-        if uri.startswith('https://github.com'):
-            # normalize uri as clone URL
-            if not uri.endswith('.git'):
-                uri += '.git'
-            return uri
-        return None
+    def _get_normalized_github_url_(uri: str) -> Optional[str]:
+        from lifemonitor.integrations.github.utils import normalized_github_url
+        return normalized_github_url(uri)
 
     @staticmethod
     def _find_git_ref_(repo: GithubWorkflowRepository, version: str) -> str:
