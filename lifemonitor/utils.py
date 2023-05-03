@@ -226,6 +226,7 @@ def validate_url(url: str) -> bool:
         return False
 
 
+@cached(client_scope=False)
 def is_service_alive(url: str, timeout: int = 5) -> bool:
     try:
         response = requests.get(url, timeout=timeout)
