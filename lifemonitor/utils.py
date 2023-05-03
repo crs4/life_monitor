@@ -49,6 +49,8 @@ import requests
 import yaml
 from dateutil import parser
 
+from lifemonitor.cache import cached
+
 from . import exceptions as lm_exceptions
 
 logger = logging.getLogger()
@@ -223,6 +225,21 @@ def validate_url(url: str) -> bool:
         result = urllib.parse.urlparse(url)
         return all([result.scheme, result.netloc])
     except Exception:
+        return False
+
+
+@cached(client_scope=False)
+def is_service_alive(url: str, timeout: int = 2) -> bool:
+    try:
+        response = requests.get(url, timeout=timeout)
+        if response.status_code == 200:
+            return True
+        else:
+            return False
+    except requests.exceptions.RequestException as e:
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.exception(e)
+        logger.error(f'Error checking service availability: {e}')
         return False
 
 

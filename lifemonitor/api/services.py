@@ -34,7 +34,7 @@ from lifemonitor.auth.oauth2.client import providers
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 from lifemonitor.auth.oauth2.server import server
 from lifemonitor.tasks.models import Job
-from lifemonitor.utils import OpenApiSpecs, ROCrateLinkContext, to_snake_case
+from lifemonitor.utils import OpenApiSpecs, ROCrateLinkContext, is_service_alive, to_snake_case
 from lifemonitor.ws import io
 
 logger = logging.getLogger()
@@ -58,6 +58,9 @@ class LifeMonitor:
     def _find_and_check_shared_workflow_version(user: User, uuid, version=None) -> models.WorkflowVersion:
         for svc in models.WorkflowRegistry.all():
             try:
+                if not is_service_alive(svc.uri):
+                    logger.warning(f"Service {svc.uri} is not alive")
+                    continue
                 if svc.get_user(user.id):
                     for w in svc.get_user_workflows(user):
                         if str(w.uuid) == str(uuid):
@@ -559,6 +562,9 @@ class LifeMonitor:
 
         workflows = [w for w in models.Workflow.get_user_workflows(user, include_subscriptions=include_subscriptions)]
         for svc in models.WorkflowRegistry.all():
+            if not is_service_alive(svc.uri):
+                logger.warning("Service %r is not alive, skipping", svc.uri)
+                continue
             if svc.get_user(user.id):
                 try:
                     workflows.extend([w for w in svc.get_user_workflows(user)
@@ -570,6 +576,9 @@ class LifeMonitor:
     @staticmethod
     def get_user_registry_workflows(user: User, registry: models.WorkflowRegistry) -> List[models.Workflow]:
         workflows = []
+        if not is_service_alive(registry.uri):
+            logger.warning("Service %r is not alive, skipping", registry.uri)
+            raise lm_exceptions.UnavailableServiceException(registry.uri, service=registry)
         if registry.get_user(user.id):
             try:
                 workflows.extend([w for w in registry.get_user_workflows(user)
