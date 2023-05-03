@@ -49,6 +49,8 @@ import requests
 import yaml
 from dateutil import parser
 
+from lifemonitor.cache import cached
+
 from . import exceptions as lm_exceptions
 
 logger = logging.getLogger()

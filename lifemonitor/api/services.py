@@ -34,7 +34,7 @@ from lifemonitor.auth.oauth2.client import providers
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 from lifemonitor.auth.oauth2.server import server
 from lifemonitor.tasks.models import Job
-from lifemonitor.utils import OpenApiSpecs, ROCrateLinkContext, to_snake_case
+from lifemonitor.utils import OpenApiSpecs, ROCrateLinkContext, is_service_alive, to_snake_case
 from lifemonitor.ws import io
 
 logger = logging.getLogger()
