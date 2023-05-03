@@ -226,6 +226,20 @@ def validate_url(url: str) -> bool:
         return False
 
 
+def is_service_alive(url: str, timeout: int = 5) -> bool:
+    try:
+        response = requests.get(url, timeout=timeout)
+        if response.status_code == 200:
+            return True
+        else:
+            return False
+    except requests.exceptions.RequestException as e:
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.exception(e)
+        logger.error(f'Error checking service availability: {e}')
+        return False
+
+
 def get_last_update(path: str):
     return time.ctime(max(os.stat(root).st_mtime for root, _, _ in os.walk(path)))
 

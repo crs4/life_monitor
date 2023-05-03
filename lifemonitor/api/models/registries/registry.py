@@ -440,6 +440,8 @@ class WorkflowRegistry(auth_models.HostingService):
 
     @property
     def client(self) -> WorkflowRegistryClient:
+        if not is_service_alive(self.uri):
+            raise lm_exceptions.ServiceUnavailableException(f"Service {self.url} is not available", service=self)
         if self._client is None:
             rtype = self.__class__.__name__.replace("WorkflowRegistry", "").lower()
             return WorkflowRegistryClient.get_client_class(rtype)(self)
