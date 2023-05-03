@@ -306,7 +306,7 @@ class WorkflowRepository():
         self._config = WorkflowRepositoryConfig.new(self.local_path,
                                                     workflow_title=workflow_title if workflow_title is not None
                                                     else self.metadata.main_entity_name if self.metadata else None,
-                                                    main_branch=main_branch if main_branch else getattr(self, "main_branch", ""),
+                                                    main_branch=main_branch if main_branch else getattr(self, "main_branch", "main"),
                                                     public=public)
         return self._config
 
