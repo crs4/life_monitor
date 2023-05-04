@@ -29,7 +29,7 @@ from lifemonitor.utils import (NextRouteRegistry, next_route_aware,
                                split_by_crlf)
 
 from .. import exceptions
-from ..utils import OpenApiSpecs, boolean_value
+from ..utils import OpenApiSpecs, boolean_value, is_service_alive
 from . import serializers
 from .forms import (EmailForm, LoginForm, NotificationsForm, Oauth2ClientForm,
                     RegisterForm, SetPasswordForm)
@@ -210,7 +210,8 @@ def register():
                 clear_cache()
                 return redirect(url_for("auth.index"))
         return render_template("auth/register.j2", form=form,
-                               action=url_for('auth.register'), providers=get_providers())
+                               action=url_for('auth.register'),
+                               providers=get_providers(), is_service_available=is_service_alive)
 
 
 @blueprint.route("/identity_not_found", methods=("GET", "POST"))
@@ -267,7 +268,8 @@ def login():
             session.pop('_flashes', None)
             flash("You have logged in", category="success")
             return redirect(NextRouteRegistry.pop(url_for("auth.profile")))
-    return render_template("auth/login.j2", form=form, providers=get_providers())
+    return render_template("auth/login.j2", form=form,
+                           providers=get_providers(), is_service_available=is_service_alive)
 
 
 @blueprint.route("/logout")
