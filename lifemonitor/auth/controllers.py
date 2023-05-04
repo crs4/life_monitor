@@ -259,6 +259,7 @@ def login():
     form = LoginForm()
     flask.session["confirm_user_details"] = True
     flask.session["sign_in"] = True
+    flask.session.pop('_flashes', None)
     if form.validate_on_submit():
         user = form.get_user()
         if user:
