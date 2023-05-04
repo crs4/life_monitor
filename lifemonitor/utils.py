@@ -232,7 +232,7 @@ def validate_url(url: str) -> bool:
 def is_service_alive(url: str, timeout: int = 1) -> bool:
     try:
         response = requests.get(url, timeout=timeout)
-        if response.status_code == 200:
+        if response.status_code < 500:
             return True
         else:
             return False
