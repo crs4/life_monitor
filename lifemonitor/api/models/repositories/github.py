@@ -303,7 +303,7 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
                                f"'{self.local_repo._local_path}' will not be deleted")
             else:
                 self.cleanup()
-        return self.local_repo.generate_metadata()
+        return self.local_repo.generate_metadata(repo_url=self.html_url)
 
     def generate_config(self, ignore_existing=False) -> WorkflowRepositoryConfig:
         current_config = self.config
