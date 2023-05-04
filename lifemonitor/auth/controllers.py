@@ -276,7 +276,9 @@ def logout():
     session.pop('_flashes', None)
     flash("You have logged out", category="success")
     NextRouteRegistry.clear()
-    return redirect('/')
+    next_route = request.args.get('next', '/')
+    logger.debug("Next route after logout: %r", next_route)
+    return redirect(next_route)
 
 
 @blueprint.route("/delete_account", methods=("POST",))
