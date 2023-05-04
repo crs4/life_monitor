@@ -120,7 +120,7 @@ class WorkflowRepository():
     def https_url(self) -> str:
         if not self._url:
             try:
-                self._url = self._remote_parser.url2https.replace('.git', '')
+                self._url = self._remote_parser.url2https.removesuffix('.git')
             except Exception as e:
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.exception(e)
