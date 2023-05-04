@@ -309,7 +309,8 @@ def cache_last_build_update(app, w, user1, check_cache_size=True, index=0,
         # check the cache after the transaction is completed
         if check_cache_size:
             cache_size = cache.size()
-            assert len(transaction_keys) + 1 == cache_size, "Unpexpected cache size: it should be equal to the transaction size"
+            # +2 because of the checks for the service availability
+            assert len(transaction_keys) + 2 == cache_size, "Unpexpected cache size: it should be equal to the transaction size + 2"
         sleep(2)
         assert cache.size() > 0, "Cache should not be empty"
         logger.debug(cache.keys())
