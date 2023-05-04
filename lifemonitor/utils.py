@@ -229,8 +229,12 @@ def validate_url(url: str) -> bool:
 
 
 @cached(client_scope=False)
-def is_service_alive(url: str, timeout: int = 1) -> bool:
+def is_service_alive(url: str, timeout: Optional[int] = None) -> bool:
     try:
+        try:
+            timeout = timeout or flask.current_app.config.get("SERVICE_ALIVE_TIMEOUT", 1)
+        except Exception:
+            timeout = 1
         response = requests.get(url, timeout=timeout)
         if response.status_code < 500:
             return True
@@ -243,7 +247,7 @@ def is_service_alive(url: str, timeout: int = 1) -> bool:
         return False
 
 
-def assert_service_is_alive(url: str, timeout: int = 1):
+def assert_service_is_alive(url: str, timeout: Optional[int] = None):
     if not is_service_alive(url, timeout=timeout):
         raise lm_exceptions.ServiceNotAvailableException(detail=f"Service not available: {url}", service=url)
 

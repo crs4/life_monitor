@@ -126,6 +126,8 @@ class BaseConfig:
     # Enable/disable integrations
     ENABLE_GITHUB_INTEGRATION = False
     ENABLE_REGISTRY_INTEGRATION = False
+    # Service Availability Timeout
+    SERVICE_AVAILABILITY_TIMEOUT = 1
 
 
 class DevelopmentConfig(BaseConfig):
