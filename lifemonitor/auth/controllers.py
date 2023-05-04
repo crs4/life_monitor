@@ -190,6 +190,7 @@ def profile(form=None, passwordForm=None, currentView=None,
                            registrySettingsForm=registrySettingsForm or RegistrySettingsForm.from_model(current_user),
                            providers=get_providers(), currentView=currentView,
                            oauth2_generic_client_scopes=OpenApiSpecs.get_instance().authorization_code_scopes,
+                           api_base_url=current_app.config['EXTERNAL_SERVER_URL'],
                            back_param=back_param)
 
 
