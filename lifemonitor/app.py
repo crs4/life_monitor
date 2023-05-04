@@ -45,7 +45,8 @@ from .serializers import ma
 logger = logging.getLogger(__name__)
 
 
-def create_app(env=None, settings=None, init_app=True, worker=False, load_jobs=True, **kwargs):
+def create_app(env=None, settings=None, init_app=True, init_integrations=True,
+               worker=False, load_jobs=True, **kwargs):
     """
     App factory method
     :param env:
@@ -81,7 +82,7 @@ def create_app(env=None, settings=None, init_app=True, worker=False, load_jobs=T
     # initialize the application
     if init_app:
         with app.app_context() as ctx:
-            initialize_app(app, ctx, load_jobs=load_jobs)
+            initialize_app(app, ctx, load_jobs=load_jobs, load_integrations=init_integrations)
 
     @app.route("/")
     def index():
@@ -127,7 +128,7 @@ def create_app(env=None, settings=None, init_app=True, worker=False, load_jobs=T
     return app
 
 
-def initialize_app(app: Flask, app_context, prom_registry=None, load_jobs: bool = True):
+def initialize_app(app: Flask, app_context, prom_registry=None, load_jobs: bool = True, load_integrations: bool = True):
     # init tmp folder
     os.makedirs(app.config.get('BASE_TEMP_FOLDER'), exist_ok=True)
     # enable CORS
@@ -151,7 +152,8 @@ def initialize_app(app: Flask, app_context, prom_registry=None, load_jobs: bool 
     # init mail system
     init_mail(app)
     # initialize integrations
-    init_integrations(app)
+    if load_integrations:
+        init_integrations(app)
     # initialize metrics engine
     init_metrics(app, prom_registry)
     # register commands
