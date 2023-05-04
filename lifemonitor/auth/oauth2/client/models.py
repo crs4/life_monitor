@@ -40,7 +40,7 @@ from lifemonitor.exceptions import (EntityNotFoundException,
                                     LifeMonitorException,
                                     NotAuthorizedException)
 from lifemonitor.models import JSON, ModelMixin
-from lifemonitor.utils import to_snake_case
+from lifemonitor.utils import assert_service_is_alive, to_snake_case
 from sqlalchemy import DateTime, inspect
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm.attributes import flag_modified
@@ -206,6 +206,8 @@ class OAuthIdentity(models.ExternalServiceAccessAuthorization, ModelMixin):
         return OAuth2Token(token, provider=self.provider)
 
     def fetch_token(self, scope: Optional[str] = None):
+        # ensure that the service is alive
+        assert_service_is_alive(self.provider.api_base_url)
         # enable dynamic refresh only if the identity
         # has been already stored in the database
         if inspect(self).persistent:
@@ -226,6 +228,8 @@ class OAuthIdentity(models.ExternalServiceAccessAuthorization, ModelMixin):
         logger.debug("Refresh token requested...")
         token = token or self.token
         if token and token.to_be_refreshed():
+            # ensure that the service is alive
+            assert_service_is_alive(self.provider.api_base_url)
             with self.cache.lock(str(self), timeout=Timeout.NONE):
                 # fetch current token from database
                 self.refresh(attribute_names=['_tokens'])
@@ -424,6 +428,7 @@ class OAuth2IdentityProvider(db.Model, ModelMixin):
         return "Bearer"
 
     def get_user_info(self, provider_user_id, token, normalized=True):
+        assert_service_is_alive(self.api_base_url)
         access_token = token['access_token'] if isinstance(token, dict) else token
         response = requests.get(urljoin(self.api_base_url, self.userinfo_endpoint),
                                 headers={'Authorization': f'Bearer {access_token}'})
@@ -505,6 +510,7 @@ class OAuth2IdentityProvider(db.Model, ModelMixin):
 
     def refresh_token(self, token: OAuth2Token) -> OAuth2Token:
         logger.debug(f"Trying to refresh the token: {token}...")
+        assert_service_is_alive(self.api_base_url)
         # reference to the token associated with the identity instance
         oauth2session = OAuth2Session(
             self.client_id, self.client_secret, token=token)
