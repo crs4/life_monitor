@@ -624,8 +624,8 @@ def _make_git_credentials_callback(token: str = None):
     return pygit2.RemoteCallbacks(pygit2.UserPass('x-access-token', token)) if token else None
 
 
-def clone_repo(url: str, ref: str = None, target_path: str = None, auth_token: str = None,
-               remote_url: str = None, remote_branch: str = None, remote_user_token: str = None):
+def clone_repo(url: str, ref: Optional[str] = None, target_path: Optional[str] = None, auth_token: Optional[str] = None,
+               remote_url: Optional[str] = None, remote_branch: Optional[str] = None, remote_user_token: Optional[str] = None) -> str:
     try:
         from . import config
         logger.warning("Local CLONE: %r - %r", url, ref)
@@ -664,7 +664,7 @@ def clone_repo(url: str, ref: str = None, target_path: str = None, auth_token: s
         logger.debug("Clean up clone local path: %r %r ..... DONE", target_path, local_path)
 
 
-def checkout_ref(repo_path: str, ref: str, auth_token: str = None, branch_name: str = None):
+def checkout_ref(repo_path: str, ref: str, auth_token: Optional[str] = None, branch_name: Optional[str] = None) -> str:
     try:
         clone = pygit2.Repository(repo_path)
         if ref is not None:
