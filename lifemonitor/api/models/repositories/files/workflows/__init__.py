@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 class WorkflowFile(RepositoryFile):
 
-    __workflow_types__: Dict[str, Type] | None = None
+    __workflow_types__: Optional[Dict[str, Type]] = None
 
     def __init__(self, repository_path: str, name: str, type: Optional[str] = None, dir: str = ".",
                  content=None, raw_file: Optional[RepositoryFile] = None) -> None:
@@ -53,7 +53,7 @@ class WorkflowFile(RepositoryFile):
         return super().get_content(binary_mode=binary_mode)
 
     @property
-    def raw_file(self) -> RepositoryFile | None:
+    def raw_file(self) -> Optional[RepositoryFile]:
         return self._raw_file
 
     @classmethod
@@ -78,7 +78,7 @@ class WorkflowFile(RepositoryFile):
                    dir=file.dir, content=file._content, raw_file=file)
 
     @classmethod
-    def __get_file_patterns__(cls, subtype: Type = None) -> Tuple[Tuple[str, str, str]] | None:
+    def __get_file_patterns__(cls, subtype: Type = None) -> Optional[Tuple[Tuple[str, str, str]]]:
         return getattr(subtype or cls, "FILE_PATTERNS", None)
 
     @classmethod

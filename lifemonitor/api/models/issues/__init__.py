@@ -28,7 +28,7 @@ from enum import Enum
 from hashlib import sha1
 from importlib import import_module
 from pathlib import Path
-from typing import List, Optional, Type
+from typing import List, Optional, Type, Union
 
 import networkx as nx
 
@@ -133,7 +133,7 @@ class WorkflowRepositoryIssue():
         return cls.to_string(cls)
 
     @classmethod
-    def to_string(cls, issue_type: WorkflowRepositoryIssue | Type[WorkflowRepositoryIssue]) -> str:
+    def to_string(cls, issue_type: Union[WorkflowRepositoryIssue, Type[WorkflowRepositoryIssue]]) -> str:
         class_name = None
         if isinstance(issue_type, WorkflowRepositoryIssue):
             class_name = issue_type.__class__.__name__
@@ -147,7 +147,7 @@ class WorkflowRepositoryIssue():
         return f"{tail_package}.{class_name}"
 
     @classmethod
-    def from_string(cls, issue_name: str) -> Type[WorkflowRepositoryIssue] | None:
+    def from_string(cls, issue_name: str) -> Optional[Type[WorkflowRepositoryIssue]]:
         for issue in cls.types():
             if issue.name == issue_name:
                 return issue

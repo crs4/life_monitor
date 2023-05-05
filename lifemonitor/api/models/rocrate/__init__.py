@@ -208,7 +208,7 @@ class ROCrate(Resource):
     def __get_attribute_from_crate_reader__(self,
                                             attributeName: str, attributedType: str = 'method',
                                             ignore_errors: bool = True,
-                                            *args, **kwargs) -> object | None:
+                                            *args, **kwargs) -> Optional[object]:
         try:
             attr = getattr(self._crate_reader, attributeName)
             if attributedType == 'method':
@@ -229,7 +229,7 @@ class ROCrate(Resource):
                 raise
         return None
 
-    def get_authors(self, suite_id: str = None) -> List[Dict] | None:
+    def get_authors(self, suite_id: Optional[str] = None) -> Optional[List[Dict]]:
         return self.__get_attribute_from_crate_reader__('get_authors', suite_id=suite_id)
 
     @hybrid_property
@@ -243,11 +243,11 @@ class ROCrate(Resource):
         return self.__get_attribute_from_crate_reader__('get_get_roc_suite', roc_suite_identifier, ignore_errors=ignore_errors)
 
     @property
-    def based_on(self) -> str | None:
+    def based_on(self):
         return self.__get_attribute_from_crate_reader__('isBasedOn', attributedType='property')
 
     @property
-    def based_on_link(self) -> str:
+    def based_on_link(self):
         return self.__get_attribute_from_crate_reader__('isBasedOn', attributedType='property')
 
     @property
@@ -258,7 +258,7 @@ class ROCrate(Resource):
     def main_entity_name(self):
         return self.__get_attribute_from_crate_reader__('main_entity_name', attributedType='property')
 
-    def _get_authorizations(self, extra_auth: ExternalServiceAuthorizationHeader = None):
+    def _get_authorizations(self, extra_auth: Optional[ExternalServiceAuthorizationHeader] = None):
         authorizations = []
         if extra_auth:
             authorizations.append(extra_auth)
@@ -266,7 +266,7 @@ class ROCrate(Resource):
         authorizations.append(None)
         return authorizations
 
-    def check_for_changes(self, roc_link: str, extra_auth: ExternalServiceAuthorizationHeader = None) -> Tuple:
+    def check_for_changes(self, roc_link: str, extra_auth: Optional[ExternalServiceAuthorizationHeader] = None) -> Tuple:
         # try either with authorization header and without authorization
         with tempfile.NamedTemporaryFile(dir=BaseConfig.BASE_TEMP_FOLDER) as target_path:
             local_path, ref, commit = self.download_from_source(target_path.name, uri=roc_link, extra_auth=extra_auth)

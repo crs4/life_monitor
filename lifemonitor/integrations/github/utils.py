@@ -23,7 +23,7 @@ from __future__ import annotations
 import logging
 import re
 from typing import (Any, Callable, Dict, List, Optional, OrderedDict, Tuple,
-                    Type)
+                    Type, Union)
 
 import github
 from github.GithubException import GithubException
@@ -245,9 +245,9 @@ class CachedPaginatedList(PaginatedList):
     def __init__(self, contentClass: Type, requester: Requester,
                  firstUrl: str, firstParams: Any, headers: Optional[Dict[str, str]] = None,
                  list_item: str = "items",
-                 transactional_update: Optional[bool | Callable] = False,
-                 force_use_cache: Optional[bool | Callable] = False,
-                 unless: Optional[bool | Callable] = None,
+                 transactional_update: Union[bool, Callable, None] = False,
+                 force_use_cache: Union[bool, Callable, None] = False,
+                 unless: Union[bool, Callable, None] = None,
                  limit: Optional[int] = None) -> None:
         super().__init__(contentClass, requester, firstUrl, firstParams, headers, list_item)
         self.transaction_update = transactional_update

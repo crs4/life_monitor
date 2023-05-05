@@ -27,7 +27,7 @@ import logging
 import os
 from abc import abstractclassmethod
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple, Type
+from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 import git
 import giturlparse
@@ -158,8 +158,8 @@ class WorkflowRepository():
 
     @staticmethod
     def _issue_name_included(issue_name: str,
-                             include_list: List[str] | None = None,
-                             exclude_list: List[str] | None = None) -> bool:
+                             include_list: Optional[List[str]] = None,
+                             exclude_list: Optional[List[str]] = None) -> bool:
         if include_list and (issue_name in [to_camel_case(_) for _ in include_list]):
             return True
 
@@ -204,7 +204,7 @@ class WorkflowRepository():
         return cls.__find_file__(files, file) is not None
 
     @classmethod
-    def __find_file__(cls, files, file) -> RepositoryFile | None:
+    def __find_file__(cls, files, file) -> Optional[RepositoryFile]:
         for f in files:
             if f == file or (f.name == file.name and f.dir == file.dir):
                 return f
@@ -238,7 +238,7 @@ class WorkflowRepository():
                     return True
 
     @classmethod
-    def __compare__(cls, left_files, right_files, exclude: List[str] | None = None):
+    def __compare__(cls, left_files, right_files, exclude: Optional[List[str]] = None):
         missing_left = [_ for _ in right_files
                         if not cls.__contains__(left_files, _) and (not exclude or _.name not in exclude)]
         logger.debug("Missing Left: %r", missing_left)
@@ -255,9 +255,9 @@ class WorkflowRepository():
         logger.debug("Differences: %r", differences)
         return missing_left, missing_right, differences
 
-    def compare_to(self, repo: WorkflowRepository, exclude: List[str] | None = None) -> Tuple[List[RepositoryFile],
-                                                                                              List[RepositoryFile],
-                                                                                              List[Tuple[RepositoryFile, RepositoryFile]]]:
+    def compare_to(self, repo: WorkflowRepository, exclude: Optional[List[str]] = None) -> Tuple[List[RepositoryFile],
+                                                                                           List[RepositoryFile],
+                                                                                           List[Tuple[RepositoryFile, RepositoryFile]]]:
         assert repo and isinstance(repo, WorkflowRepository), repo
         return self.__compare__(self.files, repo.files, exclude=exclude)
 
@@ -323,7 +323,7 @@ class IssueCheckResult:
     def found_issues(self) -> bool:
         return len(self.issues) > 0
 
-    def is_checked(self, issue: Type[issues.WorkflowRepositoryIssue] | issues.WorkflowRepositoryIssue) -> bool:
+    def is_checked(self, issue: Union[Type[issues.WorkflowRepositoryIssue], issues.WorkflowRepositoryIssue]) -> bool:
         if issue and issue in self.checked:
             return True
         if isinstance(issue, issues.WorkflowRepositoryIssue):
@@ -370,7 +370,7 @@ class WorkflowRepositoryMetadata(ROCrate):
         return self.name
 
     # TODO: the type of a roc_suite is probably better defined than "Any"
-    def get_roc_suites(self) -> Dict[str, Any] | None:
+    def get_roc_suites(self) -> Optional[Dict[str, Any]]:
         return get_roc_suites(self)
 
     def get_authors(self, suite_id: Optional[str] = None) -> List[Dict]:
