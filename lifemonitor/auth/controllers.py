@@ -22,14 +22,17 @@ import logging
 
 import connexion
 import flask
-from flask import current_app, flash, redirect, render_template, request, session, url_for
+from flask import (current_app, flash, redirect, render_template, request,
+                   session, url_for)
 from flask_login import login_required, login_user, logout_user
+
 from lifemonitor.cache import Timeout, cached, clear_cache
 from lifemonitor.utils import (NextRouteRegistry, next_route_aware,
                                split_by_crlf)
 
 from .. import exceptions
-from ..utils import OpenApiSpecs, boolean_value, is_service_alive
+from ..utils import (OpenApiSpecs, boolean_value, get_external_server_url,
+                     is_service_alive)
 from . import serializers
 from .forms import (EmailForm, LoginForm, NotificationsForm, Oauth2ClientForm,
                     RegisterForm, SetPasswordForm)
@@ -190,7 +193,7 @@ def profile(form=None, passwordForm=None, currentView=None,
                            registrySettingsForm=registrySettingsForm or RegistrySettingsForm.from_model(current_user),
                            providers=get_providers(), currentView=currentView,
                            oauth2_generic_client_scopes=OpenApiSpecs.get_instance().authorization_code_scopes,
-                           api_base_url=current_app.config['EXTERNAL_SERVER_URL'],
+                           api_base_url=get_external_server_url(),
                            back_param=back_param)
 
 
