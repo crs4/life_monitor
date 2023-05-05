@@ -22,14 +22,17 @@ import logging
 
 import connexion
 import flask
-from flask import current_app, flash, redirect, render_template, request, session, url_for
+from flask import (current_app, flash, redirect, render_template, request,
+                   session, url_for)
 from flask_login import login_required, login_user, logout_user
+
 from lifemonitor.cache import Timeout, cached, clear_cache
 from lifemonitor.utils import (NextRouteRegistry, next_route_aware,
                                split_by_crlf)
 
 from .. import exceptions
-from ..utils import OpenApiSpecs, boolean_value
+from ..utils import (OpenApiSpecs, boolean_value, get_external_server_url,
+                     is_service_alive)
 from . import serializers
 from .forms import (EmailForm, LoginForm, NotificationsForm, Oauth2ClientForm,
                     RegisterForm, SetPasswordForm)
@@ -190,6 +193,7 @@ def profile(form=None, passwordForm=None, currentView=None,
                            registrySettingsForm=registrySettingsForm or RegistrySettingsForm.from_model(current_user),
                            providers=get_providers(), currentView=currentView,
                            oauth2_generic_client_scopes=OpenApiSpecs.get_instance().authorization_code_scopes,
+                           api_base_url=get_external_server_url(),
                            back_param=back_param)
 
 
@@ -210,7 +214,8 @@ def register():
                 clear_cache()
                 return redirect(url_for("auth.index"))
         return render_template("auth/register.j2", form=form,
-                               action=url_for('auth.register'), providers=get_providers())
+                               action=url_for('auth.register'),
+                               providers=get_providers(), is_service_available=is_service_alive)
 
 
 @blueprint.route("/identity_not_found", methods=("GET", "POST"))
@@ -259,6 +264,7 @@ def login():
     form = LoginForm()
     flask.session["confirm_user_details"] = True
     flask.session["sign_in"] = True
+    flask.session.pop('_flashes', None)
     if form.validate_on_submit():
         user = form.get_user()
         if user:
@@ -266,7 +272,8 @@ def login():
             session.pop('_flashes', None)
             flash("You have logged in", category="success")
             return redirect(NextRouteRegistry.pop(url_for("auth.profile")))
-    return render_template("auth/login.j2", form=form, providers=get_providers())
+    return render_template("auth/login.j2", form=form,
+                           providers=get_providers(), is_service_available=is_service_alive)
 
 
 @blueprint.route("/logout")
@@ -276,7 +283,9 @@ def logout():
     session.pop('_flashes', None)
     flash("You have logged out", category="success")
     NextRouteRegistry.clear()
-    return redirect('/')
+    next_route = request.args.get('next', '/')
+    logger.debug("Next route after logout: %r", next_route)
+    return redirect(next_route)
 
 
 @blueprint.route("/delete_account", methods=("POST",))

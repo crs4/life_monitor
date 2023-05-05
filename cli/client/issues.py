@@ -147,7 +147,8 @@ def check(config, repository, output_path):
                 console.print(f"[{message.type.value}]{message.type.name}:[/{message.type.value}] {message.text}")
         console.print("\n\n")
     except Exception as e:
-        logger.exception(e)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.exception(e)
         error_console.print(str(e))
 
 

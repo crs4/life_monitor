@@ -23,6 +23,7 @@ from unittest.mock import MagicMock, Mock
 
 import lifemonitor.db as lm_db
 from lifemonitor.api import models
+from lifemonitor.api.models.workflows import WorkflowVersion
 from lifemonitor.api.services import LifeMonitor
 
 logger = logging.getLogger(__name__)
@@ -60,7 +61,10 @@ def _get_attr(obj, name, default=None):
 def build_workflow_path(workflow=None, version_as_subpath=False,
                         subpath=None, include_version=True):
     if workflow:
-        w = f"{_WORKFLOWS_ENDPOINT}/{_get_attr(workflow, 'uuid')}"
+        if isinstance(workflow, WorkflowVersion):
+            w = f"{_WORKFLOWS_ENDPOINT}/{_get_attr(workflow.workflow, 'uuid')}"
+        else:
+            w = f"{_WORKFLOWS_ENDPOINT}/{_get_attr(workflow, 'uuid')}"
         if include_version and version_as_subpath:
             w = f"{w}/versions/{_get_attr(workflow, 'version')}"
         if subpath:

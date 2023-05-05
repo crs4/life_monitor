@@ -297,11 +297,17 @@ class WorkflowRepository():
                 pass
         return self._config
 
-    def generate_config(self, ignore_existing=False) -> WorkflowFile:
+    def generate_config(self, ignore_existing=False,
+                        workflow_title: Optional[str] = None,
+                        public: bool = False, main_branch: Optional[str] = None) -> WorkflowFile:
         current_config = self.config
         if current_config and not ignore_existing:
             raise IllegalStateException("Config exists")
-        self._config = WorkflowRepositoryConfig.new(self.local_path, workflow_title=self.metadata.main_entity_name if self.metadata else None)
+        self._config = WorkflowRepositoryConfig.new(self.local_path,
+                                                    workflow_title=workflow_title if workflow_title is not None
+                                                    else self.metadata.main_entity_name if self.metadata else None,
+                                                    main_branch=main_branch if main_branch else getattr(self, "main_branch", "main"),
+                                                    public=public)
         return self._config
 
     def write_zip(self, target_path: str):

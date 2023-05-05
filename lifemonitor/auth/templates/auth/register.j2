@@ -66,16 +66,21 @@
           <p class="text-bold">- OR -</p>
           {% for p in providers %}
             {% if p.client_name != 'lsaai' %}
-            {{ macros.render_provider_signup_button(p) }}          
+            {{ macros.render_provider_signup_button(p,not is_service_available(p.oauth_config['api_base_url'])) }}          
             {% endif %}
           {% endfor %}
         </div>
         <div class="social-auth-links text-center mt-4">
           <p class="text-bold">- OR -</p>
-          <a href="/oauth2/login/lsaai" class="btn btn-block">
-            Sign up with <b>LifeScience RI</b>
-            <img src="{{ url_for('auth.static', filename='img/logo/providers/lsaai-register.png')}}" style="max-width: 100%;"/>
-          </a>
+          {% for p in providers %}
+            {% if p.client_name == 'lsaai' %}
+            <a href="/oauth2/login/lsaai" 
+              class="btn btn-block {% if not is_service_available(p.oauth_config['api_base_url']) %}disabled{% endif %}">
+              Sign up with <b>{{p.name}}</b>
+              <img src="{{ url_for('auth.static', filename='img/logo/providers/lsaai-register.png')}}" style="max-width: 100%;"/>
+            </a>
+            {% endif %}
+          {% endfor %}
         </div>
       {% endif %}
 

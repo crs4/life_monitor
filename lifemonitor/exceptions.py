@@ -130,6 +130,14 @@ class EntityNotFoundException(LifeMonitorException):
         return self.detail
 
 
+class UnavailableServiceException(LifeMonitorException):
+
+    def __init__(self, detail=None,
+                 type="about:blank", status=503, service=None, **kwargs):
+        super().__init__(title="External service not available",
+                         detail=detail, status=status, service=getattr(service, "uri", None) or str(service), **kwargs)
+
+
 class WorkflowVersionConflictException(LifeMonitorException):
 
     def __init__(self, workflow_uuid, workflow_version, detail=None, **kwargs) -> None:

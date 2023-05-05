@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 from flask import Flask
 from git import List
@@ -73,8 +73,8 @@ class Job:
 
     def save(self):
         if not self._data.get('created', None):
-            self._data['created'] = datetime.utcnow().timestamp()  # .replace(tzinfo=timezone.utc).timestamp()
-        self._data['modified'] = datetime.utcnow().timestamp()
+            self._data['created'] = datetime.now(tz=timezone.utc).timestamp()
+        self._data['modified'] = datetime.now(tz=timezone.utc).timestamp()
         set_job_data(self._job_id, self._data)
         notify_update(self._job_id, target_ids=self.listening_ids, target_rooms=self.listening_rooms)
 

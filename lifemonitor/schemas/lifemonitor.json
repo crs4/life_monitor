@@ -4,7 +4,7 @@
   "title": "LifeMonitor Configuration File",
   "type": "object",
   "properties": {
-    "workflow_name": {
+    "name": {
       "description": "worfklow name (override name defined on the RO-Crate metadata)",
       "type": "string",
       "minLength": 1

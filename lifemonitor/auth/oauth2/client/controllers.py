@@ -24,17 +24,21 @@ import logging
 
 from authlib.integrations.base_client.errors import OAuthError
 from authlib.integrations.flask_client import FlaskRemoteApp
-from flask import (Blueprint, abort, current_app, flash, redirect, request, session, url_for)
+from flask import (Blueprint, abort, current_app, flash, redirect, request,
+                   session, url_for)
 from flask_login import current_user, login_user
+
 from lifemonitor import exceptions, utils
 from lifemonitor.auth.models import User
 from lifemonitor.auth.oauth2.client.models import (
     OAuth2IdentityProvider, OAuthIdentityNotFoundException)
 from lifemonitor.db import db
-from lifemonitor.utils import NextRouteRegistry, next_route_aware
+from lifemonitor.utils import (NextRouteRegistry, is_service_alive,
+                               next_route_aware)
 
 from .models import OAuthIdentity, OAuthUserProfile
-from .services import config_oauth2_registry, oauth2_registry, save_current_user_identity
+from .services import (config_oauth2_registry, oauth2_registry,
+                       save_current_user_identity)
 from .utils import RequestHelper
 
 # Config a module level logger
@@ -94,6 +98,9 @@ def create_blueprint(merge_identity_view):
         remote = oauth2_registry.create_client(name)
         if remote is None:
             abort(404)
+        logger.debug("config: %r", remote.OAUTH_APP_CONFIG)
+        if not is_service_alive(remote.OAUTH_APP_CONFIG['api_base_url']):
+            abort(503)
         action = request.args.get('action', False)
         if action and action == 'sign-in':
             session['sign_in'] = True

@@ -24,10 +24,13 @@ import logging
 from abc import ABC, abstractmethod
 from typing import List, Tuple, Union
 
-import lifemonitor.api.models as models
-import lifemonitor.exceptions as lm_exceptions
 import requests
 from authlib.integrations.base_client import RemoteApp
+from sqlalchemy.orm.collections import attribute_mapped_collection
+from sqlalchemy.orm.exc import NoResultFound
+
+import lifemonitor.api.models as models
+import lifemonitor.exceptions as lm_exceptions
 from lifemonitor import utils as lm_utils
 from lifemonitor.api.models import db
 from lifemonitor.api.models.repositories.base import WorkflowRepository
@@ -35,9 +38,7 @@ from lifemonitor.auth import models as auth_models
 from lifemonitor.auth.models import Resource
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 from lifemonitor.auth.oauth2.client.services import oauth2_registry
-from lifemonitor.utils import ClassManager, download_url
-from sqlalchemy.orm.collections import attribute_mapped_collection
-from sqlalchemy.orm.exc import NoResultFound
+from lifemonitor.utils import ClassManager, download_url, is_service_alive
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -440,6 +441,8 @@ class WorkflowRegistry(auth_models.HostingService):
 
     @property
     def client(self) -> WorkflowRegistryClient:
+        if not is_service_alive(self.uri):
+            raise lm_exceptions.UnavailableServiceException(f"Service {self.uri} is not available", service=self)
         if self._client is None:
             rtype = self.__class__.__name__.replace("WorkflowRegistry", "").lower()
             return WorkflowRegistryClient.get_client_class(rtype)(self)

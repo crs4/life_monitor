@@ -25,7 +25,7 @@ import sys
 from urllib.parse import urlparse
 
 from lifemonitor.api.models.repositories.github import GithubWorkflowRepository
-from lifemonitor.api.models.repositories.local import LocalWorkflowRepository
+from lifemonitor.api.models.repositories.local import LocalWorkflowRepository, LocalGitRepository
 from rich.prompt import Prompt
 
 # Set module logger
@@ -42,15 +42,20 @@ def is_url(value):
 
 def get_repository(repository: str, local_path: str):
     assert repository, repository
-    if is_url(repository):
-        remote_repo_url = repository
-        if remote_repo_url.endswith('.git'):
-            return GithubWorkflowRepository.from_url(remote_repo_url, auto_cleanup=False, local_path=local_path)
-    else:
-        local_copy_path = os.path.join(local_path, os.path.basename(repository))
-        shutil.copytree(repository, local_copy_path)
-        return LocalWorkflowRepository(local_copy_path)
-    raise ValueError("Repository type not supported")
+    try:
+        if is_url(repository):
+            remote_repo_url = repository
+            if remote_repo_url.endswith('.git'):
+                return GithubWorkflowRepository.from_url(remote_repo_url, auto_cleanup=False, local_path=local_path)
+        else:
+            local_copy_path = os.path.join(local_path, os.path.basename(repository))
+            shutil.copytree(repository, local_copy_path)
+            if LocalGitRepository.is_git_repo(local_copy_path):
+                return LocalGitRepository(local_copy_path)
+            return LocalWorkflowRepository(local_copy_path)
+        raise ValueError("Repository type not supported")
+    except Exception as e:
+        raise ValueError("Error while loading the repository: %s" % e)
 
 
 def init_output_path(output_path):

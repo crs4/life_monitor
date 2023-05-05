@@ -4,6 +4,7 @@ import json
 import logging
 import time
 from typing import List
+from uuid import UUID
 
 from flask import Flask
 
@@ -27,6 +28,14 @@ def __format_timestamp__(timestamp: datetime) -> str:
     return timestamp.strftime('%a %b %d %Y %H:%M:%S ') + 'GMT' + tz_offset[:3] + ':' + tz_offset[3:]
 
 
+class _CustomEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, UUID):
+            return str(obj)
+        # Let the base class default method raise the TypeError
+        return json.JSONEncoder.default(self, obj)
+
+
 def publish_message(message, channel: str = __CHANNEL__,
                     target_ids: List[str] = None, target_rooms: List[str] = None, delay: int = 0):
     now = datetime.datetime.now(datetime.timezone.utc)
@@ -39,7 +48,7 @@ def publish_message(message, channel: str = __CHANNEL__,
         "target_rooms": target_rooms,
         # "timestamp": datetime_as_timestamp_with_msecs(now),
         "payload": message
-    }))
+    }, cls=_CustomEncoder))
 
 
 def start_reading(app: Flask, channel: str = __CHANNEL__, max_age: int = __MAX_AGE__):

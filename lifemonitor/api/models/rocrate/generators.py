@@ -37,8 +37,8 @@ def generate_crate(workflow_type: str,
                    workflow_version: str,
                    local_repo_path: str,
                    repo_url: Optional[str],
-                   license: Optional[str] = "MIT",
-                   ci_workflow: Optional[str] = "main.yml",
+                   license: Optional[str] = None,
+                   ci_workflow: Optional[str] = None,
                    lang_version: Optional[str] = None,
                    **kwargs):
     make_crate = get_crate_generator(workflow_type)

@@ -2,7 +2,7 @@
 {% if workflow_name %}name: {{ workflow_name }}
 {% else %}# name: MyWorkflow{%endif %}
 # worfklow visibility
-public: {{ public }}
+public: {{ "true" if public else "false" }}
 
 # Issue Checker Settings
 issues:
