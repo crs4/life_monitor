@@ -249,7 +249,7 @@ def is_service_alive(url: str, timeout: Optional[int] = None) -> bool:
 
 def assert_service_is_alive(url: str, timeout: Optional[int] = None):
     if not is_service_alive(url, timeout=timeout):
-        raise lm_exceptions.ServiceNotAvailableException(detail=f"Service not available: {url}", service=url)
+        raise lm_exceptions.UnavailableServiceException(detail=f"Service not available: {url}", service=url)
 
 
 def get_last_update(path: str):
