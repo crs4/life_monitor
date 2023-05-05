@@ -217,14 +217,18 @@ btn-info
 
 {%- endmacro %}
 
-{% macro render_provider_signin_button(provider) -%}
-<a href="/oauth2/login/{{provider.client_name}}?action=sign-in" class="btn btn-block {{render_provider_btn_class(provider)}}">
+{% macro render_provider_signin_button(provider, disabled) -%}
+<a href="/oauth2/login/{{provider.client_name}}?action=sign-in" 
+  {% if disabled %}data-toggle="tooltip" data-placement="right" title="Provider Unavailable"{% endif %}
+   class="btn btn-block {% if disabled %}disabled{% endif %} {{render_provider_btn_class(provider)}}">
   {{render_provider_fa_icon(provider)}} Sign in with <b>{{provider.name}}</b>
 </a>
 {%- endmacro %}
 
-{% macro render_provider_signup_button(provider) -%}
-<a href="/oauth2/login/{{provider.client_name}}" class="btn btn-block {{render_provider_btn_class(provider)}}">
+{% macro render_provider_signup_button(provider, disabled) -%}
+<a href="/oauth2/login/{{provider.client_name}}" 
+  {% if disabled %}data-toggle="tooltip" data-placement="right" title="Provider Unavailable"{% endif %}
+  class="btn btn-block {% if disabled %}disabled{% endif %} {{render_provider_btn_class(provider)}}">
   {{render_provider_fa_icon(provider)}} Sign up with <b>{{provider.name}}</b>
 </a>
 {%- endmacro %}

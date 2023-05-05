@@ -229,10 +229,14 @@ def validate_url(url: str) -> bool:
 
 
 @cached(client_scope=False)
-def is_service_alive(url: str, timeout: int = 2) -> bool:
+def is_service_alive(url: str, timeout: Optional[int] = None) -> bool:
     try:
+        try:
+            timeout = timeout or flask.current_app.config.get("SERVICE_ALIVE_TIMEOUT", 1)
+        except Exception:
+            timeout = 1
         response = requests.get(url, timeout=timeout)
-        if response.status_code == 200:
+        if response.status_code < 500:
             return True
         else:
             return False
@@ -241,6 +245,11 @@ def is_service_alive(url: str, timeout: int = 2) -> bool:
             logger.exception(e)
         logger.error(f'Error checking service availability: {e}')
         return False
+
+
+def assert_service_is_alive(url: str, timeout: Optional[int] = None):
+    if not is_service_alive(url, timeout=timeout):
+        raise lm_exceptions.ServiceNotAvailableException(detail=f"Service not available: {url}", service=url)
 
 
 def get_last_update(path: str):
@@ -265,7 +274,6 @@ def match_ref(ref: str, refs: List[str]) -> Optional[Tuple[str, str]]:
 
 def notify_updates(workflows: List, type: str = 'sync', delay: int = 0):
     from lifemonitor.ws import io
-    from datetime import timezone
     io.publish_message({
         "type": type,
         "data": [{

@@ -23,7 +23,7 @@ import logging
 from typing import Dict
 
 from flask import request
-from flask_socketio import disconnect, emit, join_room
+from flask_socketio import disconnect, emit, join_room, leave_room
 
 from lifemonitor.cache import cache
 
@@ -84,7 +84,27 @@ def handle_message(message):
         logger.debug(f"Joining SID {request.sid} to room {message['data']['user']}")
         join_room(str(message['data']['user']))
         logger.warning(f"SID {request.sid} joined to room {message['data']['user']}")
-    elif message['type'] == 'SYNC':
+        emit('message', {
+            'payload': {
+                'type': 'joined',
+                'data': {
+                    'user': str(message['data']['user'])
+                },
+            }
+        })
+    elif message['type'] == 'leave':
+        logger.debug(f"Leaving SID {request.sid} room {message['data']['user']}")
+        leave_room(str(message['data']['user']))
+        logger.warning(f"SID {request.sid} left room {message['data']['user']}")
+        emit('message', {
+            'payload': {
+                'type': 'joined',
+                'data': {
+                    'user': str(message['data']['user'])
+                },
+            }
+        })
+    elif message['type'] == 'sync':
         emit("message", build_sync_message())
 
 

@@ -29,9 +29,9 @@ import lifemonitor.utils as utils
 
 def test_download_url_404():
     with tempfile.TemporaryDirectory() as d:
-        with pytest.raises(lm_exceptions.DownloadException) as exec_info:
-            _ = utils.download_url('http://httpbin.org/status/404', os.path.join(d, 'get_404'))
-        assert exec_info.value.status == 404
+        with pytest.raises(lm_exceptions.DownloadException) as excinfo:
+            _ = utils.download_url('https://github.com/crs4/life_monitor/fake_path', os.path.join(d, 'fake_path'))
+        assert excinfo.value.status == 404
 
 
 def test_datetime_to_isoformat():

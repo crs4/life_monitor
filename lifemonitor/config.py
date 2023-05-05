@@ -126,6 +126,8 @@ class BaseConfig:
     # Enable/disable integrations
     ENABLE_GITHUB_INTEGRATION = False
     ENABLE_REGISTRY_INTEGRATION = False
+    # Service Availability Timeout
+    SERVICE_AVAILABILITY_TIMEOUT = 1
 
 
 class DevelopmentConfig(BaseConfig):
@@ -156,6 +158,8 @@ class TestingConfig(BaseConfig):
     # CACHE_TYPE = "flask_caching.backends.nullcache.NullCache"
     CACHE_TYPE = "flask_caching.backends.rediscache.RedisCache"
     DATA_WORKFLOWS = f"{BaseConfig.BASE_TEMP_FOLDER}/lm_tests_data"
+    # Service Availability Timeout
+    SERVICE_AVAILABILITY_TIMEOUT = 120
 
 
 class TestingSupportConfig(TestingConfig):
@@ -164,6 +168,8 @@ class TestingSupportConfig(TestingConfig):
     TESTING = False
     LOG_LEVEL = "DEBUG"
     DATA_WORKFLOWS = f"{BaseConfig.BASE_TEMP_FOLDER}/lm_tests_data"
+    # Service Availability Timeout
+    SERVICE_AVAILABILITY_TIMEOUT = 120
 
 
 _EXPORT_CONFIGS: List[Type[BaseConfig]] = [
