@@ -286,7 +286,7 @@ def logout():
     back_param = session.pop('lm_back_param', None)
     flash("You have logged out", category="success")
     NextRouteRegistry.clear()
-    next_route = request.args.get('next', '/')
+    next_route = request.args.get('next', '/logout' if back_param else '/')
     logger.debug("Next route after logout: %r", next_route)
     return redirect(next_route)
 
