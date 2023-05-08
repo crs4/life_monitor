@@ -162,7 +162,7 @@ def get_registry_user(user_id):
 
 @blueprint.route("/", methods=("GET",))
 def index():
-    return redirect(url_for('auth.profile', back=request.args.get('back', False)))
+    return redirect(url_for('auth.profile', back=request.args.get('back', None)))
 
 
 @blueprint.route("/profile", methods=("GET",))
@@ -177,7 +177,8 @@ def profile(form=None, passwordForm=None, currentView=None,
         logger.debug("Pushing back param to session")
     else:
         logger.debug("Getting back param from session")
-        back_param = back_param or session.get('lm_back_param', False)
+        back_param = back_param or session.get('lm_back_param', None)
+        session['lm_back_param'] = back_param
         logger.debug("detected back param: %s", back_param)
     from lifemonitor.api.models.registries.forms import RegistrySettingsForm
     from lifemonitor.integrations.github.forms import GithubSettingsForm
@@ -272,6 +273,7 @@ def login():
             session.pop('_flashes', None)
             flash("You have logged in", category="success")
             return redirect(NextRouteRegistry.pop(url_for("auth.profile")))
+    flask.session['lm_back_param'] = flask.request.args.get('back', None)
     return render_template("auth/login.j2", form=form,
                            providers=get_providers(), is_service_available=is_service_alive)
 
@@ -281,9 +283,10 @@ def login():
 def logout():
     logout_user()
     session.pop('_flashes', None)
+    back_param = session.pop('lm_back_param', None)
     flash("You have logged out", category="success")
     NextRouteRegistry.clear()
-    next_route = request.args.get('next', '/')
+    next_route = request.args.get('next', '/logout' if back_param else '/')
     logger.debug("Next route after logout: %r", next_route)
     return redirect(next_route)
 
