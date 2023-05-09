@@ -242,7 +242,7 @@ def register_identity():
         logger.debug("Current provider identity: %r", identity)
         if not identity:
             flash("Unable to register the user")
-            flask.abort(400)
+            return redirect(url_for("auth.register"))
         logger.debug("Provider identity on session: %r", identity)
         logger.debug("User Info: %r", identity.user_info)
         user = identity.user
