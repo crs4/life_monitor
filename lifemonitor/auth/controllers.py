@@ -254,7 +254,7 @@ def register_identity():
                 flash("Account created", category="success")
                 clear_cache()
                 return redirect(url_for("auth.index"))
-        return render_template("auth/register.j2", form=form, action=url_for('auth.register'),
+        return render_template("auth/register.j2", form=form, action=url_for('auth.register_identity'),
                                identity=identity, user=user, providers=get_providers())
 
 
