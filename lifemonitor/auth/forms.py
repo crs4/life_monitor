@@ -84,7 +84,8 @@ class RegisterForm(FlaskForm):
             db.session.commit()
             return user
         except IntegrityError as e:
-            logger.debug(e)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.exception(e)
             self.username.errors.append("This username is already taken")
             db.session.rollback()
             return None
