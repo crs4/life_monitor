@@ -213,7 +213,7 @@ def register():
                 login_user(user)
                 flash("Account created", category="success")
                 clear_cache()
-                return redirect(url_for("auth.index"))
+                return redirect(url_for("auth.profile"))
         return render_template("auth/register.j2", form=form,
                                action=url_for('auth.register'),
                                providers=get_providers(), is_service_available=is_service_alive)
@@ -229,7 +229,6 @@ def identity_not_found():
     form = RegisterForm()
     user = identity.user
     # workaround to force clean DB session
-    from lifemonitor.db import db
     db.session.rollback()
     return render_template("auth/identity_not_found.j2", form=form,
                            action=url_for('auth.register_identity') if flask.session.get('sign_in', False) else url_for('auth.register'),
@@ -243,7 +242,7 @@ def register_identity():
         logger.debug("Current provider identity: %r", identity)
         if not identity:
             flash("Unable to register the user")
-            flask.abort(400)
+            return redirect(url_for("auth.register"))
         logger.debug("Provider identity on session: %r", identity)
         logger.debug("User Info: %r", identity.user_info)
         user = identity.user
@@ -255,7 +254,7 @@ def register_identity():
                 flash("Account created", category="success")
                 clear_cache()
                 return redirect(url_for("auth.index"))
-        return render_template("auth/register.j2", form=form, action=url_for('auth.register'),
+        return render_template("auth/register.j2", form=form, action=url_for('auth.register_identity'),
                                identity=identity, user=user, providers=get_providers())
 
 
