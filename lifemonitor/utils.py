@@ -41,6 +41,7 @@ from datetime import datetime, timezone
 from importlib import import_module
 from os.path import basename, dirname, isfile, join
 from typing import Dict, List, Literal, Optional, Tuple, Type
+from urllib.parse import urlparse
 
 import flask
 import networkx as nx
