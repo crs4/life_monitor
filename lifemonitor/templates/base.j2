@@ -44,7 +44,10 @@
       <link rel="stylesheet" href="{{ url_for('auth.static', filename='dist/plugins/bootstrap4-duallistbox/bootstrap-duallistbox.min.css') }}">
       <!-- Theme style -->
       <link rel="stylesheet" href="{{ url_for('auth.static', filename='dist/css/lifemonitor.min.css') }}">
-      <link href="https://gitcdn.github.io/bootstrap-toggle/2.2.2/css/bootstrap-toggle.min.css" rel="stylesheet">      
+      <link href="https://gitcdn.github.io/bootstrap-toggle/2.2.2/css/bootstrap-toggle.min.css" rel="stylesheet">
+      <!-- cookieconsent dependency-->
+      <link rel="stylesheet" type="text/css" href="{{ url_for('auth.static', filename='dist/plugins/cookieconsent/cookieconsent.min.css') }}"/>
+      
   {% endblock stylesheets %}
 
 </head>
@@ -79,8 +82,10 @@
     <script src="{{ url_for('auth.static', filename='dist/plugins/dropzone/min/dropzone.min.js') }}"></script>
     <!-- LifeMonitor JS -->
     <script src="{{ url_for('auth.static', filename='src/js/lifemonitor.js') }}"></script>
-
+    <!-- Bootstrap Toggle -->
     <script src="https://gitcdn.github.io/bootstrap-toggle/2.2.2/js/bootstrap-toggle.min.js"></script>
+    <!-- cookieconsent -->
+    <script src="{{ url_for('auth.static', filename='dist/plugins/cookieconsent/cookieconsent.min.js') }}"></script>
 
     {# Enable notifications #}
     {{ macros.messages() }}
