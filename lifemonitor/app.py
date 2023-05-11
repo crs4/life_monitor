@@ -158,3 +158,5 @@ def initialize_app(app: Flask, app_context, prom_registry=None, load_jobs: bool 
     init_metrics(app, prom_registry)
     # register commands
     commands.register_commands(app)
+    # register the domain filter with Jinja
+    app.jinja_env.filters['domain'] = get_domain

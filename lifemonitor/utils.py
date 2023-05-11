@@ -612,6 +612,13 @@ def extract_zip(archive_path, target_path=None):
         raise lm_exceptions.NotValidROCrateException(detail=msg, original_error=str(e))
 
 
+def get_domain(value):
+    try:
+        return urlparse(value).netloc.split(':')[0]
+    except Exception:
+        raise ValueError("Invalid URL: %r" % value)
+
+
 def _make_git_credentials_callback(token: str = None):
     return pygit2.RemoteCallbacks(pygit2.UserPass('x-access-token', token)) if token else None
 
