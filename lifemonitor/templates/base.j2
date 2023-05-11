@@ -95,10 +95,12 @@
   {% block javascripts %} {% endblock javascripts %}
 
   <!-- cookieconsent -->
-  {% set domain = config.EXTERNAL_SERVER_URL|domain %}
-  <script>
-    initCookieConsentBanner('{{ domain }}')
-   </script>
+  {% if config.EXTERNAL_SERVER_URL %}
+    {% set domain = config.EXTERNAL_SERVER_URL|domain %}
+    <script>
+      initCookieConsentBanner('{{ domain }}')
+    </script>
+   {% endif %}
 </body>
 
 
