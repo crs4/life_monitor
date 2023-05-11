@@ -93,6 +93,12 @@
   {% endblock javascripts_libraries %}
 
   {% block javascripts %} {% endblock javascripts %}
+
+  <!-- cookieconsent -->
+  {% set domain = config.EXTERNAL_SERVER_URL|domain %}
+  <script>
+    initCookieConsentBanner('{{ domain }}')
+   </script>
 </body>
 
 
