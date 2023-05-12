@@ -10,6 +10,9 @@ mkdir -p ${target_path}
 # bootstrap
 cp -r node_modules/bootstrap/dist "${target_path}/bootstrap"
 
+# cookieconsent
+cp -r node_modules/cookieconsent/build "${target_path}/cookieconsent"
+
 # jquery
 cp -r node_modules/jquery/dist "${target_path}/jquery"
 

@@ -54,6 +54,7 @@
         "bootstrap-switch": "3.4.0",
         "bootstrap-switch-button": "1.1.0",
         "bootstrap4-duallistbox": "^4.0.2",
+        "cookieconsent": "^3.1.1",
         "icheck-bootstrap": "^3.0.1",
         "jquery": "^3.6.0",
         "jqvmap-novulnerability": "^1.5.1",
