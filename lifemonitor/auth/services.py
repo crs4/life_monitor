@@ -158,3 +158,9 @@ def check_api_key(api_key, required_scopes):
     login_user(api_key.user)
     # return the user_id
     return {'uid': api_key.user.id}
+
+
+def check_cookie(cookie, required_scopes):
+    logger.debug("Checking the cookie: %r; scopes required: %r", cookie, required_scopes)
+    logger.debug("Current user: %r", current_user)
+    return {'uid': current_user.id}
