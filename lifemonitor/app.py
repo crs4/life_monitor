@@ -102,7 +102,7 @@ def create_app(env=None, settings=None, init_app=True, init_integrations=True,
 
     @app.route("/openapi.html")
     def openapi():
-        return redirect('/static/apidocs.html')
+        return redirect('/static/specs/apidocs.html', code=302)
 
     @app.before_request
     def set_request_start_time():
