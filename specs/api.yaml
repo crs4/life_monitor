@@ -166,6 +166,7 @@ paths:
       summary: "Get registry index"
       description: "Get the index of workflows available on the registry"
       security:
+        - cookieAuth: []
         - apiKey: ["user.workflow.read"]
         - RegistryCodeFlow: ["user.workflow.read"]
         - AuthorizationCodeFlow: ["user.workflow.read"]
@@ -195,6 +196,7 @@ paths:
       summary: "Get registry index workflow"
       description: "Get information about the specified workflow of the registry index"
       security:
+        - cookieAuth: []
         - apiKey: ["user.workflow.read"]
         - RegistryCodeFlow: ["user.workflow.read"]
         - AuthorizationCodeFlow: ["user.workflow.read"]
@@ -226,6 +228,7 @@ paths:
       description: |
         Get information about the current (authenticated) user
       security:
+        - cookieAuth: []
         - apiKey: ["user.profile"]
         - RegistryCodeFlow: ["user.profile"]
         - AuthorizationCodeFlow: ["user.profile"]
@@ -254,6 +257,7 @@ paths:
       description: |
         List all notifications for the current (authenticated) user
       security:
+        - cookieAuth: []
         - apiKey: ["user.profile"]
         - RegistryCodeFlow: ["user.profile"]
         - AuthorizationCodeFlow: ["user.profile"]
@@ -281,6 +285,7 @@ paths:
       description: |
         Mark as read notifications for the current (authenticated) user
       security:
+        - cookieAuth: []
         - apiKey: ["user.profile"]
         - RegistryCodeFlow: ["user.profile"]
         - AuthorizationCodeFlow: ["user.profile"]
@@ -310,6 +315,7 @@ paths:
       description: |
         Delete notifications for the current (authenticated) user
       security:
+        - cookieAuth: []
         - apiKey: ["user.profile"]
         - RegistryCodeFlow: ["user.profile"]
         - AuthorizationCodeFlow: ["user.profile"]
@@ -344,6 +350,7 @@ paths:
       description: |
         Delete notification for the current (authenticated) user
       security:
+        - cookieAuth: []
         - apiKey: ["user.profile"]
         - RegistryCodeFlow: ["user.profile"]
         - AuthorizationCodeFlow: ["user.profile"]
@@ -519,6 +526,7 @@ paths:
         Submit (a new version of) a workflow indexed on the specified registry as the
         current (authenticated) user
       security:
+        - cookieAuth: []
         - apiKey: ["user.workflow.write"]
         - AuthorizationCodeFlow: ["user.workflow.write"]
       parameters:
@@ -615,6 +623,7 @@ paths:
       description: |
         List all workflows submitted or subscribed by the current user
       security:
+        - cookieAuth: []
         - apiKey: ["user.workflow.read"]
         - RegistryCodeFlow: ["user.workflow.read"]
         - AuthorizationCodeFlow: ["user.workflow.read"]
@@ -640,6 +649,7 @@ paths:
       description: |
         Submit (a new version of) a workflow.
       security:
+        - cookieAuth: []
         - apiKey: ["user.workflow.write"]
         - AuthorizationCodeFlow: ["user.workflow.write"]
       requestBody:
@@ -673,6 +683,7 @@ paths:
       description: |
         List all subscriptions for the current user
       security:
+        - cookieAuth: []
         - apiKey: ["user.workflow.read"]
         - RegistryCodeFlow: ["user.workflow.read"]
         - AuthorizationCodeFlow: ["user.workflow.read"]
@@ -695,6 +706,7 @@ paths:
       description: |
         List all workflows either public or registered by the current (authenticated) user or registry client.
       security:
+        - cookieAuth: []
         - apiKey: ["workflow.read"]
         - RegistryClientCredentials: ["workflow.read"]
         - RegistryCodeFlow: ["workflow.read"]
@@ -777,6 +789,7 @@ paths:
       operationId: "workflows_get_latest_version_by_id"
       tags: ["Workflows"]
       security:
+        - cookieAuth: []
         - apiKey: ["workflow.read"]
         - AuthorizationCodeFlow: ["workflow.read"]
         - RegistryClientCredentials: ["workflow.read"]
@@ -813,6 +826,7 @@ paths:
       operationId: "workflows_put"
       tags: ["Workflows"]
       security:
+        - cookieAuth: []
         - apiKey: ["workflow.read"]
         - AuthorizationCodeFlow: ["workflow.read"]
         - RegistryClientCredentials: ["workflow.read"]
@@ -844,6 +858,7 @@ paths:
       description: "Delete the specified workflow and all its versions"
       tags: ["Workflows"]
       security:
+        - cookieAuth: []
         - apiKey: ["workflow.write"]
         - RegistryClientCredentials: ["workflow.write"]
         - RegistryCodeFlow: ["workflow.write"]
@@ -870,6 +885,7 @@ paths:
       operationId: "user_workflow_subscribe"
       tags: ["Users"]
       security:
+        - cookieAuth: []
         - apiKey: ["workflow.write"]
         - AuthorizationCodeFlow: ["workflow.write"]
         - RegistryCodeFlow: ["workflow.write"]
@@ -898,6 +914,7 @@ paths:
       operationId: "user_workflow_subscribe_events"
       tags: ["Users"]
       security:
+        - cookieAuth: []
         - apiKey: ["workflow.write"]
         - AuthorizationCodeFlow: ["workflow.write"]
         - RegistryCodeFlow: ["workflow.write"]
@@ -935,6 +952,7 @@ paths:
       operationId: "user_workflow_unsubscribe"
       tags: ["Users"]
       security:
+        - cookieAuth: []
         - apiKey: ["workflow.write"]
         - AuthorizationCodeFlow: ["workflow.write"]
         - RegistryCodeFlow: ["workflow.write"]
@@ -960,6 +978,7 @@ paths:
       description: "List all versions of the specified workflow"
       tags: ["Workflows"]
       security:
+        - cookieAuth: []
         - apiKey: ["workflow.read"]
         - RegistryClientCredentials: ["workflow.read"]
         - RegistryCodeFlow: ["workflow.read"]
@@ -1017,6 +1036,7 @@ paths:
       operationId: "workflows_get_version_by_id"
       tags: ["Workflows"]
       security:
+        - cookieAuth: []
         - apiKey: ["workflow.read"]
         - AuthorizationCodeFlow: ["workflow.read"]
         - RegistryClientCredentials: ["workflow.read"]
@@ -1049,6 +1069,7 @@ paths:
       operationId: "workflows_version_put"
       tags: ["Workflows"]
       security:
+        - cookieAuth: []
         - apiKey: ["workflow.read"]
         - AuthorizationCodeFlow: ["workflow.read"]
         - RegistryClientCredentials: ["workflow.read"]
@@ -1084,6 +1105,7 @@ paths:
       description: "Delete the specified version of the specified workflow"
       tags: ["Workflows"]
       security:
+        - cookieAuth: []
         - apiKey: ["workflow.write"]
         - RegistryClientCredentials: ["workflow.write"]
         - RegistryCodeFlow: ["workflow.write"]
@@ -1111,6 +1133,7 @@ paths:
       description: "Get the test status for the specified workflow and workflow version"
       tags: ["Workflows"]
       security:
+        - cookieAuth: []
         - apiKey: ["workflow.read"]
         - RegistryClientCredentials: ["workflow.read"]
         - RegistryCodeFlow: ["workflow.read"]
@@ -1143,6 +1166,7 @@ paths:
       description: "Get the RO-Crate JSON metadata for the specified workflow and workflow version"
       tags: ["Workflows"]
       security:
+        - cookieAuth: []
         - apiKey: ["workflow.read"]
         - RegistryClientCredentials: ["workflow.read"]
         - RegistryCodeFlow: ["workflow.read"]
@@ -1173,6 +1197,7 @@ paths:
       description: "Get the RO-Crate ZIP archive for the specified workflow and workflow version"
       tags: ["Workflows"]
       security:
+        - cookieAuth: []
         - apiKey: ["workflow.read"]
         - RegistryClientCredentials: ["workflow.read"]
         - RegistryCodeFlow: ["workflow.read"]
@@ -1206,6 +1231,7 @@ paths:
       operationId: "workflows_get_suites"
       tags: ["Workflows"]
       security:
+        - cookieAuth: []
         - apiKey: ["workflow.read"]
         - RegistryClientCredentials: ["workflow.read"]
         - RegistryCodeFlow: ["workflow.read"]
@@ -1240,6 +1266,7 @@ paths:
       operationId: "suites_get_by_uuid"
       tags: ["Test Suites"]
       security:
+        - cookieAuth: []
         - apiKey: ["workflow.read"]
         - RegistryClientCredentials: ["workflow.read"]
         - RegistryCodeFlow: ["workflow.read"]
@@ -1272,6 +1299,7 @@ paths:
       operationId: "suites_put"
       tags: ["Test Suites"]
       security:
+        - cookieAuth: []
         - apiKey: ["workflow.write"]
         - AuthorizationCodeFlow: ["workflow.write"]
         - RegistryClientCredentials: ["workflow.write"]
@@ -1309,6 +1337,7 @@ paths:
       operationId: "suites_get_status"
       tags: ["Test Suites"]
       security:
+        - cookieAuth: []
         - apiKey: ["workflow.read"]
         - RegistryClientCredentials: ["workflow.read"]
         - RegistryCodeFlow: ["workflow.read"]
@@ -1336,6 +1365,7 @@ paths:
       operationId: "suites_get_instances"
       tags: ["Test Suites"]
       security:
+        - cookieAuth: []
         - apiKey: ["workflow.read"]
         - RegistryClientCredentials: ["workflow.read"]
         - RegistryCodeFlow: ["workflow.read"]
@@ -1365,6 +1395,7 @@ paths:
       operationId: "suites_post_instance"
       tags: ["Test Suites"]
       security:
+        - cookieAuth: []
         - apiKey: ["workflow.write"]
         - RegistryClientCredentials: ["workflow.write"]
         - RegistryCodeFlow: ["workflow.write"]
@@ -1419,6 +1450,7 @@ paths:
       operationId: "instances_get_by_id"
       tags: ["Test Instances"]
       security:
+        - cookieAuth: []
         - apiKey: ["workflow.read"]
         - RegistryClientCredentials: ["workflow.read"]
         - RegistryCodeFlow: ["workflow.read"]
@@ -1449,6 +1481,7 @@ paths:
       operationId: "instances_put"
       tags: ["Test Instances"]
       security:
+        - cookieAuth: []
         - apiKey: ["workflow.write"]
         - AuthorizationCodeFlow: ["workflow.write"]
         - RegistryClientCredentials: ["workflow.write"]
@@ -1485,6 +1518,7 @@ paths:
       description: "Delete the specified test instance"
       tags: ["Test Instances"]
       security:
+        - cookieAuth: []
         - apiKey: ["workflow.write"]
         - RegistryClientCredentials: ["workflow.write"]
         - RegistryCodeFlow: ["workflow.write"]
@@ -1511,6 +1545,7 @@ paths:
       operationId: "instances_get_builds"
       tags: ["Test Instances"]
       security:
+        - cookieAuth: []
         - apiKey: ["workflow.read"]
         - RegistryClientCredentials: ["workflow.read"]
         - RegistryCodeFlow: ["workflow.read"]
@@ -1543,6 +1578,7 @@ paths:
       operationId: "instances_builds_get_by_id"
       tags: ["Test Instances"]
       security:
+        - cookieAuth: []
         - apiKey: ["workflow.read"]
         - RegistryClientCredentials: ["workflow.read"]
         - RegistryCodeFlow: ["workflow.read"]
@@ -2882,6 +2918,12 @@ components:
         - status
 
   securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: lifemonitor_session  # cookie name
+      x-apikeyInfoFunc: lifemonitor.auth.services.check_cookie
+
     apiKey:
       type: apiKey
       in: header
