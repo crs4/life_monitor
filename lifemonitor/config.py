@@ -128,6 +128,8 @@ class BaseConfig:
     ENABLE_REGISTRY_INTEGRATION = False
     # Service Availability Timeout
     SERVICE_AVAILABILITY_TIMEOUT = 1
+    # Cookie Settings
+    SESSION_COOKIE_NAME = 'lifemonitor_session'
 
 
 class DevelopmentConfig(BaseConfig):
