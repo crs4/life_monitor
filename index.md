@@ -63,60 +63,6 @@ If you still don't have tests for your workflow or you haven't created an
 automated testing pipeline, see [our page on general workflow testing
 tips](./reference_general_workflow_testing_tips).
 
-## Road map
-
-Here is our planned development road map.
-
-#### End of 2020
-
-* [x] Support for receiving workflow POSTs as Workflow RO-crate
-* [x] Relatively stable interface and implementation for test outcome retrieval
-* [x] Complete first draft of the [Workflow Testing RO-crate specification](workflow_testing_ro_crate)
-* Support monitoring tests running on external testing services:
-  * [x] TravisCI
-  * [x] Jenkins
-
-#### Spring 2021
-
-* [x] Workflow Testing RO-crate template creation (integrated in
-      [ro-crate-py](https://github.com/ResearchObject/ro-crate-py))
-* [x] Alpha release on <https://lifemonitor.eu>
-
-#### End of 2021
-
-* [x] Command line client
-* [x] Web interface
-* Support monitoring tests running on external testing services:
-  * [x] Github Actions
-* [x] Workflow submission from the Web interface
-
-#### Winter 2022
-
-* [x] WorkflowHub integration
-* [x] Email notifications
-
-#### Spring 2022
-
-* [x] GitHub app
-* [x] Semi-automated workflow registration with GH app
-* [x] Automated workflow update with GH app
-
-#### Summer 2022
-
-* [x] Programmable periodic test execution
-
-#### Fall 2022
-
-* [ ] Semi-automated configuration of GitHub Actions for workflow testing
-
-#### Winter 2023
-
-* [ ] LS-AAI support
-
-#### Later
-
-* [ ] Support workflow test creation
-* [ ] Workflow maintenance plugins (e.g., Docker image linting)
 
 ## Acknowledgments
 
