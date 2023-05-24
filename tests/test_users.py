@@ -65,3 +65,23 @@ def test_user1_auth(user1, client_auth_method, user1_auth):
         assert "ApiKey" in user1_auth
     else:
         assert "Bearer" in user1_auth['Authorization']
+
+
+@pytest.mark.parametrize("client_auth_method", [
+    ClientAuthenticationMethod.NOAUTH,
+    ClientAuthenticationMethod.BASIC,
+    ClientAuthenticationMethod.API_KEY,
+    ClientAuthenticationMethod.AUTHORIZATION_CODE
+], indirect=True)
+def test_user_auto_logout(app_client, user1, client_auth_method, user1_auth):
+    logger.debug("Auth: %r, %r, %r", user1_auth, client_auth_method, ClientAuthenticationMethod.BASIC.value)
+
+    r1 = app_client.get('/users/current', headers=user1_auth)
+    if client_auth_method in [ClientAuthenticationMethod.NOAUTH, ClientAuthenticationMethod.BASIC]:
+        assert r1.status_code == 401, "Expected 401 status code"
+    else:
+        assert r1.status_code == 200, "Expected 200 status code"
+        logger.debug("Response R1: %r", r1.json)
+
+    r2 = app_client.get('/users/current')
+    assert r2.status_code == 401, "Expected 401 status code"
