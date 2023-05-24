@@ -165,9 +165,16 @@ def check_api_key(api_key, required_scopes):
 def check_cookie(cookie, required_scopes):
     logger.debug("Checking the cookie: %r; scopes required: %r", cookie, required_scopes)
     logger.debug("Current user: %r", current_user)
+
+    # if the cookie is present, return the user_id
+    if cookie:
+        return {'uid': current_user.id}
+    return None
+
+
 def auto_logout():
     '''
-    Auto logout the current authenticated user 
+    Auto logout the current authenticated user
     if the request contains an ApiKey or an Authorization header
     '''
     if request.headers.get('ApiKey', None) or request.headers.get('Authorization', None):
