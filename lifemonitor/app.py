@@ -28,7 +28,7 @@ from flask_migrate import Migrate
 
 import lifemonitor.config as config
 from lifemonitor import redis
-from lifemonitor.auth.services import current_user
+from lifemonitor.auth.services import current_user, auto_logout
 from lifemonitor.integrations import init_integrations
 from lifemonitor.metrics import init_metrics
 from lifemonitor.routes import register_routes
@@ -111,6 +111,7 @@ def create_app(env=None, settings=None, init_app=True, init_integrations=True,
     @app.after_request
     def log_response(response):
         logger = logging.getLogger("response")
+        # log the request
         processing_time = (time.time() * 1000.0 - request.start_time * 1000.0)
         logger.info(
             "resp: %s %s %s %s %s %s %s %s %0.3fms",
@@ -124,6 +125,10 @@ def create_app(env=None, settings=None, init_app=True, init_integrations=True,
             request.user_agent,
             processing_time
         )
+        # remove user from the current session when the authentication
+        # is performed via API key or OAuth2 token
+        auto_logout()
+        # return the response
         return response
 
     return app

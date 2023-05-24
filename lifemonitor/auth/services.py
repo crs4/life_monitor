@@ -25,10 +25,12 @@ from functools import wraps
 
 import flask_login
 from flask import g, request, url_for
+from werkzeug.local import LocalProxy
+
 from lifemonitor.auth.models import Anonymous, ApiKey, User
+from lifemonitor.db import db
 from lifemonitor.exceptions import LifeMonitorException
 from lifemonitor.lang import messages
-from werkzeug.local import LocalProxy
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
@@ -163,4 +165,14 @@ def check_api_key(api_key, required_scopes):
 def check_cookie(cookie, required_scopes):
     logger.debug("Checking the cookie: %r; scopes required: %r", cookie, required_scopes)
     logger.debug("Current user: %r", current_user)
-    return {'uid': current_user.id}
+def auto_logout():
+    '''
+    Auto logout the current authenticated user 
+    if the request contains an ApiKey or an Authorization header
+    '''
+    if request.headers.get('ApiKey', None) or request.headers.get('Authorization', None):
+        logger.debug("Found an API Key or an Authorization header: auto logout")
+        logger.debug("Current user: %r", current_user)
+        if not current_user.is_anonymous:
+            db.session.flush()
+            logout_user()
