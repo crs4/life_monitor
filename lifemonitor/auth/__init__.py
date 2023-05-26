@@ -22,7 +22,7 @@ import logging
 
 import lifemonitor.auth.oauth2 as oauth2
 
-from .controllers import blueprint as auth_blueprint
+from .controllers import blueprint as auth_blueprint, CustomSessionInterface
 from .models import EventType, Notification, User, UserNotification
 from .services import (NotAuthorizedException, authorized, current_registry,
                        current_user, login_manager, login_registry, login_user,
@@ -37,6 +37,7 @@ def register_api(app, specs_dir):
     oauth2.client.register_api(app, specs_dir, "auth.merge")
     oauth2.server.register_api(app, specs_dir)
     app.register_blueprint(auth_blueprint)
+    app.session_interface = CustomSessionInterface()
     login_manager.init_app(app)
 
 

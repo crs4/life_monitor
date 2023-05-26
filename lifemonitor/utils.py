@@ -41,6 +41,7 @@ from datetime import datetime, timezone
 from importlib import import_module
 from os.path import basename, dirname, isfile, join
 from typing import Dict, List, Literal, Optional, Tuple, Type
+from urllib.parse import urlparse
 
 import flask
 import networkx as nx
@@ -610,6 +611,13 @@ def extract_zip(archive_path, target_path=None):
         msg = "Downloaded RO-crate has bad zip format"
         logger.error(msg + ": %s", e)
         raise lm_exceptions.NotValidROCrateException(detail=msg, original_error=str(e))
+
+
+def get_domain(value):
+    try:
+        return urlparse(value).netloc.split(':')[0]
+    except Exception:
+        raise ValueError("Invalid URL: %r" % value)
 
 
 def _make_git_credentials_callback(token: str = None):

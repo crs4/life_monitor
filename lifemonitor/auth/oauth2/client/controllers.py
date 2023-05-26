@@ -135,7 +135,7 @@ def create_blueprint(merge_identity_view):
         # Determine the right next hop
         next_url = NextRouteRegistry.pop()
         return redirect(next_url, code=307) if next_url \
-            else RequestHelper.response() or redirect('/', code=302)
+            else RequestHelper.response() or redirect('/account', code=302)
     return blueprint
 
 
@@ -261,7 +261,7 @@ class AuthorizatonHandler:
             next_url = NextRouteRegistry.pop()
             flash(f"Logged with your <b>\"{identity.provider.name}\"</b> identity.", category="success")
             return redirect(next_url, code=307) if next_url \
-                else RequestHelper.response() or redirect('/', code=302)
+                else RequestHelper.response() or redirect('/account', code=302)
 
     @staticmethod
     def validate_identity_token(identity: OAuthIdentity):

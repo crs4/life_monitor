@@ -24,6 +24,7 @@ import connexion
 import flask
 from flask import (current_app, flash, redirect, render_template, request,
                    session, url_for)
+from flask.sessions import SecureCookieSessionInterface
 from flask_login import login_required, login_user, logout_user
 
 from lifemonitor.cache import Timeout, cached, clear_cache
@@ -162,7 +163,7 @@ def get_registry_user(user_id):
 
 @blueprint.route("/", methods=("GET",))
 def index():
-    return redirect(url_for('auth.profile', back=request.args.get('back', False)))
+    return redirect(url_for('auth.profile', back=request.args.get('back', None)))
 
 
 @blueprint.route("/profile", methods=("GET",))
@@ -177,7 +178,8 @@ def profile(form=None, passwordForm=None, currentView=None,
         logger.debug("Pushing back param to session")
     else:
         logger.debug("Getting back param from session")
-        back_param = back_param or session.get('lm_back_param', False)
+        back_param = back_param or session.get('lm_back_param', None)
+        session['lm_back_param'] = back_param
         logger.debug("detected back param: %s", back_param)
     from lifemonitor.api.models.registries.forms import RegistrySettingsForm
     from lifemonitor.integrations.github.forms import GithubSettingsForm
@@ -212,7 +214,7 @@ def register():
                 login_user(user)
                 flash("Account created", category="success")
                 clear_cache()
-                return redirect(url_for("auth.index"))
+                return redirect(url_for("auth.profile"))
         return render_template("auth/register.j2", form=form,
                                action=url_for('auth.register'),
                                providers=get_providers(), is_service_available=is_service_alive)
@@ -228,7 +230,6 @@ def identity_not_found():
     form = RegisterForm()
     user = identity.user
     # workaround to force clean DB session
-    from lifemonitor.db import db
     db.session.rollback()
     return render_template("auth/identity_not_found.j2", form=form,
                            action=url_for('auth.register_identity') if flask.session.get('sign_in', False) else url_for('auth.register'),
@@ -242,7 +243,7 @@ def register_identity():
         logger.debug("Current provider identity: %r", identity)
         if not identity:
             flash("Unable to register the user")
-            flask.abort(400)
+            return redirect(url_for("auth.register"))
         logger.debug("Provider identity on session: %r", identity)
         logger.debug("User Info: %r", identity.user_info)
         user = identity.user
@@ -254,7 +255,7 @@ def register_identity():
                 flash("Account created", category="success")
                 clear_cache()
                 return redirect(url_for("auth.index"))
-        return render_template("auth/register.j2", form=form, action=url_for('auth.register'),
+        return render_template("auth/register.j2", form=form, action=url_for('auth.register_identity'),
                                identity=identity, user=user, providers=get_providers())
 
 
@@ -272,6 +273,7 @@ def login():
             session.pop('_flashes', None)
             flash("You have logged in", category="success")
             return redirect(NextRouteRegistry.pop(url_for("auth.profile")))
+    flask.session['lm_back_param'] = flask.request.args.get('back', None)
     return render_template("auth/login.j2", form=form,
                            providers=get_providers(), is_service_available=is_service_alive)
 
@@ -281,9 +283,10 @@ def login():
 def logout():
     logout_user()
     session.pop('_flashes', None)
+    back_param = session.pop('lm_back_param', None)
     flash("You have logged out", category="success")
     NextRouteRegistry.clear()
-    next_route = request.args.get('next', '/')
+    next_route = request.args.get('next', '/logout' if back_param else '/')
     logger.debug("Next route after logout: %r", next_route)
     return redirect(next_route)
 
@@ -606,3 +609,16 @@ def delete_generic_code_flow_client():
         flash("App removed!", category="success")
         clear_cache()
     return redirect(url_for('auth.profile', currentView='oauth2ClientsTab'))
+
+
+class CustomSessionInterface(SecureCookieSessionInterface):
+    """Prevent creating session from API requests."""
+
+    def save_session(self, *args, **kwargs):
+
+        if flask.g.get('login_via_request'):
+            logger.debug("Prevent creating session from API requests")
+            return
+        # if login_via_request is not set, then create a new session
+        logger.debug("Saving session")
+        return super(CustomSessionInterface, self).save_session(*args, **kwargs)

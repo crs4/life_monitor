@@ -24,11 +24,12 @@ import secrets
 from functools import wraps
 
 import flask_login
-from flask import g, request, url_for
+from flask import current_app, g, request, url_for
+from werkzeug.local import LocalProxy
+
 from lifemonitor.auth.models import Anonymous, ApiKey, User
 from lifemonitor.exceptions import LifeMonitorException
 from lifemonitor.lang import messages
-from werkzeug.local import LocalProxy
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
@@ -66,8 +67,24 @@ def load_user_from_header(_req):
     return None
 
 
-def login_user(user):
-    flask_login.login_user(user)
+@flask_login.user_loaded_from_request.connect
+def user_loaded_from_request(app, user=None):
+    logger.debug("User loaded from request: %s", user)
+    g.login_via_request = True
+
+
+def login_user(user, remember=False, duration=None, force=False, fresh=True):
+    logger.debug("User logged in: %s", user)
+    logger.debug("g.get('login_via_request'): %r", g.get('login_via_request'))
+
+    # signal if API key is provided or Token is in the request header
+    if request.headers.get('ApiKey', None) or request.headers.get('Authorization', None):
+        flask_login.user_loaded_from_request.send(current_app._get_current_object(), user=user)
+        logger.debug("g.get('login_via_request'): %r", g.get('login_via_request'))
+    else:
+        logger.debug("Not logged in via request")
+
+    flask_login.login_user(user, remember=remember, duration=duration, force=force, fresh=fresh)
 
 
 def logout_user():
@@ -158,3 +175,23 @@ def check_api_key(api_key, required_scopes):
     login_user(api_key.user)
     # return the user_id
     return {'uid': api_key.user.id}
+
+
+def check_cookie(cookie, required_scopes):
+    logger.debug("Checking the cookie: %r; scopes required: %r", cookie, required_scopes)
+    logger.debug("Current user: %r", current_user)
+
+    # check is an ApiKey is present in the request
+    if request.headers.get('ApiKey', None):
+        return check_api_key(request.headers.get('ApiKey', None), required_scopes)
+
+    # check is an Authorization header is present in the request
+    if request.headers.get('Authorization', None):
+        from lifemonitor.auth.oauth2.server.services import get_token_scopes
+        auth_header = request.headers.get('Authorization', None)
+        if auth_header.startswith('Bearer '):
+            token = auth_header.replace('Bearer ', '')
+            return get_token_scopes(token)
+
+    # if the cookie is present, return the user_id
+    return {'uid': current_user.id}

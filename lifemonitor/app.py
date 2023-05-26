@@ -25,14 +25,15 @@ import time
 from flask import Flask, jsonify, redirect, render_template, request, url_for
 from flask_cors import CORS
 from flask_migrate import Migrate
-from lifemonitor import redis
 
 import lifemonitor.config as config
+from lifemonitor import redis
 from lifemonitor.auth.services import current_user
 from lifemonitor.integrations import init_integrations
 from lifemonitor.metrics import init_metrics
 from lifemonitor.routes import register_routes
 from lifemonitor.tasks import init_task_queues
+from lifemonitor.utils import get_domain
 
 from . import commands
 from .cache import init_cache
@@ -101,7 +102,7 @@ def create_app(env=None, settings=None, init_app=True, init_integrations=True,
 
     @app.route("/openapi.html")
     def openapi():
-        return redirect('/static/apidocs.html')
+        return redirect('/static/specs/apidocs.html', code=302)
 
     @app.before_request
     def set_request_start_time():
@@ -110,6 +111,14 @@ def create_app(env=None, settings=None, init_app=True, init_integrations=True,
     @app.after_request
     def log_response(response):
         logger = logging.getLogger("response")
+        # logger.debug("Current user: %s", current_user)
+        # logger.debug("request: %s %s %s %s %s %s",
+        #              request.remote_addr, request.method, request.path,
+        #              request.scheme, request.full_path, request.referrer,
+        #              )
+        # for h in request.headers:
+        #     logger.debug("header: %s %s", h, request.headers.get(h, None))
+        # log the request
         processing_time = (time.time() * 1000.0 - request.start_time * 1000.0)
         logger.info(
             "resp: %s %s %s %s %s %s %s %s %0.3fms",
@@ -123,6 +132,7 @@ def create_app(env=None, settings=None, init_app=True, init_integrations=True,
             request.user_agent,
             processing_time
         )
+        # return the response
         return response
 
     return app
@@ -158,3 +168,5 @@ def initialize_app(app: Flask, app_context, prom_registry=None, load_jobs: bool 
     init_metrics(app, prom_registry)
     # register commands
     commands.register_commands(app)
+    # register the domain filter with Jinja
+    app.jinja_env.filters['domain'] = get_domain
