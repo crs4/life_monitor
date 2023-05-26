@@ -24,6 +24,7 @@ import connexion
 import flask
 from flask import (current_app, flash, redirect, render_template, request,
                    session, url_for)
+from flask.sessions import SecureCookieSessionInterface
 from flask_login import login_required, login_user, logout_user
 
 from lifemonitor.cache import Timeout, cached, clear_cache
@@ -608,3 +609,16 @@ def delete_generic_code_flow_client():
         flash("App removed!", category="success")
         clear_cache()
     return redirect(url_for('auth.profile', currentView='oauth2ClientsTab'))
+
+
+class CustomSessionInterface(SecureCookieSessionInterface):
+    """Prevent creating session from API requests."""
+
+    def save_session(self, *args, **kwargs):
+
+        if flask.g.get('login_via_request'):
+            logger.debug("Prevent creating session from API requests")
+            return
+        # if login_via_request is not set, then create a new session
+        logger.debug("Saving session")
+        return super(CustomSessionInterface, self).save_session(*args, **kwargs)

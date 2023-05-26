@@ -102,7 +102,7 @@ def create_app(env=None, settings=None, init_app=True, init_integrations=True,
 
     @app.route("/openapi.html")
     def openapi():
-        return redirect('/static/apidocs.html')
+        return redirect('/static/specs/apidocs.html', code=302)
 
     @app.before_request
     def set_request_start_time():
@@ -111,6 +111,14 @@ def create_app(env=None, settings=None, init_app=True, init_integrations=True,
     @app.after_request
     def log_response(response):
         logger = logging.getLogger("response")
+        # logger.debug("Current user: %s", current_user)
+        # logger.debug("request: %s %s %s %s %s %s",
+        #              request.remote_addr, request.method, request.path,
+        #              request.scheme, request.full_path, request.referrer,
+        #              )
+        # for h in request.headers:
+        #     logger.debug("header: %s %s", h, request.headers.get(h, None))
+        # log the request
         processing_time = (time.time() * 1000.0 - request.start_time * 1000.0)
         logger.info(
             "resp: %s %s %s %s %s %s %s %s %0.3fms",
@@ -124,6 +132,7 @@ def create_app(env=None, settings=None, init_app=True, init_integrations=True,
             request.user_agent,
             processing_time
         )
+        # return the response
         return response
 
     return app
