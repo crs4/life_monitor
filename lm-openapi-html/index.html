@@ -189,12 +189,13 @@ that they might be solved, thus extending the useful life of the workflow.</p>
 </div>
     <div class="app-desc">More information: <a href="https://openapi-generator.tech">https://openapi-generator.tech</a></div>
     <div class="app-desc">Contact Info: <a href="team@openapitools.org">team@openapitools.org</a></div>
-    <div class="app-desc">Version: 0.10.0</div>
+    <div class="app-desc">Version: 0.11.0</div>
     <div class="app-desc">BasePath:</div>
     <div class="license-info">All rights reserved</div>
     <div class="license-url">http://apache.org/licenses/LICENSE-2.0.html</div>
   <h2>Access</h2>
     <ol>
+      <li>APIKey KeyParamName:lifemonitor_session KeyInQuery:false KeyInHeader:false</li>
       <li>APIKey KeyParamName:ApiKey KeyInQuery:false KeyInHeader:true</li>
       <li>OAuth AuthorizationUrl:TokenUrl:oauth2/token</li>
       <li>OAuth AuthorizationUrl:oauth2/authorizeTokenUrl:oauth2/token</li>
@@ -3368,7 +3369,6 @@ RO-Crate specifcation is available at https://www.researchobject.org/ro-crate/.
     <li><a href="#user_workflows_post_request"><code>user_workflows_post_request</code> - </a></li>
     <li><a href="#validate_200_response"><code>validate_200_response</code> - </a></li>
     <li><a href="#validate_200_response_oneOf"><code>validate_200_response_oneOf</code> - </a></li>
-    <li><a href="#validate_200_response_oneOf_1"><code>validate_200_response_oneOf_1</code> - </a></li>
     <li><a href="#workflows_get_versions_by_id_200_response"><code>workflows_get_versions_by_id_200_response</code> - </a></li>
     <li><a href="#workflows_get_versions_by_id_200_response_allOf"><code>workflows_get_versions_by_id_200_response_allOf</code> - </a></li>
     <li><a href="#workflows_version_put_request"><code>workflows_version_put_request</code> - </a></li>
@@ -4189,20 +4189,12 @@ accessible to the user for download
     <div class="field-items">
       <div class="param">valid </div><div class="param-desc"><span class="param-type"><a href="#boolean">Boolean</a></span> <code>true</code> if the config file is valid;
 <code>false</code> if the file is not valid </div>
-<div class="param">data </div><div class="param-desc"><span class="param-type"><a href="#">Object</a></span> Validated configuration, complete with default values. </div>
 <div class="param">message </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A short error message </div>
 <div class="param">error </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Detailed error description </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
     <h3><a name="validate_200_response_oneOf"><code>validate_200_response_oneOf</code> - </a> <a class="up" href="#__Models">Up</a></h3>
-    <div class='model-description'></div>
-    <div class="field-items">
-      <div class="param">data </div><div class="param-desc"><span class="param-type"><a href="#">Object</a></span> Validated configuration, complete with default values. </div>
-    </div>  <!-- field-items -->
-  </div>
-  <div class="model">
-    <h3><a name="validate_200_response_oneOf_1"><code>validate_200_response_oneOf_1</code> - </a> <a class="up" href="#__Models">Up</a></h3>
     <div class='model-description'></div>
     <div class="field-items">
       <div class="param">message </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A short error message </div>
