@@ -20,8 +20,10 @@
 
 import logging
 import pytest
+import requests
 from flask import g
 
+from lifemonitor.utils import get_base_url
 from .conftest import ClientAuthenticationMethod
 from .utils import assert_properties_exist
 
@@ -73,15 +75,22 @@ def test_user1_auth(user1, client_auth_method, user1_auth):
     ClientAuthenticationMethod.API_KEY,
     ClientAuthenticationMethod.AUTHORIZATION_CODE
 ], indirect=True)
-def test_user_auto_logout(app_client, user1, client_auth_method, user1_auth):
+def test_user_auto_logout(user1, client_auth_method, user1_auth):
     logger.debug("Auth: %r, %r, %r", user1_auth, client_auth_method, ClientAuthenticationMethod.BASIC.value)
 
-    r1 = app_client.get('/users/current', headers=user1_auth)
+    app_client = requests.session()
+    app_client_url = f'{get_base_url()}/users/current'
+    logger.debug("client URL: %r", app_client_url)
+
+    r1 = app_client.get(app_client_url, headers=user1_auth)
+    logger.debug("headers: %r", r1.headers)
+    logger.debug("response: %r", r1.content)
     if client_auth_method in [ClientAuthenticationMethod.NOAUTH, ClientAuthenticationMethod.BASIC]:
         assert r1.status_code == 401, "Expected 401 status code"
     else:
         assert r1.status_code == 200, "Expected 200 status code"
         logger.debug("Response R1: %r", r1.json)
 
-    r2 = app_client.get('/users/current')
+    r2 = app_client.get(app_client_url)
+    logger.debug("headers: %r", r2.headers)
     assert r2.status_code == 401, "Expected 401 status code"
