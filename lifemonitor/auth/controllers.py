@@ -214,7 +214,7 @@ def register():
                 login_user(user)
                 flash("Account created", category="success")
                 clear_cache()
-                return redirect(url_for("auth.profile"))
+                return redirect(NextRouteRegistry.pop(url_for("auth.profile")))
         return render_template("auth/register.j2", form=form,
                                action=url_for('auth.register'),
                                providers=get_providers(), is_service_available=is_service_alive)
@@ -254,7 +254,7 @@ def register_identity():
                 login_user(user)
                 flash("Account created", category="success")
                 clear_cache()
-                return redirect(url_for("auth.index"))
+                return redirect(NextRouteRegistry.pop(url_for("auth.profile")))
         return render_template("auth/register.j2", form=form, action=url_for('auth.register_identity'),
                                identity=identity, user=user, providers=get_providers())
 
