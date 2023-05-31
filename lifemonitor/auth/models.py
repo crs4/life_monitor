@@ -320,6 +320,8 @@ class ApiKey(db.Model, ModelMixin):
                 self.scope = "{} {}".format(self.scope, s)
 
     def check_scopes(self, scopes: list or str):
+        if not scopes:
+            raise ValueError("Scopes cannot be None")
         if isinstance(scopes, str):
             scopes = scopes.split(" ")
         supported_scopes = self.scope.split(" ")
