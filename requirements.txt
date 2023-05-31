@@ -1,7 +1,7 @@
 Authlib~=0.15.4
 apscheduler==3.10.1
 connexion[swagger-ui]~=2.14.2
-dramatiq[redis,watch]==1.14.1
+dramatiq[redis,watch]==1.14.2
 email-validator~=1.1.3
 boto3~=1.24.80
 Bcrypt-Flask==1.0.2
