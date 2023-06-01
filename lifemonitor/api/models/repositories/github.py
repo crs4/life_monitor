@@ -59,8 +59,11 @@ logger = logging.getLogger(__name__)
 class GitRepositoryFile(RepositoryFile):
 
     def __init__(self, content: ContentFile, type: Optional[str] = None, dir: str = '.') -> None:
-        super().__init__(None, content.name, type or content.type, dir, None)
-        self._content = content
+        super().__init__(repository_path=None,
+                         name=content.name,
+                         type=(type or content.type),
+                         dir=dir,
+                         content=content)
 
     def __repr__(self) -> str:
         return f"{super().__repr__()} (sha: {self.sha})"
