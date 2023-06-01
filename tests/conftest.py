@@ -137,7 +137,7 @@ def _get_app_settings(include_env=True, extra=None):
     pattern = re.compile("((\\w+)_API_KEY(_\\w+)?)")
     for k, v in settings.copy().items():
         m = pattern.match(k)
-        logger.debug(m)
+        # logger.debug(m)
         if m:
             settings.pop(k)
             api_keys[k] = v

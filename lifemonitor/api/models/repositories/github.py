@@ -186,6 +186,8 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
                 files.append(GitRepositoryFile(e, dir=path))
             elif e.type == 'dir':
                 files.extend(self.__get_files__(e.path, ref=ref))
+            else:
+                logger.warning("Unhandled type %r for repository path %r", e.type, e)
         return files
 
     def checkout_ref(self, ref: str, token: Optional[str] = None, branch_name: Optional[str] = None) -> str:
@@ -285,7 +287,8 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
 
     def find_remote_workflow(self, ref: Optional[str] = None, path: str = '.') -> Optional[WorkflowFile]:
         for e in self.get_contents(path, ref=ref or self.ref):
-            logger.debug("Checking: %r (type: %s)", e.name, e.type)
+            logger.debug("Checking: path=%r; name=%r; ref=%r (type: %s)",
+                         path, e.name, ref or self.ref, e.type)
             if e.type == 'dir':
                 wf = self.find_remote_workflow(ref=ref, path=f"{path}/{e.name}")
             else:
