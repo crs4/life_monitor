@@ -30,13 +30,24 @@ logger = logging.getLogger(__name__)
 
 
 class RepositoryFile():
+    """
+    A file within a source code repository.  The file may or may not exist
+    locally.
 
-    def __init__(self, repository_path: str, name: str,
+    Attributes:
+        repository_path: Path of the local copy of the repository containing
+            this file. May be None if a local copy of the repository does not exist.
+        name: filename
+        dir: path to file within the repository (excluding name)
+        _type: extension of filename or type name specified via constructor.
+        _content: cached contents of the file, or content provided via constructor.
+    """
+
+    def __init__(self, repository_path: Optional[str], name: str,
                  type: Optional[str] = None, dir: str = ".", content=None) -> None:
-        if not repository_path:
-            raise ValueError("RepositoryPath constructed with empty repository_path")
         if not name:
-            raise ValueError("RepositoryPath constructed with empty file name")
+            raise ValueError("RepositoryFile constructed with empty file name")
+
         self.repository_path = repository_path
         self.name = name
         self.dir = dir
