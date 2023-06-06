@@ -294,7 +294,9 @@ stop-dev: compose-files ## Stop all services in the Develop Environment
 	USER_UID=$$(id -u) USER_GID=$$(id -g) \
 	$(docker_compose) -f docker-compose.base.yml \
 				   -f docker-compose.dev.yml \
-				   stop init lm db github_event_proxy dev_proxy redis worker ws_server prometheus ; \
+				   -f docker-compose.prod.yml \
+				   -f docker-compose.monitoring.yml \
+				   stop init lm db github_event_proxy dev_proxy nginx redis worker ws_server prometheus ; \
 	printf "$(done)\n"
 
 stop: compose-files ## Stop all the services in the Production Environment
