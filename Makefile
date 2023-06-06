@@ -193,9 +193,10 @@ start-dev: images compose-files dev reset_compose ## Start LifeMonitor in a Deve
 	               -f docker-compose.base.yml \
 				   -f docker-compose.monitoring.yml \
 				   -f docker-compose.dev.yml \
+				   -f docker-compose.prod.yml \
 				   config)" > docker-compose.yml \
 	&& cp {,.dev.}docker-compose.yml \
-	&& $(docker_compose) -f docker-compose.yml up -d redis db dev_proxy github_event_proxy init lm worker ws_server prometheus ;\
+	&& $(docker_compose) -f docker-compose.yml up -d redis db dev_proxy github_event_proxy init lm worker ws_server prometheus nginx ;\
 	printf "$(done)\n"
 
 start-testing: compose-files aux_images ro_crates images reset_compose ## Start LifeMonitor in a Testing environment
