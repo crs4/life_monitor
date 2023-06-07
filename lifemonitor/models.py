@@ -85,6 +85,10 @@ class UUID(types.TypeDecorator):
 
     """
     impl = types.CHAR
+    cache_ok = True
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
 
     def load_dialect_impl(self, dialect):
         if dialect.name == 'postgresql':
