@@ -23,6 +23,15 @@ from __future__ import annotations
 import logging
 from typing import List, Optional, Set, Union
 
+from sqlalchemy.ext.associationproxy import association_proxy
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm import aliased
+from sqlalchemy.orm.collections import (MappedCollection,
+                                        attribute_mapped_collection,
+                                        collection)
+from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.sql.expression import true
+
 import lifemonitor.api.models as models
 import lifemonitor.exceptions as lm_exceptions
 from lifemonitor import utils as lm_utils
@@ -33,13 +42,6 @@ from lifemonitor.auth.models import (HostingService, Permission, Resource,
                                      Subscription, User)
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 from lifemonitor.storage import RemoteStorage
-from sqlalchemy.ext.associationproxy import association_proxy
-from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm.collections import (MappedCollection,
-                                        attribute_mapped_collection,
-                                        collection)
-from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.sql.expression import true
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -375,11 +377,12 @@ class WorkflowVersion(ROCrate):
     @classmethod
     def get_public_workflow_version(cls, uuid, version) -> WorkflowVersion:
         try:
+            workflow_alias = aliased(Workflow, flat=True)
             return cls.query\
-                .join(Workflow, Workflow.id == cls.workflow_id)\
-                .filter(Workflow.uuid == lm_utils.uuid_param(uuid))\
-                .filter(Workflow.public == true())\
-                .filter(cls.version == version).one()  # noqa: E712
+                .join(workflow_alias, workflow_alias.id == cls.workflow_id)\
+                .filter(workflow_alias.uuid == lm_utils.uuid_param(uuid))\
+                .filter(workflow_alias.public == true())\
+                .filter(version == version).one()  # noqa: E712
         except NoResultFound as e:
             logger.debug(e)
             return None
@@ -389,11 +392,13 @@ class WorkflowVersion(ROCrate):
     @classmethod
     def get_user_workflow_version(cls, owner: User, uuid, version) -> WorkflowVersion:
         try:
+            workflow_alias = aliased(Workflow, flat=True)
+            permission_alias = aliased(Permission, flat=True)
             return cls.query\
-                .join(Workflow, Workflow.id == cls.workflow_id)\
-                .join(Permission, Permission.resource_id == cls.id)\
-                .filter(Workflow.uuid == lm_utils.uuid_param(uuid))\
-                .filter(Permission.user_id == owner.id)\
+                .join(workflow_alias, workflow_alias.id == cls.workflow_id)\
+                .join(permission_alias, permission_alias.resource_id == cls.id)\
+                .filter(workflow_alias.uuid == lm_utils.uuid_param(uuid))\
+                .filter(permission_alias.user_id == owner.id)\
                 .filter(cls.version == version).one()
         except NoResultFound as e:
             logger.debug(e)
