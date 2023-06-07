@@ -243,11 +243,11 @@ class ROCrate(Resource):
         return self.__get_attribute_from_crate_reader__('get_get_roc_suite', roc_suite_identifier, ignore_errors=ignore_errors)
 
     @property
-    def based_on(self):
+    def based_on(self) -> Optional[str]:
         return self.__get_attribute_from_crate_reader__('isBasedOn', attributedType='property')
 
     @property
-    def based_on_link(self):
+    def based_on_link(self) -> Optional[str]:
         return self.__get_attribute_from_crate_reader__('isBasedOn', attributedType='property')
 
     @property
