@@ -46,7 +46,7 @@ networkx~=2.8.2
 rich~=12.4.1
 rocrate==0.7.0
 SQLAlchemy~=1.4.48
-wheel~=0.37.1
+wheel~=0.40.0
 Werkzeug~=2.2.3
 repo2rocrate~=0.1.2
 urllib3==1.26.11
