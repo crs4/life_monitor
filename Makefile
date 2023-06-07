@@ -17,11 +17,13 @@ define get_opts
 	$(shell opts=""; values=($(2)); for (( i=0; i<$${#values[@]}; i++)); do opts="$$opts --$(1) '$${values[$$i]}'"; done; echo "$$opts")
 endef
 
-# set docker-compose command
+# set docker-compose command and log level options
+log_level_opt :=
 ifeq ($(shell command -v "docker-compose" 2> /dev/null),)
 	docker_compose := docker compose
 else
 	docker_compose := docker-compose
+	log_level_opt := --log-level ERROR
 endif
 
 # default Docker build options
@@ -262,7 +264,7 @@ tests: start-testing ## CI utility to setup, run tests and teardown a testing en
 
 stop-aux-services: docker-compose.extra.yml ## Stop all auxiliary services (i.e., Jenkins, Seek)
 	@echo "$(bold)Teardown auxiliary services...$(reset)" ; \
-	$(docker_compose) -f docker-compose.extra.yml --log-level ERROR stop ; \
+	$(docker_compose) -f docker-compose.extra.yml $(log_level_opt) stop ; \
 	printf "$(done)\n"
 
 # stop-jupyter: docker-compose.jupyter.yml ## Stop jupyter service
@@ -282,7 +284,7 @@ stop-testing: compose-files ## Stop all the services in the Testing Environment
 				   -f docker-compose.base.yml \
 				   -f docker-compose.dev.yml \
 				   -f docker-compose.test.yml \
-				   --log-level ERROR stop db lmtests seek jenkins webserver worker ws_server ; \
+				   $(log_level_opt) stop db lmtests seek jenkins webserver worker ws_server ; \
 	printf "$(done)\n"
 
 stop-dev: compose-files ## Stop all services in the Develop Environment
@@ -299,7 +301,7 @@ stop: compose-files ## Stop all the services in the Production Environment
 	USER_UID=$$(id -u) USER_GID=$$(id -g) \
 	$(docker_compose) -f docker-compose.base.yml \
 				   -f docker-compose.monitoring.yml \
-				   --log-level ERROR stop init nginx lm db prometheus redis worker ws_server ; \
+				   $(log_level_opt) stop init nginx lm db prometheus redis worker ws_server ; \
 	printf "$(done)\n"
 
 stop-all: ## Stop all the services
