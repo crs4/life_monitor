@@ -90,7 +90,6 @@ all: images
 images: lifemonitor smeeio
 
 compose-files: docker-compose.base.yml \
-	docker-compose.prod.yml \
 	docker-compose.dev.yml \
 	docker-compose.extra.yml \
 	docker-compose.test.yml \
@@ -177,7 +176,6 @@ start: images compose-files prod reset_compose ## Start LifeMonitor in a Product
 	base=$$(if [[ -f "docker-compose.yml" ]]; then echo "-f docker-compose.yml"; fi) ; \
 	echo "$$(USER_UID=$$(id -u) USER_GID=$$(id -g) \
 			 $(docker_compose) $${base} \
-	               -f docker-compose.prod.yml \
 				   -f docker-compose.base.yml \
 				   -f docker-compose.monitoring.yml \
 				   config)" > docker-compose.yml \
@@ -193,7 +191,6 @@ start-dev: images compose-files dev reset_compose ## Start LifeMonitor in a Deve
 	               -f docker-compose.base.yml \
 				   -f docker-compose.monitoring.yml \
 				   -f docker-compose.dev.yml \
-				   -f docker-compose.prod.yml \
 				   config)" > docker-compose.yml \
 	&& cp {,.dev.}docker-compose.yml \
 	&& $(docker_compose) -f docker-compose.yml up -d redis db dev_proxy github_event_proxy init lm worker ws_server prometheus nginx ;\
@@ -216,12 +213,11 @@ start-testing: compose-files aux_images ro_crates images reset_compose ## Start 
 		exec -T lmtests /bin/bash -c "tests/wait-for-it.sh seek:3000 -t 600"; \
 	printf "$(done)\n"
 
-start-nginx: certs docker-compose.prod.yml ## Start a nginx front-end proxy for the LifeMonitor back-end
+start-nginx: certs docker-compose.base.yml ## Start a nginx front-end proxy for the LifeMonitor back-end
 	@printf "\n$(bold)Starting nginx proxy...$(reset)\n" ; \
 	base=$$(if [[ -f "docker-compose.yml" ]]; then echo "-f docker-compose.yml"; fi) ; \
 	echo "$$(USER_UID=$$(id -u) USER_GID=$$(id -g) \
 			 $(docker_compose) $${base} \
-					-f docker-compose.prod.yml \
 				    -f docker-compose.base.yml config)" > docker-compose.yml \
 		  && $(docker_compose) up -d nginx ; \
 	printf "$(done)\n"
@@ -294,7 +290,6 @@ stop-dev: compose-files ## Stop all services in the Develop Environment
 	USER_UID=$$(id -u) USER_GID=$$(id -g) \
 	$(docker_compose) -f docker-compose.base.yml \
 				   -f docker-compose.dev.yml \
-				   -f docker-compose.prod.yml \
 				   -f docker-compose.monitoring.yml \
 				   stop init lm db github_event_proxy dev_proxy nginx redis worker ws_server prometheus ; \
 	printf "$(done)\n"
@@ -303,7 +298,6 @@ stop: compose-files ## Stop all the services in the Production Environment
 	@echo "$(bold)Stopping production services...$(reset)" ; \
 	USER_UID=$$(id -u) USER_GID=$$(id -g) \
 	$(docker_compose) -f docker-compose.base.yml \
-				   -f docker-compose.prod.yml \
 				   -f docker-compose.monitoring.yml \
 				   --log-level ERROR stop init nginx lm db prometheus redis worker ws_server ; \
 	printf "$(done)\n"

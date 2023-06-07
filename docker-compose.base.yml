@@ -22,6 +22,27 @@ services:
     volumes:
       - "data_db:/bitnami/postgresql"
 
+  nginx:
+    image: bitnami/nginx:1.19-debian-10
+    depends_on:
+      - "lm"
+    ports:
+      - "8443:8443"
+    restart: "always"
+    healthcheck:
+      test: >
+        /bin/sh -c "http_code=$$(curl --insecure https://lm:8443/health -s -w %{http_code}); if [ $${http_code} -eq 502 ]; then exit 1; fi;"
+      interval: "2s"
+      retries: 3
+      timeout: "1s"
+    networks:
+      - life_monitor
+    volumes:
+      - "./certs:/nginx/certs:ro"
+      - "./docker/nginx.conf:/opt/bitnami/nginx/conf/server_blocks/lm.conf:ro"
+      - "data_static_files:/app/lifemonitor/static:ro"
+      - "data_specs:/app/specs:ro"
+
   lm:
     # Remember that this service is using its default configuration
     # to access the database, so the settings must match the environment
