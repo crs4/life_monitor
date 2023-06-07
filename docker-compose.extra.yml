@@ -4,7 +4,7 @@ services:
   seek:
     image: crs4/lifemonitor-tests:seek
     #image: fairdom/seek:workflow
-    restart: "always"
+    restart: "unless-stopped"
     ports:
       - "3000:3000"
     volumes:
