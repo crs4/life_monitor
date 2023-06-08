@@ -29,7 +29,7 @@ marshmallow-sqlalchemy~=0.27.0
 nf-core~=2.5.0
 prometheus-flask-exporter~=0.22
 pygit2~=1.11.1
-psycopg2-binary~=2.9.1
+psycopg2-binary~=2.9.6
 pyopenssl==23.0.0
 pytest-mock~=3.7.0
 pytest~=7.0.1
