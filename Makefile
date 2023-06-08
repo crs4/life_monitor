@@ -226,7 +226,7 @@ start-testing: compose-files aux_images ro_crates images reset_compose permissio
 	&& cp {,.test.}docker-compose.yml \
 	&& $(docker_compose) -f docker-compose.yml up -d db lmtests seek jenkins webserver worker ws_server ;\
 	$(docker_compose) -f ./docker-compose.yml \
-		exec -T lmtests /bin/bash -c "tests/wait-for-it.sh seek:3000 -t 600"; \
+		exec -T lmtests /bin/bash -c "tests/wait-for-seek.sh 600"; \
 	printf "$(done)\n"
 
 start-nginx: certs docker-compose.base.yml permissions ## Start a nginx front-end proxy for the LifeMonitor back-end
