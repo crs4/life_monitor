@@ -158,13 +158,29 @@ webserver:
 	printf "$(done)\n"
 
 
-ro_crates:
+ro_crates: interaction_experiments/data/crates
 	@printf "\n$(bold)Preparing RO-Crate archives...$(reset)\n" ; \
 	docker run --rm --user $$(id -u):$$(id -g) \
 		       -v $$(pwd)/:/data \
 			   --entrypoint /bin/bash crs4/lifemonitor -c \
 			   "cd /data/tests/config/data && ls && python3 make-test-rocrates.py" ; \
 	printf "$(done)\n"
+
+
+permissions: certs
+	chmod a+rx \
+		certs \
+		&& \
+	chmod a+r \
+		certs/* \
+		docker/nginx.dev.conf \
+		docker/nginx.conf \
+		prometheus.yml \
+		prometheus.dev.yml \
+		settings.conf \
+		tests/config/registries/seek/nginx.conf \
+		tests/config/registries/seek/doorkeeper.rb
+
 
 aux_images: tests/config/registries/seek/seek.Dockerfile certs
 	@printf "\n$(bold)Building auxiliary Docker images...$(reset)\n" ; \
@@ -173,7 +189,7 @@ aux_images: tests/config/registries/seek/seek.Dockerfile certs
 	       tests/config/registries/seek/ ; \
 	printf "$(done)\n"
 
-start: images compose-files prod reset_compose ## Start LifeMonitor in a Production environment
+start: images compose-files prod reset_compose permissions ## Start LifeMonitor in a Production environment
 	@printf "\n$(bold)Starting production services...$(reset)\n" ; \
 	base=$$(if [[ -f "docker-compose.yml" ]]; then echo "-f docker-compose.yml"; fi) ; \
 	echo "$$(USER_UID=$$(id -u) USER_GID=$$(id -g) \
@@ -185,7 +201,7 @@ start: images compose-files prod reset_compose ## Start LifeMonitor in a Product
 	&& $(docker_compose) -f docker-compose.yml up -d redis db init lm worker ws_server nginx prometheus ;\
 	printf "$(done)\n"
 
-start-dev: images compose-files dev reset_compose ## Start LifeMonitor in a Development environment
+start-dev: images compose-files dev reset_compose permissions ## Start LifeMonitor in a Development environment
 	@printf "\n$(bold)Starting development services...$(reset)\n" ; \
 	base=$$(if [[ -f "docker-compose.yml" ]]; then echo "-f docker-compose.yml"; fi) ; \
 	echo "$$(USER_UID=$$(id -u) USER_GID=$$(id -g) \
@@ -198,7 +214,7 @@ start-dev: images compose-files dev reset_compose ## Start LifeMonitor in a Deve
 	&& $(docker_compose) -f docker-compose.yml up -d redis db dev_proxy github_event_proxy init lm worker ws_server prometheus nginx ;\
 	printf "$(done)\n"
 
-start-testing: compose-files aux_images ro_crates images reset_compose ## Start LifeMonitor in a Testing environment
+start-testing: compose-files aux_images ro_crates images reset_compose permissions ## Start LifeMonitor in a Testing environment
 	@printf "\n$(bold)Starting testing services...$(reset)\n" ; \
 	base=$$(if [[ -f "docker-compose.yml" ]]; then echo "-f docker-compose.yml"; fi) ; \
 	echo "$$(USER_UID=$$(id -u) USER_GID=$$(id -g) \
@@ -215,7 +231,7 @@ start-testing: compose-files aux_images ro_crates images reset_compose ## Start 
 		exec -T lmtests /bin/bash -c "tests/wait-for-it.sh seek:3000 -t 600"; \
 	printf "$(done)\n"
 
-start-nginx: certs docker-compose.base.yml ## Start a nginx front-end proxy for the LifeMonitor back-end
+start-nginx: certs docker-compose.base.yml permissions ## Start a nginx front-end proxy for the LifeMonitor back-end
 	@printf "\n$(bold)Starting nginx proxy...$(reset)\n" ; \
 	base=$$(if [[ -f "docker-compose.yml" ]]; then echo "-f docker-compose.yml"; fi) ; \
 	echo "$$(USER_UID=$$(id -u) USER_GID=$$(id -g) \
@@ -224,7 +240,7 @@ start-nginx: certs docker-compose.base.yml ## Start a nginx front-end proxy for 
 		  && $(docker_compose) up -d nginx ; \
 	printf "$(done)\n"
 
-start-aux-services: aux_images ro_crates docker-compose.extra.yml ## Start auxiliary services (i.e., Jenkins, Seek) useful for development and testing
+start-aux-services: aux_images ro_crates docker-compose.extra.yml permissions ## Start auxiliary services (i.e., Jenkins, Seek) useful for development and testing
 	@printf "\n$(bold)Starting auxiliary services...$(reset)\n" ; \
 	base=$$(if [[ -f "docker-compose.yml" ]]; then echo "-f docker-compose.yml"; fi) ; \
 	echo "$$(USER_UID=$$(id -u) USER_GID=$$(id -g) \
