@@ -21,7 +21,7 @@ if uname -a | grep -q Darwin; then
     fi
 fi
 
-IPADDRESSES=$(echo "${NETWORK_DATA}" | sed -En 's/127.0.0.1//;s/.*inet (addr:)?(([0-9]*\.){3}[0-9]*).*/\2/p;' | ${gsed} -e ':a;N;$!ba;s/\n/,/g')
+IPADDRESSES="$(echo "${NETWORK_DATA}" | "${gsed}" -En 's/127.0.0.1//;s/.*inet (addr:)?(([0-9]*\.){3}[0-9]*).*/\2/p;' | "${gsed}" -e ':a;N;$!ba;s/\n/,/g')"
 DOMAINS="lm,lm.local,lifemonitor,lifemonitor.local,lmtests,localhost,seek,nginx,wfhub"
 IMAGE_NAME="crs4/minica"
 
