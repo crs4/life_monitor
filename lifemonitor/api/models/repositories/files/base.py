@@ -23,6 +23,7 @@ from __future__ import annotations
 import logging
 import os
 import re
+from pathlib import Path
 from typing import Optional, Tuple, Union
 
 # set module level logger
@@ -48,8 +49,6 @@ class RepositoryFile():
         if not name:
             raise ValueError("RepositoryFile constructed with empty file name")
 
-    def __init__(self, repository_path: str, name: str,
-                 type: Optional[str] = None, dir: str = ".", content=None) -> None:
         self.repository_path = repository_path
         self.name = name
         self.dir = dir
@@ -106,5 +105,6 @@ class RepositoryFile():
 
     @staticmethod
     def get_type(filename: Optional[str]) -> Optional[str]:
-        parts = os.path.splitext(filename) if filename else None
-        return parts[1].replace('.', '') if parts and len(parts) > 0 else None
+        path = Path(filename or '')
+        # Path.suffix includes the leading dot
+        return path.suffix[1:] if len(path.suffix) > 1 else None

@@ -25,7 +25,7 @@ import sys
 from urllib.parse import urlparse
 
 from lifemonitor.api.models.repositories.github import GithubWorkflowRepository
-from lifemonitor.api.models.repositories.local import LocalWorkflowRepository, LocalGitRepository
+from lifemonitor.api.models.repositories.local import LocalWorkflowRepository, LocalGitWorkflowRepository
 from rich.prompt import Prompt
 
 # Set module logger
@@ -50,8 +50,8 @@ def get_repository(repository: str, local_path: str):
         else:
             local_copy_path = os.path.join(local_path, os.path.basename(repository))
             shutil.copytree(repository, local_copy_path)
-            if LocalGitRepository.is_git_repo(local_copy_path):
-                return LocalGitRepository(local_copy_path)
+            if LocalGitWorkflowRepository.is_git_repo(local_copy_path):
+                return LocalGitWorkflowRepository(local_copy_path)
             return LocalWorkflowRepository(local_copy_path)
         raise ValueError("Repository type not supported")
     except Exception as e:

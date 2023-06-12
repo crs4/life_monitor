@@ -35,10 +35,14 @@ from unittest.mock import MagicMock
 import lifemonitor.db as lm_db
 import pytest
 from lifemonitor import auth
-from lifemonitor.api.models import (TestingService, TestingServiceTokenManager,
-                                    TestSuite, User)
-from lifemonitor.api.models.repositories import ZippedWorkflowRepository
-from lifemonitor.api.models.repositories import LocalWorkflowRepository
+from lifemonitor.api.models import (TestingService,
+                                    TestingServiceTokenManager,
+                                    TestSuite,
+                                    User)
+from lifemonitor.api.models.repositories import (GithubWorkflowRepository,
+                                                 LocalGitWorkflowRepository,
+                                                 LocalWorkflowRepository,
+                                                 ZippedWorkflowRepository)
 from lifemonitor.api.services import LifeMonitor
 from lifemonitor.cache import cache, clear_cache
 from lifemonitor.utils import ClassManager, extract_zip
