@@ -67,11 +67,11 @@ class IssueMessage:
 
 class WorkflowRepositoryIssue():
 
-    __issues__: List[WorkflowRepositoryIssue] = None
+    __issues__: List[Type[WorkflowRepositoryIssue]] = None
 
     name: str = "A workflow repository issue"
     description: str = ""
-    labels = []
+    labels: List[str] = []
     depends_on = []
 
     def __init__(self):
@@ -154,14 +154,14 @@ class WorkflowRepositoryIssue():
         return None
 
     @classmethod
-    def all(cls) -> List[Type[WorkflowRepositoryIssue]]:
-        if not cls.__issues__:
+    def all(cls) -> List[WorkflowRepositoryIssue]:
+        if cls.__issues__ is None:
             cls.__issues__ = find_issue_types()
         return [_() for _ in cls.__issues__]
 
     @classmethod
     def types(cls) -> List[Type[WorkflowRepositoryIssue]]:
-        if not cls.__issues__:
+        if cls.__issues__ is None:
             cls.__issues__ = find_issue_types()
         return cls.__issues__
 
@@ -186,7 +186,7 @@ def load_issue(issue_file) -> List[Type[WorkflowRepositoryIssue]]:
             and obj != WorkflowRepositoryIssue \
                 and issubclass(obj, WorkflowRepositoryIssue):
             issues[obj.name] = obj
-    return issues.values()
+    return [v for v in issues.values()]
 
 
 def get_issue_graph(path: Optional[str] = None) -> nx.DiGraph:
