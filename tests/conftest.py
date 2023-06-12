@@ -26,6 +26,7 @@ import random
 import re
 import shutil
 import string
+import tempfile
 import uuid
 from collections.abc import Iterable
 from pathlib import Path
@@ -72,13 +73,18 @@ os.environ.pop("FLASK_APP_CONFIG_FILE", None)
 
 
 @pytest.fixture
-def current_path():
-    return os.path.dirname(os.path.abspath(__file__))
-
-
-@pytest.fixture
 def headers():
     return helpers.get_headers()
+
+
+@pytest.fixture(scope='session')
+def test_repo_collection_path() -> Path:
+    return Path(__file__).parent / 'config' / 'data' / 'repos'
+
+
+@pytest.fixture(scope='session')
+def test_crate_collection_path() -> Path:
+    return Path(__file__).parent / 'config' / 'data' / 'crates'
 
 
 @pytest.fixture
@@ -490,3 +496,26 @@ def repository() -> Generator[LocalWorkflowRepository, None, None]:
         yield repo
     finally:
         repo.cleanup()
+
+
+@pytest.fixture
+def github_repository() -> GithubWorkflowRepository:
+    repo = GithubWorkflowRepository('iwc-workflows/gromacs-mmgbsa', ref="HEAD")
+    logger.debug("Github workflow repository: %r", repo)
+    return repo
+
+@pytest.fixture
+def simple_local_wf_repo(test_repo_collection_path: Path) -> Generator[LocalGitWorkflowRepository, None, None]:
+    """
+    On-disk git repository with a dummy Galaxy workflow.  Should follow best practices.
+    """
+    source_repo_path = test_repo_collection_path / 'test-galaxy-wf-repo'
+
+    # make a temporary copy of the source repository so that tests can freely
+    # modify it.
+    with tempfile.TemporaryDirectory(prefix=f"tmp-{source_repo_path.name}") as tmpdir:
+        tmp_repo_path = shutil.copytree(source_repo_path,
+                                        Path(tmpdir) / source_repo_path.name,
+                                        symlinks=True)
+        repo = LocalGitWorkflowRepository(str(tmp_repo_path))
+        yield repo
