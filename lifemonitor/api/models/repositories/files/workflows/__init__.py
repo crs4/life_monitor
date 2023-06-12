@@ -25,7 +25,7 @@ import inspect
 import logging
 import os
 from importlib import import_module
-from typing import Dict, List, Set, Tuple, Type
+from typing import Dict, List, Optional, Set, Tuple, Type
 
 from ..base import RepositoryFile
 
@@ -35,10 +35,10 @@ logger = logging.getLogger(__name__)
 
 class WorkflowFile(RepositoryFile):
 
-    __workflow_types__: Dict[str, Type] | None = None
+    __workflow_types__: Optional[Dict[str, Type]] = None
 
-    def __init__(self, repository_path: str, name: str, type: str | None = None, dir: str = ".",
-                 content=None, raw_file: RepositoryFile | None = None) -> None:
+    def __init__(self, repository_path: str, name: str, type: Optional[str] = None, dir: str = ".",
+                 content=None, raw_file: Optional[RepositoryFile] = None) -> None:
         super().__init__(repository_path, name, type, dir, content)
         self._raw_file = raw_file
 
@@ -53,11 +53,11 @@ class WorkflowFile(RepositoryFile):
         return super().get_content(binary_mode=binary_mode)
 
     @property
-    def raw_file(self) -> RepositoryFile | None:
+    def raw_file(self) -> Optional[RepositoryFile]:
         return self._raw_file
 
     @classmethod
-    def get_workflow_extensions(cls, workflow_type: str) -> Set[str] | None:
+    def get_workflow_extensions(cls, workflow_type: str) -> Optional[Set[str]]:
         try:
             return {_[1] for _ in cls.__get_workflow_types__()[workflow_type].__get_file_patterns__()}
         except AttributeError:
@@ -66,7 +66,7 @@ class WorkflowFile(RepositoryFile):
 
     @classmethod
     def get_types(cls) -> List[Type]:
-        return cls.__get_workflow_types__().values()
+        return list(cls.__get_workflow_types__().values())
 
     @classmethod
     def __type_name__(cls) -> str:
@@ -78,11 +78,11 @@ class WorkflowFile(RepositoryFile):
                    dir=file.dir, content=file._content, raw_file=file)
 
     @classmethod
-    def __get_file_patterns__(cls, subtype: Type = None) -> Tuple[Tuple[str, str, str]] | None:
+    def __get_file_patterns__(cls, subtype: Type = None) -> Optional[Tuple[Tuple[str, str, str]]]:
         return getattr(subtype or cls, "FILE_PATTERNS", None)
 
     @classmethod
-    def is_workflow(cls, file: RepositoryFile) -> WorkflowFile | None:
+    def is_workflow(cls, file: RepositoryFile) -> Optional[WorkflowFile]:
         if not file:
             return None
 

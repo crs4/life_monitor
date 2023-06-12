@@ -190,7 +190,7 @@ class TestingServiceNotSupportedException(LifeMonitorException):
 
 class TestingServiceException(LifeMonitorException):
 
-    def __init__(self, title="Testing service error", detail="",
+    def __init__(self, title="Testing service error", detail=None,
                  type="about:blank", status=500, instance=None, **kwargs):
         super().__init__(title=title,
                          detail=detail, status=status, **kwargs)

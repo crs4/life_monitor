@@ -27,7 +27,7 @@ import pickle
 import threading
 import time
 from contextlib import contextmanager
-from typing import Callable, Optional
+from typing import Callable, Union
 
 import redis
 import redis_lock
@@ -538,9 +538,9 @@ def _process_cache_data(cache, transaction, key, unless, timeout,
 
 def cache_function(function: Callable, timeout=Timeout.REQUEST,
                    client_scope=True,
-                   unless: Optional[bool | Callable] = None,
-                   transactional_update: Optional[bool | Callable] = False,
-                   force_cache_value: Optional[bool | Callable] = False,
+                   unless: Union[bool, Callable, None] = None,
+                   transactional_update: Union[bool, Callable, None] = False,
+                   force_cache_value: Union[bool, Callable, None] = False,
                    args=(), kwargs={}):
     logger.debug("Args: %r", args)
     logger.debug("KwArgs: %r", kwargs)
@@ -598,9 +598,9 @@ def cache_function(function: Callable, timeout=Timeout.REQUEST,
 
 
 def cached(timeout=Timeout.REQUEST, client_scope=True,
-           unless: Optional[bool | Callable] = None,
-           transactional_update: Optional[bool | Callable] = False,
-           force_cache_value: Optional[bool | Callable] = False):
+           unless: Union[bool, Callable, None] = None,
+           transactional_update: Union[bool, Callable, None] = False,
+           force_cache_value: Union[bool, Callable, None] = False):
     def decorator(function):
 
         @functools.wraps(function)

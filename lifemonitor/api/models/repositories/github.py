@@ -58,14 +58,17 @@ logger = logging.getLogger(__name__)
 
 class GitRepositoryFile(RepositoryFile):
 
-    def __init__(self, content: ContentFile, type: str = None, dir: str = '.') -> None:
-        super().__init__(None, content.name, type or content.type, dir, None)
-        self._content = content
+    def __init__(self, content: ContentFile, type: Optional[str] = None, dir: str = '.') -> None:
+        super().__init__(repository_path=None,
+                         name=content.name,
+                         type=(type or content.type),
+                         dir=dir,
+                         content=content)
 
     def __repr__(self) -> str:
         return f"{super().__repr__()} (sha: {self.sha})"
 
-    def get_content(self, binary_mode: bool = False):
+    def get_content(self, binary_mode: bool = False) -> Union[str, bytes]:
         result = self._content.decoded_content
         return result if binary_mode else result.decode()
 
@@ -131,7 +134,7 @@ class GithubRepositoryRevision():
 class TempWorkflowRepositoryMetadata(WorkflowRepositoryMetadata):
 
     def __init__(self, repo: InstallationGithubWorkflowRepository,
-                 local_path: str = None, gen_preview=False, init=False):
+                 local_path: Optional[str] = None, gen_preview=False, init=False):
         local_path = local_path or tempfile.mkdtemp(dir=BaseConfig.BASE_TEMP_FOLDER)
         try:
             target_path = f'{local_path}/ro-crate-metadata.json'
@@ -167,7 +170,7 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
         self.rev = rev
         self.auto_cleanup = auto_cleanup
         self._metadata = None
-        self._local_repo: LocalWorkflowRepository = None
+        self._local_repo: Optional[LocalWorkflowRepository] = None
         self._local_path = local_path
         self._config = None
         self._name = name
@@ -183,9 +186,11 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
                 files.append(GitRepositoryFile(e, dir=path))
             elif e.type == 'dir':
                 files.extend(self.__get_files__(e.path, ref=ref))
+            else:
+                logger.warning("Unhandled type %r for repository path %r", e.type, e)
         return files
 
-    def checkout_ref(self, ref: str, token: str = None, branch_name: str = None) -> bool:
+    def checkout_ref(self, ref: str, token: Optional[str] = None, branch_name: Optional[str] = None) -> str:
         return checkout_ref(self.local_path, ref, auth_token=token, branch_name=branch_name)
 
     @property
@@ -228,7 +233,7 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
         return self.__get_files__('.', ref=self.ref or self.default_branch)
 
     @property
-    def remote_metadata(self) -> WorkflowRepositoryMetadata:
+    def remote_metadata(self) -> Optional[WorkflowRepositoryMetadata]:
         if not self._metadata:
             try:
                 self._metadata = TempWorkflowRepositoryMetadata(self, init=False)
@@ -237,13 +242,13 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
         return self._metadata
 
     @property
-    def metadata(self) -> WorkflowRepositoryMetadata:
+    def metadata(self) -> Optional[WorkflowRepositoryMetadata]:
         if not self.local_repo:
             return self.remote_metadata
         return self.local_repo.metadata
 
-    def find_remote_file_by_pattern(self, search: str, ref: str = None,
-                                    path: str = ".", include_subdirs: bool = False) -> GitRepositoryFile:
+    def find_remote_file_by_pattern(self, search: str, ref: Optional[str] = None,
+                                    path: str = ".", include_subdirs: bool = False) -> Optional[GitRepositoryFile]:
         for e in self.get_contents(path, ref=ref or self.ref):
             logger.debug("Name: %r -- type: %r", e.name, e.type)
             c_file = None
@@ -255,13 +260,15 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
                 return GitRepositoryFile(c_file)
         return None
 
-    def find_file_by_pattern(self, search: str, path: str = None, ref: str = None) -> GitRepositoryFile:
+    def find_file_by_pattern(self, search: str, path: Optional[str] = None, ref: Optional[str] = None) -> Optional[GitRepositoryFile]:
         if not self.local_repo:
             return self.find_remote_file_by_pattern(search, ref=ref)
         return self.local_repo.find_file_by_pattern(search, path=path)
 
-    def find_remote_file_by_name(self, name: str, ref: str = None,
-                                 path: str = '.', include_subdirs: bool = False) -> GitRepositoryFile:
+    # TODO: these find_*_file_* methods have the same 'ref' and 'path' arguments
+    # but the order changes, which can be confusing.
+    def find_remote_file_by_name(self, name: str, ref: Optional[str] = None,
+                                 path: str = '.', include_subdirs: bool = False) -> Optional[GitRepositoryFile]:
         for e in self.get_contents(path, ref=ref or self.ref):
             logger.debug("Name: %r -- type: %r", e.name, e.type)
             c_file = None
@@ -273,14 +280,15 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
                 return GitRepositoryFile(c_file)
         return None
 
-    def find_file_by_name(self, name: str, ref: str = None, path: str = '.') -> GitRepositoryFile:
+    def find_file_by_name(self, name: str, ref: Optional[str] = None, path: str = '.') -> Optional[GitRepositoryFile]:
         if not self.local_repo:
             return self.find_remote_file_by_name(name, ref=ref, path=path)
         return self.local_repo.find_file_by_name(name, path=path)
 
-    def find_remote_workflow(self, ref: str = None, path: str = '.') -> GitRepositoryFile:
+    def find_remote_workflow(self, ref: Optional[str] = None, path: str = '.') -> Optional[WorkflowFile]:
         for e in self.get_contents(path, ref=ref or self.ref):
-            logger.debug("Checking: %r (type: %s)", e.name, e.type)
+            logger.debug("Checking: path=%r; name=%r; ref=%r (type: %s)",
+                         path, e.name, ref or self.ref, e.type)
             if e.type == 'dir':
                 wf = self.find_remote_workflow(ref=ref, path=f"{path}/{e.name}")
             else:
@@ -290,7 +298,7 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
                 return wf
         return None
 
-    def find_workflow(self, ref: str = None) -> WorkflowFile:
+    def find_workflow(self, ref: Optional[str] = None) -> Optional[WorkflowFile]:
         logger.debug("Local repo: %r", self.local_repo)
         if self.local_repo:
             return self.local_repo.find_workflow()
@@ -309,14 +317,16 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
         current_config = self.config
         if current_config and not ignore_existing:
             raise IllegalStateException("Config exists")
+        if not self.local_path:
+            raise IllegalStateException("Missing local_path")
         self._config = WorkflowRepositoryConfig.new(self.local_path,
                                                     workflow_title=self.metadata.main_entity_name if self.metadata else None,
                                                     main_branch=self.default_branch)
         return self._config
 
-    def clone(self, branch: str, local_path: str = None) -> RepoCloneContextManager:
+    def clone(self, branch: str, local_path: Optional[str] = None) -> RepoCloneContextManager:
         assert isinstance(branch, str), branch
-        assert local_path is None or isinstance(str, local_path), local_path
+        assert local_path is None or isinstance(local_path, str), local_path
         return RepoCloneContextManager(self.clone_url, repo_branch=branch, local_path=local_path)
 
     def write_zip(self, target_path: str):
@@ -332,14 +342,14 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
         return self._local_repo
 
     @property
-    def local_path(self) -> str:
+    def local_path(self) -> Optional[str]:
         return self.local_repo.local_path if self.local_repo else None
 
     def __del__(self):
         if self.auto_cleanup:
             self.cleanup()
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         logger.debug("Repository cleanup")
         if self._local_repo:
             logger.debug("Removing temp folder %r of %r", self.local_path, self)
@@ -349,8 +359,8 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
 
 class GithubWorkflowRepository(InstallationGithubWorkflowRepository):
 
-    def __init__(self, full_name_or_id: str, token: str = None,
-                 ref: str = None, rev: str = None, local_path: str = None, auto_cleanup: bool = True) -> None:
+    def __init__(self, full_name_or_id: str, token: Optional[str] = None,
+                 ref: Optional[str] = None, rev: Optional[str] = None, local_path: Optional[str] = None, auto_cleanup: bool = True) -> None:
         assert isinstance(full_name_or_id, (str, int)), full_name_or_id
         url_base = "/repositories/" if isinstance(full_name_or_id, int) else "/repos/"
         url = f"{url_base}{full_name_or_id}"
@@ -359,49 +369,30 @@ class GithubWorkflowRepository(InstallationGithubWorkflowRepository):
             ref=ref, rev=rev, local_path=local_path, auto_cleanup=auto_cleanup)
 
     @classmethod
-    def from_url(cls, url: str, token: str = None, ref: str = None,
-                 local_path: str = None, auto_cleanup: bool = True) -> GithubWorkflowRepository:
-        repo_url = url.replace('.git', '')
-        if repo_url.startswith('https://github.com'):
-            return cls(repo_url.replace('https://github.com/', ''),
-                       token=token, ref=ref, local_path=local_path, auto_cleanup=auto_cleanup)
-        elif repo_url.startswith('git@github.com'):
-            return cls(repo_url.replace('git@github.com:', ''),
-                       token=token, ref=ref, local_path=local_path, auto_cleanup=auto_cleanup)
+    def from_url(cls, url: str, token: Optional[str] = None, ref: Optional[str] = None,
+                 local_path: Optional[str] = None, auto_cleanup: bool = True) -> GithubWorkflowRepository:
+        repo_path = url.removeprefix('git@github.com:').removeprefix('https://github.com/').removesuffix('.git')
+        return cls(repo_path, token=token, ref=ref, local_path=local_path, auto_cleanup=auto_cleanup)
 
     @classmethod
-    def from_local(cls, archive_path: str, url: str, token: str = None, ref: str = None,
-                   local_path: str = None, auto_cleanup: bool = True) -> GithubWorkflowRepository:
-        repo = None
-        repo_url = url.replace('.git', '')
-        if repo_url.startswith('https://github.com'):
-            repo = cls(repo_url.replace('https://github.com/', ''),
-                       token=token, ref=ref, local_path=local_path, auto_cleanup=auto_cleanup)
-        elif repo_url.startswith('git@github.com'):
-            repo = cls(repo_url.replace('git@github.com:', ''),
-                       token=token, ref=ref, local_path=local_path, auto_cleanup=auto_cleanup)
+    def from_local(cls, archive_path: str, url: str, token: Optional[str] = None, ref: Optional[str] = None,
+                   local_path: Optional[str] = None, auto_cleanup: bool = True) -> GithubWorkflowRepository:
+        repo = cls.from_url(url, token, ref, local_path, auto_cleanup)
         repo._local_repo = LocalWorkflowRepository(archive_path)
         return repo
 
     @classmethod
-    def from_zip(cls, archive_path: str, url: str, token: str = None, ref: str = None,
-                 local_path: str = None, auto_cleanup: bool = True) -> GithubWorkflowRepository:
-        repo = None
-        repo_url = url.replace('.git', '')
-        if repo_url.startswith('https://github.com'):
-            repo = cls(repo_url.replace('https://github.com/', ''),
-                       token=token, ref=ref, local_path=local_path, auto_cleanup=auto_cleanup)
-        elif repo_url.startswith('git@github.com'):
-            repo = cls(repo_url.replace('git@github.com:', ''),
-                       token=token, ref=ref, local_path=local_path, auto_cleanup=auto_cleanup)
+    def from_zip(cls, archive_path: str, url: str, token: Optional[str] = None, ref: Optional[str] = None,
+                 local_path: Optional[str] = None, auto_cleanup: bool = True) -> GithubWorkflowRepository:
+        repo = cls.from_url(url, token, ref, local_path, auto_cleanup)
         repo._local_repo = ZippedWorkflowRepository(archive_path, auto_cleanup=auto_cleanup)
         return repo
 
 
 class RepoCloneContextManager():
 
-    def __init__(self, repo_url: str, repo_branch: str = None, auth_token: str = None,
-                 base_dir: str = BaseConfig.BASE_TEMP_FOLDER, local_path: str = None) -> None:
+    def __init__(self, repo_url: str, repo_branch: Optional[str] = None, auth_token: Optional[str] = None,
+                 base_dir: str = BaseConfig.BASE_TEMP_FOLDER, local_path: Optional[str] = None) -> None:
         self.base_dir = base_dir
         self.local_path = local_path
         self.auth_token = auth_token
@@ -420,7 +411,7 @@ class RepoCloneContextManager():
             logger.debug(f"Creating clone of repo {self.repo_url}<{self.repo_branch} @ {self._current_path}...")
             clone_repo(self.repo_url, ref=self.repo_branch,
                        target_path=self._current_path, auth_token=self.auth_token)
-        if not os.path.isdir(self._current_path):
+        if not (self._current_path and os.path.isdir(self._current_path)):
             raise ValueError(f"The local path '{self._current_path}' should be a folder")
         return self._current_path
 
@@ -431,7 +422,7 @@ class RepoCloneContextManager():
             shutil.rmtree(self._current_path, ignore_errors=True)
 
 
-def __make_requester__(jwt: str = None, token: str = None, base_url: str = DEFAULT_BASE_URL) -> Requester:
+def __make_requester__(jwt: Optional[str] = None, token: Optional[str] = None, base_url: str = DEFAULT_BASE_URL) -> Requester:
     return Requester(token or None, None, jwt, base_url,
                      DEFAULT_TIMEOUT, "PyGithub/Python", DEFAULT_PER_PAGE,
                      True, None, None)

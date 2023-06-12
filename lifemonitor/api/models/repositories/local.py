@@ -37,7 +37,9 @@ from lifemonitor.api.models.repositories.base import (
 from lifemonitor.api.models.repositories.files import (RepositoryFile,
                                                        WorkflowFile)
 from lifemonitor.config import BaseConfig
-from lifemonitor.exceptions import (DecodeROCrateException, LifeMonitorException,
+from lifemonitor.exceptions import (DecodeROCrateException,
+                                    IllegalStateException,
+                                    LifeMonitorException,
                                     NotValidROCrateException)
 from lifemonitor.utils import extract_zip, walk
 
@@ -48,9 +50,9 @@ logger = logging.getLogger(__name__)
 class LocalWorkflowRepository(WorkflowRepository):
 
     def __init__(self,
-                 local_path: Optional[str] = None,
+                 local_path: str,
                  exclude: Optional[List[str]] = None) -> None:
-        super().__init__(local_path, exclude)
+        super().__init__(local_path, exclude=exclude)
         self._transient_files = {'add': {}, 'remove': {}}
 
     @classmethod
@@ -69,7 +71,7 @@ class LocalWorkflowRepository(WorkflowRepository):
         result.extend([v for k, v in self._transient_files['add'].items() if k not in skip])
         return result
 
-    def add_file(self, file: RepositoryFile):
+    def add_file(self, file: RepositoryFile) -> None:
         assert isinstance(file, RepositoryFile), file
         self._transient_files['add'][self._file_key_(file)] = file
         self._transient_files['remove'].pop(self._file_key_(file), None)
@@ -88,15 +90,50 @@ class LocalWorkflowRepository(WorkflowRepository):
                 os.remove(f.path)
         for f in self._transient_files['add'].values():
             logger.debug("Removing file: %r", f)
-            shutil.copy(f.path, RepositoryFile(self.local_path, f.name, f.type, f.dir))
+            shutil.copy(f.path, RepositoryFile(self.local_path, f.name, f.type, f.dir).path)
         self.reset()
 
     def reset(self):
         self._transient_files['add'].clear()
         self._transient_files['remove'].clear()
 
+    def generate_metadata(self,
+                          workflow_name: Optional[str] = None,
+                          workflow_version: str = "main",
+                          license: Optional[str] = None,
+                          repo_url: Optional[str] = None,
+                          **kwargs) -> WorkflowRepositoryMetadata:
+        workflow = self.find_workflow()
+        if not workflow:
+            raise IllegalStateException("No workflow found", instance=self)
+        workflow_type = workflow.type
+        if not workflow_type:
+            raise IllegalStateException(
+                f"Can't generate crate. Unable to determine workflow type for {workflow}.")
+        logger.debug("Detected workflow type: %r", workflow_type)
+        if not self.local_path:
+            raise IllegalStateException("Local path not set")
+        try:
+            from ..rocrate import generators
+            generators.generate_crate(workflow_type,
+                                      workflow_name=workflow_name or self.name,
+                                      workflow_version=workflow_version,
+                                      local_repo_path=self.local_path,
+                                      license=license or self.license,
+                                      repo_url=repo_url or self.https_url, **kwargs)
+            self._metadata = WorkflowRepositoryMetadata(self, init=False, exclude=self.exclude,
+                                                        local_path=self.local_path)
+        except Exception as e:
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.exception(e)
+            self._metadata = WorkflowRepositoryMetadata(self, init=True, exclude=self.exclude,
+                                                        local_path=self.local_path)
+            self._metadata.write(self.local_path)
+        self.add_file(self._metadata.repository_file)
+        return self._metadata
+
     @property
-    def metadata(self) -> WorkflowRepositoryMetadata:
+    def metadata(self) -> Optional[WorkflowRepositoryMetadata]:
         if not self._metadata:
             try:
                 self._metadata = WorkflowRepositoryMetadata(self, init=False)
@@ -106,15 +143,15 @@ class LocalWorkflowRepository(WorkflowRepository):
             if self._file_key_(self._metadata.repository_file) not in self._transient_files['remove'] \
             else None
 
-    def find_file_by_pattern(self, search: str, path: Optional[str] = None) -> RepositoryFile:
+    def find_file_by_pattern(self, search: str, path: Optional[str] = None) -> Optional[RepositoryFile]:
         logger.warning("Searching file: %r %r", search, path)
         return next((f for f in self.files if re.search(search, f.name) and (not path or f.dir == path or f.dir == f"./{path}")), None)
 
-    def find_file_by_name(self, name: str, path: Optional[str] = None) -> RepositoryFile:
+    def find_file_by_name(self, name: str, path: Optional[str] = None) -> Optional[RepositoryFile]:
         logger.warning("Searching file: %r %r", name, path)
         return next((f for f in self.files if f.name == name and (not path or f.path == path or f.dir == f"./{path}")), None)
 
-    def find_workflow(self) -> WorkflowFile:
+    def find_workflow(self) -> Optional[WorkflowFile]:
         for file in self.files:
             wf = WorkflowFile.is_workflow(file)
             if wf:
@@ -126,7 +163,7 @@ class LocalWorkflowRepository(WorkflowRepository):
 class TemporaryLocalWorkflowRepository(LocalWorkflowRepository):
 
     def __init__(self,
-                 local_path: Optional[str] = None,
+                 local_path: str,
                  exclude: Optional[List[str]] = None,
                  auto_cleanup: bool = True) -> None:
         self.auto_cleanup = auto_cleanup

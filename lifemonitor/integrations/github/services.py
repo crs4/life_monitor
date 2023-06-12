@@ -21,7 +21,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 from lifemonitor.api import serializers
 from lifemonitor.api.models.registries.registry import WorkflowRegistry
@@ -53,6 +53,7 @@ def map_issues(check_result: IssueCheckResult):
             try:
                 gh_issue = issues.find_issue(repo, issue)
             except ValueError as e:
+                gh_issue = None
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.exception(e)
             logger.debug("Found issue on GitHub? ->> %r", gh_issue)
@@ -295,7 +296,7 @@ def register_workflow_on_registries(github_registry: GithubWorkflowRegistry, sub
 
 def register_workflow_on_registry(github_registry: GithubWorkflowRegistry, submitter: User,
                                   repo: GithubWorkflowRepository, workflow_version: WorkflowVersion,
-                                  workflow_identifier: str, registry: Optional[str | WorkflowRegistry]):
+                                  workflow_identifier: str, registry: Union[str, WorkflowRegistry, None]):
     assert isinstance(registry, str) or isinstance(registry, WorkflowRegistry), registry
     registry: WorkflowRegistry = WorkflowRegistry.find_by_client_name(registry) if isinstance(registry, str) else registry
     logger.warning("Registry: %r", registry)
