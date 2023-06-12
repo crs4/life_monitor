@@ -68,15 +68,17 @@ def test_cfg_file_missing(issue, simple_local_wf_repo):
     valid = ConfigFileValidator.validate(new_config)
     assert valid, f"Generated LM config has validation errors: {valid}"
 
-    assert new_config['name'] == repo_path.name
+    logger.debug("[test_cfg_file_missing] generated configuration: %s", new_config)
+
+    assert 'name' not in new_config
     assert new_config['public'] is False
     assert new_config['issues']['check'] is True
 
     push_branches = new_config['push']['branches']
     assert len(push_branches) == 1
     assert push_branches[0]['name'] == simple_local_wf_repo.main_branch
-    assert set(push_branches[0]['update_registries']) == {"wfhub", "wfhubdev"}
     assert push_branches[0]['enable_notifications'] is True
+    assert len(push_branches[0]['update_registries']) == 0
 
     tags = new_config['push']['tags']
     assert len(tags) == 2
