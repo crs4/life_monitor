@@ -215,7 +215,7 @@ class Base64WorkflowRepository(TemporaryLocalWorkflowRepository):
 
 class LocalGitRepository(LocalWorkflowRepository):
 
-    def __init__(self, local_path: str | None = None, exclude: List[str] | None = None) -> None:
+    def __init__(self, local_path: str, exclude: Optional[List[str]] = None) -> None:
         super().__init__(local_path, exclude)
         assert self.is_git_repo(self.local_path), f"Local path {local_path} is not a git repository"
 

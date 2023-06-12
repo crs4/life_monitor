@@ -48,6 +48,8 @@ class RepositoryFile():
         if not name:
             raise ValueError("RepositoryFile constructed with empty file name")
 
+    def __init__(self, repository_path: str, name: str,
+                 type: Optional[str] = None, dir: str = ".", content=None) -> None:
         self.repository_path = repository_path
         self.name = name
         self.dir = dir
@@ -103,6 +105,6 @@ class RepositoryFile():
         return self._content
 
     @staticmethod
-    def get_type(filename: str) -> Optional[str]:
+    def get_type(filename: Optional[str]) -> Optional[str]:
         parts = os.path.splitext(filename) if filename else None
         return parts[1].replace('.', '') if parts and len(parts) > 0 else None
