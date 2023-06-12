@@ -4,7 +4,7 @@ set -o errexit
 set -o nounset
 
 CA_NAME="ca"
-if type -P ifconfig; then
+if type -P ifconfig > /dev/null 2>&1; then
     NETWORK_DATA="$(ifconfig)"
 else
     NETWORK_DATA="$(ip -oneline addr)"
