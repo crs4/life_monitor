@@ -67,7 +67,7 @@ class GithubIssueComment(IssueComment):
         self.__body = None
         app = LifeMonitorGithubApp.get_instance()
         self.__bot_id = app.bot
-        self._pattern = re.compile(r'^@(lm|{0})(\[bot\])?(\s(.*))?'.format(app.bot.strip('[bot]')))
+        self._pattern = re.compile(r'^@({0})(\[bot\])?(\s(.*))?'.format(app.bot.strip('[bot]')))
 
     def __process_comment__(self):
         self.__body = super().body
