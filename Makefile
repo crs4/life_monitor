@@ -105,8 +105,7 @@ dev:
 	$(eval LM_MODE=dev)
 
 certs:
-	@# Generate certificates if they do not exist \
-	if ! [[ -f "certs/lm.key" && -f "certs/lm.key" && -f "certs/lifemonitor.ca.crt" ]]; then \
+	@if ! [[ -f "certs/lm.key" && -f "certs/lm.key" && -f "certs/lifemonitor.ca.crt" ]]; then \
 	  printf "\n$(bold)Generating certificates...$(reset)\n" ; \
 	  mkdir -p certs && \
 	  ./utils/certs/gencerts.sh && \
@@ -119,8 +118,7 @@ certs:
 	  printf "\n$(done)\n"; \
 	else \
 	  echo "$(yellow)WARNING: Using existing certificates$(reset)" ; \
-	fi
-	@# Generate JWT keys if they do not exist \
+	fi ;\
 	if ! [[ -f "certs/jwt-key" && -f "certs/jwt-key.pub" ]]; then \
 	  printf "\n$(bold)Generating JWT keys...$(reset)\n" ; \
 	  openssl genrsa -out certs/jwt-key 4096 ; \
