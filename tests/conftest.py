@@ -504,6 +504,7 @@ def github_repository() -> GithubWorkflowRepository:
     logger.debug("Github workflow repository: %r", repo)
     return repo
 
+
 @pytest.fixture
 def simple_local_wf_repo(test_repo_collection_path: Path) -> Generator[LocalGitWorkflowRepository, None, None]:
     """
