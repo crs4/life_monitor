@@ -223,11 +223,10 @@ class LocalGitWorkflowRepository(LocalWorkflowRepository):
     """
 
     def __init__(self, local_path: str, exclude: Optional[List[str]] = None) -> None:
+        from git import Repo
         super().__init__(local_path, exclude)
-        assert self.is_git_repo(self.local_path), f"Local path {local_path} is not a git repository"
+        self._git_repo = Repo(self.local_path)
 
     @property
     def main_branch(self) -> str:
-        from git import Repo
-        repo = Repo(self.local_path)
-        return repo.active_branch.name
+        return self._git_repo.active_branch.name

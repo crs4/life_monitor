@@ -1,7 +1,7 @@
-# worfklow name (override name defined on the RO-Crate metadata)
+# workflow name (override name defined on the RO-Crate metadata)
 {% if workflow_name %}name: {{ workflow_name }}
 {% else %}# name: MyWorkflow{%endif %}
-# worfklow visibility
+# worklow visibility
 public: {{ "true" if public else "false" }}
 
 # Issue Checker Settings

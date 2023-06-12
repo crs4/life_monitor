@@ -188,13 +188,21 @@ class WorkflowRepositoryConfig(RepositoryFile):
 
     @classmethod
     def new(cls, repository_path: str, workflow_title: Optional[str] = None, public: bool = False, main_branch: str = "main") -> WorkflowRepositoryConfig:
-        if workflow_title is None:
-            workflow_title = "Workflow RO-Crate"
         tmpl = TemplateRepositoryFile(repository_path="lifemonitor/templates/repositories/base", name=cls.TEMPLATE_FILENAME)
         registries = ["wfhub", "wfhubdev"]
         issue_types = models.WorkflowRepositoryIssue.all()
         os.makedirs(repository_path, exist_ok=True)
-        tmpl.write(workflow_title=workflow_title, main_branch=main_branch, public=public,
-                   issues=issue_types, registries=registries,
-                   output_file_path=os.path.join(repository_path, cls.DEFAULT_FILENAME))
+        template_args = dict(
+           public=public,
+           issues=issue_types,
+           registries=registries)
+        if workflow_title:
+           template_args['workflow_name'] = workflow_title
+        if main_branch:
+            template_args['main_branch'] = main_branch
+
+        tmpl.write(
+            output_file_path=os.path.join(repository_path, cls.DEFAULT_FILENAME),
+            **template_args)
+
         return cls(repo_path=repository_path)

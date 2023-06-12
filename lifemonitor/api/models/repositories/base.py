@@ -279,10 +279,9 @@ class WorkflowRepository():
         if not self.local_path:
             raise IllegalStateException("local_path not defined. Can't generate WorkflowRepositoryConfig")
         self._config = WorkflowRepositoryConfig.new(self.local_path,
-                                                    workflow_title=workflow_title if workflow_title is not None
-                                                    else self.metadata.main_entity_name if self.metadata else None,
-                                                    main_branch=main_branch if main_branch else getattr(self, "main_branch", "main"),
-                                                    public=public)
+                                                    workflow_title=workflow_title,
+                                                    public=public,
+                                                    main_branch=main_branch if main_branch else getattr(self, "main_branch", "main"))
         return self._config
 
     def write_zip(self, target_path: str):

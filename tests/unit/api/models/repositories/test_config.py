@@ -23,24 +23,23 @@ from pathlib import Path
 
 import pytest
 
-from lifemonitor.api.models.repositories.local import LocalWorkflowRepository
+from lifemonitor.api.models.repositories.local import (LocalGitWorkflowRepository,
+                                                       LocalWorkflowRepository)
 from lifemonitor.api.models.repositories.config import WorkflowRepositoryConfig
 
 logger = logging.getLogger(__name__)
-
-
-cfg_file_contents = """
-name: "MyWorkflow"
-public: true
-issues:
-    checks: false
-"""
 
 
 def test_finding_config_file(repository: LocalWorkflowRepository):
     with pytest.raises(ValueError):
         cfg = WorkflowRepositoryConfig(repository.local_path)
 
+    cfg_file_contents = """
+                        name: "MyWorkflow"
+                        public: true
+                        issues:
+                            checks: false
+                        """
     for fname in ('.lifemonitor', 'lifemonitor'):
         for ext in ('yml', 'yaml'):
             cfg_file = Path(repository.local_path, f"{fname}.{ext}")
@@ -54,3 +53,38 @@ def test_finding_config_file(repository: LocalWorkflowRepository):
                 assert "MyWorkflow" == cfg.workflow_name
             finally:
                 cfg_file.unlink()
+
+
+def test_generate_config(simple_local_wf_repo: LocalGitWorkflowRepository):
+    # test with defaults
+    new_config = simple_local_wf_repo.generate_config(ignore_existing=True)
+    assert new_config.workflow_name is None
+    monitored_branches = new_config.branches
+    assert len(monitored_branches) == 1
+    assert set(monitored_branches) == {'main'}
+    assert not new_config.public
+    monitored_tags = new_config.tags
+    assert len(monitored_tags) == 2
+    assert set(monitored_tags) == {'v*.*.*', '*.*.*'}
+
+    # specify some things
+    new_config = simple_local_wf_repo.generate_config(ignore_existing=True,
+                                                      workflow_title='dummy')
+    assert new_config.workflow_name == 'dummy'
+
+    new_config = simple_local_wf_repo.generate_config(ignore_existing=True, public=True)
+    assert new_config.public
+    new_config = simple_local_wf_repo.generate_config(ignore_existing=True, public=False)
+    assert not new_config.public
+
+    new_config = simple_local_wf_repo.generate_config(ignore_existing=True,
+                                                      main_branch='develop')
+    assert set(new_config.branches) == {'develop'}
+
+    git_repo = simple_local_wf_repo._git_repo  # access private member to implement this test
+    # Create and checkout a branch called "develop".  See if generate_config picks it up
+    # as the branch to monitor.
+    dev_branch = git_repo.create_head('develop')
+    dev_branch.checkout()
+    new_config = simple_local_wf_repo.generate_config(ignore_existing=True)
+    assert set(new_config.branches) == {'develop'}
