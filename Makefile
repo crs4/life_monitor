@@ -168,7 +168,7 @@ ro_crates: interaction_experiments/data/crates
 
 
 permissions: certs
-	chmod a+rx \
+	@chmod a+rx \
 		certs \
 		&& \
 	chmod a+r \
