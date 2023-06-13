@@ -40,7 +40,13 @@ class MissingLMConfigFile(WorkflowRepositoryIssue):
     def check(self, repo: WorkflowRepository) -> bool:
         if repo.config is None:
             config = repo.generate_config()
-            self.add_change(config)
+            validation_result = config.validate()
+            if validation_result:
+                self.add_change(config)
+            else:
+                logger.error("MissingLMConfigFile generated an invalid configuration!")
+                logger.error("Error:\n%s", validation_result)
+                logger.error("Configuration:\n%s", config)
             return True
         return False
 
