@@ -1,6 +1,6 @@
 #!/bin/bash
 
-url="https://seek:3000/auth/authorize"
+url="https://seek:3000/oauth/authorize"
 timeout_seconds=${1:-30}
 DEBUG=${DEBUG:-0}
 
@@ -9,7 +9,7 @@ check_server() {
     response=$(curl -Is "$url" | head -n 1)
     status_code=$(echo "$response" | awk '{print $2}')
     
-    if [ "$status_code" == "200" ]; then
+    if [ "$status_code" == "302" ]; then
         echo -en "\e[1mOK\e[0m: Seek is now available!\n"
         exit 0
     fi
