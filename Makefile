@@ -257,13 +257,13 @@ start-aux-services: aux_images ro_crates docker-compose.extra.yml permissions ##
 run-tests: start-testing ## Run all tests in the Testing Environment
 	@printf "\n$(bold)Running tests...$(reset)\n" ; \
 	USER_UID=$$(id -u) USER_GID=$$(id -g) \
-	$(docker_compose) exec -T lmtests /bin/bash -c "pytest --color=yes tests"
+	$(docker_compose) exec -T lmtests /bin/bash -c "pytest --durations=10 --color=yes tests"
 
 
 tests: start-testing ## CI utility to setup, run tests and teardown a testing environment
 	@printf "\n$(bold)Running tests...$(reset)\n" ; \
 	$(docker_compose) -f ./docker-compose.yml \
-		exec -T lmtests /bin/bash -c "pytest --color=yes tests"; \
+		exec -T lmtests /bin/bash -c "pytest --durations=10 --color=yes tests"; \
 	  result=$$?; \
 	  	printf "\n$(bold)Teardown services...$(reset)\n" ; \
 	  	USER_UID=$$(id -u) USER_GID=$$(id -g) \
@@ -273,7 +273,7 @@ tests: start-testing ## CI utility to setup, run tests and teardown a testing en
 				   -f docker-compose.dev.yml \
 				   -f docker-compose.test.yml \
 				   down ; \
-		printf "$(done)\n" ; \
+		printf "$(done)\n" ; \fix/gen-invalid-lm-config
 	  exit $$?
 
 stop-aux-services: docker-compose.extra.yml ## Stop all auxiliary services (i.e., Jenkins, Seek)
