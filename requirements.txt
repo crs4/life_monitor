@@ -33,6 +33,7 @@ psycopg2-binary~=2.9.6
 pyopenssl==23.2.0
 pytest-mock~=3.10.0
 pytest~=7.3.1
+pytest-rerunfailures~=11.1.2
 pytest-xdist~=3.3.1
 python-dotenv~=0.19.0
 python-jenkins==1.7.0
