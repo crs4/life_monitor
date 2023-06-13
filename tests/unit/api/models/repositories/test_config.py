@@ -23,6 +23,7 @@ from pathlib import Path
 
 import pytest
 
+from lifemonitor.api.models import WorkflowRegistry
 from lifemonitor.api.models.repositories.local import (LocalGitWorkflowRepository,
                                                        LocalWorkflowRepository)
 from lifemonitor.api.models.repositories.config import WorkflowRepositoryConfig
@@ -88,3 +89,32 @@ def test_generate_config(simple_local_wf_repo: LocalGitWorkflowRepository):
     dev_branch.checkout()
     new_config = simple_local_wf_repo.generate_config(ignore_existing=True)
     assert set(new_config.branches) == {'develop'}
+
+
+def test_getting_refs(simple_local_wf_repo: LocalGitWorkflowRepository):
+    config = simple_local_wf_repo.config
+    assert isinstance(config, WorkflowRepositoryConfig)
+
+    assert len(config.branches) == 1
+    assert 'main' in config.branches
+    assert len(config.tags) == 2
+    assert set(config.tags) == {'v*.*.*', '*.*.*'}
+
+    assert config.get_ref_settings('pippo') is None
+    push_to_main = config.get_ref_settings('main')
+    assert push_to_main is not None
+    assert push_to_main['enable_notifications'] is True
+    assert push_to_main['update_registries'] == []
+    assert push_to_main['name'] == 'main'
+
+    assert config.get_ref_settings('v1.0.1')['update_registries'] == ['wfhub']
+    assert config.get_ref_settings('1.0.1')['update_registries'] == ['seek']
+
+    # The fixture configuration associates v*.*.* with 'wfhub'. This
+    # registry id is not registered during the tests.
+    # Instead, '*.*.*' pattern is associated with the registry 'seek',
+    # which exists during the tests.
+    assert config.get_tag_registries('v*.*.*') == []
+    assert config.get_branch_registries('main') == []
+    test_registry = config.get_tag_registries('*.*.*')[0]
+    assert isinstance(test_registry, WorkflowRegistry)
