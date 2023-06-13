@@ -233,7 +233,7 @@ def validate_url(url: str) -> bool:
 def is_service_alive(url: str, timeout: Optional[int] = None) -> bool:
     try:
         try:
-            timeout = timeout or flask.current_app.config.get("SERVICE_ALIVE_TIMEOUT", 1)
+            timeout = timeout or flask.current_app.config.get("SERVICE_AVAILABILITY_TIMEOUT", 1)
         except Exception:
             timeout = 1
         response = requests.get(url, timeout=timeout)
