@@ -193,11 +193,11 @@ class WorkflowRepositoryConfig(RepositoryFile):
         issue_types = models.WorkflowRepositoryIssue.all()
         os.makedirs(repository_path, exist_ok=True)
         template_args = dict(
-           public=public,
-           issues=issue_types,
-           registries=registries)
+            public=public,
+            issues=issue_types,
+            registries=registries)
         if workflow_title:
-           template_args['workflow_name'] = workflow_title
+            template_args['workflow_name'] = workflow_title
         if main_branch:
             template_args['main_branch'] = main_branch
 
