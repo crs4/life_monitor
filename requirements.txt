@@ -54,3 +54,6 @@ flask-socketio==5.3.2
 gevent-websocket==0.10.1
 eventlet==0.33.3
 uwsgi==2.0.21
+# watchdog version 2.3 introduces a change that breaks Flask in development mode.
+# Don't use watchdog > 2.2.1 until up update Flask to something >= 2.2
+watchdog==2.2.1
