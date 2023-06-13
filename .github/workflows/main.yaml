@@ -154,7 +154,7 @@ jobs:
           GH_TESTING_SERVICE_TYPE: github
       # Run tests
       - name: Run tests
-        run: SKIP_BUILD=1 SW_VERSION=${{ env.SOFTWARE_VERSION }} BUILD_NUMBER=${{ github.run_number }} make run-tests
+        run: SKIP_BUILD=1 SKIP_RESET_COMPOSE=1 SW_VERSION=${{ env.SOFTWARE_VERSION }} BUILD_NUMBER=${{ github.run_number }} make run-tests
         env:
           TRAVIS_TESTING_SERVICE_URL: ${{ secrets.TRAVIS_TESTING_SERVICE_URL }}
           TRAVIS_TESTING_SERVICE_TOKEN: ${{ secrets.TRAVIS_TESTING_SERVICE_TOKEN }}

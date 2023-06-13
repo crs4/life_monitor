@@ -49,6 +49,12 @@ ifeq ($(SKIP_BUILD),1)
 	skip_build_opt := 1
 endif
 
+# set the flag to skip reset compose
+skip_reset_compose := 0
+ifeq ($(SKIP_RESET_COMPOSE),1) 
+	skip_reset_compose := 1
+endif
+
 # set the build number
 sw_version_arg :=
 ifdef SW_VERSION
@@ -329,7 +335,9 @@ stop-all: ## Stop all the services
 	fi
 
 reset_compose:
-	@if [[ -f "docker-compose.yml" ]]; then \
+	@if [[ $${SKIP_RESET_COMPOSE} -eq 1 ]]; then \
+		echo "$(bold)Skip reset of docker-compose services $(reset)" ;\
+	elif [[ -f "docker-compose.yml" ]]; then \
 		cmp -s docker-compose.yml .$(LM_MODE).docker-compose.yml ; \
 		RETVAL=$$? ; \
 		if [ $${RETVAL} -ne 0 ]; then \
