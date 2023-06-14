@@ -1,0 +1,113 @@
+{
+  "a_galaxy_workflow": "true",
+  "annotation": "Example of Galaxy workflow",
+  "format-version": "0.1",
+  "name": "Workflow",
+  "steps": {
+    "0": {
+      "annotation": "",
+      "content_id": null,
+      "errors": null,
+      "id": 0,
+      "input_connections": {},
+      "inputs": [
+        {
+          "description": "",
+          "name": "Input File"
+        }
+      ],
+      "label": "Input File",
+      "name": "Input dataset",
+      "outputs": [],
+      "position": {
+        "bottom": 495.5,
+        "height": 63,
+        "left": 520,
+        "right": 720,
+        "top": 432.5,
+        "width": 200,
+        "x": 520,
+        "y": 432.5
+      },
+      "tool_id": null,
+      "tool_state": "{\"optional\": false, \"tag\": \"\"}",
+      "tool_version": null,
+      "type": "data_input",
+      "uuid": "000ba77b-302a-44d2-b4d6-df1d2ba4ec3d",
+      "workflow_outputs": []
+    },
+    "1": {
+      "annotation": "",
+      "content_id": "toolshed.g2.bx.psu.edu/repos/bgruening/add_line_to_file/add_line_to_file/0.1.0",
+      "errors": null,
+      "id": 1,
+      "input_connections": {
+        "infile": {
+          "id": 0,
+          "output_name": "output"
+        }
+      },
+      "inputs": [
+        {
+          "description": "runtime parameter for tool Add line to file",
+          "name": "infile"
+        }
+      ],
+      "label": "Add Text",
+      "name": "Add line to file",
+      "outputs": [
+        {
+          "name": "outfile",
+          "type": "input"
+        }
+      ],
+      "position": {
+        "bottom": 529.5,
+        "height": 95,
+        "left": 850,
+        "right": 1050,
+        "top": 434.5,
+        "width": 200,
+        "x": 850,
+        "y": 434.5
+      },
+      "post_job_actions": {
+        "ChangeDatatypeActionoutfile": {
+          "action_arguments": {
+            "newtype": "txt"
+          },
+          "action_type": "ChangeDatatypeAction",
+          "output_name": "outfile"
+        },
+        "RenameDatasetActionoutfile": {
+          "action_arguments": {
+            "newname": "output file"
+          },
+          "action_type": "RenameDatasetAction",
+          "output_name": "outfile"
+        }
+      },
+      "tool_id": "toolshed.g2.bx.psu.edu/repos/bgruening/add_line_to_file/add_line_to_file/0.1.0",
+      "tool_shed_repository": {
+        "changeset_revision": "8e251055b1a9",
+        "name": "add_line_to_file",
+        "owner": "bgruening",
+        "tool_shed": "toolshed.g2.bx.psu.edu"
+      },
+      "tool_state": "{\"infile\": {\"__class__\": \"RuntimeValue\"}, \"options\": \"footer\", \"text_input\": \"workflow owner\", \"__page__\": null, \"__rerun_remap_job_id__\": null}",
+      "tool_version": "0.1.0",
+      "type": "tool",
+      "uuid": "50a1a290-8772-409a-8a4b-23f7f0854332",
+      "workflow_outputs": [
+        {
+          "label": "output_file",
+          "output_name": "outfile",
+          "uuid": "1fe29493-bd6d-47b9-b805-c5fbec044c35"
+        }
+      ]
+    }
+  },
+  "tags": [],
+  "uuid": "49b7d49b-796c-4e15-88ec-252c6ccd5a85",
+  "version": 5
+}

@@ -518,5 +518,8 @@ def simple_local_wf_repo(test_repo_collection_path: Path) -> Generator[LocalGitW
         tmp_repo_path = shutil.copytree(source_repo_path,
                                         Path(tmpdir) / source_repo_path.name,
                                         symlinks=True)
+        logger.debug("Staging '%s' repository to temporary path '%s'", source_repo_path, tmp_repo_path)
+        # move the .dot-git directory to .git, so that the repository works as a normal git repository
+        (tmp_repo_path / '.dot-git').rename(tmp_repo_path / '.git')
         repo = LocalGitWorkflowRepository(str(tmp_repo_path))
         yield repo
