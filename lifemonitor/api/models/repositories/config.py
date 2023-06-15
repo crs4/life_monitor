@@ -165,7 +165,7 @@ class WorkflowRepositoryConfig(RepositoryFile):
                 if r not in registries:
                     registry = models.WorkflowRegistry.find_by_client_name(r)
                     if registry:
-                        registries[r] = models.WorkflowRegistry.find_by_client_name(r)
+                        registries[r] = registry
                     else:
                         logger.warning("Unable to find registry: %r", r)
             return list(registries.values())
