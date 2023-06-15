@@ -137,7 +137,7 @@ class GithubIOHandler(IOHandler):
         return None
 
     def parse_answer(self, answer: object) -> str:
-        return re.sub(r'(@lm|%s)\s+' % self.app.bot.strip("[bot]"), '',
+        return re.sub(r'%s\s+' % self.app.bot.strip("[bot]"), '',
                       answer.body) if answer else None
 
     def get_input_as_text(self, question: QuestionStep) -> object:
@@ -156,7 +156,7 @@ class GithubIOHandler(IOHandler):
         return result
 
     def get_help(self):
-        return f'<br>\n> **?** type **@lm** or **@{self.app.bot.strip("[bot]")}** to answer'
+        return f'<br>\n> **?** type **@{self.app.bot.strip("[bot]")}** to answer'
 
     def write(self, step: Step, append_help: bool = False):
         assert isinstance(step, Step), step
