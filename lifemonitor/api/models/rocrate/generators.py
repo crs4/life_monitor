@@ -48,8 +48,8 @@ def generate_crate(workflow_type: str,
         raise RuntimeError(m)
 
     # TODO: generalize the config object to
-    #       other types of generators and CI instances.
-    #       The current implementation only supports Snakemake and Github CI
+    #       other types of CI instances.
+    #       The current implementation only supports Github CI
     cfg = {
         "root": Path(local_repo_path),
         "repo_url": repo_url,
