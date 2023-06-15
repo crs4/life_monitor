@@ -18,7 +18,7 @@ issues:
 
 # Github Integration Settings
 push:
-  branches:
+  branches: {% if not main_branch %}[]{% endif %}
     # Define the list of branches to watch
     # - name: feature/XXX                   # Wildcards can be used to specify branches (e.g., feature/*)
     #   enable_notifications: true          # Enable to notify LifeMonitor and possibly also workflow registries
