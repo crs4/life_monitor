@@ -130,7 +130,12 @@ class WorkflowRepositoryConfig(RepositoryFile):
         return []
 
     def _get_ref_settings(self, ref: str, ref_type: str) -> Optional[Dict]:
-        ref_pattern = match_ref(ref, self.branches if ref_type == 'branch' else self.tags)
+        if ref_type not in ('branch', 'tag'):
+            raise ValueError(f"Invalid ref_type {ref_type}. Expected 'branch' or 'tag'")
+        # the value of the name property is used as the key in the Dict objects returned
+        # by self.branches and self.tags
+        ref_names_in_config = list(self.branches if ref_type == 'branch' else self.tags)
+        ref_pattern = match_ref(ref, ref_names_in_config)
         if not ref_pattern:
             return None
         logger.debug(f"ref {ref} matched with pattern {ref_pattern}")
@@ -149,17 +154,20 @@ class WorkflowRepositoryConfig(RepositoryFile):
         return list(registries.values())
 
     def get_ref_registries(self, ref_type: str, tag: str) -> List[models.WorkflowRegistry]:
+        if ref_type not in ('branches', 'tags'):
+            raise ValueError(f"Invalid ref_type {ref_type}")
         try:
             tag_data = next((r for r in self._raw_data['push'][ref_type] if r["name"] == tag), None)
             if not tag_data:
                 return []
             registries = {}
             for r in tag_data.get("update_registries", []):
-                if not registries.get(r, None):
+                if r not in registries:
                     registry = models.WorkflowRegistry.find_by_client_name(r)
-                    if not registry:
+                    if registry:
+                        registries[r] = registry
+                    else:
                         logger.warning("Unable to find registry: %r", r)
-                    registries[r] = models.WorkflowRegistry.find_by_client_name(r)
             return list(registries.values())
         except KeyError as e:
             logger.debug("KeyError: %r", str(e))
@@ -188,13 +196,21 @@ class WorkflowRepositoryConfig(RepositoryFile):
 
     @classmethod
     def new(cls, repository_path: str, workflow_title: Optional[str] = None, public: bool = False, main_branch: str = "main") -> WorkflowRepositoryConfig:
-        if workflow_title is None:
-            workflow_title = "Workflow RO-Crate"
         tmpl = TemplateRepositoryFile(repository_path="lifemonitor/templates/repositories/base", name=cls.TEMPLATE_FILENAME)
         registries = ["wfhub", "wfhubdev"]
         issue_types = models.WorkflowRepositoryIssue.all()
         os.makedirs(repository_path, exist_ok=True)
-        tmpl.write(workflow_title=workflow_title, main_branch=main_branch, public=public,
-                   issues=issue_types, registries=registries,
-                   output_file_path=os.path.join(repository_path, cls.DEFAULT_FILENAME))
+        template_args = dict(
+            public=public,
+            issues=issue_types,
+            registries=registries)
+        if workflow_title:
+            template_args['workflow_name'] = workflow_title
+        if main_branch:
+            template_args['main_branch'] = main_branch
+
+        tmpl.write(
+            output_file_path=os.path.join(repository_path, cls.DEFAULT_FILENAME),
+            **template_args)
+
         return cls(repo_path=repository_path)

@@ -1,7 +1,7 @@
-# worfklow name (override name defined on the RO-Crate metadata)
+# workflow name (override name defined on the RO-Crate metadata)
 {% if workflow_name %}name: {{ workflow_name }}
 {% else %}# name: MyWorkflow{%endif %}
-# worfklow visibility
+# worklow visibility
 public: {{ "true" if public else "false" }}
 
 # Issue Checker Settings
@@ -18,36 +18,55 @@ issues:
 
 # Github Integration Settings
 push:
-  branches:
+  branches: {% if not main_branch %}[]{% endif %}
     # Define the list of branches to watch
-    # - name: feature/XXX                   # wildcards can be used to specify branches (e.g., feature/*)
-    #   update_registries: ["wfhubdev"]     # available registries are listed
+    # - name: feature/XXX                   # Wildcards can be used to specify branches (e.g., feature/*)
+    #   enable_notifications: true          # Enable to notify LifeMonitor and possibly also workflow registries
+    #                                       # such as WorkflowHub (wfhub) and dev.WorkflowHub (wfhubdev).
+    #                                       #   Default: true
+    #   lifemonitor_instance: "production"  # Specify the LifeMonitor instance to notify.
+    #                                       # Available options: "production" (the default) and "development"
+    #                                       # The "development" instance is only for testing.
+    #                                       #   Default: "production"
+    #   update_registries: []               # Workflow registries to be notified. Options are listed
     #                                       # by the endpoint `<lifemonitor_url>/registries`
+    #                                       #   Default: []
     #                                       # (e.g., https://api.lifemontor.eu/registries)
-    #   lifemonitor_instance: development   # uncomment to use the 'development' instance of LifeMonitor
-    #                                       # (the 'production' instance is used by default)
-    - name: "{{main_branch}}"
-      update_registries: []
-      enable_notifications: true
-      # lifemonitor_instance: development
+    #
+    # An example:
+    #
     # - name: "develop"
-    #   update_registries: []
     #   enable_notifications: true
     #   lifemonitor_instance: development
+    #   update_registries: []
+{% if main_branch %}
+    # Monitor {{main_branch}}. Notify only LifeMonitor (production instance) of changes.
+    - name: "{{main_branch}}"
+      enable_notifications: true
+      lifemonitor_instance: production
+      update_registries: []
+{% endif %}
 
   tags:
-    # Define the list of tags to watch
-    # - name: v*.*.*                    # wildcards can be used to specify tags (e.g., feature/*)
-    #   update_registries: ["wfhub"]    # available registries are listed
-    #                                   # by the endpoint `<lifemonitor_url>/registries`
-    #                                   # (e.g., https://api.lifemontor.eu/registries)
-    #   lifemonitor_instance: development   # uncomment to use the 'development' instance of LifeMonitor
-    #                                       # (the 'production' instance is used by default)
+    # Define the list of **tags** to watch.
+    # The same fields that are applied to 'branches' (above) are also valid for tags.
+    #
+    # Example:
+    # - name: "v*.*.*"  # e.g,. v1.0.2
+    #   enable_notifications: true
+    #   lifemonitor_instance: development
+    #   update_registries: []
+
+    # Recognize tags with names matching "v*.*.*" as new releases.
+    # Notify LifeMonitor (production instance) and the
+    # workflow registries [{{registries|join(', ')}}]
     - name: "v*.*.*"
-      update_registries: [{{registries|join(', ')}}]
       enable_notifications: true
-      # lifemonitor_instance: development
+      lifemonitor_instance: production
+      update_registries: [{{registries|join(', ')}}]
+
+    # Also recognize the tag names matching "*.*.*". For the rest, same rules as above.
     - name: "*.*.*"
-      update_registries: [{{registries|join(', ')}}]
       enable_notifications: true
-      # lifemonitor_instance: development
+      update_registries: [{{registries|join(', ')}}]
+      lifemonitor_instance: production

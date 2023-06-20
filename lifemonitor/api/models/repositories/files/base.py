@@ -23,6 +23,7 @@ from __future__ import annotations
 import logging
 import os
 import re
+from pathlib import Path
 from typing import Optional, Tuple, Union
 
 # set module level logger
@@ -103,6 +104,7 @@ class RepositoryFile():
         return self._content
 
     @staticmethod
-    def get_type(filename: str) -> Optional[str]:
-        parts = os.path.splitext(filename) if filename else None
-        return parts[1].replace('.', '') if parts and len(parts) > 0 else None
+    def get_type(filename: Optional[str]) -> Optional[str]:
+        path = Path(filename or '')
+        # Path.suffix includes the leading dot
+        return path.suffix[1:] if len(path.suffix) > 1 else None

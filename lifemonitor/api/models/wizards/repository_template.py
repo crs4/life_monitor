@@ -61,7 +61,7 @@ def get_files(wizard: RepositoryTemplateWizard, repo: GithubWorkflowRepository, 
     repo_template = WorkflowRepositoryTemplate.new_instance(workflow_type, local_path=workflow_path, data={
         'workflow_name': workflow_name, 'workflow_description': workflow_description,
         'workflow_version': repo.default_branch,
-        'repo_url': repo.html_url, 'repo_full_name': repo.full_name, 'repo_branch': repo.default_branch
+        'repo_url': repo.html_url, 'repo_full_name': repo.full_name, 'main_branch': repo.default_branch
     }).generate()
 
     logger.debug("Template files: %r --> %r", repo_template, repo_template.files)

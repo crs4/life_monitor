@@ -55,6 +55,10 @@ class LocalWorkflowRepository(WorkflowRepository):
         super().__init__(local_path, exclude=exclude)
         self._transient_files = {'add': {}, 'remove': {}}
 
+    @staticmethod
+    def is_git_repo(local_path: str) -> bool:
+        return (Path(local_path) / '.git').is_dir()
+
     @classmethod
     def _file_key_(cls, f: RepositoryFile) -> str:
         return f"{f.dir}/{f.name}"
@@ -213,18 +217,16 @@ class Base64WorkflowRepository(TemporaryLocalWorkflowRepository):
             raise DecodeROCrateException(detail=str(e))
 
 
-class LocalGitRepository(LocalWorkflowRepository):
+class LocalGitWorkflowRepository(LocalWorkflowRepository):
+    """
+    A LocalWorkflowRepository that is also a Git repository.
+    """
 
-    def __init__(self, local_path: str | None = None, exclude: List[str] | None = None) -> None:
+    def __init__(self, local_path: str, exclude: Optional[List[str]] = None) -> None:
+        from git import Repo
         super().__init__(local_path, exclude)
-        assert self.is_git_repo(self.local_path), f"Local path {local_path} is not a git repository"
+        self._git_repo = Repo(self.local_path)
 
     @property
     def main_branch(self) -> str:
-        from git import Repo
-        repo = Repo(self.local_path)
-        return repo.active_branch.name
-
-    @staticmethod
-    def is_git_repo(local_path: str) -> bool:
-        return os.path.isdir(os.path.join(local_path, '.git'))
+        return self._git_repo.active_branch.name
