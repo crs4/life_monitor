@@ -28,6 +28,12 @@ from . import WorkflowRepositoryTemplate
 
 class GalaxyRepositoryTemplate(WorkflowRepositoryTemplate):
 
+    def get_defaults(self) -> Dict:
+        defaults = WorkflowRepositoryTemplate.get_defaults()
+        defaults.update({
+            'ci_workflow': 'main.yml',
+        })
+        return defaults
 
     def write(self, target_path: str, overwrite: bool = False):
         super().write(target_path, overwrite)
