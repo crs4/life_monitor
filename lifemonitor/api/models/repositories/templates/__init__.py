@@ -23,7 +23,7 @@ from __future__ import annotations
 import logging
 import os
 import tempfile
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from lifemonitor.api.models.repositories.files import (TemplateRepositoryFile,
                                                        WorkflowFile)
@@ -48,8 +48,14 @@ class WorkflowRepositoryTemplate(WorkflowRepository):
         super().__init__(local_path, exclude=exclude)
         self._name = name
         self._files = None
-        self._data = data or {}
+        self._data = self.get_defaults()
+        if data:
+            self._data.update(data)
         self._dirty = True
+
+    @classmethod
+    def get_defaults(cls) -> Dict:
+        return {}
 
     @property
     def data(self) -> Dict:
@@ -109,36 +115,27 @@ class WorkflowRepositoryTemplate(WorkflowRepository):
                 return f
         return None
 
-    def generate(self, target_path: str = None) -> LocalWorkflowRepository:
+    def generate(self, target_path: Optional[str] = None) -> LocalWorkflowRepository:
         target_path = target_path or self.local_path
         logger.debug("Rendering template files to %s...", target_path)
         self.write(target_path)
         logger.debug("Rendering template files to %s... DONE", target_path)
+        metadata = self.generate_metadata(target_path)
+        assert isinstance(metadata, WorkflowRepositoryMetadata), "Error generating workflow repository metadata"
+        return metadata.repository
+
+    def generate_metadata(self, target_path: Optional[str] = None) -> WorkflowRepositoryMetadata:
+        target_path = target_path or self.local_path
         repo = LocalWorkflowRepository(target_path)
         opts = self.data.copy()
         opts.update({
             'root': target_path,
         })
-        repo.generate_metadata(**opts)
-        return repo
-
-    def generate_metadata(self) -> WorkflowRepositoryMetadata:
-        self._metadata = WorkflowRepositoryMetadata(self, init=True, exclude=self.exclude,
-                                                    local_path=self._local_path)
-        self._metadata.add_workflow(self.get_workflow_name(),
-                                    lang=self.name, properties={
-                                        'name': self.data.get('workflow_title', None)} if self.data else None)
-        self._metadata.write(self._local_path)
+        self._metadata = repo.generate_metadata(**opts)
         return self._metadata
 
     def write(self, target_path: str, overwrite: bool = False):
         super().write(target_path, overwrite=overwrite)
-        # rename files according to best practices
-        if self.name == "galaxy":
-            os.rename(os.path.join(target_path, 'workflow.ga'),
-                      os.path.join(target_path, f"{to_kebab_case(self.data.get('workflow_name', 'workflow'))}.ga"))
-            os.rename(os.path.join(target_path, 'workflow-test.yml'),
-                      os.path.join(target_path, f"{to_kebab_case(self.data.get('workflow_name', 'workflow'))}-test.yml"))
 
     @classmethod
     def _types(cls) -> List[WorkflowRepositoryTemplate]:
