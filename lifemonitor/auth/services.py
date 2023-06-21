@@ -169,7 +169,7 @@ def check_api_key(api_key, required_scopes):
         raise NotAuthorizedException(detail='Invalid ApiKey')
     # check whether all the required scopes are allowed
     logger.debug("%r -- required scopes: %r", api_key, required_scopes)
-    if not api_key.check_scopes(required_scopes):
+    if required_scopes and not api_key.check_scopes(required_scopes):
         raise NotAuthorizedException(detail='Invalid scopes')
     # set ApiKey user as the current user
     login_user(api_key.user)

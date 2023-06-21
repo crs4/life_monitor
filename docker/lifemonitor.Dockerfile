@@ -1,4 +1,4 @@
-FROM python:3.9-slim-buster as base
+FROM python:3.10-slim-buster as base
 
 # Install base requirements
 RUN apt-get update -q \
@@ -19,7 +19,7 @@ RUN pip3 install --no-cache-dir --upgrade pip
 RUN pip3 install --no-cache-dir -r /lm/requirements.txt
 
 # Update Environment
-ENV PYTHONPATH=/lm:/usr/local/lib/python3.7/dist-packages:/usr/lib/python3/dist-packages:${PYTHONPATH} \
+ENV PYTHONPATH=/lm:/usr/local/lib/python3.10/dist-packages:/usr/lib/python3/dist-packages:${PYTHONPATH} \
     FLASK_RUN_HOST=0.0.0.0 \
     GUNICORN_WORKERS=1 \
     GUNICORN_THREADS=2 \

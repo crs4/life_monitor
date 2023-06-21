@@ -85,6 +85,10 @@ class UUID(types.TypeDecorator):
 
     """
     impl = types.CHAR
+    cache_ok = True
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
 
     def load_dialect_impl(self, dialect):
         if dialect.name == 'postgresql':
@@ -122,6 +126,7 @@ class JSON(types.TypeDecorator):
 
     """
     impl = types.JSON
+    cache_ok = True
 
     def load_dialect_impl(self, dialect):
         if dialect.name == 'postgresql':
@@ -129,6 +134,9 @@ class JSON(types.TypeDecorator):
             return dialect.type_descriptor(JSONB())
         else:
             return dialect.type_descriptor(types.JSON())
+
+    def coerce_compared_value(self, op, value):
+        return self.impl.coerce_compared_value(op, value)
 
 
 class CustomSet(types.TypeDecorator):

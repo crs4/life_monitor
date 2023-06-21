@@ -146,7 +146,9 @@ class OAuthIdentity(models.ExternalServiceAccessAuthorization, ModelMixin):
             "oauth_identity",
             collection_class=attribute_mapped_collection("provider.client_name"),
             cascade="all, delete-orphan",
+            overlaps="user,authorizations"
         ),
+        overlaps="authorizations"
     )
 
     __table_args__ = (db.UniqueConstraint("provider_id", "provider_user_id"),)

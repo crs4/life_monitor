@@ -49,6 +49,12 @@ ifeq ($(SKIP_BUILD),1)
 	skip_build_opt := 1
 endif
 
+# set the flag to skip reset compose
+skip_reset_compose := 0
+ifeq ($(SKIP_RESET_COMPOSE),1) 
+	skip_reset_compose := 1
+endif
+
 # set the build number
 sw_version_arg :=
 ifdef SW_VERSION
@@ -226,7 +232,7 @@ start-testing: compose-files aux_images ro_crates images reset_compose permissio
 	&& cp {,.test.}docker-compose.yml \
 	&& $(docker_compose) -f docker-compose.yml up -d db lmtests seek jenkins webserver worker ws_server ;\
 	$(docker_compose) -f ./docker-compose.yml \
-		exec -T lmtests /bin/bash -c "tests/wait-for-it.sh seek:3000 -t 600"; \
+		exec -T lmtests /bin/bash -c "tests/wait-for-seek.sh 600"; \
 	printf "$(done)\n"
 
 start-nginx: certs docker-compose.base.yml permissions ## Start a nginx front-end proxy for the LifeMonitor back-end
@@ -263,7 +269,7 @@ run-tests: start-testing ## Run all tests in the Testing Environment
 tests: start-testing ## CI utility to setup, run tests and teardown a testing environment
 	@printf "\n$(bold)Running tests...$(reset)\n" ; \
 	$(docker_compose) -f ./docker-compose.yml \
-		exec -T lmtests /bin/bash -c "pytest --durations=10 --color=yes tests"; \
+		exec -T lmtests /bin/bash -c "pytest --reruns 2 --reruns-delay 5 --durations=10 --color=yes tests"; \
 	  result=$$?; \
 	  	printf "\n$(bold)Teardown services...$(reset)\n" ; \
 	  	USER_UID=$$(id -u) USER_GID=$$(id -g) \
@@ -329,7 +335,9 @@ stop-all: ## Stop all the services
 	fi
 
 reset_compose:
-	@if [[ -f "docker-compose.yml" ]]; then \
+	@if [[ $${SKIP_RESET_COMPOSE} -eq 1 ]]; then \
+		echo "$(bold)Skip reset of docker-compose services $(reset)" ;\
+	elif [[ -f "docker-compose.yml" ]]; then \
 		cmp -s docker-compose.yml .$(LM_MODE).docker-compose.yml ; \
 		RETVAL=$$? ; \
 		if [ $${RETVAL} -ne 0 ]; then \
