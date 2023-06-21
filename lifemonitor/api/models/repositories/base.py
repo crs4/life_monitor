@@ -27,17 +27,18 @@ import logging
 import os
 from abc import abstractclassmethod
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple, Type
+from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 import git
 import giturlparse
-import lifemonitor.api.models.issues as issues
 import requests
+from rocrate.rocrate import Metadata, ROCrate
+
+import lifemonitor.api.models.issues as issues
 from lifemonitor.api.models.repositories.config import WorkflowRepositoryConfig
 from lifemonitor.exceptions import IllegalStateException, LifeMonitorException
 from lifemonitor.test_metadata import get_roc_suites, get_workflow_authors
 from lifemonitor.utils import to_camel_case
-from rocrate.rocrate import Metadata, ROCrate
 
 from .files import RepositoryFile, WorkflowFile
 
@@ -49,14 +50,16 @@ DEFAULT_IGNORED_FILES = ['.git']
 
 class WorkflowRepository():
 
-    def __init__(self, local_path: Optional[str] = None,
+    def __init__(self, local_path: str,
                  url: Optional[str] = None,
                  name: Optional[str] = None,
                  license: Optional[str] = None,
                  exclude: Optional[List[str]] = None) -> None:
+        if not local_path:
+            raise ValueError("empty local_path argument")
         self._local_path = local_path
         self._metadata = None
-        self.exclude = exclude or DEFAULT_IGNORED_FILES
+        self.exclude = exclude if exclude is not None else DEFAULT_IGNORED_FILES
         self._config = None
         self._url = url
         self._name = name
@@ -68,10 +71,10 @@ class WorkflowRepository():
 
     @property
     def files(self) -> List[RepositoryFile]:
-        pass
+        raise NotImplementedError()
 
     @property
-    def metadata(self) -> WorkflowRepositoryMetadata:
+    def metadata(self) -> Optional[WorkflowRepositoryMetadata]:
         if not self._metadata:
             try:
                 self._metadata = WorkflowRepositoryMetadata(self, init=False, exclude=self.exclude)
@@ -117,7 +120,7 @@ class WorkflowRepository():
     def https_url(self) -> str:
         if not self._url:
             try:
-                self._url = self._remote_parser.url2https.replace('.git', '')
+                self._url = self._remote_parser.url2https.removesuffix('.git')
             except Exception as e:
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.exception(e)
@@ -140,23 +143,23 @@ class WorkflowRepository():
 
     @abstractclassmethod
     def find_file_by_pattern(self, search: str, path: str = '.') -> RepositoryFile:
-        pass
+        raise NotImplementedError()
 
     @abstractclassmethod
     def find_file_by_name(self, name: str, path: str = '.') -> RepositoryFile:
-        pass
+        raise NotImplementedError()
 
     @abstractclassmethod
     def find_workflow(self) -> WorkflowFile:
-        pass
+        raise NotImplementedError()
 
     def contains(self, file: RepositoryFile) -> bool:
         return self.__contains__(self.files, file)
 
     @staticmethod
     def _issue_name_included(issue_name: str,
-                             include_list: List[str] | None = None,
-                             exclude_list: List[str] | None = None) -> bool:
+                             include_list: Optional[List[str]] = None,
+                             exclude_list: Optional[List[str]] = None) -> bool:
         if include_list and (issue_name in [to_camel_case(_) for _ in include_list]):
             return True
 
@@ -201,7 +204,7 @@ class WorkflowRepository():
         return cls.__find_file__(files, file) is not None
 
     @classmethod
-    def __find_file__(cls, files, file) -> RepositoryFile | None:
+    def __find_file__(cls, files, file) -> Optional[RepositoryFile]:
         for f in files:
             if f == file or (f.name == file.name and f.dir == file.dir):
                 return f
@@ -213,13 +216,13 @@ class WorkflowRepository():
         if os.path.exists(f.path):
             fp = open(f.path, 'rb')
         else:
-            content = f.get_content(binary_mode=False)
+            content = f.get_content(binary_mode=True)
             if content:
-                content_str = content.encode()
+                logger.debug("Reading file content: %r", content.encode())
+                fp = io.BytesIO(content)
             else:
-                content_str = b""
-            logger.debug("Reading file content: %r", content_str if content else b"None")
-            fp = io.BytesIO(content_str)
+                logger.debug("Reading file content: %s", "<empty content>")
+                fp = io.BytesIO(b"")
         return fp
 
     @classmethod
@@ -235,7 +238,7 @@ class WorkflowRepository():
                     return True
 
     @classmethod
-    def __compare__(cls, left_files, right_files, exclude: List[str] = None):
+    def __compare__(cls, left_files, right_files, exclude: Optional[List[str]] = None):
         missing_left = [_ for _ in right_files
                         if not cls.__contains__(left_files, _) and (not exclude or _.name not in exclude)]
         logger.debug("Missing Left: %r", missing_left)
@@ -252,45 +255,15 @@ class WorkflowRepository():
         logger.debug("Differences: %r", differences)
         return missing_left, missing_right, differences
 
-    def compare_to(self, repo: WorkflowRepository, exclude: List[str] = None) -> Tuple[List[RepositoryFile],
-                                                                                       List[RepositoryFile],
-                                                                                       List[Tuple[RepositoryFile, RepositoryFile]]]:
+    def compare_to(self, repo: WorkflowRepository, exclude: Optional[List[str]] = None) -> Tuple[List[RepositoryFile],
+                                                                                                 List[RepositoryFile],
+                                                                                                 List[Tuple[RepositoryFile, RepositoryFile]]]:
         assert repo and isinstance(repo, WorkflowRepository), repo
         return self.__compare__(self.files, repo.files, exclude=exclude)
 
-    def generate_metadata(self,
-                          workflow_name: Optional[str] = None,
-                          workflow_version: str = "main",
-                          license: Optional[str] = None,
-                          repo_url: Optional[str] = None,
-                          **kwargs) -> WorkflowRepositoryMetadata:
-        workflow = self.find_workflow()
-        if not workflow:
-            raise IllegalStateException("No workflow found", instance=self)
-        workflow_type = workflow.type
-        logger.debug("Detected workflow type: %r", workflow_type)
-        try:
-            from ..rocrate import generators
-            generators.generate_crate(workflow_type,
-                                      workflow_name=workflow_name or self.name,
-                                      workflow_version=workflow_version,
-                                      local_repo_path=self.local_path,
-                                      license=license or self.license,
-                                      repo_url=repo_url or self.https_url, **kwargs)
-            self._metadata = WorkflowRepositoryMetadata(self, init=False, exclude=self.exclude,
-                                                        local_path=self._local_path)
-        except Exception as e:
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.exception(e)
-            self._metadata = WorkflowRepositoryMetadata(self, init=True, exclude=self.exclude,
-                                                        local_path=self._local_path)
-            self._metadata.write(self._local_path)
-        self.add_file(self._metadata.repository_file)
-        return self._metadata
-
     @property
-    def config(self) -> WorkflowRepositoryConfig:
-        if self._config is None:
+    def config(self) -> Optional[WorkflowRepositoryConfig]:
+        if self._config is None and self.local_path:
             try:
                 self._config = WorkflowRepositoryConfig(self.local_path)
             except ValueError:
@@ -299,15 +272,16 @@ class WorkflowRepository():
 
     def generate_config(self, ignore_existing=False,
                         workflow_title: Optional[str] = None,
-                        public: bool = False, main_branch: Optional[str] = None) -> WorkflowFile:
+                        public: bool = False, main_branch: Optional[str] = None) -> WorkflowRepositoryConfig:
         current_config = self.config
         if current_config and not ignore_existing:
             raise IllegalStateException("Config exists")
+        if not self.local_path:
+            raise IllegalStateException("local_path not defined. Can't generate WorkflowRepositoryConfig")
         self._config = WorkflowRepositoryConfig.new(self.local_path,
-                                                    workflow_title=workflow_title if workflow_title is not None
-                                                    else self.metadata.main_entity_name if self.metadata else None,
-                                                    main_branch=main_branch if main_branch else getattr(self, "main_branch", "main"),
-                                                    public=public)
+                                                    workflow_title=workflow_title,
+                                                    public=public,
+                                                    main_branch=main_branch if main_branch else getattr(self, "main_branch", "main"))
         return self._config
 
     def write_zip(self, target_path: str):
@@ -315,7 +289,7 @@ class WorkflowRepository():
             raise IllegalStateException(detail="Missing RO Crate metadata")
         return self.metadata.write_zip(target_path)
 
-    def write(self, target_path: str, overwrite: bool = False):
+    def write(self, target_path: str, overwrite: bool = False) -> None:
         for f in self.files:
             base_path = os.path.join(target_path, f.dir)
             file_path = os.path.join(base_path, f.name)
@@ -342,13 +316,13 @@ class IssueCheckResult:
         return f"Check repo {self.repo.local_path} @ {self.created} " \
             f"=> checks: {len(self.checked)}, issues: {len(self.issues)}"
 
-    def get_issue(self, issue_name: str) -> issues.WorkflowRepositoryIssue:
+    def get_issue(self, issue_name: str) -> Optional[issues.WorkflowRepositoryIssue]:
         return next((_ for _ in self.issues if _.name == issue_name), None)
 
     def found_issues(self) -> bool:
         return len(self.issues) > 0
 
-    def is_checked(self, issue: Type[issues.WorkflowRepositoryIssue] | issues.WorkflowRepositoryIssue) -> bool:
+    def is_checked(self, issue: Union[Type[issues.WorkflowRepositoryIssue], issues.WorkflowRepositoryIssue]) -> bool:
         if issue and issue in self.checked:
             return True
         if isinstance(issue, issues.WorkflowRepositoryIssue):
@@ -369,16 +343,19 @@ class WorkflowRepositoryMetadata(ROCrate):
     DEFAULT_METADATA_FILENAME = Metadata.BASENAME
 
     def __init__(self, repo: WorkflowRepository,
-                 local_path: str = None, gen_preview=False, init=False, exclude=None):
+                 local_path: Optional[str] = None, gen_preview=False, init=False, exclude=None):
         super().__init__(source=local_path or repo.local_path, gen_preview=gen_preview, init=init, exclude=exclude)
         self.repository = repo
         self._file = None
 
-    def get_workflow(self) -> WorkflowFile:
+    def get_workflow(self) -> Optional[WorkflowFile]:
         if self.mainEntity and self.mainEntity.id:
+            if self.source is None:
+                raise IllegalStateException(
+                    f"Internal error: trying to construct WorkflowFile but self.source is '{self.source}")
             lang = self.mainEntity.get("programmingLanguage", None)
             path, filename = os.path.split(self.mainEntity.id)
-            return WorkflowFile(self.source, filename,
+            return WorkflowFile(str(self.source), filename,
                                 type=lang.get("name", lang.id).lower() if lang else None,
                                 dir=path)
         return None
@@ -391,23 +368,26 @@ class WorkflowRepositoryMetadata(ROCrate):
     def dataset_name(self):
         return self.name
 
-    def get_roc_suites(self):
+    # TODO: the type of a roc_suite is probably better defined than "Any"
+    def get_roc_suites(self) -> Optional[Dict[str, Any]]:
         return get_roc_suites(self)
 
-    def get_authors(self, suite_id: str = None) -> List[Dict]:
+    def get_authors(self, suite_id: Optional[str] = None) -> List[Dict]:
         return get_workflow_authors(self, suite_id=suite_id)
 
-    def get_get_roc_suite(self, roc_suite_identifier):
-        try:
-            return self.get_roc_suites()[roc_suite_identifier]
-        except KeyError:
-            logger.warning("Unable to find the roc_suite with identifier: %r", roc_suite_identifier)
+    def get_get_roc_suite(self, roc_suite_identifier) -> Any:
+        suites = self.get_roc_suites()
+        if suites is not None:
+            try:
+                return suites[roc_suite_identifier]
+            except KeyError:
+                logger.warning("Unable to find the roc_suite with identifier: %r", roc_suite_identifier)
         return None
 
     @property
     def local_path(self) -> str:
         logger.debug("SOURCE: %r - ID: %r", self.source, self.metadata.id)
-        return os.path.join(self.source, self.metadata.id)
+        return os.path.join(str(self.source), self.metadata.id)
 
     @property
     def repository_file(self) -> MetadataRepositoryFile:
@@ -415,9 +395,13 @@ class WorkflowRepositoryMetadata(ROCrate):
             self._file = MetadataRepositoryFile(self)
         return self._file
 
-    def to_json(self) -> Dict:
+    def to_json(self) -> Optional[Dict[str, Any]]:
         file = self.repository.find_file_by_name(self.metadata.id)
-        return json.loads(file.get_content(binary_mode=False)) if file else None
+        if file:
+            text = file.get_content(binary_mode=False)
+            if text:
+                return json.loads(text)
+        return None
 
 
 class MetadataRepositoryFile(RepositoryFile):
@@ -427,5 +411,6 @@ class MetadataRepositoryFile(RepositoryFile):
                          WorkflowRepositoryMetadata.DEFAULT_METADATA_FILENAME, 'json', '.')
         self.metadata = metadata
 
-    def get_content(self, binary_mode: bool = False):
+    def get_content(self, binary_mode: bool = False) -> str:
+        # TODO: why parse a JSON string just to re-serialize it?
         return json.dumps(self.metadata.to_json(), indent=4, sort_keys=True)

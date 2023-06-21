@@ -232,8 +232,15 @@ def seek_user_session(application, index=None):
         wfhub_user_info = user_info_r.json()['data']
         logger.debug("WfHub user info: %r", wfhub_user_info)
         application.config.pop("SEEK_API_KEY", None)
-        login_r = session.get(f"https://{application.config.get('SERVER_NAME')}/oauth2/login/seek")
-        logger.debug(login_r.content)
+        retries = 2
+        while retries > 0:
+            try:
+                login_r = session.get(f"https://{application.config.get('SERVER_NAME')}/oauth2/login/seek")
+                logger.debug(login_r.content)
+                if login_r.status_code == 200:
+                    break
+            finally:
+                retries -= 1
         assert login_r.status_code == 200, "Login Error: status code {} !!!".format(login_r.status_code)
         return OAuthIdentity.find_by_provider_user_id(wfhub_user_info['id'], 'seek').user, session, wfhub_user_info
 

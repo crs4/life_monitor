@@ -1,0 +1,4 @@
+0000000000000000000000000000000000000000 9e8045f9ea15ac7594c463a6c60c20fb0d79cdc0 Luca Pireddu <pireddu@crs4.it> 1686231983 +0200	commit (initial): Initial commit
+9e8045f9ea15ac7594c463a6c60c20fb0d79cdc0 580a96a91b62d750343d7becbedc5a73bf43bc43 Luca Pireddu <pireddu@crs4.it> 1686588011 +0200	commit: Set ROC main entity name and LM branch to be monitored
+580a96a91b62d750343d7becbedc5a73bf43bc43 baae060f0deba671927480c0d8aa7e45f1e84a75 Luca Pireddu <pireddu@crs4.it> 1686647677 +0200	commit: change LM config registries to match test fixture
+baae060f0deba671927480c0d8aa7e45f1e84a75 c97b820624c3117f5193f95b8357b14cc2f54153 Luca Pireddu <pireddu@crs4.it> 1686735479 +0200	commit: Update readme

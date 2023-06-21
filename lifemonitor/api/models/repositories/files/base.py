@@ -23,16 +23,32 @@ from __future__ import annotations
 import logging
 import os
 import re
-from typing import Tuple
+from pathlib import Path
+from typing import Optional, Tuple, Union
 
 # set module level logger
 logger = logging.getLogger(__name__)
 
 
 class RepositoryFile():
+    """
+    A file within a source code repository.  The file may or may not exist
+    locally.
 
-    def __init__(self, repository_path: str, name: str,
-                 type: str = None, dir: str = ".", content=None) -> None:
+    Attributes:
+        repository_path: Path of the local copy of the repository containing
+            this file. May be None if a local copy of the repository does not exist.
+        name: filename
+        dir: path to file within the repository (excluding name)
+        _type: extension of filename or type name specified via constructor.
+        _content: cached contents of the file, or content provided via constructor.
+    """
+
+    def __init__(self, repository_path: Optional[str], name: str,
+                 type: Optional[str] = None, dir: str = ".", content=None) -> None:
+        if not name:
+            raise ValueError("RepositoryFile constructed with empty file name")
+
         self.repository_path = repository_path
         self.name = name
         self.dir = dir
@@ -43,7 +59,7 @@ class RepositoryFile():
         return f"File {self.name} (dir: {self.dir})"
 
     @property
-    def type(self) -> str:
+    def type(self) -> Optional[str]:
         if not self._type and self.name:
             return self.get_type(self.name)
         return self._type
@@ -81,13 +97,14 @@ class RepositoryFile():
     def has_path(self, path) -> bool:
         return re.sub(r'\./?', '', self.dir) == re.sub(r'\./?', '', path)
 
-    def get_content(self, binary_mode: bool = False):
+    def get_content(self, binary_mode: bool = False) -> Union[str, bytes, None]:
         if not self._content and self.dir:
             with open(f"{self.path}", 'rb' if binary_mode else 'r') as f:
                 return f.read()
         return self._content
 
     @staticmethod
-    def get_type(filename: str) -> str:
-        parts = os.path.splitext(filename) if filename else None
-        return parts[1].replace('.', '') if parts and len(parts) > 0 else None
+    def get_type(filename: Optional[str]) -> Optional[str]:
+        path = Path(filename or '')
+        # Path.suffix includes the leading dot
+        return path.suffix[1:] if len(path.suffix) > 1 else None

@@ -47,6 +47,15 @@ class ValidationResult:
     def to_dict(self) -> Dict:
         return {'valid': self.valid, 'data': self.output_data}
 
+    def __repr__(self) -> str:
+        return str(self.to_dict())
+
+    def __str__(self) -> str:
+        return self.__repr__()
+
+    def __bool__(self) -> bool:
+        return self.valid
+
 
 class ValidationError(ValidationResult):
 

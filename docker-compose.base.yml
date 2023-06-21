@@ -12,7 +12,7 @@ services:
       - settings.conf
     environment:
       - "ALLOW_EMPTY_PASSWORD=no"
-    restart: "always"
+    restart: "unless-stopped"
     healthcheck:
       test: "pg_isready -U $${POSTGRESQL_USERNAME}"
       interval: "10s"
@@ -22,12 +22,33 @@ services:
     volumes:
       - "data_db:/bitnami/postgresql"
 
+  nginx:
+    image: bitnami/nginx:1.19-debian-10
+    depends_on:
+      - "lm"
+    ports:
+      - "8443:8443"
+    restart: "unless-stopped"
+    healthcheck:
+      test: >
+        /bin/sh -c "http_code=$$(curl --insecure https://lm:8443/health -s -w %{http_code}); if [ $${http_code} -eq 502 ]; then exit 1; fi;"
+      interval: "2s"
+      retries: 3
+      timeout: "1s"
+    networks:
+      - life_monitor
+    volumes:
+      - "./certs:/nginx/certs:ro"
+      - "./docker/nginx.conf:/opt/bitnami/nginx/conf/server_blocks/lm.conf:ro"
+      - "data_static_files:/app/lifemonitor/static:ro"
+      - "data_specs:/app/specs:ro"
+
   lm:
     # Remember that this service is using its default configuration
     # to access the database, so the settings must match the environment
     # configuration set for db above.
     image: crs4/lifemonitor
-    restart: "always"
+    restart: "unless-stopped"
     depends_on:
       - "db"
       - "init"
@@ -80,7 +101,7 @@ services:
   worker:
     image: crs4/lifemonitor
     entrypoint: /usr/local/bin/worker_entrypoint.sh
-    restart: "always"
+    restart: "unless-stopped"
     depends_on:
       - "db"
       - "init"
@@ -103,7 +124,7 @@ services:
   ws_server:
     image: crs4/lifemonitor
     entrypoint: /usr/local/bin/wss-entrypoint.sh
-    restart: "always"
+    restart: "unless-stopped"
     depends_on:
       - "db"
       - "init"

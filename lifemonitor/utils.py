@@ -20,6 +20,7 @@
 
 
 import base64
+import fnmatch
 import ftplib
 import functools
 import glob
@@ -40,7 +41,7 @@ import zipfile
 from datetime import datetime, timezone
 from importlib import import_module
 from os.path import basename, dirname, isfile, join
-from typing import Dict, List, Literal, Optional, Tuple, Type
+from typing import Dict, Iterable, List, Literal, Optional, Tuple, Type
 from urllib.parse import urlparse
 
 import flask
@@ -233,7 +234,7 @@ def validate_url(url: str) -> bool:
 def is_service_alive(url: str, timeout: Optional[int] = None) -> bool:
     try:
         try:
-            timeout = timeout or flask.current_app.config.get("SERVICE_ALIVE_TIMEOUT", 1)
+            timeout = timeout or flask.current_app.config.get("SERVICE_AVAILABILITY_TIMEOUT", 1)
         except Exception:
             timeout = 1
         response = requests.get(url, timeout=timeout)
@@ -257,19 +258,26 @@ def get_last_update(path: str):
     return time.ctime(max(os.stat(root).st_mtime for root, _, _ in os.walk(path)))
 
 
-def match_ref(ref: str, refs: List[str]) -> Optional[Tuple[str, str]]:
-    if not ref:
+def match_ref(candidate: str, refs: Iterable[str]) -> Optional[Tuple[str, str]]:
+    """
+    Checks the patterns in `refs` to see if any elements match the canditate string
+    according to Unix filename pattern matching (fnmatch.fnmatchcase).
+    For instance:
+        * candidate = "v1.0.1"; refs = ['v*.*.*'] -> Match
+        * candidate = "1.0.1"; refs = ['v*.*.*'] -> No match
+        * candidate = "pippo"; refs = ['*.*.*'] -> No match
+
+    If a match is found, returns tuple (candidate, matching ref).
+    If no match is found, returns None.
+    """
+    if not candidate:
         return None
-    for v in refs:
-        pattern = rf"^({v})$".replace('*', "[a-zA-Z0-9-_/]+")
-        try:
-            logger.debug("Searching match for %s (pattern: %s)", ref, pattern)
-            match = re.match(pattern, ref)
-            if match:
-                logger.debug("Match found: %r", match)
-                return (match.group(0), pattern.replace("[a-zA-Z0-9-_/]+", '*').strip('^()$'))
-        except Exception:
-            logger.debug("Unable to find a match for %s (pattern: %s)", ref, pattern)
+    for pattern in refs:
+        logger.debug("Searching match for %s (pattern: %s)", candidate, pattern)
+        if fnmatch.fnmatchcase(candidate, pattern):
+            logger.debug("Match found: %r === %r", candidate, pattern)
+            return (candidate, pattern)
+    logger.debug("Unable to find a match for %s (refs: %s)", candidate, refs)
     return None
 
 
@@ -624,8 +632,8 @@ def _make_git_credentials_callback(token: str = None):
     return pygit2.RemoteCallbacks(pygit2.UserPass('x-access-token', token)) if token else None
 
 
-def clone_repo(url: str, ref: str = None, target_path: str = None, auth_token: str = None,
-               remote_url: str = None, remote_branch: str = None, remote_user_token: str = None):
+def clone_repo(url: str, ref: Optional[str] = None, target_path: Optional[str] = None, auth_token: Optional[str] = None,
+               remote_url: Optional[str] = None, remote_branch: Optional[str] = None, remote_user_token: Optional[str] = None) -> str:
     try:
         from . import config
         logger.warning("Local CLONE: %r - %r", url, ref)
@@ -664,7 +672,7 @@ def clone_repo(url: str, ref: str = None, target_path: str = None, auth_token: s
         logger.debug("Clean up clone local path: %r %r ..... DONE", target_path, local_path)
 
 
-def checkout_ref(repo_path: str, ref: str, auth_token: str = None, branch_name: str = None):
+def checkout_ref(repo_path: str, ref: str, auth_token: Optional[str] = None, branch_name: Optional[str] = None) -> str:
     try:
         clone = pygit2.Repository(repo_path)
         if ref is not None:

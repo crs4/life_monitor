@@ -10,7 +10,7 @@ services:
     restart: "no"
     entrypoint: /bin/bash
     command: |
-      -c "wait-for-postgres.sh && ./lm-admin db init && /usr/local/bin/lm_entrypoint.sh"
+      -c "wait-for-postgres.sh && wait-for-redis.sh ./lm-admin db init && /usr/local/bin/lm_entrypoint.sh"
     environment:
       - "FLASK_ENV=testingSupport"
       - "HOME=/lm"

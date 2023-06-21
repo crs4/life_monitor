@@ -30,7 +30,7 @@ import string
 import urllib
 import uuid as _uuid
 from enum import Enum
-from typing import List
+from typing import List, Union
 
 from authlib.integrations.sqla_oauth2 import OAuth2TokenMixin
 from flask import current_app
@@ -219,7 +219,7 @@ class User(db.Model, UserMixin):
         user_notification = self.get_user_notification(notification_uuid)
         return None if not user_notification else user_notification.notification
 
-    def remove_notification(self, n: Notification | UserNotification):
+    def remove_notification(self, n: Union[Notification, UserNotification]):
         user_notification = None
         try:
             user_notification = self.get_user_notification(n.uuid)
@@ -320,6 +320,8 @@ class ApiKey(db.Model, ModelMixin):
                 self.scope = "{} {}".format(self.scope, s)
 
     def check_scopes(self, scopes: list or str):
+        if not scopes:
+            raise ValueError("Scopes cannot be None")
         if isinstance(scopes, str):
             scopes = scopes.split(" ")
         supported_scopes = self.scope.split(" ")

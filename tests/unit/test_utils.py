@@ -135,3 +135,13 @@ def test_parse_date_interval():
     assert operator == ".."
     assert start_date == dt
     assert end_date == dt
+
+
+def test_match_ref():
+    assert utils.match_ref('1.0.1', ['v1.0.1']) is None
+    assert utils.match_ref('v1.0.1', ['v1.0.1']) == ('v1.0.1', 'v1.0.1')
+    assert utils.match_ref('v1.0.1', ['v*.*.*']) == ('v1.0.1', 'v*.*.*')
+    assert utils.match_ref('v1.0.1', ['*.*.*']) == ('v1.0.1', '*.*.*')
+    assert utils.match_ref('1.0.1', ['*.*.*']) == ('1.0.1', '*.*.*')
+    assert utils.match_ref('pippo', ['*.*.*']) is None
+    assert utils.match_ref('v1.0.1', ['v*.*.*', '*.*.*']) == ('v1.0.1', 'v*.*.*')

@@ -37,7 +37,7 @@ crates_source_path = os.path.join(current_path, "../../../interaction_experiment
 logger.debug("RO-CRATES SOURCE PATH: %s", crates_source_path)
 
 crates_target_path = os.path.join(current_path, "crates")
-logger.debug("RO-CRATES SOURCE PATH: %s", crates_target_path)
+logger.debug("RO-CRATES TARGET PATH: %s", crates_target_path)
 
 # List of RO-Crates to be created.
 # New RO-crates are created by copying a path under crates_source_path to a path under crates_target_path.

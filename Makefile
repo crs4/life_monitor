@@ -17,11 +17,13 @@ define get_opts
 	$(shell opts=""; values=($(2)); for (( i=0; i<$${#values[@]}; i++)); do opts="$$opts --$(1) '$${values[$$i]}'"; done; echo "$$opts")
 endef
 
-# set docker-compose command
+# set docker-compose command and log level options
+log_level_opt :=
 ifeq ($(shell command -v "docker-compose" 2> /dev/null),)
 	docker_compose := docker compose
 else
 	docker_compose := docker-compose
+	log_level_opt := --log-level ERROR
 endif
 
 # default Docker build options
@@ -45,6 +47,12 @@ endif
 skip_build_opt := 0
 ifeq ($(SKIP_BUILD),1)
 	skip_build_opt := 1
+endif
+
+# set the flag to skip reset compose
+skip_reset_compose := 0
+ifeq ($(SKIP_RESET_COMPOSE),1) 
+	skip_reset_compose := 1
 endif
 
 # set the build number
@@ -90,7 +98,6 @@ all: images
 images: lifemonitor smeeio
 
 compose-files: docker-compose.base.yml \
-	docker-compose.prod.yml \
 	docker-compose.dev.yml \
 	docker-compose.extra.yml \
 	docker-compose.test.yml \
@@ -104,8 +111,7 @@ dev:
 	$(eval LM_MODE=dev)
 
 certs:
-	@# Generate certificates if they do not exist \
-	if ! [[ -f "certs/lm.key" && -f "certs/lm.key" && -f "certs/lifemonitor.ca.crt" ]]; then \
+	@if ! [[ -f "certs/lm.key" && -f "certs/lm.key" && -f "certs/lifemonitor.ca.crt" ]]; then \
 	  printf "\n$(bold)Generating certificates...$(reset)\n" ; \
 	  mkdir -p certs && \
 	  ./utils/certs/gencerts.sh && \
@@ -118,8 +124,7 @@ certs:
 	  printf "\n$(done)\n"; \
 	else \
 	  echo "$(yellow)WARNING: Using existing certificates$(reset)" ; \
-	fi
-	@# Generate JWT keys if they do not exist \
+	fi ;\
 	if ! [[ -f "certs/jwt-key" && -f "certs/jwt-key.pub" ]]; then \
 	  printf "\n$(bold)Generating JWT keys...$(reset)\n" ; \
 	  openssl genrsa -out certs/jwt-key 4096 ; \
@@ -157,13 +162,29 @@ webserver:
 	printf "$(done)\n"
 
 
-ro_crates:
+ro_crates: interaction_experiments/data/crates
 	@printf "\n$(bold)Preparing RO-Crate archives...$(reset)\n" ; \
 	docker run --rm --user $$(id -u):$$(id -g) \
 		       -v $$(pwd)/:/data \
 			   --entrypoint /bin/bash crs4/lifemonitor -c \
 			   "cd /data/tests/config/data && ls && python3 make-test-rocrates.py" ; \
 	printf "$(done)\n"
+
+
+permissions: certs
+	@chmod a+rx \
+		certs \
+		&& \
+	chmod a+r \
+		certs/* \
+		docker/nginx.dev.conf \
+		docker/nginx.conf \
+		prometheus.yml \
+		prometheus.dev.yml \
+		settings.conf \
+		tests/config/registries/seek/nginx.conf \
+		tests/config/registries/seek/doorkeeper.rb
+
 
 aux_images: tests/config/registries/seek/seek.Dockerfile certs
 	@printf "\n$(bold)Building auxiliary Docker images...$(reset)\n" ; \
@@ -172,12 +193,11 @@ aux_images: tests/config/registries/seek/seek.Dockerfile certs
 	       tests/config/registries/seek/ ; \
 	printf "$(done)\n"
 
-start: images compose-files prod reset_compose ## Start LifeMonitor in a Production environment
+start: images compose-files prod reset_compose permissions ## Start LifeMonitor in a Production environment
 	@printf "\n$(bold)Starting production services...$(reset)\n" ; \
 	base=$$(if [[ -f "docker-compose.yml" ]]; then echo "-f docker-compose.yml"; fi) ; \
 	echo "$$(USER_UID=$$(id -u) USER_GID=$$(id -g) \
 			 $(docker_compose) $${base} \
-	               -f docker-compose.prod.yml \
 				   -f docker-compose.base.yml \
 				   -f docker-compose.monitoring.yml \
 				   config)" > docker-compose.yml \
@@ -185,7 +205,7 @@ start: images compose-files prod reset_compose ## Start LifeMonitor in a Product
 	&& $(docker_compose) -f docker-compose.yml up -d redis db init lm worker ws_server nginx prometheus ;\
 	printf "$(done)\n"
 
-start-dev: images compose-files dev reset_compose ## Start LifeMonitor in a Development environment
+start-dev: images compose-files dev reset_compose permissions ## Start LifeMonitor in a Development environment
 	@printf "\n$(bold)Starting development services...$(reset)\n" ; \
 	base=$$(if [[ -f "docker-compose.yml" ]]; then echo "-f docker-compose.yml"; fi) ; \
 	echo "$$(USER_UID=$$(id -u) USER_GID=$$(id -g) \
@@ -195,10 +215,10 @@ start-dev: images compose-files dev reset_compose ## Start LifeMonitor in a Deve
 				   -f docker-compose.dev.yml \
 				   config)" > docker-compose.yml \
 	&& cp {,.dev.}docker-compose.yml \
-	&& $(docker_compose) -f docker-compose.yml up -d redis db dev_proxy github_event_proxy init lm worker ws_server prometheus ;\
+	&& $(docker_compose) -f docker-compose.yml up -d redis db dev_proxy github_event_proxy init lm worker ws_server prometheus nginx ;\
 	printf "$(done)\n"
 
-start-testing: compose-files aux_images ro_crates images reset_compose ## Start LifeMonitor in a Testing environment
+start-testing: compose-files aux_images ro_crates images reset_compose permissions ## Start LifeMonitor in a Testing environment
 	@printf "\n$(bold)Starting testing services...$(reset)\n" ; \
 	base=$$(if [[ -f "docker-compose.yml" ]]; then echo "-f docker-compose.yml"; fi) ; \
 	echo "$$(USER_UID=$$(id -u) USER_GID=$$(id -g) \
@@ -212,20 +232,19 @@ start-testing: compose-files aux_images ro_crates images reset_compose ## Start 
 	&& cp {,.test.}docker-compose.yml \
 	&& $(docker_compose) -f docker-compose.yml up -d db lmtests seek jenkins webserver worker ws_server ;\
 	$(docker_compose) -f ./docker-compose.yml \
-		exec -T lmtests /bin/bash -c "tests/wait-for-it.sh seek:3000 -t 600"; \
+		exec -T lmtests /bin/bash -c "tests/wait-for-seek.sh 600"; \
 	printf "$(done)\n"
 
-start-nginx: certs docker-compose.prod.yml ## Start a nginx front-end proxy for the LifeMonitor back-end
+start-nginx: certs docker-compose.base.yml permissions ## Start a nginx front-end proxy for the LifeMonitor back-end
 	@printf "\n$(bold)Starting nginx proxy...$(reset)\n" ; \
 	base=$$(if [[ -f "docker-compose.yml" ]]; then echo "-f docker-compose.yml"; fi) ; \
 	echo "$$(USER_UID=$$(id -u) USER_GID=$$(id -g) \
 			 $(docker_compose) $${base} \
-					-f docker-compose.prod.yml \
 				    -f docker-compose.base.yml config)" > docker-compose.yml \
 		  && $(docker_compose) up -d nginx ; \
 	printf "$(done)\n"
 
-start-aux-services: aux_images ro_crates docker-compose.extra.yml ## Start auxiliary services (i.e., Jenkins, Seek) useful for development and testing
+start-aux-services: aux_images ro_crates docker-compose.extra.yml permissions ## Start auxiliary services (i.e., Jenkins, Seek) useful for development and testing
 	@printf "\n$(bold)Starting auxiliary services...$(reset)\n" ; \
 	base=$$(if [[ -f "docker-compose.yml" ]]; then echo "-f docker-compose.yml"; fi) ; \
 	echo "$$(USER_UID=$$(id -u) USER_GID=$$(id -g) \
@@ -244,13 +263,13 @@ start-aux-services: aux_images ro_crates docker-compose.extra.yml ## Start auxil
 run-tests: start-testing ## Run all tests in the Testing Environment
 	@printf "\n$(bold)Running tests...$(reset)\n" ; \
 	USER_UID=$$(id -u) USER_GID=$$(id -g) \
-	$(docker_compose) exec -T lmtests /bin/bash -c "pytest --color=yes tests"
+	$(docker_compose) exec -T lmtests /bin/bash -c "pytest --durations=10 --color=yes tests"
 
 
 tests: start-testing ## CI utility to setup, run tests and teardown a testing environment
 	@printf "\n$(bold)Running tests...$(reset)\n" ; \
 	$(docker_compose) -f ./docker-compose.yml \
-		exec -T lmtests /bin/bash -c "pytest --color=yes tests"; \
+		exec -T lmtests /bin/bash -c "pytest --reruns 2 --reruns-delay 5 --durations=10 --color=yes tests"; \
 	  result=$$?; \
 	  	printf "\n$(bold)Teardown services...$(reset)\n" ; \
 	  	USER_UID=$$(id -u) USER_GID=$$(id -g) \
@@ -260,12 +279,12 @@ tests: start-testing ## CI utility to setup, run tests and teardown a testing en
 				   -f docker-compose.dev.yml \
 				   -f docker-compose.test.yml \
 				   down ; \
-		printf "$(done)\n" ; \
+		printf "$(done)\n" ; \fix/gen-invalid-lm-config
 	  exit $$?
 
 stop-aux-services: docker-compose.extra.yml ## Stop all auxiliary services (i.e., Jenkins, Seek)
 	@echo "$(bold)Teardown auxiliary services...$(reset)" ; \
-	$(docker_compose) -f docker-compose.extra.yml --log-level ERROR stop ; \
+	$(docker_compose) -f docker-compose.extra.yml $(log_level_opt) stop ; \
 	printf "$(done)\n"
 
 # stop-jupyter: docker-compose.jupyter.yml ## Stop jupyter service
@@ -285,7 +304,7 @@ stop-testing: compose-files ## Stop all the services in the Testing Environment
 				   -f docker-compose.base.yml \
 				   -f docker-compose.dev.yml \
 				   -f docker-compose.test.yml \
-				   --log-level ERROR stop db lmtests seek jenkins webserver worker ws_server ; \
+				   $(log_level_opt) stop db lmtests seek jenkins webserver worker ws_server ; \
 	printf "$(done)\n"
 
 stop-dev: compose-files ## Stop all services in the Develop Environment
@@ -293,16 +312,16 @@ stop-dev: compose-files ## Stop all services in the Develop Environment
 	USER_UID=$$(id -u) USER_GID=$$(id -g) \
 	$(docker_compose) -f docker-compose.base.yml \
 				   -f docker-compose.dev.yml \
-				   stop init lm db github_event_proxy dev_proxy redis worker ws_server prometheus ; \
+				   -f docker-compose.monitoring.yml \
+				   stop init lm db github_event_proxy dev_proxy nginx redis worker ws_server prometheus ; \
 	printf "$(done)\n"
 
 stop: compose-files ## Stop all the services in the Production Environment
 	@echo "$(bold)Stopping production services...$(reset)" ; \
 	USER_UID=$$(id -u) USER_GID=$$(id -g) \
 	$(docker_compose) -f docker-compose.base.yml \
-				   -f docker-compose.prod.yml \
 				   -f docker-compose.monitoring.yml \
-				   --log-level ERROR stop init nginx lm db prometheus redis worker ws_server ; \
+				   $(log_level_opt) stop init nginx lm db prometheus redis worker ws_server ; \
 	printf "$(done)\n"
 
 stop-all: ## Stop all the services
@@ -316,7 +335,9 @@ stop-all: ## Stop all the services
 	fi
 
 reset_compose:
-	@if [[ -f "docker-compose.yml" ]]; then \
+	@if [[ $${SKIP_RESET_COMPOSE} -eq 1 ]]; then \
+		echo "$(bold)Skip reset of docker-compose services $(reset)" ;\
+	elif [[ -f "docker-compose.yml" ]]; then \
 		cmp -s docker-compose.yml .$(LM_MODE).docker-compose.yml ; \
 		RETVAL=$$? ; \
 		if [ $${RETVAL} -ne 0 ]; then \

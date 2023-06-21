@@ -23,7 +23,7 @@ from __future__ import annotations
 import logging
 import re
 from typing import (Any, Callable, Dict, List, Optional, OrderedDict, Tuple,
-                    Type)
+                    Type, Union)
 
 import github
 from github.GithubException import GithubException
@@ -137,7 +137,7 @@ class GithubIOHandler(IOHandler):
         return None
 
     def parse_answer(self, answer: object) -> str:
-        return re.sub(r'(@lm|%s)\s+' % self.app.bot.strip("[bot]"), '',
+        return re.sub(r'%s\s+' % self.app.bot.strip("[bot]"), '',
                       answer.body) if answer else None
 
     def get_input_as_text(self, question: QuestionStep) -> object:
@@ -156,7 +156,7 @@ class GithubIOHandler(IOHandler):
         return result
 
     def get_help(self):
-        return f'<br>\n> **?** type **@lm** or **@{self.app.bot.strip("[bot]")}** to answer'
+        return f'<br>\n> **?** type **@{self.app.bot.strip("[bot]")}** to answer'
 
     def write(self, step: Step, append_help: bool = False):
         assert isinstance(step, Step), step
@@ -245,9 +245,9 @@ class CachedPaginatedList(PaginatedList):
     def __init__(self, contentClass: Type, requester: Requester,
                  firstUrl: str, firstParams: Any, headers: Optional[Dict[str, str]] = None,
                  list_item: str = "items",
-                 transactional_update: Optional[bool | Callable] = False,
-                 force_use_cache: Optional[bool | Callable] = False,
-                 unless: Optional[bool | Callable] = None,
+                 transactional_update: Union[bool, Callable, None] = False,
+                 force_use_cache: Union[bool, Callable, None] = False,
+                 unless: Union[bool, Callable, None] = None,
                  limit: Optional[int] = None) -> None:
         super().__init__(contentClass, requester, firstUrl, firstParams, headers, list_item)
         self.transaction_update = transactional_update

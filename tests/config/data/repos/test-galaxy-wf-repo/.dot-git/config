@@ -1,0 +1,14 @@
+[core]
+	repositoryformatversion = 0
+	filemode = true
+	bare = false
+	logallrefupdates = true
+[remote "origin"]
+	url = https://github.com/ilveroluca/test-galaxy-wf-repo.git
+	fetch = +refs/heads/*:refs/remotes/origin/*
+[remote "origin-ssh"]
+	url = git@github.com:ilveroluca/test-galaxy-wf-repo.git
+	fetch = +refs/heads/*:refs/remotes/origin-ssh/*
+[branch "main"]
+	remote = origin-ssh
+	merge = refs/heads/main

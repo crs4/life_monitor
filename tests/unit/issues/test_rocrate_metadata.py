@@ -28,40 +28,33 @@ logger = logging.getLogger(__name__)
 
 
 @pytest.fixture
-def repository() -> GithubWorkflowRepository:
-    repo = GithubWorkflowRepository('iwc-workflows/gromacs-mmgbsa', ref="HEAD")
-    logger.debug("Github workflow repository: %r", repo)
-    return repo
-
-
-@pytest.fixture
 def issue() -> MissingROCrateFile:
     return MissingROCrateFile()
 
 
-def test_check_true(repository: GithubWorkflowRepository, issue: MissingROCrateFile):
-    logger.debug("Workflow RO-Crate: %r", repository)
+def test_check_true(github_repository: GithubWorkflowRepository, issue: MissingROCrateFile):
+    logger.debug("Workflow RO-Crate: %r", github_repository)
 
     # detect workflow metadata
-    metadata = repository.metadata
+    metadata = github_repository.metadata
     logger.debug("Detected workflow metadata: %r", metadata)
     assert metadata, "Workflow metadata not found"
 
     # test if issue doesn't apply to the current repo
-    result = issue.check(repository)
+    result = issue.check(github_repository)
     assert result is False, "Workflow RO-Crate should have the workflow file"
 
 
-def test_check_false(repository: GithubWorkflowRepository, issue: MissingROCrateFile):
-    logger.debug("Workflow RO-Crate: %r", repository)
+def test_check_false(github_repository: GithubWorkflowRepository, issue: MissingROCrateFile):
+    logger.debug("Workflow RO-Crate: %r", github_repository)
 
     # detect workflow file
-    metadata = repository.metadata
+    metadata = github_repository.metadata
     logger.debug("Detected workflow file: %r", metadata)
     assert metadata, "Workflow file not found"
 
     # set reference to local copy of the remote repo
-    local = repository.local_repo
+    local = github_repository.local_repo
 
     # temporary remove workflow metadata from the local repo
     local.remove_file(metadata.repository_file)
