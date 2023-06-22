@@ -655,7 +655,7 @@ def issue_comment(event: GithubEvent):
     logger.debug("Detected wizard: %r", wizard)
     if wizard:
         step = wizard.current_step
-        logger.debug("The current step: %r %r", step, step.wizard)
+        logger.debug("The current step: %r (wizard: %r)", step, step.wizard if step else None)
 
         if isinstance(step, QuestionStep):
             answer = step.get_answer()
