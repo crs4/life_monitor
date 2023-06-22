@@ -137,7 +137,7 @@ class GithubIOHandler(IOHandler):
         return None
 
     def parse_answer(self, answer: object) -> str:
-        return re.sub(r'%s\s+' % self.app.bot.strip("[bot]"), '',
+        return re.sub(r'(@%s)\s+' % self.app.bot.strip("[bot]"), '',
                       answer.body) if answer else None
 
     def get_input_as_text(self, question: QuestionStep) -> object:
