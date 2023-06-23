@@ -568,16 +568,24 @@ class SuiteSchema(ResourceMetadataSchema):
         self.latest_builds = latest_builds
 
     def get_definition(self, obj):
-        result = {
-            'path': obj.definition['path'],
-            'test_engine': {
-                'type': obj.definition['test_engine']['type']
+        if not hasattr(obj, 'definition') or not obj.definition:
+            return None
+        try:
+            result = {
+                'path': obj.definition['path'],
+                'test_engine': {
+                    'type': obj.definition['test_engine']['type']
+                }
             }
-        }
-        engine_version = obj.definition['test_engine'].get('version', None)
-        if engine_version:
-            result['test_engine']['version'] = engine_version
-        return result
+            engine_version = obj.definition['test_engine'].get('version', None)
+            if engine_version:
+                result['test_engine']['version'] = engine_version
+            return result
+        except Exception as e:
+            logger.error("Unable to extract definition for suite: %r", obj)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.exception(e)
+            return None
 
     def get_status(self, obj):
         try:
