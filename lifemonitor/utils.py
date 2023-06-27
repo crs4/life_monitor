@@ -47,6 +47,8 @@ from typing import Dict, Iterable, List, Literal, Optional, Tuple, Type
 from urllib.parse import urlparse
 
 import flask
+import git
+import giturlparse
 import networkx as nx
 import pygit2
 import requests
@@ -724,6 +726,37 @@ def get_current_active_branch(local_repo_path: str) -> str:
         raise ValueError(f"Invalid git repository: {local_repo_path}")
     except Exception as e:
         raise lm_exceptions.LifeMonitorException(detail=f"Unable to get the current active branch: {e}")
+
+
+class RemoteGitRepoInfo(giturlparse.result.GitUrlParsed):
+    pathname: str = None
+    protocol: str = None
+    owner: str = None
+
+    def __init__(self, parsed_info):
+        # fix for giturlparse: protocols are not parsed correctly
+        del parsed_info['protocols']
+        super().__init__(parsed_info)
+
+    @property
+    def fullname(self):
+        return f"{self.owner}/{self.repo}"
+
+    @property
+    def urls(self) -> Dict[str, str]:
+        urls = super().urls
+        # fix for giturlparse: https urls should not have a .git suffix
+        urls['https'] = urls['https'].rstrip('.git')
+        return urls
+
+    @property
+    def protocols(self) -> List[str]:
+        return list(self.urls.keys())
+
+    @staticmethod
+    def parse(git_remote_url: str) -> RemoteGitRepoInfo:
+        return RemoteGitRepoInfo(giturlparse.parser.parse(git_remote_url))
+
 
 def get_current_ref(local_repo_path: str) -> str:
     assert os.path.isdir(local_repo_path), "Path should be a folder"
