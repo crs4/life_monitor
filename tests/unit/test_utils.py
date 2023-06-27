@@ -18,6 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import logging
 import os
 import tempfile
 
@@ -25,6 +26,8 @@ import pytest
 
 import lifemonitor.exceptions as lm_exceptions
 import lifemonitor.utils as utils
+
+logger = logging.getLogger(__name__)
 
 
 def test_download_url_404():
@@ -145,3 +148,15 @@ def test_match_ref():
     assert utils.match_ref('1.0.1', ['*.*.*']) == ('1.0.1', '*.*.*')
     assert utils.match_ref('pippo', ['*.*.*']) is None
     assert utils.match_ref('v1.0.1', ['v*.*.*', '*.*.*']) == ('v1.0.1', 'v*.*.*')
+
+
+def test_main_branch_detection_no_remote(simple_local_wf_repo):
+    logger.debug("Testing main branch detection... (repo: %r)", simple_local_wf_repo)
+    logger.debug("Repo branches: %r", simple_local_wf_repo.local_path)
+    assert utils.detect_default_remote_branch(simple_local_wf_repo.local_path) is None, "No remote, main branch detection should fail"
+
+
+def test_main_branch_detection():
+    logger.debug("Testing main branch detection of LifeMonitor repo... (repo: %r)", '.')
+    assert utils.detect_default_remote_branch('.') == 'master', "main branch detection failed"
+
