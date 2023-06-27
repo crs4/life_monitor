@@ -160,3 +160,16 @@ def test_main_branch_detection():
     logger.debug("Testing main branch detection of LifeMonitor repo... (repo: %r)", '.')
     assert utils.detect_default_remote_branch('.') == 'master', "main branch detection failed"
 
+
+def test_active_branch_detection(simple_local_wf_repo):
+    logger.debug("Testing active branch detection... (repo: %r)", simple_local_wf_repo)
+    logger.debug("Repo local path: %r", simple_local_wf_repo.local_path)
+    assert utils.get_current_active_branch(simple_local_wf_repo.local_path) == 'main', "active branch detection failed"
+
+
+def test_active_branch_detection_against_no_git_folder():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        logger.debug("Testing active branch detection... (repo: %r)", tmpdir)
+        with pytest.raises(ValueError):
+            assert utils.get_current_active_branch(tmpdir) is None, "active branch detection failed"
+
