@@ -18,6 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+from __future__ import annotations
 
 import base64
 import fnmatch
@@ -33,6 +34,7 @@ import re
 import shutil
 import socket
 import string
+import subprocess
 import tempfile
 import time
 import urllib
@@ -697,6 +699,20 @@ def checkout_ref(repo_path: str, ref: str, auth_token: Optional[str] = None, bra
             raise lm_exceptions.NotAuthorizedException("Token authorization not valid")
         raise lm_exceptions.DownloadException(detail=str(e))
 
+
+def detect_default_remote_branch(local_repo_path: str) -> Optional[str]:
+    '''Return the default remote branch of the repo; None if not found'''
+    assert os.path.isdir(local_repo_path), "Path should be a folder"
+    try:
+        output = subprocess.run(['git', 'symbolic-ref', 'refs/remotes/origin/HEAD'],
+                                check=False, stdout=subprocess.PIPE, cwd=local_repo_path).stdout.decode('utf-8')
+        branch_name = output.replace('refs/remotes/origin/', '').strip()
+        return branch_name or None
+    except Exception as e:
+        logger.error(e)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.exception(e)
+        return None
 
 def get_current_ref(local_repo_path: str) -> str:
     assert os.path.isdir(local_repo_path), "Path should be a folder"
