@@ -21,6 +21,7 @@
 import logging
 import os
 import tempfile
+from typing import Dict
 
 import pytest
 
@@ -173,3 +174,28 @@ def test_active_branch_detection_against_no_git_folder():
         with pytest.raises(ValueError):
             assert utils.get_current_active_branch(tmpdir) is None, "active branch detection failed"
 
+
+def __git_remote_urls__() -> Dict[str, str]:
+    return {
+        'https': 'https://github.com/crs4/life_monitor',
+        'ssh': 'git@github.com:crs4/life_monitor.git',
+        'git': 'git://github.com/crs4/life_monitor.git'
+    }
+
+
+@pytest.mark.parametrize("protocol,remote_git_url", list(__git_remote_urls__().items()))
+def test_remote_git_info_detection(protocol, remote_git_url):
+    remote_info = utils.RemoteGitRepoInfo.parse(remote_git_url)
+    assert remote_info is not None, "remote info detection failed"
+    assert isinstance(remote_info, utils.RemoteGitRepoInfo), "remote info detection failed"
+
+    assert remote_info.url == remote_git_url, "Invalid remote url"
+    assert remote_info.owner == 'crs4', "Invalid remote owner"
+    assert remote_info.repo == 'life_monitor', "Invalid remote repo"
+    assert remote_info.fullname == 'crs4/life_monitor', "Invalid remote fullname"
+    assert protocol in remote_info.protocols, "Invalid remote protocols"
+    assert remote_info.host == 'github.com', "Invalid remote host"
+    assert protocol in remote_info.urls, "Invalid remote urls"
+
+    for p, u in __git_remote_urls__().items():
+        assert u == remote_info.urls[p], "Invalid remote url for the %s protocol" % p
