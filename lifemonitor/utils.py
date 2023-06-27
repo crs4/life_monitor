@@ -714,6 +714,17 @@ def detect_default_remote_branch(local_repo_path: str) -> Optional[str]:
             logger.exception(e)
         return None
 
+
+def get_current_active_branch(local_repo_path: str) -> str:
+    assert os.path.isdir(local_repo_path), "Path should be a folder"
+    try:
+        repo = git.Repo(local_repo_path)
+        return repo.active_branch.name
+    except git.InvalidGitRepositoryError:
+        raise ValueError(f"Invalid git repository: {local_repo_path}")
+    except Exception as e:
+        raise lm_exceptions.LifeMonitorException(detail=f"Unable to get the current active branch: {e}")
+
 def get_current_ref(local_repo_path: str) -> str:
     assert os.path.isdir(local_repo_path), "Path should be a folder"
     repo = pygit2.Repository(local_repo_path)
