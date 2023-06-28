@@ -25,7 +25,7 @@ from typing import Dict
 import pytest
 
 import lifemonitor.api.models.repositories as repos
-import lifemonitor.utils as utils
+#  import lifemonitor.utils as utils
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +68,7 @@ def test_base_repo_fullname_wo_owner(test_repo_info):
                                     name=test_repo_info['name'])
     assert isinstance(repo, repos.WorkflowRepository), "Repository is not a WorkflowRepository"
     assert repo.name == test_repo_info['name'], "Repository name is not correct"
-    assert repo.owner == None, "Repository owner is not correct"
+    assert repo.owner is None, "Repository owner is not correct"
     assert repo.full_name == test_repo_info['name'], "Repository full name is not correct"
 
 

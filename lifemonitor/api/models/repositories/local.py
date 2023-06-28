@@ -332,4 +332,3 @@ class LocalGitWorkflowRepository(LocalWorkflowRepository):
     @property
     def remote_info(self) -> RemoteGitRepoInfo | None:
         return self._remote_repo_info
-
