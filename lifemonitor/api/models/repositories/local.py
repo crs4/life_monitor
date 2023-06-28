@@ -32,6 +32,8 @@ from io import BytesIO
 from pathlib import Path
 from typing import List, Optional
 
+import git
+
 from lifemonitor.api.models.repositories.base import (
     WorkflowRepository, WorkflowRepositoryMetadata)
 from lifemonitor.api.models.repositories.files import (RepositoryFile,
@@ -41,7 +43,7 @@ from lifemonitor.exceptions import (DecodeROCrateException,
                                     IllegalStateException,
                                     LifeMonitorException,
                                     NotValidROCrateException)
-from lifemonitor.utils import extract_zip, walk
+from lifemonitor.utils import RemoteGitRepoInfo, extract_zip, walk
 
 # set module level logger
 logger = logging.getLogger(__name__)
