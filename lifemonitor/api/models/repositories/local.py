@@ -51,9 +51,22 @@ class LocalWorkflowRepository(WorkflowRepository):
 
     def __init__(self,
                  local_path: str,
+                 remote_url: Optional[str] = None,
+                 owner: Optional[str] = None,
+                 name: Optional[str] = None,
+                 license: Optional[str] = None,
                  exclude: Optional[List[str]] = None) -> None:
-        super().__init__(local_path, exclude=exclude)
+        super().__init__(local_path=local_path,
+                         remote_url=remote_url,
+                         owner=owner,
+                         name=name,
+                         license=license,
+                         exclude=exclude)
         self._transient_files = {'add': {}, 'remove': {}}
+        # check if the local path is defined
+        if not local_path:
+            raise ValueError("Local path not set")
+        # check if the local path is a git repository
 
     @staticmethod
     def is_git_repo(local_path: str) -> bool:
@@ -124,7 +137,7 @@ class LocalWorkflowRepository(WorkflowRepository):
                                       workflow_version=workflow_version,
                                       local_repo_path=self.local_path,
                                       license=license or self.license,
-                                      repo_url=repo_url or self.https_url, **kwargs)
+                                      repo_url=repo_url or self.remote_url, **kwargs)
             self._metadata = WorkflowRepositoryMetadata(self, init=False, exclude=self.exclude,
                                                         local_path=self.local_path)
         except Exception as e:
@@ -168,10 +181,20 @@ class TemporaryLocalWorkflowRepository(LocalWorkflowRepository):
 
     def __init__(self,
                  local_path: str,
+                 remote_url: Optional[str] = None,
+                 owner: Optional[str] = None,
+                 name: Optional[str] = None,
+                 license: Optional[str] = None,
                  exclude: Optional[List[str]] = None,
                  auto_cleanup: bool = True) -> None:
         self.auto_cleanup = auto_cleanup
-        super().__init__(local_path, exclude)
+        super().__init__(
+            local_path=local_path,
+            remote_url=remote_url,
+            owner=owner,
+            name=name,
+            license=license,
+            exclude=exclude)
 
     def cleanup(self) -> None:
         logger.debug("Cleaning temp extraction folder of zipped repository @ %s ...", self.local_path)
@@ -186,9 +209,22 @@ class TemporaryLocalWorkflowRepository(LocalWorkflowRepository):
 
 class ZippedWorkflowRepository(TemporaryLocalWorkflowRepository):
 
-    def __init__(self, archive_path: str | Path, exclude: Optional[List[str]] = None, auto_cleanup: bool = True) -> None:
-        local_path = tempfile.mkdtemp(dir=BaseConfig.BASE_TEMP_FOLDER)
-        super().__init__(local_path=local_path, exclude=exclude, auto_cleanup=auto_cleanup)
+    def __init__(self, archive_path: str | Path,
+                 local_path: Optional[str] = None,
+                 remote_url: Optional[str] = None,
+                 owner: Optional[str] = None,
+                 name: Optional[str] = None,
+                 license: Optional[str] = None,
+                 exclude: Optional[List[str]] = None,
+                 auto_cleanup: bool = True) -> None:
+        local_path = local_path or tempfile.mkdtemp(dir=BaseConfig.BASE_TEMP_FOLDER)
+        super().__init__(local_path=local_path,
+                         remote_url=remote_url,
+                         owner=owner,
+                         name=name,
+                         license=license,
+                         exclude=exclude,
+                         auto_cleanup=auto_cleanup)
         try:
             extract_zip(archive_path, local_path)
             self.archive_path = archive_path
@@ -201,10 +237,25 @@ class ZippedWorkflowRepository(TemporaryLocalWorkflowRepository):
 
 class Base64WorkflowRepository(TemporaryLocalWorkflowRepository):
 
-    def __init__(self, base64_rocrate: str) -> None:
-        local_path = tempfile.mkdtemp(dir=BaseConfig.BASE_TEMP_FOLDER)
-        super().__init__(local_path, auto_cleanup=True)
+    def __init__(self, base64_rocrate: str,
+                 local_path: Optional[str] = None,
+                 remote_url: Optional[str] = None,
+                 owner: Optional[str] = None,
+                 name: Optional[str] = None,
+                 license: Optional[str] = None,
+                 exclude: Optional[List[str]] = None,
+                 auto_cleanup: bool = True) -> None:
+        local_path = local_path or tempfile.mkdtemp(dir=BaseConfig.BASE_TEMP_FOLDER)
+        super().__init__(
+            local_path=local_path,
+            remote_url=remote_url,
+            owner=owner,
+            name=name,
+            license=license,
+            exclude=exclude,
+            auto_cleanup=auto_cleanup)
         try:
+            self._base64 = base64_rocrate
             rocrate = base64.b64decode(base64_rocrate)
             zip_file = zipfile.ZipFile(BytesIO(rocrate))
             zip_file.extractall(local_path)
@@ -222,10 +273,28 @@ class LocalGitWorkflowRepository(LocalWorkflowRepository):
     A LocalWorkflowRepository that is also a Git repository.
     """
 
-    def __init__(self, local_path: str, exclude: Optional[List[str]] = None) -> None:
-        from git import Repo
-        super().__init__(local_path, exclude)
-        self._git_repo = Repo(self.local_path)
+    def __init__(self,
+                 local_path: Optional[str] = None,
+                 remote_url: Optional[str] = None,
+                 owner: Optional[str] = None,
+                 name: Optional[str] = None,
+                 license: Optional[str] = None,
+                 exclude: Optional[List[str]] = None) -> None:
+        super().__init__(
+            local_path=local_path,
+            remote_url=remote_url,
+            owner=owner,
+            name=name,
+            license=license,
+            exclude=exclude
+        )
+        self._git_repo = git.Repo(self.local_path)
+        self._remote_repo_info = None
+        try:
+            self._remote_repo_info = RemoteGitRepoInfo.parse(self._git_repo.remotes.origin.url)
+        except git.exc.GitCommandError as e:
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.exception(e)
 
     @property
     def main_branch(self) -> str:
