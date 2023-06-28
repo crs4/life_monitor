@@ -302,3 +302,28 @@ class LocalGitWorkflowRepository(LocalWorkflowRepository):
     @property
     def main_branch(self) -> str:
         return self._git_repo.active_branch.name
+
+    @property
+    def owner(self) -> str:
+        return super().owner or \
+            self._remote_repo_info.owner if self._remote_repo_info else None
+
+    @property
+    def name(self) -> str:
+        return super().name or \
+            self._remote_repo_info.repo if self._remote_repo_info else None
+
+    @property
+    def remote_url(self) -> str:
+        return super().remote_url or \
+            self._remote_repo_info.url if self._remote_repo_info else None
+
+    @property
+    def license(self) -> str:
+        return super().license or \
+            self._remote_repo_info.license if self._remote_repo_info else None
+
+    @property
+    def remote_info(self) -> RemoteGitRepoInfo | None:
+        return self._remote_repo_info
+

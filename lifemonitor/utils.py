@@ -753,6 +753,17 @@ class RemoteGitRepoInfo(giturlparse.result.GitUrlParsed):
     def protocols(self) -> List[str]:
         return list(self.urls.keys())
 
+    @property
+    def license(self) -> Optional[str]:
+        try:
+            if self.host == 'github.com':
+                l_info = requests.get(f"https://api.github.com/repos/{self.fullname}/license")
+                self._license = l_info.json()['license']['spdx_id']
+        except Exception as e:
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.error(e)
+        return self._license
+
     @staticmethod
     def parse(git_remote_url: str) -> RemoteGitRepoInfo:
         return RemoteGitRepoInfo(giturlparse.parser.parse(git_remote_url))
