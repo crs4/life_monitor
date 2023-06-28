@@ -25,7 +25,7 @@ from typing import Dict
 import pytest
 
 import lifemonitor.api.models.repositories as repos
-#  import lifemonitor.utils as utils
+import lifemonitor.utils as utils
 
 logger = logging.getLogger(__name__)
 
@@ -72,11 +72,20 @@ def test_base_repo_fullname_wo_owner(test_repo_info):
     assert repo.full_name == test_repo_info['name'], "Repository full name is not correct"
 
 
-# def test_base_repo_system_user_as_owner(test_repo_info):
-#     repo = repos.WorkflowRepository(local_path=test_repo_info['local_path'],
-#                                     name=test_repo_info['name'],
-#                                     license=test_repo_info['license'],
-#                                     exclude=test_repo_info['exclude'],)
+def test_base_repo_system_user_as_owner(test_repo_info):
+    repo = repos.WorkflowRepository(local_path=test_repo_info['local_path'],
+                                    name=test_repo_info['name'],
+                                    license=test_repo_info['license'],
+                                    exclude=test_repo_info['exclude'],
+                                    owner_as_system_user=True)
+
+    current_username = utils.get_current_username()
+    assert repo, "Repository object is None"
+    assert isinstance(repo, repos.WorkflowRepository), "Repository is not a WorkflowRepository"
+    assert repo.name == test_repo_info['name'], "Repository name is not correct"
+    assert repo.owner == current_username, "Repository owner is not correct"
+    assert repo.full_name == f"{current_username}/{test_repo_info['name']}", "Repository full name is not correct"
+
 
 #     current_username = utils.get_current_username()
 #     assert repo, "Repository object is None"

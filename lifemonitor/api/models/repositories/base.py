@@ -35,7 +35,7 @@ import lifemonitor.api.models.issues as issues
 from lifemonitor.api.models.repositories.config import WorkflowRepositoryConfig
 from lifemonitor.exceptions import IllegalStateException
 from lifemonitor.test_metadata import get_roc_suites, get_workflow_authors
-from lifemonitor.utils import to_camel_case
+from lifemonitor.utils import get_current_username, to_camel_case
 
 from .files import RepositoryFile, WorkflowFile
 
@@ -52,7 +52,8 @@ class WorkflowRepository():
                  owner: Optional[str] = None,
                  name: Optional[str] = None,
                  license: Optional[str] = None,
-                 exclude: Optional[List[str]] = None) -> None:
+                 exclude: Optional[List[str]] = None,
+                 owner_as_system_user: bool = False) -> None:
         if not local_path:
             raise ValueError("empty local_path argument")
         self._local_path = local_path
@@ -62,6 +63,8 @@ class WorkflowRepository():
         self._remote_url = remote_url
         self._name = name
         self._owner = owner
+        if not owner and owner_as_system_user:
+            self._owner = get_current_username()
         self._license = license
 
     @property
