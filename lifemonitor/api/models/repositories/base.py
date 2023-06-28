@@ -99,7 +99,9 @@ class WorkflowRepository():
 
     @property
     def full_name(self) -> str:
-        return f"{self.owner}/{self.name}"
+        if self.owner:
+            return f"{self.owner}/{self.name}"
+        return self.name
 
     @property
     def remote_url(self) -> str:
