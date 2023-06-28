@@ -45,7 +45,7 @@ from github.ContentFile import ContentFile
 from github.Repository import Repository as GithubRepository
 from github.Requester import Requester
 
-from .local import ZippedWorkflowRepository
+from .local import LocalGitWorkflowRepository, ZippedWorkflowRepository
 
 DEFAULT_BASE_URL = "https://api.github.com"
 DEFAULT_TIMEOUT = 15
@@ -194,13 +194,13 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
         return checkout_ref(self.local_path, ref, auth_token=token, branch_name=branch_name)
 
     @property
-    def https_url(self) -> str:
+    def remote_url(self) -> str:
         return self.html_url
 
     @property
     def _remote_parser(self) -> giturlparse.GitUrlParsed:
         try:
-            return giturlparse.parse(self.https_url)
+            return giturlparse.parse(self.remote_url)
         except Exception as e:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.exception(e)
@@ -333,12 +333,12 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
         return self.local_repo.write_zip(target_path=target_path)
 
     @property
-    def local_repo(self) -> LocalWorkflowRepository:
+    def local_repo(self) -> LocalGitWorkflowRepository:
         if not self._local_repo:
             local_path = self._local_path or tempfile.mkdtemp(dir=BaseConfig.BASE_TEMP_FOLDER)
             logger.debug("Cloning %r", self)
             clone_repo(self.clone_url, ref=self.ref, target_path=local_path)
-            self._local_repo = LocalWorkflowRepository(local_path=local_path)
+            self._local_repo = LocalGitWorkflowRepository(local_path=local_path)
         return self._local_repo
 
     @property
