@@ -272,6 +272,10 @@ class Base64WorkflowRepository(TemporaryLocalWorkflowRepository):
             logger.debug(e)
             raise DecodeROCrateException(detail=str(e))
 
+    @property
+    def base64_archive(self) -> str:
+        return self._base64
+
 
 class LocalGitWorkflowRepository(LocalWorkflowRepository):
     """
