@@ -67,6 +67,9 @@ class LocalWorkflowRepository(WorkflowRepository):
         if not local_path:
             raise ValueError("Local path not set")
         # check if the local path is a git repository
+        # and if so, raise a warning
+        if self.is_git_repo(self.local_path):
+            logger.warning("The repository is a git repository. You should use the LocalGitWorkflowRepository instead")
 
     @staticmethod
     def is_git_repo(local_path: str) -> bool:
