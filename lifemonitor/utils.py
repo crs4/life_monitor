@@ -717,10 +717,21 @@ def detect_default_remote_branch(local_repo_path: str) -> Optional[str]:
     '''Return the default remote branch of the repo; None if not found'''
     assert os.path.isdir(local_repo_path), "Path should be a folder"
     try:
-        output = subprocess.run(['git', 'symbolic-ref', 'refs/remotes/origin/HEAD'],
-                                check=False, stdout=subprocess.PIPE, cwd=local_repo_path).stdout.decode('utf-8')
-        branch_name = output.replace('refs/remotes/origin/', '').strip()
-        return branch_name or None
+        pattern = r"HEAD branch: (\w+)"
+        repo = git.Repo(local_repo_path)
+        for remote in repo.remotes:
+            try:
+                output = subprocess.run(['git', 'remote', 'show', remote.url],
+                                        check=False, stdout=subprocess.PIPE, cwd=local_repo_path).stdout.decode('utf-8')
+                match = re.search(pattern, output)
+                if match:
+                    detected_branch = match.group(1)
+                    logger.debug("Found default branch %r for remote %r", detected_branch, remote.url)
+                    return detected_branch
+            except Exception as e:
+                logger.debug("Unable to get default branch for remote %r: %r", remote.url, e)
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.exception(e)
     except Exception as e:
         logger.error(e)
         if logger.isEnabledFor(logging.DEBUG):

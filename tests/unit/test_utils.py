@@ -154,12 +154,13 @@ def test_match_ref():
 def test_main_branch_detection_no_remote(simple_local_wf_repo):
     logger.debug("Testing main branch detection... (repo: %r)", simple_local_wf_repo)
     logger.debug("Repo branches: %r", simple_local_wf_repo.local_path)
-    assert utils.detect_default_remote_branch(simple_local_wf_repo.local_path) is None, "No remote, main branch detection should fail"
+    assert utils.detect_default_remote_branch(simple_local_wf_repo.local_path) == 'main', "No remote, main branch detection should fail"
 
 
-def test_main_branch_detection():
+def test_default_branch_detection(simple_local_wf_repo):
     logger.debug("Testing main branch detection of LifeMonitor repo... (repo: %r)", '.')
-    assert utils.detect_default_remote_branch('.') == 'master', "main branch detection failed"
+    logger.debug("Current dir: %r", simple_local_wf_repo.local_path)
+    assert utils.detect_default_remote_branch(simple_local_wf_repo.local_path) == 'main', "main branch detection failed"
 
 
 def test_active_branch_detection(simple_local_wf_repo):
