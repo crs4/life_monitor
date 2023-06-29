@@ -30,6 +30,11 @@ from datetime import timedelta
 from typing import Any, Dict, List, Optional, Union
 
 import giturlparse
+import requests
+from github.ContentFile import ContentFile
+from github.Repository import Repository as GithubRepository
+from github.Requester import Requester
+
 from lifemonitor.api.models.repositories.base import (
     WorkflowRepository, WorkflowRepositoryMetadata)
 from lifemonitor.api.models.repositories.config import WorkflowRepositoryConfig
@@ -40,10 +45,6 @@ from lifemonitor.config import BaseConfig
 from lifemonitor.exceptions import IllegalStateException, LifeMonitorException
 from lifemonitor.utils import (checkout_ref, clone_repo, get_current_ref,
                                get_git_repo_revision)
-
-from github.ContentFile import ContentFile
-from github.Repository import Repository as GithubRepository
-from github.Requester import Requester
 
 from .local import LocalGitWorkflowRepository, ZippedWorkflowRepository
 
@@ -163,7 +164,7 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
                  headers: Dict[str, Union[str, int]],
                  attributes: Dict[str, Any], completed: bool,
                  ref: Optional[str] = None, rev: Optional[str] = None,
-                 name: Optional[str] = None, license: Optional[str] = None,
+                 exclude: Optional[List[str]] = None,
                  local_path: Optional[str] = None, auto_cleanup: bool = True) -> None:
         super().__init__(requester, headers, attributes, completed)
         self._ref = ref
@@ -173,6 +174,10 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
         self._local_repo: Optional[LocalWorkflowRepository] = None
         self._local_path = local_path
         self._config = None
+        self._license = None
+        self._exclude = exclude or []
+        # Check if the local path is a git repo:
+        # if so, we do not need to clone it again and we can disable the auto-cleanup
         if local_path and (
                 not os.path.exists(local_path) or not LocalWorkflowRepository.is_git_repo(local_path)):
             logger.warning("Local path %r already exists and it is a git repository. Thus, auto-cleanup is disabled.", local_path)
@@ -385,13 +390,17 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
 class GithubWorkflowRepository(InstallationGithubWorkflowRepository):
 
     def __init__(self, full_name_or_id: str, token: Optional[str] = None,
-                 ref: Optional[str] = None, rev: Optional[str] = None, local_path: Optional[str] = None, auto_cleanup: bool = True) -> None:
+                 exclude: Optional[List[str]] = None,
+                 ref: Optional[str] = None, rev: Optional[str] = None,
+                 local_path: Optional[str] = None, auto_cleanup: bool = True,
+                 ) -> None:
         assert isinstance(full_name_or_id, (str, int)), full_name_or_id
         url_base = "/repositories/" if isinstance(full_name_or_id, int) else "/repos/"
         url = f"{url_base}{full_name_or_id}"
         super().__init__(
             __make_requester__(token=token), headers={}, attributes={'url': url}, completed=False,
-            ref=ref, rev=rev, local_path=local_path, auto_cleanup=auto_cleanup)
+            ref=ref, rev=rev, exclude=exclude,
+            local_path=local_path, auto_cleanup=auto_cleanup)
 
     @classmethod
     def from_url(cls, url: str, token: Optional[str] = None, ref: Optional[str] = None,
