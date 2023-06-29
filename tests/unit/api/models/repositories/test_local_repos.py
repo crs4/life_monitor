@@ -87,14 +87,6 @@ def test_base_repo_system_user_as_owner(test_repo_info):
     assert repo.full_name == f"{current_username}/{test_repo_info['name']}", "Repository full name is not correct"
 
 
-#     current_username = utils.get_current_username()
-#     assert repo, "Repository object is None"
-#     assert isinstance(repo, repos.WorkflowRepository), "Repository is not a WorkflowRepository"
-#     assert repo.name == test_repo_info['name'], "Repository name is not correct"
-#     assert repo.owner == current_username, "Repository owner is not correct"
-#     assert repo.full_name == f"{current_username}/{test_repo_info['name']}", "Repository full name is not correct"
-
-
 def test_local_git_repo(simple_local_wf_repo):
     assert repos.LocalWorkflowRepository.is_git_repo(simple_local_wf_repo.local_path)
     assert repos.LocalGitWorkflowRepository.is_git_repo(simple_local_wf_repo.local_path)
