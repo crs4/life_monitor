@@ -173,8 +173,10 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
         self._local_repo: Optional[LocalWorkflowRepository] = None
         self._local_path = local_path
         self._config = None
-        self._name = name
-        self._license = license
+        if local_path and (
+                not os.path.exists(local_path) or not LocalWorkflowRepository.is_git_repo(local_path)):
+            logger.warning("Local path %r already exists and it is a git repository. Thus, auto-cleanup is disabled.", local_path)
+            self.auto_cleanup = False
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__} bound to {self.url} (ref: {self.ref}, rev: {self.rev})"
@@ -356,8 +358,11 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
     def local_repo(self) -> LocalGitWorkflowRepository:
         if not self._local_repo:
             local_path = self._local_path or tempfile.mkdtemp(dir=BaseConfig.BASE_TEMP_FOLDER)
-            logger.debug("Cloning %r", self)
-            clone_repo(self.clone_url, ref=self.ref, target_path=local_path)
+            if not os.path.exists(local_path) or not LocalWorkflowRepository.is_git_repo(local_path):
+                logger.debug("Cloning %r", self.clone_url)
+                clone_repo(self.clone_url, ref=self.ref, target_path=local_path)
+            else:
+                logger.debug("Skipping cloning of %r", self.clone_url)
             self._local_repo = LocalGitWorkflowRepository(local_path=local_path)
         return self._local_repo
 
