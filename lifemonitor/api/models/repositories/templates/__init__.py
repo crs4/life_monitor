@@ -25,9 +25,12 @@ import os
 import tempfile
 from typing import Dict, List, Optional
 
+import pygit2
+
 from lifemonitor.api.models.repositories.files import (TemplateRepositoryFile,
                                                        WorkflowFile)
-from lifemonitor.api.models.repositories.local import LocalWorkflowRepository
+from lifemonitor.api.models.repositories.local import (
+    LocalGitWorkflowRepository, LocalWorkflowRepository)
 from lifemonitor.utils import find_types, to_kebab_case
 
 from ..base import WorkflowRepository, WorkflowRepositoryMetadata
