@@ -73,12 +73,20 @@ class WorkflowRepositoryTemplate():
         self._dirty = True
 
     @property
+    def init_git(self) -> bool:
+        return self._init_git
+
+    @init_git.setter
+    def init_git(self, init_git: bool):
+        self._init_git = init_git
+
+    @property
     def _templates_base_path(self) -> str:
         return "lifemonitor/templates/repositories"
 
     @property
     def template_path(self) -> str:
-        return os.path.join(self._templates_base_path, self.name)
+        return os.path.join(self._templates_base_path, self.type)
 
     @property
     def files(self) -> List[TemplateRepositoryFile]:
