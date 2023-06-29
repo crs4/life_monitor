@@ -2622,6 +2622,22 @@ components:
           description: |
             Software application that runs workflow tests according to a definition.
           properties:
+            path:
+              type: string
+              description: Relative path to the file containing the test definition              
+            test_engine:
+              $ref: "#/components/schemas/TestEngine"              
+
+    TestEngine:
+      type: object
+      description: |
+        Test Suite metadata
+      properties:
+        test_engine:
+          type: object
+          description: |
+            Software application that runs workflow tests according to a definition.
+          properties:
             type:
               type: string
               description: Type of the software engine (e.g., planemo, etc.)
@@ -2630,6 +2646,8 @@ components:
               type: string
               description: Version of the software engine
               example: ">=0.70"
+          required:
+            - type
 
     TestSuite:
       allOf:

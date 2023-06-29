@@ -218,7 +218,7 @@ class WorkflowRepository():
         else:
             content = f.get_content(binary_mode=True)
             if content:
-                logger.debug("Reading file content: %r", content.encode())
+                logger.debug("Reading file content: %r bytes", len(content))
                 fp = io.BytesIO(content)
             else:
                 logger.debug("Reading file content: %s", "<empty content>")
