@@ -204,8 +204,8 @@ class WorkflowRepositoryTemplate():
             return WorkflowRepositoryTemplate
 
     @classmethod
-    def new_instance(cls, name: str, local_path: str = None,
-                     data: dict = None, exclude: List[str] = None) -> WorkflowRepositoryTemplate:
-        tmpl_type = cls._get_type(name)
+    def new_instance(cls, type: str, data: Dict[str, str],
+                     local_path: Optional[str] = None, init_git: bool = False) -> WorkflowRepositoryTemplate:
+        tmpl_type = cls._get_type(type)
         logger.debug("Using template type: %s", tmpl_type)
-        return tmpl_type(name, local_path=local_path, data=data, exclude=exclude)
+        return tmpl_type(data=data, local_path=local_path, init_git=init_git)
