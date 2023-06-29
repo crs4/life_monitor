@@ -128,27 +128,55 @@ class WorkflowRepositoryTemplate():
                 return f
         return None
 
-    def generate(self, target_path: Optional[str] = None) -> LocalWorkflowRepository:
+    def __init_repo_object__(self, target_path: str) -> LocalWorkflowRepository:
+        # prepare the metadata to initialise the repository
+        data = {
+            'name': self.data.get('workflow_name', 'MyWorkflow'),
+            'license': self.data.get('workflow_license', 'MIT'),
+            'owner': self.data.get('workflow_author', 'lm'),
+            'exclude': self.data.get('exclude', []),
+            'remote_url': self.data.get('repo_url', None),
+        }
+        # initialise the repository
+        repo = LocalWorkflowRepository(target_path, **data) \
+            if not self.init_git else LocalGitWorkflowRepository(target_path, **data)
+        # return the repository object
+        return repo
+
+    def generate(self, target_path: Optional[str] = None) -> WorkflowRepository:
         target_path = target_path or self.local_path
+        # create the target directory if it does not exist
+        if not os.path.exists(target_path):
+            os.makedirs(target_path, exist_ok=True)
+        # initialise the target directory as a git repository
+        if self._init_git and not WorkflowRepository.is_git_repository(target_path):
+            pygit2.init_repository(target_path, bare=False)
+        # initialise the repository object
+        repo = self.__init_repo_object__(target_path)
+        # render the template files
         logger.debug("Rendering template files to %s...", target_path)
         self.write(target_path)
         logger.debug("Rendering template files to %s... DONE", target_path)
-        metadata = self.generate_metadata(target_path)
-        assert isinstance(metadata, WorkflowRepositoryMetadata), "Error generating workflow repository metadata"
-        return metadata.repository
-
-    def generate_metadata(self, target_path: Optional[str] = None) -> WorkflowRepositoryMetadata:
-        target_path = target_path or self.local_path
-        repo = LocalWorkflowRepository(target_path)
+        # generate the metadata
         opts = self.data.copy()
         opts.update({
             'root': target_path,
         })
-        self._metadata = repo.generate_metadata(**opts)
-        return self._metadata
+        metadata = repo.generate_metadata(**opts)
+        assert isinstance(metadata, WorkflowRepositoryMetadata), "Error generating workflow repository metadata"
+        # return the repository
+        return repo
 
-    def write(self, target_path: str, overwrite: bool = False):
-        super().write(target_path, overwrite=overwrite)
+    def write(self, target_path: str, overwrite: bool = False) -> None:
+        for f in self.files:
+            base_path = os.path.join(target_path, f.dir)
+            file_path = os.path.join(base_path, f.name)
+            os.makedirs(base_path, exist_ok=True)
+            file_exists = os.path.isfile(file_path)
+            if not file_exists or overwrite:
+                logger.debug("%s file: %r", "Overwriting" if file_exists else "Writing", file_path)
+                with open(file_path, "w") as out:
+                    out.write(f.get_content())
 
     @classmethod
     def _types(cls) -> List[WorkflowRepositoryTemplate]:

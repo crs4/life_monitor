@@ -92,14 +92,17 @@ class NextflowRepositoryTemplate(WorkflowRepositoryTemplate):
             file.write(ignore_license)
         # patch permission of checker script
         os.chmod(os.path.join(target_path, 'bin/check_samplesheet.py'), 0o777)
-
         logger.debug("Rendering template files to %s... DONE", target_path)
-        repo = LocalWorkflowRepository(local_path=target_path)
+        
+        # create the repository object
+        repo = self.__init_repo_object__(target_path)
+        # generate metadata
         opts = self.data.copy()
         opts.update({
             'root': target_path,
         })
         repo.generate_metadata(**self.data)
+        # return the repository object
         return repo
 
 
