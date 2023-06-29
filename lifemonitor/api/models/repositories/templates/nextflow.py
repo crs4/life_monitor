@@ -23,7 +23,7 @@ from __future__ import annotations
 import logging
 import os
 import re
-from typing import List
+from typing import Dict, List, Optional
 
 import nf_core.create
 from lifemonitor.api.models.repositories.files.base import RepositoryFile
@@ -53,8 +53,10 @@ indent_size = unset
 
 class NextflowRepositoryTemplate(WorkflowRepositoryTemplate):
 
-    def __init__(self, name: str, local_path: str = None, data: dict = None, exclude: List[str] = None) -> None:
-        super().__init__(name, local_path, data, exclude)
+    def __init__(self, data: Optional[Dict[str, str]] = None,
+                 local_path: Optional[str] = None,
+                 init_git: bool = False) -> None:
+        super().__init__(data=data, local_path=local_path, init_git=init_git)
 
     @property
     def files(self) -> List[RepositoryFile]:
