@@ -36,21 +36,26 @@ from ..base import WorkflowRepository, WorkflowRepositoryMetadata
 logger = logging.getLogger(__name__)
 
 
-class WorkflowRepositoryTemplate(WorkflowRepository):
+class WorkflowRepositoryTemplate():
 
     # template subclasses
     templates: List[WorkflowRepositoryTemplate] = None
 
-    def __init__(self, name: str, local_path: str = None,
-                 data: dict = None, exclude: List[str] = None) -> None:
+    def __init__(self, data: Optional[Dict[str, str]] = None,
+                 local_path: Optional[str] = None, init_git: bool = False) -> None:
+        # if local_path is None then create a temporary directory
         if not local_path:
             local_path = tempfile.NamedTemporaryFile(dir='/tmp').name
-        super().__init__(local_path, exclude=exclude)
-        self._name = name
+        # init local path
+        self._local_path = local_path
         self._files = None
+        # init default data
         self._data = self.get_defaults()
+        # update data with the provided one
         if data:
             self._data.update(data)
+        # set flag to indicate if the template has been initialised as a git repository
+        self._init_git = init_git
         self._dirty = True
 
     @classmethod
