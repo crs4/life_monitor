@@ -59,7 +59,7 @@ def generate_crate(workflow_type: str,
         "ci_workflow": ci_workflow,
         "lang_version": lang_version
     }
-    logger.warning("Config: %r", cfg)
+    logger.debug("Config: %r", cfg)
     crate = make_crate(**cfg)
     crate.write(local_repo_path)
     return crate
