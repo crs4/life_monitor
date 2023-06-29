@@ -63,6 +63,15 @@ class WorkflowRepositoryTemplate():
         return {}
 
     @property
+    def type(self) -> str:
+        wf_type = self.__class__.__name__.replace("RepositoryTemplate", "").lower()
+        return wf_type if wf_type != 'workflow' else 'other'
+
+    @property
+    def local_path(self) -> str:
+        return self._local_path
+
+    @property
     def data(self) -> Dict:
         return self._data
 
