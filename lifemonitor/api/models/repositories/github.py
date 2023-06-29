@@ -198,6 +198,26 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
         return self.html_url
 
     @property
+    def owner(self) -> str:
+        onwer = super().owner
+        return onwer.login if onwer else None
+
+    @property
+    def license(self) -> Optional[str]:
+        if not self._license:
+            try:
+                l_info = requests.get(f"https://api.github.com/repos/{self.full_name}/license")
+                self._license = l_info.json()['license']['spdx_id']
+            except Exception as e:
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.error(e)
+        return self._license
+
+    @property
+    def exclude(self) -> List[str]:
+        return self._exclude
+
+    @property
     def _remote_parser(self) -> giturlparse.GitUrlParsed:
         try:
             return giturlparse.parse(self.remote_url)
