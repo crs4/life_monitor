@@ -87,7 +87,9 @@ COPY --chown=lm:lm cli /lm/cli
 FROM node:14.16.0-alpine3.12 as node
 
 
-RUN mkdir -p /static && apk add --no-cache bash
+RUN mkdir -p /static && apk add --no-cache bash python3 make g++ \
+    && addgroup -S lm && adduser -S lm -G lm \
+    && chown -R lm:lm /static
 WORKDIR /static/src
 COPY lifemonitor/static/src/package.json package.json
 RUN npm install
