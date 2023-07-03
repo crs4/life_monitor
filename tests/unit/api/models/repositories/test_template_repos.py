@@ -19,16 +19,13 @@
 # SOFTWARE.
 
 import logging
+import tempfile
 from typing import Dict, List
 
 import pytest
-import tempfile
 
 import lifemonitor.api.models.repositories as repos
-from lifemonitor.api.models.repositories.templates import WorkflowRepositoryTemplate
-from lifemonitor.api.models.repositories.templates.galaxy import GalaxyRepositoryTemplate
-from lifemonitor.api.models.repositories.templates.nextflow import NextflowRepositoryTemplate
-from lifemonitor.api.models.repositories.templates.snakemake import SnakemakeRepositoryTemplate
+import lifemonitor.api.models.repositories.templates as templates
 
 logger = logging.getLogger(__name__)
 
@@ -63,23 +60,23 @@ def test_repo_template(test_repo_info, repo_template_type):
     workflow_path = tempfile.TemporaryDirectory().name
     logger.debug("Creating a new Galaxy workflow repository template in %r", workflow_path)
     # instantiate the template
-    tmpl = WorkflowRepositoryTemplate.new_instance(repo_template_type, data={
+    tmpl = templates.WorkflowRepositoryTemplate.new_instance(repo_template_type, data={
         'workflow_name': test_repo_info['name'], 'workflow_description': test_repo_info['description'],
         'workflow_version': '1.0.0', 'workflow_author': 'lm', 'workflow_license': test_repo_info['license'],
         'repo_url': test_repo_info['remote_url'], 'repo_full_name': test_repo_info['full_name'],
         'main_branch': test_repo_info['default_branch']
     }, local_path=workflow_path)
     # check the template type
-    assert isinstance(tmpl, WorkflowRepositoryTemplate), "Template is not a WorkflowRepositoryTemplate"
+    assert isinstance(tmpl, templates.WorkflowRepositoryTemplate), "Template is not a WorkflowRepositoryTemplate"
     assert tmpl.type == repo_template_type, "Template type is not correct"
 
     # check if the template is the expected one
     if repo_template_type == 'galaxy':
-        assert isinstance(tmpl, GalaxyRepositoryTemplate), "Template is not a GalaxyWorkflowTemplate"
+        assert isinstance(tmpl, templates.galaxy.GalaxyRepositoryTemplate), "Template is not a GalaxyWorkflowTemplate"
     if repo_template_type == 'nextflow':
-        assert isinstance(tmpl, NextflowRepositoryTemplate), "Template is not a SnakeMakeWorkflowTemplate"
+        assert isinstance(tmpl, templates.nextflow.NextflowRepositoryTemplate), "Template is not a SnakeMakeWorkflowTemplate"
     if repo_template_type == 'snakemake':
-        assert isinstance(tmpl, SnakemakeRepositoryTemplate), "Template is not a NextflowWorkflowTemplate"
+        assert isinstance(tmpl, templates.snakemake.SnakemakeRepositoryTemplate), "Template is not a NextflowWorkflowTemplate"
 
     # generate the repository
     repo = tmpl.generate()
