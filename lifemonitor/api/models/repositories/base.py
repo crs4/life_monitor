@@ -29,16 +29,13 @@ from abc import abstractclassmethod
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
-import git
-import giturlparse
-import requests
 from rocrate.rocrate import Metadata, ROCrate
 
 import lifemonitor.api.models.issues as issues
 from lifemonitor.api.models.repositories.config import WorkflowRepositoryConfig
-from lifemonitor.exceptions import IllegalStateException, LifeMonitorException
+from lifemonitor.exceptions import IllegalStateException
 from lifemonitor.test_metadata import get_roc_suites, get_workflow_authors
-from lifemonitor.utils import to_camel_case
+from lifemonitor.utils import get_current_username, to_camel_case
 
 from .files import RepositoryFile, WorkflowFile
 
@@ -51,18 +48,23 @@ DEFAULT_IGNORED_FILES = ['.git']
 class WorkflowRepository():
 
     def __init__(self, local_path: str,
-                 url: Optional[str] = None,
+                 remote_url: Optional[str] = None,
+                 owner: Optional[str] = None,
                  name: Optional[str] = None,
                  license: Optional[str] = None,
-                 exclude: Optional[List[str]] = None) -> None:
+                 exclude: Optional[List[str]] = None,
+                 owner_as_system_user: bool = False) -> None:
         if not local_path:
             raise ValueError("empty local_path argument")
         self._local_path = local_path
         self._metadata = None
         self.exclude = exclude if exclude is not None else DEFAULT_IGNORED_FILES
         self._config = None
-        self._url = url
+        self._remote_url = remote_url
         self._name = name
+        self._owner = owner
+        if not owner and owner_as_system_user:
+            self._owner = get_current_username()
         self._license = license
 
     @property
@@ -83,63 +85,42 @@ class WorkflowRepository():
         return self._metadata
 
     @property
-    def _remote_parser(self) -> giturlparse.GitUrlParsed:
-        try:
-            r = git.Repo(self.local_path)
-            remote = next((x for x in r.remotes if x.name == 'origin'), r.remotes[0])
-            assert remote, "Unable to find a Git remote"
-            return giturlparse.parse(remote.url)
-        except Exception as e:
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.exception(e)
-            raise LifeMonitorException(f"Not valid workflow repository: {e}")
+    def name(self) -> str:
+        return self._name
+
+    @name.setter
+    def name(self, value):
+        self._name = value
 
     @property
-    def name(self) -> str:
-        if not self._name:
-            try:
-                self._name = self._remote_parser.name
-            except Exception as e:
-                if logger.isEnabledFor(logging.DEBUG):
-                    logger.exception(e)
-                raise LifeMonitorException(f"Not valid workflow repository: {e}")
-        assert self._name, "Unable to detect repository name"
-        return self._name
+    def owner(self) -> str:
+        return self._owner
+
+    @owner.setter
+    def owner(self, value):
+        self._owner = value
 
     @property
     def full_name(self) -> str:
-        try:
-            parser = self._remote_parser
-            return f"{parser.owner}/{parser.name}"
-        except Exception as e:
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.exception(e)
-            raise LifeMonitorException(f"Not valid workflow repository: {e}")
+        if self.owner:
+            return f"{self.owner}/{self.name}"
+        return self.name
 
     @property
-    def https_url(self) -> str:
-        if not self._url:
-            try:
-                self._url = self._remote_parser.url2https.removesuffix('.git')
-            except Exception as e:
-                if logger.isEnabledFor(logging.DEBUG):
-                    logger.exception(e)
-                raise LifeMonitorException(f"Not valid workflow repository: {e}")
-        assert self._url, "Unable to detect repository url"
-        return self._url
+    def remote_url(self) -> str:
+        return self._remote_url
+
+    @remote_url.setter
+    def remote_url(self, value):
+        self._remote_url = value
 
     @property
     def license(self) -> Optional[str]:
-        if not self._license:
-            try:
-                parser = self._remote_parser
-                if parser.host == 'github.com':
-                    l_info = requests.get(f"https://api.github.com/repos/{self.full_name}/license")
-                    self._license = l_info.json()['license']['spdx_id']
-            except Exception as e:
-                if logger.isEnabledFor(logging.DEBUG):
-                    logger.error(e)
         return self._license
+
+    @license.setter
+    def license(self, value):
+        self._license = value
 
     @abstractclassmethod
     def find_file_by_pattern(self, search: str, path: str = '.') -> RepositoryFile:
@@ -218,7 +199,7 @@ class WorkflowRepository():
         else:
             content = f.get_content(binary_mode=True)
             if content:
-                logger.debug("Reading file content: %r", content.encode())
+                logger.debug("Reading file content: %r bytes", len(content))
                 fp = io.BytesIO(content)
             else:
                 logger.debug("Reading file content: %s", "<empty content>")

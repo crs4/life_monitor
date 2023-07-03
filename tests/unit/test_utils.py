@@ -18,13 +18,17 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import logging
 import os
 import tempfile
+from typing import Dict
 
 import pytest
 
 import lifemonitor.exceptions as lm_exceptions
 import lifemonitor.utils as utils
+
+logger = logging.getLogger(__name__)
 
 
 def test_download_url_404():
@@ -145,3 +149,54 @@ def test_match_ref():
     assert utils.match_ref('1.0.1', ['*.*.*']) == ('1.0.1', '*.*.*')
     assert utils.match_ref('pippo', ['*.*.*']) is None
     assert utils.match_ref('v1.0.1', ['v*.*.*', '*.*.*']) == ('v1.0.1', 'v*.*.*')
+
+
+def test_main_branch_detection_no_remote(simple_local_wf_repo):
+    logger.debug("Testing main branch detection... (repo: %r)", simple_local_wf_repo)
+    logger.debug("Repo branches: %r", simple_local_wf_repo.local_path)
+    assert utils.detect_default_remote_branch(simple_local_wf_repo.local_path) == 'main', "No remote, main branch detection should fail"
+
+
+def test_default_branch_detection(simple_local_wf_repo):
+    logger.debug("Testing main branch detection of LifeMonitor repo... (repo: %r)", '.')
+    logger.debug("Current dir: %r", simple_local_wf_repo.local_path)
+    assert utils.detect_default_remote_branch(simple_local_wf_repo.local_path) == 'main', "main branch detection failed"
+
+
+def test_active_branch_detection(simple_local_wf_repo):
+    logger.debug("Testing active branch detection... (repo: %r)", simple_local_wf_repo)
+    logger.debug("Repo local path: %r", simple_local_wf_repo.local_path)
+    assert utils.get_current_active_branch(simple_local_wf_repo.local_path) == 'main', "active branch detection failed"
+
+
+def test_active_branch_detection_against_no_git_folder():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        logger.debug("Testing active branch detection... (repo: %r)", tmpdir)
+        with pytest.raises(ValueError):
+            assert utils.get_current_active_branch(tmpdir) is None, "active branch detection failed"
+
+
+def __git_remote_urls__() -> Dict[str, str]:
+    return {
+        'https': 'https://github.com/crs4/life_monitor',
+        'ssh': 'git@github.com:crs4/life_monitor.git',
+        'git': 'git://github.com/crs4/life_monitor.git'
+    }
+
+
+@pytest.mark.parametrize("protocol,remote_git_url", list(__git_remote_urls__().items()))
+def test_remote_git_info_detection(protocol, remote_git_url):
+    remote_info = utils.RemoteGitRepoInfo.parse(remote_git_url)
+    assert remote_info is not None, "remote info detection failed"
+    assert isinstance(remote_info, utils.RemoteGitRepoInfo), "remote info detection failed"
+
+    assert remote_info.url == remote_git_url, "Invalid remote url"
+    assert remote_info.owner == 'crs4', "Invalid remote owner"
+    assert remote_info.repo == 'life_monitor', "Invalid remote repo"
+    assert remote_info.fullname == 'crs4/life_monitor', "Invalid remote fullname"
+    assert protocol in remote_info.protocols, "Invalid remote protocols"
+    assert remote_info.host == 'github.com', "Invalid remote host"
+    assert protocol in remote_info.urls, "Invalid remote urls"
+
+    for p, u in __git_remote_urls__().items():
+        assert u == remote_info.urls[p], "Invalid remote url for the %s protocol" % p

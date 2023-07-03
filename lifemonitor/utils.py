@@ -18,6 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+from __future__ import annotations
 
 import base64
 import fnmatch
@@ -33,6 +34,7 @@ import re
 import shutil
 import socket
 import string
+import subprocess
 import tempfile
 import time
 import urllib
@@ -45,6 +47,8 @@ from typing import Dict, Iterable, List, Literal, Optional, Tuple, Type
 from urllib.parse import urlparse
 
 import flask
+import git
+import giturlparse
 import networkx as nx
 import pygit2
 import requests
@@ -431,6 +435,17 @@ def isoformat_to_datetime(iso: str) -> datetime:
         raise ValueError(f"Datetime string {iso} is not in ISO format") from e
 
 
+def get_current_username() -> str:
+    try:
+        import pwd
+        return pwd.getpwuid(os.getuid()).pw_name
+    except Exception as e:
+        logger.warning("Unable to get current username: %s", e)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.exception(e)
+        return "unknown"
+
+
 def parse_date_interval(interval: str) -> Tuple[Literal['<=', '>=', '<', '>', '..'], Optional[datetime], datetime]:
     """Parse a date interval string.
 
@@ -696,6 +711,84 @@ def checkout_ref(repo_path: str, ref: str, auth_token: Optional[str] = None, bra
         if 'authentication' in str(e):
             raise lm_exceptions.NotAuthorizedException("Token authorization not valid")
         raise lm_exceptions.DownloadException(detail=str(e))
+
+
+def detect_default_remote_branch(local_repo_path: str) -> Optional[str]:
+    '''Return the default remote branch of the repo; None if not found'''
+    assert os.path.isdir(local_repo_path), "Path should be a folder"
+    try:
+        pattern = r"HEAD branch: (\w+)"
+        repo = git.Repo(local_repo_path)
+        for remote in repo.remotes:
+            try:
+                output = subprocess.run(['git', 'remote', 'show', remote.url],
+                                        check=False, stdout=subprocess.PIPE, cwd=local_repo_path).stdout.decode('utf-8')
+                match = re.search(pattern, output)
+                if match:
+                    detected_branch = match.group(1)
+                    logger.debug("Found default branch %r for remote %r", detected_branch, remote.url)
+                    return detected_branch
+            except Exception as e:
+                logger.debug("Unable to get default branch for remote %r: %r", remote.url, e)
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.exception(e)
+    except Exception as e:
+        logger.error(e)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.exception(e)
+        return None
+
+
+def get_current_active_branch(local_repo_path: str) -> str:
+    assert os.path.isdir(local_repo_path), "Path should be a folder"
+    try:
+        repo = git.Repo(local_repo_path)
+        return repo.active_branch.name
+    except git.InvalidGitRepositoryError:
+        raise ValueError(f"Invalid git repository: {local_repo_path}")
+    except Exception as e:
+        raise lm_exceptions.LifeMonitorException(detail=f"Unable to get the current active branch: {e}")
+
+
+class RemoteGitRepoInfo(giturlparse.result.GitUrlParsed):
+    pathname: str = None
+    protocol: str = None
+    owner: str = None
+
+    def __init__(self, parsed_info):
+        # fix for giturlparse: protocols are not parsed correctly
+        del parsed_info['protocols']
+        super().__init__(parsed_info)
+
+    @property
+    def fullname(self):
+        return f"{self.owner}/{self.repo}"
+
+    @property
+    def urls(self) -> Dict[str, str]:
+        urls = super().urls
+        # fix for giturlparse: https urls should not have a .git suffix
+        urls['https'] = urls['https'].rstrip('.git')
+        return urls
+
+    @property
+    def protocols(self) -> List[str]:
+        return list(self.urls.keys())
+
+    @property
+    def license(self) -> Optional[str]:
+        try:
+            if self.host == 'github.com':
+                l_info = requests.get(f"https://api.github.com/repos/{self.fullname}/license")
+                self._license = l_info.json()['license']['spdx_id']
+        except Exception as e:
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.error(e)
+        return self._license
+
+    @staticmethod
+    def parse(git_remote_url: str) -> RemoteGitRepoInfo:
+        return RemoteGitRepoInfo(giturlparse.parser.parse(git_remote_url))
 
 
 def get_current_ref(local_repo_path: str) -> str:

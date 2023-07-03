@@ -18,7 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-
+import base64
 import logging
 import os
 import pathlib
@@ -43,6 +43,7 @@ from lifemonitor.api.models import (TestingService,
 from lifemonitor.api.models.repositories import (GithubWorkflowRepository,
                                                  LocalGitWorkflowRepository,
                                                  LocalWorkflowRepository,
+                                                 Base64WorkflowRepository,
                                                  ZippedWorkflowRepository)
 from lifemonitor.api.services import LifeMonitor
 from lifemonitor.cache import cache, clear_cache
@@ -523,3 +524,25 @@ def simple_local_wf_repo(test_repo_collection_path: Path) -> Generator[LocalGitW
         (tmp_repo_path / '.dot-git').rename(tmp_repo_path / '.git')
         repo = LocalGitWorkflowRepository(str(tmp_repo_path))
         yield repo
+
+
+@pytest.fixture
+def simple_zip_wf_repo(simple_local_wf_repo) -> Generator[ZippedWorkflowRepository, None, None]:
+    from rocrate.rocrate import ROCrate
+    with tempfile.NamedTemporaryFile(suffix='.zip') as tmpzip:
+        crate = ROCrate(simple_local_wf_repo.local_path)
+        crate.write_zip(tmpzip.name)
+        tmpzip.seek(0)
+        repo = ZippedWorkflowRepository(tmpzip.name)
+        yield repo
+
+
+@pytest.fixture
+def simple_base64_wf_repo(simple_zip_wf_repo: ZippedWorkflowRepository) -> Generator[Base64WorkflowRepository, None, None]:
+    base64_encoded_repo = None
+    with open(simple_zip_wf_repo.archive_path, mode="rb") as zip_file:
+        contents = zip_file.read()
+        base64_encoded_repo = base64.b64encode(contents)
+    if not base64_encoded_repo:
+        raise RuntimeError("Could not base64 encode the repository")
+    return Base64WorkflowRepository(base64_encoded_repo)

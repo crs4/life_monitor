@@ -3,7 +3,7 @@
 openapi: "3.0.0"
 
 info:
-  version: "0.11.3"
+  version: "0.11.4"
   title: "Life Monitor API"
   description: |
     *Workflow sustainability service*
@@ -18,7 +18,7 @@ info:
 servers:
   - url: /
     description: >
-      Version 0.11.3 of API.
+      Version 0.11.4 of API.
 
 tags:
   - name: GitHub Integration
@@ -2622,6 +2622,22 @@ components:
           description: |
             Software application that runs workflow tests according to a definition.
           properties:
+            path:
+              type: string
+              description: Relative path to the file containing the test definition              
+            test_engine:
+              $ref: "#/components/schemas/TestEngine"              
+
+    TestEngine:
+      type: object
+      description: |
+        Test Suite metadata
+      properties:
+        test_engine:
+          type: object
+          description: |
+            Software application that runs workflow tests according to a definition.
+          properties:
             type:
               type: string
               description: Type of the software engine (e.g., planemo, etc.)
@@ -2630,6 +2646,8 @@ components:
               type: string
               description: Version of the software engine
               example: ">=0.70"
+          required:
+            - type
 
     TestSuite:
       allOf:
