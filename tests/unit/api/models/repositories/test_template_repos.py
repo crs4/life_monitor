@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 
 @pytest.fixture
-def test_repo_info(simple_local_wf_repo) -> Dict[str, str]:
+def repo_info(simple_local_wf_repo) -> Dict[str, str]:
     return {
         "name": "MyWorkflowTest",
         "owner": "lm",
@@ -54,17 +54,17 @@ def repo_template_type(request):
     return request.param
 
 
-def test_repo_template(test_repo_info, repo_template_type):
+def test_repo_template(repo_info, repo_template_type):
 
     # with tempfile.TemporaryDirectory() as workflow_path:
     workflow_path = tempfile.TemporaryDirectory().name
     logger.debug("Creating a new Galaxy workflow repository template in %r", workflow_path)
     # instantiate the template
     tmpl = templates.WorkflowRepositoryTemplate.new_instance(repo_template_type, data={
-        'workflow_name': test_repo_info['name'], 'workflow_description': test_repo_info['description'],
-        'workflow_version': '1.0.0', 'workflow_author': 'lm', 'workflow_license': test_repo_info['license'],
-        'repo_url': test_repo_info['remote_url'], 'repo_full_name': test_repo_info['full_name'],
-        'main_branch': test_repo_info['default_branch']
+        'workflow_name': repo_info['name'], 'workflow_description': repo_info['description'],
+        'workflow_version': '1.0.0', 'workflow_author': 'lm', 'workflow_license': repo_info['license'],
+        'repo_url': repo_info['remote_url'], 'repo_full_name': repo_info['full_name'],
+        'main_branch': repo_info['default_branch']
     }, local_path=workflow_path)
     # check the template type
     assert isinstance(tmpl, templates.WorkflowRepositoryTemplate), "Template is not a WorkflowRepositoryTemplate"
@@ -84,9 +84,9 @@ def test_repo_template(test_repo_info, repo_template_type):
     # check the repository metadata
     assert repo, "Repository object is None"
     assert isinstance(repo, repos.LocalWorkflowRepository), "Repository is not a WorkflowRepository"
-    assert repo.name == test_repo_info['name'], "Repository name is not correct"
-    assert repo.owner == test_repo_info['owner'], "Repository owner is not correct"
-    assert repo.full_name == f"{test_repo_info['owner']}/{test_repo_info['name']}", "Repository full name is not correct"
-    assert repo.license == test_repo_info['license'], "Repository license is not correct"
+    assert repo.name == repo_info['name'], "Repository name is not correct"
+    assert repo.owner == repo_info['owner'], "Repository owner is not correct"
+    assert repo.full_name == f"{repo_info['owner']}/{repo_info['name']}", "Repository full name is not correct"
+    assert repo.license == repo_info['license'], "Repository license is not correct"
     assert repo.local_path == workflow_path, "Repository local path is not correct"
-    assert repo.remote_url == test_repo_info['remote_url'], "Repository remote url is not correct"
+    assert repo.remote_url == repo_info['remote_url'], "Repository remote url is not correct"
