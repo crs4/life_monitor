@@ -10,6 +10,8 @@ RUN apt-get update -q \
 
 # Create a user 'lm' with HOME at /lm and set 'lm' as default git user
 RUN useradd -d /lm -m lm
+# Set the default user
+ENV USER=lm
 
 # Copy requirements and certificates
 COPY --chown=lm:lm requirements.txt certs/*.crt /lm/
@@ -45,13 +47,13 @@ COPY \
 
 # Update permissions and install optional certificates
 RUN chmod 755 \
-      /usr/local/bin/wait-for-postgres.sh \
-      /usr/local/bin/wait-for-redis.sh \
-      /usr/local/bin/wait-for-file.sh \
-      /usr/local/bin/lm_entrypoint.sh \
-      /usr/local/bin/worker_entrypoint.sh \
-      /usr/local/bin/wss-entrypoint.sh \
-      /nextflow \
+    /usr/local/bin/wait-for-postgres.sh \
+    /usr/local/bin/wait-for-redis.sh \
+    /usr/local/bin/wait-for-file.sh \
+    /usr/local/bin/lm_entrypoint.sh \
+    /usr/local/bin/worker_entrypoint.sh \
+    /usr/local/bin/wss-entrypoint.sh \
+    /nextflow \
     && certs=$(ls *.crt 2> /dev/null) \
     && mv *.crt /usr/local/share/ca-certificates/ \
     && update-ca-certificates || true \
