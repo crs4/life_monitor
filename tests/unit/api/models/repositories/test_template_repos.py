@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 
 @pytest.fixture
-def repo_info(simple_local_wf_repo) -> Dict[str, str]:
+def repo_info() -> Dict[str, str]:
     return {
         "name": "MyWorkflowTest",
         "owner": "lm",
