@@ -189,7 +189,7 @@ that they might be solved, thus extending the useful life of the workflow.</p>
 </div>
     <div class="app-desc">More information: <a href="https://openapi-generator.tech">https://openapi-generator.tech</a></div>
     <div class="app-desc">Contact Info: <a href="team@openapitools.org">team@openapitools.org</a></div>
-    <div class="app-desc">Version: 0.11.3</div>
+    <div class="app-desc">Version: 0.11.4</div>
     <div class="app-desc">BasePath:</div>
     <div class="license-info">All rights reserved</div>
     <div class="license-url">http://apache.org/licenses/LICENSE-2.0.html</div>
@@ -3323,6 +3323,8 @@ RO-Crate specifcation is available at https://www.researchobject.org/ro-crate/.
     <li><a href="#RoCrateWorkflowVersionBase"><code>RoCrateWorkflowVersionBase</code> - </a></li>
     <li><a href="#Subscription"><code>Subscription</code> - </a></li>
     <li><a href="#Subscription_resource"><code>Subscription_resource</code> - </a></li>
+    <li><a href="#TestEngine"><code>TestEngine</code> - </a></li>
+    <li><a href="#TestEngine_test_engine"><code>TestEngine_test_engine</code> - </a></li>
     <li><a href="#TestInstance"><code>TestInstance</code> - </a></li>
     <li><a href="#TestInstanceBase"><code>TestInstanceBase</code> - </a></li>
     <li><a href="#TestInstance_allOf_links"><code>TestInstance_allOf_links</code> - </a></li>
@@ -3741,6 +3743,21 @@ accessible to the user for download
     </div>  <!-- field-items -->
   </div>
   <div class="model">
+    <h3><a name="TestEngine"><code>TestEngine</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'>Test Suite metadata</div>
+    <div class="field-items">
+      <div class="param">test_engine (optional)</div><div class="param-desc"><span class="param-type"><a href="#TestEngine_test_engine">TestEngine_test_engine</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="TestEngine_test_engine"><code>TestEngine_test_engine</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'>Software application that runs workflow tests according to a definition.</div>
+    <div class="field-items">
+      <div class="param">type </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Type of the software engine (e.g., planemo, etc.) </div>
+<div class="param">version (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Version of the software engine </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
     <h3><a name="TestInstance"><code>TestInstance</code> - </a> <a class="up" href="#__Models">Up</a></h3>
     <div class='model-description'>Test Instance</div>
     <div class="field-items">
@@ -3797,8 +3814,8 @@ from a Workflow RO-Crate </div>
     <h3><a name="TestSuiteDefinition_test_engine"><code>TestSuiteDefinition_test_engine</code> - </a> <a class="up" href="#__Models">Up</a></h3>
     <div class='model-description'>Software application that runs workflow tests according to a definition.</div>
     <div class="field-items">
-      <div class="param">type (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Type of the software engine (e.g., planemo, etc.) </div>
-<div class="param">version (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Version of the software engine </div>
+      <div class="param">path (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Relative path to the file containing the test definition </div>
+<div class="param">test_engine (optional)</div><div class="param-desc"><span class="param-type"><a href="#TestEngine">TestEngine</a></span>  </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
