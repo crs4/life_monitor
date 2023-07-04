@@ -269,7 +269,7 @@ run-tests: start-testing ## Run all tests in the Testing Environment
 tests: start-testing ## CI utility to setup, run tests and teardown a testing environment
 	@printf "\n$(bold)Running tests...$(reset)\n" ; \
 	$(docker_compose) -f ./docker-compose.yml \
-		exec -T lmtests /bin/bash -c "pytest --reruns 2 --reruns-delay 5 --durations=10 --color=yes tests"; \
+		exec -T lmtests /bin/bash -c "pytest --reruns 2 --reruns-delay 5 --durations=10 --color=yes tests --order-dependencies"; \
 	  result=$$?; \
 	  	printf "\n$(bold)Teardown services...$(reset)\n" ; \
 	  	USER_UID=$$(id -u) USER_GID=$$(id -g) \

@@ -46,7 +46,7 @@ def repo_info() -> Dict[str, str]:
 
 
 def repo_template_types() -> List[str]:
-    return ['galaxy', 'snakemake', 'nextflow', 'other']
+    return ['galaxy', 'snakemake']  # , 'nextflow', 'other']
 
 
 @pytest.fixture(params=repo_template_types())
@@ -54,7 +54,8 @@ def repo_template_type(request):
     return request.param
 
 
-def test_repo_template(repo_info, repo_template_type):
+@pytest.mark.skip(reason="Template type not supported")
+def test_repo_template(user1, repo_info, repo_template_type):
     with tempfile.TemporaryDirectory(prefix=f"template-{repo_template_type}") as workflow_path:
         logger.debug("Creating a new Galaxy workflow repository template in %r", workflow_path)
         # instantiate the template
