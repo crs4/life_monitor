@@ -56,7 +56,7 @@ def repo_template_types() -> List[str]:
 
 def test_repo_template(repo_info):
     for repo_template_type in repo_template_types():
-        with tempfile.TemporaryDirectory() as workflow_path:
+        with tempfile.TemporaryDirectory(prefix=f"template-{repo_template_type}") as workflow_path:
             logger.debug("Creating a new Galaxy workflow repository template in %r", workflow_path)
             # instantiate the template
             tmpl = templates.WorkflowRepositoryTemplate.new_instance(repo_template_type, data={
