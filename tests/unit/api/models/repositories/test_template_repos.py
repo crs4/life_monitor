@@ -50,8 +50,8 @@ def repo_template_types() -> List[str]:
 
 
 @pytest.fixture(params=repo_template_types())
-def repo_template_type(request):
-    return request.param
+def repo_template_type(template_param):
+    return template_param.param
 
 
 def test_repo_template(repo_info, repo_template_type):
