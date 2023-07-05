@@ -280,12 +280,17 @@ def user(_app_context, _provider_type, _user_index=1, _register_workflows=False)
         }
         if _register_workflows:
             utils.register_workflows(user_obj)
-        yield user_obj
-        if user and not user.is_anonymous:
-            try:
-                logout_user()
-            except Exception:
-                pass
+        try:
+            yield user_obj
+        except Exception as e:
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.exception(e)
+        finally:
+            if user and not user.is_anonymous:
+                try:
+                    logout_user()
+                except Exception:
+                    pass
     except KeyError as e:
         logger.exception(e)
         raise RuntimeError(f"Authorization provider {_provider_type} is not supported")
