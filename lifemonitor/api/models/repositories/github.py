@@ -361,7 +361,7 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
 
     @property
     def local_repo(self) -> LocalGitWorkflowRepository:
-        if not self._local_repo:
+        if not getattr(self, "_local_repo", None):
             local_path = self._local_path or tempfile.mkdtemp(dir=BaseConfig.BASE_TEMP_FOLDER)
             if not os.path.exists(local_path) or not LocalWorkflowRepository.is_git_repo(local_path):
                 logger.debug("Cloning %r", self.clone_url)
