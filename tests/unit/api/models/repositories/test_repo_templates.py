@@ -46,12 +46,17 @@ def repository_info() -> Dict[str, str]:
 
 
 def repo_template_types() -> List[str]:
-    return ['galaxy', 'nextflow', 'other']
+    types = ['galaxy', 'snakemake', 'nextflow', 'other']
+    skip_types = os.environ.get('TEST_SKIP_TEMPLATE_TYPES', None)
+    for skip_type in skip_types.split(',') if skip_types else []:
+        types.remove(skip_type)
+    logger.debug("Skipping the following template types: %r", types)
+    return types
 
 
+@pytest.mark.skipif(boolean_value(os.environ.get('TEST_SKIP_REPO_TEMPLATES', None)) is True, reason="Skipping repo templates")
 @pytest.mark.parametrize("repo_template_type", repo_template_types())
 def test_repo_template(repository_info, repo_template_type):
-    # for repo_template_type in repo_template_types():
     with tempfile.TemporaryDirectory(prefix=f"template-{repo_template_type}") as workflow_path:
         logger.debug("Creating a new Galaxy workflow repository template in %r", workflow_path)
         # instantiate the template
