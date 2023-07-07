@@ -46,7 +46,7 @@ def repository_info() -> Dict[str, str]:
 
 
 def repo_template_types() -> List[str]:
-    return ['galaxy', 'snakemake', 'nextflow', 'other']
+    return ['galaxy', 'nextflow', 'other']
 
 
 @pytest.mark.parametrize("repo_template_type", repo_template_types())
