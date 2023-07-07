@@ -19,6 +19,7 @@
 # SOFTWARE.
 
 import logging
+import os
 import tempfile
 from typing import Dict, List
 
@@ -26,6 +27,7 @@ import pytest
 
 from lifemonitor.api.models import repositories as repos
 from lifemonitor.api.models.repositories import templates
+from lifemonitor.utils import boolean_value
 
 logger = logging.getLogger(__name__)
 
