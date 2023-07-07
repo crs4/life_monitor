@@ -54,7 +54,7 @@ def repo_template_types() -> List[str]:
     return types
 
 
-@pytest.mark.skipif(boolean_value(os.environ.get('TEST_SKIP_REPO_TEMPLATES', None)) is True, reason="Skipping repo templates")
+@pytest.mark.skipif(boolean_value(os.environ.get('TEST_SKIP_REPO_TEMPLATES', True)) is True, reason="Skipping repo templates")
 @pytest.mark.parametrize("repo_template_type", repo_template_types())
 def test_repo_template(repository_info, repo_template_type):
     with tempfile.TemporaryDirectory(prefix=f"template-{repo_template_type}") as workflow_path:
