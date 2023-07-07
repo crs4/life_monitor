@@ -55,45 +55,33 @@ def test_repo_template(repository_info, repo_template_type):
     with tempfile.TemporaryDirectory(prefix=f"template-{repo_template_type}") as workflow_path:
         logger.debug("Creating a new Galaxy workflow repository template in %r", workflow_path)
         # instantiate the template
-        from lifemonitor.api.models.repositories.templates.galaxy import GalaxyRepositoryTemplate
-        from lifemonitor.api.models.repositories.templates import WorkflowRepositoryTemplate
-        from lifemonitor.api.models.repositories.templates.nextflow import NextflowRepositoryTemplate
-        from lifemonitor.api.models.repositories.templates.snakemake import SnakemakeRepositoryTemplate
-        tmpl = GalaxyRepositoryTemplate(
-            data={
-                'workflow_name': repository_info['name'], 'workflow_description': repository_info['description'],
-                'workflow_version': '1.0.0', 'workflow_author': 'lm', 'workflow_license': repository_info['license'],
-                'repo_url': repository_info['remote_url'], 'repo_full_name': repository_info['full_name'],
-                'main_branch': repository_info['default_branch']
-            }, local_path=workflow_path
-        )
-        # tmpl = templates.WorkflowRepositoryTemplate.new_instance(repo_template_type, data={
-        #     'workflow_name': repository_info['name'], 'workflow_description': repository_info['description'],
-        #     'workflow_version': '1.0.0', 'workflow_author': 'lm', 'workflow_license': repository_info['license'],
-        #     'repo_url': repository_info['remote_url'], 'repo_full_name': repository_info['full_name'],
-        #     'main_branch': repository_info['default_branch']
-        # }, local_path=workflow_path)
-    # # # check the template type
-    # assert isinstance(tmpl, templates.WorkflowRepositoryTemplate), "Template is not a WorkflowRepositoryTemplate"
-    # assert tmpl.type == repo_template_type, "Template type is not correct"
+        tmpl = templates.WorkflowRepositoryTemplate.new_instance(repo_template_type, data={
+            'workflow_name': repository_info['name'], 'workflow_description': repository_info['description'],
+            'workflow_version': '1.0.0', 'workflow_author': 'lm', 'workflow_license': repository_info['license'],
+            'repo_url': repository_info['remote_url'], 'repo_full_name': repository_info['full_name'],
+            'main_branch': repository_info['default_branch']
+        }, local_path=workflow_path)
+        # # check the template type
+        assert isinstance(tmpl, templates.WorkflowRepositoryTemplate), "Template is not a WorkflowRepositoryTemplate"
+        assert tmpl.type == repo_template_type, "Template type is not correct"
 
-    # # check if the template is the expected one
-    # if repo_template_type == 'galaxy':
-    #     assert isinstance(tmpl, templates.galaxy.GalaxyRepositoryTemplate), "Template is not a GalaxyWorkflowTemplate"
-    # if repo_template_type == 'nextflow':
-    #     assert isinstance(tmpl, templates.nextflow.NextflowRepositoryTemplate), "Template is not a SnakeMakeWorkflowTemplate"
-    # if repo_template_type == 'snakemake':
-    #     assert isinstance(tmpl, templates.snakemake.SnakemakeRepositoryTemplate), "Template is not a NextflowWorkflowTemplate"
+        # check if the template is the expected one
+        if repo_template_type == 'galaxy':
+            assert isinstance(tmpl, templates.galaxy.GalaxyRepositoryTemplate), "Template is not a GalaxyWorkflowTemplate"
+        if repo_template_type == 'nextflow':
+            assert isinstance(tmpl, templates.nextflow.NextflowRepositoryTemplate), "Template is not a SnakeMakeWorkflowTemplate"
+        if repo_template_type == 'snakemake':
+            assert isinstance(tmpl, templates.snakemake.SnakemakeRepositoryTemplate), "Template is not a NextflowWorkflowTemplate"
 
-    # # generate the repository
-    # repo = tmpl.generate()
+        # generate the repository
+        repo = tmpl.generate()
 
-    # # check the repository metadata
-    # assert repo, "Repository object is None"
-    # assert isinstance(repo, repos.LocalWorkflowRepository), "Repository is not a WorkflowRepository"
-    # assert repo.name == repository_info['name'], "Repository name is not correct"
-    # assert repo.owner == repository_info['owner'], "Repository owner is not correct"
-    # assert repo.full_name == f"{repository_info['owner']}/{repository_info['name']}", "Repository full name is not correct"
-    # assert repo.license == repository_info['license'], "Repository license is not correct"
-    # assert repo.local_path == workflow_path, "Repository local path is not correct"
-    # assert repo.remote_url == repository_info['remote_url'], "Repository remote url is not correct"
+        # check the repository metadata
+        assert repo, "Repository object is None"
+        assert isinstance(repo, repos.LocalWorkflowRepository), "Repository is not a WorkflowRepository"
+        assert repo.name == repository_info['name'], "Repository name is not correct"
+        assert repo.owner == repository_info['owner'], "Repository owner is not correct"
+        assert repo.full_name == f"{repository_info['owner']}/{repository_info['name']}", "Repository full name is not correct"
+        assert repo.license == repository_info['license'], "Repository license is not correct"
+        assert repo.local_path == workflow_path, "Repository local path is not correct"
+        assert repo.remote_url == repository_info['remote_url'], "Repository remote url is not correct"
