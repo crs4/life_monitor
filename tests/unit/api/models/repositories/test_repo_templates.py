@@ -90,3 +90,7 @@ def test_repo_template(repository_info, repo_template_type):
         assert repo.license == repository_info['license'], "Repository license is not correct"
         assert repo.local_path == workflow_path, "Repository local path is not correct"
         assert repo.remote_url == repository_info['remote_url'], "Repository remote url is not correct"
+
+        # check the repository files
+        assert os.path.exists(os.path.join(workflow_path, 'README.md')), "README.md file does not exist"
+        assert os.path.exists(os.path.join(workflow_path, 'ro-crate-metadata.json')), "ro-crate-metadata.json file does not exist"
