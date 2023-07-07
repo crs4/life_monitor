@@ -25,18 +25,14 @@ import os
 import re
 from typing import Dict, List, Optional
 
-import nf_core.create
-from lifemonitor.api.models.repositories.files.base import RepositoryFile
-from lifemonitor.api.models.repositories.local import LocalWorkflowRepository
-from nf_core import utils as nf_core_utils
+import lifemonitor.api.models.repositories as repos
+import lifemonitor.api.models.repositories.files as repo_files
 
 from . import WorkflowRepositoryTemplate
 
 # set module level logger
 logger = logging.getLogger(__name__)
 
-# log loaded nf_core.utils is loaded
-logger.debug("Loaded module 'nf-core.utils': %r", nf_core_utils)
 
 # Ignore LICENSE
 ignore_license = """
@@ -59,27 +55,29 @@ class NextflowRepositoryTemplate(WorkflowRepositoryTemplate):
         super().__init__(data=data, local_path=local_path, init_git=init_git)
 
     @property
-    def files(self) -> List[RepositoryFile]:
+    def files(self) -> List[repo_files.base.RepositoryFile]:
         result = []
         # skip = self._transient_files['remove'].keys()
         for root, _, files in os.path.walk(self.local_path, exclude=self.exclude):
             dirname = root.replace(self.local_path, '.')
             for name in files:
                 # if f"{dirname}/{name}" not in skip:
-                result.append(RepositoryFile(self.local_path, name, dir=dirname))
+                result.append(repo_files.base.RepositoryFile(self.local_path, name, dir=dirname))
         result.extend([v for k, v in self._transient_files['add'].items()])
         return result
 
-    def generate(self, target_path: str = None) -> LocalWorkflowRepository:
+    def generate(self, target_path: str = None) -> repos.LocalWorkflowRepository:
         target_path = target_path or self.local_path
         logger.debug("Rendering template files to %s...", target_path)
         # name, description, author, version="1.0dev", no_git=False, force=False, outdir=None
-        create_obj = NextflowPipeline(
-            self.data.get("workflow_name"),
-            self.data.get("workflow_description", ""),
+        from nf_core.create import PipelineCreate
+        create_obj = PipelineCreate(
+            re.sub(r"\s+", "", self.data.get("workflow_name")),
+            self.data.get("workflow_description"),
             self.data.get("workflow_author", ""),
-            self.data.get('workflow_version', "0.1.0"),
-            False, True, outdir=target_path, plain=True)
+            self.data.get("workflow_version", "0.1.0"),
+            False, True, outdir=target_path, plain=True
+        )
         create_obj.init_pipeline()
 
         # patch prettier config to ignore crate and lm metadata
@@ -104,29 +102,3 @@ class NextflowRepositoryTemplate(WorkflowRepositoryTemplate):
         repo.generate_metadata(**self.data)
         # return the repository object
         return repo
-
-
-class NextflowPipeline(nf_core.create.PipelineCreate):
-
-    def __init__(self, name, description, author, version="1.0dev", no_git=False,
-                 force=False, outdir=None, template_yaml=None, plain=True):
-        """ Override default constructor to properly set workflow name"""
-        super().__init__(re.sub(r"\s+", "", name), description, author, version, no_git,
-                         force, outdir, template_yaml_path=template_yaml, plain=plain)
-
-    # def git_init_pipeline(self):
-    #     """Initialises the new pipeline as a Git repository and submits first commit."""
-    #     logger.info("Initialising pipeline git repository")
-    #     repo = git.Repo.init(self.outdir)
-    #     repo.git.add(A=True)
-    #     repo.index.commit(f"initial template build from nf-core/tools, version {nf_core.__version__}")
-    #     # Add TEMPLATE branch to git repository
-    #     repo.git.branch("TEMPLATE")
-    #     repo.git.branch("dev")
-    #     logger.info(
-    #         "Done. Remember to add a remote and push to GitHub:\n"
-    #         f"[white on grey23] cd {self.outdir} \n"
-    #         " git remote add origin git@github.com:USERNAME/REPO_NAME.git \n"
-    #         " git push --all origin                                       "
-    #     )
-    #     logger.info("This will also push your newly created dev branch and the TEMPLATE branch for syncing.")
