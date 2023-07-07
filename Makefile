@@ -263,13 +263,16 @@ start-aux-services: aux_images ro_crates docker-compose.extra.yml permissions ##
 run-tests: start-testing ## Run all tests in the Testing Environment
 	@printf "\n$(bold)Running tests...$(reset)\n" ; \
 	USER_UID=$$(id -u) USER_GID=$$(id -g) \
-	$(docker_compose) exec -T lmtests /bin/bash -c "pytest --durations=10 --color=yes tests"
+	$(docker_compose) exec -T lmtests /bin/bash -c "TEST_SKIP_REPO_TEMPLATES=true pytest --durations=10 --color=yes tests" \
+	$(docker_compose) exec -T lmtests /bin/bash -c "pytest --durations=10 --color=yes tests/unit/api/models/repositories/test_repo_templates.py"
 
 
 tests: start-testing ## CI utility to setup, run tests and teardown a testing environment
 	@printf "\n$(bold)Running tests...$(reset)\n" ; \
 	$(docker_compose) -f ./docker-compose.yml \
-		exec -T lmtests /bin/bash -c "pytest --reruns 2 --reruns-delay 5 --durations=10 --color=yes tests --order-dependencies"; \
+		exec -T lmtests /bin/bash -c "TEST_SKIP_REPO_TEMPLATES=true pytest --reruns 2 --reruns-delay 5 --durations=10 --color=yes --order-dependencies tests"; \
+	$(docker_compose) -f ./docker-compose.yml \
+		exec -T lmtests /bin/bash -c "pytest --reruns 2 --reruns-delay 5 --durations=10 --color=yes --order-dependencies tests/unit/api/models/repositories/test_repo_templates.py"; \
 	  result=$$?; \
 	  	printf "\n$(bold)Teardown services...$(reset)\n" ; \
 	  	USER_UID=$$(id -u) USER_GID=$$(id -g) \
