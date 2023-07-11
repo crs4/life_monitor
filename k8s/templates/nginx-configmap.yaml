@@ -33,6 +33,11 @@ data:
             location /static/ {
                 root /app/lifemonitor;
             }
+            
+            # if the path matches to root, redirect to the account page
+            location = / {
+                return 301 https://$host:8443/account/;
+            }
 
             # set proxy location
             location / {
