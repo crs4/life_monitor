@@ -4,7 +4,7 @@ set -o errexit
 set -o nounset
 
 CA_NAME="ca"
-if type -P ifconfig > /dev/null 2>&1; then
+if type -P ifconfig >/dev/null 2>&1; then
     NETWORK_DATA="$(ifconfig)"
 else
     NETWORK_DATA="$(ip -oneline addr)"
@@ -13,7 +13,7 @@ fi
 # check if GNU sed is available
 gsed=sed
 if uname -a | grep -q Darwin; then
-    if ! type -P gsed > /dev/null 2>&1; then
+    if ! type -P gsed >/dev/null 2>&1; then
         echo "GNU sed is not available. Please install it with 'brew install gnu-sed'" >&2
         exit 1
     else
@@ -31,7 +31,7 @@ if [[ -n "${EXTRA_DOMAINS}" ]]; then
 fi
 
 # script path
-current_path="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+current_path="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 
 # gen cmd
 cmd="minica -ca-cert \"${CA_NAME}.pem\" -ca-key \"${CA_NAME}.key\" -domains \"${DOMAINS}\" -ip-addresses \"${IPADDRESSES}\""
