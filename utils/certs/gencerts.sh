@@ -22,8 +22,13 @@ if uname -a | grep -q Darwin; then
 fi
 
 IPADDRESSES="$(echo "${NETWORK_DATA}" | "${gsed}" -En 's/127.0.0.1//;s/.*inet (addr:)?(([0-9]*\.){3}[0-9]*).*/\2/p;' | "${gsed}" -e ':a;N;$!ba;s/\n/,/g')"
-DOMAINS="lm,lm.local,lifemonitor,lifemonitor.local,lmtests,localhost,seek,nginx,wfhub"
+DOMAINS="lm,lm.local,lifemonitor,lifemonitor.local,lmtests,seek,nginx,wfhub,$(hostname),localhost"
 IMAGE_NAME="crs4/minica"
+
+# add extra domains
+if [[ -n "${EXTRA_DOMAINS}" ]]; then
+    DOMAINS="${DOMAINS},${EXTRA_DOMAINS}"
+fi
 
 # script path
 current_path="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
