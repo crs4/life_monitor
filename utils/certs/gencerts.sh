@@ -26,6 +26,7 @@ DOMAINS="lm,lm.local,lifemonitor,lifemonitor.local,lmtests,seek,nginx,wfhub,$(ho
 IMAGE_NAME="crs4/minica"
 
 # add extra domains
+EXTRA_DOMAINS="${EXTRA_DOMAINS:-}"
 if [[ -n "${EXTRA_DOMAINS}" ]]; then
     DOMAINS="${DOMAINS},${EXTRA_DOMAINS}"
 fi
