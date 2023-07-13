@@ -62,6 +62,14 @@ Define lifemonitor image
 
 
 {{/*
+Define lifemonitor TLS secret name
+*/}}
+{{- define "chart.lifemonitor.tls" -}}
+{{- printf "%s-tls" .Release.Name }}
+{{- end }}
+
+
+{{/*
 Create the name of the service account to use
 */}}
 {{- define "chart.serviceAccountName" -}}
@@ -112,7 +120,7 @@ Define volumes shared by some pods.
 {{- define "lifemonitor.common-volume" -}}
 - name: lifemonitor-tls
   secret:
-    secretName: lifemonitor-tls
+    secretName: {{ include "chart.lifemonitor.tls" . }}
 - name: lifemonitor-settings
   secret:
     secretName: {{ include "chart.fullname" . }}-settings
@@ -152,4 +160,16 @@ Define mount points shared by some pods.
 {{- end -}}
 {{- end -}}
 {{- end -}}
+{{- end -}}
+
+
+{{/*
+Generate certificates for the LifeMonitor Api Server .
+*/}}
+{{- define "gen-certs" -}}
+{{- $altNames := list ( printf "%s.%s" (include "chart.name" .) .Release.Namespace ) ( printf "%s.%s.svc" (include "chart.name" .) .Release.Namespace ) -}}
+{{- $ca := genCA "lifemonitor-ca" 365 -}}
+{{- $cert := genSignedCert ( include "chart.name" . ) nil $altNames 365 $ca -}}
+tls.crt: {{ $cert.Cert | b64enc }}
+tls.key: {{ $cert.Key | b64enc }}
 {{- end -}}
