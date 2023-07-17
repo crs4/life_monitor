@@ -2341,7 +2341,8 @@ components:
             roc_link:
               type: string
               description: |
-                Link to the workflow RO-Crate
+                Link to the workflow RO-Crate. Here LM will also accept a link
+                to a GitHub repository containing the RO-Crate contents.
               example: http://webserver:5000/download?file=ro-crate-galaxy-sortchangecase.crate.zip
             authorization:
               type: string
