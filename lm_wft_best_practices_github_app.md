@@ -90,6 +90,9 @@ the global settings in the LifeMonitor web app.
 
 You can see a full example configuration file here: [`lifemonitor.yaml`](./lifemonitor.yaml).
 
+The full schema for the file format is here: [`lifemonitor.yaml schema`](https://api.lifemonitor.eu/integrations/github/config/schema.json).
+
+
 #### Configuration keys
 
 Base configuration settings:
@@ -129,6 +132,11 @@ push:
       update_registries: ["wfhub"]
       enable_notifications: true
 ```
+
+### Validating your configuration
+
+Before committing your configuration file, you can validate it by uploading it
+to the LifeMonitor [configuration validation service](https://api.lifemonitor.eu/static/specs/apidocs.html#post-/integrations/github/config/validate).
 
 ### Example configuration
 
