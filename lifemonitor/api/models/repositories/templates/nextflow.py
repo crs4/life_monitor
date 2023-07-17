@@ -25,10 +25,19 @@ import os
 import re
 from typing import Dict, List, Optional
 
+from nf_core.create import PipelineCreate
+
 import lifemonitor.api.models.repositories as repos
 import lifemonitor.api.models.repositories.files as repo_files
 
 from . import WorkflowRepositoryTemplate
+
+# disable requests_cache
+try:
+    import requests_cache
+    requests_cache.patcher.uninstall_cache()
+except ImportError:
+    pass
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -69,8 +78,6 @@ class NextflowRepositoryTemplate(WorkflowRepositoryTemplate):
     def generate(self, target_path: str = None) -> repos.LocalWorkflowRepository:
         target_path = target_path or self.local_path
         logger.debug("Rendering template files to %s...", target_path)
-        # name, description, author, version="1.0dev", no_git=False, force=False, outdir=None
-        from nf_core.create import PipelineCreate
         create_obj = PipelineCreate(
             re.sub(r"\s+", "", self.data.get("workflow_name")),
             self.data.get("workflow_description"),
