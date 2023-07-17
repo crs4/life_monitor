@@ -129,7 +129,7 @@ backup:
 lifemonitor:
   replicaCount: 1
 
-  image: &lifemonitorImage crs4/lifemonitor:0.4.0
+  image: &lifemonitorImage crs4/lifemonitor:0.11.4
   imagePullPolicy: &lifemonitorImagePullPolicy Always
   imagePullSecrets: []
 
