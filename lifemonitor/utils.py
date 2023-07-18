@@ -437,13 +437,16 @@ def isoformat_to_datetime(iso: str) -> datetime:
 
 def get_current_username() -> str:
     try:
-        import pwd
-        return pwd.getpwuid(os.getuid()).pw_name
-    except Exception as e:
-        logger.warning("Unable to get current username: %s", e)
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.exception(e)
-        return "unknown"
+        return os.environ["USER"]
+    except KeyError:
+        try:
+            import pwd
+            return pwd.getpwuid(os.getuid()).pw_name
+        except Exception as e:
+            logger.warning("Unable to get current username: %s", e)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.exception(e)
+    return "unknown"
 
 
 def parse_date_interval(interval: str) -> Tuple[Literal['<=', '>=', '<', '>', '..'], Optional[datetime], datetime]:

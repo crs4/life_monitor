@@ -31,9 +31,9 @@ prometheus-flask-exporter~=0.22
 pygit2~=1.12.1
 psycopg2-binary~=2.9.6
 pyopenssl==23.2.0
-pytest-mock~=3.10.0
-pytest~=7.3.1
-pytest-rerunfailures~=11.1.2
+pytest-mock~=3.11.1
+pytest~=7.4.0
+pytest-rerunfailures~=12.0.0
 pytest-xdist~=3.3.1
 python-dotenv~=0.19.0
 python-jenkins==1.7.0
@@ -47,7 +47,7 @@ snakemake==6.13.1
 networkx~=3.1.0
 rich~=13.4.1
 rocrate==0.8.0
-SQLAlchemy~=1.4.41
+SQLAlchemy==1.4.41
 wheel~=0.40.0
 Werkzeug~=2.2.3
 repo2rocrate~=0.1.2

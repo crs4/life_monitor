@@ -78,19 +78,19 @@ def test_user1_auth(user1, client_auth_method, user1_auth):
 def test_user_auto_logout(user1, client_auth_method, user1_auth):
     logger.debug("Auth: %r, %r, %r", user1_auth, client_auth_method, ClientAuthenticationMethod.BASIC.value)
 
-    app_client = requests.session()
-    app_client_url = f'{get_base_url()}/users/current'
-    logger.debug("client URL: %r", app_client_url)
+    with requests.Session() as app_client:
+        app_client_url = f'{get_base_url()}/users/current'
+        logger.debug("client URL: %r", app_client_url)
 
-    r1 = app_client.get(app_client_url, headers=user1_auth)
-    logger.debug("headers: %r", r1.headers)
-    logger.debug("response: %r", r1.content)
-    if client_auth_method in [ClientAuthenticationMethod.NOAUTH, ClientAuthenticationMethod.BASIC]:
-        assert r1.status_code == 401, "Expected 401 status code"
-    else:
-        assert r1.status_code == 200, "Expected 200 status code"
-        logger.debug("Response R1: %r", r1.json)
+        r1 = app_client.get(app_client_url, headers=user1_auth)
+        logger.debug("headers: %r", r1.headers)
+        logger.debug("response: %r", r1.content)
+        if client_auth_method in [ClientAuthenticationMethod.NOAUTH, ClientAuthenticationMethod.BASIC]:
+            assert r1.status_code == 401, "Expected 401 status code"
+        else:
+            assert r1.status_code == 200, "Expected 200 status code"
+            logger.debug("Response R1: %r", r1.json)
 
-    r2 = app_client.get(app_client_url)
-    logger.debug("headers: %r", r2.headers)
-    assert r2.status_code == 401, "Expected 401 status code"
+        r2 = app_client.get(app_client_url)
+        logger.debug("headers: %r", r2.headers)
+        assert r2.status_code == 401, "Expected 401 status code"

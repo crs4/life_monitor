@@ -35,7 +35,7 @@ logger = logging.getLogger()
 
 
 @pytest.fixture
-def user_identity(app_client, user1, provider_type):
+def user_identity(user1, provider_type):
     logger.debug(user1.keys())
     logger.debug(user1['user_info'].keys())
     user = user1['user']

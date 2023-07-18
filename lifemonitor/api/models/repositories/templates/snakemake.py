@@ -1,4 +1,3 @@
-
 # Copyright (c) 2020-2022 CRS4
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -19,24 +18,11 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from __future__ import annotations
+from typing import Dict, Optional
+from . import WorkflowRepositoryTemplate
 
-from .base import (IssueCheckResult, WorkflowRepository,
-                   WorkflowRepositoryMetadata)
-from .config import WorkflowRepositoryConfig
-from .files import RepositoryFile, TemplateRepositoryFile, WorkflowFile
-from .github import (GithubWorkflowRepository,
-                     InstallationGithubWorkflowRepository,
-                     RepoCloneContextManager)
-from .local import (LocalGitWorkflowRepository, LocalWorkflowRepository,
-                    Base64WorkflowRepository, ZippedWorkflowRepository)
-from .templates import WorkflowRepositoryTemplate
 
-__all__ = [
-    "RepositoryFile", "WorkflowRepositoryConfig", "WorkflowFile", "TemplateRepositoryFile",
-    "WorkflowRepository", "WorkflowRepositoryMetadata", "IssueCheckResult",
-    "LocalWorkflowRepository", "LocalGitWorkflowRepository",
-    "Base64WorkflowRepository", "ZippedWorkflowRepository",
-    "InstallationGithubWorkflowRepository", "GithubWorkflowRepository", "RepoCloneContextManager",
-    "WorkflowRepositoryTemplate"
-]
+class SnakemakeRepositoryTemplate(WorkflowRepositoryTemplate):
+
+    def __init__(self, data: Optional[Dict[str, str]] = None, local_path: Optional[str] = None, init_git: bool = False) -> None:
+        super().__init__(data=data, local_path=local_path, init_git=init_git)
