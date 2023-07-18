@@ -1,0 +1,14 @@
+{{- $dataBackupExists := (lookup "v1" "PersistentVolumeClaim" .Release.Namespace ( include "chart.lifemonitor.data.backup" . ) ) }}
+{{- if not $dataBackupExists }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "chart.lifemonitor.data.backup" . }}
+spec:
+  storageClassName: {{ .Values.storageClass.readWriteManyStorageClass }}
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+{{- end -}}

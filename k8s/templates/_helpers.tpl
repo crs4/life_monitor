@@ -70,6 +70,27 @@ Define lifemonitor TLS secret name
 
 
 {{/*
+Define volume name of LifeMonitor backup data 
+*/}}
+{{- define "chart.lifemonitor.data.backup" -}}
+{{- printf "data-%s-backup" .Release.Name }}
+{{- end }}
+
+{{/*
+Define volume name of LifeMonitor workflows data
+*/}}
+{{- define "chart.lifemonitor.data.workflows" -}}
+{{- printf "data-%s-workflows" .Release.Name }}
+{{- end }}
+
+{{/*
+Define volume name of LifeMonitor logs data
+*/}}
+{{- define "chart.lifemonitor.data.logs" -}}
+{{- printf "data-%s-logs" .Release.Name }}
+{{- end }}
+
+{{/*
 Create the name of the service account to use
 */}}
 {{- define "chart.serviceAccountName" -}}

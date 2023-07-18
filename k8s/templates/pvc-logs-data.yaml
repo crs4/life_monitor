@@ -1,0 +1,14 @@
+{{- $dataLogsExists := (lookup "v1" "PersistentVolumeClaim" .Release.Namespace ( include "chart.lifemonitor.data.logs" . ) ) }}
+{{- if not $dataLogsExists }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: data-api-logs
+spec:
+  storageClassName: nfs-client
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+{{- end -}}
