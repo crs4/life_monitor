@@ -14,7 +14,9 @@ externalServerName: &hostname api.lifemonitor.eu
 webappUrl: &webapp_url https://app.lifemonitor.eu
 
 # global storage class
-storageClass: &storageClass "-"
+storageClass: 
+  default: &defaultStorageClass "-"
+  readWriteManyStorageClass: &readWriteManyStorageClass "-"
 
 remoteStorage:
   enabled: false
@@ -166,7 +168,7 @@ lifemonitor:
     port: 8000
 
   persistence:
-    storageClass: *storageClass
+    storageClass: *defaultStorageClass
     storageSize: 1Gi
 
   # Enable/Disable the pod to test connection to the LifeMonitor back-end
@@ -427,7 +429,7 @@ postgresql:
     ##
     subPath: ""
 
-    storageClass: *storageClass
+    storageClass: *defaultStorageClass
     accessModes:
       - ReadWriteOnce
     size: 1Gi
@@ -741,7 +743,7 @@ redis:
       ## If set to "-", storageClassName: "", which disables dynamic provisioning
       ## If undefined (the default) or set to null, no storageClassName spec is set, choosing the default provisioner
       ##
-      storageClass: ""
+      storageClass: *defaultStorageClass
       ## @param master.persistence.accessModes [array] Persistent Volume access modes
       ##
       accessModes:
@@ -1050,7 +1052,7 @@ redis:
       ## If set to "-", storageClassName: "", which disables dynamic provisioning
       ## If undefined (the default) or set to null, no storageClassName spec is set, choosing the default provisioner
       ##
-      storageClass: ""
+      storageClass: *defaultStorageClass
       ## @param replica.persistence.accessModes [array] Persistent Volume access modes
       ##
       accessModes:
