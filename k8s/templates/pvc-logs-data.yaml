@@ -5,7 +5,7 @@ kind: PersistentVolumeClaim
 metadata:
   name: data-api-logs
 spec:
-  storageClassName: nfs-client
+  storageClassName: {{ .Values.readWriteManyStorageClass }}
   accessModes:
   - ReadWriteMany
   resources:
