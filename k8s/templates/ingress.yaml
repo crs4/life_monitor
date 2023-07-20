@@ -14,6 +14,17 @@ metadata:
   {{- with .Values.ingress.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
+    # new way of setting the ingress class
+    {{- if semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion -}}
+    spec.ingressClassName: {{ .Values.ingress.className }}
+    {{- else -}}
+    # old way of setting the ingress class
+    kubernetes.io/ingress.class: {{ .Values.ingress.className }}
+    {{- end -}}
+    nginx.ingress.kubernetes.io/affinity: "cookie"
+    nginx.ingress.kubernetes.io/session-cookie-name: "lm-api-back-end"
+    nginx.ingress.kubernetes.io/session-cookie-expires: "172800"
+    nginx.ingress.kubernetes.io/session-cookie-max-age: "172800"
   {{- end }}
 spec:
   {{- if .Values.ingress.tls }}

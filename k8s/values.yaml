@@ -39,10 +39,9 @@ serviceAccount:
 # from outside the cluster
 ingress:
   enabled: false
+  className: nginx
   annotations:
-    # kubernetes.io/ingress.class: nginx
-    spec.ingressClassName: nginx
-    #nginx.ingress.kubernetes.io/rewrite-target: /
+    # nginx.ingress.kubernetes.io/rewrite-target: /
     # kubernetes.io/tls-acme: "true"
   hosts:
     - host: *hostname
