@@ -13,11 +13,13 @@ externalServerName: &hostname api.lifemonitor.eu
 # Base URL of the LifeMonitor web app associated with this back-end instance
 webappUrl: &webapp_url https://app.lifemonitor.eu
 
-# global storage class
-storageClass: 
-  default: &defaultStorageClass "-"
+# global storage classes
+global:
+  readWriteOnceStorageClass: &readWriteOnceStorageClass "-"
   readWriteManyStorageClass: &readWriteManyStorageClass "-"
+  storageClass: *readWriteOnceStorageClass
 
+# remote storage settings
 remoteStorage:
   enabled: false
   s3_endpoint_url: "https://your-s3-storage-url"
@@ -168,7 +170,7 @@ lifemonitor:
     port: 8000
 
   persistence:
-    storageClass: *defaultStorageClass
+    storageClass: *readWriteOnceStorageClass
     storageSize: 1Gi
 
   # Enable/Disable the pod to test connection to the LifeMonitor back-end
@@ -429,7 +431,7 @@ postgresql:
     ##
     subPath: ""
 
-    storageClass: *defaultStorageClass
+    storageClass: *readWriteOnceStorageClass
     accessModes:
       - ReadWriteOnce
     size: 1Gi
@@ -439,7 +441,6 @@ postgresql:
     ##   matchLabels:
     ##     app: my-app
     selector: {}
-
 
 redis:
   image:
@@ -743,7 +744,7 @@ redis:
       ## If set to "-", storageClassName: "", which disables dynamic provisioning
       ## If undefined (the default) or set to null, no storageClassName spec is set, choosing the default provisioner
       ##
-      storageClass: *defaultStorageClass
+      storageClass: *readWriteOnceStorageClass
       ## @param master.persistence.accessModes [array] Persistent Volume access modes
       ##
       accessModes:
@@ -1052,7 +1053,7 @@ redis:
       ## If set to "-", storageClassName: "", which disables dynamic provisioning
       ## If undefined (the default) or set to null, no storageClassName spec is set, choosing the default provisioner
       ##
-      storageClass: *defaultStorageClass
+      storageClass: *readWriteOnceStorageClass
       ## @param replica.persistence.accessModes [array] Persistent Volume access modes
       ##
       accessModes:
