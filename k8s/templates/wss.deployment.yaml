@@ -1,10 +1,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "chart.fullname" . }}-backend
+  name: {{ include "chart.fullname" . }}-wss
   labels:
     {{- include "chart.labels" . | nindent 4 }}
-    app.kubernetes.io/component: backend
+    app.kubernetes.io/component: wss
 spec:
   {{- if not .Values.lifemonitor.autoscaling.enabled }}
   replicas: {{ .Values.lifemonitor.replicaCount }}
@@ -12,17 +12,21 @@ spec:
   selector:
     matchLabels:
       {{- include "chart.selectorLabels" . | nindent 6 }}
-      app.kubernetes.io/component: backend
+      app.kubernetes.io/component: wss
   template:
     metadata:
       annotations:
-        checksum/settings: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        checksum/settings: {{ include (print $.Template.BasePath "/settings.secret.yaml") . | sha256sum }}
       {{- with .Values.lifemonitor.podAnnotations }}
         {{- toYaml . | nindent 8 }}
       {{- end }}       
       labels:
         {{- include "chart.selectorLabels" . | nindent 8 }}
-        app.kubernetes.io/component: backend
+        app.kubernetes.io/component: wss
+        # prometheus.io/scrape: 'true'
+        # prometheus.io/path: 'metrics'
+        # prometheus.io/port: '9090'
+        # prometheus.io/scheme: 'http'
     spec:
       {{- with .Values.lifemonitor.imagePullSecrets }}
       imagePullSecrets:
@@ -38,13 +42,16 @@ spec:
           image: {{ include "chart.lifemonitor.image" . }}
           imagePullPolicy: {{ .Values.lifemonitor.imagePullPolicy }}
           command: ["/bin/sh","-c"]
+          # args: ["wait-for-redis.sh && wait-for-postgres.sh && ./lm-admin db wait-for-db && wait-for-file.sh ${PROMETHEUS_MULTIPROC_DIR}"]
           args: ["wait-for-redis.sh && wait-for-postgres.sh && ./lm-admin db wait-for-db"]
           env:
           {{- include "lifemonitor.common-env" . | nindent 12 }}
           volumeMounts:
           {{- include "lifemonitor.common-volume-mounts" . | nindent 12 }}
       containers:
-        - name: app
+        - name: wss
+          command: ["/bin/sh","-c"]
+          args: ["wss-entrypoint.sh"]
           securityContext:
             {{- toYaml .Values.lifemonitor.securityContext | nindent 12 }}
           image: {{ include "chart.lifemonitor.image" . }}
@@ -54,21 +61,24 @@ spec:
           volumeMounts:
           {{- include "lifemonitor.common-volume-mounts" . | nindent 12 }}
           ports:
-            - name: http
-              containerPort: 8000
+            - name: wss
+              containerPort: 8001
               protocol: TCP
-          livenessProbe:
-            httpGet:
-              scheme: HTTPS
-              path: /health
-              port: 8000
-          readinessProbe:
-            httpGet:
-              scheme: HTTPS
-              path: /health
-              port: 8000
-            initialDelaySeconds: 5
-            periodSeconds: 3
+            - name: metrics
+              containerPort: 9090
+              protocol: TCP
+          # livenessProbe:
+          #   httpGet:
+          #     scheme: HTTPS
+          #     path: /health
+          #     port: 8001
+          # readinessProbe:
+          #   httpGet:
+          #     scheme: HTTPS
+          #     path: /health
+          #     port: 8001
+          #   initialDelaySeconds: 5
+          #   periodSeconds: 3
           resources:
             {{- toYaml .Values.lifemonitor.resources | nindent 12 }}
       volumes:

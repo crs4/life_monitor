@@ -18,12 +18,16 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/settings: {{ include (print $.Template.BasePath "/secret.yaml") $ | sha256sum }}
+        checksum/settings: {{ include (print $.Template.BasePath "/settings.secret.yaml") $ | sha256sum }}
       {{- with $.Values.worker.podAnnotations }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
         {{- include "chart.selectorLabels" $ | nindent 8 }}
+        prometheus.io/scrape: 'true'
+        prometheus.io/path: 'metrics'
+        prometheus.io/port: '9191'
+        prometheus.io/scheme: 'http'
     spec:
       {{- with $.Values.worker.imagePullSecrets }}
       imagePullSecrets:
@@ -64,6 +68,8 @@ spec:
               {{ else }}
               value: {{ $queue.name }}
               {{ end }}
+          ports:
+            - containerPort: 9191
           volumeMounts:
           {{- include "lifemonitor.common-volume-mounts" $ | nindent 12 }}
           # livenessProbe:
