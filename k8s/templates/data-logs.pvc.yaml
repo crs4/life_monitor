@@ -6,7 +6,7 @@ metadata:
   name: {{ include "chart.lifemonitor.data.logs" . }}
   namespace: {{ .Release.Namespace }}
 spec:
-  storageClassName: {{ .Values.readWriteManyStorageClass }}
+  storageClassName: {{ .Values.global.readWriteManyStorageClass }}
   accessModes:
   - ReadWriteMany
   resources:
