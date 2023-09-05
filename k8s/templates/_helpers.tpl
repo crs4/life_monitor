@@ -145,6 +145,8 @@ Define volumes shared by some pods.
 - name: lifemonitor-settings
   secret:
     secretName: {{ include "chart.fullname" . }}-settings
+- name: lifemonitor-logs
+  emptyDir: {}
 - name: lifemonitor-data
   persistentVolumeClaim:
     claimName: data-{{- .Release.Name -}}-workflows
