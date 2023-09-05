@@ -195,3 +195,20 @@ Generate certificates for the LifeMonitor Api Server .
 tls.crt: {{ $cert.Cert | b64enc }}
 tls.key: {{ $cert.Key | b64enc }}
 {{- end -}}
+
+
+{{/*
+Define lifemonitor GithubApp secret name
+*/}}
+{{- define "chart.lifemonitor.githubApp.key" -}}
+{{- printf "%s-ghapp-key" .Release.Name }}
+{{- end }}
+
+{{/*
+Read and encode the GitHub App private key.
+*/}}
+{{- define "lifemonitor.githubApp.readPrivateKey" -}}
+{{- $fileContent := $.Files.Get .Values.integrations.github.private_key.path -}}
+{{- $base64Content := $fileContent | b64enc -}}
+{{- printf "%s" $base64Content -}}
+{{- end -}}
