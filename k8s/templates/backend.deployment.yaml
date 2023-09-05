@@ -1,5 +1,5 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: {{ include "chart.fullname" . }}-backend
   labels:
@@ -8,6 +8,7 @@ metadata:
 spec:
   {{- if not .Values.lifemonitor.autoscaling.enabled }}
   replicas: {{ .Values.lifemonitor.replicaCount }}
+  serviceName: "lifemonitor-backend"
   {{- end }}
   selector:
     matchLabels:
