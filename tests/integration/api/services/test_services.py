@@ -44,7 +44,7 @@ def test_workflow_registration(app_client, user1, valid_workflow):
     logger.debug("Registered workflow: %r", workflow)
     assert workflow is not None, "workflow must be not None"
     assert isinstance(workflow, models.WorkflowVersion), "Object is not an instance of WorkflowVersion"
-    assert (str(workflow.workflow.uuid), workflow.version) == (w['uuid'], w['version']),\
+    assert (str(workflow.workflow.uuid), workflow.version) == (w['uuid'], w['version']), \
         "Unexpected workflow ID"
     assert len(models.Workflow.all()) == 1, "Unexpected number of workflows"
     assert len(models.WorkflowVersion.all()) == 1, "Unexpected number of workflow_versions"
@@ -134,7 +134,7 @@ def test_workflow_registry_generic_link(app_client, user1):  # , valid_workflow)
     _, workflow = utils.register_workflow(user1, w)
     assert workflow is not None, "workflow must be not None"
     assert isinstance(workflow, models.WorkflowVersion), "Object is not an instance of WorkflowVersion"
-    assert (workflow.workflow.uuid, workflow.version) == (w['uuid'], w['version']),\
+    assert (workflow.workflow.uuid, workflow.version) == (w['uuid'], w['version']), \
         "Unexpected workflow ID"
     # assert workflow.external_id is not None, "External ID must be computed if not provided"
     # assert workflow.external_id == w["external_id"], "Invalid external ID"
