@@ -294,9 +294,9 @@ class WorkflowVersion(ROCrate):
                 auths.append(auth)
         return auths
 
-    @hybrid_property
-    def roc_link(self) -> str:
-        return self.uri
+    # @hybrid_property
+    # def roc_link(self) -> str:
+    #     return self.uri
 
     @property
     def workflow_name(self) -> str:
