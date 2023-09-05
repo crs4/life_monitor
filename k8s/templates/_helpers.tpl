@@ -49,7 +49,6 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
-
 Define lifemonitor image
 */}}
 {{- define "chart.lifemonitor.image" -}}
