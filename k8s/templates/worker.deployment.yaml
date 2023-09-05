@@ -24,10 +24,12 @@ spec:
       {{- end }}
       labels:
         {{- include "chart.selectorLabels" $ | nindent 8 }}
+        {{- if $.Values.monitoring.enabled }}
         prometheus.io/scrape: 'true'
         prometheus.io/path: 'metrics'
         prometheus.io/port: '9191'
         prometheus.io/scheme: 'http'
+        {{- end }}        
     spec:
       {{- with $.Values.worker.imagePullSecrets }}
       imagePullSecrets:

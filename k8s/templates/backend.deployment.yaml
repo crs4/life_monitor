@@ -23,10 +23,12 @@ spec:
       labels:
         {{- include "chart.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: backend
-        # prometheus.io/scrape: 'true'
-        # prometheus.io/path: 'metrics'
-        # prometheus.io/port: '9090'
-        # prometheus.io/scheme: 'http'
+        {{- if $.Values.monitoring.enabled }}
+        prometheus.io/scrape: 'true'
+        prometheus.io/path: 'metrics'
+        prometheus.io/port: '9090'
+        prometheus.io/scheme: 'http'
+        {{- end }}
     spec:
       {{- with .Values.lifemonitor.imagePullSecrets }}
       imagePullSecrets:

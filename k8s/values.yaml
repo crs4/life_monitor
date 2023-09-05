@@ -130,6 +130,8 @@ backup:
     path: /user/home/lm-backups
     tls: true
 
+monitoring:
+  enabled: false
 lifemonitor:
   replicaCount: 1
 
