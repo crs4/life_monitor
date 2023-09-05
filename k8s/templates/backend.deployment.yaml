@@ -44,8 +44,12 @@ spec:
             {{- toYaml .Values.lifemonitor.securityContext | nindent 12 }}
           image: {{ include "chart.lifemonitor.image" . }}
           imagePullPolicy: {{ .Values.lifemonitor.imagePullPolicy }}
-          command: ["/bin/sh","-c"]
-          args: ["wait-for-redis.sh && wait-for-postgres.sh && ./lm-admin db wait-for-db"]
+          command:
+            - "/bin/sh"
+            - "-c"
+            - |
+              wait-for-redis.sh && wait-for-postgres.sh
+              ./lm-admin db wait-for-db
           env:
           {{- include "lifemonitor.common-env" . | nindent 12 }}
           volumeMounts:
