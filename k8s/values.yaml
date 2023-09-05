@@ -132,6 +132,11 @@ backup:
 
 monitoring:
   enabled: false
+  service_monitor:
+    enabled: false
+  prometheus:
+    namespace: kube-prometheus-stack
+
 lifemonitor:
   replicaCount: 1
 
