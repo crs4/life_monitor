@@ -39,7 +39,7 @@ spec:
       securityContext:
         {{- toYaml .Values.lifemonitor.podSecurityContext | nindent 8 }}
       initContainers:
-        - name: init
+        - name: init-backend
           securityContext:
             {{- toYaml .Values.lifemonitor.securityContext | nindent 12 }}
           image: {{ include "chart.lifemonitor.image" . }}
@@ -51,7 +51,7 @@ spec:
           volumeMounts:
           {{- include "lifemonitor.common-volume-mounts" . | nindent 12 }}
       containers:
-        - name: app
+        - name: backend
           securityContext:
             {{- toYaml .Values.lifemonitor.securityContext | nindent 12 }}
           image: {{ include "chart.lifemonitor.image" . }}
