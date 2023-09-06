@@ -23,7 +23,6 @@ from __future__ import annotations
 import logging
 from typing import List, Optional, Set, Union
 
-from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import aliased
 from sqlalchemy.orm.collections import (MappedCollection,
@@ -215,8 +214,6 @@ class WorkflowVersion(ROCrate):
                                 backref=db.backref("workflows", cascade="all, delete-orphan",
                                                    collection_class=WorkflowVersionCollection))
 
-    roc_link = association_proxy('ro_crate', 'uri')
-
     __mapper_args__ = {
         'polymorphic_identity': 'workflow_version'
     }
@@ -294,9 +291,9 @@ class WorkflowVersion(ROCrate):
                 auths.append(auth)
         return auths
 
-    # @hybrid_property
-    # def roc_link(self) -> str:
-    #     return self.uri
+    @hybrid_property
+    def roc_link(self) -> str:
+        return self.uri
 
     @property
     def workflow_name(self) -> str:
