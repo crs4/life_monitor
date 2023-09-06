@@ -49,7 +49,6 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
-
 Define lifemonitor image
 */}}
 {{- define "chart.lifemonitor.image" -}}
@@ -60,6 +59,35 @@ Define lifemonitor image
 {{- end }}
 {{- end }}
 
+
+{{/*
+Define lifemonitor TLS secret name
+*/}}
+{{- define "chart.lifemonitor.tls" -}}
+{{- printf "%s-tls" .Release.Name }}
+{{- end }}
+
+
+{{/*
+Define volume name of LifeMonitor backup data 
+*/}}
+{{- define "chart.lifemonitor.data.backup" -}}
+{{- printf "data-%s-backup" .Release.Name }}
+{{- end }}
+
+{{/*
+Define volume name of LifeMonitor workflows data
+*/}}
+{{- define "chart.lifemonitor.data.workflows" -}}
+{{- printf "data-%s-workflows" .Release.Name }}
+{{- end }}
+
+{{/*
+Define volume name of LifeMonitor logs data
+*/}}
+{{- define "chart.lifemonitor.data.logs" -}}
+{{- printf "data-%s-logs" .Release.Name }}
+{{- end }}
 
 {{/*
 Create the name of the service account to use
@@ -112,10 +140,12 @@ Define volumes shared by some pods.
 {{- define "lifemonitor.common-volume" -}}
 - name: lifemonitor-tls
   secret:
-    secretName: lifemonitor-tls
+    secretName: {{ include "chart.lifemonitor.tls" . }}
 - name: lifemonitor-settings
   secret:
     secretName: {{ include "chart.fullname" . }}-settings
+- name: lifemonitor-logs
+  emptyDir: {}
 - name: lifemonitor-data
   persistentVolumeClaim:
     claimName: data-{{- .Release.Name -}}-workflows
@@ -152,4 +182,33 @@ Define mount points shared by some pods.
 {{- end -}}
 {{- end -}}
 {{- end -}}
+{{- end -}}
+
+
+{{/*
+Generate certificates for the LifeMonitor Api Server .
+*/}}
+{{- define "gen-certs" -}}
+{{- $altNames := list ( printf "%s.%s" (include "chart.name" .) .Release.Namespace ) ( printf "%s.%s.svc" (include "chart.name" .) .Release.Namespace ) -}}
+{{- $ca := genCA "lifemonitor-ca" 365 -}}
+{{- $cert := genSignedCert ( include "chart.name" . ) nil $altNames 365 $ca -}}
+tls.crt: {{ $cert.Cert | b64enc }}
+tls.key: {{ $cert.Key | b64enc }}
+{{- end -}}
+
+
+{{/*
+Define lifemonitor GithubApp secret name
+*/}}
+{{- define "chart.lifemonitor.githubApp.key" -}}
+{{- printf "%s-ghapp-key" .Release.Name }}
+{{- end }}
+
+{{/*
+Read and encode the GitHub App private key.
+*/}}
+{{- define "lifemonitor.githubApp.readPrivateKey" -}}
+{{- $fileContent := $.Files.Get .Values.integrations.github.private_key.path -}}
+{{- $base64Content := $fileContent | b64enc -}}
+{{- printf "%s" $base64Content -}}
 {{- end -}}

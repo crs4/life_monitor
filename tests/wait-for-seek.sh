@@ -6,7 +6,7 @@ DEBUG=${DEBUG:-0}
 
 # Function to check if the server is available
 check_server() {
-    response=$(curl -Is "$url" | head -n 1)
+    response=$(curl -Is "$url" --insecure | head -n 1)
     status_code=$(echo "$response" | awk '{print $2}')
     
     if [ "$status_code" == "302" ]; then

@@ -4,7 +4,7 @@ set -o errexit
 set -o nounset
 
 CA_NAME="ca"
-if type -P ifconfig > /dev/null 2>&1; then
+if type -P ifconfig >/dev/null 2>&1; then
     NETWORK_DATA="$(ifconfig)"
 else
     NETWORK_DATA="$(ip -oneline addr)"
@@ -13,7 +13,7 @@ fi
 # check if GNU sed is available
 gsed=sed
 if uname -a | grep -q Darwin; then
-    if ! type -P gsed > /dev/null 2>&1; then
+    if ! type -P gsed >/dev/null 2>&1; then
         echo "GNU sed is not available. Please install it with 'brew install gnu-sed'" >&2
         exit 1
     else
@@ -22,11 +22,17 @@ if uname -a | grep -q Darwin; then
 fi
 
 IPADDRESSES="$(echo "${NETWORK_DATA}" | "${gsed}" -En 's/127.0.0.1//;s/.*inet (addr:)?(([0-9]*\.){3}[0-9]*).*/\2/p;' | "${gsed}" -e ':a;N;$!ba;s/\n/,/g')"
-DOMAINS="lm,lm.local,lifemonitor,lifemonitor.local,lmtests,localhost,seek,nginx,wfhub"
+DOMAINS="lm,lm.local,lifemonitor,lifemonitor.local,lmtests,seek,nginx,wfhub,$(hostname),localhost"
 IMAGE_NAME="crs4/minica"
 
+# add extra domains
+EXTRA_DOMAINS="${EXTRA_DOMAINS:-}"
+if [[ -n "${EXTRA_DOMAINS}" ]]; then
+    DOMAINS="${DOMAINS},${EXTRA_DOMAINS}"
+fi
+
 # script path
-current_path="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+current_path="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 
 # gen cmd
 cmd="minica -ca-cert \"${CA_NAME}.pem\" -ca-key \"${CA_NAME}.key\" -domains \"${DOMAINS}\" -ip-addresses \"${IPADDRESSES}\""

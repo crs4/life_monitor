@@ -239,7 +239,7 @@ def test_post_workflow_by_registry_error_submitter_not_found(m, request_context,
     with pytest.raises(lm_exceptions.NotAuthorizedException) as ex:
         controllers.workflows_post(body=data)
     assert messages.no_user_oauth_identity_on_registry \
-        .format(data["submitter_id"], mock_registry.name) in ex.exconly(True),\
+        .format(data["submitter_id"], mock_registry.name) in ex.exconly(True), \
         "Unexpected error message"
 
 

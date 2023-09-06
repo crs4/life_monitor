@@ -35,7 +35,7 @@ def test_identity(app_client, user1, client_credentials_registry):
 
     assert user.current_identity is not None, "Current identity should not be empty"
     identity = user.current_identity[client_credentials_registry.name]
-    assert identity,\
+    assert identity, \
         f"Current identity should contain an identity issued by the provider {client_credentials_registry.name}"
     assert user.current_identity[client_credentials_registry.name].provider == client_credentials_registry.server_credentials, \
         "Unexpected identity provider"
@@ -44,7 +44,7 @@ def test_identity(app_client, user1, client_credentials_registry):
     logger.debug(serialization)
     assert "identities" in serialization, \
         "Unable to find the property 'identity' on the serialized user"
-    assert serialization['identities'][client_credentials_registry.name]['provider']['name'] == client_credentials_registry.name,\
+    assert serialization['identities'][client_credentials_registry.name]['provider']['name'] == client_credentials_registry.name, \
         "Invalid provider"
 
 

@@ -87,7 +87,7 @@ def test_default_update_registries_of_branch(data, schema):
     assert result is not None, "Result should be empty"
     assert result.valid is True, "Data should be valid"
     print(json.dumps(result.output_data, indent=2))
-    assert 'update_registries' in result.output_data['push']['branches'][0],\
+    assert 'update_registries' in result.output_data['push']['branches'][0], \
         "update_registries should be automatically initialized"
     assert result.output_data['push']['branches'][0]['update_registries'] == [], \
         "update_registries should be automatically initialized with default values"

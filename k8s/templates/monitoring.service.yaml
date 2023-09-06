@@ -1,0 +1,94 @@
+{{- if .Values.monitoring.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: '9090'
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backend-metrics-exporter
+  name: {{ include "chart.fullname" . }}-backend-metrics-headless
+  namespace: {{ .Release.Namespace }}
+spec:
+  clusterIP: None
+  selector:
+    app.kubernetes.io/component: backend    
+  ports:
+    - name: metrics
+      protocol: TCP
+      port: 9090
+      targetPort: 9090
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: '9090'
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backend-proxy-metrics-exporter
+  name: {{ include "chart.fullname" . }}-backend-proxy-metrics-headless
+  namespace: {{ .Release.Namespace }}
+spec:
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: nginx
+    app.kubernetes.io/instance: api
+  ports:
+    - name: metrics
+      protocol: TCP
+      port: 9090
+      targetPort: 9090
+
+---
+
+{{- if .Values.monitoring.service_monitor.enabled -}}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "chart.fullname" . }}-lifemonitor-backend-metrics-servicemonitor
+  # same namespace that Prometheus is running in
+  namespace: {{ .Values.monitoring.prometheus.namespace }}
+  labels:
+    app: {{ include "chart.fullname" . }}-backend
+    release: prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: backend-metrics-exporter
+  endpoints:
+    - path: /metrics
+      port: metrics
+      interval: 15s
+  namespaceSelector:
+    matchNames:
+    - {{ .Release.Namespace }} # namespace where the app is running
+
+---
+
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "chart.fullname" . }}-lifemonitor-backend-proxy-metrics-servicemonitor
+  # same namespace that Prometheus is running in
+  namespace: {{ .Values.monitoring.prometheus.namespace }}
+  labels:
+    app: {{ include "chart.fullname" . }}-backend
+    release: prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: backend-proxy-metrics-exporter
+  endpoints:
+    - path: /metrics
+      port: metrics
+      interval: 15s
+  namespaceSelector:
+    matchNames:
+    - {{ .Release.Namespace }} # namespace where the app is running
+{{- end -}}
+
+{{- end -}}
