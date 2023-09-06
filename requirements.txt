@@ -7,7 +7,7 @@ boto3~=1.24.80
 Bcrypt-Flask==1.0.2
 giturlparse~=0.10.0
 click-option-group~=0.5.5
-cryptography==41.0.1
+cryptography>=41.0.3
 dnspython==2.2.1
 flask-cors==3.0.10
 flask-marshmallow~=0.14.0
@@ -31,15 +31,15 @@ prometheus-flask-exporter~=0.22
 pygit2~=1.12.1
 psycopg2-binary~=2.9.6
 pyopenssl==23.2.0
-pytest-mock~=3.10.0
-pytest~=7.3.1
-pytest-rerunfailures~=11.1.2
+pytest-mock~=3.11.1
+pytest~=7.4.0
+pytest-rerunfailures~=12.0.0
 pytest-xdist~=3.3.1
 python-dotenv~=0.19.0
 python-jenkins==1.7.0
 python-redis-lock~=4.0.0
 PyGithub==1.55
-PyYAML~=5.4.1
+PyYAML~=6.0.1
 pika~=1.2.0
 redis~=4.5.5
 requests~=2.31.0
@@ -47,7 +47,7 @@ snakemake==6.13.1
 networkx~=3.1.0
 rich~=13.4.1
 rocrate==0.8.0
-SQLAlchemy~=1.4.41
+SQLAlchemy==1.4.41
 wheel~=0.40.0
 Werkzeug~=2.2.3
 repo2rocrate~=0.1.2
@@ -55,7 +55,7 @@ urllib3==1.26.11
 flask-socketio==5.3.4
 gevent-websocket==0.10.1
 eventlet==0.33.3
-uwsgi==2.0.21
+uwsgi==2.0.22
 # watchdog version 2.3 introduces a change that breaks Flask in development mode.
 # Don't use watchdog > 2.2.1 until up update Flask to something >= 2.2
 watchdog==2.2.1

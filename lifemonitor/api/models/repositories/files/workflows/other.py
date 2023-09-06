@@ -1,4 +1,3 @@
-
 # Copyright (c) 2020-2022 CRS4
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,22 +20,16 @@
 
 from __future__ import annotations
 
-from .base import (IssueCheckResult, WorkflowRepository,
-                   WorkflowRepositoryMetadata)
-from .config import WorkflowRepositoryConfig
-from .files import RepositoryFile, TemplateRepositoryFile, WorkflowFile
-from .github import (GithubWorkflowRepository,
-                     InstallationGithubWorkflowRepository,
-                     RepoCloneContextManager)
-from .local import (LocalGitWorkflowRepository, LocalWorkflowRepository,
-                    Base64WorkflowRepository, ZippedWorkflowRepository)
-from .templates import WorkflowRepositoryTemplate
+import logging
 
-__all__ = [
-    "RepositoryFile", "WorkflowRepositoryConfig", "WorkflowFile", "TemplateRepositoryFile",
-    "WorkflowRepository", "WorkflowRepositoryMetadata", "IssueCheckResult",
-    "LocalWorkflowRepository", "LocalGitWorkflowRepository",
-    "Base64WorkflowRepository", "ZippedWorkflowRepository",
-    "InstallationGithubWorkflowRepository", "GithubWorkflowRepository", "RepoCloneContextManager",
-    "WorkflowRepositoryTemplate"
-]
+from lifemonitor.api.models.repositories.files.workflows import WorkflowFile
+
+# set module level logger
+logger = logging.getLogger(__name__)
+
+
+class OtherWorkflowFile(WorkflowFile):
+
+    FILE_PATTERNS = (
+        ("workflow", "", ""),
+    )

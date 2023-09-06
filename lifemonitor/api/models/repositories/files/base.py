@@ -100,7 +100,7 @@ class RepositoryFile():
     def get_content(self, binary_mode: bool = False) -> Union[str, bytes, None]:
         if not self._content and self.dir:
             with open(f"{self.path}", 'rb' if binary_mode else 'r') as f:
-                return f.read()
+                self._content = f.read()
         return self._content
 
     @staticmethod

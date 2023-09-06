@@ -361,7 +361,7 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
 
     @property
     def local_repo(self) -> LocalGitWorkflowRepository:
-        if not self._local_repo:
+        if not getattr(self, "_local_repo", None):
             local_path = self._local_path or tempfile.mkdtemp(dir=BaseConfig.BASE_TEMP_FOLDER)
             if not os.path.exists(local_path) or not LocalWorkflowRepository.is_git_repo(local_path):
                 logger.debug("Cloning %r", self.clone_url)
@@ -381,9 +381,11 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
 
     def cleanup(self) -> None:
         logger.debug("Repository cleanup")
-        if self._local_repo:
+        if getattr(self, "_local_repo", None):
+            local_repo_path = self.local_repo.local_path
+            del self._local_repo
             logger.debug("Removing temp folder %r of %r", self.local_path, self)
-            shutil.rmtree(self.local_repo.local_path, ignore_errors=True)
+            shutil.rmtree(local_repo_path, ignore_errors=True)
             self._local_repo = None
 
 
