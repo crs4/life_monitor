@@ -24,8 +24,8 @@ import logging
 from typing import List, Optional, Set, Union
 from uuid import UUID
 
-from sqlalchemy import aliased
 from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm import aliased
 from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql.expression import true
