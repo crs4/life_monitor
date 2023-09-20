@@ -22,12 +22,11 @@ from __future__ import annotations
 
 import logging
 from typing import List, Optional, Set, Union
+from uuid import UUID
 
+from sqlalchemy import aliased
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import aliased
-from sqlalchemy.orm.collections import (MappedCollection,
-                                        attribute_mapped_collection,
-                                        collection)
+from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql.expression import true
 
@@ -183,22 +182,6 @@ class Workflow(Resource):
         return query.all()
 
 
-class WorkflowVersionCollection(MappedCollection):
-
-    def __init__(self) -> None:
-        super().__init__(lambda wv: wv.workflow.uuid)
-
-    @collection.internally_instrumented
-    def __setitem__(self, key, value, _sa_initiator=None):
-        current_value = self.get(key, set())
-        current_value.add(value)
-        super(WorkflowVersionCollection, self).__setitem__(key, current_value, _sa_initiator)
-
-    @collection.internally_instrumented
-    def __delitem__(self, key, _sa_initiator=None):
-        super(WorkflowVersionCollection, self).__delitem__(key, _sa_initiator)
-
-
 class WorkflowVersion(ROCrate):
     id = db.Column(db.Integer, db.ForeignKey(ROCrate.id), primary_key=True)
     submitter_id = db.Column(db.Integer, db.ForeignKey(User.id), nullable=True)
@@ -211,8 +194,7 @@ class WorkflowVersion(ROCrate):
     test_suites = db.relationship("TestSuite", back_populates="workflow_version",
                                   cascade="all, delete")
     submitter = db.relationship("User", uselist=False,
-                                backref=db.backref("workflows", cascade="all, delete-orphan",
-                                                   collection_class=WorkflowVersionCollection))
+                                backref=db.backref("workflow_versions", cascade="all, delete-orphan"))
 
     __mapper_args__ = {
         'polymorphic_identity': 'workflow_version'
@@ -439,3 +421,23 @@ class WorkflowVersion(ROCrate):
             .join(WorkflowVersion, WorkflowVersion.hosting_service_id == hosting_service.id)\
             .filter(HostingService.uuid == lm_utils.uuid_param(hosting_service.uuid))\
             .filter(WorkflowVersion.uri == uri).all()
+
+
+def __get_user_workflows_map__(user: User) -> dict[UUID, Set[WorkflowVersion]]:
+    '''
+    utility function to get the workflows of a user from the list of workflow versions
+    submitted by the user
+    '''
+    workflows = {}
+    for v in user.workflow_versions:
+        w_set = workflows.get(v.workflow.uuid, None)
+        if w_set is None:
+            workflows[v.workflow.uuid] = {v}
+        else:
+            w_set.add(v)
+
+    return workflows
+
+
+# augmentg the User class with the "workflow" property
+User.workflows = property(lambda self: __get_user_workflows_map__(self))
