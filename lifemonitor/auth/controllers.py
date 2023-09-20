@@ -40,7 +40,7 @@ from . import serializers
 from .forms import (EmailForm, LoginForm, NotificationsForm, Oauth2ClientForm,
                     RegisterForm, SetPasswordForm)
 from .models import db
-from .oauth2.client.services import (get_current_user_identity, get_providers,
+from .oauth2.client.services import (get_current_user_identity, get_providers, merge_users,
                                      save_current_user_identity)
 from .oauth2.server.services import server
 from .services import (authorized, current_registry, current_user,
@@ -515,29 +515,43 @@ def disable_registry_sync():
 @blueprint.route("/merge", methods=("GET", "POST"))
 @login_required
 def merge():
+    # get the username and provider from the request
     username = request.args.get("username")
     provider = request.args.get("provider")
-    flash(f"Your <b>{provider}</b> identity is already linked to the username "
-          f"<b>{username}</b> and cannot be merged to <b>{current_user.username}</b>",
-          category="warning")
-    return redirect(url_for('auth.profile'))
-    # form = LoginForm(data={
-    #     "username": username,
-    #     "provider": provider})
-    # if form.validate_on_submit():
-    #     user = form.get_user()
-    #     if user:
-    #         if user != current_user:
-    #             merge_users(current_user, user, request.args.get("provider"))
-    #             flash(
-    #                 "User {username} has been merged into your account".format(
-    #                     username=user.username
-    #                 )
-    #             )
-    #             return redirect(url_for("auth.index"))
-    #         else:
-    #             form.username.errors.append("Cannot merge with yourself")
-    # return render_template("auth/merge.j2", form=form)
+
+    # Uncomment to disable the merge feature
+    # flash(f"Your <b>{p>rovider}</b> identity is already linked to the username "
+    #       f"<b>{username}</b> and cannot be merged to <b>{current_user.username}</b>",
+    #       category="warning")
+    # return redirect(url_for('auth.profile'))
+
+    # Check the authenticity of the identity before merging
+    form = LoginForm(data={
+        "username": username,
+        "provider": provider})
+    if form.validate_on_submit():
+        user = form.get_user()
+        if user:
+            # check if the user is the same as the current user
+            if user == current_user:
+                flash("Cannot merge with yourself", category="warning")
+                form.username.errors.append("Cannot merge with yourself")
+            else:
+                # merge the users
+                resulting_user = merge_users(current_user, user, request.args.get("provider"))
+                logger.debug("User obtained by the merging process: %r", resulting_user)
+                logout_user()
+                # login the resulting user
+                login_user(resulting_user)
+                # redirect to the profile page with a flash message
+                flash(
+                    "User {username} has been merged into your account".format(
+                        username=resulting_user.username
+                    ), category="success"
+                )
+                return profile()
+    # render the merge page
+    return render_template("auth/merge.j2", form=form)
 
 
 @blueprint.route("/create_apikey", methods=("POST",))
