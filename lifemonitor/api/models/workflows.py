@@ -379,7 +379,7 @@ class WorkflowVersion(ROCrate):
                 .join(workflow_alias, workflow_alias.id == cls.workflow_id)\
                 .filter(workflow_alias.uuid == lm_utils.uuid_param(uuid))\
                 .filter(workflow_alias.public == true())\
-                .filter(version == version).one()  # noqa: E712
+                .filter(cls.version == version).one()
         except NoResultFound as e:
             logger.debug(e)
             return None
