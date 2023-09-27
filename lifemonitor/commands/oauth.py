@@ -70,6 +70,87 @@ def token_invalidate(username):
     logger.debug("Token of User '%s' invalidated!", user.username)
 
 
+def _refresh_tokens(user: User, identity, silent):
+    refreshed = {}
+    skipped = {}
+    errors = {}
+    for user_identity in user.oauth_identity.values():
+        try:
+            if identity is not None and user_identity.provider.client_name != identity:
+                logger.debug("Skipping identity '%s'...", user_identity.provider.client_name)
+                skipped[user_identity.provider.client_name] = user_identity.token
+                continue
+            if not silent:
+                value = click.prompt("Would you like to refresh the token for '%s'?" % user_identity.provider.client_name, type=bool)
+                logger.debug("Confirm refresh: %r", value)
+                if not value:
+                    logger.debug("Skipping identity '%s'...", user_identity.provider.client_name)
+                    skipped[user_identity.provider.client_name] = user_identity.token
+                    continue
+            user_identity.token = invalidate_token(user_identity.token)
+            user_identity.refresh_token()
+            user_identity.save()
+            logger.debug("Token refreshed: %r !", user_identity.token)
+            refreshed[user_identity.provider.client_name] = user_identity.token
+        except Exception as e:
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.exception(e)
+            errors[user_identity.provider.client_name] = str(e)
+    logger.debug("Token refresh executed for the user '%s' ", user.username)
+    return refreshed, skipped, errors
+
+
+@blueprint.cli.command('refresh-tokens')
+@click.option("--username", "-u", default=None)
+@click.option("--all", "-a", default=False, is_flag=True)
+@click.option("--identity", "-i", default=None)
+@click.option("--silent", "-y", default=False, is_flag=True)
+@with_appcontext
+def token_refresh(username, all, identity, silent):
+    """
+    Refresh all tokens related with a given user
+    """
+    logger.debug("Username: %r", username)
+    logger.debug("Identity: %r", identity)
+    logger.debug("Silent mode enabled: %r", silent)
+
+    if not username and not all:
+        print("Missing username or --all option", file=sys.stderr)
+        sys.exit(99)
+
+    # filter by username
+    if username:
+        logger.debug("Finding User '%s'...", username)
+        user = User.find_by_username(username)
+        if not user:
+            print("User not found", file=sys.stderr)
+            sys.exit(99)
+        logger.debug("User found: %r", user)
+        print("\nRefreshing tokens for user '%s'..." % user.username, file=sys.stdout)
+        refreshed, skipped, errors = _refresh_tokens(user, identity, silent)
+        print("Token refreshed: %s" % ", ".join(refreshed.keys()), file=sys.stdout)
+        print("Token skipped: %d" % len(skipped.keys()), file=sys.stdout)
+        for s in skipped.keys():
+            print(" -> '%s': %s" % (s, skipped[s]), file=sys.stdout)
+        print("Token refresh errors: %d" % len(errors.keys()), file=sys.stdout)
+        for e in errors.keys():
+            print(" -> '%s': %s" % (e, errors[e]), file=sys.stdout)
+
+    # refresh all tokens
+    if all:
+        for user in User.query.all():
+            print("\nRefreshing tokens for user '%s'..." % user.username, file=sys.stdout)
+            refreshed, skipped, errors = _refresh_tokens(user, identity, silent)
+            print("Token refreshed for user '%s': %s" % (user.username, ", ".join(refreshed.keys())),
+                  file=sys.stdout)
+            print("Token skipped for user '%s': %d" % (user.username, len(skipped.keys())), file=sys.stdout)
+            for s in skipped.keys():
+                print(" -> '%s': %s" % (s, skipped[s]), file=sys.stdout)
+            print("Token refresh errors for user '%s': %d" % (user.username, len(errors.keys())), file=sys.stdout)
+            for e in errors.keys():
+                print(" -> '%s': %s" % (e, errors[e]), file=sys.stdout)
+
+
 @blueprint.cli.command('create-client-oauth-code')
 @click.argument("client_name")
 @click.argument("client_uri")
