@@ -38,6 +38,9 @@ blueprint.cli.help = "Manage credentials for OAuth2 clients"
 
 
 def invalidate_token(token):
+    assert token, "Invalid token"
+    if token.get("expires_in", None) is None:
+        raise ValueError("Invalid token: missing 'expires_in' field")
     invalid_token = token.copy()
     invalid_token["expires_in"] = 10
     invalid_token["expires_at"] = token["created_at"] + 10
