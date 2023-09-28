@@ -64,10 +64,10 @@ logger = logging.getLogger(__name__)
 
 class LoginForm(FlaskForm):
     username = StringField(
-        "Username", validators=[DataRequired(), Length(min=3, max=20)]
+        "Username", validators=[DataRequired(), Length(min=3, max=30)]
     )
     password = PasswordField("Password", validators=[DataRequired()])
-    provider = HiddenField("Provider", validators=[Optional(), Length(min=3, max=20)])
+    provider = HiddenField("Provider", validators=[Optional(), Length(min=3, max=30)])
 
     def get_user(self):
         user = User.query.filter_by(username=self.username.data).first()
