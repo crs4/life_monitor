@@ -81,7 +81,7 @@ class LoginForm(FlaskForm):
 
 
 class UsernameValidator:
-    regex = "^(?=.*[+!@#$%^&*., ?\\/])"
+    regex = r"^(?=.*[+!@#$%^&*., ?\\/])"
 
     def __init__(self, banned: List[str] = None):
         self.banned = banned
