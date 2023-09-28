@@ -108,7 +108,7 @@ class RegisterForm(FlaskForm):
         "Username",
         validators=[
             DataRequired(),
-            Length(min=3, max=20),
+            Length(min=3, max=30),
             UsernameValidator(
                 banned=["root", "admin", "sys", "administrator", "lifemonitor"]
             ),
@@ -118,7 +118,7 @@ class RegisterForm(FlaskForm):
         "Password",
         validators=[
             DataRequired(),
-            Length(min=8, max=20),
+            Length(min=8, max=30),
             EqualTo("repeat_password", message="Passwords must match"),
         ],
     )
