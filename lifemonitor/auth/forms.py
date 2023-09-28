@@ -21,15 +21,35 @@
 
 from __future__ import annotations
 
-import logging
 
+import re
+import logging
+from typing import List
 from flask_wtf import FlaskForm
+from sqlalchemy.exc import IntegrityError
+from wtforms import (
+    BooleanField,
+    HiddenField,
+    PasswordField,
+    SelectField,
+    SelectMultipleField,
+    StringField,
+)
+
+from urllib.parse import urlparse
+from wtforms.validators import (
+    URL,
+    DataRequired,
+    Email,
+    EqualTo,
+    Length,
+    Optional,
+    ValidationError,
+)
+
+
 from lifemonitor.auth.oauth2.server.models import Client
 from lifemonitor.utils import OpenApiSpecs
-from sqlalchemy.exc import IntegrityError
-from wtforms import (BooleanField, HiddenField, PasswordField, SelectField,
-                     SelectMultipleField, StringField)
-from wtforms.validators import URL, DataRequired, Email, EqualTo, Optional
 
 from .models import User, db
 
@@ -38,15 +58,16 @@ try:
 except ImportError:
     from wtforms.fields.html5 import URLField
 
-
 # Set the module level logger
 logger = logging.getLogger(__name__)
 
 
 class LoginForm(FlaskForm):
-    username = StringField("Username", validators=[DataRequired()])
+    username = StringField(
+        "Username", validators=[DataRequired(), Length(min=3, max=20)]
+    )
     password = PasswordField("Password", validators=[DataRequired()])
-    provider = HiddenField("Provider", validators=[Optional()])
+    provider = HiddenField("Provider", validators=[Optional(), Length(min=3, max=20)])
 
     def get_user(self):
         user = User.query.filter_by(username=self.username.data).first()
@@ -59,12 +80,45 @@ class LoginForm(FlaskForm):
         return user
 
 
+class UsernameValidator:
+    regex = "^(?=.*[+!@#$%^&*., ?])"
+
+    def __init__(self, banned: List[str] = None):
+        self.banned = banned
+
+    def __call__(self, form, field):
+        return self.validate(field.data, self.banned)
+
+    @classmethod
+    def validate(cls, value: str, banned: List[str] = None) -> bool:
+        p = re.compile(cls.regex)
+        if banned and value.lower() in (word.lower() for word in banned):
+            raise ValidationError("Username not allowed")
+        if re.search(p, value.lower()):
+            raise ValidationError(
+                "Invalid characters detected. "
+                "Please use only letters (a-zA-Z), numbers (0-9), "
+                "hyphens (-), or underscores (_)."
+            )
+        return True
+
+
 class RegisterForm(FlaskForm):
-    username = StringField("Username", validators=[DataRequired()])
+    username = StringField(
+        "Username",
+        validators=[
+            DataRequired(),
+            Length(min=3, max=20),
+            UsernameValidator(
+                banned=["root", "admin", "sys", "administrator", "lifemonitor"]
+            ),
+        ],
+    )
     password = PasswordField(
         "Password",
         validators=[
             DataRequired(),
+            Length(min=8, max=20),
             EqualTo("repeat_password", message="Passwords must match"),
         ],
     )
@@ -73,8 +127,7 @@ class RegisterForm(FlaskForm):
 
     def create_user(self, identity=None):
         try:
-            user = User(username=self.username.data) \
-                if not identity else identity.user
+            user = User(username=self.username.data) if not identity else identity.user
             if not identity:
                 user.password = self.password.data
             elif identity.user_info.get("picture", None):
@@ -93,7 +146,9 @@ class RegisterForm(FlaskForm):
     def validate(self, extra_validators=None):
         # if the current user has an external OAuth2 identity
         # then we do not validate the password field (which is optional)
-        logger.debug("OAuth identity: %r (%r)", self.identity.raw_data, not self.identity.data)
+        logger.debug(
+            "OAuth identity: %r (%r)", self.identity.raw_data, not self.identity.data
+        )
         if self.identity.data:
             return self.username.validate(self)
         return super().validate(extra_validators=extra_validators)
@@ -104,6 +159,7 @@ class SetPasswordForm(FlaskForm):
         "Password",
         validators=[
             DataRequired(),
+            Length(min=8, max=20),
             EqualTo("repeat_password", message="Passwords must match"),
         ],
     )
@@ -113,10 +169,27 @@ class SetPasswordForm(FlaskForm):
 class NotificationsForm(FlaskForm):
     enable_notifications = BooleanField(
         "enable_notifications",
-        validators=[
-            DataRequired()
-        ],
+        validators=[DataRequired()],
     )
+
+
+class RedirectURIsValidator:
+    def __call__(self, form, field):
+        if not field.data:
+            raise ValidationError("Redirect URI cannot be empty")
+        uris = field.data.replace(" ", "")
+        for uri in uris.split(","):
+            if not self.validate_url(uri):
+                raise ValidationError("Invalid Redirect URI '%s'" % uri)
+        return True
+
+    @staticmethod
+    def validate_url(url):
+        try:
+            result = urlparse(url)
+            return all([result.scheme, result.netloc])
+        except ValueError:
+            return False
 
 
 class EmailForm(FlaskForm):
@@ -134,21 +207,34 @@ class EmailForm(FlaskForm):
 class Oauth2ClientForm(FlaskForm):
     clientId = HiddenField("clientId")
     name = StringField("Client Name", validators=[DataRequired()])
-    uri = URLField('Client URI',
-                   validators=[DataRequired(message="Enter URI Please"),
-                               URL(require_tld=False,
-                                   message="Enter Valid URI Please.")])
+    uri = URLField(
+        "Client URI",
+        validators=[
+            DataRequired(message="Enter URI Please"),
+            URL(require_tld=False, message="Enter Valid URI Please."),
+        ],
+    )
 
-    redirect_uris = StringField("Client Redirect URIs (one per line)",
-                                validators=[DataRequired()])
-    scopes = SelectMultipleField("Allowed scopes",
-                                 render_kw={"multiple": "multiple"},
-                                 choices=[(k, v) for k, v in OpenApiSpecs.get_instance().authorization_code_scopes.items()])
+    redirect_uris = StringField(
+        "Client Redirect URIs (one per line)",
+        validators=[DataRequired(), RedirectURIsValidator()],
+    )
+    scopes = SelectMultipleField(
+        "Allowed scopes",
+        render_kw={"multiple": "multiple"},
+        choices=[
+            (k, v)
+            for k, v in OpenApiSpecs.get_instance().authorization_code_scopes.items()
+        ],
+    )
     confidential = BooleanField("Confidential")
-    auth_method = SelectField("Client Authentication Method",
-                              choices=[
-                                  ("client_secret_basic", "Authorization Header (client_secret_basic)"),
-                                  ("client_secret_post", "Request Body (client_secret_post)")])
+    auth_method = SelectField(
+        "Client Authentication Method",
+        choices=[
+            ("client_secret_basic", "Authorization Header (client_secret_basic)"),
+            ("client_secret_post", "Request Body (client_secret_post)"),
+        ],
+    )
 
     def get_client_data(self):
         logger.debug("Extracting client data from form...")
@@ -158,7 +244,7 @@ class Oauth2ClientForm(FlaskForm):
             "redirect_uris": self.redirect_uris.data,
             "scopes": self.scopes.data,
             "confidential": self.confidential.data,
-            "auth_method": self.auth_method.data if self.confidential.data else "none"
+            "auth_method": self.auth_method.data if self.confidential.data else "none",
         }
         logger.debug("Client data: %r", data)
         return data
