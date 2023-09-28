@@ -81,7 +81,7 @@ class LoginForm(FlaskForm):
 
 
 class UsernameValidator:
-    regex = r"^(?=.*[+!@#$%^&*., ?\\/])"
+    regex = r"^[a-z0-9][a-z0-9\-_]+[a-z0-9]$"
 
     def __init__(self, banned: List[str] = None):
         self.banned = banned
@@ -91,15 +91,18 @@ class UsernameValidator:
 
     @classmethod
     def validate(cls, value: str, banned: List[str] = None) -> bool:
+        value_length = len(value) if value else 0
+        if value_length == 0:
+            return ValidationError("Username cannot be empty")
         p = re.compile(cls.regex)
+        if not re.search(p, value.lower()):
+            raise ValidationError(
+                "Please use only letters (a-zA-Z), numbers (0-9), "
+                "hyphens (-), or underscores (_). "
+                "Usernames cannot start or end with hyphens (-) or underscores (_)."
+            )
         if banned and value.lower() in (word.lower() for word in banned):
             raise ValidationError("Username not allowed")
-        if re.search(p, value.lower()):
-            raise ValidationError(
-                "Invalid characters detected. "
-                "Please use only letters (a-zA-Z), numbers (0-9), "
-                "hyphens (-), or underscores (_)."
-            )
         return True
 
 
