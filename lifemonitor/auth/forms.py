@@ -21,32 +21,17 @@
 
 from __future__ import annotations
 
-
-import re
 import logging
+import re
 from typing import List
+from urllib.parse import urlparse
+
 from flask_wtf import FlaskForm
 from sqlalchemy.exc import IntegrityError
-from wtforms import (
-    BooleanField,
-    HiddenField,
-    PasswordField,
-    SelectField,
-    SelectMultipleField,
-    StringField,
-)
-
-from urllib.parse import urlparse
-from wtforms.validators import (
-    URL,
-    DataRequired,
-    Email,
-    EqualTo,
-    Length,
-    Optional,
-    ValidationError,
-)
-
+from wtforms import (BooleanField, HiddenField, PasswordField, SelectField,
+                     SelectMultipleField, StringField)
+from wtforms.validators import (URL, DataRequired, Email, EqualTo, Length,
+                                Optional, ValidationError)
 
 from lifemonitor.auth.oauth2.server.models import Client
 from lifemonitor.utils import OpenApiSpecs
