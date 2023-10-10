@@ -29,6 +29,35 @@ data:
             # force HTTP traffic to HTTPS
             error_page  497 https://$http_host$request_uri;
 
+            # define error pages
+            error_page 404 /error/404;
+            error_page 429 /error/429;
+            error_page 500 /error/500;
+            error_page 502 /error/502;
+
+            # location for error pages
+            location ~ ^/error {
+                # disable redirects
+                proxy_redirect          off;
+
+                # rewrite headers
+                proxy_pass_header       Server;
+                proxy_set_header        X-Real-IP $http_x_forwarded_for;
+                proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header        X-Scheme $scheme;
+                proxy_set_header        Host $http_host;
+                proxy_set_header        Cookie $http_cookie;
+
+                # various proxy settings
+                proxy_connect_timeout   600;
+                proxy_read_timeout      600;
+                proxy_send_timeout      600;
+                #proxy_intercept_errors  on;
+
+                # set uppstream
+                proxy_pass              https://lm_app;
+            }
+
             # set static files location
             location /static/ {
                 root /app/lifemonitor;
