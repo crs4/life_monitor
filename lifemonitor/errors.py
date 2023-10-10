@@ -53,8 +53,11 @@ def parametric_page():
         return handle_500()
 
 
+@blueprint.route("/400")
+def handle_400(e: Exception = None):
+
 @blueprint.route("/404")
-def handle_404():
+def handle_404(e: Exception = None):
     return handle_error(
         {
             "title": "LifeMonitor: Page not found",
@@ -65,7 +68,7 @@ def handle_404():
 
 
 @blueprint.route("/429")
-def handle_429():
+def handle_429(e: Exception = None):
     return handle_error(
         {
             "title": "LifeMonitor: API rate limit exceeded",
@@ -76,7 +79,7 @@ def handle_429():
 
 
 @blueprint.route("/500")
-def handle_500():
+def handle_500(e: Exception = None):
     return handle_error(
         {
             "title": "LifeMonitor: Internal Server Error",
@@ -87,7 +90,7 @@ def handle_500():
 
 
 @blueprint.route("/502")
-def handle_502():
+def handle_502(e: Exception = None):
     return handle_error(
         {
             "title": "LifeMonitor: Bad Gateway",
