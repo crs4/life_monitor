@@ -27,7 +27,7 @@ data:
             #ssl_certificate_key /nginx/certs/lm.key;
 
             # force HTTP traffic to HTTPS
-            error_page  497 https://$host:8443$request_uri;
+            error_page  497 https://$http_host$request_uri;
 
             # set static files location
             location /static/ {
