@@ -137,6 +137,15 @@ monitoring:
   prometheus:
     namespace: kube-prometheus-stack
 
+rateLimiting:
+  zone:
+    accounts:
+      enabled: false 
+      size: 60m
+      rate: 2r/s
+      burst: 20
+      delay: 2
+
 lifemonitor:
   replicaCount: 1
 

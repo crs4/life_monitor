@@ -16,6 +16,11 @@ data:
             server {{ include "chart.fullname" . }}-backend:8000 fail_timeout=0;
         }
 
+        {{- if .Values.rateLimiting.zone.accounts.enabled }}
+        # Define Rate Limiting Zones
+        limit_req_zone $binary_remote_addr zone=api_accounts:{{ .Values.rateLimiting.zone.accounts.size }} rate={{ .Values.rateLimiting.zone.accounts.rate }};
+        {{- end }}
+
         server {
             listen 0.0.0.0:8080 default_server;
             client_max_body_size 4G;
@@ -68,6 +73,32 @@ data:
                 return 301 https://{{ .Values.externalServerName }}/account/;
             }
 
+            location ~ ^/account {
+                # disable redirects
+                proxy_redirect          off;
+
+                # rewrite headers
+                proxy_pass_header       Server;
+                proxy_set_header        X-Real-IP $http_x_forwarded_for;
+                proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header        X-Scheme $scheme;
+                proxy_set_header        Host $http_host;
+                proxy_set_header        Cookie $http_cookie;
+
+                # various proxy settings
+                proxy_connect_timeout   600;
+                proxy_read_timeout      600;
+                proxy_send_timeout      600;
+                #proxy_intercept_errors  on;
+
+                # set uppstream
+                proxy_pass              https://lm_app;
+
+                {{- if .Values.rateLimiting.zone.accounts.enabled }}
+                # Rate limit for API data endpoints
+                limit_req zone=api_accounts burst={{.Values.rateLimiting.zone.accounts.burst}} delay={{.Values.rateLimiting.zone.accounts.delay}};
+                limit_req_status 429;
+                {{- end }}
             }
 
             # set proxy location
@@ -80,5 +111,9 @@ data:
                 # redirects, we set the Host: header above already.
                 proxy_redirect off;
                 proxy_pass https://lm_app;
+
+                # Rate limit for API data endpoints
+                limit_req zone=api_data burst=20 nodelay;
+                limit_req_status 429;
             }
         }
