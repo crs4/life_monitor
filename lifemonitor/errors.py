@@ -22,16 +22,8 @@ import logging
 import sys
 from typing import Dict
 
-from flask import (
-    Blueprint,
-    current_app,
-    flash,
-    redirect,
-    render_template,
-    request,
-    session,
-    url_for,
-)
+from flask import Blueprint, render_template, request, url_for
+
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
