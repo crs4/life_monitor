@@ -141,3 +141,8 @@ def handle_error(error: Dict[str, str]):
 def register_api(app):
     logger.debug("Registering errors blueprint")
     app.register_blueprint(blueprint)
+    app.register_error_handler(400, handle_400)
+    app.register_error_handler(404, handle_404)
+    app.register_error_handler(429, handle_429)
+    app.register_error_handler(500, handle_500)
+    app.register_error_handler(502, handle_502)
