@@ -49,7 +49,8 @@ def parametric_page():
         logger.debug(f"Handling error code: {code}")
         return handler()
     except ValueError as e:
-        logger.error(f"Invalid error code: {code}")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f"Error handling error code: {e}")
         return handle_500()
 
 
@@ -135,7 +136,14 @@ def handle_error(error: Dict[str, str]):
         )
     except Exception as e:
         logger.error(f"Error rendering error page: {e}")
-        return "Internal Server Error", 500
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.exception(e)
+        return (
+            "Internal Server Error" + f": {str(e)}"
+            if e and logger.isEnabledFor(logging.DEBUG)
+            else "Internal Server Error: the server encountered a temporary error and could not complete your request",
+            500,
+        )
 
 
 def register_api(app):
