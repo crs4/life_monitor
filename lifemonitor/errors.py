@@ -55,14 +55,29 @@ def parametric_page():
 
 @blueprint.route("/400")
 def handle_400(e: Exception = None):
-
-@blueprint.route("/404")
-def handle_404(e: Exception = None):
     return handle_error(
         {
             "title": "LifeMonitor: Page not found",
             "code": "404",
-            "description": "Page not found",
+            "description": str(e)
+            if e and logger.isEnabledFor(logging.DEBUG)
+            else "Bad request",
+        }
+    )
+
+
+@blueprint.route("/404")
+def handle_404(e: Exception = None):
+    resource = request.args.get("resource", None, type=str)
+    logger.debug(f"Resource not found: {resource}")
+    return handle_error(
+        {
+            "title": "LifeMonitor: Page not found",
+            "code": "404",
+            "description": str(e)
+            if e and logger.isEnabledFor(logging.DEBUG)
+            else "Page not found",
+            "resource": resource,
         }
     )
 
@@ -73,7 +88,9 @@ def handle_429(e: Exception = None):
         {
             "title": "LifeMonitor: API rate limit exceeded",
             "code": "429",
-            "description": "API rate limit exceeded",
+            "description": str(e)
+            if e and logger.isEnabledFor(logging.DEBUG)
+            else "API rate limit exceeded",
         }
     )
 
@@ -84,7 +101,9 @@ def handle_500(e: Exception = None):
         {
             "title": "LifeMonitor: Internal Server Error",
             "code": "500",
-            "description": "Internal Server Error: the server encountered a temporary error and could not complete your request",
+            "description": str(e)
+            if e and logger.isEnabledFor(logging.DEBUG)
+            else "Internal Server Error: the server encountered a temporary error and could not complete your request",
         }
     )
 
@@ -95,7 +114,9 @@ def handle_502(e: Exception = None):
         {
             "title": "LifeMonitor: Bad Gateway",
             "code": "502",
-            "description": "Internal Server Error: the server encountered a temporary error and could not complete your request",
+            "description": str(e)
+            if e and logger.isEnabledFor(logging.DEBUG)
+            else "Internal Server Error: the server encountered a temporary error and could not complete your request",
         }
     )
 
