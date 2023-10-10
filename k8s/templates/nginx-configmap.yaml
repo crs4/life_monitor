@@ -36,7 +36,9 @@ data:
             
             # if the path matches to root, redirect to the account page
             location = / {
-                return 301 https://$host:8443/account/;
+                return 301 https://{{ .Values.externalServerName }}/account/;
+            }
+
             }
 
             # set proxy location
