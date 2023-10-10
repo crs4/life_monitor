@@ -393,7 +393,7 @@ def update_github_settings():
     from lifemonitor.integrations.github.forms import GithubSettingsForm
     form = GithubSettingsForm()
     if not form.validate_on_submit():
-        return redirect(url_for('auth.profile', githubSettingsForm=form, currentView='githubSettingsTab'))
+        return profile(githubSettingsForm=form, currentView="githubSettingsTab")
     form.update_model(current_user)
     current_user.save()
     return redirect(url_for('auth.profile', currentView='githubSettingsTab'))
