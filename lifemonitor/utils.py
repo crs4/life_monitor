@@ -655,7 +655,7 @@ def clone_repo(url: str, ref: Optional[str] = None, target_path: Optional[str] =
     local_path = target_path
     try:
         from . import config
-        logger.warning("Local CLONE: %r - %r", url, ref)        
+        logger.debug("Local CLONE: %r - %r", url, ref)
         if not local_path:
             local_path = tempfile.TemporaryDirectory(dir=config.BaseConfig.BASE_TEMP_FOLDER).name
         user_credentials = _make_git_credentials_callback(auth_token)
