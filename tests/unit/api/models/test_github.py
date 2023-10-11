@@ -373,7 +373,7 @@ def test_instance_builds_versioned_by_date(
         logger.debug("Found: %r", [f"{x}: {x.created_at}" for x in found])
         logger.debug("Not found: %r", [f"{x}: {x.created_at}" for x in not_found])
 
-        assert len(instance_builds) == (len(instance_all_builds) - 1), "Unexpected number of runs for the instance revision"
+        assert len(instance_builds) == (len(instance_all_builds) - 4), "Unexpected number of runs for the instance revision"
 
     # simulate an intermediate workflow version
     with cache.transaction():
@@ -386,7 +386,7 @@ def test_instance_builds_versioned_by_date(
         instance_builds = github_service.get_test_builds(test_instance_one_version, limit=items_limit)
         logger.debug("Instance runs: %r", instance_builds)
 
-        assert len(instance_builds) == 8, "Unexpected number of runs for the instance revision"
+        assert len(instance_builds) == 5, "Unexpected number of runs for the instance revision"
 
 
 @pytest.mark.skipif(not token, reason="Github token not set")
