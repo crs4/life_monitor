@@ -94,11 +94,7 @@ data:
                 # set uppstream
                 proxy_pass              https://lm_app;
 
-                {{- if .Values.rateLimiting.zone.accounts.enabled }}
-                # Rate limit for API data endpoints
-                limit_req zone=api_accounts burst={{.Values.rateLimiting.zone.accounts.burst}} delay={{.Values.rateLimiting.zone.accounts.delay}};
-                limit_req_status 429;
-                {{- end }}
+                {{ include "lifemonitor.api.rateLimiting" . | indent 12 }}
             }
 
             # set proxy location
@@ -111,9 +107,5 @@ data:
                 # redirects, we set the Host: header above already.
                 proxy_redirect off;
                 proxy_pass https://lm_app;
-
-                # Rate limit for API data endpoints
-                limit_req zone=api_data burst=20 nodelay;
-                limit_req_status 429;
             }
         }
