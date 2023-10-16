@@ -66,13 +66,24 @@ tips](./reference_general_workflow_testing_tips).
 
 ## Acknowledgments
 
-LifeMonitor is being developed as part of the [EOSC-Life project](https://www.eosc-life.eu/)
-
+LifeMonitor was started as part of the [EOSC-Life
+project](https://www.eosc-life.eu/) and is developed by
+[CRS4](https://www.crs4.it/) with contributions from the wider
+[WorkflowHub Club](https://about.workflowhub.eu/project/community/#workflowhub-club).
 <div>
   <a title="Acknowledgments" href="https://www.eosc-life.eu">
     <img alt="Acknowledgments"
          width="300px"
          src="https://github.com/crs4/life_monitor/raw/master/docs/footer-logo.svg" style="vertical-align: middle" />
+  </a>
+</div>
+
+Hosting for LifeMonitor is provided by [CSC](https://www.csc.fi/en/).
+<div>
+  <a title="Hosting-CSC" href="https://www.csc.fi/en">
+    <img alt="Hosting by CSC"
+         width="200px"
+         src="images/csc.png" style="vertical-align: middle" />
   </a>
 </div>
 
