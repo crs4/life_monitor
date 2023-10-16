@@ -1,0 +1,57 @@
+{% extends 'base.j2' %}
+{% import 'macros.j2' as macros %}
+
+<!-- Set the page title -->
+{% block title %} {{ title }} {% endblock title %}
+
+<!-- Add extra stylesheets -->
+{% block extra_stylesheets %} {% endblock extra_stylesheets %}
+
+<!-- Set the CSS class for the error page -->
+{% block body_class %} error-page {% endblock %}
+
+<!-- Define the page body -->
+{% block body %}
+
+<div class="">
+    <div class="py-2 text-center">
+        {{ macros.render_logo(style="width: 200px; margin: auto;") }}
+    </div>
+    <h1 class="text-primary text-center" style="font-size: 6rem; font-weight: 50;">
+        ...Oops...
+    </h1>
+    <div class="text-center pt-4 pb-1">
+        <img src="{{ url_for('static', filename='img/icons/error.png') }}" max-width="250px">
+    </div>
+
+    <!-- Set the error page  -->
+    <h3 class="font-weight-light text-primary text-monospace mx-auto">
+        <div>
+            <div>
+                <div>{</div>
+                <div class="pl-5">error: {</div>
+                <div class="pl-5">
+                    <div class="pl-5">code: <span class="font-weight-bold">{{code}}</span>,</div>
+                    <div class="pl-5">description: <em>"{{description}}"</em></div>
+                    {% if resource %}
+                    <div class="pl-5">resource: <em>"{{resource}}"</em></div>
+                    {% endif %}
+                    <div>}</div>
+                </div>
+                <div>}</div>
+            </div>
+        </div>
+    </h3>
+
+    <!-- Go Back Button -->
+    <div class="py-4 text-center">
+        <a class="btn btn-primary btn-lg" role="button" href="{{ url_for('auth.profile') }}">Back</a>
+    </div>
+
+</div>
+
+{% endblock body %}
+
+<!-- Add extra javascripts -->
+{% block javascripts %}
+{% endblock javascripts %}

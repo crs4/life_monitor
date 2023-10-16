@@ -212,3 +212,19 @@ Read and encode the GitHub App private key.
 {{- $base64Content := $fileContent | b64enc -}}
 {{- printf "%s" $base64Content -}}
 {{- end -}}
+
+
+{{/*
+Set the Rate Limiting configuration for the API server.
+*/}}
+{{- define "lifemonitor.api.rateLimiting" -}}
+{{- if .Values.rateLimiting.zone.accounts.enabled -}}
+{{- $delay := .Values.rateLimiting.zone.accounts.delay | int -}}
+{{- $burst := .Values.rateLimiting.zone.accounts.burst | int }}
+# Rate limiting for the /accounts endpoint
+limit_req zone=api_accounts burst={{ $burst }} {{ if gt $delay 0 }}delay={{ $delay }}{{ else }}nodelay{{ end }};
+limit_req_status 429;
+{{- else }}
+# Rate limiting disabled for the /accounts endpoint
+{{- end -}}
+{{- end -}}

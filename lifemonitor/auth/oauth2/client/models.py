@@ -514,6 +514,8 @@ class OAuth2IdentityProvider(db.Model, ModelMixin):
         logger.debug(f"Trying to refresh the token: {token}...")
         assert_service_is_alive(self.api_base_url)
         # reference to the token associated with the identity instance
+        if not token.can_be_refreshed():
+            raise LifeMonitorException("The token cannot be refreshed")
         oauth2session = OAuth2Session(
             self.client_id, self.client_secret, token=token)
         new_token = oauth2session.refresh_token(
