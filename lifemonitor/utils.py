@@ -652,10 +652,10 @@ def _make_git_credentials_callback(token: str = None):
 
 def clone_repo(url: str, ref: Optional[str] = None, target_path: Optional[str] = None, auth_token: Optional[str] = None,
                remote_url: Optional[str] = None, remote_branch: Optional[str] = None, remote_user_token: Optional[str] = None) -> str:
+    local_path = target_path
     try:
         from . import config
-        logger.warning("Local CLONE: %r - %r", url, ref)
-        local_path = target_path
+        logger.debug("Local CLONE: %r - %r", url, ref)
         if not local_path:
             local_path = tempfile.TemporaryDirectory(dir=config.BaseConfig.BASE_TEMP_FOLDER).name
         user_credentials = _make_git_credentials_callback(auth_token)
