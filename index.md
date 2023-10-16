@@ -82,7 +82,7 @@ Hosting for LifeMonitor is provided by [CSC](https://www.csc.fi/en/).
 <div>
   <a title="Hosting-CSC" href="https://www.csc.fi/en">
     <img alt="Hosting by CSC"
-         width="300px"
+         width="200px"
          src="images/csc.png" style="vertical-align: middle" />
   </a>
 </div>
