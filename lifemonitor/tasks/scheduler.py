@@ -29,7 +29,7 @@ class Scheduler(APScheduler):
         logger.debug("List of current jobs: %r", self.get_jobs())
         logger.debug("List of deferred jobs: %r", self._not_scheduled_jobs)
         if event.code in [events.EVENT_JOB_EXECUTED, events.EVENT_JOB_ERROR]:
-            logger.warning("List of current jobs: %r", self.get_jobs())
+            logger.debug("List of current jobs: %r", self.get_jobs())
 
     @staticmethod
     def __enqueue_dramatiq_job__(**message):
