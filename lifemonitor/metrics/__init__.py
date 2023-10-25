@@ -60,7 +60,7 @@ def init_metrics(app, prom_registry=None):
         else:
             logger.warning("Unable to start multiprocess prometheus exporter: 'PROMETHEUS_MULTIPROC_DIR' not set."
                            f"Metrics will be exposed through the `{__METRICS_ENDPOINT__}` endpoint.")
-    logger.warning("Configured class for metrics: %r", metrics_class)
+    logger.info("Configured class for metrics: %r", metrics_class)
 
     # init metrics
     metrics = metrics_class(app, defaults_prefix=model.PREFIX, registry=prom_registry)
