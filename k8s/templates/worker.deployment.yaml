@@ -92,8 +92,31 @@ spec:
           #   periodSeconds: 3
           resources:
             {{- toYaml $.Values.worker.resources | nindent 12 }}
+        {{- if $.Values.monitoring.loki.enabled }}
+        - name: log-exporter
+          image: {{ $.Values.monitoring.loki.logExporterImage }}
+          args:
+            - "-config.file=/etc/promtail/promtail.yaml" # Found in the ConfigMap
+          resources:
+            requests:
+              memory: 128Mi
+              cpu: 0.1
+            limits:
+              memory: 256Mi
+              cpu: 0.2
+          volumeMounts:
+            - name: promtail-config
+              mountPath: /etc/promtail
+            - name: lifemonitor-logs
+              mountPath: /var/log
+        {{- end }}
       volumes:
       {{- include "lifemonitor.common-volume" $ | nindent 8 }}
+      {{- if $.Values.monitoring.loki.enabled }}
+        - name: promtail-config
+          configMap:
+            name: "{{$.Release.Name}}-promtail-worker-{{ $queue.name }}-configmap"
+      {{- end }}
       {{- with $.Values.worker.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

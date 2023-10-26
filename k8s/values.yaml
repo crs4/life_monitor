@@ -136,6 +136,10 @@ monitoring:
     enabled: false
   prometheus:
     namespace: kube-prometheus-stack
+  loki:
+    enabled: false
+    url: http://loki:3100
+    logExporterImage: grafana/promtail:main-60ea954
 
 rateLimiting:
   zone:
