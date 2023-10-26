@@ -50,6 +50,10 @@ spec:
           {{- include "lifemonitor.common-env" $ | nindent 12 }}
           volumeMounts:
           {{- include "lifemonitor.common-volume-mounts" $ | nindent 12 }}
+          resources:
+            limits:
+              memory: 256Mi
+              cpu: 200m
       containers:
         - name: worker
           securityContext:
