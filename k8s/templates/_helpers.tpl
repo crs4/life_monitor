@@ -167,6 +167,8 @@ Define mount points shared by some pods.
 - mountPath: "/lm/certs/"
   name: lifemonitor-tls
   readOnly: true
+- name: lifemonitor-logs
+  mountPath: "/var/log"
 - name: lifemonitor-settings
   mountPath: "/lm/settings.conf"
   subPath: settings.conf
