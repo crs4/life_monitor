@@ -197,7 +197,6 @@ lifemonitor:
   enableTestConnection: false
 
   resources:
-    {}
     # We usually recommend not to specify default resources and to leave this as a conscious
     # choice for the user. This also increases chances charts run on environments with little
     # resources, such as Minikube. If you do want to specify resources, uncomment the following
@@ -208,6 +207,12 @@ lifemonitor:
     # requests:
     #   cpu: 100m
     #   memory: 128Mi
+    limits:
+      cpu: 1.8
+      memory: 7936Mi
+    requests:
+      cpu: 0.5
+      memory: 1024Mi
 
   autoscaling:
     enabled: false
@@ -264,7 +269,6 @@ worker:
   replicaCount: 1
 
   resources:
-    {}
     # We usually recommend not to specify default resources and to leave this as a conscious
     # choice for the user. This also increases chances charts run on environments with little
     # resources, such as Minikube. If you do want to specify resources, uncomment the following
@@ -275,6 +279,12 @@ worker:
     # requests:
     #   cpu: 100m
     #   memory: 128Mi
+    limits:
+      cpu: 1.8
+      memory: 7936Mi
+    requests:
+      cpu: 0.5
+      memory: 1024Mi
 
   autoscaling:
     enabled: false
