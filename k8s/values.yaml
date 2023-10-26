@@ -144,7 +144,7 @@ monitoring:
 rateLimiting:
   zone:
     accounts:
-      enabled: false 
+      enabled: false
       size: 60m
       rate: 2r/s
       burst: 20
