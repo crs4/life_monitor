@@ -82,6 +82,7 @@ def handle_404(e: Exception = None):
         }
     )
 
+
 @blueprint.route("/405")
 def handle_405(e: Exception = None):
     resource = request.args.get("resource", None, type=str)
