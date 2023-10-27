@@ -67,6 +67,7 @@ RUN mkdir -p /var/data/lm \
     && chown -R lm:lm /var/data/lm \
     && ln -s /var/data/lm /lm/data \
     && chown -R lm:lm /lm/data \
+    && mkdir -p /var/log/lm && chown -R lm:lm /var/log/lm \
     && mkdir /lm/.nextflow && chmod -R 777 /lm/.nextflow
 
 # Set the default user
