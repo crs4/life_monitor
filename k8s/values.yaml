@@ -223,6 +223,14 @@ lifemonitor:
       cpu: 0.5
       memory: 1024Mi
 
+  # configure resources for the init containers
+  initContainers:
+    initBackend:
+      resources:
+        limits:
+          memory: 256Mi
+          cpu: 200m
+
   autoscaling:
     enabled: false
     minReplicas: 1
@@ -294,6 +302,14 @@ worker:
     requests:
       cpu: 0.5
       memory: 1024Mi
+
+  # configure resources for the init containers
+  initContainers:
+    initWorker:
+      resources:
+        limits:
+          memory: 256Mi
+          cpu: 200m
 
   autoscaling:
     enabled: false

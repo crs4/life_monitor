@@ -55,9 +55,7 @@ spec:
           volumeMounts:
           {{- include "lifemonitor.common-volume-mounts" . | nindent 12 }}
           resources:
-            limits:
-              memory: 256Mi
-              cpu: 200m
+            {{- toYaml .Values.lifemonitor.initContainers.initBackend.resources | nindent 12 }}
       containers:
         - name: backend
           securityContext:

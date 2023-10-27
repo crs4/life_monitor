@@ -51,9 +51,7 @@ spec:
           volumeMounts:
           {{- include "lifemonitor.common-volume-mounts" $ | nindent 12 }}
           resources:
-            limits:
-              memory: 256Mi
-              cpu: 200m
+            {{- toYaml $.Values.worker.initContainers.initWorker.resources | nindent 12 }}
       containers:
         - name: worker
           securityContext:
