@@ -139,7 +139,9 @@ monitoring:
   loki:
     enabled: false
     url: http://loki:3100
-    logExporterImage: grafana/promtail:main-60ea954
+    exporter:
+      image: grafana/promtail:main-60ea954
+      imagePullPolicy: IfNotPresent
 
 rateLimiting:
   zone:

@@ -91,7 +91,8 @@ spec:
             {{- toYaml .Values.lifemonitor.resources | nindent 12 }}
         {{- if .Values.monitoring.loki.enabled }}
         - name: log-exporter
-          image: {{ .Values.monitoring.loki.logExporterImage }}
+          image: {{ .Values.monitoring.loki.exporter.image }}
+          imagePullPolicy: {{ $.Values.monitoring.loki.exporter.imagePullPolicy }}
           args:
             - "-config.file=/etc/promtail/promtail.yaml" # Found in the ConfigMap
           resources:
