@@ -139,7 +139,9 @@ lifemonitor: docker/lifemonitor.Dockerfile certs app.py gunicorn.conf.py ## Buil
 		printf "\n$(yellow)WARNING: $(bold)Skip build of LifeMonitor Docker image !!! $(reset)\n" ; \
 	else \
 		printf "\n$(bold)Building LifeMonitor Docker image...$(reset)\n" ; \
-		$(build_kit) docker $(build_cmd) $(cache_from_opt) $(cache_to_opt) \
+		$(build_kit) docker $(build_cmd) \
+			--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) \
+			$(cache_from_opt) $(cache_to_opt) \
 			${sw_version_arg} ${build_number_arg} ${tags_opt} ${labels_opt} ${platforms_opt} \
 			-f docker/lifemonitor.Dockerfile -t crs4/lifemonitor . ;\
 		printf "$(done)\n" ; \
