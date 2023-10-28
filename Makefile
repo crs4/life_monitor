@@ -263,7 +263,6 @@ start-aux-services: aux_images ro_crates docker-compose.extra.yml permissions ##
 
 run-tests: start-testing ## Run all tests in the Testing Environment
 	@printf "\n$(bold)Running tests...$(reset)\n" ; \
-	docker compose logs ; \
 	$(docker_compose) exec -T lmtests /bin/bash -c "pytest --durations=10 --color=yes tests"
 
 
