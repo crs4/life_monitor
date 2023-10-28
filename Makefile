@@ -223,14 +223,13 @@ start-dev: images compose-files dev reset_compose permissions ## Start LifeMonit
 start-testing: compose-files aux_images ro_crates images reset_compose permissions ## Start LifeMonitor in a Testing environment
 	@printf "\n$(bold)Starting testing services...$(reset)\n" ; \
 	base=$$(if [[ -f "docker-compose.yml" ]]; then echo "-f docker-compose.yml"; fi) ; \
-	echo "$$(USER_UID=$$(id -u) USER_GID=$$(id -g) \
-	         $(docker_compose) $${base} \
-                   -f docker-compose.extra.yml \
-				   -f docker-compose.base.yml \
-				   -f docker-compose.monitoring.yml \
-				   -f docker-compose.dev.yml \
-				   -f docker-compose.test.yml \
-				   config)" > docker-compose.yml \
+	echo "$$($(docker_compose) $${base} \
+				-f docker-compose.extra.yml \
+				-f docker-compose.base.yml \
+				-f docker-compose.monitoring.yml \
+				-f docker-compose.dev.yml \
+				-f docker-compose.test.yml \
+				config)" > docker-compose.yml \
 	&& cp {,.test.}docker-compose.yml \
 	&& $(docker_compose) -f docker-compose.yml up -d db lmtests seek jenkins webserver worker ws_server ;\
 	$(docker_compose) -f ./docker-compose.yml \
@@ -264,7 +263,7 @@ start-aux-services: aux_images ro_crates docker-compose.extra.yml permissions ##
 
 run-tests: start-testing ## Run all tests in the Testing Environment
 	@printf "\n$(bold)Running tests...$(reset)\n" ; \
-	USER_UID=$$(id -u) USER_GID=$$(id -g) \
+	docker compose logs ; \
 	$(docker_compose) exec -T lmtests /bin/bash -c "pytest --durations=10 --color=yes tests"
 
 
