@@ -1,11 +1,8 @@
 {{- if .Values.monitoring.loki.enabled }}
-{{- $releaseName := .Release.Name }}
-{{- $releaseNamespace := .Release.Namespace }}
-{{- $lokiUrl := .Values.monitoring.loki.url }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: "{{.Release.Name}}-promtail-proxy-configmap"
+  name: "{{$.Release.Name}}-promtail-proxy-configmap"
 data:
   promtail.yaml: |
     server:
@@ -15,16 +12,16 @@ data:
     positions:
       filename: /tmp/positions.yaml
     clients: # Specify target
-      - url: {{.Values.monitoring.loki.url}}/loki/api/v1/push
+      - url: {{ $.Values.monitoring.loki.url }}/loki/api/v1/push
     scrape_configs:
       - job_name:  "lifemonitor-api-proxy-logger" 
         static_configs:
-          - targets: 
+          - targets:
               - localhost 
             labels:
               app: "lifemonitor-backend"
-              component: "{{.Release.Name}}-proxy"
-              environment: "{{.Release.Namespace}}"
+              component: "{{$.Release.Name}}-proxy"
+              environment: "{{$.Release.Namespace}}"
               format: "extended"
               level: "INFO"
               __path__: /var/log/nginx/access.log
@@ -32,8 +29,8 @@ data:
               - localhost 
             labels:
               app: "lifemonitor-backend"
-              component: "{{.Release.Name}}-proxy"
-              environment: "{{.Release.Namespace}}"
+              component: "{{ $.Release.Name }}-proxy"
+              environment: "{{ $.Release.Namespace }}"
               format: "extended"
               level: "ERROR"
               __path__: /var/log/nginx/*error.log          
@@ -44,7 +41,7 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: "{{.Release.Name}}-promtail-backend-configmap"
+  name: "{{ $.Release.Name }}-promtail-backend-configmap"
 data:
   promtail.yaml: |
     server:
@@ -54,7 +51,7 @@ data:
     positions:
       filename: /tmp/positions.yaml
     clients: # Specify target
-      - url: {{ $lokiUrl }}/loki/api/v1/push
+      - url: {{ $.Values.monitoring.loki.url }}/loki/api/v1/push
     scrape_configs:
       - job_name:  "lifemonitor-api-backend-logger" 
         static_configs:
@@ -63,7 +60,7 @@ data:
             labels:
               app: "lifemonitor-backend"
               component: "api-backend"
-              environment: "{{.releaseNamespace}}"
+              environment: "{{ $.Release.Namespace }}"
               format: "backend"
               __path__: /var/log/lm/*.log
         pipeline_stages:
@@ -80,7 +77,7 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: "{{ $releaseName }}-promtail-worker-{{ $queue.name }}-configmap"
+  name: "{{ $.Release.Name }}-promtail-worker-{{ $queue.name }}-configmap"
 data:
   promtail.yaml: |
     server:
@@ -90,7 +87,7 @@ data:
     positions:
       filename: /tmp/positions.yaml
     clients: # Specify target
-      - url: {{ $lokiUrl }}/loki/api/v1/push
+      - url: {{ $.Values.monitoring.loki.url }}/loki/api/v1/push
     scrape_configs:
       - job_name:  "lifemonitor-api-backend-logger" 
         static_configs:
@@ -99,7 +96,7 @@ data:
             labels:
               app: "lifemonitor-backend"
               component: "api-worker-{{ $queue.name }}"
-              environment: "{{.releaseNamespace}}"
+              environment: "{{ $.Release.Namespace }}"
               format: "backend"
               __path__: /var/log/lm/*.log
         pipeline_stages:
