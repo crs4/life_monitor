@@ -107,9 +107,6 @@
           "color": {
             "mode": "thresholds"
           },
-          "custom": {
-            "neutral": 38
-          },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -131,6 +128,9 @@
       },
       "id": 18,
       "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
@@ -139,8 +139,7 @@
           "fields": "",
           "values": false
         },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true
+        "textMode": "auto"
       },
       "pluginVersion": "10.1.1",
       "targets": [
@@ -149,15 +148,19 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
+          "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "sum(lifemonitor_api_users)",
+          "expr": "max(lifemonitor_api_users{environment=\"$environment\"})",
+          "fullMetaSearch": false,
+          "includeNullMetadata": true,
           "legendFormat": "__auto",
           "range": true,
-          "refId": "A"
+          "refId": "A",
+          "useBackend": false
         }
       ],
       "title": "Users",
-      "type": "gauge"
+      "type": "stat"
     },
     {
       "datasource": {
@@ -191,6 +194,9 @@
       },
       "id": 20,
       "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
@@ -199,8 +205,7 @@
           "fields": "",
           "values": false
         },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true
+        "textMode": "auto"
       },
       "pluginVersion": "10.1.1",
       "targets": [
@@ -209,15 +214,19 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
+          "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "sum(lifemonitor_api_workflows)",
+          "expr": "max(lifemonitor_api_workflows{environment=\"$environment\"})",
+          "fullMetaSearch": false,
+          "includeNullMetadata": true,
           "legendFormat": "__auto",
           "range": true,
-          "refId": "A"
+          "refId": "A",
+          "useBackend": false
         }
       ],
       "title": "Workflows",
-      "type": "gauge"
+      "type": "stat"
     },
     {
       "datasource": {
@@ -251,6 +260,9 @@
       },
       "id": 24,
       "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
@@ -259,8 +271,7 @@
           "fields": "",
           "values": false
         },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true
+        "textMode": "auto"
       },
       "pluginVersion": "10.1.1",
       "targets": [
@@ -269,15 +280,19 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
+          "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "sum(lifemonitor_api_workflow_versions)",
+          "expr": "max(lifemonitor_api_workflow_versions{environment=\"$environment\"})",
+          "fullMetaSearch": false,
+          "includeNullMetadata": true,
           "legendFormat": "__auto",
           "range": true,
-          "refId": "A"
+          "refId": "A",
+          "useBackend": false
         }
       ],
       "title": "Workflow Versions",
-      "type": "gauge"
+      "type": "stat"
     },
     {
       "datasource": {
@@ -315,6 +330,9 @@
       },
       "id": 26,
       "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
@@ -323,8 +341,7 @@
           "fields": "",
           "values": false
         },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true
+        "textMode": "auto"
       },
       "pluginVersion": "10.1.1",
       "targets": [
@@ -333,15 +350,19 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
+          "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "sum(lifemonitor_api_workflow_registries)",
+          "expr": "max(lifemonitor_api_workflow_registries{environment=\"$environment\"})",
+          "fullMetaSearch": false,
+          "includeNullMetadata": true,
           "legendFormat": "__auto",
           "range": true,
-          "refId": "A"
+          "refId": "A",
+          "useBackend": false
         }
       ],
       "title": "Workflow Registries",
-      "type": "gauge"
+      "type": "stat"
     },
     {
       "datasource": {
@@ -375,6 +396,9 @@
       },
       "id": 28,
       "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
@@ -383,8 +407,7 @@
           "fields": "",
           "values": false
         },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true
+        "textMode": "auto"
       },
       "pluginVersion": "10.1.1",
       "targets": [
@@ -393,15 +416,19 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
+          "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "sum(lifemonitor_api_workflow_suites)",
+          "expr": "max(lifemonitor_api_workflow_suites{environment=\"$environment\"})",
+          "fullMetaSearch": false,
+          "includeNullMetadata": true,
           "legendFormat": "__auto",
           "range": true,
-          "refId": "A"
+          "refId": "A",
+          "useBackend": false
         }
       ],
       "title": "Workflow Suites",
-      "type": "gauge"
+      "type": "stat"
     },
     {
       "datasource": {
@@ -435,6 +462,9 @@
       },
       "id": 30,
       "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
@@ -443,8 +473,7 @@
           "fields": "",
           "values": false
         },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true
+        "textMode": "auto"
       },
       "pluginVersion": "10.1.1",
       "targets": [
@@ -453,15 +482,19 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
+          "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "sum(lifemonitor_api_workflow_test_instances)",
+          "expr": "max(lifemonitor_api_workflow_test_instances{environment=\"$environment\"})",
+          "fullMetaSearch": false,
+          "includeNullMetadata": true,
           "legendFormat": "__auto",
           "range": true,
-          "refId": "A"
+          "refId": "A",
+          "useBackend": false
         }
       ],
       "title": "Workflow Test Instances",
-      "type": "gauge"
+      "type": "stat"
     },
     {
       "collapsed": false,
@@ -532,7 +565,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "sum(lifemonitor_webapp_http_websocket_connections_total)",
+          "expr": "sum(lifemonitor_webapp_http_websocket_connections_total{environment=\"$environment\"})",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "legendFormat": "__auto",
@@ -670,7 +703,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "lifemonitor_webapp_http_websocket_connections_total",
+          "expr": "lifemonitor_webapp_http_websocket_connections_total{environment=\"$environment\"}",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "instant": false,
@@ -765,7 +798,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "sum by(client_country_long) (rate(lifemonitor_webapp_http_requests_total[30s]))",
+          "expr": "sum by(client_country_long) (rate(lifemonitor_webapp_http_requests_total{environment=\"$environment\"}[30s]))",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "legendFormat": "__auto",
@@ -841,7 +874,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "rate(lifemonitor_webapp_http_connections{status=\"200\"}[30s])",
+          "expr": "rate(lifemonitor_webapp_http_connections{status=\"200\", environment=\"$environment\"}[30s])",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "instant": false,
@@ -907,7 +940,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "sum(rate(lifemonitor_webapp_http_connections{status=~\"3[0-9][0-9]\"}[30s]))",
+          "expr": "sum(rate(lifemonitor_webapp_http_connections{status=~\"3[0-9][0-9]\", environment=\"$environment\"}[0-9][0-9]\"}[30s]))",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "instant": false,
@@ -974,7 +1007,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "sum(rate(lifemonitor_webapp_http_connections{status=~\"4[0-9][0-9]\"}[30s]))",
+          "expr": "sum(rate(lifemonitor_webapp_http_connections{status=~\"4[0-9][0-9]\", environment=\"$environment\"}[0-9][0-9]\"}[30s]))",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "instant": false,
@@ -1041,7 +1074,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "sum(rate(lifemonitor_webapp_http_connections{status=~\"5[0-9][0-9]\"}[30s]))",
+          "expr": "sum(rate(lifemonitor_webapp_http_connections{status=~\"5[0-9][0-9]\", environment=\"$environment\"}[0-9][0-9]\"}[30s]))",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "instant": false,
@@ -1121,7 +1154,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "sum by(status) (lifemonitor_webapp_http_connections)",
+          "expr": "sum by(status) (lifemonitor_webapp_http_connections{environment=\"$environment\"})",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "instant": false,
@@ -1178,6 +1211,9 @@
       },
       "id": 49,
       "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
@@ -1186,8 +1222,7 @@
           "fields": "",
           "values": false
         },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true
+        "textMode": "auto"
       },
       "pluginVersion": "10.1.1",
       "targets": [
@@ -1198,7 +1233,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "increase(lifemonitor_api_proxy_http_active_connections_number[30s])",
+          "expr": "increase(lifemonitor_api_proxy_http_connection_status{state=\"active\", environment=\"$environment\"}[30s])",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "instant": false,
@@ -1209,7 +1244,7 @@
         }
       ],
       "title": "Active HTTP Connections",
-      "type": "gauge"
+      "type": "stat"
     },
     {
       "datasource": {
@@ -1242,16 +1277,18 @@
       },
       "id": 50,
       "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "lastNotNull"
+            "distinctCount"
           ],
-          "fields": "",
+          "fields": "/^Distinct Count$/",
           "values": false
         },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true
+        "textMode": "auto"
       },
       "pluginVersion": "10.1.1",
       "targets": [
@@ -1262,7 +1299,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "increase(lifemonitor_api_proxy_http_upstream_connections_total[30s])",
+          "expr": "increase(lifemonitor_api_proxy_http_connection_requests{upstream_address!=\"-\", request!=\"/metrics\", environment=\"$environment\"}[30s])",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "instant": false,
@@ -1273,7 +1310,18 @@
         }
       ],
       "title": "Active Upstream Connections",
-      "type": "gauge"
+      "transformations": [
+        {
+          "id": "calculateField",
+          "options": {
+            "mode": "reduceRow",
+            "reduce": {
+              "reducer": "distinctCount"
+            }
+          }
+        }
+      ],
+      "type": "stat"
     },
     {
       "datasource": {
@@ -1293,7 +1341,8 @@
               "viz": false
             }
           },
-          "mappings": []
+          "mappings": [],
+          "unit": "none"
         },
         "overrides": []
       },
@@ -1305,10 +1354,14 @@
       },
       "id": 47,
       "options": {
+        "displayLabels": [],
         "legend": {
           "displayMode": "list",
           "placement": "bottom",
-          "showLegend": true
+          "showLegend": true,
+          "values": [
+            "percent"
+          ]
         },
         "pieType": "pie",
         "reduceOptions": {
@@ -1323,7 +1376,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "10.1.0",
+      "pluginVersion": "10.1.1",
       "targets": [
         {
           "datasource": {
@@ -1332,16 +1385,18 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "sum by(client_country_long) (increase(lifemonitor_api_proxy_http_requests_total[30s]))",
+          "expr": "sum by(country_long) (increase(lifemonitor_api_proxy_http_connection_requests{request!=\"/metrics\", environment=\"$environment\"}[30s]))",
+          "format": "time_series",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
-          "legendFormat": "__auto",
+          "legendFormat": "{{country_long}}",
           "range": true,
           "refId": "A",
           "useBackend": false
         }
       ],
       "title": "Active Requests by Country",
+      "transformations": [],
       "type": "piechart"
     },
     {
@@ -1349,7 +1404,7 @@
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
       },
-      "description": "Number of Active Clients By Country",
+      "description": "Percentage of request errors by type",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1374,15 +1429,19 @@
       },
       "id": 51,
       "options": {
+        "displayLabels": [],
         "legend": {
           "displayMode": "list",
           "placement": "bottom",
-          "showLegend": true
+          "showLegend": true,
+          "values": [
+            "percent"
+          ]
         },
         "pieType": "pie",
         "reduceOptions": {
           "calcs": [
-            "lastNotNull"
+            "range"
           ],
           "fields": "",
           "values": false
@@ -1392,7 +1451,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "10.1.0",
+      "pluginVersion": "10.1.1",
       "targets": [
         {
           "datasource": {
@@ -1401,7 +1460,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "sum by(client_country_long) (lifemonitor_api_proxy_http_requests_total)",
+          "expr": "sum by(status) (increase(lifemonitor_api_proxy_http_requests_error_total{environment=\"$environment\"}[30s]))",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "legendFormat": "__auto",
@@ -1410,7 +1469,8 @@
           "useBackend": false
         }
       ],
-      "title": "# Requests by Country",
+      "title": "% Request Errors",
+      "transformations": [],
       "type": "piechart"
     },
     {
@@ -1533,15 +1593,19 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
+          "disableTextWrap": false,
           "editorMode": "builder",
           "exemplar": true,
-          "expr": "increase(lifemonitor_api_http_request_total[1m])",
+          "expr": "increase(lifemonitor_api_http_request_total{environment=\"$environment\"}[1m])",
           "format": "time_series",
+          "fullMetaSearch": false,
+          "includeNullMetadata": true,
           "interval": "",
           "intervalFactor": 1,
           "legendFormat": "HTTP {{ status }}",
           "range": true,
-          "refId": "A"
+          "refId": "A",
+          "useBackend": false
         }
       ],
       "title": "Total requests per minute",
@@ -1604,32 +1668,7 @@
           },
           "unit": "short"
         },
-        "overrides": [
-          {
-            "__systemRef": "hideSeriesFrom",
-            "matcher": {
-              "id": "byNames",
-              "options": {
-                "mode": "exclude",
-                "names": [
-                  "/workflows"
-                ],
-                "prefix": "All except:",
-                "readOnly": true
-              }
-            },
-            "properties": [
-              {
-                "id": "custom.hideFrom",
-                "value": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": true
-                }
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 14,
@@ -1662,15 +1701,19 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "editorMode": "code",
+          "disableTextWrap": false,
+          "editorMode": "builder",
           "exemplar": true,
-          "expr": "rate(lifemonitor_api_http_request_duration_seconds_count{status=\"200\"}[30s])",
+          "expr": "rate(lifemonitor_api_http_request_duration_seconds_count{status=\"200\", environment=\"$environment\"}[30s])",
           "format": "time_series",
+          "fullMetaSearch": false,
+          "includeNullMetadata": true,
           "interval": "",
           "intervalFactor": 1,
           "legendFormat": "{{ path }}",
           "range": true,
-          "refId": "A"
+          "refId": "A",
+          "useBackend": false
         }
       ],
       "title": "Requests per second",
@@ -1722,8 +1765,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1783,15 +1825,19 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "editorMode": "code",
+          "disableTextWrap": false,
+          "editorMode": "builder",
           "exemplar": true,
-          "expr": "sum(rate(lifemonitor_api_http_request_duration_seconds_count{status!=\"200\"}[30s]))",
+          "expr": "sum(rate(lifemonitor_api_http_request_duration_seconds_count{status!=\"200\", environment=\"$environment\"}[30s]))",
           "format": "time_series",
+          "fullMetaSearch": false,
+          "includeNullMetadata": true,
           "interval": "",
           "intervalFactor": 1,
           "legendFormat": "errors",
           "range": true,
-          "refId": "A"
+          "refId": "A",
+          "useBackend": false
         }
       ],
       "title": "Errors per second",
@@ -1843,8 +1889,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1886,15 +1931,19 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "editorMode": "code",
+          "disableTextWrap": false,
+          "editorMode": "builder",
           "exemplar": true,
-          "expr": "rate(lifemonitor_api_http_request_duration_seconds_sum{status=\"200\"}[30s])\n/\nrate(lifemonitor_api_http_request_duration_seconds_count{status=\"200\"}[30s])",
+          "expr": "rate(lifemonitor_api_http_request_duration_seconds_sum{status=\"200\", environment=\"$environment\"}[30s]) / rate(lifemonitor_api_http_request_duration_seconds_count{status=\"200\", environment=\"$environment\"}[30s])",
           "format": "time_series",
+          "fullMetaSearch": false,
+          "includeNullMetadata": true,
           "interval": "",
           "intervalFactor": 1,
           "legendFormat": "{{ path }}",
           "range": true,
-          "refId": "A"
+          "refId": "A",
+          "useBackend": false
         }
       ],
       "title": "Average response time [30s]",
@@ -1948,8 +1997,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1991,15 +2039,19 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "editorMode": "code",
+          "disableTextWrap": false,
+          "editorMode": "builder",
           "exemplar": true,
-          "expr": "increase(lifemonitor_api_http_request_duration_seconds_bucket{status=\"200\",le=\"0.25\"}[30s]) \n/ ignoring (le) increase(lifemonitor_api_http_request_duration_seconds_count{status=\"200\"}[30s])",
+          "expr": "increase(lifemonitor_api_http_request_duration_seconds_bucket{status=\"200\", le=\"0.25\", environment=\"$environment\"}[30s]) / ignoring(le) increase(lifemonitor_api_http_request_duration_seconds_count{status=\"200\", environment=\"$environment\"}[30s])",
           "format": "time_series",
+          "fullMetaSearch": false,
+          "includeNullMetadata": true,
           "instant": false,
           "interval": "",
           "intervalFactor": 1,
           "legendFormat": "{{ path }}",
-          "refId": "A"
+          "refId": "A",
+          "useBackend": false
         }
       ],
       "title": "Requests under 250ms",
@@ -2052,8 +2104,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -2098,15 +2149,19 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "editorMode": "code",
+          "disableTextWrap": false,
+          "editorMode": "builder",
           "exemplar": true,
-          "expr": "histogram_quantile(0.5, rate(lifemonitor_api_http_request_duration_seconds_bucket{status=\"200\"}[30s]))",
+          "expr": "histogram_quantile(0.5, rate(lifemonitor_api_http_request_duration_seconds_bucket{status=\"200\", environment=\"$environment\"}[30s]))",
           "format": "time_series",
+          "fullMetaSearch": false,
+          "includeNullMetadata": true,
           "interval": "",
           "intervalFactor": 1,
           "legendFormat": "{{ path }}",
           "range": true,
-          "refId": "A"
+          "refId": "A",
+          "useBackend": false
         }
       ],
       "title": "Request duration [s] - p50",
@@ -2158,8 +2213,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -2204,30 +2258,58 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "editorMode": "code",
+          "disableTextWrap": false,
+          "editorMode": "builder",
           "exemplar": true,
-          "expr": "histogram_quantile(0.9, rate(lifemonitor_api_http_request_duration_seconds_bucket{status=\"200\"}[30s]))",
+          "expr": "histogram_quantile(0.9, rate(lifemonitor_api_http_request_duration_seconds_bucket{status=\"200\", environment=\"$environment\"}[30s]))",
           "format": "time_series",
+          "fullMetaSearch": false,
+          "includeNullMetadata": true,
           "interval": "",
           "intervalFactor": 1,
           "legendFormat": "{{ path }}",
           "range": true,
-          "refId": "A"
+          "refId": "A",
+          "useBackend": false
         }
       ],
       "title": "Request duration [s] - p90",
       "type": "timeseries"
     }
   ],
-  "refresh": "auto",
+  "refresh": "5s",
   "schemaVersion": 38,
   "style": "dark",
   "tags": [],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "current": {},
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${DS_PROMETHEUS}"
+        },
+        "definition": "label_values(environment)",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Environment",
+        "multi": true,
+        "name": "environment",
+        "options": [],
+        "query": {
+          "query": "label_values(environment)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      }
+    ]
   },
   "time": {
-    "from": "now-5m",
+    "from": "now-15m",
     "to": "now"
   },
   "timepicker": {
@@ -2249,6 +2331,6 @@
   "timezone": "Europe/Rome",
   "title": "LifeMonitor Dashboard",
   "uid": "_eX4mpl3",
-  "version": 12,
+  "version": 26,
   "weekStart": ""
 }
