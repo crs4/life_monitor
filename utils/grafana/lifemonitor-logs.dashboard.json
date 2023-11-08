@@ -409,10 +409,21 @@
             "uid": "${DS_LOKI}"
           },
           "editorMode": "code",
-          "expr": "{app=\"$app\", component=\"$component\"} |~ \"$search\" | pattern `<client_ip> - <remote_user> [<time>] \"<method> <request> <http_version>\" <status> <response_size> \"<http_referer>\" \"<http_user_agent>\" - \"<country_long>\" \"<count_short>\" \"<region>\" \"<city>\" \"<zipcode>\" \"<latitude>\" \"<longitude>\" - <forwarded_for> <request_time> <request_length> - <connection> <connection_requests> <pipe> - <upstream_address> <upstream_status> <upstream_cache_status> <upstream_response_time> <upstream_response_length>`",
+          "expr": "{app=\"$app\", component=\"$component\", format=\"extended\"} |~ \"$search\" | pattern `<client_ip> - <remote_user> [<time>] \"<method> <request> <http_version>\" <status> <response_size> \"<http_referer>\" \"<http_user_agent>\" - \"<country_long>\" \"<count_short>\" \"<region>\" \"<city>\" \"<zipcode>\" \"<latitude>\" \"<longitude>\" - <forwarded_for> <request_time> <request_length> - <connection> <connection_requests> <pipe> - <upstream_address> <upstream_status> <upstream_cache_status> <upstream_response_time> <upstream_response_length>`",
           "legendFormat": "HTTP requests",
           "queryType": "range",
           "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${DS_LOKI}"
+          },
+          "editorMode": "code",
+          "expr": "{app=\"$app\", component=\"$component\", format!=\"extended\"} |~ \"$search\" | decolorize | pattern `[<time>] <level> in <module> @ line: <src_line>: <description>`",
+          "hide": false,
+          "queryType": "range",
+          "refId": "B"
         }
       ],
       "type": "logs"
@@ -578,6 +589,6 @@
   "timezone": "",
   "title": "Logs Explorer",
   "uid": "f03899b9-2939-44ab-9e60-88aa36cf68c8",
-  "version": 7,
+  "version": 9,
   "weekStart": ""
 }
