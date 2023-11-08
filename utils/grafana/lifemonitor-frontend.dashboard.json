@@ -13,12 +13,6 @@
   "__requires": [
     {
       "type": "panel",
-      "id": "gauge",
-      "name": "Gauge",
-      "version": ""
-    },
-    {
-      "type": "panel",
       "id": "geomap",
       "name": "Geomap",
       "version": ""
@@ -76,6 +70,7 @@
       }
     ]
   },
+  "description": "Dashboard to monitor to the LifeMonitor Back-end",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
@@ -84,16 +79,14 @@
   "liveNow": false,
   "panels": [
     {
-      "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
         "y": 0
       },
-      "id": 22,
-      "panels": [],
-      "title": "LifeMonitor Objects",
+      "id": 60,
+      "title": "Active WebApp Clients",
       "type": "row"
     },
     {
@@ -101,205 +94,6 @@
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
       },
-      "description": "Number of users registered on this LifeMonitor instance",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 6,
-        "w": 4,
-        "x": 0,
-        "y": 1
-      },
-      "id": 18,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
-      },
-      "pluginVersion": "10.1.1",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "disableTextWrap": false,
-          "editorMode": "builder",
-          "expr": "max(lifemonitor_api_users{environment=\"$environment\"})",
-          "fullMetaSearch": false,
-          "includeNullMetadata": true,
-          "legendFormat": "__auto",
-          "range": true,
-          "refId": "A",
-          "useBackend": false
-        }
-      ],
-      "title": "Users",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "description": "Number of workflows registered on this LifeMonitor instance",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 6,
-        "w": 4,
-        "x": 4,
-        "y": 1
-      },
-      "id": 20,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
-      },
-      "pluginVersion": "10.1.1",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "disableTextWrap": false,
-          "editorMode": "builder",
-          "expr": "max(lifemonitor_api_workflows{environment=\"$environment\"})",
-          "fullMetaSearch": false,
-          "includeNullMetadata": true,
-          "legendFormat": "__auto",
-          "range": true,
-          "refId": "A",
-          "useBackend": false
-        }
-      ],
-      "title": "Workflows",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "description": "Number of workflow versions registered on this LifeMonitor instance",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 6,
-        "w": 4,
-        "x": 8,
-        "y": 1
-      },
-      "id": 24,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
-      },
-      "pluginVersion": "10.1.1",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "disableTextWrap": false,
-          "editorMode": "builder",
-          "expr": "max(lifemonitor_api_workflow_versions{environment=\"$environment\"})",
-          "fullMetaSearch": false,
-          "includeNullMetadata": true,
-          "legendFormat": "__auto",
-          "range": true,
-          "refId": "A",
-          "useBackend": false
-        }
-      ],
-      "title": "Workflow Versions",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "description": "Number of Workflow registries registered on the LifeMonitor instance",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -323,12 +117,12 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 6,
-        "w": 4,
-        "x": 12,
+        "h": 9,
+        "w": 5,
+        "x": 0,
         "y": 1
       },
-      "id": 26,
+      "id": 59,
       "options": {
         "colorMode": "value",
         "graphMode": "area",
@@ -352,16 +146,17 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "max(lifemonitor_api_workflow_registries{environment=\"$environment\"})",
+          "expr": "sum(lifemonitor_webapp_proxy_http_websocket_connections_total{environment=\"$environment\"})",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
+          "instant": false,
           "legendFormat": "__auto",
           "range": true,
           "refId": "A",
           "useBackend": false
         }
       ],
-      "title": "Workflow Registries",
+      "title": "Active WebApp Clients",
       "type": "stat"
     },
     {
@@ -369,11 +164,17 @@
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
       },
-      "description": "Number of workflow suites registered on the LifeMonitor instance",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "thresholds"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
           },
           "mappings": [],
           "thresholds": {
@@ -382,72 +183,10 @@
               {
                 "color": "green",
                 "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 6,
-        "w": 4,
-        "x": 16,
-        "y": 1
-      },
-      "id": 28,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
-      },
-      "pluginVersion": "10.1.1",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "disableTextWrap": false,
-          "editorMode": "builder",
-          "expr": "max(lifemonitor_api_workflow_suites{environment=\"$environment\"})",
-          "fullMetaSearch": false,
-          "includeNullMetadata": true,
-          "legendFormat": "__auto",
-          "range": true,
-          "refId": "A",
-          "useBackend": false
-        }
-      ],
-      "title": "Workflow Suites",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "description": "Number of workflow test instances registered on the LifeMonitor instance",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
+              },
               {
-                "color": "green",
-                "value": null
+                "color": "red",
+                "value": 80
               }
             ]
           }
@@ -455,25 +194,56 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 6,
-        "w": 4,
-        "x": 20,
+        "h": 9,
+        "w": 19,
+        "x": 5,
         "y": 1
       },
-      "id": 30,
+      "id": 58,
       "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
+        "basemap": {
+          "config": {},
+          "name": "Layer 0",
+          "type": "default"
         },
-        "textMode": "auto"
+        "controls": {
+          "mouseWheelZoom": true,
+          "showAttribution": true,
+          "showDebug": false,
+          "showMeasure": false,
+          "showScale": false,
+          "showZoom": true
+        },
+        "layers": [
+          {
+            "config": {
+              "blur": 15,
+              "radius": 5,
+              "weight": {
+                "fixed": 1,
+                "max": 1,
+                "min": 0
+              }
+            },
+            "filterData": {
+              "id": "byRefId",
+              "options": "A"
+            },
+            "name": "Layer 1",
+            "tooltip": true,
+            "type": "heatmap"
+          }
+        ],
+        "tooltip": {
+          "mode": "details"
+        },
+        "view": {
+          "allLayers": true,
+          "id": "europe",
+          "lat": 46,
+          "lon": 14,
+          "zoom": 4
+        }
       },
       "pluginVersion": "10.1.1",
       "targets": [
@@ -484,17 +254,29 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "max(lifemonitor_api_workflow_test_instances{environment=\"$environment\"})",
+          "expr": "lifemonitor_webapp_proxy_http_websocket_connections_total{environment=\"$environment\"}",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
+          "instant": false,
           "legendFormat": "__auto",
           "range": true,
           "refId": "A",
           "useBackend": false
         }
       ],
-      "title": "Workflow Test Instances",
-      "type": "stat"
+      "title": "Localisation of Active WebApp Clients",
+      "transformations": [
+        {
+          "id": "reduce",
+          "options": {
+            "labelsToFields": true,
+            "reducers": [
+              "lastNotNull"
+            ]
+          }
+        }
+      ],
+      "type": "geomap"
     },
     {
       "collapsed": false,
@@ -502,80 +284,12 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 7
+        "y": 10
       },
-      "id": 45,
+      "id": 53,
       "panels": [],
-      "title": "LifeMonitor WebApp Active Clients",
+      "title": "WebApp Connections and Requests",
       "type": "row"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "description": "Number of Current Users on the Web App",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 5,
-        "x": 0,
-        "y": 8
-      },
-      "id": 36,
-      "options": {
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true
-      },
-      "pluginVersion": "10.1.1",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "disableTextWrap": false,
-          "editorMode": "builder",
-          "expr": "sum(lifemonitor_webapp_http_websocket_connections_total{environment=\"$environment\"})",
-          "fullMetaSearch": false,
-          "includeNullMetadata": true,
-          "legendFormat": "__auto",
-          "range": true,
-          "refId": "A",
-          "useBackend": false
-        }
-      ],
-      "title": "Active Web App Clients",
-      "type": "gauge"
     },
     {
       "datasource": {
@@ -609,10 +323,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
-        "w": 19,
-        "x": 5,
-        "y": 8
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 11
       },
       "id": 52,
       "options": {
@@ -632,55 +346,21 @@
         "layers": [
           {
             "config": {
-              "showLegend": true,
-              "style": {
-                "color": {
-                  "field": "Last",
-                  "fixed": "dark-green"
-                },
-                "opacity": 0.4,
-                "rotation": {
-                  "field": "Last",
-                  "fixed": 0,
-                  "max": 360,
-                  "min": -360,
-                  "mode": "mod"
-                },
-                "size": {
-                  "field": "Total",
-                  "fixed": 5,
-                  "max": 15,
-                  "min": 2
-                },
-                "symbol": {
-                  "fixed": "img/icons/marker/circle.svg",
-                  "mode": "fixed"
-                },
-                "text": {
-                  "field": "Last",
-                  "fixed": "",
-                  "mode": "field"
-                },
-                "textConfig": {
-                  "fontSize": 12,
-                  "offsetX": 10,
-                  "offsetY": 0,
-                  "textAlign": "left",
-                  "textBaseline": "middle"
-                }
+              "blur": 15,
+              "radius": 5,
+              "weight": {
+                "fixed": 1,
+                "max": 1,
+                "min": 0
               }
             },
             "filterData": {
               "id": "byRefId",
               "options": "A"
             },
-            "location": {
-              "latitude": "lifemonitor_api_proxy_http_requests_total",
-              "mode": "auto"
-            },
-            "name": "Web Clients",
+            "name": "Requests",
             "tooltip": true,
-            "type": "markers"
+            "type": "heatmap"
           }
         ],
         "tooltip": {
@@ -688,10 +368,10 @@
         },
         "view": {
           "allLayers": true,
-          "id": "zero",
-          "lat": 0,
-          "lon": 0,
-          "zoom": 1
+          "id": "europe",
+          "lat": 46,
+          "lon": 14,
+          "zoom": 4
         }
       },
       "pluginVersion": "10.1.1",
@@ -703,17 +383,18 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "lifemonitor_webapp_http_websocket_connections_total{environment=\"$environment\"}",
+          "exemplar": true,
+          "expr": "sum by(country_long, country_short, city, latitude, longitude) (lifemonitor_webapp_proxy_http_connection_requests{environment=\"$environment\", request!=\"/metrics\"})",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "instant": false,
-          "legendFormat": "__auto",
+          "legendFormat": "requests",
           "range": true,
           "refId": "A",
           "useBackend": false
         }
       ],
-      "title": "Location of Active Web App Clients",
+      "title": "Requests Location",
       "transformations": [
         {
           "id": "reduce",
@@ -730,17 +411,70 @@
       "type": "geomap"
     },
     {
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 16
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
       },
-      "id": 44,
-      "panels": [],
-      "title": "Rate of LifeMonitor WebApp HTTP Connections to Back-end API",
-      "type": "row"
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 6,
+        "x": 0,
+        "y": 21
+      },
+      "id": 55,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.1.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "disableTextWrap": false,
+          "editorMode": "builder",
+          "expr": "sum(lifemonitor_webapp_proxy_http_connection_status{environment=\"$environment\", state=\"active\"})",
+          "fullMetaSearch": false,
+          "includeNullMetadata": true,
+          "instant": false,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A",
+          "useBackend": false
+        }
+      ],
+      "title": "Active Http Connections",
+      "type": "stat"
     },
     {
       "datasource": {
@@ -753,43 +487,69 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
               "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 8,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
             }
           },
-          "mappings": []
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 9,
-        "w": 7,
-        "x": 0,
-        "y": 17
+        "h": 7,
+        "w": 18,
+        "x": 6,
+        "y": 21
       },
-      "id": 38,
+      "id": 49,
       "options": {
         "legend": {
+          "calcs": [],
           "displayMode": "list",
           "placement": "bottom",
           "showLegend": true
-        },
-        "pieType": "pie",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
         },
         "tooltip": {
           "mode": "single",
           "sort": "none"
         }
       },
-      "pluginVersion": "9.3.6",
+      "pluginVersion": "10.1.1",
       "targets": [
         {
           "datasource": {
@@ -798,246 +558,41 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "sum by(client_country_long) (rate(lifemonitor_webapp_http_requests_total{environment=\"$environment\"}[30s]))",
+          "expr": "sum by(state) (lifemonitor_webapp_proxy_http_connection_status{environment=\"$environment\"})",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
-          "legendFormat": "__auto",
+          "instant": false,
+          "legendFormat": "{{state}}",
           "range": true,
           "refId": "A",
           "useBackend": false
         }
       ],
-      "title": "Requests by Country",
-      "type": "piechart"
+      "title": "Number of HTTP Connections by state",
+      "type": "timeseries"
     },
     {
       "datasource": {
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
       },
+      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "thresholds"
           },
-          "mappings": [
-            {
-              "options": {
-                "status=200": {
-                  "color": "purple",
-                  "index": 0,
-                  "text": "OK"
-                }
-              },
-              "type": "value"
-            }
-          ],
+          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
                 "color": "green",
                 "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 9,
-        "w": 5,
-        "x": 7,
-        "y": 17
-      },
-      "id": 39,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
-      },
-      "pluginVersion": "10.1.1",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "disableTextWrap": false,
-          "editorMode": "builder",
-          "expr": "rate(lifemonitor_webapp_http_connections{status=\"200\", environment=\"$environment\"}[30s])",
-          "fullMetaSearch": false,
-          "includeNullMetadata": true,
-          "instant": false,
-          "legendFormat": "__auto",
-          "range": true,
-          "refId": "A",
-          "useBackend": false
-        }
-      ],
-      "title": "Status 200",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "yellow",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 9,
-        "w": 4,
-        "x": 12,
-        "y": 17
-      },
-      "id": 40,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
-      },
-      "pluginVersion": "10.1.1",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "disableTextWrap": false,
-          "editorMode": "builder",
-          "expr": "sum(rate(lifemonitor_webapp_http_connections{status=~\"3[0-9][0-9]\", environment=\"$environment\"}[0-9][0-9]\"}[30s]))",
-          "fullMetaSearch": false,
-          "includeNullMetadata": true,
-          "instant": false,
-          "legendFormat": "__auto",
-          "range": true,
-          "refId": "A",
-          "useBackend": false
-        }
-      ],
-      "title": "Status ~= 3**",
-      "transformations": [],
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "blue",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 9,
-        "w": 4,
-        "x": 16,
-        "y": 17
-      },
-      "id": 42,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
-      },
-      "pluginVersion": "10.1.1",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "disableTextWrap": false,
-          "editorMode": "builder",
-          "expr": "sum(rate(lifemonitor_webapp_http_connections{status=~\"4[0-9][0-9]\", environment=\"$environment\"}[0-9][0-9]\"}[30s]))",
-          "fullMetaSearch": false,
-          "includeNullMetadata": true,
-          "instant": false,
-          "legendFormat": "__auto",
-          "range": true,
-          "refId": "A",
-          "useBackend": false
-        }
-      ],
-      "title": "Status ~= 4**",
-      "transformations": [],
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
+              },
               {
                 "color": "red",
-                "value": null
+                "value": 80
               }
             ]
           }
@@ -1045,12 +600,12 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 9,
-        "w": 4,
-        "x": 20,
-        "y": 17
+        "h": 7,
+        "w": 6,
+        "x": 0,
+        "y": 28
       },
-      "id": 43,
+      "id": 56,
       "options": {
         "colorMode": "value",
         "graphMode": "area",
@@ -1058,7 +613,7 @@
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "lastNotNull"
+            "diff"
           ],
           "fields": "",
           "values": false
@@ -1074,9 +629,9 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "sum(rate(lifemonitor_webapp_http_connections{status=~\"5[0-9][0-9]\", environment=\"$environment\"}[0-9][0-9]\"}[30s]))",
+          "expr": "sum(lifemonitor_webapp_proxy_http_connection_requests{environment=\"$environment\", upstream_address!=\"-\"})",
           "fullMetaSearch": false,
-          "includeNullMetadata": true,
+          "includeNullMetadata": false,
           "instant": false,
           "legendFormat": "__auto",
           "range": true,
@@ -1084,251 +639,16 @@
           "useBackend": false
         }
       ],
-      "title": "Status ~= 5**",
+      "title": "Upstream Connection Requests",
       "transformations": [],
       "type": "stat"
     },
     {
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 26
-      },
-      "id": 48,
-      "panels": [],
-      "title": "WebApp Http Connections to Back-end API by status",
-      "type": "row"
-    },
-    {
       "datasource": {
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
       },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#5f675e",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 6,
-        "w": 24,
-        "x": 0,
-        "y": 27
-      },
-      "id": 41,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
-      },
-      "pluginVersion": "10.1.1",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "disableTextWrap": false,
-          "editorMode": "builder",
-          "expr": "sum by(status) (lifemonitor_webapp_http_connections{environment=\"$environment\"})",
-          "fullMetaSearch": false,
-          "includeNullMetadata": true,
-          "instant": false,
-          "legendFormat": "__auto",
-          "range": true,
-          "refId": "A",
-          "useBackend": false
-        }
-      ],
-      "title": "WebApp HTTP Connections 200 status",
-      "type": "stat"
-    },
-    {
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 33
-      },
-      "id": 53,
-      "panels": [],
-      "title": "Direct API Back-end Requests",
-      "type": "row"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 7,
-        "w": 6,
-        "x": 0,
-        "y": 34
-      },
-      "id": 49,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
-      },
-      "pluginVersion": "10.1.1",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "disableTextWrap": false,
-          "editorMode": "builder",
-          "expr": "increase(lifemonitor_api_proxy_http_connection_status{state=\"active\", environment=\"$environment\"}[30s])",
-          "fullMetaSearch": false,
-          "includeNullMetadata": true,
-          "instant": false,
-          "legendFormat": "__auto",
-          "range": true,
-          "refId": "A",
-          "useBackend": false
-        }
-      ],
-      "title": "Active HTTP Connections",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "yellow",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 7,
-        "w": 6,
-        "x": 6,
-        "y": 34
-      },
-      "id": 50,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "distinctCount"
-          ],
-          "fields": "/^Distinct Count$/",
-          "values": false
-        },
-        "textMode": "auto"
-      },
-      "pluginVersion": "10.1.1",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "disableTextWrap": false,
-          "editorMode": "builder",
-          "expr": "increase(lifemonitor_api_proxy_http_connection_requests{upstream_address!=\"-\", request!=\"/metrics\", environment=\"$environment\"}[30s])",
-          "fullMetaSearch": false,
-          "includeNullMetadata": true,
-          "instant": false,
-          "legendFormat": "__auto",
-          "range": true,
-          "refId": "A",
-          "useBackend": false
-        }
-      ],
-      "title": "Active Upstream Connections",
-      "transformations": [
-        {
-          "id": "calculateField",
-          "options": {
-            "mode": "reduceRow",
-            "reduce": {
-              "reducer": "distinctCount"
-            }
-          }
-        }
-      ],
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "description": "Number of Active Clients By Country",
+      "description": "Number of requests By Country",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1349,8 +669,8 @@
       "gridPos": {
         "h": 7,
         "w": 6,
-        "x": 12,
-        "y": 34
+        "x": 6,
+        "y": 28
       },
       "id": 47,
       "options": {
@@ -1366,7 +686,7 @@
         "pieType": "pie",
         "reduceOptions": {
           "calcs": [
-            "lastNotNull"
+            "range"
           ],
           "fields": "",
           "values": false
@@ -1385,7 +705,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "sum by(country_long) (increase(lifemonitor_api_proxy_http_connection_requests{request!=\"/metrics\", environment=\"$environment\"}[30s]))",
+          "expr": "sum by(country_long) (lifemonitor_webapp_proxy_http_connection_requests{environment=\"$environment\", upstream_address!=\"-\"})",
           "format": "time_series",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
@@ -1395,7 +715,129 @@
           "useBackend": false
         }
       ],
-      "title": "Active Requests by Country",
+      "title": "Requests by Country",
+      "transformations": [],
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "description": "Percentage of request errors by type",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": []
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "success"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "failure"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 6,
+        "x": 12,
+        "y": 28
+      },
+      "id": 57,
+      "options": {
+        "displayLabels": [],
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true,
+          "values": [
+            "percent"
+          ]
+        },
+        "pieType": "pie",
+        "reduceOptions": {
+          "calcs": [
+            "range"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.1.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "disableTextWrap": false,
+          "editorMode": "builder",
+          "expr": "sum by(status) (lifemonitor_webapp_proxy_http_connection_requests{environment=\"$environment\", status=~\"2.*\", upstream_address!=\"-\"})",
+          "fullMetaSearch": true,
+          "includeNullMetadata": true,
+          "legendFormat": "success",
+          "range": true,
+          "refId": "A",
+          "useBackend": true
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "disableTextWrap": false,
+          "editorMode": "builder",
+          "expr": "sum by() (lifemonitor_webapp_proxy_http_connection_requests{environment=\"$environment\", upstream_address!=\"-\", status!~\"2.+\"})",
+          "fullMetaSearch": false,
+          "hide": false,
+          "includeNullMetadata": true,
+          "instant": false,
+          "legendFormat": "failure",
+          "range": true,
+          "refId": "B",
+          "useBackend": false
+        }
+      ],
+      "title": "Requests Success/Failure %",
       "transformations": [],
       "type": "piechart"
     },
@@ -1425,7 +867,7 @@
         "h": 7,
         "w": 6,
         "x": 18,
-        "y": 34
+        "y": 28
       },
       "id": 51,
       "options": {
@@ -1460,7 +902,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "sum by(status) (increase(lifemonitor_api_proxy_http_requests_error_total{environment=\"$environment\"}[30s]))",
+          "expr": "sum by(status) (lifemonitor_webapp_proxy_http_connection_requests{environment=\"$environment\", upstream_address!=\"-\"})",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "legendFormat": "__auto",
@@ -1479,11 +921,11 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 41
+        "y": 35
       },
       "id": 46,
       "panels": [],
-      "title": "LifeMonitor API Backend Requests",
+      "title": "Performance of API Back-end Requests",
       "type": "row"
     },
     {
@@ -1566,7 +1008,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 42
+        "y": 36
       },
       "id": 13,
       "links": [],
@@ -1674,7 +1116,7 @@
         "h": 14,
         "w": 24,
         "x": 0,
-        "y": 50
+        "y": 44
       },
       "id": 2,
       "links": [],
@@ -1797,7 +1239,7 @@
         "h": 7,
         "w": 24,
         "x": 0,
-        "y": 64
+        "y": 58
       },
       "id": 4,
       "links": [],
@@ -1905,7 +1347,7 @@
         "h": 9,
         "w": 24,
         "x": 0,
-        "y": 71
+        "y": 65
       },
       "id": 6,
       "links": [],
@@ -2013,7 +1455,7 @@
         "h": 11,
         "w": 24,
         "x": 0,
-        "y": 80
+        "y": 74
       },
       "id": 11,
       "links": [],
@@ -2120,7 +1562,7 @@
         "h": 11,
         "w": 24,
         "x": 0,
-        "y": 91
+        "y": 85
       },
       "id": 15,
       "links": [],
@@ -2229,7 +1671,7 @@
         "h": 7,
         "w": 24,
         "x": 0,
-        "y": 102
+        "y": 96
       },
       "id": 16,
       "links": [],
@@ -2277,10 +1719,14 @@
       "type": "timeseries"
     }
   ],
-  "refresh": "5s",
+  "refresh": "auto",
   "schemaVersion": 38,
   "style": "dark",
-  "tags": [],
+  "tags": [
+    "monitoring",
+    "lifemonitor",
+    "back-end"
+  ],
   "templating": {
     "list": [
       {
@@ -2329,8 +1775,8 @@
     ]
   },
   "timezone": "Europe/Rome",
-  "title": "LifeMonitor Dashboard",
-  "uid": "_eX4mpl3",
-  "version": 26,
+  "title": "LifeMonitor Dashboard: Front-end",
+  "uid": "d6ae2f51-d538-4ba8-b9b6-143e66d6151b",
+  "version": 8,
   "weekStart": ""
 }
