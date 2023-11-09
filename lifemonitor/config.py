@@ -322,7 +322,7 @@ def configure_logging(app):
                 'level': logging.INFO,
                 'class': "logging.handlers.RotatingFileHandler",
                 'formatter': 'default',
-                "filename": "/var/log/lm/app.log",
+                "filename": os.path.join(log_file_path, 'lifemonitor.log'),
                 "maxBytes": 10485760,
                 "backupCount": 10,
             },
