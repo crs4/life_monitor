@@ -43,7 +43,7 @@ import zipfile
 from datetime import datetime, timezone
 from importlib import import_module
 from os.path import basename, dirname, isfile, join
-from typing import Dict, Iterable, List, Literal, Optional, Tuple, Type
+from typing import BinaryIO, Dict, Iterable, List, Literal, Optional, Tuple, Type
 from urllib.parse import urlparse
 
 import flask
@@ -53,6 +53,7 @@ import networkx as nx
 import pygit2
 import requests
 import yaml
+from cryptography.fernet import Fernet
 from dateutil import parser
 
 from lifemonitor.cache import cached
@@ -1248,3 +1249,45 @@ class FtpUtils():
             self.ftp.rmd(path)
         except ftplib.all_errors as e:
             logger.debug('Could not remove {0}: {1}'.format(path, e))
+
+
+def generate_encryption_key() -> bytes:
+    """Generate a new encryption key"""
+    key = None
+    try:
+        key = Fernet.generate_key()
+        logger.debug("Encryption key generated: %r", key)
+    except Exception as e:
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.exception(e)
+    return key
+
+
+def encrypt_file(input: BinaryIO, output: BinaryIO, key: bytes, raise_error: bool = False) -> bool:
+    """Encrypt a file using AES-256-CBC"""
+    try:
+        cipher = Fernet(key)
+        for chunk in iter(lambda: input.read(8192), b""):
+            output.write(cipher.encrypt(chunk))
+        return True
+    except Exception as e:
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.exception(e)
+        if raise_error:
+            raise lm_exceptions.EncryptionException(detail=str(e))
+    return False
+
+
+def decrypt_file(input: BinaryIO, output: BinaryIO, key: bytes, raise_error: bool = False) -> bool:
+    """Decrypt a file using AES-256-CBC"""
+    try:
+        cipher = Fernet(key)
+        for chunk in iter(lambda: input.read(8192), b""):
+            output.write(cipher.decrypt(chunk))
+        return True
+    except Exception as e:
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.exception(e)
+        if raise_error:
+            raise lm_exceptions.EncryptionException(detail=str(e))
+    return False
