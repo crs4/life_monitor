@@ -50,6 +50,8 @@ spec:
           {{- include "lifemonitor.common-env" $ | nindent 12 }}
           volumeMounts:
           {{- include "lifemonitor.common-volume-mounts" $ | nindent 12 }}
+          resources:
+            {{- toYaml $.Values.worker.initContainers.initWorker.resources | nindent 12 }}
       containers:
         - name: worker
           securityContext:
@@ -88,8 +90,27 @@ spec:
           #   periodSeconds: 3
           resources:
             {{- toYaml $.Values.worker.resources | nindent 12 }}
+        {{- if $.Values.monitoring.loki.enabled }}
+        - name: log-exporter
+          image: {{ $.Values.monitoring.loki.exporter.image }}
+          imagePullPolicy: {{ $.Values.monitoring.loki.exporter.imagePullPolicy }}
+          args:
+            - "-config.file=/etc/promtail/promtail.yaml" # Found in the ConfigMap
+          resources:
+            {{- toYaml $.Values.monitoring.loki.exporter.resources | nindent 12 }}
+          volumeMounts:
+            - name: promtail-config
+              mountPath: /etc/promtail
+            - name: lifemonitor-logs
+              mountPath: /var/log
+        {{- end }}
       volumes:
       {{- include "lifemonitor.common-volume" $ | nindent 8 }}
+      {{- if $.Values.monitoring.loki.enabled }}
+        - name: promtail-config
+          configMap:
+            name: "{{$.Release.Name}}-promtail-worker-{{ $queue.name }}-configmap"
+      {{- end }}
       {{- with $.Values.worker.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

@@ -83,6 +83,22 @@ def handle_404(e: Exception = None):
     )
 
 
+@blueprint.route("/405")
+def handle_405(e: Exception = None):
+    resource = request.args.get("resource", None, type=str)
+    logger.debug(f"Method not allowed for resource {resource}")
+    return handle_error(
+        {
+            "title": "LifeMonitor: Method not allowed",
+            "code": "404",
+            "description": str(e)
+            if e and logger.isEnabledFor(logging.DEBUG)
+            else "Method not allowed for this resource",
+            "resource": resource,
+        }
+    )
+
+
 @blueprint.route("/429")
 def handle_429(e: Exception = None):
     return handle_error(

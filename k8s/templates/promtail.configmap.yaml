@@ -1,0 +1,110 @@
+{{- if .Values.monitoring.loki.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{$.Release.Name}}-promtail-proxy-configmap"
+data:
+  promtail.yaml: |
+    server:
+      http_listen_port: 9080
+      grpc_listen_port: 0
+      log_level: "debug"
+    positions:
+      filename: /tmp/positions.yaml
+    clients: # Specify target
+      - url: {{ $.Values.monitoring.loki.url }}/loki/api/v1/push
+    scrape_configs:
+      - job_name:  "lifemonitor-api-proxy-logger" 
+        static_configs:
+          - targets:
+              - localhost 
+            labels:
+              app: "lifemonitor-backend"
+              component: "{{$.Release.Name}}-proxy"
+              environment: "{{$.Release.Namespace}}"
+              format: "extended"
+              level: "INFO"
+              __path__: /var/log/nginx/access.log
+          - targets: 
+              - localhost 
+            labels:
+              app: "lifemonitor-backend"
+              component: "{{ $.Release.Name }}-proxy"
+              environment: "{{ $.Release.Namespace }}"
+              format: "extended"
+              level: "ERROR"
+              __path__: /var/log/nginx/*error.log          
+        pipeline_stages:
+        - drop:
+            expression: ".*(DEBUG|health|heartbeat).*"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{ $.Release.Name }}-promtail-backend-configmap"
+data:
+  promtail.yaml: |
+    server:
+      http_listen_port: 9080
+      grpc_listen_port: 0
+      log_level: "debug"
+    positions:
+      filename: /tmp/positions.yaml
+    clients: # Specify target
+      - url: {{ $.Values.monitoring.loki.url }}/loki/api/v1/push
+    scrape_configs:
+      - job_name:  "lifemonitor-api-backend-logger" 
+        static_configs:
+          - targets: 
+              - localhost 
+            labels:
+              app: "lifemonitor-backend"
+              component: "api-backend"
+              environment: "{{ $.Release.Namespace }}"
+              format: "backend"
+              __path__: /var/log/lm/*.log
+        pipeline_stages:
+          - drop:
+              expression: ".*(DEBUG|health|heartbeat).*"
+          - regex:
+              expression: '(.*)(?P<log_level>ERROR|INFO|DEBUG|WARNING)(.*)'
+          - labels:
+              level: log_level
+
+
+{{- range $i, $queue := .Values.worker.queues }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{ $.Release.Name }}-promtail-worker-{{ $queue.name }}-configmap"
+data:
+  promtail.yaml: |
+    server:
+      http_listen_port: 9080
+      grpc_listen_port: 0
+      log_level: "debug"
+    positions:
+      filename: /tmp/positions.yaml
+    clients: # Specify target
+      - url: {{ $.Values.monitoring.loki.url }}/loki/api/v1/push
+    scrape_configs:
+      - job_name:  "lifemonitor-api-backend-logger" 
+        static_configs:
+          - targets: 
+              - localhost 
+            labels:
+              app: "lifemonitor-backend"
+              component: "api-worker-{{ $queue.name }}"
+              environment: "{{ $.Release.Namespace }}"
+              format: "backend"
+              __path__: /var/log/lm/*.log
+        pipeline_stages:
+          - drop:
+              expression: ".*(DEBUG|health|heartbeat).*"
+          - regex:
+              expression: '(.*)(?P<log_level>ERROR|INFO|DEBUG|WARNING)(.*)'
+          - labels:
+              level: log_level
+{{- end }}
+{{- end }}

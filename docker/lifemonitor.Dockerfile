@@ -8,8 +8,18 @@ RUN apt-get update -q \
         postgresql-client-11 default-jre \
  && apt-get clean -y && rm -rf /var/lib/apt/lists
 
+# Set the parametric USER ID
+ARG USER_ID
+ENV USER_ID=${USER_ID:-1000}
+
+# Set the parametric GROUP ID
+ARG GROUP_ID
+ENV GROUP_ID=${GROUP_ID:-1000}
+
 # Create a user 'lm' with HOME at /lm and set 'lm' as default git user
-RUN useradd -d /lm -m lm
+RUN groupadd -g ${GROUP_ID} lm && \
+    useradd -u ${USER_ID} -g lm -d /lm -m lm
+
 # Set the default user
 ENV USER=lm
 
@@ -67,6 +77,7 @@ RUN mkdir -p /var/data/lm \
     && chown -R lm:lm /var/data/lm \
     && ln -s /var/data/lm /lm/data \
     && chown -R lm:lm /lm/data \
+    && mkdir -p /var/log/lm && chown -R lm:lm /var/log/lm \
     && mkdir /lm/.nextflow && chmod -R 777 /lm/.nextflow
 
 # Set the default user

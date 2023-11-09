@@ -293,6 +293,12 @@ def configure_logging(app):
     if level_value == logging.DEBUG:
         log_format = f'[{COLOR_SEQ % (90)}%(asctime)s{RESET_SEQ}] %(levelname)s in %(module)s::%(funcName)s @ line: %(lineno)s: {COLOR_SEQ % (90)}%(message)s{RESET_SEQ}'
 
+    # configure and initialize log_path
+    log_file_path = app.config.get('LOG_FILE_PATH', '/var/log/lm')
+    if not os.path.exists(log_file_path):
+        os.makedirs(log_file_path, exist_ok=True)
+
+    # configure logging
     dictConfig({
         'version': 1,
         'formatters': {'default': {
@@ -305,24 +311,34 @@ def configure_logging(app):
                 # 'param': '',
             }
         },
-        'handlers': {'wsgi': {
-            'class': 'logging.StreamHandler',
-            'stream': 'ext://flask.logging.wsgi_errors_stream',
-            'formatter': 'default',
-            'filters': ['myfilter']
-        }},
+        'handlers': {
+            'wsgi': {
+                'class': 'logging.StreamHandler',
+                         'stream': 'ext://flask.logging.wsgi_errors_stream',
+                         'formatter': 'default',
+                         'filters': ['myfilter']
+            },
+            'rotating_to_file': {
+                'level': logging.INFO,
+                'class': "logging.handlers.RotatingFileHandler",
+                'formatter': 'default',
+                "filename": os.path.join(log_file_path, 'lifemonitor.log'),
+                "maxBytes": 10485760,
+                "backupCount": 10,
+            },
+        },
         'response': {
             'level': logging.INFO,
-            'handlers': ['wsgi'],
+            'handlers': ['wsgi', 'rotating_to_file'],
         },
         'root': {
             'level': level_value,
-            'handlers': ['wsgi']
+            'handlers': ['wsgi', 'rotating_to_file']
         },
         # Lower the log level for the github.Requester object -- else it'll flood us with messages
         'Requester': {
             'level': logging.ERROR,
-            'handlers': ['wsgi']
+            'handlers': ['wsgi', 'rotating_to_file']
         },
         'disable_existing_loggers': False,
     })

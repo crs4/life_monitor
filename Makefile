@@ -139,7 +139,9 @@ lifemonitor: docker/lifemonitor.Dockerfile certs app.py gunicorn.conf.py ## Buil
 		printf "\n$(yellow)WARNING: $(bold)Skip build of LifeMonitor Docker image !!! $(reset)\n" ; \
 	else \
 		printf "\n$(bold)Building LifeMonitor Docker image...$(reset)\n" ; \
-		$(build_kit) docker $(build_cmd) $(cache_from_opt) $(cache_to_opt) \
+		$(build_kit) docker $(build_cmd) \
+			--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) \
+			$(cache_from_opt) $(cache_to_opt) \
 			${sw_version_arg} ${build_number_arg} ${tags_opt} ${labels_opt} ${platforms_opt} \
 			-f docker/lifemonitor.Dockerfile -t crs4/lifemonitor . ;\
 		printf "$(done)\n" ; \
@@ -221,14 +223,13 @@ start-dev: images compose-files dev reset_compose permissions ## Start LifeMonit
 start-testing: compose-files aux_images ro_crates images reset_compose permissions ## Start LifeMonitor in a Testing environment
 	@printf "\n$(bold)Starting testing services...$(reset)\n" ; \
 	base=$$(if [[ -f "docker-compose.yml" ]]; then echo "-f docker-compose.yml"; fi) ; \
-	echo "$$(USER_UID=$$(id -u) USER_GID=$$(id -g) \
-	         $(docker_compose) $${base} \
-                   -f docker-compose.extra.yml \
-				   -f docker-compose.base.yml \
-				   -f docker-compose.monitoring.yml \
-				   -f docker-compose.dev.yml \
-				   -f docker-compose.test.yml \
-				   config)" > docker-compose.yml \
+	echo "$$($(docker_compose) $${base} \
+				-f docker-compose.extra.yml \
+				-f docker-compose.base.yml \
+				-f docker-compose.monitoring.yml \
+				-f docker-compose.dev.yml \
+				-f docker-compose.test.yml \
+				config)" > docker-compose.yml \
 	&& cp {,.test.}docker-compose.yml \
 	&& $(docker_compose) -f docker-compose.yml up -d db lmtests seek jenkins webserver worker ws_server ;\
 	$(docker_compose) -f ./docker-compose.yml \
@@ -262,7 +263,6 @@ start-aux-services: aux_images ro_crates docker-compose.extra.yml permissions ##
 
 run-tests: start-testing ## Run all tests in the Testing Environment
 	@printf "\n$(bold)Running tests...$(reset)\n" ; \
-	USER_UID=$$(id -u) USER_GID=$$(id -g) \
 	$(docker_compose) exec -T lmtests /bin/bash -c "pytest --durations=10 --color=yes tests"
 
 
