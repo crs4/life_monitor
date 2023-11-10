@@ -113,17 +113,17 @@ def bck(ctx):
 @backup_options
 @synch_otptions
 @with_appcontext
-def db_cmd(file, directory, verbose, *args, **kwargs):
+def db_cmd(file, directory, encryption_key, encryption_key_file, verbose, *args, **kwargs):
     """
     Make a backup of the database
     """
-    result = backup_db(directory, file, verbose, *args, **kwargs)
+    result = backup_db(directory, file, encryption_key, encryption_key_file, verbose, *args, **kwargs)
     sys.exit(result)
 
 
-def backup_db(directory, file=None, verbose=False, *args, **kwargs):
+def backup_db(directory, file=None, encryption_key=None, encryption_key_file=None, verbose=False, *args, **kwargs):
     logger.debug(sys.argv)
-    result = backup(directory, file, verbose)
+    result = backup(directory, file, encryption_key, encryption_key_file, verbose)
     if result.returncode == 0:
         synch = kwargs.pop('synch', False)
         if synch:
