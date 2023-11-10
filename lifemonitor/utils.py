@@ -1296,6 +1296,45 @@ def encrypt_file(input: BinaryIO, output: BinaryIO, key: bytes,
     return False
 
 
+def encrypt_folder(input_folder: str, output_folder: str,
+                   key: bytes, block=65536,
+                   raise_error: bool = True) -> bool:
+
+    # check if the input folder exists
+    if not os.path.exists(input_folder):
+        raise ValueError(f"Input folder {input_folder} does not exist")
+
+    # check if the key is valid
+    if not key:
+        raise ValueError("Invalid encryption key")
+
+    try:
+        # walk on the input folder
+        for root, dirs, files in os.walk(input_folder):
+            for file in files:
+                input_file = os.path.join(root, file)
+                file_output_folder = root.replace(input_folder, output_folder)
+                logger.warning(f"File output folder: {file_output_folder}")
+                if not os.path.exists(file_output_folder):
+                    os.makedirs(file_output_folder, exist_ok=True)
+                    logger.debug(f"Created folder: {file_output_folder}")
+                output_file = f"{os.path.join(file_output_folder, file)}.enc"
+                logger.debug(f"Encrypting file: {input_file}")
+                logger.debug(f"Output file: {output_file}")
+                with open(input_file, "rb") as f:
+                    with open(output_file, "wb") as o:
+                        encrypt_file(f, o, key, raise_error=raise_error, block=block)
+                        logger.debug(f"File encrypted: {output_file}")
+                        print(f"File encrypted: {output_file}")
+                return True
+    except Exception as e:
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.exception(e)
+        if raise_error:
+            raise lm_exceptions.LifeMonitorException(detail=str(e))
+    return False
+
+
 def decrypt_file(input: BinaryIO, output: BinaryIO, key: bytes,
                  raise_error: bool = True) -> bool:
     """Decrypt a file using AES-256-CBC"""
@@ -1317,6 +1356,45 @@ def decrypt_file(input: BinaryIO, output: BinaryIO, key: bytes,
             chunk = input.read(struct.unpack('<I', size_data)[0])
             dec = cipher.decrypt(chunk)
             output.write(dec)
+        return True
+    except Exception as e:
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.exception(e)
+        if raise_error:
+            raise lm_exceptions.LifeMonitorException(detail=str(e))
+    return False
+
+
+def decrypt_folder(input_folder: str, output_folder: str,
+                   key: bytes, raise_error: bool = True) -> bool:
+
+    # check if the input folder exists
+    if not os.path.exists(input_folder):
+        raise ValueError(f"Input folder {input_folder} does not exist")
+
+    # check if the key is valid
+    if not key:
+        raise ValueError("Invalid encryption key")
+
+    # walk on the input folder
+    try:        
+        for root, dirs, files in os.walk(input_folder):
+            for file in files:
+                input_file = os.path.join(root, file)
+                file_output_folder = root.replace(input_folder, output_folder)
+                logger.warning(f"File output folder: {file_output_folder}")
+                if not os.path.exists(file_output_folder):
+                    os.makedirs(file_output_folder, exist_ok=True)
+                    logger.debug(f"Created folder: {file_output_folder}")
+                output_file = f"{os.path.join(file_output_folder, file).removesuffix('.enc')}"
+                logger.debug(f"Decrypting file: {input_file}")
+                logger.debug(f"Output file: {output_file}")
+                with open(input_file, "rb") as f:
+                    with open(output_file, "wb") as o:
+                        decrypt_file(f, o, key)
+                        logger.debug(f"File decrypted: {output_file}")
+                        print(f"File decrypted: {output_file}")
+        logger.debug(f"Decryption completed: files on {output_folder}")
         return True
     except Exception as e:
         if logger.isEnabledFor(logging.DEBUG):

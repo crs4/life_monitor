@@ -19,12 +19,14 @@
 # SOFTWARE.
 
 import logging
-import sys
 import os
+import sys
+
 import click
 from flask import Blueprint
 
-from ..utils import generate_encryption_key as gen_key, encrypt_file, decrypt_file
+from ..utils import decrypt_file, decrypt_folder, encrypt_file, encrypt_folder
+from ..utils import generate_encryption_key as gen_key
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -44,7 +46,7 @@ encryption_key_file_option = click.option("-kf", "--encryption-key-file",
 
 @blueprint.cli.command('generate-encryption-key')
 @click.option("-f", "--key-file", type=click.Path(exists=False), default="lifemonitor.key", show_default=True)
-def generate_encryption_key(key_file):
+def generate_encryption_key_cmd(key_file):
     """Generate a new encryption key"""
     try:
         # check if the key file already exists
@@ -72,7 +74,7 @@ def generate_encryption_key(key_file):
 @click.option("-o", "--out", type=click.File("wb"), default="<FILENAME>.enc", show_default=True, help="Output file")
 @encryption_key_option
 @encryption_key_file_option
-def encrypt(input_file, out, encryption_key, encryption_key_file):
+def encrypt_cmd(input_file, out, encryption_key, encryption_key_file):
     """Encrypt a file"""
     try:
         # log the parameters
@@ -115,7 +117,7 @@ def encrypt(input_file, out, encryption_key, encryption_key_file):
 @click.option("-o", "--output_folder", type=click.Path(exists=False), default="<INPUT_FOLDER>", show_default=True, help="Output file")
 @encryption_key_option
 @encryption_key_file_option
-def encrypt_folder(input_folder, output_folder, encryption_key, encryption_key_file):
+def encrypt_folder_cmd(input_folder, output_folder, encryption_key, encryption_key_file):
 
     # log the parameters
     logger.debug(f"Input folder: {input_folder}")
@@ -137,24 +139,8 @@ def encrypt_folder(input_folder, output_folder, encryption_key, encryption_key_f
     if encryption_key is None:
         encryption_key = encryption_key_file.read()
 
-    # walk on the input folder
-    for root, dirs, files in os.walk(input_folder):
-        for file in files:
-            input_file = os.path.join(root, file)
-            file_output_folder = root.replace(input_folder, output_folder)
-            logger.warning(f"File output folder: {file_output_folder}")
-            if not os.path.exists(file_output_folder):
-                os.makedirs(file_output_folder, exist_ok=True)
-                logger.debug(f"Created folder: {file_output_folder}")
-            output_file = f"{os.path.join(file_output_folder, file)}.enc"
-            logger.debug(f"Encrypting file: {input_file}")
-            logger.debug(f"Output file: {output_file}")
-            with open(input_file, "rb") as f:
-                with open(output_file, "wb") as o:
-                    encrypt_file(f, o, encryption_key)
-                    logger.debug(f"File encrypted: {output_file}")
-                    print(f"File encrypted: {output_file}")
-            logger.debug(f"Removing file: {input_file}")
+    # encrypt the folder
+    encrypt_folder(input_folder, output_folder, encryption_key)
     print(f"Encryption completed: files on {output_folder}")
     sys.exit(0)
 
@@ -164,7 +150,7 @@ def encrypt_folder(input_folder, output_folder, encryption_key, encryption_key_f
 @click.option("-o", "--out", type=click.File("wb"), default="<FILENAME>", show_default=True, help="Output file")
 @encryption_key_option
 @encryption_key_file_option
-def decrypt(input_file, out, encryption_key, encryption_key_file):
+def decrypt_cmd(input_file, out, encryption_key, encryption_key_file):
     """Decrypt a file"""
     try:
         # log the parameters
@@ -206,7 +192,7 @@ def decrypt(input_file, out, encryption_key, encryption_key_file):
 @click.option("-o", "--output_folder", type=click.Path(exists=False), default="<INPUT_FOLDER>", show_default=True, help="Output file")
 @encryption_key_option
 @encryption_key_file_option
-def decrypt_folder(input_folder, output_folder, encryption_key, encryption_key_file):
+def decrypt_folder_cmd(input_folder, output_folder, encryption_key, encryption_key_file):
 
     # log the parameters
     logger.debug(f"Input folder: {input_folder}")
@@ -228,23 +214,7 @@ def decrypt_folder(input_folder, output_folder, encryption_key, encryption_key_f
     if encryption_key is None:
         encryption_key = encryption_key_file.read()
 
-    # walk on the input folder
-    for root, dirs, files in os.walk(input_folder):
-        for file in files:
-            input_file = os.path.join(root, file)
-            file_output_folder = root.replace(input_folder, output_folder)
-            logger.warning(f"File output folder: {file_output_folder}")
-            if not os.path.exists(file_output_folder):
-                os.makedirs(file_output_folder, exist_ok=True)
-                logger.debug(f"Created folder: {file_output_folder}")
-            output_file = f"{os.path.join(file_output_folder, file).removesuffix('.enc')}"
-            logger.debug(f"Decrypting file: {input_file}")
-            logger.debug(f"Output file: {output_file}")
-            with open(input_file, "rb") as f:
-                with open(output_file, "wb") as o:
-                    decrypt_file(f, o, encryption_key)
-                    logger.debug(f"File decrypted: {output_file}")
-                    print(f"File decrypted: {output_file}")
-            logger.debug(f"Removing file: {input_file}")
+    # decrypt the folder
+    decrypt_folder(input_folder, output_folder, encryption_key)
     print(f"Decryption completed: files on {output_folder}")
     sys.exit(0)
