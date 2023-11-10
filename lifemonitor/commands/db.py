@@ -227,8 +227,8 @@ def restore(file, safe, encryption_key, encryption_key_file, verbose):
             # decrypt the backup file using the encryption key with the Fernet algorithm
             file = file.removesuffix(".enc")
             with open(encrypted_file, "rb") as input_file:
-                    with open(file, "wb") as output_file:
-                        decrypt_file(input_file, output_file, encryption_key)
+                with open(file, "wb") as output_file:
+                    decrypt_file(input_file, output_file, encryption_key)
             logger.debug("Decrypted backup file '%s' to '%s'", encrypted_file, file)
 
         # check if delete or preserve the current app database (if exists)
