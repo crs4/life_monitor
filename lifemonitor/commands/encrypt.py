@@ -35,6 +35,12 @@ blueprint = Blueprint('ed', __name__)
 # set CLI help
 blueprint.cli.help = "Manage files encryption/decryption"
 
+# define the encryption key options
+encryption_key_option = click.option("-k", "--encryption-key", default=None, help="Encryption key")
+encryption_key_file_option = click.option("-kf", "--encryption-key-file",
+                                          type=click.File("rb"), default="lifemonitor.key",
+                                          help="File containing the encryption key")
+
 
 @blueprint.cli.command('generate-encryption-key')
 @click.option("-f", "--key-file", type=click.Path(exists=False), default="lifemonitor.key", show_default=True)
@@ -64,25 +70,35 @@ def generate_encryption_key(key_file):
 @blueprint.cli.command('encrypt')
 @click.argument("input_file", metavar="input", type=click.File("rb"))
 @click.option("-o", "--out", type=click.File("wb"), default="<FILENAME>.enc", show_default=True, help="Output file")
-@click.option("-k", "--key", type=click.File("rb"), default="lifemonitor.key", show_default=True, help="Encryption key")
-def encrypt(input_file, out, key):
+@encryption_key_option
+@encryption_key_file_option
+def encrypt(input_file, out, encryption_key, encryption_key_file):
     """Encrypt a file"""
     try:
-        # check if the key file doesn't exist
-        if not os.path.exists(key.name):
-            print("Key file '%s' does not exist" % os.path.abspath(key.name))
+        # log the parameters
+        logger.debug(f"Input file: {input_file.name}")
+        logger.debug(f"Output file: {out.name}")
+        logger.debug(f"Encryption key: {encryption_key}")
+        logger.debug(f"Encryption key file: {encryption_key_file.name}")
+
+        # # check if the key or key file are not set
+        if encryption_key is None and encryption_key_file is None:
+            print("ERROR: Key or key file should be set")
             sys.exit(1)
         # check if the output file already exists
         if os.path.exists(out.name):
-            print("Output file '%s' already exists" % os.path.abspath(out.name))
+            print("ERROR: Output file '%s' already exists" % os.path.abspath(out.name))
             sys.exit(1)
         # initialize the output file
         if out.name == "<FILENAME>.enc":
             out.name = "%s.enc" % os.path.basename(input_file.name)
-        # read the key
-        key = key.read()
+
+        # read the encryption key from the file if the key is not provided
+        if encryption_key is None:
+            encryption_key = encryption_key_file.read()
+
         # encrypt the file
-        encrypt_file(input_file, out, key)
+        encrypt_file(input_file, out, encryption_key)
         logger.debug(f"File encrypted: {out.name}")
         print(f"File encrypted: {out.name}")
         sys.exit(0)
@@ -97,12 +113,19 @@ def encrypt(input_file, out, key):
 @blueprint.cli.command('encrypt-folder')
 @click.argument("input_folder", type=click.Path(exists=True))
 @click.option("-o", "--output_folder", type=click.Path(exists=False), default="<INPUT_FOLDER>", show_default=True, help="Output file")
-@click.option("-k", "--key", type=click.File("rb"), default="lifemonitor.key", show_default=True, help="Encryption key")
-def encrypt_folder(input_folder, output_folder, key):
+@encryption_key_option
+@encryption_key_file_option
+def encrypt_folder(input_folder, output_folder, encryption_key, encryption_key_file):
 
-    # check if the key file doesn't exist
-    if not os.path.exists(key.name):
-        print("Key file '%s' does not exist" % os.path.abspath(key.name))
+    # log the parameters
+    logger.debug(f"Input folder: {input_folder}")
+    logger.debug(f"Output file: {output_folder}")
+    logger.debug(f"Encryption key: {encryption_key}")
+    logger.debug(f"Encryption key file: {encryption_key_file.name}")
+
+    # # check if the key or key file are not set
+    if encryption_key is None and encryption_key_file is None:
+        print("ERROR: Key or key file should be set")
         sys.exit(1)
 
     # init the output folder
@@ -110,8 +133,9 @@ def encrypt_folder(input_folder, output_folder, key):
         output_folder = input_folder
     logger.debug(f"Using Output folder: {output_folder}")
 
-    # read the key
-    key_data = key.read()
+    # read the encryption key from the file if the key is not provided
+    if encryption_key is None:
+        encryption_key = encryption_key_file.read()
 
     # walk on the input folder
     for root, dirs, files in os.walk(input_folder):
@@ -127,7 +151,7 @@ def encrypt_folder(input_folder, output_folder, key):
             logger.debug(f"Output file: {output_file}")
             with open(input_file, "rb") as f:
                 with open(output_file, "wb") as o:
-                    encrypt_file(f, o, key_data)
+                    encrypt_file(f, o, encryption_key)
                     logger.debug(f"File encrypted: {output_file}")
                     print(f"File encrypted: {output_file}")
             logger.debug(f"Removing file: {input_file}")
@@ -138,25 +162,34 @@ def encrypt_folder(input_folder, output_folder, key):
 @blueprint.cli.command('decrypt')
 @click.argument("input_file", metavar="input", type=click.File("rb"))
 @click.option("-o", "--out", type=click.File("wb"), default="<FILENAME>", show_default=True, help="Output file")
-@click.option("-k", "--key", type=click.File("rb"), default="lifemonitor.key", show_default=True, help="Encryption key")
-def decrypt(input_file, out, key):
+@encryption_key_option
+@encryption_key_file_option
+def decrypt(input_file, out, encryption_key, encryption_key_file):
     """Decrypt a file"""
     try:
-        # check if the key file doesn't exist
-        if not os.path.exists(key.name):
-            print("Key file '%s' does not exist" % os.path.abspath(key.name))
+        # log the parameters
+        logger.debug(f"Input file: {input_file.name}")
+        logger.debug(f"Output file: {out.name}")
+        logger.debug(f"Encryption key: {encryption_key}")
+        logger.debug(f"Encryption key file: {encryption_key_file.name}")
+
+        # check if the key or key file are not set
+        if encryption_key is None and encryption_key_file is None:
+            print("ERROR: Key or key file should be set")
             sys.exit(1)
+
         # check if the output file already exists
         if os.path.exists(out.name):
             print("Output file '%s' already exists" % os.path.abspath(out.name))
             sys.exit(1)
         # initialize the output file
         if out.name == "<FILENAME>":
-            out.name = "%s" % os.path.basename(input_file.name).removesuffix(".enc")
-        # read the key
-        key = key.read()
+            out.name = "%s" % os.path.abspath(input_file.name).removesuffix(".enc")
+        # read the encryption key from the file if the key is not provided
+        if encryption_key is None:
+            encryption_key = encryption_key_file.read()
         # decrypt the file
-        decrypt_file(input_file, out, key)
+        decrypt_file(input_file, out, encryption_key)
         logger.debug(f"File decrypted: {out.name}")
         print(f"File decrypted: {out.name}")
         sys.exit(0)
@@ -171,12 +204,19 @@ def decrypt(input_file, out, key):
 @blueprint.cli.command('decrypt-folder')
 @click.argument("input_folder", type=click.Path(exists=True))
 @click.option("-o", "--output_folder", type=click.Path(exists=False), default="<INPUT_FOLDER>", show_default=True, help="Output file")
-@click.option("-k", "--key", type=click.File("rb"), default="lifemonitor.key", show_default=True, help="Encryption key")
-def decrypt_folder(input_folder, output_folder, key):
+@encryption_key_option
+@encryption_key_file_option
+def decrypt_folder(input_folder, output_folder, encryption_key, encryption_key_file):
 
-    # check if the key file doesn't exist
-    if not os.path.exists(key.name):
-        print("Key file '%s' does not exist" % os.path.abspath(key.name))
+    # log the parameters
+    logger.debug(f"Input folder: {input_folder}")
+    logger.debug(f"Output file: {output_folder}")
+    logger.debug(f"Encryption key: {encryption_key}")
+    logger.debug(f"Encryption key file: {encryption_key_file.name}")
+
+    # check if the key or key file are not set
+    if encryption_key is None and encryption_key_file is None:
+        print("ERROR: Key or key file should be set")
         sys.exit(1)
 
     # init the output folder
@@ -184,8 +224,9 @@ def decrypt_folder(input_folder, output_folder, key):
         output_folder = input_folder
     logger.debug(f"Using Output folder: {output_folder}")
 
-    # read the key
-    key_data = key.read()
+    # read the encryption key from the file if the key is not provided
+    if encryption_key is None:
+        encryption_key = encryption_key_file.read()
 
     # walk on the input folder
     for root, dirs, files in os.walk(input_folder):
@@ -201,7 +242,7 @@ def decrypt_folder(input_folder, output_folder, key):
             logger.debug(f"Output file: {output_file}")
             with open(input_file, "rb") as f:
                 with open(output_file, "wb") as o:
-                    decrypt_file(f, o, key_data)
+                    decrypt_file(f, o, encryption_key)
                     logger.debug(f"File decrypted: {output_file}")
                     print(f"File decrypted: {output_file}")
             logger.debug(f"Removing file: {input_file}")
