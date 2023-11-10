@@ -1314,7 +1314,7 @@ def encrypt_folder(input_folder: str, output_folder: str,
             for file in files:
                 input_file = os.path.join(root, file)
                 file_output_folder = root.replace(input_folder, output_folder)
-                logger.warning(f"File output folder: {file_output_folder}")
+                logger.debug(f"File output folder: {file_output_folder}")
                 if not os.path.exists(file_output_folder):
                     os.makedirs(file_output_folder, exist_ok=True)
                     logger.debug(f"Created folder: {file_output_folder}")
@@ -1382,7 +1382,7 @@ def decrypt_folder(input_folder: str, output_folder: str,
             for file in files:
                 input_file = os.path.join(root, file)
                 file_output_folder = root.replace(input_folder, output_folder)
-                logger.warning(f"File output folder: {file_output_folder}")
+                logger.debug(f"File output folder: {file_output_folder}")
                 if not os.path.exists(file_output_folder):
                     os.makedirs(file_output_folder, exist_ok=True)
                     logger.debug(f"Created folder: {file_output_folder}")
