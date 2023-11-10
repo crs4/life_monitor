@@ -34,6 +34,7 @@ import re
 import shutil
 import socket
 import string
+import struct
 import subprocess
 import tempfile
 import time
@@ -1263,31 +1264,45 @@ def generate_encryption_key() -> bytes:
     return key
 
 
-def encrypt_file(input: BinaryIO, output: BinaryIO, key: bytes, raise_error: bool = False) -> bool:
+def encrypt_file(input: BinaryIO, output: BinaryIO, key: bytes,
+                 raise_error: bool = True, block=65536) -> bool:
     """Encrypt a file using AES-256-CBC"""
     try:
         cipher = Fernet(key)
-        for chunk in iter(lambda: input.read(8192), b""):
-            output.write(cipher.encrypt(chunk))
+        while True:
+            chunk = input.read(block)
+            if len(chunk) == 0:
+                break
+            enc = cipher.encrypt(chunk)
+            output.write(struct.pack('<I', len(enc)))
+            output.write(enc)
+            if len(chunk) < block:
+                break
         return True
     except Exception as e:
         if logger.isEnabledFor(logging.DEBUG):
             logger.exception(e)
         if raise_error:
-            raise lm_exceptions.EncryptionException(detail=str(e))
+            raise lm_exceptions.LifeMonitorException(detail=str(e))
     return False
 
 
-def decrypt_file(input: BinaryIO, output: BinaryIO, key: bytes, raise_error: bool = False) -> bool:
+def decrypt_file(input: BinaryIO, output: BinaryIO, key: bytes,
+                 raise_error: bool = True) -> bool:
     """Decrypt a file using AES-256-CBC"""
     try:
         cipher = Fernet(key)
-        for chunk in iter(lambda: input.read(8192), b""):
-            output.write(cipher.decrypt(chunk))
+        while True:
+            size_data = input.read(4)
+            if len(size_data) == 0:
+                break
+            chunk = input.read(struct.unpack('<I', size_data)[0])
+            dec = cipher.decrypt(chunk)
+            output.write(dec)
         return True
     except Exception as e:
         if logger.isEnabledFor(logging.DEBUG):
             logger.exception(e)
         if raise_error:
-            raise lm_exceptions.EncryptionException(detail=str(e))
+            raise lm_exceptions.LifeMonitorException(detail=str(e))
     return False
