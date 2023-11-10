@@ -1267,6 +1267,15 @@ def generate_encryption_key() -> bytes:
 def encrypt_file(input: BinaryIO, output: BinaryIO, key: bytes,
                  raise_error: bool = True, block=65536) -> bool:
     """Encrypt a file using AES-256-CBC"""
+    # check if input and output are valid
+    if not input or not output:
+        raise ValueError("Invalid input/output file")
+    # check if the input file exists
+    if not os.path.exists(input.name):
+        raise ValueError(f"Input file {input.name} does not exist")
+    # check if the key is valid
+    if not key:
+        raise ValueError("Invalid encryption key")
     try:
         cipher = Fernet(key)
         while True:
@@ -1290,6 +1299,15 @@ def encrypt_file(input: BinaryIO, output: BinaryIO, key: bytes,
 def decrypt_file(input: BinaryIO, output: BinaryIO, key: bytes,
                  raise_error: bool = True) -> bool:
     """Decrypt a file using AES-256-CBC"""
+    # check if input and output are valid
+    if not input or not output:
+        raise ValueError("Invalid input/output file")
+    # check if the input file exists
+    if not os.path.exists(input.name):
+        raise ValueError(f"Input file {input.name} does not exist")
+    # check if the key is valid
+    if not key:
+        raise ValueError("Invalid encryption key")
     try:
         cipher = Fernet(key)
         while True:
