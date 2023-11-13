@@ -191,6 +191,9 @@ def auto(config: Config):
     if not base_path:
         click.echo("No BACKUP_LOCAL_PATH found in your settings")
         sys.exit(0)
+    
+    # search for an encryption key
+    encryption_key = config.get("BACKUP_ENCRYPTION_KEY", None)
 
     # set paths
     base_path = base_path.removesuffix('/')  # remove trailing '/'
@@ -198,13 +201,13 @@ def auto(config: Config):
     rc_backups = f"{base_path}/crates"
     logger.debug("Backup paths: %r - %r - %r", base_path, db_backups, rc_backups)
     # backup database
-    result = backup(db_backups)
+    result = backup(db_backups, encryption_key=encryption_key)
     if result.returncode != 0:
         sys.exit(result.returncode)
     # backup crates
-    result = backup_crates(config, rc_backups)
-    if result != 0:
-        sys.exit(result)
+    result = backup_crates(config, rc_backups, encryption_key=encryption_key)
+    if result.returncode != 0:
+        sys.exit(result.returncode)
     # clean up old files
     retain_days = int(config.get("BACKUP_RETAIN_DAYS", -1))
     logger.debug("RETAIN DAYS: %d", retain_days)
