@@ -25,6 +25,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+from typing import BinaryIO
 
 import click
 from click_option_group import GroupedOption, optgroup
@@ -32,7 +33,7 @@ from flask import current_app
 from flask.blueprints import Blueprint
 from flask.cli import with_appcontext
 from flask.config import Config
-from lifemonitor.utils import FtpUtils
+from lifemonitor.utils import FtpUtils, encrypt_folder
 
 from .db import backup, backup_options
 
@@ -44,6 +45,12 @@ _blueprint = Blueprint('backup', __name__)
 
 # set help for the CLI command
 _blueprint.cli.help = "Manage backups of database and RO-Crates"
+
+# define the encryption key options
+encryption_key_option = click.option("-k", "--encryption-key", default=None, help="Encryption key")
+encryption_key_file_option = click.option("-kf", "--encryption-key-file",
+                                          type=click.File("rb"), default=None,
+                                          help="File containing the encryption key")
 
 
 class RequiredIf(GroupedOption):
@@ -134,22 +141,40 @@ def backup_db(directory, file=None, encryption_key=None, encryption_key_file=Non
 @bck.command("crates")
 @click.option("-d", "--directory", default="./", show_default=True,
               help="Local path to store RO-Crates")
+@encryption_key_option
+@encryption_key_file_option
 @synch_otptions
 @with_appcontext
-def crates_cmd(directory, *args, **kwargs):
+def crates_cmd(directory, encryption_key, encryption_key_file, *args, **kwargs):
     """
     Make a backup of the registered workflow RO-Crates
     """
-    result = backup_crates(current_app.config, directory, *args, **kwargs)
-    sys.exit(result)
+    result = backup_crates(current_app.config, directory,
+                           encryption_key, encryption_key_file,
+                           *args, **kwargs)
+    sys.exit(result.returncode)
 
 
-def backup_crates(config, directory, *args, **kwargs):
+def backup_crates(config, directory,
+                  encryption_key: bytes = None, encryption_key_file: BinaryIO = None,
+                  *args, **kwargs) -> subprocess.CompletedProcess:
     assert config.get("DATA_WORKFLOWS", None), "DATA_WORKFLOWS not configured"
+    # get the path of the RO-Crates
     rocrate_source_path = config.get("DATA_WORKFLOWS").removesuffix('/')
+    # create the directory if not exists
     os.makedirs(directory, exist_ok=True)
-    result = subprocess.run(f'rsync -avh --delete {rocrate_source_path}/ {directory} ', shell=True, capture_output=True)
-    if result.returncode == 0:
+    # flag to check the result of the rsync or encrypt command
+    result = False
+    # encrypt the RO-Crates if an encryption key is provided
+    if encryption_key or encryption_key_file:
+        if not encryption_key:
+            encryption_key = encryption_key_file.read()
+        result = encrypt_folder(rocrate_source_path, directory, encryption_key)
+        result = subprocess.CompletedProcess(returncode=0 if result else 1, args=())
+    else:
+        result = subprocess.run(f'rsync -avh --delete {rocrate_source_path}/ {directory} ',
+                                shell=True, capture_output=True)
+    if result:
         print("Created backup of workflow RO-Crates @ '%s'" % directory)
         synch = kwargs.pop('synch', False)
         if synch:
@@ -157,7 +182,7 @@ def backup_crates(config, directory, *args, **kwargs):
             return __remote_synch__(source=directory, **kwargs)
     else:
         print("Unable to backup workflow RO-Crates\n%s", result.stderr.decode())
-    return result.returncode
+    return result
 
 
 def auto(config: Config):
