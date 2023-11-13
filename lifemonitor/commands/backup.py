@@ -191,7 +191,7 @@ def auto(config: Config):
     if not base_path:
         click.echo("No BACKUP_LOCAL_PATH found in your settings")
         sys.exit(0)
-    
+
     # search for an encryption key
     encryption_key = config.get("BACKUP_ENCRYPTION_KEY", None)
 

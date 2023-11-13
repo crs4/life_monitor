@@ -1377,7 +1377,7 @@ def decrypt_folder(input_folder: str, output_folder: str,
         raise ValueError("Invalid encryption key")
 
     # walk on the input folder
-    try:        
+    try:
         for root, dirs, files in os.walk(input_folder):
             for file in files:
                 input_file = os.path.join(root, file)
