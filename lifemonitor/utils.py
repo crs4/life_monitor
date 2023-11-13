@@ -1328,7 +1328,7 @@ def encrypt_folder(input_folder: str, output_folder: str,
                         logger.debug(f"File encrypted: {output_file}")
                         print(f"File encrypted: {output_file}")
         logger.debug(f"Encryption completed: files on {output_folder}")
-                return True
+        return True
     except Exception as e:
         if logger.isEnabledFor(logging.DEBUG):
             logger.exception(e)
