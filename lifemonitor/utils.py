@@ -1313,6 +1313,7 @@ def encrypt_folder(input_folder: str, output_folder: str,
         for root, dirs, files in os.walk(input_folder):
             for file in files:
                 input_file = os.path.join(root, file)
+                logger.debug(f"Input file: {input_file}")
                 file_output_folder = root.replace(input_folder, output_folder)
                 logger.debug(f"File output folder: {file_output_folder}")
                 if not os.path.exists(file_output_folder):
@@ -1326,6 +1327,7 @@ def encrypt_folder(input_folder: str, output_folder: str,
                         encrypt_file(f, o, key, raise_error=raise_error, block=block)
                         logger.debug(f"File encrypted: {output_file}")
                         print(f"File encrypted: {output_file}")
+        logger.debug(f"Encryption completed: files on {output_folder}")
                 return True
     except Exception as e:
         if logger.isEnabledFor(logging.DEBUG):
