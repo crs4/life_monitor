@@ -93,7 +93,7 @@ def encrypt_cmd(input_file, out, encryption_key, encryption_key_file):
             sys.exit(1)
         # initialize the output file
         if out.name == "<FILENAME>.enc":
-            out.name = "%s.enc" % os.path.basename(input_file.name)
+            out.name = "%s.enc" % os.path.abspath(input_file.name)
 
         # read the encryption key from the file if the key is not provided
         if encryption_key is None:
