@@ -120,7 +120,7 @@ backup:
   successfulJobsHistoryLimit: 30
   failedJobsHistoryLimit: 30
   existingClaim: data-api-backup
-  # encryptionKey: <YOUR_ENCRYPTION_KEY>
+  # encryptionKeySecret: lifemonitor-api-backup-key
   # Settings to mirror the (cluster) local backup
   # to a remote site via FTPS or SFTP
   remote:

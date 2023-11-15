@@ -33,6 +33,7 @@ from flask import current_app
 from flask.blueprints import Blueprint
 from flask.cli import with_appcontext
 from flask.config import Config
+
 from lifemonitor.utils import FtpUtils, encrypt_folder
 
 from .db import backup, backup_options
@@ -51,6 +52,9 @@ encryption_key_option = click.option("-k", "--encryption-key", default=None, hel
 encryption_key_file_option = click.option("-kf", "--encryption-key-file",
                                           type=click.File("rb"), default=None,
                                           help="File containing the encryption key")
+encryption_asymmetric_option = click.option("-a", "--encryption-asymmetric", is_flag=True, default=False,
+                                            show_default=True,
+                                            help="Use asymmetric encryption")
 
 
 class RequiredIf(GroupedOption):
@@ -120,17 +124,29 @@ def bck(ctx):
 @backup_options
 @synch_otptions
 @with_appcontext
-def db_cmd(file, directory, encryption_key, encryption_key_file, verbose, *args, **kwargs):
+def db_cmd(file, directory,
+           encryption_key, encryption_key_file, encryption_asymmetric,
+           verbose, *args, **kwargs):
     """
     Make a backup of the database
     """
-    result = backup_db(directory, file, encryption_key, encryption_key_file, verbose, *args, **kwargs)
+    result = backup_db(directory, file,
+                       encryption_key=encryption_key,
+                       encryption_key_file=encryption_key_file,
+                       encryption_asymmetric=encryption_asymmetric,
+                       verbose=verbose, *args, **kwargs)
     sys.exit(result)
 
 
-def backup_db(directory, file=None, encryption_key=None, encryption_key_file=None, verbose=False, *args, **kwargs):
+def backup_db(directory, file=None,
+              encryption_key=None, encryption_key_file=None, encryption_asymmetric=False,
+              verbose=False, *args, **kwargs):
     logger.debug(sys.argv)
-    result = backup(directory, file, encryption_key, encryption_key_file, verbose)
+    logger.debug("Backup DB: %r - %r - %r - %r - %r - %r - %r",)
+    logger.warning(f"Encryption asymmetric: {encryption_asymmetric}")
+    result = backup(directory, file,
+                    encryption_key=encryption_key, encryption_key_file=encryption_key_file,
+                    encryption_asymmetric=encryption_asymmetric, verbose=verbose)
     if result.returncode == 0:
         synch = kwargs.pop('synch', False)
         if synch:
@@ -143,20 +159,25 @@ def backup_db(directory, file=None, encryption_key=None, encryption_key_file=Non
               help="Local path to store RO-Crates")
 @encryption_key_option
 @encryption_key_file_option
+@encryption_asymmetric_option
 @synch_otptions
 @with_appcontext
-def crates_cmd(directory, encryption_key, encryption_key_file, *args, **kwargs):
+def crates_cmd(directory,
+               encryption_key, encryption_key_file, encryption_asymmetric,
+               *args, **kwargs):
     """
     Make a backup of the registered workflow RO-Crates
     """
     result = backup_crates(current_app.config, directory,
-                           encryption_key, encryption_key_file,
+                           encryption_key=encryption_key, encryption_key_file=encryption_key_file,
+                           encryption_asymmetric=encryption_asymmetric,
                            *args, **kwargs)
     sys.exit(result.returncode)
 
 
 def backup_crates(config, directory,
                   encryption_key: bytes = None, encryption_key_file: BinaryIO = None,
+                  encryption_asymmetric: bool = False,
                   *args, **kwargs) -> subprocess.CompletedProcess:
     assert config.get("DATA_WORKFLOWS", None), "DATA_WORKFLOWS not configured"
     # get the path of the RO-Crates
@@ -169,19 +190,23 @@ def backup_crates(config, directory,
     if encryption_key or encryption_key_file:
         if not encryption_key:
             encryption_key = encryption_key_file.read()
-        result = encrypt_folder(rocrate_source_path, directory, encryption_key)
-        result = subprocess.CompletedProcess(returncode=0 if result else 1, args=())
+        result = encrypt_folder(rocrate_source_path, directory, encryption_key,
+                                encryption_asymmetric=encryption_asymmetric)
+        result = subprocess.CompletedProcess(returncode=0 if result else 1, args=())        
     else:
         result = subprocess.run(f'rsync -avh --delete {rocrate_source_path}/ {directory} ',
                                 shell=True, capture_output=True)
-    if result:
+    if result.returncode == 0:
         print("Created backup of workflow RO-Crates @ '%s'" % directory)
         synch = kwargs.pop('synch', False)
         if synch:
             logger.debug("Remaining args: %r", kwargs)
             return __remote_synch__(source=directory, **kwargs)
     else:
-        print("Unable to backup workflow RO-Crates\n%s", result.stderr.decode())
+        try:
+            print("Unable to backup workflow RO-Crates\n%s", result.stderr.decode())
+        except Exception:
+            print("Unable to backup workflow RO-Crates\n")
     return result
 
 
@@ -192,8 +217,21 @@ def auto(config: Config):
         click.echo("No BACKUP_LOCAL_PATH found in your settings")
         sys.exit(0)
 
-    # search for an encryption key
-    encryption_key = config.get("BACKUP_ENCRYPTION_KEY", None)
+    # search for an encryption key file
+    encryption_key = None
+    encryption_key_file = config.get("BACKUP_ENCRYPTION_KEY_PATH", None)
+    if not encryption_key_file:
+        click.echo("WARNING: No BACKUP_ENCRYPTION_KEY_PATH found in your settings")
+        logger.warning("No BACKUP_ENCRYPTION_KEY_PATH found in your settings")
+    else:
+        # read the encryption key from the file if the key is not provided
+        if isinstance(encryption_key_file, str):
+            with open(encryption_key_file, "rb") as encryption_key_file:
+                encryption_key = encryption_key_file.read()
+        elif isinstance(encryption_key_file, BinaryIO):
+            encryption_key = encryption_key_file.read()
+        else:
+            raise ValueError("Invalid encryption key file")
 
     # set paths
     base_path = base_path.removesuffix('/')  # remove trailing '/'
@@ -201,11 +239,14 @@ def auto(config: Config):
     rc_backups = f"{base_path}/crates"
     logger.debug("Backup paths: %r - %r - %r", base_path, db_backups, rc_backups)
     # backup database
-    result = backup(db_backups, encryption_key=encryption_key)
+    result = backup(db_backups,
+                    encryption_key=encryption_key,
+                    encryption_asymmetric=True)
     if result.returncode != 0:
         sys.exit(result.returncode)
     # backup crates
-    result = backup_crates(config, rc_backups, encryption_key=encryption_key)
+    result = backup_crates(config, rc_backups,
+                           encryption_key=encryption_key, encryption_asymmetric=True)
     if result.returncode != 0:
         sys.exit(result.returncode)
     # clean up old files

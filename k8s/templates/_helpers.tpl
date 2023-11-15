@@ -67,6 +67,13 @@ Define lifemonitor TLS secret name
 {{- printf "%s-tls" .Release.Name }}
 {{- end }}
 
+{{/*
+Define lifemonitor secret name for backup key
+*/}}
+{{- define "chart.lifemonitor.backup.key" -}}
+{{- printf "%s-backup-key" .Release.Name }}
+{{- end }}
+
 
 {{/*
 Define volume name of LifeMonitor backup data 

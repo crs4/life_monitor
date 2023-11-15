@@ -44,7 +44,8 @@ import zipfile
 from datetime import datetime, timezone
 from importlib import import_module
 from os.path import basename, dirname, isfile, join
-from typing import BinaryIO, Dict, Iterable, List, Literal, Optional, Tuple, Type
+from typing import (BinaryIO, Dict, Iterable, List, Literal, Optional, Tuple,
+                    Type)
 from urllib.parse import urlparse
 
 import flask
@@ -55,6 +56,11 @@ import pygit2
 import requests
 import yaml
 from cryptography.fernet import Fernet
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import padding, rsa
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from dateutil import parser
 
 from lifemonitor.cache import cached
@@ -1252,7 +1258,7 @@ class FtpUtils():
             logger.debug('Could not remove {0}: {1}'.format(path, e))
 
 
-def generate_encryption_key() -> bytes:
+def generate_symmetric_encryption_key() -> bytes:
     """Generate a new encryption key"""
     key = None
     try:
@@ -1264,29 +1270,92 @@ def generate_encryption_key() -> bytes:
     return key
 
 
-def encrypt_file(input: BinaryIO, output: BinaryIO, key: bytes,
+def generate_asymmetric_encryption_keys(
+        key_filename: str = "lifemonitor.key",
+        public_exponent=65537, key_size=2048) -> Tuple[rsa.RSAPrivateKey, rsa.RSAPublicKey]:
+
+    # Generate the RSA private key
+    private_key = rsa.generate_private_key(
+        public_exponent=public_exponent,
+        key_size=key_size,
+    )
+
+    # Write the private key to a file
+    with open(f"{key_filename}", "wb") as key_file:
+        key_file.write(
+            private_key.private_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PrivateFormat.PKCS8,
+                encryption_algorithm=serialization.NoEncryption()
+            )
+        )
+
+    # Extract the corresponding public key
+    public_key = private_key.public_key()
+
+    # Write the public key to a file
+    with open(f"{key_filename}.pub", "wb") as key_file:
+        key_file.write(
+            public_key.public_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PublicFormat.SubjectPublicKeyInfo
+            )
+        )
+
+    return private_key, public_key
+
+
+def encrypt_file(input_file: BinaryIO, output_file: BinaryIO, key: bytes,
+                 encryption_asymmetric: bool = False,
                  raise_error: bool = True, block=65536) -> bool:
     """Encrypt a file using AES-256-CBC"""
     # check if input and output are valid
-    if not input or not output:
+    if not input_file or not output_file:
         raise ValueError("Invalid input/output file")
     # check if the input file exists
-    if not os.path.exists(input.name):
-        raise ValueError(f"Input file {input.name} does not exist")
+    if not os.path.exists(input_file.name):
+        raise ValueError(f"Input file {input_file.name} does not exist")
     # check if the key is valid
     if not key:
         raise ValueError("Invalid encryption key")
     try:
-        cipher = Fernet(key)
-        while True:
-            chunk = input.read(block)
-            if len(chunk) == 0:
-                break
-            enc = cipher.encrypt(chunk)
-            output.write(struct.pack('<I', len(enc)))
-            output.write(enc)
-            if len(chunk) < block:
-                break
+        logger.warning("Encryption asymmetric: %r", encryption_asymmetric)
+        # encrypt the file chunk by chunk
+        # using a symmetric encryption algorithm
+        if not encryption_asymmetric:
+            cipher = Fernet(key)
+            while True:
+                chunk = input_file.read(block)
+                if not chunk or len(chunk) == 0:
+                    break
+                enc = cipher.encrypt(chunk)
+                output_file.write(struct.pack('<I', len(enc)))
+                output_file.write(enc)
+                if len(chunk) < block:
+                    break
+        # encrypt the file chunk by chunk
+        # using an asymmetric encryption algorithm
+        else:
+            logger.debug("Loading public key...")
+            public_key = serialization.load_pem_public_key(
+                key,
+                # backend=default_backend()
+            )
+            logger.debug("Loading public key... DONE")
+
+            while True:
+                chunk = input_file.read(190)
+                if not chunk or len(chunk) == 0:
+                    break
+                encrypted_chunk = public_key.encrypt(
+                    chunk,
+                    padding.OAEP(
+                        mgf=padding.MGF1(algorithm=hashes.SHA256()),
+                        algorithm=hashes.SHA256(),
+                        label=None
+                    )
+                )
+                output_file.write(encrypted_chunk)
         return True
     except Exception as e:
         if logger.isEnabledFor(logging.DEBUG):
@@ -1297,7 +1366,7 @@ def encrypt_file(input: BinaryIO, output: BinaryIO, key: bytes,
 
 
 def encrypt_folder(input_folder: str, output_folder: str,
-                   key: bytes, block=65536,
+                   key: bytes, block=65536, encryption_asymmetric: bool = False,
                    raise_error: bool = True) -> bool:
 
     # check if the input folder exists
@@ -1308,6 +1377,8 @@ def encrypt_folder(input_folder: str, output_folder: str,
     if not key:
         raise ValueError("Invalid encryption key")
 
+    # initialize the counter
+    count = 0
     try:
         # walk on the input folder
         for root, dirs, files in os.walk(input_folder):
@@ -1324,40 +1395,71 @@ def encrypt_folder(input_folder: str, output_folder: str,
                 logger.debug(f"Output file: {output_file}")
                 with open(input_file, "rb") as f:
                     with open(output_file, "wb") as o:
-                        encrypt_file(f, o, key, raise_error=raise_error, block=block)
+                        encrypt_file(f, o, key, raise_error=raise_error, block=block,
+                                     encryption_asymmetric=encryption_asymmetric)
                         logger.debug(f"File encrypted: {output_file}")
                         print(f"File encrypted: {output_file}")
-        logger.debug(f"Encryption completed: files on {output_folder}")
-        return True
+                        count += 1
+                        logger.debug(f"File encrypted: {count}")
+        logger.debug(f"Encryption completed: {count} files encrypted on {output_folder}")
     except Exception as e:
         if logger.isEnabledFor(logging.DEBUG):
             logger.exception(e)
         if raise_error:
             raise lm_exceptions.LifeMonitorException(detail=str(e))
-    return False
+    return count
 
 
-def decrypt_file(input: BinaryIO, output: BinaryIO, key: bytes,
+def decrypt_file(input_file: BinaryIO, output_file: BinaryIO, key: bytes,
+                 encryption_asymmetric: bool = False, block=65536,
                  raise_error: bool = True) -> bool:
     """Decrypt a file using AES-256-CBC"""
     # check if input and output are valid
-    if not input or not output:
+    if not input_file or not output_file:
         raise ValueError("Invalid input/output file")
     # check if the input file exists
-    if not os.path.exists(input.name):
-        raise ValueError(f"Input file {input.name} does not exist")
+    if not os.path.exists(input_file.name):
+        raise ValueError(f"Input file {input_file.name} does not exist")
     # check if the key is valid
     if not key:
         raise ValueError("Invalid encryption key")
     try:
-        cipher = Fernet(key)
-        while True:
-            size_data = input.read(4)
-            if len(size_data) == 0:
-                break
-            chunk = input.read(struct.unpack('<I', size_data)[0])
-            dec = cipher.decrypt(chunk)
-            output.write(dec)
+        # decrypt the file chunk by chunk
+        # using a symmetric encryption algorithm
+        if not encryption_asymmetric:
+            cipher = Fernet(key)
+            while True:
+                size_data = input_file.read(4)
+                if len(size_data) == 0:
+                    break
+                chunk = input_file.read(struct.unpack('<I', size_data)[0])
+                dec = cipher.decrypt(chunk)
+                output_file.write(dec)
+                if len(chunk) < 4:
+                    break
+        # decrypt the file chunk by chunk
+        # using an asymmetric encryption algorithm
+        else:
+            logger.debug("Loading private key...")
+            private_key = serialization.load_pem_private_key(
+                key,
+                password=None,
+                # backend=default_backend()
+            )
+            logger.debug("Loading private key... DONE")
+            while True:
+                encrypted_chunk = input_file.read(256)
+                if not encrypted_chunk or len(encrypted_chunk) == 0:
+                    break  # End of file
+                decrypted_chunk = private_key.decrypt(
+                    encrypted_chunk,
+                    padding.OAEP(
+                        mgf=padding.MGF1(algorithm=hashes.SHA256()),
+                        algorithm=hashes.SHA256(),
+                        label=None
+                    )
+                )
+                output_file.write(decrypted_chunk)
         return True
     except Exception as e:
         if logger.isEnabledFor(logging.DEBUG):
@@ -1368,7 +1470,8 @@ def decrypt_file(input: BinaryIO, output: BinaryIO, key: bytes,
 
 
 def decrypt_folder(input_folder: str, output_folder: str,
-                   key: bytes, raise_error: bool = True) -> bool:
+                   key: bytes, asymmetric_encryption: bool = False,
+                   raise_error: bool = True) -> int:
 
     # check if the input folder exists
     if not os.path.exists(input_folder):
@@ -1379,6 +1482,7 @@ def decrypt_folder(input_folder: str, output_folder: str,
         raise ValueError("Invalid encryption key")
 
     # walk on the input folder
+    count = 0
     try:
         for root, dirs, files in os.walk(input_folder):
             for file in files:
@@ -1393,14 +1497,16 @@ def decrypt_folder(input_folder: str, output_folder: str,
                 logger.debug(f"Output file: {output_file}")
                 with open(input_file, "rb") as f:
                     with open(output_file, "wb") as o:
-                        decrypt_file(f, o, key)
+                        decrypt_file(f, o, key, raise_error=raise_error,
+                                     encryption_asymmetric=asymmetric_encryption)
                         logger.debug(f"File decrypted: {output_file}")
                         print(f"File decrypted: {output_file}")
-        logger.debug(f"Decryption completed: files on {output_folder}")
-        return True
+                        count += 1
+                        logger.debug(f"File decrypted: {count}")
+        logger.debug(f"Decryption completed: {count} files decrypted on {output_folder}")
     except Exception as e:
         if logger.isEnabledFor(logging.DEBUG):
             logger.exception(e)
         if raise_error:
             raise lm_exceptions.LifeMonitorException(detail=str(e))
-    return False
+    return count

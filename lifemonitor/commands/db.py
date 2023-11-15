@@ -24,13 +24,15 @@ import os
 import subprocess
 import sys
 from datetime import datetime
+from typing import BinaryIO
 
 import click
 from flask import current_app
 from flask.cli import with_appcontext
 from flask_migrate import cli, current, stamp, upgrade
+
 from lifemonitor.auth.models import User
-from lifemonitor.utils import encrypt_file, decrypt_file, hide_secret
+from lifemonitor.utils import decrypt_file, encrypt_file, hide_secret
 
 # set module level logger
 logger = logging.getLogger()
@@ -109,11 +111,14 @@ encryption_key_option = click.option("-k", "--encryption-key", default=None, hel
 encryption_key_file_option = click.option("-kf", "--encryption-key-file",
                                           type=click.File("rb"),
                                           default=None, help="File containing the encryption key")
+encryption_asymmetric_option = click.option("-a", "--encryption-asymmetric", is_flag=True, default=False,
+                                            help="Use asymmetric encryption", show_default=True)
 
 
 def backup_options(func):
     # backup command options (evaluated in reverse order!)
     func = verbose_option(func)
+    func = encryption_asymmetric_option(func)
     func = encryption_key_file_option(func)
     func = encryption_key_option(func)
     func = click.option("-f", "--file", default=None, help="Backup filename (default 'hhmmss_yyyymmdd.tar')")(func)
@@ -124,23 +129,34 @@ def backup_options(func):
 @cli.db.command("backup")
 @backup_options
 @with_appcontext
-def backup_cmd(directory, file, encryption_key, encryption_key_file, verbose):
+def backup_cmd(directory, file,
+               encryption_key, encryption_key_file, encryption_asymmetric,
+               verbose):
     """
     Make a backup of the current app database
     """
-    logger.debug("%r - %r - %r - %r - %r", file, directory, encryption_key, encryption_key_file, verbose)
-    result = backup(directory, file, encryption_key, encryption_key_file, verbose)
+    logger.debug("%r - %r - %r - %r - %r - %r ", file, directory,
+                 encryption_key, encryption_key_file, encryption_asymmetric, verbose)
+    result = backup(directory, file,
+                    encryption_key=encryption_key,
+                    encryption_key_file=encryption_key_file,
+                    encryption_asymmetric=encryption_asymmetric,
+                    verbose=verbose)
     # report exit code to the main process
     sys.exit(result.returncode)
 
 
 def backup(directory, file=None,
-           encryption_key=None, encryption_key_file=None,
+           encryption_key=None, encryption_key_file: BinaryIO = None,
+           encryption_asymmetric=False,
            verbose=False) -> subprocess.CompletedProcess:
     """
     Make a backup of the current app database
     """
-    logger.debug("%r - %r - %r - %r - %r", file, directory, encryption_key, encryption_key_file, verbose)
+    logger.debug("%r - %r - %r - %r - %r - %r",
+                 file, directory,
+                 encryption_key, encryption_key_file, encryption_asymmetric,
+                 verbose)
     from lifemonitor.db import db_connection_params
     params = db_connection_params()
     if not file:
@@ -161,21 +177,23 @@ def backup(directory, file=None,
             msg = f"Encrypting backup file {target_path}..."
             logger.debug(msg)
             print(msg)
-
             # read the encryption key from the file if the key is not provided
             if encryption_key is None:
                 encryption_key = encryption_key_file.read()
-
             # encrypt the backup file using the encryption key with the Fernet algorithm
             try:
                 with open(target_path, "rb") as input_file:
                     with open(target_path + ".enc", "wb") as output_file:
-                        encrypt_file(input_file, output_file, encryption_key, raise_error=True)
+                        encrypt_file(input_file, output_file, encryption_key,
+                                     encryption_asymmetric=encryption_asymmetric,
+                                     raise_error=True)
                 # remove the original backup file
                 os.remove(target_path)
                 msg = f"Backup file {target_path} encrypted"
                 logger.debug(msg)
                 print(msg)
+            except ValueError as e:
+                logger.error("Unable to encrypt backup file '%s'. ERROR: %s", target_path, str(e))
             except Exception as e:
                 print("Unable to encrypt backup file '%s'. ERROR: %s" % (target_path, str(e)))
                 sys.exit(1)
@@ -192,9 +210,12 @@ def backup(directory, file=None,
               help="Preserve the current database renaming it as '<dbname>_yyyymmdd_hhmmss'")
 @encryption_key_option
 @encryption_key_file_option
+@encryption_asymmetric_option
 @verbose_option
 @with_appcontext
-def restore(file, safe, encryption_key, encryption_key_file, verbose):
+def restore(file, safe,
+            encryption_key, encryption_key_file, encryption_asymmetric,
+            verbose):
     """
     Restore a backup of the app database
     """
@@ -228,7 +249,8 @@ def restore(file, safe, encryption_key, encryption_key_file, verbose):
             file = file.removesuffix(".enc")
             with open(encrypted_file, "rb") as input_file:
                 with open(file, "wb") as output_file:
-                    decrypt_file(input_file, output_file, encryption_key)
+                    decrypt_file(input_file, output_file,
+                                 encryption_key, encryption_asymmetric=encryption_asymmetric)
             logger.debug("Decrypted backup file '%s' to '%s'", encrypted_file, file)
 
         # check if delete or preserve the current app database (if exists)
