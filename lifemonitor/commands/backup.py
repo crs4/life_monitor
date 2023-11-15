@@ -192,7 +192,7 @@ def backup_crates(config, directory,
             encryption_key = encryption_key_file.read()
         result = encrypt_folder(rocrate_source_path, directory, encryption_key,
                                 encryption_asymmetric=encryption_asymmetric)
-        result = subprocess.CompletedProcess(returncode=0 if result else 1, args=())        
+        result = subprocess.CompletedProcess(returncode=0 if result else 1, args=())
     else:
         result = subprocess.run(f'rsync -avh --delete {rocrate_source_path}/ {directory} ',
                                 shell=True, capture_output=True)

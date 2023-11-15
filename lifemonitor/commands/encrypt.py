@@ -81,7 +81,7 @@ def generate_encryption_keys_cmd(key_file, encryption_asymmetric):
         # generate the kubernetes secret containing the key
         with open(key_file + ".secret.yaml", "w") as f:
             with open(os.path.join("k8s", "backup-key.secret.yaml"), "r") as t:
-                # base 64 encode the key                
+                # base 64 encode the key
                 f.write(t.read().replace("<base64-encoded-encryption-key>",
                                          base64.b64encode(key).decode("utf-8")))
         sys.exit(0)
