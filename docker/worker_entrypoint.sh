@@ -84,7 +84,6 @@ while : ; do
     ${threads:-} \
     lifemonitor.tasks.worker:broker lifemonitor.tasks ${queues}
   exit_code=$?
-  exit_code=$?
   if [[ $exit_code == 3 ]]; then
     log "dramatiq worker could not connect to message broker (exit code ${exit_code})" 
     log "Restarting..."
