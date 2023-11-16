@@ -156,30 +156,32 @@ def initialize_app(app: Flask, app_context, prom_registry=None, load_jobs: bool 
     CORS(app, expose_headers=["Content-Type", "X-CSRFToken"], supports_credentials=True)
     # configure logging
     config.configure_logging(app)
-    # register error handlers
-    errors_controller.register_api(app)
-    # init Redis connection
-    redis.init(app)
-    # configure app DB
-    db.init_app(app)
-    # initialize Migration engine
-    Migrate(app, db)
-    # initialize cache
-    init_cache(app)
-    # configure serializer engine (Flask Marshmallow)
-    ma.init_app(app)
-    # configure app routes
-    register_routes(app)
-    # init scheduler/worker for async tasks
-    init_task_queues(app, load_jobs=load_jobs)
-    # init mail system
-    init_mail(app)
-    # initialize integrations
-    if load_integrations:
-        init_integrations(app)
-    # initialize metrics engine
-    init_metrics(app, prom_registry)
-    # register commands
-    commands.register_commands(app)
-    # register the domain filter with Jinja
-    app.jinja_env.filters['domain'] = get_domain
+    # check if the app is running in maintenance mode
+    if app.config.get("MAINTENANCE_MODE", False):
+        logger.warning("Application is running in maintenance mode")
+    else:
+        # register error handlers
+        errors_controller.register_api(app)
+        # init Redis connection
+        redis.init(app)
+        # configure app DB
+        db.init_app(app)
+        # initialize Migration engine
+        Migrate(app, db)
+        # initialize cache
+        init_cache(app)
+        # configure serializer engine (Flask Marshmallow)
+        ma.init_app(app)
+        # configure app routes
+        register_routes(app)
+        # init scheduler/worker for async tasks
+        init_task_queues(app, load_jobs=load_jobs)
+        # init mail system
+        init_mail(app)
+        # initialize integrations
+        if load_integrations:
+            init_integrations(app)
+        # initialize metrics engine
+        init_metrics(app, prom_registry)
+        # register commands
+        commands.register_commands(app)
