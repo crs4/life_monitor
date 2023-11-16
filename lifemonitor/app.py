@@ -103,11 +103,21 @@ def create_app(env=None, settings=None, init_app=True, init_integrations=True,
 
     @app.route("/openapi.html")
     def openapi():
-        return redirect('/static/specs/apidocs.html', code=302)
+
+    @app.route("/maintenance")
+    def maintenance():
+        if not app.config.get("MAINTENANCE_MODE", False):
+            return redirect(url_for("index"))
+        return render_template("maintenance/maintenance.j2")
+
 
     @app.before_request
     def set_request_start_time():
         request.start_time = time.time()
+        if app.config.get("MAINTENANCE_MODE", False):
+            logger.debug("Application is running in maintenance mode. Request %s cannot be served!", request.path)
+            if not request.path.startswith("/maintenance"):
+                return redirect('/maintenance')
 
     @app.after_request
     def log_response(response):
