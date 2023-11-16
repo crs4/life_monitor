@@ -6,6 +6,9 @@
 nameOverride: ""
 fullnameOverride: ""
 
+# manage maintenance mode
+maintenanceMode:
+  enabled: false
 # The name and port number of the server (e.g.: 'lm.local:8000'),
 # used as base_url on all the links returned by the API
 externalServerName: &hostname api.lifemonitor.eu
@@ -150,6 +153,10 @@ monitoring:
         limits:
           memory: 256Mi
           cpu: 0.2
+
+# management console settings
+console:
+  enabled: false
 
 rateLimiting:
   zone:
