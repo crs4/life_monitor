@@ -27,14 +27,13 @@ from flask_cors import CORS
 from flask_migrate import Migrate
 
 import lifemonitor.config as config
-from lifemonitor import redis
 from lifemonitor import errors as errors_controller
+from lifemonitor import redis
 from lifemonitor.auth.services import current_user
 from lifemonitor.integrations import init_integrations
 from lifemonitor.metrics import init_metrics
 from lifemonitor.routes import register_routes
 from lifemonitor.tasks import init_task_queues
-from lifemonitor.utils import get_domain
 
 from . import commands
 from .cache import init_cache
@@ -47,8 +46,15 @@ from .serializers import ma
 logger = logging.getLogger(__name__)
 
 
-def create_app(env=None, settings=None, init_app=True, init_integrations=True,
-               worker=False, load_jobs=True, **kwargs):
+def create_app(
+    env=None,
+    settings=None,
+    init_app=True,
+    init_integrations=True,
+    worker=False,
+    load_jobs=True,
+    **kwargs,
+):
     """
     App factory method
     :param env:
@@ -58,10 +64,10 @@ def create_app(env=None, settings=None, init_app=True, init_integrations=True,
     """
     # set app env
     app_env = env or os.environ.get("FLASK_ENV", "production")
-    if app_env != 'production':
+    if app_env != "production":
         # Set the DEBUG_METRICS env var to also enable the
         # prometheus metrics exporter when running in development mode
-        os.environ['DEBUG_METRICS'] = 'true'
+        os.environ["DEBUG_METRICS"] = "true"
     # load app config
     app_config = config.get_config_by_name(app_env, settings=settings)
     # set the FlaskApp instance path
@@ -77,24 +83,26 @@ def create_app(env=None, settings=None, init_app=True, init_integrations=True,
     if os.environ.get("FLASK_APP_CONFIG_FILE", None):
         app.config.from_envvar("FLASK_APP_CONFIG_FILE")
     # set worker flag
-    app.config['WORKER'] = worker
+    app.config["WORKER"] = worker
     # append proxy settings
-    app.config['PROXY_ENTRIES'] = config.load_proxy_entries(app.config)
+    app.config["PROXY_ENTRIES"] = config.load_proxy_entries(app.config)
 
     # initialize the application
     if init_app:
         with app.app_context() as ctx:
-            initialize_app(app, ctx, load_jobs=load_jobs, load_integrations=init_integrations)
+            initialize_app(
+                app, ctx, load_jobs=load_jobs, load_integrations=init_integrations
+            )
 
     @app.route("/")
     def index():
         if not current_user.is_authenticated:
             return render_template("index.j2")
-        return redirect(url_for('auth.index'))
+        return redirect(url_for("auth.index"))
 
     @app.route("/profile")
     def profile():
-        return redirect(url_for('auth.index', back=request.args.get('back', False)))
+        return redirect(url_for("auth.index", back=request.args.get("back", False)))
 
     # append routes to check app health
     @app.route("/health")
@@ -103,13 +111,13 @@ def create_app(env=None, settings=None, init_app=True, init_integrations=True,
 
     @app.route("/openapi.html")
     def openapi():
+        return redirect("/static/specs/apidocs.html", code=302)
 
     @app.route("/maintenance")
     def maintenance():
         if not app.config.get("MAINTENANCE_MODE", False):
             return redirect(url_for("index"))
         return render_template("maintenance/maintenance.j2")
-
 
     @app.before_request
     def set_request_start_time():
@@ -130,7 +138,7 @@ def create_app(env=None, settings=None, init_app=True, init_integrations=True,
         # for h in request.headers:
         #     logger.debug("header: %s %s", h, request.headers.get(h, None))
         # log the request
-        processing_time = (time.time() * 1000.0 - request.start_time * 1000.0)
+        processing_time = time.time() * 1000.0 - request.start_time * 1000.0
         logger.info(
             "resp: %s %s %s %s %s %s %s %s %0.3fms",
             request.remote_addr,
@@ -141,7 +149,7 @@ def create_app(env=None, settings=None, init_app=True, init_integrations=True,
             response.content_length,
             request.referrer,
             request.user_agent,
-            processing_time
+            processing_time,
         )
         # return the response
         return response
@@ -149,9 +157,15 @@ def create_app(env=None, settings=None, init_app=True, init_integrations=True,
     return app
 
 
-def initialize_app(app: Flask, app_context, prom_registry=None, load_jobs: bool = True, load_integrations: bool = True):
+def initialize_app(
+    app: Flask,
+    app_context,
+    prom_registry=None,
+    load_jobs: bool = True,
+    load_integrations: bool = True,
+):
     # init tmp folder
-    os.makedirs(app.config.get('BASE_TEMP_FOLDER'), exist_ok=True)
+    os.makedirs(app.config.get("BASE_TEMP_FOLDER"), exist_ok=True)
     # enable CORS
     CORS(app, expose_headers=["Content-Type", "X-CSRFToken"], supports_credentials=True)
     # configure logging
