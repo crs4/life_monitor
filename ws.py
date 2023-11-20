@@ -30,5 +30,9 @@ logger = logging.getLogger(__name__)
 
 # create an app instance
 application = create_app(init_app=True, load_jobs=False, init_integrations=False)
+
+# initialise the websocket
 socketIO = initialise_ws(application)
-start_brodcaster(application, max_age=5)  # use default ws_channel
+# initialise the message broker only if the app is not in maintenance mode
+if not application.config.get("MAINTENANCE_MODE", False):
+    start_brodcaster(application, max_age=5)  # use default ws_channel

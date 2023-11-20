@@ -29,12 +29,22 @@ spec:
             {{- include "lifemonitor.common-volume-mounts" . | nindent 12 }}
             - name: lifemonitor-backup
               mountPath: "/var/data/backup"
+            {{- if .Values.backup.encryptionKeySecret }}
+            - name: lifemonitor-backup-encryption-key
+              mountPath: "/lm/backup/encryption.key"
+              subPath: encryptionKey
+            {{- end }}
           restartPolicy: OnFailure
           volumes:
             {{- include "lifemonitor.common-volume" . | nindent 10 }}
           - name: lifemonitor-backup
             persistentVolumeClaim:
               claimName: {{ .Values.backup.existingClaim }}
+          {{- if .Values.backup.encryptionKeySecret }}
+          - name: lifemonitor-backup-encryption-key
+            secret:
+              secretName: {{ .Values.backup.encryptionKeySecret }}
+          {{- end }}
           {{- with .Values.lifemonitor.nodeSelector }}
           nodeSelector:
             {{- toYaml . | nindent 10 }}

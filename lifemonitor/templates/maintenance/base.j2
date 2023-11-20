@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Life Monitor{% endblock %}</title>
+
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+
+    {% block stylesheets %}
+      <!-- Google Font: Source Sans Pro -->
+      <link rel="preconnect" href="https://fonts.googleapis.com"> 
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin> 
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">      
+      <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;300;400;600&display=swap" rel="stylesheet">
+      <!-- Ionicons -->
+      <link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
+      <!-- Font Awesome -->
+      <link rel="stylesheet" href="{{ url_for('static', filename='dist/plugins/fontawesome-free/css/all.min.css') }}">
+      <!-- SweetAlert2 -->
+      <link rel="stylesheet" href="{{ url_for('static', filename='dist/plugins/sweetalert2-theme-bootstrap-4/bootstrap-4.min.css') }}">
+      <!-- Toastr -->
+      <link rel="stylesheet" href="{{ url_for('static', filename='dist/plugins/toastr/toastr.min.css') }}">
+      <!-- Tempusdominus Bootstrap 4 -->
+      <link rel="stylesheet" href="{{ url_for('static', filename='dist/plugins/tempusdominus-bootstrap-4/css/tempusdominus-bootstrap-4.min.css') }}">
+      <!-- Theme style -->
+      <link rel="stylesheet" href="{{ url_for('static', filename='dist/css/lifemonitor.min.css') }}">
+      <link href="https://gitcdn.github.io/bootstrap-toggle/2.2.2/css/bootstrap-toggle.min.css" rel="stylesheet">
+      <!-- cookieconsent dependency-->
+      <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='dist/plugins/cookieconsent/cookieconsent.min.css') }}"/>
+      
+  {% endblock stylesheets %}
+
+  {% block extra_stylesheets %} {%endblock extra_stylesheets %}
+
+</head>
+<body class="hold-transition {% block body_class %}{% endblock body_class %}"
+      style="{% block body_style %}{% endblock body_style %}">
+  {% block body %}{% endblock %}
+
+  <!-- JS dependencies  -->
+  {% block javascripts_libraries %}
+    <!-- jQuery -->
+    <script src="{{ url_for('static', filename='dist/plugins/jquery/jquery.min.js') }}"></script>
+    <!-- Bootstrap 4 -->
+    <script src="{{ url_for('static', filename='dist/plugins/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+    <!-- LifeMonitor JS -->
+    <script src="{{ url_for('static', filename='src/js/lifemonitor.js') }}"></script>
+    <!-- Bootstrap Toggle -->
+    
+    {# Enable notifications #}
+    {{ macros.messages() }}
+
+  {% endblock javascripts_libraries %}
+
+  {% block javascripts %} {% endblock javascripts %}  
+</body>
+
+

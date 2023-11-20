@@ -1,0 +1,59 @@
+{% extends 'maintenance/base.j2' %}
+{% import 'macros.j2' as macros %}
+
+<!-- Set the page title -->
+{% block title %} {{ title }} {% endblock title %}
+
+<!-- Add extra stylesheets -->
+{% block extra_stylesheets %} {% endblock extra_stylesheets %}
+
+<!-- Set the CSS class for the error page -->
+{% block body_class %} error-page {% endblock %}
+
+<!-- Define the page body -->
+{% block body %}
+
+<div class="">
+    <div class="py-2 text-center">
+        {{ macros.render_logo(style="width: 200px; margin: auto;") }}
+    </div>
+    <h1 class="text-primary text-center" style="font-size: 5rem; font-weight: 50;">
+        We'll be back soon!
+    </h1>
+    <div class="text-center pt-4 pb-1">
+        <img src="{{ url_for('static', filename='img/icons/maintenance-2.png') }}" width="280px">
+    </div>
+
+    {% if not main_message %}
+    <!-- Set the generic maintenance message  -->
+    <h3 class="font-weight-light text-primary text-center mx-auto my-5">
+        We're busy updating the 
+        <span style="font-style: italic; font-family: Baskerville,Baskerville Old Face,Hoefler Text,Garamond,Times New Roman,serif;">Life</span><span class="small" style="font-size: 75%; margin: 0 -1px 0 1px;">-</span><span style="font-weight: bold; font-family: Gill Sans,Gill Sans MT,Calibri,sans-serif;">Monitor</span>
+         service for you. <br>Please check back soon!
+    </h3>
+    {% else %}
+    <h3 class="font-weight-light text-primary text-center mx-auto my-5">
+        {{ main_message }}
+    </h3>    
+    {% endif %}
+
+    <!-- Set the secondary maintenance message  -->
+    {% if secondary_message %}
+    <h4 class="font-weight-light text-muted text-center mx-auto my-5">
+        {{ secondary_message }}
+    </h4>
+    {% endif %}
+    
+
+    <!-- Home Button -->
+    <!--<div class="py-4 text-center">
+        <a class="btn btn-primary btn-lg" role="button" href="/">Back</a>
+    </div>-->
+
+</div>
+
+{% endblock body %}
+
+<!-- Add extra javascripts -->
+{% block javascripts %}
+{% endblock javascripts %}

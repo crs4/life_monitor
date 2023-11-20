@@ -63,7 +63,11 @@ spec:
           image: {{ include "chart.lifemonitor.image" . }}
           imagePullPolicy: {{ .Values.lifemonitor.imagePullPolicy }}
           env:
-          {{- include "lifemonitor.common-env" . | nindent 12 }}
+          {{- include "lifemonitor.common-env" . | nindent 12 }}          
+            {{- if  .Values.maintenanceMode.enabled }}
+            - name: FLASK_ENV
+              value: "maintenance"
+            {{- end }}
           volumeMounts:
           {{- include "lifemonitor.common-volume-mounts" . | nindent 12 }}
           ports:

@@ -130,6 +130,8 @@ class BaseConfig:
     SERVICE_AVAILABILITY_TIMEOUT = 1
     # Cookie Settings
     SESSION_COOKIE_NAME = 'lifemonitor_session'
+    # Disable Maintenance Mode by default
+    MAINTENANCE_MODE = False
 
 
 class DevelopmentConfig(BaseConfig):
@@ -147,6 +149,13 @@ class ProductionConfig(BaseConfig):
     SECRET_KEY = os.getenv("PROD_SECRET_KEY", BaseConfig.SECRET_KEY)
     TESTING = False
     CACHE_TYPE = "flask_caching.backends.rediscache.RedisCache"
+
+
+class MaintenanceConfig(BaseConfig):
+    CONFIG_NAME = "maintenance"
+    TESTING = False
+    CACHE_TYPE = "flask_caching.backends.rediscache.RedisCache"
+    MAINTENANCE_MODE = True
 
 
 class TestingConfig(BaseConfig):
@@ -178,7 +187,8 @@ _EXPORT_CONFIGS: List[Type[BaseConfig]] = [
     DevelopmentConfig,
     TestingConfig,
     ProductionConfig,
-    TestingSupportConfig
+    TestingSupportConfig,
+    MaintenanceConfig
 ]
 _config_by_name = {cfg.CONFIG_NAME: cfg for cfg in _EXPORT_CONFIGS}
 

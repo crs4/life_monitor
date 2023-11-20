@@ -236,6 +236,21 @@ start-testing: compose-files aux_images ro_crates images reset_compose permissio
 		exec -T lmtests /bin/bash -c "tests/wait-for-seek.sh 600"; \
 	printf "$(done)\n"
 
+start-maintenance: compose-files aux_images ro_crates images reset_compose permissions ## Start LifeMonitor in a Testing environment
+	@printf "\n$(bold)Starting testing services...$(reset)\n" ; \
+	base=$$(if [[ -f "docker-compose.yml" ]]; then echo "-f docker-compose.yml"; fi) ; \
+	echo "$$(USER_UID=$$(id -u) USER_GID=$$(id -g) \
+				$(docker_compose) $${base} \
+				-f docker-compose.extra.yml \
+				-f docker-compose.base.yml \
+				-f docker-compose.monitoring.yml \
+				-f docker-compose.dev.yml \
+				-f docker-compose.maintenance.yml \
+				config)" > docker-compose.yml \
+	&& cp {,.maintenance.}docker-compose.yml \
+	&& $(docker_compose) -f docker-compose.yml up -d db redis lm ws_server nginx console ;\
+	printf "$(done)\n"
+
 start-nginx: certs docker-compose.base.yml permissions ## Start a nginx front-end proxy for the LifeMonitor back-end
 	@printf "\n$(bold)Starting nginx proxy...$(reset)\n" ; \
 	base=$$(if [[ -f "docker-compose.yml" ]]; then echo "-f docker-compose.yml"; fi) ; \

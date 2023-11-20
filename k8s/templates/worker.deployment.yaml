@@ -72,6 +72,10 @@ spec:
               {{ else }}
               value: {{ $queue.name }}
               {{ end }}
+            {{- if  $.Values.maintenanceMode.enabled }}
+            - name: FLASK_ENV
+              value: "maintenance"
+            {{- end }}
           ports:
             - containerPort: 9191
           volumeMounts:
