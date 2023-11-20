@@ -117,7 +117,9 @@ def create_app(
     def maintenance():
         if not app.config.get("MAINTENANCE_MODE", False):
             return redirect(url_for("index"))
-        return render_template("maintenance/maintenance.j2")
+        return render_template("maintenance/maintenance.j2",
+                               main_message=app.config.get("MAINTENANCE_MODE_MAIN_MESSAGE", None),
+                               secondary_message=app.config.get("MAINTENANCE_MODE_SECONDARY_MESSAGE", None))
 
     @app.before_request
     def set_request_start_time():
