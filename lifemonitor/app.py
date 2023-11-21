@@ -34,6 +34,7 @@ from lifemonitor.integrations import init_integrations
 from lifemonitor.metrics import init_metrics
 from lifemonitor.routes import register_routes
 from lifemonitor.tasks import init_task_queues
+from lifemonitor.utils import get_domain
 
 from . import commands
 from .cache import init_cache
@@ -201,3 +202,5 @@ def initialize_app(
         init_metrics(app, prom_registry)
         # register commands
         commands.register_commands(app)
+        # register the domain filter with Jinja
+        app.jinja_env.filters["domain"] = get_domain
