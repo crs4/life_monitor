@@ -579,6 +579,19 @@ def check_resource_exists(url, authorizations: List = None):
 
 
 def download_url(url: str, target_path: str = None, authorization: str = None) -> str:
+
+    # inner function to handle exceptions
+    def handle_download_exception(url: str,
+                                  exception: Exception,
+                                  status: int = 400, detail: Optional[str] = None):
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.exception(exception)
+
+        raise lm_exceptions.DownloadException(
+            detail=f"Error downloading from {url}" if not detail else detail,
+            status=status,
+            original_error=str(exception))
+
     if not target_path:
         target_path = tempfile.mktemp()
     try:
@@ -588,43 +601,16 @@ def download_url(url: str, target_path: str = None, authorization: str = None) -
             shutil.copyfile(parsed_url.path, target_path)
         else:
             logger.debug("Downloading %s to local path %s", url, target_path)
-            with open(target_path, 'wb') as fd:
-                _download_from_remote(url, fd, authorization)
-            logger.info("Fetched %s of data from %s",
-                        sizeof_fmt(os.path.getsize(target_path)), url)
+            target_path = download_file_from_remote_url(url, target_path)
     except urllib.error.URLError as e:
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.exception(e)
-        raise \
-            lm_exceptions.DownloadException(
-                detail=f"Error downloading from {url}",
-                status=400,
-                original_error=str(e))
+        handle_download_exception(url, e)
     except requests.exceptions.HTTPError as e:
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.exception(e)
-        raise \
-            lm_exceptions.DownloadException(
-                detail=f"Error downloading from {url}",
-                status=e.response.status_code,
-                original_error=str(e))
+        handle_download_exception(url, e, status=e.response.status_code)
     except requests.exceptions.ConnectionError as e:
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.exception(e)
-        raise \
-            lm_exceptions.DownloadException(
-                detail=f"Unable to establish connection to {url}",
-                status=404,
-                original_error=str(e))
+        handle_download_exception(url, e, status=404, detail=f"Unable to establish connection to {url}")
     except IOError as e:
-        # requests raised on an exception as we were trying to download.
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.exception(e)
-        raise \
-            lm_exceptions.DownloadException(
-                detail=f"Error downloading from {url}",
-                status=500,
-                original_error=str(e))
+        handle_download_exception(url, e, status=500)
+
     return target_path
 
 
