@@ -593,7 +593,7 @@ def download_url(url: str, target_path: str = None, authorization: str = None) -
             original_error=str(exception))
 
     if not target_path:
-        target_path = tempfile.mktemp()
+        logger.warning("Target path is not defined: a temporary file will be created")
     try:
         parsed_url = urllib.parse.urlparse(url)
         if parsed_url.scheme == '' or parsed_url.scheme in ['file', 'tmp']:
