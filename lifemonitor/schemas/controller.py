@@ -23,12 +23,11 @@ def validate():
     data = None
     logger.debug("Request: data", request.data)
     try:
-        data = yaml.unsafe_load(request.data)
+        data = yaml.safe_load(request.data)
     except yaml.parser.ParserError:
-        data = json.loads(request.data.decode())
-        logger.debug("JSON data: %r", data)
+        data = json.loads(request.data.decode())        
     finally:
         if not data:
             raise BadRequestException(title="Invalid file format", detail="It should be a JSON or YAML file")
-    logger.debug("Data: %r", data)
+    logger.debug("JSON data to validate: %r", data)
     return ConfigFileValidator.validate(data).to_dict()
