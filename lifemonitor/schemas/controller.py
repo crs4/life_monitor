@@ -25,7 +25,7 @@ def validate():
     try:
         data = yaml.safe_load(request.data)
     except yaml.parser.ParserError:
-        data = json.loads(request.data.decode())        
+        data = json.loads(request.data.decode())
     finally:
         if not data:
             raise BadRequestException(title="Invalid file format", detail="It should be a JSON or YAML file")
