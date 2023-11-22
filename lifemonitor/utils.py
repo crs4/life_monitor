@@ -578,6 +578,51 @@ def check_resource_exists(url, authorizations: List = None):
     return False
 
 
+def copy_file_from_local_url(url, target_path: str = None):
+    '''
+    Copy file from parsed url to target path
+    :param parsed_url: parsed url
+    :param target_path: if None, a temporary file will be created
+    :return:
+    '''
+    logger.debug("Copying local resource %s to local path %s", url, target_path)
+    try:
+        if target_path:
+            shutil.copyfile(url, target_path)
+        else:
+            with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+                shutil.copyfile(url, tmp_file.name)
+                target_path = tmp_file.name
+        return target_path
+    except Exception as e:
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.exception(e)
+        raise lm_exceptions.DownloadException('Error copying local resource: %s' % e)
+
+
+def download_file_from_remote_url(url, target_path: str = None):
+    '''
+    Download file from parsed url to target path
+    :param parsed_url: parsed url
+    :param target_path: if None, a temporary file will be created
+    :return:
+    '''
+    logger.debug("Downloading remote resource %s to local path %s", url, target_path)
+    try:
+        if target_path:
+            with open(target_path, 'wb') as fd:
+                _download_from_remote(url, fd)
+        else:
+            with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+                _download_from_remote(url, tmp_file)
+                target_path = tmp_file.name
+        return target_path
+    except Exception as e:
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.exception(e)
+        raise lm_exceptions.DownloadException('Error downloading remote resource: %s' % e)
+
+
 def download_url(url: str, target_path: str = None, authorization: str = None) -> str:
 
     # inner function to handle exceptions
@@ -597,8 +642,7 @@ def download_url(url: str, target_path: str = None, authorization: str = None) -
     try:
         parsed_url = urllib.parse.urlparse(url)
         if parsed_url.scheme == '' or parsed_url.scheme in ['file', 'tmp']:
-            logger.debug("Copying %s to local path %s", url, target_path)
-            shutil.copyfile(parsed_url.path, target_path)
+            target_path = copy_file_from_local_url(parsed_url.path, target_path)
         else:
             logger.debug("Downloading %s to local path %s", url, target_path)
             target_path = download_file_from_remote_url(url, target_path)
