@@ -600,7 +600,8 @@ def copy_file_from_local_url(url, target_path: str = None):
         raise lm_exceptions.DownloadException('Error copying local resource: %s' % e)
 
 
-def download_file_from_remote_url(url, target_path: str = None):
+def download_file_from_remote_url(url, target_path: str = None,
+                                  authorization: str = None):
     '''
     Download file from parsed url to target path
     :param parsed_url: parsed url
@@ -611,10 +612,10 @@ def download_file_from_remote_url(url, target_path: str = None):
     try:
         if target_path:
             with open(target_path, 'wb') as fd:
-                _download_from_remote(url, fd)
+                _download_from_remote(url, fd, authorization=authorization)
         else:
             with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
-                _download_from_remote(url, tmp_file)
+                _download_from_remote(url, tmp_file, authorization=authorization)
                 target_path = tmp_file.path
         return target_path
     except Exception as e:
@@ -645,7 +646,7 @@ def download_url(url: str, target_path: str = None, authorization: str = None) -
             target_path = copy_file_from_local_url(parsed_url.path, target_path)
         else:
             logger.debug("Downloading %s to local path %s", url, target_path)
-            target_path = download_file_from_remote_url(url, target_path)
+            target_path = download_file_from_remote_url(url, target_path, authorization=authorization)
     except urllib.error.URLError as e:
         handle_download_exception(url, e)
     except requests.exceptions.HTTPError as e:
