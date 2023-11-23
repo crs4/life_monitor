@@ -351,7 +351,7 @@ class ROCrate(Resource):
                         auth_header = authorization.as_http_header() if authorization else None
                         logger.debug(auth_header)
                         local_zip = download_url(uri,
-                                                 target_path=target_path, # auto-generated if None
+                                                 target_path=target_path,  # auto-generated if None
                                                  authorization=auth_header)
                         logger.debug("ZIP Archive: %s", local_zip)
                         return target_path, None, None
