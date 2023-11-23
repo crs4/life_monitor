@@ -592,7 +592,7 @@ def copy_file_from_local_url(url, target_path: str = None):
         else:
             with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
                 shutil.copyfile(url, tmp_file.name)
-                target_path = tmp_file.name
+                target_path = tmp_file.path
         return target_path
     except Exception as e:
         if logger.isEnabledFor(logging.DEBUG):
@@ -615,7 +615,7 @@ def download_file_from_remote_url(url, target_path: str = None):
         else:
             with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
                 _download_from_remote(url, tmp_file)
-                target_path = tmp_file.name
+                target_path = tmp_file.path
         return target_path
     except Exception as e:
         if logger.isEnabledFor(logging.DEBUG):
