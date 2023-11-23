@@ -40,6 +40,8 @@ blueprint = flask.Blueprint("jobs", __name__,
 @authorized
 @blueprint.route("/status/<job_id>", methods=("GET",))
 def get_job_status(job_id: str):
+    if not utils.validate_job_id(job_id):
+        raise ValueError(f"Invalid job id: {job_id}")
     serialized_job_data = cache.get(utils.get_job_key(job_id=job_id))
     if not serialized_job_data:
         return f"job ${job_id} not found", 404
