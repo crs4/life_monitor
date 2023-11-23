@@ -322,7 +322,7 @@ class ROCrate(Resource):
 
         # set target_path
         if not target_path:
-            target_path = tempfile.mktemp(dir=BaseConfig.BASE_TEMP_FOLDER)
+            logger.warning("Target path is not defined: a temporary file will be created")
         try:
             # try either with authorization header and without authorization
             for authorization in self._get_authorizations(extra_auth=extra_auth):
@@ -338,14 +338,20 @@ class ROCrate(Resource):
                             repo.checkout_ref(ref)  # , branch_name=version)
                             logger.debug("Checkout DONE")
                             logger.debug(get_current_ref(tmp_path))
-                            archive = repo.write_zip(target_path)
+                            if target_path:
+                                archive = repo.write_zip(target_path)
+                            else:
+                                with tempfile.NamedTemporaryFile(
+                                        dir=BaseConfig.BASE_TEMP_FOLDER,
+                                        delete=False) as tmp_file:
+                                    archive = repo.write_zip(tmp_file.name)
                             logger.debug("Zip file written to: %r", archive)
                             return archive, ref, commit
                     else:
                         auth_header = authorization.as_http_header() if authorization else None
                         logger.debug(auth_header)
                         local_zip = download_url(uri,
-                                                 target_path=target_path,
+                                                 target_path=target_path, # auto-generated if None
                                                  authorization=auth_header)
                         logger.debug("ZIP Archive: %s", local_zip)
                         return target_path, None, None
