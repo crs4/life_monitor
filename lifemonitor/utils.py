@@ -609,22 +609,6 @@ def download_file_from_remote_url(url, target_path: str = None,
     :return:
     '''
     logger.debug("Downloading remote resource %s to local path %s", url, target_path)
-    try:
-        if target_path:
-            with open(target_path, 'wb') as fd:
-                _download_from_remote(url, fd, authorization=authorization)
-        else:
-            with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
-                _download_from_remote(url, tmp_file, authorization=authorization)
-                target_path = tmp_file.path
-        return target_path
-    except Exception as e:
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.exception(e)
-        raise lm_exceptions.DownloadException('Error downloading remote resource: %s' % e)
-
-
-def download_url(url: str, target_path: str = None, authorization: str = None) -> str:
 
     # inner function to handle exceptions
     def handle_download_exception(url: str,
@@ -638,15 +622,15 @@ def download_url(url: str, target_path: str = None, authorization: str = None) -
             status=status,
             original_error=str(exception))
 
-    if not target_path:
-        logger.warning("Target path is not defined: a temporary file will be created")
     try:
-        parsed_url = urllib.parse.urlparse(url)
-        if parsed_url.scheme == '' or parsed_url.scheme in ['file', 'tmp']:
-            target_path = copy_file_from_local_url(parsed_url.path, target_path)
+        if target_path:
+            with open(target_path, 'wb') as fd:
+                _download_from_remote(url, fd, authorization=authorization)
         else:
-            logger.debug("Downloading %s to local path %s", url, target_path)
-            target_path = download_file_from_remote_url(url, target_path, authorization=authorization)
+            with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+                _download_from_remote(url, tmp_file, authorization=authorization)
+                target_path = tmp_file.path
+        return target_path
     except urllib.error.URLError as e:
         handle_download_exception(url, e)
     except requests.exceptions.HTTPError as e:
@@ -655,6 +639,22 @@ def download_url(url: str, target_path: str = None, authorization: str = None) -
         handle_download_exception(url, e, status=404, detail=f"Unable to establish connection to {url}")
     except IOError as e:
         handle_download_exception(url, e, status=500)
+    except Exception as e:
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.exception(e)
+        raise lm_exceptions.DownloadException('Error downloading remote resource: %s' % e)
+
+
+def download_url(url: str, target_path: str = None, authorization: str = None) -> str:
+    if not target_path:
+        logger.warning("Target path is not defined: a temporary file will be created")
+
+    parsed_url = urllib.parse.urlparse(url)
+    if parsed_url.scheme == '' or parsed_url.scheme in ['file', 'tmp']:
+        target_path = copy_file_from_local_url(parsed_url.path, target_path)
+    else:
+        logger.debug("Downloading %s to local path %s", url, target_path)
+        target_path = download_file_from_remote_url(url, target_path, authorization=authorization)
 
     return target_path
 
