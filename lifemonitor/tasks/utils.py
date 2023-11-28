@@ -15,6 +15,16 @@ def make_job_id() -> str:
     return str(uuid4())
 
 
+def validate_job_id(job_id: str) -> bool:
+    '''Validate the job id defined as uuid4'''
+    from uuid import UUID
+    try:
+        UUID(job_id, version=4)
+        return True
+    except ValueError:
+        return False
+
+
 def get_job_key(job_id: str):
     return f"job-{job_id}"
 

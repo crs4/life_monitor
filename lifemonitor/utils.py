@@ -235,7 +235,9 @@ def validate_url(url: str) -> bool:
     try:
         result = urllib.parse.urlparse(url)
         return all([result.scheme, result.netloc])
-    except Exception:
+    except Exception as e:
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.exception(e)
         return False
 
 
