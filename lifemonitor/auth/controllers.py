@@ -404,8 +404,8 @@ def update_github_settings():
 def enable_registry_sync():
     logger.debug("Enabling Registry Sync")
     if request.method == "GET":
-        registry_name = request.values.get("s", None)
-        logger.debug("Enabling Registry Sync: %r", registry_name)
+        registry_name = session.pop("registry_integration_name", None)
+        logger.debug("Registry name from session: %r", registry_name)
         if not registry_name:  # or not current_user.check_secret(registry_name, secret_hash):
             flash("Invalid request: registry cannot be enabled", category="error")
             return redirect(url_for('auth.profile', currentView='registrySettingsTab'))
@@ -426,6 +426,7 @@ def enable_registry_sync():
             settings.set_token(registry.client_name, registry_user_identity.tokens['read write'])
             current_user.save()
             flash(f"Integration with registry \"{registry.name}\" enabled", category="success")
+            logger.info("Integration with registry \"%s\" enabled", registry.name)
             return redirect(url_for('auth.profile', currentView='registrySettingsTab'))
 
     elif request.method == "POST":
@@ -433,11 +434,13 @@ def enable_registry_sync():
             RegistrySettingsForm
         form = RegistrySettingsForm()
         if form.validate_on_submit():
-            registry_name = request.values.get("registry", None)
-            return redirect(f'/oauth2/login/{registry_name}?scope=read+write&next=/account/enable_registry_sync?s={registry_name}')
-        else:
-            logger.debug("Form validation failed")
-            flash("Invalid request", category="error")
+            registry_name = form.registry.data
+            if registry_name:
+                session['registry_integration_name'] = registry_name
+                return redirect(f'/oauth2/login/{registry_name}?scope=read+write&next=/account/enable_registry_sync')
+        # if we are here, then the form validation failed
+        logger.debug("Form validation failed")
+        flash("Invalid request", category="error")
     # set a fallback redirect
     return redirect(url_for('auth.profile', currentView='registrySettingsTab'))
 
@@ -446,16 +449,22 @@ def enable_registry_sync():
 @login_required
 def disable_registry_sync():
     from lifemonitor.api.models.registries.forms import RegistrySettingsForm
-    registry_name = request.values.get("registry", None)
-    logger.debug("Disabling sync for registry: %r", registry_name)
     form = RegistrySettingsForm()
-    settings = current_user.registry_settings
+    # extract the registry name from the form
+    # and check if it is valid
+    registry_name = form.registry.data
+    if not registry_name:
+        flash("Invalid request: registry not found", category="error")
+        return redirect(url_for('auth.profile', currentView='registrySettingsTab'))
+    # validate the form
     if form.validate_on_submit():
+        logger.debug("Disabling sync for registry: %r", registry_name)
         from lifemonitor.api.models import WorkflowRegistry
         registry = WorkflowRegistry.find_by_client_name(registry_name)
         if not registry:
             flash("Invalid request: registry not found", category="error")
             return redirect(url_for('auth.profile', currentView='registrySettingsTab'))
+        settings = current_user.registry_settings
         settings.remove_registry(registry_name)
         current_user.save()
         flash(f"Integration with registry \"{registry.name}\" disabled", category="success")
