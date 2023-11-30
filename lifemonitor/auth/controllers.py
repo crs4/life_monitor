@@ -26,6 +26,7 @@ from flask import (current_app, flash, redirect, render_template, request,
                    session, url_for)
 from flask.sessions import SecureCookieSessionInterface
 from flask_login import login_required, login_user, logout_user
+from wtforms import ValidationError
 
 from lifemonitor.cache import Timeout, cached, clear_cache
 from lifemonitor.utils import (NextRouteRegistry, next_route_aware,
@@ -173,6 +174,13 @@ def profile(form=None, passwordForm=None, currentView=None,
     logger.debug(OpenApiSpecs.get_instance().authorization_code_scopes)
     back_param = request.args.get('back', None)
     logger.debug("detected back param: %r", back_param)
+    # validate back_param if defined
+    try:
+        NextRouteRegistry.validate_next_route_url(back_param)
+    except ValidationError:
+        logger.warning("Detected an invalid back param: %r", back_param)
+        back_param = None
+    # set the back param in the session
     if not current_user.is_authenticated:
         session['lm_back_param'] = back_param
         logger.debug("Pushing back param to session")
@@ -273,7 +281,18 @@ def login():
             session.pop('_flashes', None)
             flash("You have logged in", category="success")
             return redirect(NextRouteRegistry.pop(url_for("auth.profile")))
-    flask.session['lm_back_param'] = flask.request.args.get('back', None)
+    # Configure the next route
+    back_param = session.pop('lm_back_param', None)
+    # validate back_param if defined
+    if back_param:
+        try:
+            NextRouteRegistry.validate_next_route_url(back_param)
+        except ValidationError:
+            flash('back param not valid')
+            back_param = None
+    # set the back param in the session
+    flask.session['lm_back_param'] = back_param
+    # render the login page
     return render_template("auth/login.j2", form=form,
                            providers=get_providers(), is_service_available=is_service_alive)
 
@@ -283,11 +302,21 @@ def login():
 def logout():
     logout_user()
     session.pop('_flashes', None)
-    back_param = session.pop('lm_back_param', None)
     flash("You have logged out", category="success")
+    # Configure the next route
     NextRouteRegistry.clear()
+    back_param = session.pop('lm_back_param', None)
+    # validate back_param if defined
+    if back_param:
+        try:
+            NextRouteRegistry.validate_next_route_url(back_param)
+        except ValidationError:
+            flash('back param not valid')
+            back_param = None
+    # set the next route
     next_route = request.args.get('next', '/logout' if back_param else '/')
-    logger.debug("Next route after logout: %r", next_route)
+    logger.debug("Next route after logout: %r", back_param)
+    # redirect to the next route
     return redirect(next_route)
 
 
