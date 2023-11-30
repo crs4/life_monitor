@@ -1046,12 +1046,13 @@ class NextRouteRegistry(object):
         logger.debug("Route registry saved")
 
     @classmethod
-    def save(cls, route=None):
+    def save(cls, route=None, skipValidation: bool = False):
         route = route or flask.request.args.get('next', False)
         logger.debug("'next' route param found: %r", route)
         if route:
             try:
-                cls.validate_next_route_url(route)
+                if not skipValidation:
+                    cls.validate_next_route_url(route)
                 registry = cls._get_route_registry()
                 registry.append(route)
                 logger.debug("Route registry changed: %r", registry)
@@ -1062,7 +1063,7 @@ class NextRouteRegistry(object):
                     logger.exception(e)
 
     @classmethod
-    def pop(cls, default=None):
+    def pop(cls, default=None, skipValidation=False):
         # extract the route from the request
         route = flask.request.args.get('next', None)
         logger.debug("'next' route as param: %r", route)
@@ -1077,6 +1078,8 @@ class NextRouteRegistry(object):
                 logger.debug(e)
             finally:
                 cls._save_route_registry(registry)
+        if skipValidation:
+            return route or default
         # validate the actual route
         try:
             cls.validate_next_route_url(route)
