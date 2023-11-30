@@ -134,8 +134,15 @@ def create_blueprint(merge_identity_view):
 
         # Determine the right next hop
         next_url = NextRouteRegistry.pop()
-        return redirect(next_url, code=307) if next_url \
-            else RequestHelper.response() or redirect('/account', code=302)
+        if next_url:
+            try:
+                NextRouteRegistry.validate_next_route_url(next_url)
+                return redirect(next_url, code=307)
+            except ValidationError as e:
+                logger.error(e)
+        # redirect to the account page if the next url is not defined or invalid
+        return RequestHelper.response() or redirect('/account', code=302)
+
     return blueprint
 
 
@@ -256,12 +263,18 @@ class AuthorizatonHandler:
             db.session.commit()
             db.session.flush()
             logger.debug("Identity flushed")
+            flash(f"Logged with your <b>\"{identity.provider.name}\"</b> identity.", category="success")
 
             # Determine the right next hop
             next_url = NextRouteRegistry.pop()
-            flash(f"Logged with your <b>\"{identity.provider.name}\"</b> identity.", category="success")
-            return redirect(next_url, code=307) if next_url \
-                else RequestHelper.response() or redirect('/account', code=302)
+            if next_url:
+                try:
+                    NextRouteRegistry.validate_next_route_url(next_url)
+                    return redirect(next_url, code=307)
+                except ValidationError as e:
+                    logger.error(e)
+            # redirect to the account page if the next url is not defined or invalid
+            return RequestHelper.response() or redirect('/account', code=302)
 
     @staticmethod
     def validate_identity_token(identity: OAuthIdentity):
