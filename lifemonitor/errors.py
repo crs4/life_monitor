@@ -73,7 +73,7 @@ def handle_404(e: Exception = None):
     resource = request.args.get("resource", None, type=str)
     logger.debug(f"Resource not found: {resource}")
     if not validate_url(resource):
-        return handle_400(decription="Invalid URL")
+        return handle_400(description="Invalid URL")
     return handle_error(
         {
             "title": "LifeMonitor: Page not found",
