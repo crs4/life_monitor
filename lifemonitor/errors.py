@@ -22,7 +22,7 @@ import logging
 import sys
 from typing import Dict
 
-from flask import Blueprint, render_template, request, url_for
+from flask import Blueprint, escape, render_template, request, url_for
 
 from lifemonitor.utils import validate_url
 
@@ -99,7 +99,7 @@ def handle_405(e: Exception = None):
             "description": str(e)
             if e and logger.isEnabledFor(logging.DEBUG)
             else "Method not allowed for this resource",
-            "resource": resource,
+            "resource": escape(resource),
         }
     )
 
