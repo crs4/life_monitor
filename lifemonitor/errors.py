@@ -72,7 +72,8 @@ def handle_400(e: Exception = None, description: str = None):
 def handle_404(e: Exception = None):
     resource = request.args.get("resource", None, type=str)
     logger.debug(f"Resource not found: {resource}")
-    if not validate_url(resource):
+    if resource and not validate_url(resource):
+        logger.error(f"Invalid URL: {resource}")
         return handle_400(description="Invalid URL")
     return handle_error(
         {
