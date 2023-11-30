@@ -27,6 +27,7 @@ from authlib.integrations.flask_client import FlaskRemoteApp
 from flask import (Blueprint, abort, current_app, flash, redirect, request,
                    session, url_for)
 from flask_login import current_user, login_user
+from wtforms import ValidationError
 
 from lifemonitor import exceptions, utils
 from lifemonitor.auth.models import User
