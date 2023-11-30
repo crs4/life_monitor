@@ -207,6 +207,10 @@ def decodeBase64(str, as_object=False, encoding='utf-8'):
     return result
 
 
+def get_netloc(url: str) -> str:
+    return urlparse(url).netloc
+
+
 def get_base_url():
     server_name = None
     try:
@@ -225,6 +229,10 @@ def get_external_server_url():
     except RuntimeError as e:
         logger.warning(str(e))
     return get_base_url() if not external_server_url else external_server_url
+
+
+def get_valid_server_domains():
+    return ['/', get_netloc(get_base_url()), get_netloc(get_external_server_url())]
 
 
 def get_validation_schema_url():
