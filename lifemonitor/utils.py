@@ -59,6 +59,7 @@ from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
 from dateutil import parser
+from wtforms import ValidationError
 
 from lifemonitor.cache import cached
 
@@ -1049,15 +1050,23 @@ class NextRouteRegistry(object):
         route = route or flask.request.args.get('next', False)
         logger.debug("'next' route param found: %r", route)
         if route:
-            registry = cls._get_route_registry()
-            registry.append(route)
-            logger.debug("Route registry changed: %r", registry)
-            cls._save_route_registry(registry)
+            try:
+                cls.validate_next_route_url(route)
+                registry = cls._get_route_registry()
+                registry.append(route)
+                logger.debug("Route registry changed: %r", registry)
+                cls._save_route_registry(registry)
+            except ValidationError as e:
+                logger.error(e)
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.exception(e)
 
     @classmethod
     def pop(cls, default=None):
+        # extract the route from the request
         route = flask.request.args.get('next', None)
         logger.debug("'next' route as param: %r", route)
+        # if the route is not defined as param, try to get it from the registry
         if route is None:
             registry = cls._get_route_registry()
             try:
@@ -1068,11 +1077,59 @@ class NextRouteRegistry(object):
                 logger.debug(e)
             finally:
                 cls._save_route_registry(registry)
-        return route or default
+        # validate the actual route
+        try:
+            cls.validate_next_route_url(route)
+        except ValidationError as e:
+            logger.error(e)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.exception(e)
+            # if the route is not valid, try to get the default route
+            try:
+                cls.validate_next_route_url(default)
+                route = default
+            except ValidationError as ex:
+                logger.error(ex)
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.exception(ex)
+                route = None
+        # return the validated route
+        return route
 
     @classmethod
     def clear(cls):
         flask.session[cls.__LM_NEXT_ROUTE_REGISTRY__] = json.dumps([])
+
+    @classmethod
+    def validate_next_route_url(cls, url: str) -> bool:
+        # check whether the URL is valid
+        url_domain = None
+        try:
+            url_domain = get_netloc(url)
+        except Exception as e:
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.exception(e)
+        # check whether a url domain has been extracted
+        if url_domain is None:
+            raise ValidationError("Invalid URL: unable to detect domain")
+        # check if the URL domain matches the main domain of the back-end app
+        valid_server_domains = get_valid_server_domains()
+        logger.debug("Valid app domains: %r", valid_server_domains)
+        if not url_domain or url_domain in valid_server_domains:
+            return True
+        # check whether the URL belong to a client
+        from lifemonitor.auth.oauth2.server.models import Client
+        for c in Client.all():
+            for c_redirect_uri in c.redirect_uris:
+                try:
+                    if url_domain == get_netloc(c_redirect_uri):
+                        logger.debug(f"Found a match for the URL url: {url}")
+                        return True
+                except Exception as e:
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.exception(e)
+        # the URL doesn't belong to any of the client domains
+        raise ValidationError(message="URL not allowed as next route")
 
 
 class ClassManager:
