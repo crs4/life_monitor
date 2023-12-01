@@ -113,8 +113,7 @@ jobs:
             type=ref,event=pr
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-            type=raw,value=${{ env.SOFTWARE_VERSION_AS_DOCKER_TAG }}
-            type=raw,value=${{ env.SOFTWARE_VERSION_AS_DOCKER_TAG}}.build${{ github.run_number }}
+            type=semver,pattern={{major}}.{{minor}}.build${{ github.run_number }}
             type=sha
           labels: |
             org.opencontainers.image.version=${{ env.SOFTWARE_VERSION }}.build${{ github.run_number }}
