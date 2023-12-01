@@ -26,6 +26,7 @@ from flask import (current_app, flash, redirect, render_template, request,
                    session, url_for)
 from flask.sessions import SecureCookieSessionInterface
 from flask_login import login_required, login_user, logout_user
+from wtforms import ValidationError
 
 from lifemonitor.cache import Timeout, cached, clear_cache
 from lifemonitor.utils import (NextRouteRegistry, next_route_aware,
@@ -173,6 +174,13 @@ def profile(form=None, passwordForm=None, currentView=None,
     logger.debug(OpenApiSpecs.get_instance().authorization_code_scopes)
     back_param = request.args.get('back', None)
     logger.debug("detected back param: %r", back_param)
+    # validate back_param if defined
+    try:
+        NextRouteRegistry.validate_next_route_url(back_param)
+    except ValidationError:
+        logger.warning("Detected an invalid back param: %r", back_param)
+        back_param = None
+    # set the back param in the session
     if not current_user.is_authenticated:
         session['lm_back_param'] = back_param
         logger.debug("Pushing back param to session")
@@ -273,7 +281,18 @@ def login():
             session.pop('_flashes', None)
             flash("You have logged in", category="success")
             return redirect(NextRouteRegistry.pop(url_for("auth.profile")))
-    flask.session['lm_back_param'] = flask.request.args.get('back', None)
+    # Configure the next route
+    back_param = session.pop('lm_back_param', None)
+    # validate back_param if defined
+    if back_param:
+        try:
+            NextRouteRegistry.validate_next_route_url(back_param)
+        except ValidationError:
+            flash('back param not valid')
+            back_param = None
+    # set the back param in the session
+    flask.session['lm_back_param'] = back_param
+    # render the login page
     return render_template("auth/login.j2", form=form,
                            providers=get_providers(), is_service_available=is_service_alive)
 
@@ -283,11 +302,21 @@ def login():
 def logout():
     logout_user()
     session.pop('_flashes', None)
-    back_param = session.pop('lm_back_param', None)
     flash("You have logged out", category="success")
+    # Configure the next route
     NextRouteRegistry.clear()
+    back_param = session.pop('lm_back_param', None)
+    # validate back_param if defined
+    if back_param:
+        try:
+            NextRouteRegistry.validate_next_route_url(back_param)
+        except ValidationError:
+            flash('back param not valid')
+            back_param = None
+    # set the next route
     next_route = request.args.get('next', '/logout' if back_param else '/')
-    logger.debug("Next route after logout: %r", next_route)
+    logger.debug("Next route after logout: %r", back_param)
+    # redirect to the next route
     return redirect(next_route)
 
 
@@ -404,8 +433,8 @@ def update_github_settings():
 def enable_registry_sync():
     logger.debug("Enabling Registry Sync")
     if request.method == "GET":
-        registry_name = request.values.get("s", None)
-        logger.debug("Enabling Registry Sync: %r", registry_name)
+        registry_name = session.pop("registry_integration_name", None)
+        logger.debug("Registry name from session: %r", registry_name)
         if not registry_name:  # or not current_user.check_secret(registry_name, secret_hash):
             flash("Invalid request: registry cannot be enabled", category="error")
             return redirect(url_for('auth.profile', currentView='registrySettingsTab'))
@@ -426,6 +455,7 @@ def enable_registry_sync():
             settings.set_token(registry.client_name, registry_user_identity.tokens['read write'])
             current_user.save()
             flash(f"Integration with registry \"{registry.name}\" enabled", category="success")
+            logger.info("Integration with registry \"%s\" enabled", registry.name)
             return redirect(url_for('auth.profile', currentView='registrySettingsTab'))
 
     elif request.method == "POST":
@@ -433,11 +463,13 @@ def enable_registry_sync():
             RegistrySettingsForm
         form = RegistrySettingsForm()
         if form.validate_on_submit():
-            registry_name = request.values.get("registry", None)
-            return redirect(f'/oauth2/login/{registry_name}?scope=read+write&next=/account/enable_registry_sync?s={registry_name}')
-        else:
-            logger.debug("Form validation failed")
-            flash("Invalid request", category="error")
+            registry_name = form.registry.data
+            if registry_name:
+                session['registry_integration_name'] = registry_name
+                return redirect(f'/oauth2/login/{registry_name}?scope=read+write&next=/account/enable_registry_sync')
+        # if we are here, then the form validation failed
+        logger.debug("Form validation failed")
+        flash("Invalid request", category="error")
     # set a fallback redirect
     return redirect(url_for('auth.profile', currentView='registrySettingsTab'))
 
@@ -446,16 +478,22 @@ def enable_registry_sync():
 @login_required
 def disable_registry_sync():
     from lifemonitor.api.models.registries.forms import RegistrySettingsForm
-    registry_name = request.values.get("registry", None)
-    logger.debug("Disabling sync for registry: %r", registry_name)
     form = RegistrySettingsForm()
-    settings = current_user.registry_settings
+    # extract the registry name from the form
+    # and check if it is valid
+    registry_name = form.registry.data
+    if not registry_name:
+        flash("Invalid request: registry not found", category="error")
+        return redirect(url_for('auth.profile', currentView='registrySettingsTab'))
+    # validate the form
     if form.validate_on_submit():
+        logger.debug("Disabling sync for registry: %r", registry_name)
         from lifemonitor.api.models import WorkflowRegistry
         registry = WorkflowRegistry.find_by_client_name(registry_name)
         if not registry:
             flash("Invalid request: registry not found", category="error")
             return redirect(url_for('auth.profile', currentView='registrySettingsTab'))
+        settings = current_user.registry_settings
         settings.remove_registry(registry_name)
         current_user.save()
         flash(f"Integration with registry \"{registry.name}\" disabled", category="success")
