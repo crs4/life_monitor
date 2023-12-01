@@ -115,8 +115,8 @@ jobs:
             type=semver,enable=${{env.USE_SOFTWARE_VERSION}},pattern={{version}}
             type=semver,enable=${{env.USE_SOFTWARE_VERSION}},event=tag,pattern={{major}}.{{minor}}
             type=semver,enable=${{env.USE_SOFTWARE_VERSION}},pattern={{major}}.{{minor}}.build${{ github.run_number }}
-            type=raw,event=tag,value=${{ env.SOFTWARE_VERSION_AS_DOCKER_TAG }}
-            type=raw,event=tag,value=${{ env.SOFTWARE_VERSION_AS_DOCKER_TAG}}.build${{ github.run_number }}
+            type=raw,event=tag,enable=${{env.USE_SOFTWARE_VERSION}},value=${{ env.SOFTWARE_VERSION_AS_DOCKER_TAG }}
+            type=raw,event=tag,enable=${{env.USE_SOFTWARE_VERSION}},value=${{ env.SOFTWARE_VERSION_AS_DOCKER_TAG}}.build${{ github.run_number }}
             type=sha
           labels: |
             org.opencontainers.image.version=${{ env.SOFTWARE_VERSION }}.build${{ github.run_number }}
