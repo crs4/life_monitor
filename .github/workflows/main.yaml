@@ -34,7 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10"]
+        python-version: ["3.11"]
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v3
@@ -53,7 +53,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10"]
+        python-version: ["3.11"]
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v3
@@ -96,6 +96,7 @@ jobs:
           echo "Current Software Version: ${sw_version}"
           echo "SOFTWARE_VERSION=${sw_version}" >> $GITHUB_ENV
           echo "SOFTWARE_VERSION_AS_DOCKER_TAG=$( echo ${sw_version} | tr + _ )" >> $GITHUB_ENV
+          echo "USE_SOFTWARE_VERSION=$( if [[ $(git tag --points-at HEAD) ]]; then echo true; else echo false; fi )" >> $GITHUB_ENV
       # Set Docker image
       - name: Set Docker repository
         run: |
@@ -111,10 +112,11 @@ jobs:
           tags: |
             type=ref,event=branch
             type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=raw,value=${{ env.SOFTWARE_VERSION_AS_DOCKER_TAG }}
-            type=raw,value=${{ env.SOFTWARE_VERSION_AS_DOCKER_TAG}}.build${{ github.run_number }}
+            type=semver,enable=${{env.USE_SOFTWARE_VERSION}},pattern={{version}}
+            type=semver,enable=${{env.USE_SOFTWARE_VERSION}},event=tag,pattern={{major}}.{{minor}}
+            type=semver,enable=${{env.USE_SOFTWARE_VERSION}},pattern={{major}}.{{minor}}.build${{ github.run_number }}
+            type=raw,event=tag,value=${{ env.SOFTWARE_VERSION_AS_DOCKER_TAG }}
+            type=raw,event=tag,value=${{ env.SOFTWARE_VERSION_AS_DOCKER_TAG}}.build${{ github.run_number }}
             type=sha
           labels: |
             org.opencontainers.image.version=${{ env.SOFTWARE_VERSION }}.build${{ github.run_number }}
