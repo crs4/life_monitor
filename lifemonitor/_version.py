@@ -494,12 +494,15 @@ def get_versions():
     verbose = cfg.verbose
 
     try:
+        logger.debug("Trying keywords...")
         return git_versions_from_keywords(get_keywords(), cfg.tag_prefix,
                                           verbose)
     except NotThisMethod:
+        logger.debug("Not keywords")
         pass
 
     try:
+        logger.debug("Trying expanded keywords...")
         root = os.path.realpath(__file__)
         # versionfile_source is the relative path from the top of the source
         # tree (where the .git directory might live) to this file. Invert
@@ -513,7 +516,9 @@ def get_versions():
                 "date": None}
 
     try:
+        logger.debug("Trying pieces_from_vcs...")
         pieces = git_pieces_from_vcs(cfg.tag_prefix, root, verbose)
+        logger.debug("pieces_from_vcs returned %r", pieces)
         return render(pieces, cfg.style)
     except NotThisMethod:
         pass
