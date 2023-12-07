@@ -10,10 +10,14 @@
 """Git implementation of _version.py."""
 
 import errno
+import logging
 import os
 import re
 import subprocess
 import sys
+
+# define logger
+logger = logging.getLogger(__name__)
 
 
 def get_keywords():
@@ -233,70 +237,68 @@ def git_pieces_from_vcs(tag_prefix, root, verbose, run_command=run_command):
             print("Directory %s not under git control" % root)
         raise NotThisMethod("'git rev-parse --git-dir' returned error")
 
-    # if there is a tag matching tag_prefix, this yields TAG-NUM-gHEX[-dirty]
-    # if there isn't one, this yields HEX[-dirty] (no NUM)
-    describe_out, rc = run_command(GITS, ["describe", "--tags", "--dirty",
-                                          "--always", "--long",
-                                          "--match", "%s*" % tag_prefix],
-                                   cwd=root)
+    # init pieces to store git information
+    pieces = {}
+
+    # try to extract the current branch
+    branch, rc = run_command(GITS, ["rev-parse", "--abbrev-ref", "HEAD"], cwd=root, hide_stderr=True)
+    if not branch:
+        if verbose:
+            print("Unable to detect git branch")
+        raise NotThisMethod("'git rev-parse --abbrev-ref HEAD' returned error")
+    logger.debug("Detected branch: %s", branch)
+
+    # declare closest_tag
+    closest_tag = None
+
+    # get all tags sorted by date
+    all_tags_sorted, rc = run_command(GITS, ["for-each-ref", "--sort=creatordate", "--format='%(refname:short)'", "refs/tags"],
+                                      cwd=root)
+    logger.debug("all_tags_sorted: %r", all_tags_sorted)
+    if len(all_tags_sorted.splitlines()) == 0:
+        logger.warning("No tags found")
+    else:
+        closest_tag = all_tags_sorted.splitlines()[-1].strip("'")
+        logger.debug("Closest tag: %r", closest_tag)
+    pieces["closest-tag"] = closest_tag
+
+    # detect the branch of the closest tag
+    closest_tag_branch = None
+    if closest_tag is not None:
+        # get the commit hash of the tag
+        closest_tag_branch_out, rc = run_command(GITS, ["branch", f"--contains=tags/{closest_tag}"], cwd=root)
+        logger.debug("Closest Tag branch output: %r", closest_tag_branch_out)
+        if len(closest_tag_branch_out.splitlines()) == 0:
+            logger.warning("No branch found for tag %r", closest_tag)
+        else:
+            closest_tag_branch = closest_tag_branch_out.splitlines()[0].strip("* ")
+            logger.debug("Closest tag branch: %r", closest_tag_branch)
+    pieces["closest-tag-branch"] = closest_tag_branch
+
     # --long was added in git-1.5.5
-    if describe_out is None:
-        raise NotThisMethod("'git describe' failed")
-    describe_out = describe_out.strip()
     full_out, rc = run_command(GITS, ["rev-parse", "HEAD"], cwd=root)
     if full_out is None:
         raise NotThisMethod("'git rev-parse' failed")
     full_out = full_out.strip()
 
-    pieces = {}
+    pieces["branch"] = branch
     pieces["long"] = full_out
-    pieces["short"] = full_out[:7]  # maybe improved later
+    pieces["short"] = full_out[:7]
     pieces["error"] = None
 
-    # parse describe_out. It will be like TAG-NUM-gHEX[-dirty] or HEX[-dirty]
-    # TAG might have hyphens.
-    git_describe = describe_out
+    # compute distance to latest tag (if any) or to the master branch if no tags are found
+    distance = 0
+    distance_from = closest_tag if closest_tag and closest_tag_branch in ("master", branch) else "master"
+    distance_out, rc = run_command(GITS, ["rev-list", "%s..HEAD" % distance_from, "--count"], cwd=root)
+    if distance_out is None:
+        raise NotThisMethod("'git rev-list' failed")
+    distance = int(distance_out.strip())
+    logger.debug(f"Computed distance from '{distance_from}': %d", distance)
+    pieces["distance"] = distance
 
-    # look for -dirty suffix
-    dirty = git_describe.endswith("-dirty")
+    # compute dirty
+    dirty = True if distance > 0 else False
     pieces["dirty"] = dirty
-    if dirty:
-        git_describe = git_describe[:git_describe.rindex("-dirty")]
-
-    # now we have TAG-NUM-gHEX or HEX
-
-    if "-" in git_describe:
-        # TAG-NUM-gHEX
-        mo = re.search(r'^(.+)-(\d+)-g([0-9a-f]+)$', git_describe)
-        if not mo:
-            # unparseable. Maybe git-describe is misbehaving?
-            pieces["error"] = ("unable to parse git-describe output: '%s'"
-                               % describe_out)
-            return pieces
-
-        # tag
-        full_tag = mo.group(1)
-        if not full_tag.startswith(tag_prefix):
-            if verbose:
-                fmt = "tag '%s' doesn't start with prefix '%s'"
-                print(fmt % (full_tag, tag_prefix))
-            pieces["error"] = ("tag '%s' doesn't start with prefix '%s'"
-                               % (full_tag, tag_prefix))
-            return pieces
-        pieces["closest-tag"] = full_tag[len(tag_prefix):]
-
-        # distance: number of commits since tag
-        pieces["distance"] = int(mo.group(2))
-
-        # commit: short hex revision ID
-        pieces["short"] = mo.group(3)
-
-    else:
-        # HEX: no tags
-        pieces["closest-tag"] = None
-        count_out, rc = run_command(GITS, ["rev-list", "HEAD", "--count"],
-                                    cwd=root)
-        pieces["distance"] = int(count_out)  # total number of commits
 
     # commit date: see ISO-8601 comment in git_versions_from_keywords()
     date = run_command(GITS, ["show", "-s", "--format=%ci", "HEAD"],
