@@ -290,10 +290,13 @@ def git_pieces_from_vcs(tag_prefix, root, verbose, run_command=run_command):
     distance = 0
     distance_from = closest_tag if closest_tag and closest_tag_branch in ("master", branch) else "master"
     distance_out, rc = run_command(GITS, ["rev-list", "%s..HEAD" % distance_from, "--count"], cwd=root)
+    if rc != 0:
+        distance_out, rc = run_command(GITS, ["rev-list", "origin/%s..HEAD" % distance_from, "--count"], cwd=root)
     if distance_out is None:
-        raise NotThisMethod("'git rev-list' failed")
-    distance = int(distance_out.strip())
-    logger.debug(f"Computed distance from '{distance_from}': %d", distance)
+        logger.warning(f"Unable to detect distance from {distance_from}")
+    else:
+        distance = int(distance_out.strip())
+        logger.debug(f"Computed distance from '{distance_from}': %d", distance)
     pieces["distance"] = distance
 
     # compute dirty
