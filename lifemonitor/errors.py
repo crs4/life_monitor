@@ -22,8 +22,9 @@ import logging
 import sys
 from typing import Dict
 
-from flask import Blueprint, render_template, request, url_for
+from flask import Blueprint, escape, render_template, request, url_for
 
+from lifemonitor.utils import validate_url
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
@@ -55,13 +56,13 @@ def parametric_page():
 
 
 @blueprint.route("/400")
-def handle_400(e: Exception = None):
+def handle_400(e: Exception = None, description: str = None):
     return handle_error(
         {
             "title": "LifeMonitor: Page not found",
             "code": "404",
-            "description": str(e)
-            if e and logger.isEnabledFor(logging.DEBUG)
+            "description": description if description
+            else str(e) if e and logger.isEnabledFor(logging.DEBUG)
             else "Bad request",
         }
     )
@@ -71,6 +72,9 @@ def handle_400(e: Exception = None):
 def handle_404(e: Exception = None):
     resource = request.args.get("resource", None, type=str)
     logger.debug(f"Resource not found: {resource}")
+    if resource and not validate_url(resource):
+        logger.error(f"Invalid URL: {resource}")
+        return handle_400(description="Invalid URL")
     return handle_error(
         {
             "title": "LifeMonitor: Page not found",
@@ -87,6 +91,8 @@ def handle_404(e: Exception = None):
 def handle_405(e: Exception = None):
     resource = request.args.get("resource", None, type=str)
     logger.debug(f"Method not allowed for resource {resource}")
+    if not validate_url(resource):
+        return handle_400(decription="Invalid URL")
     return handle_error(
         {
             "title": "LifeMonitor: Method not allowed",
@@ -94,7 +100,7 @@ def handle_405(e: Exception = None):
             "description": str(e)
             if e and logger.isEnabledFor(logging.DEBUG)
             else "Method not allowed for this resource",
-            "resource": resource,
+            "resource": escape(resource),
         }
     )
 

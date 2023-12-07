@@ -42,11 +42,16 @@ spec:
             - name: LIFEMONITOR_MAINTENANCE_MODE
               value: {{ .Values.maintenanceMode.enabled | quote }}
             - name: LIFEMONITOR_CONSOLE_ENABLED
-              value: {{ .Values.console.enabled | quote }}
+              value: {{ .Values.console.enabled | quote }}          
           volumeMounts:
           {{- include "lifemonitor.common-volume-mounts" . | nindent 12 }}
             - name: lifemonitor-backup
               mountPath: "/var/data/backup"
+            {{- if .Values.backup.encryptionKeySecret }}
+            - name: lifemonitor-backup-encryption-key
+              mountPath: "/lm/backup/encryption.key"
+              subPath: encryptionKey
+            {{- end }}
           ports:
             - name: http
               containerPort: 8000
@@ -57,6 +62,11 @@ spec:
         - name: lifemonitor-backup
           persistentVolumeClaim:
             claimName: {{ .Values.backup.existingClaim }}
+        {{- if .Values.backup.encryptionKeySecret }}
+        - name: lifemonitor-backup-encryption-key
+          secret:
+            secretName: {{ .Values.backup.encryptionKeySecret }}
+        {{- end }}
       {{- include "lifemonitor.common-volume" . | nindent 8 }}
       {{- with .Values.lifemonitor.nodeSelector }}
       nodeSelector:

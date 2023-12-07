@@ -20,15 +20,27 @@ def lifemonitor_json():
 
 
 def validate():
-    data = None
-    logger.debug("Request: data", request.data)
+    '''
+    Validates the data in the request body against the lifemonitor.json schema
+    :return: a JSON representation of the validation result
+
+    :raises BadRequestException: if the data in the request body is not valid
+    :raises ValidationError: if the data in the request body is not valid
+    '''
+    logger.debug("Request data: %r", request.data)
+    # Try to parse the data as YAML
     try:
-        data = yaml.unsafe_load(request.data)
-    except yaml.parser.ParserError:
-        data = json.loads(request.data.decode())
-        logger.debug("JSON data: %r", data)
-    finally:
-        if not data:
+        data = yaml.safe_load(request.data)
+        if data is None:
+            raise ValueError("Data is None after YAML parsing")
+    except (yaml.parser.ParserError, ValueError):
+        try:
+            data = json.loads(request.data.decode())
+        except json.JSONDecodeError:
             raise BadRequestException(title="Invalid file format", detail="It should be a JSON or YAML file")
-    logger.debug("Data: %r", data)
+    # Check if the data is empty
+    if not data:
+        raise BadRequestException(title="Invalid file format", detail="It should be a JSON or YAML file")
+    logger.debug("JSON data to validate: %r", data)
+    # Validate the data
     return ConfigFileValidator.validate(data).to_dict()
