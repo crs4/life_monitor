@@ -89,18 +89,19 @@ def run_command(commands, args, cwd=None, verbose=False, hide_stderr=False,
             if e.errno == errno.ENOENT:
                 continue
             if verbose:
-                print("unable to run %s" % dispcmd)
-                print(e)
+                logger.debug("unable to run %s", dispcmd)
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.exception(e)
             return None, None
     else:
         if verbose:
-            print("unable to find command, tried %s" % (commands,))
+            logger.error("unable to find command, tried %s", (commands,))
         return None, None
     stdout = p.communicate()[0].strip().decode()
     if p.returncode != 0:
         if verbose:
-            print("unable to run %s (error)" % dispcmd)
-            print("stdout was %s" % stdout)
+            logger.error("unable to run %s (error)", dispcmd)
+            logger.error("stdout was %s", stdout)
         return None, p.returncode
     return stdout, p.returncode
 
