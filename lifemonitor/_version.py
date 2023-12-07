@@ -327,19 +327,22 @@ def render_pep440(pieces):
     Exceptions:
     1: no tags. git_describe was just HEX. 0+untagged.DISTANCE.gHEX[.dirty]
     """
+    # determine version name prefix
+    rendered = None
     if pieces["closest-tag"]:
-        rendered = pieces["closest-tag"]
-        if pieces["distance"] or pieces["dirty"]:
-            rendered += plus_or_dot(pieces)
-            rendered += "%d.g%s" % (pieces["distance"], pieces["short"])
-            if pieces["dirty"]:
-                rendered += ".dirty"
-    else:
-        # exception #1
-        rendered = "0+untagged.%d.g%s" % (pieces["distance"],
-                                          pieces["short"])
+        if pieces["branch"] in ("master", pieces["closest-tag-branch"]):
+            rendered = pieces["closest-tag"]
+        elif pieces["branch"] not in ("master", "develop"):
+            rendered = f"develop.{pieces['branch'].replace('/', '-')}"
+        else:
+            rendered = pieces["branch"]
+
+    if pieces["distance"] or pieces["dirty"]:
+        rendered += plus_or_dot(pieces)
+        rendered += "%d.g%s" % (pieces["distance"], pieces["short"])
         if pieces["dirty"]:
             rendered += ".dirty"
+
     return rendered
 
 
