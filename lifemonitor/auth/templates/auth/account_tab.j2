@@ -12,24 +12,37 @@
     <table class="table table-striped">
     <thead>
         <tr>
-        <th style="width: 5px"></th>
-        <th>Provider</th>
-        <th style="width: 100px">User ID</th>
+        <th style="width: 5px; height: 80px;"></th>
+        <th style="height: 80px;">Provider</th>
+        <th style="height: 80px; width: 120px;">User ID</th>
         <th style="width: 120px"></th>
         </tr>
     </thead>
     <tbody>
-    {% for p in providers %}
+    {% for user_identity in user_identities %}
         <tr>
-        <td>{{ macros.render_provider_fa_icon(p, color="black") }}</td>
-        <td>{{p.name}}</td>
-        <td>{% if p.client_name in current_user.oauth_identity %}
-            {{ current_user.oauth_identity[p.client_name].provider_user_id }}
-            {% endif %}</td>
-        {% if p.client_name in current_user.oauth_identity %}
+        <td style="height: 70px; vertical-align: middle;">
+            {{ macros.render_provider_fa_icon(user_identity.provider, color="black") }}
+        </td>
+        <td style="vertical-align: middle;">
+            {{user_identity.provider.name}}
+        </td>
         <td>
+            {% if user_identity.identity %}
+            {{ user_identity.identity.provider_user_id }}
+            <div class="text-muted" style="font-size: 0.8em">
+                <a href="{{user_identity.provider.get_user_profile_page(user_identity.identity)}}" target="_blank" 
+                   title="Click to open '{{user_identity.provider.name}}' website">
+               see on <b>{{user_identity.provider.name}}</b>
+                </a>
+            </div>
+            {% endif %}
+        </td>
+        {% if user_identity.identity %}
+        <td style="vertical-align: middle;">
             {% if current_user.oauth_identity|length > 1 or current_user.has_password %}
-            <a title="Click to unlink your '{{p.client_name}}' identity" onclick="disconnect('{{p.name}}', '{{p.client_name}}')">
+            <a title="Click to unlink your '{{user_identity.provider.client_name}}' identity" 
+               onclick="disconnect('{{user_identity.provider.name}}', '{{user_identity.provider.client_name}}')">
                 <span class="badge bg-success" style="width: 75px; margin-right: 5px;">CONNECTED</span>
                 <i class="fas fa-link fa-xs" style="color: black;"></i>
             </a>
@@ -39,8 +52,9 @@
 
         </td>
         {% else %}
-        <td>            
-            <a href="/oauth2/login/{{p.client_name}}" title="Click to link your '{{p.client_name}}' identity">
+        <td style="vertical-align: middle;">
+            <a href="/oauth2/login/{{user_identity.provider.client_name}}" 
+               title="Click to link your '{{user_identity.provider.client_name}}' identity">
                 <span class="badge bg-primary" style="width: 75px; margin-right: 5px;">CONNECT</span>
                 <i class="fas fa-unlink fa-xs" style="color: black;"></i>                
             </a>
