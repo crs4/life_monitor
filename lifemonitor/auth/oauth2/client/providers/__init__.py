@@ -57,7 +57,11 @@ def new_instance(provider_type, **kwargs):
     m = f"lifemonitor.auth.oauth2.client.providers.{provider_type.lower()}"
     try:
         mod = import_module(m)
-        return getattr(mod, provider_type.capitalize())(**kwargs)
+        provider_type_name = provider_type.capitalize()
+        # override Github identifier
+        if provider_type_name == 'Github':
+            provider_type_name = 'GitHub'
+        return getattr(mod, provider_type_name)(**kwargs)
     except (ModuleNotFoundError, AttributeError) as e:
         logger.exception(e)
         raise OAuth2ProviderNotSupportedException(provider_type=provider_type, orig=e)
