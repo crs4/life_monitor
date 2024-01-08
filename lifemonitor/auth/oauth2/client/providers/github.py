@@ -19,7 +19,10 @@
 # SOFTWARE.
 
 import logging
+
 from flask import current_app
+
+from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
@@ -66,10 +69,17 @@ class GitHub:
         'client_kwargs': {'scope': 'read:user user:email'},
         'userinfo_endpoint': 'https://api.github.com/user',
         'userinfo_compliance_fix': normalize_userinfo,
+        'user_profile_html': 'https://github.com/settings/profile'
     }
 
     def __repr__(self) -> str:
         return f"Github Provider {self.name}"
+
+    @classmethod
+    def get_user_profile_page(cls, user_identity: OAuthIdentity):
+        logger.warning("user: %r", user_identity)
+        # the user profile page can be retrieved without user_provider_id
+        return cls.oauth_config['user_profile_html']
 
     @staticmethod
     def normalize_userinfo(client, data):

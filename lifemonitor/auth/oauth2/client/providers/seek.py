@@ -19,10 +19,13 @@
 # SOFTWARE.
 
 import logging
-import requests
 from urllib.parse import urljoin
+
+import requests
+
 from lifemonitor import exceptions
-from ..models import OAuth2IdentityProvider
+
+from ..models import OAuth2IdentityProvider, OAuthIdentity
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
@@ -74,9 +77,12 @@ class Seek(OAuth2IdentityProvider):
         }
         return params
 
+    def get_user_profile_html(self, provider_user_id) -> str:
+        return urljoin(self.api_base_url,
+                       f'/people/{provider_user_id}?format=json')
+
     def get_user_info(self, provider_user_id, token, normalized=True):
-        response = requests.get(urljoin(self.api_base_url,
-                                        f'/people/{provider_user_id}?format=json'),
+        response = requests.get(self.get_user_profile_html(provider_user_id),
                                 headers={'Authorization': f'Bearer {token["access_token"]}'})
         if response.status_code != 200:
             try:
@@ -90,6 +96,16 @@ class Seek(OAuth2IdentityProvider):
         user_info = response.json()
         logger.debug("USER info: %r", user_info)
         return user_info['data'] if not normalized else self.normalize_userinfo(None, user_info)
+
+    @classmethod
+    def get_user_profile_page(cls, user_identity: OAuthIdentity):
+        logger.debug("user: %r", user_identity)
+        # the user profile page can require user_provider_id
+        if not user_identity:
+            logger.warning("No identity found for user %r", user_identity)
+            return None
+        assert user_identity.provider.name == cls.name, "Invalid user identity"
+        return user_identity.provider.get_user_profile_html(user_identity.provider_user_id)
 
 
 def refresh_oauth2_token(func):
