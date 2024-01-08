@@ -257,6 +257,11 @@ class OAuthIdentity(models.ExternalServiceAccessAuthorization, ModelMixin):
     def user_info(self, value):
         self._user_info = value
 
+    @property
+    def profile_page(self) -> str:
+        logger.debug("Trying to get the user profile page for provider %r...", self.provider.name)
+        return self.provider.get_user_profile_page(self)
+
     def __repr__(self):
         parts = []
         parts.append(self.__class__.__name__)
