@@ -104,7 +104,7 @@ class Seek(OAuth2IdentityProvider):
         if not user_identity:
             logger.warning("No identity found for user %r", user_identity)
             return None
-        assert user_identity.provider.name == cls.name, "Invalid user identity"
+        assert isinstance(user_identity.provider, cls), "Invalid provider"
         return user_identity.provider.get_user_profile_html(user_identity.provider_user_id)
 
 
