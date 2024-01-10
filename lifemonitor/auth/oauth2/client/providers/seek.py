@@ -77,12 +77,14 @@ class Seek(OAuth2IdentityProvider):
         }
         return params
 
-    def get_user_profile_html(self, provider_user_id) -> str:
+    def __get_user_profile__(self, provider_user_id, json_format: bool = False) -> str:
+        format_opt = '?format=json' if json_format else ''
         return urljoin(self.api_base_url,
-                       f'/people/{provider_user_id}?format=json')
+                       f'/people/{provider_user_id}{format_opt}')
 
     def get_user_info(self, provider_user_id, token, normalized=True):
-        response = requests.get(self.get_user_profile_html(provider_user_id),
+        response = requests.get(self.__get_user_profile__(provider_user_id,
+                                                          json_format=True),
                                 headers={'Authorization': f'Bearer {token["access_token"]}'})
         if response.status_code != 200:
             try:
@@ -105,7 +107,7 @@ class Seek(OAuth2IdentityProvider):
             logger.warning("No identity found for user %r", user_identity)
             return None
         assert isinstance(user_identity.provider, cls), "Invalid provider"
-        return user_identity.provider.get_user_profile_html(user_identity.provider_user_id)
+        return user_identity.provider.__get_user_profile__(user_identity.provider_user_id)
 
 
 def refresh_oauth2_token(func):
