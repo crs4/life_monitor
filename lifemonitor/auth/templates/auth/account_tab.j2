@@ -33,7 +33,9 @@
             <div class="text-muted" style="font-size: 0.8em">
                 <a href="{{user_identity.provider.get_user_profile_page(user_identity.identity)}}" target="_blank" 
                    title="Click to open '{{user_identity.provider.name}}' website">
-               see profile on <b>{{user_identity.provider.name}}</b>
+               <div class="d-inline m-n3">
+               see <b>{{user_identity.provider.name}}</b> profile
+               </div>
                 </a>
             </div>
             {% endif %}
