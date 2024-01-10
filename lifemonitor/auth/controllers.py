@@ -197,7 +197,7 @@ def profile(form=None, passwordForm=None, currentView=None,
     logger.debug("Current user: %r", current_user)
     user_identities = [{
         "name": p.name,
-        "identity": current_user.oauth_identity.get(p.name, None)
+        "identity": current_user.oauth_identity.get(p.client_name, None)
         if current_user and current_user.is_authenticated else None,
         "provider": p
     } for p in OAuth2IdentityProvider.all()

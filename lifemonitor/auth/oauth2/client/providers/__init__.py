@@ -53,14 +53,16 @@ def refresh_oauth2_provider_token(func, name):
     return decorated_view
 
 
+def __find_module_attribute__(m, attribute_name: str):
+    attribute_map = {k.lower(): k for k in dir(m) if not k.startswith('__')}
+    return attribute_map[attribute_name.lower()]
+
+
 def new_instance(provider_type, **kwargs):
     m = f"lifemonitor.auth.oauth2.client.providers.{provider_type.lower()}"
     try:
         mod = import_module(m)
-        provider_type_name = provider_type.capitalize()
-        # override Github identifier
-        if provider_type_name == 'Github':
-            provider_type_name = 'GitHub'
+        provider_type_name = __find_module_attribute__(mod, provider_type)
         return getattr(mod, provider_type_name)(**kwargs)
     except (ModuleNotFoundError, AttributeError) as e:
         logger.exception(e)

@@ -455,7 +455,7 @@ class OAuth2IdentityProvider(db.Model, ModelMixin):
 
     @property
     def _provider_config_helper(self):
-        return provider_config_helper_new_instance(self.name)
+        return provider_config_helper_new_instance(self.client_name)
 
     def get_user_profile_page(self, user_identity: OAuthIdentity) -> str:
         try:
