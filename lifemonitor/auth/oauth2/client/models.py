@@ -33,6 +33,12 @@ from authlib.integrations.requests_client import OAuth2Session
 from authlib.oauth2.rfc6749 import OAuth2Token as OAuth2TokenBase
 from flask import current_app
 from flask_login import current_user
+from sqlalchemy import DateTime, inspect
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm.attributes import flag_modified
+from sqlalchemy.orm.collections import attribute_mapped_collection
+from sqlalchemy.orm.exc import NoResultFound
+
 from lifemonitor.auth import models
 from lifemonitor.cache import Timeout
 from lifemonitor.db import db
@@ -41,11 +47,8 @@ from lifemonitor.exceptions import (EntityNotFoundException,
                                     NotAuthorizedException)
 from lifemonitor.models import JSON, ModelMixin
 from lifemonitor.utils import assert_service_is_alive, to_snake_case
-from sqlalchemy import DateTime, inspect
-from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm.attributes import flag_modified
-from sqlalchemy.orm.collections import attribute_mapped_collection
-from sqlalchemy.orm.exc import NoResultFound
+
+from .providers import new_instance as provider_config_helper_new_instance
 
 logger = logging.getLogger(__name__)
 
@@ -257,6 +260,11 @@ class OAuthIdentity(models.ExternalServiceAccessAuthorization, ModelMixin):
     def user_info(self, value):
         self._user_info = value
 
+    @property
+    def profile_page(self) -> str:
+        logger.debug("Trying to get the user profile page for provider %r...", self.provider.name)
+        return self.provider.get_user_profile_page(self)
+
     def __repr__(self):
         parts = []
         parts.append(self.__class__.__name__)
@@ -444,6 +452,19 @@ class OAuth2IdentityProvider(db.Model, ModelMixin):
             raise LifeMonitorException(title="Unable to decode user data", details=str(e))
         return data if not normalized \
             else self.normalize_userinfo(OAuth2Registry.get_instance().get_client(self.name), data)
+
+    @property
+    def _provider_config_helper(self):
+        return provider_config_helper_new_instance(self.client_name)
+
+    def get_user_profile_page(self, user_identity: OAuthIdentity) -> str:
+        try:
+            logger.warning("user info: %r", user_identity)
+            return self._provider_config_helper.get_user_profile_page(user_identity)
+        except AttributeError as e:
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.exception("Unable to get the user profile page for provider: %r", e)
+            return None
 
     @property
     def api_base_url(self):

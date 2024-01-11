@@ -19,7 +19,10 @@
 # SOFTWARE.
 
 import logging
+
 from flask import current_app
+
+from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
@@ -69,11 +72,18 @@ class LsAAI:
         'client_kwargs': {'scope': 'openid profile email orcid eduperson_principal_name'},
         'userinfo_endpoint': 'https://proxy.aai.lifescience-ri.eu/OIDC/userinfo',
         'userinfo_compliance_fix': normalize_userinfo,
+        'user_profile_html': 'https://profile.aai.lifescience-ri.eu/profile',
         'server_metadata_url': 'https://proxy.aai.lifescience-ri.eu/.well-known/openid-configuration'
     }
 
     def __repr__(self) -> str:
         return "LSAAI Provider"
+
+    @classmethod
+    def get_user_profile_page(cls, user_identity: OAuthIdentity):
+        logger.warning("user: %r", user_identity)
+        # the user profile page can be retrieved without user_provider_id
+        return cls.oauth_config['user_profile_html']
 
     @staticmethod
     def normalize_userinfo(client, data):
