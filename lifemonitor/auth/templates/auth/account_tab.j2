@@ -10,8 +10,60 @@
 
 <div class="card-body p-1 table-responsive">    
     <table class="table table-striped table-hover">
+        <thead>
+            <tr>
+                <th style="width: 60px;" scope="col"></th>
+                <th style="width: 100%;"scope="col">Provider</th>
+                <th style="width: 300px;" scope="col">User ID</th>
+                <th style="min-width: 150px;" scope="col"></th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for user_identity in user_identities %}
+            <tr style="height: 80px;">
+                <td class="align-middle text-center">
+                    {{ macros.render_provider_fa_icon(user_identity.provider, color="black") }}
+                </td>
+                <td class="align-middle">
+                    {{user_identity.provider.name}}
+                </td>
+                <td class="align-middle" style="min-width: 150px; max-width: 300px;">
+                    {% if user_identity.identity %}
+                    <div>
+                    {{ user_identity.identity.provider_user_id }}
+                    </div>
                     <div class="text-muted small mt-2" style="font-size: 0.7em;">
+                        <a class="fw-light" href="{{user_identity.provider.get_user_profile_page(user_identity.identity)}}" 
+                        target="_blank" 
+                        title="Click to open '{{user_identity.provider.name}}' website">
+                            see <b>{{user_identity.provider.name}}</b> profile
+                        </a>
+                    </div>
+                    {% endif %}
+                </td>
+                <td class="align-middle text-center" style="min-width: 150px;">
+                {% if user_identity.identity %}
+                    {% if current_user.oauth_identity|length > 1 or current_user.has_password %}
+                    <a title="Click to unlink your '{{user_identity.provider.client_name}}' identity" 
+                    onclick="disconnect('{{user_identity.provider.name}}', '{{user_identity.provider.client_name}}')">
+                        <span class="badge bg-success" style="width: 75px; margin-right: 5px;">CONNECTED</span>
+                            <i class="fas fa-link fa-xs" style="color: black;"></i>
+                    </a>
+                    {% else %}
+                    <span class="badge bg-success" style="width: 75px; margin-right: 5px;">CONNECTED</span>
                     <i class="fas fa-link fa-xs" style="color: gray;"></i>
+                    {% endif %}
+                {% else %}
+                    <a href="/oauth2/login/{{user_identity.provider.client_name}}" 
+                    title="Click to link your '{{user_identity.provider.client_name}}' identity">
+                        <span class="badge bg-primary" style="width: 75px; margin-right: 5px;">CONNECT</span>
+                        <i class="fas fa-unlink fa-xs" style="color: black;"></i>
+                    </a>
+                {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
     </table>
 </div>
 
