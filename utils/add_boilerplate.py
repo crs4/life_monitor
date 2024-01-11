@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2022 CRS4
+# Copyright (c) 2020-2024 CRS4
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -24,7 +24,7 @@ import os
 import re
 
 
-THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+THIS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir)
 THIS_YEAR = datetime.date.today().year
 C_YEAR = f"2020-{THIS_YEAR}"
 LICENSE_FN = os.path.join(THIS_DIR, "LICENSE")
