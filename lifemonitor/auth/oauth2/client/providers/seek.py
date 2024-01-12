@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2022 CRS4
+# Copyright (c) 2020-2024 CRS4
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -19,10 +19,13 @@
 # SOFTWARE.
 
 import logging
-import requests
 from urllib.parse import urljoin
+
+import requests
+
 from lifemonitor import exceptions
-from ..models import OAuth2IdentityProvider
+
+from ..models import OAuth2IdentityProvider, OAuthIdentity
 
 # Config a module level logger
 logger = logging.getLogger(__name__)
@@ -74,9 +77,14 @@ class Seek(OAuth2IdentityProvider):
         }
         return params
 
+    def __get_user_profile__(self, provider_user_id, json_format: bool = False) -> str:
+        format_opt = '?format=json' if json_format else ''
+        return urljoin(self.api_base_url,
+                       f'/people/{provider_user_id}{format_opt}')
+
     def get_user_info(self, provider_user_id, token, normalized=True):
-        response = requests.get(urljoin(self.api_base_url,
-                                        f'/people/{provider_user_id}?format=json'),
+        response = requests.get(self.__get_user_profile__(provider_user_id,
+                                                          json_format=True),
                                 headers={'Authorization': f'Bearer {token["access_token"]}'})
         if response.status_code != 200:
             try:
@@ -90,6 +98,16 @@ class Seek(OAuth2IdentityProvider):
         user_info = response.json()
         logger.debug("USER info: %r", user_info)
         return user_info['data'] if not normalized else self.normalize_userinfo(None, user_info)
+
+    @classmethod
+    def get_user_profile_page(cls, user_identity: OAuthIdentity):
+        logger.debug("user: %r", user_identity)
+        # the user profile page can require user_provider_id
+        if not user_identity:
+            logger.warning("No identity found for user %r", user_identity)
+            return None
+        assert isinstance(user_identity.provider, cls), "Invalid provider"
+        return user_identity.provider.__get_user_profile__(user_identity.provider_user_id)
 
 
 def refresh_oauth2_token(func):

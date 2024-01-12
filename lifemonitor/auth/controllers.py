@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2022 CRS4
+# Copyright (c) 2020-2024 CRS4
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -28,6 +28,7 @@ from flask.sessions import SecureCookieSessionInterface
 from flask_login import login_required, login_user, logout_user
 from wtforms import ValidationError
 
+from lifemonitor.auth.oauth2.client.models import OAuth2IdentityProvider
 from lifemonitor.cache import Timeout, cached, clear_cache
 from lifemonitor.utils import (NextRouteRegistry, next_route_aware,
                                split_by_crlf)
@@ -191,7 +192,17 @@ def profile(form=None, passwordForm=None, currentView=None,
         logger.debug("detected back param: %s", back_param)
     from lifemonitor.api.models.registries.forms import RegistrySettingsForm
     from lifemonitor.integrations.github.forms import GithubSettingsForm
-    logger.warning("Request args: %r", request.args)
+    logger.debug("Request args: %r", request.args)
+    logger.debug("Providers: %r", get_providers())
+    logger.debug("Current user: %r", current_user)
+    user_identities = [{
+        "name": p.name,
+        "identity": current_user.oauth_identity.get(p.client_name, None)
+        if current_user and current_user.is_authenticated else None,
+        "provider": p
+    } for p in OAuth2IdentityProvider.all()
+    ]
+    logger.debug("User identities: %r", user_identities)
     return render_template("auth/profile.j2",
                            passwordForm=passwordForm or SetPasswordForm(),
                            emailForm=emailForm or EmailForm(),
@@ -204,6 +215,7 @@ def profile(form=None, passwordForm=None, currentView=None,
                            providers=get_providers(), currentView=currentView,
                            oauth2_generic_client_scopes=OpenApiSpecs.get_instance().authorization_code_scopes,
                            api_base_url=get_external_server_url(),
+                           user_identities=user_identities,
                            back_param=back_param)
 
 

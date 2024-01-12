@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2022 CRS4
+# Copyright (c) 2020-2024 CRS4
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -53,11 +53,17 @@ def refresh_oauth2_provider_token(func, name):
     return decorated_view
 
 
+def __find_module_attribute__(m, attribute_name: str):
+    attribute_map = {k.lower(): k for k in dir(m) if not k.startswith('__')}
+    return attribute_map[attribute_name.lower()]
+
+
 def new_instance(provider_type, **kwargs):
     m = f"lifemonitor.auth.oauth2.client.providers.{provider_type.lower()}"
     try:
         mod = import_module(m)
-        return getattr(mod, provider_type.capitalize())(**kwargs)
+        provider_type_name = __find_module_attribute__(mod, provider_type)
+        return getattr(mod, provider_type_name)(**kwargs)
     except (ModuleNotFoundError, AttributeError) as e:
         logger.exception(e)
         raise OAuth2ProviderNotSupportedException(provider_type=provider_type, orig=e)
