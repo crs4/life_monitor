@@ -411,7 +411,27 @@ against the schema
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
     <pre class="example"><code>{
-  "items" : [ null, null ]
+  "items" : [ {
+    "identifier" : "148",
+    "registry" : {
+      "identifier" : "workflowhub_dev",
+      "name" : "WorkflowHub Dev",
+      "uuid" : "aa16c6a9-571f-4a62-976f-60ea514ad2c1",
+      "uri" : "https://dev.workflowhub.eu/"
+    },
+    "public" : false,
+    "name" : "COVID-19 Workflow"
+  }, {
+    "identifier" : "148",
+    "registry" : {
+      "identifier" : "workflowhub_dev",
+      "name" : "WorkflowHub Dev",
+      "uuid" : "aa16c6a9-571f-4a62-976f-60ea514ad2c1",
+      "uri" : "https://dev.workflowhub.eu/"
+    },
+    "public" : false,
+    "name" : "COVID-19 Workflow"
+  } ]
 }</code></pre>
 
     <h3 class="field-label">Produces</h3>
@@ -472,7 +492,10 @@ against the schema
 
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
-    <pre class="example"><code>null</code></pre>
+    <pre class="example"><code>{
+  "latest_version" : "1.0",
+  "versions" : [ "1.0", "1.0-dev" ]
+}</code></pre>
 
     <h3 class="field-label">Produces</h3>
     This API call produces the following media types according to the <span class="header">Accept</span> request header;
@@ -540,7 +563,113 @@ LifeMonitor by the current (authenticated) user.</div>
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
     <pre class="example"><code>{
-  "items" : [ null, null ]
+  "items" : [ {
+    "versions" : [ {
+      "uuid" : "21ac72ec-b9a5-49e0-b5a6-1322b8b54552",
+      "version" : "1.0",
+      "ro_crate" : {
+        "links" : {
+          "origin" : "https://dev.workflowhub.eu/workflows/142/content_blobs/240/download",
+          "download" : "https://api.lifemonitor.eu/ro_crates/10/download"
+        }
+      },
+      "is_latest" : false,
+      "submitter" : {
+        "id" : 501,
+        "username" : "lm"
+      }
+    } ],
+    "status" : {
+      "latest_builds" : [ {
+        "duration" : 2648,
+        "instance" : {
+          "managed" : false,
+          "name" : "test_instance_1",
+          "service" : {
+            "type" : "travis",
+            "url" : "https://travis-ci.org/"
+          },
+          "resource" : "github/seek4science/seek"
+        },
+        "build_id" : "167444",
+        "links" : {
+          "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
+        },
+        "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+        "timestamp" : "1616427012"
+      }, {
+        "duration" : 2648,
+        "instance" : {
+          "managed" : false,
+          "name" : "test_instance_1",
+          "service" : {
+            "type" : "travis",
+            "url" : "https://travis-ci.org/"
+          },
+          "resource" : "github/seek4science/seek"
+        },
+        "build_id" : "167444",
+        "links" : {
+          "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
+        },
+        "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+        "timestamp" : "1616427012"
+      } ]
+    }
+  }, {
+    "versions" : [ {
+      "uuid" : "21ac72ec-b9a5-49e0-b5a6-1322b8b54552",
+      "version" : "1.0",
+      "ro_crate" : {
+        "links" : {
+          "origin" : "https://dev.workflowhub.eu/workflows/142/content_blobs/240/download",
+          "download" : "https://api.lifemonitor.eu/ro_crates/10/download"
+        }
+      },
+      "is_latest" : false,
+      "submitter" : {
+        "id" : 501,
+        "username" : "lm"
+      }
+    } ],
+    "status" : {
+      "latest_builds" : [ {
+        "duration" : 2648,
+        "instance" : {
+          "managed" : false,
+          "name" : "test_instance_1",
+          "service" : {
+            "type" : "travis",
+            "url" : "https://travis-ci.org/"
+          },
+          "resource" : "github/seek4science/seek"
+        },
+        "build_id" : "167444",
+        "links" : {
+          "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
+        },
+        "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+        "timestamp" : "1616427012"
+      }, {
+        "duration" : 2648,
+        "instance" : {
+          "managed" : false,
+          "name" : "test_instance_1",
+          "service" : {
+            "type" : "travis",
+            "url" : "https://travis-ci.org/"
+          },
+          "resource" : "github/seek4science/seek"
+        },
+        "build_id" : "167444",
+        "links" : {
+          "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
+        },
+        "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+        "timestamp" : "1616427012"
+      } ]
+    }
+  } ]
 }</code></pre>
 
     <h3 class="field-label">Produces</h3>
@@ -603,7 +732,11 @@ current (authenticated) user</div>
 
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
-    <pre class="example"><code>null</code></pre>
+    <pre class="example"><code>{
+  "public" : false,
+  "name" : "COVID-19 Workflow",
+  "uuid" : "123e4567-e89b-12d3-a456-426614174000"
+}</code></pre>
 
     <h3 class="field-label">Produces</h3>
     This API call produces the following media types according to the <span class="header">Accept</span> request header;
@@ -862,7 +995,113 @@ OAuth2 clients can use this endpoint.</p>
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
     <pre class="example"><code>{
-  "items" : [ null, null ]
+  "items" : [ {
+    "versions" : [ {
+      "uuid" : "21ac72ec-b9a5-49e0-b5a6-1322b8b54552",
+      "version" : "1.0",
+      "ro_crate" : {
+        "links" : {
+          "origin" : "https://dev.workflowhub.eu/workflows/142/content_blobs/240/download",
+          "download" : "https://api.lifemonitor.eu/ro_crates/10/download"
+        }
+      },
+      "is_latest" : false,
+      "submitter" : {
+        "id" : 501,
+        "username" : "lm"
+      }
+    } ],
+    "status" : {
+      "latest_builds" : [ {
+        "duration" : 2648,
+        "instance" : {
+          "managed" : false,
+          "name" : "test_instance_1",
+          "service" : {
+            "type" : "travis",
+            "url" : "https://travis-ci.org/"
+          },
+          "resource" : "github/seek4science/seek"
+        },
+        "build_id" : "167444",
+        "links" : {
+          "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
+        },
+        "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+        "timestamp" : "1616427012"
+      }, {
+        "duration" : 2648,
+        "instance" : {
+          "managed" : false,
+          "name" : "test_instance_1",
+          "service" : {
+            "type" : "travis",
+            "url" : "https://travis-ci.org/"
+          },
+          "resource" : "github/seek4science/seek"
+        },
+        "build_id" : "167444",
+        "links" : {
+          "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
+        },
+        "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+        "timestamp" : "1616427012"
+      } ]
+    }
+  }, {
+    "versions" : [ {
+      "uuid" : "21ac72ec-b9a5-49e0-b5a6-1322b8b54552",
+      "version" : "1.0",
+      "ro_crate" : {
+        "links" : {
+          "origin" : "https://dev.workflowhub.eu/workflows/142/content_blobs/240/download",
+          "download" : "https://api.lifemonitor.eu/ro_crates/10/download"
+        }
+      },
+      "is_latest" : false,
+      "submitter" : {
+        "id" : 501,
+        "username" : "lm"
+      }
+    } ],
+    "status" : {
+      "latest_builds" : [ {
+        "duration" : 2648,
+        "instance" : {
+          "managed" : false,
+          "name" : "test_instance_1",
+          "service" : {
+            "type" : "travis",
+            "url" : "https://travis-ci.org/"
+          },
+          "resource" : "github/seek4science/seek"
+        },
+        "build_id" : "167444",
+        "links" : {
+          "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
+        },
+        "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+        "timestamp" : "1616427012"
+      }, {
+        "duration" : 2648,
+        "instance" : {
+          "managed" : false,
+          "name" : "test_instance_1",
+          "service" : {
+            "type" : "travis",
+            "url" : "https://travis-ci.org/"
+          },
+          "resource" : "github/seek4science/seek"
+        },
+        "build_id" : "167444",
+        "links" : {
+          "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
+        },
+        "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+        "timestamp" : "1616427012"
+      } ]
+    }
+  } ]
 }</code></pre>
 
     <h3 class="field-label">Produces</h3>
@@ -925,7 +1164,11 @@ OAuth2 clients can use this endpoint.</p>
 
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
-    <pre class="example"><code>null</code></pre>
+    <pre class="example"><code>{
+  "public" : false,
+  "name" : "COVID-19 Workflow",
+  "uuid" : "123e4567-e89b-12d3-a456-426614174000"
+}</code></pre>
 
     <h3 class="field-label">Produces</h3>
     This API call produces the following media types according to the <span class="header">Accept</span> request header;
@@ -990,7 +1233,113 @@ OAuth2 clients can use this endpoint.</p>
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
     <pre class="example"><code>{
-  "items" : [ null, null ]
+  "items" : [ {
+    "versions" : [ {
+      "uuid" : "21ac72ec-b9a5-49e0-b5a6-1322b8b54552",
+      "version" : "1.0",
+      "ro_crate" : {
+        "links" : {
+          "origin" : "https://dev.workflowhub.eu/workflows/142/content_blobs/240/download",
+          "download" : "https://api.lifemonitor.eu/ro_crates/10/download"
+        }
+      },
+      "is_latest" : false,
+      "submitter" : {
+        "id" : 501,
+        "username" : "lm"
+      }
+    } ],
+    "status" : {
+      "latest_builds" : [ {
+        "duration" : 2648,
+        "instance" : {
+          "managed" : false,
+          "name" : "test_instance_1",
+          "service" : {
+            "type" : "travis",
+            "url" : "https://travis-ci.org/"
+          },
+          "resource" : "github/seek4science/seek"
+        },
+        "build_id" : "167444",
+        "links" : {
+          "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
+        },
+        "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+        "timestamp" : "1616427012"
+      }, {
+        "duration" : 2648,
+        "instance" : {
+          "managed" : false,
+          "name" : "test_instance_1",
+          "service" : {
+            "type" : "travis",
+            "url" : "https://travis-ci.org/"
+          },
+          "resource" : "github/seek4science/seek"
+        },
+        "build_id" : "167444",
+        "links" : {
+          "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
+        },
+        "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+        "timestamp" : "1616427012"
+      } ]
+    }
+  }, {
+    "versions" : [ {
+      "uuid" : "21ac72ec-b9a5-49e0-b5a6-1322b8b54552",
+      "version" : "1.0",
+      "ro_crate" : {
+        "links" : {
+          "origin" : "https://dev.workflowhub.eu/workflows/142/content_blobs/240/download",
+          "download" : "https://api.lifemonitor.eu/ro_crates/10/download"
+        }
+      },
+      "is_latest" : false,
+      "submitter" : {
+        "id" : 501,
+        "username" : "lm"
+      }
+    } ],
+    "status" : {
+      "latest_builds" : [ {
+        "duration" : 2648,
+        "instance" : {
+          "managed" : false,
+          "name" : "test_instance_1",
+          "service" : {
+            "type" : "travis",
+            "url" : "https://travis-ci.org/"
+          },
+          "resource" : "github/seek4science/seek"
+        },
+        "build_id" : "167444",
+        "links" : {
+          "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
+        },
+        "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+        "timestamp" : "1616427012"
+      }, {
+        "duration" : 2648,
+        "instance" : {
+          "managed" : false,
+          "name" : "test_instance_1",
+          "service" : {
+            "type" : "travis",
+            "url" : "https://travis-ci.org/"
+          },
+          "resource" : "github/seek4science/seek"
+        },
+        "build_id" : "167444",
+        "links" : {
+          "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
+        },
+        "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+        "timestamp" : "1616427012"
+      } ]
+    }
+  } ]
 }</code></pre>
 
     <h3 class="field-label">Produces</h3>
@@ -1047,7 +1396,11 @@ OAuth2 clients can use this endpoint.</p>
 
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
-    <pre class="example"><code>null</code></pre>
+    <pre class="example"><code>{
+  "public" : false,
+  "name" : "COVID-19 Workflow",
+  "uuid" : "123e4567-e89b-12d3-a456-426614174000"
+}</code></pre>
 
     <h3 class="field-label">Produces</h3>
     This API call produces the following media types according to the <span class="header">Accept</span> request header;
@@ -1519,7 +1872,75 @@ OAuth2 clients can use this endpoint.</p>
 
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
-    <pre class="example"><code>null</code></pre>
+    <pre class="example"><code>{
+  "reason" : "reason",
+  "roc_suite" : "#test1",
+  "instances" : [ {
+    "managed" : false,
+    "name" : "test_instance_1",
+    "service" : {
+      "type" : "travis",
+      "url" : "https://travis-ci.org/"
+    },
+    "resource" : "github/seek4science/seek"
+  }, {
+    "managed" : false,
+    "name" : "test_instance_1",
+    "service" : {
+      "type" : "travis",
+      "url" : "https://travis-ci.org/"
+    },
+    "resource" : "github/seek4science/seek"
+  } ],
+  "name" : "Workflow Test Suite",
+  "latest_builds" : [ {
+    "duration" : 2648,
+    "instance" : {
+      "managed" : false,
+      "name" : "test_instance_1",
+      "service" : {
+        "type" : "travis",
+        "url" : "https://travis-ci.org/"
+      },
+      "resource" : "github/seek4science/seek"
+    },
+    "build_id" : "167444",
+    "links" : {
+      "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
+    },
+    "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+    "timestamp" : "1616427012"
+  }, {
+    "duration" : 2648,
+    "instance" : {
+      "managed" : false,
+      "name" : "test_instance_1",
+      "service" : {
+        "type" : "travis",
+        "url" : "https://travis-ci.org/"
+      },
+      "resource" : "github/seek4science/seek"
+    },
+    "build_id" : "167444",
+    "links" : {
+      "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
+    },
+    "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+    "timestamp" : "1616427012"
+  } ],
+  "definition" : {
+    "test_engine" : {
+      "path" : "path",
+      "test_engine" : {
+        "test_engine" : {
+          "type" : "planemo",
+          "version" : ">=0.70"
+        }
+      }
+    }
+  },
+  "uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c"
+}</code></pre>
 
     <h3 class="field-label">Produces</h3>
     This API call produces the following media types according to the <span class="header">Accept</span> request header;
@@ -1649,7 +2070,45 @@ OAuth2 clients can use this endpoint.</p>
 
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
-    <pre class="example"><code>null</code></pre>
+    <pre class="example"><code>{
+  "reason" : "reason",
+  "latest_builds" : [ {
+    "duration" : 2648,
+    "instance" : {
+      "managed" : false,
+      "name" : "test_instance_1",
+      "service" : {
+        "type" : "travis",
+        "url" : "https://travis-ci.org/"
+      },
+      "resource" : "github/seek4science/seek"
+    },
+    "build_id" : "167444",
+    "links" : {
+      "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
+    },
+    "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+    "timestamp" : "1616427012"
+  }, {
+    "duration" : 2648,
+    "instance" : {
+      "managed" : false,
+      "name" : "test_instance_1",
+      "service" : {
+        "type" : "travis",
+        "url" : "https://travis-ci.org/"
+      },
+      "resource" : "github/seek4science/seek"
+    },
+    "build_id" : "167444",
+    "links" : {
+      "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
+    },
+    "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+    "timestamp" : "1616427012"
+  } ],
+  "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c"
+}</code></pre>
 
     <h3 class="field-label">Produces</h3>
     This API call produces the following media types according to the <span class="header">Accept</span> request header;
@@ -1835,7 +2294,21 @@ through the service's API).</li>
 
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
-    <pre class="example"><code>null</code></pre>
+    <pre class="example"><code>{
+  "identities" : {
+    "seek" : {
+      "sub" : 1,
+      "username" : "lm",
+      "provider" : {
+        "type" : "seek",
+        "name" : "workflowhub",
+        "uri" : "https://workflowhub.eu/"
+      }
+    }
+  },
+  "id" : 501,
+  "username" : "lm"
+}</code></pre>
 
     <h3 class="field-label">Produces</h3>
     This API call produces the following media types according to the <span class="header">Accept</span> request header;
@@ -2382,7 +2855,113 @@ through the service's API).</li>
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
     <pre class="example"><code>{
-  "items" : [ null, null ]
+  "items" : [ {
+    "versions" : [ {
+      "uuid" : "21ac72ec-b9a5-49e0-b5a6-1322b8b54552",
+      "version" : "1.0",
+      "ro_crate" : {
+        "links" : {
+          "origin" : "https://dev.workflowhub.eu/workflows/142/content_blobs/240/download",
+          "download" : "https://api.lifemonitor.eu/ro_crates/10/download"
+        }
+      },
+      "is_latest" : false,
+      "submitter" : {
+        "id" : 501,
+        "username" : "lm"
+      }
+    } ],
+    "status" : {
+      "latest_builds" : [ {
+        "duration" : 2648,
+        "instance" : {
+          "managed" : false,
+          "name" : "test_instance_1",
+          "service" : {
+            "type" : "travis",
+            "url" : "https://travis-ci.org/"
+          },
+          "resource" : "github/seek4science/seek"
+        },
+        "build_id" : "167444",
+        "links" : {
+          "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
+        },
+        "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+        "timestamp" : "1616427012"
+      }, {
+        "duration" : 2648,
+        "instance" : {
+          "managed" : false,
+          "name" : "test_instance_1",
+          "service" : {
+            "type" : "travis",
+            "url" : "https://travis-ci.org/"
+          },
+          "resource" : "github/seek4science/seek"
+        },
+        "build_id" : "167444",
+        "links" : {
+          "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
+        },
+        "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+        "timestamp" : "1616427012"
+      } ]
+    }
+  }, {
+    "versions" : [ {
+      "uuid" : "21ac72ec-b9a5-49e0-b5a6-1322b8b54552",
+      "version" : "1.0",
+      "ro_crate" : {
+        "links" : {
+          "origin" : "https://dev.workflowhub.eu/workflows/142/content_blobs/240/download",
+          "download" : "https://api.lifemonitor.eu/ro_crates/10/download"
+        }
+      },
+      "is_latest" : false,
+      "submitter" : {
+        "id" : 501,
+        "username" : "lm"
+      }
+    } ],
+    "status" : {
+      "latest_builds" : [ {
+        "duration" : 2648,
+        "instance" : {
+          "managed" : false,
+          "name" : "test_instance_1",
+          "service" : {
+            "type" : "travis",
+            "url" : "https://travis-ci.org/"
+          },
+          "resource" : "github/seek4science/seek"
+        },
+        "build_id" : "167444",
+        "links" : {
+          "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
+        },
+        "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+        "timestamp" : "1616427012"
+      }, {
+        "duration" : 2648,
+        "instance" : {
+          "managed" : false,
+          "name" : "test_instance_1",
+          "service" : {
+            "type" : "travis",
+            "url" : "https://travis-ci.org/"
+          },
+          "resource" : "github/seek4science/seek"
+        },
+        "build_id" : "167444",
+        "links" : {
+          "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
+        },
+        "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+        "timestamp" : "1616427012"
+      } ]
+    }
+  } ]
 }</code></pre>
 
     <h3 class="field-label">Produces</h3>
@@ -2436,7 +3015,11 @@ through the service's API).</li>
 
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
-    <pre class="example"><code>null</code></pre>
+    <pre class="example"><code>{
+  "public" : false,
+  "name" : "COVID-19 Workflow",
+  "uuid" : "123e4567-e89b-12d3-a456-426614174000"
+}</code></pre>
 
     <h3 class="field-label">Produces</h3>
     This API call produces the following media types according to the <span class="header">Accept</span> request header;
@@ -2599,7 +3182,113 @@ through the service's API).</li>
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
     <pre class="example"><code>{
-  "items" : [ null, null ]
+  "items" : [ {
+    "versions" : [ {
+      "uuid" : "21ac72ec-b9a5-49e0-b5a6-1322b8b54552",
+      "version" : "1.0",
+      "ro_crate" : {
+        "links" : {
+          "origin" : "https://dev.workflowhub.eu/workflows/142/content_blobs/240/download",
+          "download" : "https://api.lifemonitor.eu/ro_crates/10/download"
+        }
+      },
+      "is_latest" : false,
+      "submitter" : {
+        "id" : 501,
+        "username" : "lm"
+      }
+    } ],
+    "status" : {
+      "latest_builds" : [ {
+        "duration" : 2648,
+        "instance" : {
+          "managed" : false,
+          "name" : "test_instance_1",
+          "service" : {
+            "type" : "travis",
+            "url" : "https://travis-ci.org/"
+          },
+          "resource" : "github/seek4science/seek"
+        },
+        "build_id" : "167444",
+        "links" : {
+          "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
+        },
+        "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+        "timestamp" : "1616427012"
+      }, {
+        "duration" : 2648,
+        "instance" : {
+          "managed" : false,
+          "name" : "test_instance_1",
+          "service" : {
+            "type" : "travis",
+            "url" : "https://travis-ci.org/"
+          },
+          "resource" : "github/seek4science/seek"
+        },
+        "build_id" : "167444",
+        "links" : {
+          "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
+        },
+        "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+        "timestamp" : "1616427012"
+      } ]
+    }
+  }, {
+    "versions" : [ {
+      "uuid" : "21ac72ec-b9a5-49e0-b5a6-1322b8b54552",
+      "version" : "1.0",
+      "ro_crate" : {
+        "links" : {
+          "origin" : "https://dev.workflowhub.eu/workflows/142/content_blobs/240/download",
+          "download" : "https://api.lifemonitor.eu/ro_crates/10/download"
+        }
+      },
+      "is_latest" : false,
+      "submitter" : {
+        "id" : 501,
+        "username" : "lm"
+      }
+    } ],
+    "status" : {
+      "latest_builds" : [ {
+        "duration" : 2648,
+        "instance" : {
+          "managed" : false,
+          "name" : "test_instance_1",
+          "service" : {
+            "type" : "travis",
+            "url" : "https://travis-ci.org/"
+          },
+          "resource" : "github/seek4science/seek"
+        },
+        "build_id" : "167444",
+        "links" : {
+          "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
+        },
+        "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+        "timestamp" : "1616427012"
+      }, {
+        "duration" : 2648,
+        "instance" : {
+          "managed" : false,
+          "name" : "test_instance_1",
+          "service" : {
+            "type" : "travis",
+            "url" : "https://travis-ci.org/"
+          },
+          "resource" : "github/seek4science/seek"
+        },
+        "build_id" : "167444",
+        "links" : {
+          "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
+        },
+        "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+        "timestamp" : "1616427012"
+      } ]
+    }
+  } ]
 }</code></pre>
 
     <h3 class="field-label">Produces</h3>
@@ -2773,7 +3462,26 @@ through the service's API).</li>
 
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
-    <pre class="example"><code>null</code></pre>
+    <pre class="example"><code>{
+  "previous_versions" : [ {
+    "uuid" : "21ac72ec-b9a5-49e0-b5a6-1322b8b54552",
+    "version" : "0.1",
+    "links" : {
+      "origin" : "http://webserver:5000/download?file=ro-crate-galaxy-sortchangecase.crate.zip"
+    },
+    "ro_crate" : {
+      "links" : {
+        "download" : "https://lm:8000/workflows/123e4567-e89b-12d3-a456-426614174000/rocrate/1.0/download",
+        "metadata" : "https://lm:8000/workflows/123e4567-e89b-12d3-a456-426614174000/rocrate/1.0/metadata",
+        "origin" : "http://webserver:5000/download?file=ro-crate-galaxy-sortchangecase.crate.zip"
+      }
+    },
+    "submitter" : {
+      "id" : 501,
+      "username" : "lm"
+    }
+  } ]
+}</code></pre>
 
     <h3 class="field-label">Produces</h3>
     This API call produces the following media types according to the <span class="header">Accept</span> request header;
@@ -2835,7 +3543,67 @@ through the service's API).</li>
 
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
-    <pre class="example"><code>null</code></pre>
+    <pre class="example"><code>{
+  "reason" : "reason",
+  "latest_builds" : [ {
+    "duration" : 2648,
+    "instance" : {
+      "managed" : false,
+      "name" : "test_instance_1",
+      "service" : {
+        "type" : "travis",
+        "url" : "https://travis-ci.org/"
+      },
+      "resource" : "github/seek4science/seek"
+    },
+    "build_id" : "167444",
+    "links" : {
+      "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
+    },
+    "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+    "timestamp" : "1616427012"
+  }, {
+    "duration" : 2648,
+    "instance" : {
+      "managed" : false,
+      "name" : "test_instance_1",
+      "service" : {
+        "type" : "travis",
+        "url" : "https://travis-ci.org/"
+      },
+      "resource" : "github/seek4science/seek"
+    },
+    "build_id" : "167444",
+    "links" : {
+      "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
+    },
+    "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+    "timestamp" : "1616427012"
+  } ],
+  "version" : {
+    "submitter" : {
+      "id" : 501,
+      "username" : "lm"
+    },
+    "submitter_id" : "submitter_id",
+    "uuid" : "123e4567-e44b-12f3-a456-426614174123",
+    "version" : "1.0",
+    "is_latest" : true,
+    "ro_crate" : {
+      "links" : {
+        "download" : "https://api.lifemonitor.eu/ro_crates/11/download",
+        "origin" : "https://dev.workflowhub.eu/workflows/152/content_blobs/240/download"
+      }
+    },
+    "authors" : [ {
+      "name" : "Josiah Carberry",
+      "url" : "https://orcid.org/0000-0002-1825-0097"
+    }, {
+      "name" : "Josiah Carberry",
+      "url" : "https://orcid.org/0000-0002-1825-0097"
+    } ]
+  }
+}</code></pre>
 
     <h3 class="field-label">Produces</h3>
     This API call produces the following media types according to the <span class="header">Accept</span> request header;
@@ -2902,7 +3670,143 @@ through the service's API).</li>
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
     <pre class="example"><code>{
-  "items" : [ null, null ]
+  "items" : [ {
+    "reason" : "reason",
+    "roc_suite" : "#test1",
+    "instances" : [ {
+      "managed" : false,
+      "name" : "test_instance_1",
+      "service" : {
+        "type" : "travis",
+        "url" : "https://travis-ci.org/"
+      },
+      "resource" : "github/seek4science/seek"
+    }, {
+      "managed" : false,
+      "name" : "test_instance_1",
+      "service" : {
+        "type" : "travis",
+        "url" : "https://travis-ci.org/"
+      },
+      "resource" : "github/seek4science/seek"
+    } ],
+    "name" : "Workflow Test Suite",
+    "latest_builds" : [ {
+      "duration" : 2648,
+      "instance" : {
+        "managed" : false,
+        "name" : "test_instance_1",
+        "service" : {
+          "type" : "travis",
+          "url" : "https://travis-ci.org/"
+        },
+        "resource" : "github/seek4science/seek"
+      },
+      "build_id" : "167444",
+      "links" : {
+        "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
+      },
+      "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+      "timestamp" : "1616427012"
+    }, {
+      "duration" : 2648,
+      "instance" : {
+        "managed" : false,
+        "name" : "test_instance_1",
+        "service" : {
+          "type" : "travis",
+          "url" : "https://travis-ci.org/"
+        },
+        "resource" : "github/seek4science/seek"
+      },
+      "build_id" : "167444",
+      "links" : {
+        "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
+      },
+      "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+      "timestamp" : "1616427012"
+    } ],
+    "definition" : {
+      "test_engine" : {
+        "path" : "path",
+        "test_engine" : {
+          "test_engine" : {
+            "type" : "planemo",
+            "version" : ">=0.70"
+          }
+        }
+      }
+    },
+    "uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c"
+  }, {
+    "reason" : "reason",
+    "roc_suite" : "#test1",
+    "instances" : [ {
+      "managed" : false,
+      "name" : "test_instance_1",
+      "service" : {
+        "type" : "travis",
+        "url" : "https://travis-ci.org/"
+      },
+      "resource" : "github/seek4science/seek"
+    }, {
+      "managed" : false,
+      "name" : "test_instance_1",
+      "service" : {
+        "type" : "travis",
+        "url" : "https://travis-ci.org/"
+      },
+      "resource" : "github/seek4science/seek"
+    } ],
+    "name" : "Workflow Test Suite",
+    "latest_builds" : [ {
+      "duration" : 2648,
+      "instance" : {
+        "managed" : false,
+        "name" : "test_instance_1",
+        "service" : {
+          "type" : "travis",
+          "url" : "https://travis-ci.org/"
+        },
+        "resource" : "github/seek4science/seek"
+      },
+      "build_id" : "167444",
+      "links" : {
+        "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
+      },
+      "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+      "timestamp" : "1616427012"
+    }, {
+      "duration" : 2648,
+      "instance" : {
+        "managed" : false,
+        "name" : "test_instance_1",
+        "service" : {
+          "type" : "travis",
+          "url" : "https://travis-ci.org/"
+        },
+        "resource" : "github/seek4science/seek"
+      },
+      "build_id" : "167444",
+      "links" : {
+        "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
+      },
+      "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+      "timestamp" : "1616427012"
+    } ],
+    "definition" : {
+      "test_engine" : {
+        "path" : "path",
+        "test_engine" : {
+          "test_engine" : {
+            "type" : "planemo",
+            "version" : ">=0.70"
+          }
+        }
+      }
+    },
+    "uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c"
+  } ]
 }</code></pre>
 
     <h3 class="field-label">Produces</h3>
@@ -2967,7 +3871,42 @@ through the service's API).</li>
 
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
-    <pre class="example"><code>null</code></pre>
+    <pre class="example"><code>{
+  "registries" : [ {
+    "identifier" : "workflowhub_dev",
+    "name" : "WorkflowHub Dev",
+    "uuid" : "aa16c6a9-571f-4a62-976f-60ea514ad2c1",
+    "uri" : "https://dev.workflowhub.eu/"
+  }, {
+    "identifier" : "workflowhub_dev",
+    "name" : "WorkflowHub Dev",
+    "uuid" : "aa16c6a9-571f-4a62-976f-60ea514ad2c1",
+    "uri" : "https://dev.workflowhub.eu/"
+  } ],
+  "version" : {
+    "submitter" : {
+      "id" : 501,
+      "username" : "lm"
+    },
+    "submitter_id" : "submitter_id",
+    "uuid" : "123e4567-e44b-12f3-a456-426614174123",
+    "version" : "1.0",
+    "is_latest" : true,
+    "ro_crate" : {
+      "links" : {
+        "download" : "https://api.lifemonitor.eu/ro_crates/11/download",
+        "origin" : "https://dev.workflowhub.eu/workflows/152/content_blobs/240/download"
+      }
+    },
+    "authors" : [ {
+      "name" : "Josiah Carberry",
+      "url" : "https://orcid.org/0000-0002-1825-0097"
+    }, {
+      "name" : "Josiah Carberry",
+      "url" : "https://orcid.org/0000-0002-1825-0097"
+    } ]
+  }
+}</code></pre>
 
     <h3 class="field-label">Produces</h3>
     This API call produces the following media types according to the <span class="header">Accept</span> request header;
@@ -3023,7 +3962,28 @@ through the service's API).</li>
 
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
-    <pre class="example"><code>null</code></pre>
+    <pre class="example"><code>{
+  "workflow" : {
+    "public" : false,
+    "name" : "COVID-19 Workflow",
+    "uuid" : "123e4567-e89b-12d3-a456-426614174000"
+  },
+  "versions" : [ {
+    "uuid" : "21ac72ec-b9a5-49e0-b5a6-1322b8b54552",
+    "version" : "1.0",
+    "ro_crate" : {
+      "links" : {
+        "origin" : "https://dev.workflowhub.eu/workflows/142/content_blobs/240/download",
+        "download" : "https://api.lifemonitor.eu/ro_crates/10/download"
+      }
+    },
+    "is_latest" : false,
+    "submitter" : {
+      "id" : 501,
+      "username" : "lm"
+    }
+  } ]
+}</code></pre>
 
     <h3 class="field-label">Produces</h3>
     This API call produces the following media types according to the <span class="header">Accept</span> request header;
