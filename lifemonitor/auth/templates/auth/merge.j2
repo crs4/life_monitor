@@ -15,24 +15,24 @@
       <h5 class="login-box-msg text-bold">Merge Account</h5>
       <p class="font-weight-light">
         If you want to merge another 
-        account into this one, log in to that account here. 
+        account into this one, log in to that account here.
         That account must have a password set.</p>
       <form method="POST">
         {{ form.hidden_tag() }}
         {{ macros.render_custom_field(form.username,caption="identity username",disabled="true")}}
         {{ macros.render_custom_field(form.password,caption="identity password") }}
 
-        <div class="text-center my-4 row">            
+        <div class="text-center my-4 row">
           <div class="col-6">
             <a href="{{ url_for("auth.profile") }}" class="btn btn-block btn-secondary">
             Back
-            </a>          
+            </a>
           </div>
           <div class="col-6">
             <button type="submit"
                 class="btn btn-block btn-primary">
               Merge
-            </button>         
+            </button>
           </div>
         </div>
 
