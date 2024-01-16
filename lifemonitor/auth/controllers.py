@@ -551,7 +551,10 @@ def merge():
                 )
                 return profile()
     # render the merge page
-    return render_template("auth/merge.j2", form=form)
+    return render_template("auth/merge.j2", form=form, identity={
+        "username": username,
+        "provider": provider
+    })
 
 
 @blueprint.route("/create_apikey", methods=("POST",))
