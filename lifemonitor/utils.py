@@ -1070,6 +1070,7 @@ class NextRouteRegistry(object):
         # if the route is not defined as param, try to get it from the registry
         if route is None:
             registry = cls._get_route_registry()
+            logger.debug("Route registry: %r", registry)
             try:
                 route = registry.pop()
                 logger.debug("Route registry changed: %r", registry)
@@ -1082,6 +1083,7 @@ class NextRouteRegistry(object):
             return route or default
         # validate the actual route
         try:
+            logger.debug("Validating route: %r", route)
             cls.validate_next_route_url(route)
         except ValidationError as e:
             logger.error(e)
@@ -1108,11 +1110,13 @@ class NextRouteRegistry(object):
         # check whether the URL is valid
         url_domain = None
         try:
+            logger.debug("Validating URL: %r", url)
             url_domain = get_netloc(url)
         except Exception as e:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.exception(e)
         # check whether a url domain has been extracted
+        logger.debug("URL domain: %r", url_domain)
         if url_domain is None:
             raise ValidationError("Invalid URL: unable to detect domain")
         # check if the URL domain matches the main domain of the back-end app
