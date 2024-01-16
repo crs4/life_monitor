@@ -1081,6 +1081,9 @@ class NextRouteRegistry(object):
                 cls._save_route_registry(registry)
         if skipValidation:
             return route or default
+        # if the route is not defined, set the default route as next route
+        if not route:
+            route = default
         # validate the actual route
         try:
             logger.debug("Validating route: %r", route)
