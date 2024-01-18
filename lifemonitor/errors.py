@@ -55,6 +55,18 @@ def parametric_page():
         return handle_500()
 
 
+def handle_error(e: Exception):
+    status = getattr(e, 'status', 500)
+    try:
+        handler = getattr(error_handlers, f"handle_{status}")
+        logger.debug(f"Handling error code: {status}")
+        return handler(e)
+    except ValueError as e:
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f"Error handling error code: {e}")
+        return handle_500(e)
+
+
 @blueprint.route("/400")
 def handle_400(e: Exception = None, description: str = None):
     return __handle_error__(
@@ -148,7 +160,10 @@ def __handle_error__(error: Dict[str, str]):
     back_url = request.args.get("back_url", url_for("auth.profile"))
     # parse Accept header
     accept = request.headers.get("Accept", "text/html")
-    if "application/json" in accept:
+    content_type = request.headers.get("Content-Type")
+    if "application/json" == accept \
+            or 'application/json' == content_type \
+            or 'application/problem+json' == content_type:
         # return error as JSON
         return error, error.get("code", 500)
     try:
