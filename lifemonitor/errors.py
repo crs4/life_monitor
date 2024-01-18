@@ -57,7 +57,7 @@ def parametric_page():
 
 @blueprint.route("/400")
 def handle_400(e: Exception = None, description: str = None):
-    return handle_error(
+    return __handle_error__(
         {
             "title": getattr(e, 'title', None) or "LifeMonitor: Page not found",
             "code": "404",
@@ -75,7 +75,7 @@ def handle_404(e: Exception = None):
     if resource and not validate_url(resource):
         logger.error(f"Invalid URL: {resource}")
         return handle_400(description="Invalid URL")
-    return handle_error(
+    return __handle_error__(
         {
             "title": getattr(e, 'title', None) or "LifeMonitor: Page not found",
             "code": "404",
@@ -93,7 +93,7 @@ def handle_405(e: Exception = None):
     logger.debug(f"Method not allowed for resource {resource}")
     if not validate_url(resource):
         return handle_400(decription="Invalid URL")
-    return handle_error(
+    return __handle_error__(
         {
             "title": getattr(e, 'title', None) or "LifeMonitor: Method not allowed",
             "code": "404",
@@ -107,7 +107,7 @@ def handle_405(e: Exception = None):
 
 @blueprint.route("/429")
 def handle_429(e: Exception = None):
-    return handle_error(
+    return __handle_error__(
         {
             "title": getattr(e, 'title', None) or "LifeMonitor: API rate limit exceeded",
             "code": "429",
@@ -120,7 +120,7 @@ def handle_429(e: Exception = None):
 
 @blueprint.route("/500")
 def handle_500(e: Exception = None):
-    return handle_error(
+    return __handle_error__(
         {
             "title": getattr(e, 'title', None) or "LifeMonitor: Internal Server Error",
             "code": "500",
@@ -133,7 +133,7 @@ def handle_500(e: Exception = None):
 
 @blueprint.route("/502")
 def handle_502(e: Exception = None):
-    return handle_error(
+    return __handle_error__(
         {
             "title": getattr(e, 'title', None) or "LifeMonitor: Bad Gateway",
             "code": "502",
@@ -144,7 +144,7 @@ def handle_502(e: Exception = None):
     )
 
 
-def handle_error(error: Dict[str, str]):
+def __handle_error__(error: Dict[str, str]):
     back_url = request.args.get("back_url", url_for("auth.profile"))
     # parse Accept header
     accept = request.headers.get("Accept", "text/html")
