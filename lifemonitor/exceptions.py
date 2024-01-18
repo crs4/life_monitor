@@ -164,6 +164,18 @@ class NotValidROCrateException(LifeMonitorException):
                          detail=detail, status=status, **kwargs)
 
 
+class ROCrateNotFoundException(LifeMonitorException):
+
+    def __init__(self, detail="RO-Crate not found",
+                 type="about:blank", status=404, resource=None, **kwargs):
+        super().__init__(title="Bad request",
+                         detail=detail, status=status, **kwargs)
+        self.resource = resource
+
+    def __str__(self):
+        return f"Unable to find the RO-Crate {self.resource}"
+
+
 class DecodeROCrateException(LifeMonitorException):
 
     def __init__(self, detail="Unable to decode RO-Crate",
