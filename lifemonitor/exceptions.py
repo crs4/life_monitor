@@ -158,7 +158,7 @@ class DownloadException(LifeMonitorException):
 
 class NotValidROCrateException(LifeMonitorException):
 
-    def __init__(self, detail="Not valid RO Crate",
+    def __init__(self, detail="Not valid RO-Crate",
                  type="about:blank", status=400, instance=None, **kwargs):
         super().__init__(title="Bad request",
                          detail=detail, status=status, **kwargs)
@@ -166,7 +166,7 @@ class NotValidROCrateException(LifeMonitorException):
 
 class DecodeROCrateException(LifeMonitorException):
 
-    def __init__(self, detail="Unable to decode RO Crate",
+    def __init__(self, detail="Unable to decode RO-Crate",
                  type="about:blank", status=400, instance=None, **kwargs):
         super().__init__(title="Bad request",
                          detail=detail, status=status, **kwargs)

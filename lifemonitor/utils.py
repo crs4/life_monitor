@@ -515,7 +515,7 @@ class ROCrateLinkContext(object):
         # written into a local file and a local roc_link will be returned.
         logger.debug("Entering ROCrateLinkContext: %r", self.rocrate_or_link)
         if validate_url(self.rocrate_or_link):
-            logger.debug("RO Crate param is a link: %r", self.rocrate_or_link)
+            logger.debug("RO-Crate param is a link: %r", self.rocrate_or_link)
             return self.rocrate_or_link
         if self.rocrate_or_link:
             if os.path.isdir(self.rocrate_or_link) or os.path.isfile(self.rocrate_or_link):
@@ -535,7 +535,7 @@ class ROCrateLinkContext(object):
             except Exception as e:
                 logger.debug(e)
                 raise lm_exceptions.DecodeROCrateException(detail=str(e))
-        logger.debug("RO Crate link is undefined!!!")
+        logger.debug("RO-Crate link is undefined!!!")
         return None
 
     def __exit__(self, type, value, traceback):
