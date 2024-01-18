@@ -1,15 +1,60 @@
 {% extends 'base.j2' %}
 {% import 'macros.j2' as macros %}
+
+{% block body_class %} login-page {% endblock %}
+{% block body_style %} height: auto; {% endblock %}
+
 {% block body %}
-  <h1>Merge Account</h1>
-  <p>If you want to merge another account into this one, log in to that account here. That account must have a password set.</p>
-  <form method="POST">
-    {{ form.hidden_tag() }}
-    {{ macros.render_field(form.username) }}
-    {{ macros.render_field(form.password) }}
-    <div class="buttons">
-      <input type="submit" value="Merge Account">
+<div class="login-box" style="margin: 50px 0;">
+
+  {{ macros.render_logo(class="login-logo", style="width: auto") }}
+
+  <div class="card card-primary card-outline shadow-lg p-3 mb-5 bg-white rounded">
+
+    <div class="card-body login-card-body text-center">
+      <h5 class="login-box-msg text-bold">Merge Account</h5>
+      <p class="font-weight-light">
+        Your <b>{{ identity.provider }}</b> identity is already associated
+        with the existing account under the username <b>{{ identity.username }}</b>.
+      </p>
+      <p class="font-weight-light">
+        If you wish to merge your <b>{{ current_user.username }}</b> account
+        with your <b>{{ identity.username }}</b> account, 
+        please log in to the later (ensure that it has a password set).
+      </p>
+      <form method="POST">
+        {{ form.hidden_tag() }}
+        {{ macros.render_custom_field(form.username,caption="identity username",disabled="true")}}
+        {{ macros.render_custom_field(form.password,caption="identity password") }}
+
+        <div class="text-center my-4 row">
+          <div class="col-6">
+            <a href="{{ url_for("auth.profile") }}" class="btn btn-block btn-secondary">
+            Back
+            </a>
+          </div>
+          <div class="col-6">
+            <button type="submit"
+                class="btn btn-block btn-primary">
+              Merge
+            </button>
+          </div>
+        </div>
+
+      </form>
+      <div>
+        <span style="color: var(--eosc-yellow)">
+        <i class="fas fa-exclamation-triangle"></i>
+        <b class="text-warning font-weight-bold">Warning:</b></span>
+        <span class="font-weight-bold" style="color: var(--test-aborted)">
+          all content from your current <b class="font-weight-light">{{ current_user.username }}</b> account 
+          will be transferred to the 
+          <b class="font-weight-light">{{ identity.username }}</b> account,
+          and then the <b class="font-weight-light">{{ current_user.username }}</b> 
+          account will be deleted!
+        </span>
+      </div>
     </div>
-  </form>
-  <p>Warning: all of the content of that account will be transferred to this account, and then that account will be deleted!</p>
+  </div>
+</div>
 {% endblock %}

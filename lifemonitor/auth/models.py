@@ -105,7 +105,7 @@ class User(db.Model, UserMixin):
     @property
     def current_identity(self):
         from .services import current_registry, current_user
-        if not current_user.is_anonymous:
+        if not current_user.is_anonymous and current_user.id == self.id:
             return self.oauth_identity
         if current_registry:
             for p, i in self.oauth_identity.items():
@@ -130,6 +130,8 @@ class User(db.Model, UserMixin):
         return bool(self.password_hash)
 
     def verify_password(self, password):
+        if not self.password_hash:
+            return False
         return check_password_hash(self.password_hash, password)
 
     def _generate_random_code(self, chars=string.ascii_uppercase + string.digits):
