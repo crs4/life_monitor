@@ -59,7 +59,7 @@ def parametric_page():
 def handle_400(e: Exception = None, description: str = None):
     return handle_error(
         {
-            "title": "LifeMonitor: Page not found",
+            "title": getattr(e, 'title', None) or "LifeMonitor: Page not found",
             "code": "404",
             "description": description if description
             else str(e) if e and logger.isEnabledFor(logging.DEBUG)
@@ -77,9 +77,9 @@ def handle_404(e: Exception = None):
         return handle_400(description="Invalid URL")
     return handle_error(
         {
-            "title": "LifeMonitor: Page not found",
+            "title": getattr(e, 'title', None) or "LifeMonitor: Page not found",
             "code": "404",
-            "description": str(e)
+            "description": getattr(e, 'details', None) or str(e)
             if e and logger.isEnabledFor(logging.DEBUG)
             else "Page not found",
             "resource": resource,
@@ -95,9 +95,9 @@ def handle_405(e: Exception = None):
         return handle_400(decription="Invalid URL")
     return handle_error(
         {
-            "title": "LifeMonitor: Method not allowed",
+            "title": getattr(e, 'title', None) or "LifeMonitor: Method not allowed",
             "code": "404",
-            "description": str(e)
+            "description": getattr(e, 'details', None) or str(e)
             if e and logger.isEnabledFor(logging.DEBUG)
             else "Method not allowed for this resource",
             "resource": escape(resource),
@@ -109,9 +109,9 @@ def handle_405(e: Exception = None):
 def handle_429(e: Exception = None):
     return handle_error(
         {
-            "title": "LifeMonitor: API rate limit exceeded",
+            "title": getattr(e, 'title', None) or "LifeMonitor: API rate limit exceeded",
             "code": "429",
-            "description": str(e)
+            "description": getattr(e, 'details', None) or str(e)
             if e and logger.isEnabledFor(logging.DEBUG)
             else "API rate limit exceeded",
         }
@@ -122,9 +122,9 @@ def handle_429(e: Exception = None):
 def handle_500(e: Exception = None):
     return handle_error(
         {
-            "title": "LifeMonitor: Internal Server Error",
+            "title": getattr(e, 'title', None) or "LifeMonitor: Internal Server Error",
             "code": "500",
-            "description": str(e)
+            "description": getattr(e, 'details', None) or str(e)
             if e and logger.isEnabledFor(logging.DEBUG)
             else "Internal Server Error: the server encountered a temporary error and could not complete your request",
         }
@@ -135,9 +135,9 @@ def handle_500(e: Exception = None):
 def handle_502(e: Exception = None):
     return handle_error(
         {
-            "title": "LifeMonitor: Bad Gateway",
+            "title": getattr(e, 'title', None) or "LifeMonitor: Bad Gateway",
             "code": "502",
-            "description": str(e)
+            "description": getattr(e, 'details', None) or str(e)
             if e and logger.isEnabledFor(logging.DEBUG)
             else "Internal Server Error: the server encountered a temporary error and could not complete your request",
         }
