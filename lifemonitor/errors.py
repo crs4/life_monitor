@@ -24,8 +24,6 @@ from typing import Dict
 
 from flask import Blueprint, escape, render_template, request, url_for
 
-from lifemonitor.utils import validate_url
-
 # Config a module level logger
 logger = logging.getLogger(__name__)
 
@@ -84,6 +82,7 @@ def handle_400(e: Exception = None, description: str = None):
 def handle_404(e: Exception = None):
     resource = request.args.get("resource", None, type=str)
     logger.debug(f"Resource not found: {resource}")
+    from lifemonitor.utils import validate_url
     if resource and not validate_url(resource):
         logger.error(f"Invalid URL: {resource}")
         return handle_400(description="Invalid URL")
@@ -103,6 +102,7 @@ def handle_404(e: Exception = None):
 def handle_405(e: Exception = None):
     resource = request.args.get("resource", None, type=str)
     logger.debug(f"Method not allowed for resource {resource}")
+    from lifemonitor.utils import validate_url
     if not validate_url(resource):
         return handle_400(decription="Invalid URL")
     return __handle_error__(

@@ -26,8 +26,6 @@ from werkzeug.exceptions import HTTPException
 
 from lifemonitor import serializers
 
-from .errors import handle_error
-
 logger = logging.getLogger(__name__)
 
 
@@ -229,6 +227,7 @@ def handle_exception(e: Exception):
     if logger.isEnabledFor(logging.DEBUG):
         logger.exception(e)
     if isinstance(e, LifeMonitorException):
+        from .errors import handle_error
         if request.accept_mimetypes.best == "text/html":
             return handle_error(e)
         return Response(response=e.to_json(),
@@ -259,6 +258,7 @@ def report_problem(status, title, detail=None, type=None, instance=None, extra_i
     Returns a `Problem Details <https://tools.ietf.org/html/draft-ietf-appsawg-http-problem-00>`_ error response.
     """
     if request.accept_mimetypes.best == "text/html":
+        from .errors import handle_error
         return handle_error(LifeMonitorException(title=title, detail=detail, status=status))
     if not type:
         type = 'about:blank'
