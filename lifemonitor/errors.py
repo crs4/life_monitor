@@ -79,7 +79,7 @@ def handle_404(e: Exception = None):
         {
             "title": getattr(e, 'title', None) or "LifeMonitor: Page not found",
             "code": "404",
-            "description": getattr(e, 'details', None) or str(e)
+            "description": getattr(e, 'detail', None) or str(e)
             if e and logger.isEnabledFor(logging.DEBUG)
             else "Page not found",
             "resource": resource,
@@ -97,7 +97,7 @@ def handle_405(e: Exception = None):
         {
             "title": getattr(e, 'title', None) or "LifeMonitor: Method not allowed",
             "code": "404",
-            "description": getattr(e, 'details', None) or str(e)
+            "description": getattr(e, 'detail', None) or str(e)
             if e and logger.isEnabledFor(logging.DEBUG)
             else "Method not allowed for this resource",
             "resource": escape(resource),
@@ -111,7 +111,7 @@ def handle_429(e: Exception = None):
         {
             "title": getattr(e, 'title', None) or "LifeMonitor: API rate limit exceeded",
             "code": "429",
-            "description": getattr(e, 'details', None) or str(e)
+            "description": getattr(e, 'detail', None) or str(e)
             if e and logger.isEnabledFor(logging.DEBUG)
             else "API rate limit exceeded",
         }
@@ -124,7 +124,7 @@ def handle_500(e: Exception = None):
         {
             "title": getattr(e, 'title', None) or "LifeMonitor: Internal Server Error",
             "code": "500",
-            "description": getattr(e, 'details', None) or str(e)
+            "description": getattr(e, 'detail', None) or str(e)
             if e and logger.isEnabledFor(logging.DEBUG)
             else "Internal Server Error: the server encountered a temporary error and could not complete your request",
         }
@@ -137,7 +137,7 @@ def handle_502(e: Exception = None):
         {
             "title": getattr(e, 'title', None) or "LifeMonitor: Bad Gateway",
             "code": "502",
-            "description": getattr(e, 'details', None) or str(e)
+            "description": getattr(e, 'detail', None) or str(e)
             if e and logger.isEnabledFor(logging.DEBUG)
             else "Internal Server Error: the server encountered a temporary error and could not complete your request",
         }
