@@ -24,8 +24,6 @@ from typing import Dict
 
 from flask import Blueprint, escape, render_template, request, url_for
 
-from lifemonitor.utils import validate_url
-
 # Config a module level logger
 logger = logging.getLogger(__name__)
 
@@ -55,11 +53,23 @@ def parametric_page():
         return handle_500()
 
 
+def handle_error(e: Exception):
+    status = getattr(e, 'status', 500)
+    try:
+        handler = getattr(error_handlers, f"handle_{status}")
+        logger.debug(f"Handling error code: {status}")
+        return handler(e)
+    except ValueError as e:
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f"Error handling error code: {e}")
+        return handle_500(e)
+
+
 @blueprint.route("/400")
 def handle_400(e: Exception = None, description: str = None):
-    return handle_error(
+    return __handle_error__(
         {
-            "title": "LifeMonitor: Page not found",
+            "title": getattr(e, 'title', None) or "LifeMonitor: Page not found",
             "code": "404",
             "description": description if description
             else str(e) if e and logger.isEnabledFor(logging.DEBUG)
@@ -72,14 +82,15 @@ def handle_400(e: Exception = None, description: str = None):
 def handle_404(e: Exception = None):
     resource = request.args.get("resource", None, type=str)
     logger.debug(f"Resource not found: {resource}")
+    from lifemonitor.utils import validate_url
     if resource and not validate_url(resource):
         logger.error(f"Invalid URL: {resource}")
         return handle_400(description="Invalid URL")
-    return handle_error(
+    return __handle_error__(
         {
-            "title": "LifeMonitor: Page not found",
+            "title": getattr(e, 'title', None) or "LifeMonitor: Page not found",
             "code": "404",
-            "description": str(e)
+            "description": getattr(e, 'detail', None) or str(e)
             if e and logger.isEnabledFor(logging.DEBUG)
             else "Page not found",
             "resource": resource,
@@ -91,13 +102,14 @@ def handle_404(e: Exception = None):
 def handle_405(e: Exception = None):
     resource = request.args.get("resource", None, type=str)
     logger.debug(f"Method not allowed for resource {resource}")
+    from lifemonitor.utils import validate_url
     if not validate_url(resource):
         return handle_400(decription="Invalid URL")
-    return handle_error(
+    return __handle_error__(
         {
-            "title": "LifeMonitor: Method not allowed",
+            "title": getattr(e, 'title', None) or "LifeMonitor: Method not allowed",
             "code": "404",
-            "description": str(e)
+            "description": getattr(e, 'detail', None) or str(e)
             if e and logger.isEnabledFor(logging.DEBUG)
             else "Method not allowed for this resource",
             "resource": escape(resource),
@@ -107,11 +119,11 @@ def handle_405(e: Exception = None):
 
 @blueprint.route("/429")
 def handle_429(e: Exception = None):
-    return handle_error(
+    return __handle_error__(
         {
-            "title": "LifeMonitor: API rate limit exceeded",
+            "title": getattr(e, 'title', None) or "LifeMonitor: API rate limit exceeded",
             "code": "429",
-            "description": str(e)
+            "description": getattr(e, 'detail', None) or str(e)
             if e and logger.isEnabledFor(logging.DEBUG)
             else "API rate limit exceeded",
         }
@@ -120,11 +132,11 @@ def handle_429(e: Exception = None):
 
 @blueprint.route("/500")
 def handle_500(e: Exception = None):
-    return handle_error(
+    return __handle_error__(
         {
-            "title": "LifeMonitor: Internal Server Error",
+            "title": getattr(e, 'title', None) or "LifeMonitor: Internal Server Error",
             "code": "500",
-            "description": str(e)
+            "description": getattr(e, 'detail', None) or str(e)
             if e and logger.isEnabledFor(logging.DEBUG)
             else "Internal Server Error: the server encountered a temporary error and could not complete your request",
         }
@@ -133,22 +145,25 @@ def handle_500(e: Exception = None):
 
 @blueprint.route("/502")
 def handle_502(e: Exception = None):
-    return handle_error(
+    return __handle_error__(
         {
-            "title": "LifeMonitor: Bad Gateway",
+            "title": getattr(e, 'title', None) or "LifeMonitor: Bad Gateway",
             "code": "502",
-            "description": str(e)
+            "description": getattr(e, 'detail', None) or str(e)
             if e and logger.isEnabledFor(logging.DEBUG)
             else "Internal Server Error: the server encountered a temporary error and could not complete your request",
         }
     )
 
 
-def handle_error(error: Dict[str, str]):
+def __handle_error__(error: Dict[str, str]):
     back_url = request.args.get("back_url", url_for("auth.profile"))
     # parse Accept header
     accept = request.headers.get("Accept", "text/html")
-    if "application/json" in accept:
+    content_type = request.headers.get("Content-Type")
+    if "application/json" == accept \
+            or 'application/json' == content_type \
+            or 'application/problem+json' == content_type:
         # return error as JSON
         return error, error.get("code", 500)
     try:

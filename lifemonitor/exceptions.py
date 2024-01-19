@@ -21,7 +21,6 @@
 import logging
 
 import connexion
-
 from flask import Response, request
 from werkzeug.exceptions import HTTPException
 
@@ -158,15 +157,27 @@ class DownloadException(LifeMonitorException):
 
 class NotValidROCrateException(LifeMonitorException):
 
-    def __init__(self, detail="Not valid RO Crate",
+    def __init__(self, detail="Not valid RO-Crate",
                  type="about:blank", status=400, instance=None, **kwargs):
         super().__init__(title="Bad request",
                          detail=detail, status=status, **kwargs)
 
 
+class ROCrateNotFoundException(LifeMonitorException):
+
+    def __init__(self, detail="RO-Crate not found",
+                 type="about:blank", status=404, resource=None, **kwargs):
+        super().__init__(title="Bad request",
+                         detail=detail, status=status, **kwargs)
+        self.resource = resource
+
+    def __str__(self):
+        return f"Unable to find the RO-Crate {self.resource}"
+
+
 class DecodeROCrateException(LifeMonitorException):
 
-    def __init__(self, detail="Unable to decode RO Crate",
+    def __init__(self, detail="Unable to decode RO-Crate",
                  type="about:blank", status=400, instance=None, **kwargs):
         super().__init__(title="Bad request",
                          detail=detail, status=status, **kwargs)
@@ -216,9 +227,12 @@ def handle_exception(e: Exception):
     if logger.isEnabledFor(logging.DEBUG):
         logger.exception(e)
     if isinstance(e, LifeMonitorException):
+        from .errors import handle_error
+        if request.accept_mimetypes.best == "text/html":
+            return handle_error(e)
         return Response(response=e.to_json(),
                         status=e.status,
-                        mimetype="application/problem+json")
+                        mimetype=request.accept_mimetypes.best)
     if isinstance(e, HTTPException):
         return report_problem(status=e.code,
                               title=e.__class__.__name__,
@@ -243,6 +257,9 @@ def report_problem(status, title, detail=None, type=None, instance=None, extra_i
     """
     Returns a `Problem Details <https://tools.ietf.org/html/draft-ietf-appsawg-http-problem-00>`_ error response.
     """
+    if request.accept_mimetypes.best == "text/html":
+        from .errors import handle_error
+        return handle_error(LifeMonitorException(title=title, detail=detail, status=status))
     if not type:
         type = 'about:blank'
 

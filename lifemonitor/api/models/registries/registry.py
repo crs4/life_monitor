@@ -227,6 +227,8 @@ class WorkflowRegistryClient(ABC):
                     errors.append(str(e))
         if response.status_code == 401 or response.status_code == 403:
             raise lm_exceptions.NotAuthorizedException(details=response.content)
+        if response.status_code == 404:
+            raise lm_exceptions.ROCrateNotFoundException(details=response.content, resource=response.url)
         raise lm_exceptions.LifeMonitorException(errors=[str(e) for e in errors])
 
     def get_index(self, user: auth_models.User) -> List[RegistryWorkflow]:
