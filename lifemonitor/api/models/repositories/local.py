@@ -301,7 +301,8 @@ class LocalGitWorkflowRepository(LocalWorkflowRepository):
         self._remote_repo_info = None
         try:
             self._remote_repo_info = RemoteGitRepoInfo.parse(self._git_repo.remotes.origin.url)
-        except git.exc.GitCommandError as e:
+        except (git.exc.GitCommandError, AttributeError) as e:
+            logger.warning("Unable to parse remote repository info: %s", e)
             if logger.isEnabledFor(logging.DEBUG):
                 logger.exception(e)
 
