@@ -36,6 +36,7 @@ class MissingLMConfigFile(WorkflowRepositoryIssue):
     description = "No <code>lifemonitor.yaml</code> configuration file found on this repository.<br>"\
         "The <code>lifemonitor.yaml</code> should be placed on the root of this repository."
     labels = ['lifemonitor']
+    depends_on = ["GitRepositoryWithoutMainBranch"]
 
     def check(self, repo: WorkflowRepository) -> bool:
         if repo.config is None:

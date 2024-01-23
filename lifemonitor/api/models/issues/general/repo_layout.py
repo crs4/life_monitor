@@ -29,10 +29,25 @@ from lifemonitor.api.models.repositories import WorkflowRepository
 logger = logging.getLogger(__name__)
 
 
+class GitRepositoryWithoutMainBranch(WorkflowRepositoryIssue):
+    name = "Repository without main branch"
+    description = "This repository does not have a main branch."
+    labels = ['best-practices']
+
+    def check(self, repo: WorkflowRepository) -> bool:
+        """
+        If the repository is a Git repository, check if it has a main branch.
+        """
+        if not repo.is_git_repo(repo.local_path):
+            return False
+        return repo.main_branch is None
+
+
 class RepositoryNotInitialised(WorkflowRepositoryIssue):
     name = "Repository not intialised"
     description = "No workflow and crate metadata found on this repository."
     labels = ['best-practices']
+    depends_on = [GitRepositoryWithoutMainBranch]
 
     def check(self, repo: WorkflowRepository) -> bool:
         return repo.find_workflow() is None and repo.metadata is None
