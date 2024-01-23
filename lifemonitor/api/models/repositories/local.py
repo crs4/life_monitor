@@ -311,6 +311,14 @@ class LocalGitWorkflowRepository(LocalWorkflowRepository):
         return self._git_repo.active_branch.name
 
     @property
+    def remotes(self) -> List[str]:
+        return [r.name for r in self._git_repo.remotes]
+
+    @property
+    def heads(self) -> List[str]:
+        return [h.name for h in self._git_repo.heads]
+
+    @property
     def owner(self) -> str:
         return super().owner or \
             self._remote_repo_info.owner if self._remote_repo_info else None
