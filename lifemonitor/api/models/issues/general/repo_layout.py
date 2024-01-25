@@ -40,7 +40,7 @@ class GitRepositoryWithoutMainBranch(WorkflowRepositoryIssue):
         """
         If the repository is a Git repository, check if it has a main branch.
         """
-        if not repo.is_git_repo(repo.local_path):
+        if not LocalGitWorkflowRepository.is_git_repo(repo.local_path):
             return False
         git_repo = LocalGitWorkflowRepository(repo.local_path)
         logger.debug("Local Git repository: %r - branches: %r", git_repo, git_repo.heads)
