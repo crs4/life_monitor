@@ -807,7 +807,8 @@ class RemoteGitRepoInfo(giturlparse.result.GitUrlParsed):
 
     def __init__(self, parsed_info):
         # fix for giturlparse: protocols are not parsed correctly
-        del parsed_info['protocols']
+        if 'protocols' in parsed_info:
+            del parsed_info['protocols']
         super().__init__(parsed_info)
 
     @property

@@ -24,15 +24,34 @@ import logging
 
 from lifemonitor.api.models.issues import WorkflowRepositoryIssue
 from lifemonitor.api.models.repositories import WorkflowRepository
+from lifemonitor.api.models.repositories.local import \
+    LocalGitWorkflowRepository
 
 # set module level logger
 logger = logging.getLogger(__name__)
+
+
+class GitRepositoryWithoutMainBranch(WorkflowRepositoryIssue):
+    name = "Repository without main branch"
+    description = "This repository does not have a main branch."
+    labels = ['best-practices']
+
+    def check(self, repo: WorkflowRepository) -> bool:
+        """
+        If the repository is a Git repository, check if it has a main branch.
+        """
+        if not LocalGitWorkflowRepository.is_git_repo(repo.local_path):
+            return False
+        git_repo = LocalGitWorkflowRepository(repo.local_path)
+        logger.debug("Local Git repository: %r - branches: %r", git_repo, git_repo.heads)
+        return git_repo.heads is None or len(git_repo.heads) == 0
 
 
 class RepositoryNotInitialised(WorkflowRepositoryIssue):
     name = "Repository not intialised"
     description = "No workflow and crate metadata found on this repository."
     labels = ['best-practices']
+    depends_on = [GitRepositoryWithoutMainBranch]
 
     def check(self, repo: WorkflowRepository) -> bool:
         return repo.find_workflow() is None and repo.metadata is None
