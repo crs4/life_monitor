@@ -28,6 +28,7 @@ else
            --threads "${GUNICORN_THREADS}" \
            --config "${GUNICORN_CONF}" \
            --certfile="${CERT}" --keyfile="${KEY}" \
+           --timeout 60 \
            -b "0.0.0.0:8000" \
            "app"
 fi
