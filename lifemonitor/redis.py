@@ -37,4 +37,19 @@ def init(app: Flask) -> Redis:
                           port=int(app.config.get("REDIS_PORT_NUMBER", 6379)),
                           password=app.config.get("REDIS_PASSWORD", "foobar"),
                           db=0)
+
+    # fix logger level
+    import logging
+
+    import redis_lock
+
+    redis_lock_logger_level = logging.ERROR
+    redis_lock.logger_for_acquire.setLevel(redis_lock_logger_level)
+    redis_lock.logger_for_release.setLevel(redis_lock_logger_level)
+    redis_lock.logger_for_acquire.setLevel(redis_lock_logger_level)
+    redis_lock.logger_for_refresh_thread.setLevel(redis_lock_logger_level)
+    redis_lock.logger_for_refresh_start.setLevel(redis_lock_logger_level)
+    redis_lock.logger_for_refresh_shutdown.setLevel(redis_lock_logger_level)
+    redis_lock.logger_for_refresh_exit.setLevel(redis_lock_logger_level)
+    redis_lock.logger_for_release.setLevel(redis_lock_logger_level)
     return __redis__
