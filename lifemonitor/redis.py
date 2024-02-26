@@ -18,6 +18,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import logging
+
+import redis_lock
 from flask import Flask
 from redis import Redis
 
@@ -38,12 +41,10 @@ def init(app: Flask) -> Redis:
                           password=app.config.get("REDIS_PASSWORD", "foobar"),
                           db=0)
 
-    # fix logger level
-    import logging
-
-    import redis_lock
-
-    redis_lock_logger_level = logging.ERROR
+    # reconfigure the logging level for the redis_lock library
+    redis_lock_logger_level = logging.WARNING
+    if app.config.get("DEBUG", False):
+        redis_lock_logger_level = logging.DEBUG
     redis_lock.logger_for_acquire.setLevel(redis_lock_logger_level)
     redis_lock.logger_for_release.setLevel(redis_lock_logger_level)
     redis_lock.logger_for_acquire.setLevel(redis_lock_logger_level)
