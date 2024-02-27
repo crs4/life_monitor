@@ -382,9 +382,9 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
     def cleanup(self) -> None:
         logger.debug("Repository cleanup")
         if getattr(self, "_local_repo", None):
-            local_repo_path = self.local_repo.local_path
+            local_repo_path = self._local_repo.local_path
             del self._local_repo
-            logger.debug("Removing temp folder %r of %r", self.local_path, self)
+            logger.debug("Removing temp folder %r of %r", self._local_path, self)
             shutil.rmtree(local_repo_path, ignore_errors=True)
             self._local_repo = None
 
