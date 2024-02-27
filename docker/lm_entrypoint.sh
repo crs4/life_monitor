@@ -23,7 +23,20 @@ else
     mkdir -p ${metrics_base_path}
     export PROMETHEUS_MULTIPROC_DIR=$(mktemp -d ${metrics_base_path}/backend.XXXXXXXX)
   fi
+
+  # gunicorn settings
   export GUNICORN_SERVER="true"
+  export GUNICORN_WORKERS="${GUNICORN_WORKERS:-2}"
+  export GUNICORN_THREADS="${GUNICORN_THREADS:-1}"
+  export GUNICORN_MAX_REQUESTS="${GUNICORN_MAX_REQUESTS:-0}"
+  export GUNICORN_MAX_REQUESTS_JITTER="${GUNICORN_MAX_REQUESTS_JITTER:-0}"
+  export GUNICORN_WORKER_CONNECTIONS="${GUNICORN_WORKER_CONNECTIONS:-1000}"
+  export GUNICORN_TIMEOUT="${GUNICORN_TIMEOUT:-30}"
+  export GUNICORN_GRACEFUL_TIMEOUT="${GUNICORN_GRACEFUL_TIMEOUT:-30}"
+  export GUNICORN_KEEPALIVE="${GUNICORN_KEEPALIVE:-2}"
+
+  # run app with gunicorn
+  printf "Starting app in PROD mode (Gunicorn)"
   gunicorn  --workers "${GUNICORN_WORKERS}"  \
             --threads "${GUNICORN_THREADS}" \
             --max_requests "${GUNICORN_MAX_REQUESTS}"
