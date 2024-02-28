@@ -39,12 +39,12 @@ else
   printf "Starting app in PROD mode (Gunicorn)"
   gunicorn  --workers "${GUNICORN_WORKERS}"  \
             --threads "${GUNICORN_THREADS}" \
-            --max_requests "${GUNICORN_MAX_REQUESTS}"
-            --max_requests_jitter "${GUNICORN_MAX_REQUESTS_JITTER}" \
-            --worker_connections "${GUNICORN_WORKER_CONNECTIONS}" \
-            --worker_class "${GUNICORN_WORKER_CLASS}" \
+            --max-requests "${GUNICORN_MAX_REQUESTS}"
+            --max-requests-jitter "${GUNICORN_MAX_REQUESTS_JITTER}" \
+            --worker-connections "${GUNICORN_WORKER_CONNECTIONS}" \
+            --worker-class "${GUNICORN_WORKER_CLASS}" \
             --timeout "${GUNICORN_TIMEOUT}" \
-            --graceful_timeout "${GUNICORN_GRACEFUL_TIMEOUT}" \
+            --graceful-timeout "${GUNICORN_GRACEFUL_TIMEOUT}" \
             --keepalive "${GUNICORN_KEEPALIVE}" \
             --config "${GUNICORN_CONF}" \
             --certfile="${CERT}" --keyfile="${KEY}" \
