@@ -39,7 +39,7 @@ else
   printf "Starting app in PROD mode (Gunicorn)"
   gunicorn  --workers "${GUNICORN_WORKERS}"  \
             --threads "${GUNICORN_THREADS}" \
-            --max-requests "${GUNICORN_MAX_REQUESTS}"
+            --max-requests "${GUNICORN_MAX_REQUESTS}" \
             --max-requests-jitter "${GUNICORN_MAX_REQUESTS_JITTER}" \
             --worker-connections "${GUNICORN_WORKER_CONNECTIONS}" \
             --worker-class "${GUNICORN_WORKER_CLASS}" \
