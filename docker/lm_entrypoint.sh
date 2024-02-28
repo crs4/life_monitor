@@ -46,7 +46,7 @@ else
             --worker-class "${GUNICORN_WORKER_CLASS}" \
             --timeout "${GUNICORN_TIMEOUT}" \
             --graceful-timeout "${GUNICORN_GRACEFUL_TIMEOUT}" \
-            --keepalive "${GUNICORN_KEEPALIVE}" \
+            --keep-alive "${GUNICORN_KEEPALIVE}" \
             --config "${GUNICORN_CONF}" \
             --certfile="${CERT}" --keyfile="${KEY}" \
             -b "0.0.0.0:8000" \
