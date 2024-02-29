@@ -23,11 +23,32 @@ else
     mkdir -p ${metrics_base_path}
     export PROMETHEUS_MULTIPROC_DIR=$(mktemp -d ${metrics_base_path}/backend.XXXXXXXX)
   fi
+
+  # gunicorn settings
   export GUNICORN_SERVER="true"
-  gunicorn --workers "${GUNICORN_WORKERS}"  \
-           --threads "${GUNICORN_THREADS}" \
-           --config "${GUNICORN_CONF}" \
-           --certfile="${CERT}" --keyfile="${KEY}" \
-           -b "0.0.0.0:8000" \
-           "app"
+  export GUNICORN_WORKERS="${GUNICORN_WORKERS:-2}"
+  export GUNICORN_THREADS="${GUNICORN_THREADS:-1}"
+  export GUNICORN_WORKER_CLASS="${GUNICORN_WORKER_CLASS:-sync}"
+  export GUNICORN_MAX_REQUESTS="${GUNICORN_MAX_REQUESTS:-0}"
+  export GUNICORN_MAX_REQUESTS_JITTER="${GUNICORN_MAX_REQUESTS_JITTER:-0}"
+  export GUNICORN_WORKER_CONNECTIONS="${GUNICORN_WORKER_CONNECTIONS:-1000}"
+  export GUNICORN_TIMEOUT="${GUNICORN_TIMEOUT:-30}"
+  export GUNICORN_GRACEFUL_TIMEOUT="${GUNICORN_GRACEFUL_TIMEOUT:-30}"
+  export GUNICORN_KEEPALIVE="${GUNICORN_KEEPALIVE:-2}"
+
+  # run app with gunicorn
+  printf "Starting app in PROD mode (Gunicorn)"
+  gunicorn  --workers "${GUNICORN_WORKERS}"  \
+            --threads "${GUNICORN_THREADS}" \
+            --max-requests "${GUNICORN_MAX_REQUESTS}" \
+            --max-requests-jitter "${GUNICORN_MAX_REQUESTS_JITTER}" \
+            --worker-connections "${GUNICORN_WORKER_CONNECTIONS}" \
+            --worker-class "${GUNICORN_WORKER_CLASS}" \
+            --timeout "${GUNICORN_TIMEOUT}" \
+            --graceful-timeout "${GUNICORN_GRACEFUL_TIMEOUT}" \
+            --keep-alive "${GUNICORN_KEEPALIVE}" \
+            --config "${GUNICORN_CONF}" \
+            --certfile="${CERT}" --keyfile="${KEY}" \
+            -b "0.0.0.0:8000" \
+            "app"
 fi

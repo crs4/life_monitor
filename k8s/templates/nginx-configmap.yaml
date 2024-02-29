@@ -1,111 +1,157 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-    name: lifemonitor-nginx-configmap
-    labels:
-        app.kubernetes.io/name: {{ include "chart.name" . }}
-        helm.sh/chart: {{ include "chart.chart" . }}
-        app.kubernetes.io/instance: {{ .Release.Name }}
-        app.kubernetes.io/managed-by: {{ .Release.Service }}
+  name: lifemonitor-nginx-configmap
+  labels:
+    app.kubernetes.io/name: { { include "chart.name" . } }
+    helm.sh/chart: { { include "chart.chart" . } }
+    app.kubernetes.io/instance: { { .Release.Name } }
+    app.kubernetes.io/managed-by: { { .Release.Service } }
 data:
-    server-block.conf: |-
-        # set upstream server
-        upstream lm_app {
-            # fail_timeout=0 means we always retry an upstream even if it failed
-            # to return a good HTTP response
-            server {{ include "chart.fullname" . }}-backend:8000 fail_timeout=0;
+  server-block.conf: |-
+    # set upstream server
+    upstream lm_app {
+        # fail_timeout=0 means we always retry an upstream even if it failed
+        # to return a good HTTP response
+        server {{ include "chart.fullname" . }}-backend:8000 fail_timeout=0;
+    }
+
+    {{- if .Values.rateLimiting.zone.accounts.enabled }}
+    # Define Rate Limiting Zones
+    limit_req_zone $binary_remote_addr zone=api_accounts:{{ .Values.rateLimiting.zone.accounts.size }} rate={{ .Values.rateLimiting.zone.accounts.rate }};
+    {{- end }}
+
+    server {
+        listen 0.0.0.0:8080 default_server;
+
+        # set the correct host(s) for your site
+        server_name localhost;
+
+        #ssl_certificate /nginx/certs/lm.crt;
+        #ssl_certificate_key /nginx/certs/lm.key;
+
+        # force HTTP traffic to HTTPS
+        error_page  497 https://$http_host$request_uri;
+
+        # define error pages
+        error_page 404 /error/404;
+        error_page 429 /error/429;
+        error_page 500 /error/500;
+        error_page 502 /error/502;
+
+        # location for error pages
+        location ~ ^/error {
+            # disable redirects
+            proxy_redirect          off;
+
+            # rewrite headers
+            proxy_pass_header       Server;
+            proxy_set_header        X-Real-IP $http_x_forwarded_for;
+            proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header        X-Scheme $scheme;
+            proxy_set_header        Host $http_host;
+            proxy_set_header        Cookie $http_cookie;
+
+            # set uppstream
+            proxy_pass              https://lm_app;
         }
 
-        {{- if .Values.rateLimiting.zone.accounts.enabled }}
-        # Define Rate Limiting Zones
-        limit_req_zone $binary_remote_addr zone=api_accounts:{{ .Values.rateLimiting.zone.accounts.size }} rate={{ .Values.rateLimiting.zone.accounts.rate }};
-        {{- end }}
-
-        server {
-            listen 0.0.0.0:8080 default_server;
-            client_max_body_size 4G;
-            # set the correct host(s) for your site
-            server_name localhost;
-            keepalive_timeout 60;
-
-            #ssl_certificate /nginx/certs/lm.crt;
-            #ssl_certificate_key /nginx/certs/lm.key;
-
-            # force HTTP traffic to HTTPS
-            error_page  497 https://$http_host$request_uri;
-
-            # define error pages
-            error_page 404 /error/404;
-            error_page 429 /error/429;
-            error_page 500 /error/500;
-            error_page 502 /error/502;
-
-            # location for error pages
-            location ~ ^/error {
-                # disable redirects
-                proxy_redirect          off;
-
-                # rewrite headers
-                proxy_pass_header       Server;
-                proxy_set_header        X-Real-IP $http_x_forwarded_for;
-                proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
-                proxy_set_header        X-Scheme $scheme;
-                proxy_set_header        Host $http_host;
-                proxy_set_header        Cookie $http_cookie;
-
-                # various proxy settings
-                proxy_connect_timeout   600;
-                proxy_read_timeout      600;
-                proxy_send_timeout      600;
-                #proxy_intercept_errors  on;
-
-                # set uppstream
-                proxy_pass              https://lm_app;
-            }
-
-            # set static files location
-            location /static/ {
-                root /app/lifemonitor;
-            }
-            
-            # if the path matches to root, redirect to the account page
-            location = / {
-                return 301 https://{{ .Values.externalServerName }}/account/;
-            }
-
-            location ~ ^/account {
-                # disable redirects
-                proxy_redirect          off;
-
-                # rewrite headers
-                proxy_pass_header       Server;
-                proxy_set_header        X-Real-IP $http_x_forwarded_for;
-                proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
-                proxy_set_header        X-Scheme $scheme;
-                proxy_set_header        Host $http_host;
-                proxy_set_header        Cookie $http_cookie;
-
-                # various proxy settings
-                proxy_connect_timeout   600;
-                proxy_read_timeout      600;
-                proxy_send_timeout      600;
-                #proxy_intercept_errors  on;
-
-                # set uppstream
-                proxy_pass              https://lm_app;
-
-                {{ include "lifemonitor.api.rateLimiting" . | indent 12 }}
-            }
-
-            # set proxy location
-            location / {
-                #resolver 127.0.0.11 ipv6=off valid=30s;
-                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                proxy_set_header X-Forwarded-Proto $scheme;
-                proxy_set_header Host $http_host;
-                # we don't want nginx trying to do something clever with
-                # redirects, we set the Host: header above already.
-                proxy_redirect off;
-                proxy_pass https://lm_app;
-            }
+        # set static files location
+        location /static/ {
+            root /app/lifemonitor;
         }
+        
+        # if the path matches to root, redirect to the account page
+        location = / {
+            return 301 https://{{ .Values.externalServerName }}/account/;
+        }
+
+        location ~ ^/account {
+            # disable redirects
+            proxy_redirect          off;
+
+            # rewrite headers
+            proxy_pass_header       Server;
+            proxy_set_header        X-Real-IP $http_x_forwarded_for;
+            proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header        X-Scheme $scheme;
+            proxy_set_header        Host $http_host;
+            proxy_set_header        Cookie $http_cookie;
+
+            # set uppstream
+            proxy_pass              https://lm_app;
+
+            {{ include "lifemonitor.api.rateLimiting" . | indent 12 }}
+        }
+
+        # set proxy location
+        location / {
+            #resolver 127.0.0.11 ipv6=off valid=30s;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header Host $http_host;
+            # we don't want nginx trying to do something clever with
+            # redirects, we set the Host: header above already.
+            proxy_redirect off;
+            proxy_pass https://lm_app;
+        }
+    }
+
+  nginx.conf: |-
+
+    # logs
+    pid        /var/log/nginx/nginx.pid;
+    error_log  /var/log/nginx/nginx.error.log warn;
+
+    events {
+        worker_connections 1024;
+    }
+
+    http {
+        
+        include mime.types;
+
+        default_type application/octet-stream;
+
+        # Enables or disables the use of underscores in client request header fields.
+        # When the use of underscores is disabled, request header fields whose names contain underscores are marked as invalid and become subject to the ignore_invalid_headers directive.
+        # underscores_in_headers off;
+
+        proxy_headers_hash_max_size 512;
+        proxy_headers_hash_bucket_size 128;
+
+        # Configure Log files
+        # access_log /var/log/nginx/access.log custom_format;
+        error_log  /var/log/nginx/error.log warn;
+
+        # See Move default writable paths to a dedicated directory (#119)
+        # https://github.com/openresty/docker-openresty/issues/119
+        client_body_temp_path /var/run/nginx/nginx-client-body;
+        proxy_temp_path /var/run/nginx/nginx-proxy;
+        fastcgi_temp_path /var/run/nginx/nginx-fastcgi;
+        uwsgi_temp_path /var/run/nginx/nginx-uwsgi;
+        scgi_temp_path /var/run/nginx/nginx-scgi;
+
+        # Increase the buffer size
+        proxy_buffers 8 16k;
+        proxy_buffer_size 32k;
+        
+        # various proxy settings
+        proxy_connect_timeout   180s;
+        proxy_read_timeout      180s;
+        proxy_send_timeout      180s;
+        keepalive_timeout       180s;
+
+        fastcgi_send_timeout    180s;
+        fastcgi_read_timeout    180s;
+
+        sendfile on;
+        #tcp_nopush     on;
+
+        #gzip  on;
+
+        include /etc/nginx/conf.d/*.conf;
+
+        # Don't reveal OpenResty version to clients.
+        # server_tokens off;
+    }

@@ -135,6 +135,22 @@ Define environment variables shared by some pods.
   value: "{{ .Values.worker.processes }}"
 - name: WORKER_THREADS
   value: "{{ .Values.worker.threads }}"
+- name: GUNICORN_WORKERS
+  value: "{{ .Values.lifemonitor.gunicorn.workers }}"
+- name: GUNICORN_THREADS
+  value: "{{ .Values.lifemonitor.gunicorn.threads }}"
+- name: GUNICORN_MAX_REQUESTS
+  value: "{{ .Values.lifemonitor.gunicorn.max_requests }}"
+- name: GUNICORN_MAX_REQUESTS_JITTER
+  value: "{{ .Values.lifemonitor.gunicorn.max_requests_jitter }}"
+- name: GUNICORN_WORKER_CONNECTIONS
+  value: "{{ .Values.lifemonitor.gunicorn.worker_connections }}"
+- name: GUNICORN_GRACEFUL_TIMEOUT
+  value: "{{ .Values.lifemonitor.gunicorn.graceful_timeout }}"
+- name: GUNICORN_TIMEOUT
+  value: "{{ .Values.lifemonitor.gunicorn.timeout }}"
+- name: GUNICORN_KEEPALIVE
+  value: "{{ .Values.lifemonitor.gunicorn.keepalive }}"
 - name: LIFEMONITOR_TLS_KEY
   value: "/lm/certs/tls.key"
 - name: LIFEMONITOR_TLS_CERT
