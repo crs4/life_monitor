@@ -515,7 +515,7 @@ class ROCrateLinkContext(object):
         # written into a local file and a local roc_link will be returned.
         logger.debug("Entering ROCrateLinkContext: %r", self.rocrate_or_link)
         if validate_url(self.rocrate_or_link):
-            logger.debug("RO Crate param is a link: %r", self.rocrate_or_link)
+            logger.debug("RO-Crate param is a link: %r", self.rocrate_or_link)
             return self.rocrate_or_link
         if self.rocrate_or_link:
             if os.path.isdir(self.rocrate_or_link) or os.path.isfile(self.rocrate_or_link):
@@ -535,7 +535,7 @@ class ROCrateLinkContext(object):
             except Exception as e:
                 logger.debug(e)
                 raise lm_exceptions.DecodeROCrateException(detail=str(e))
-        logger.debug("RO Crate link is undefined!!!")
+        logger.debug("RO-Crate link is undefined!!!")
         return None
 
     def __exit__(self, type, value, traceback):
@@ -807,7 +807,8 @@ class RemoteGitRepoInfo(giturlparse.result.GitUrlParsed):
 
     def __init__(self, parsed_info):
         # fix for giturlparse: protocols are not parsed correctly
-        del parsed_info['protocols']
+        if 'protocols' in parsed_info:
+            del parsed_info['protocols']
         super().__init__(parsed_info)
 
     @property
@@ -1070,6 +1071,7 @@ class NextRouteRegistry(object):
         # if the route is not defined as param, try to get it from the registry
         if route is None:
             registry = cls._get_route_registry()
+            logger.debug("Route registry: %r", registry)
             try:
                 route = registry.pop()
                 logger.debug("Route registry changed: %r", registry)
@@ -1080,8 +1082,12 @@ class NextRouteRegistry(object):
                 cls._save_route_registry(registry)
         if skipValidation:
             return route or default
+        # if the route is not defined, set the default route as next route
+        if not route:
+            route = default
         # validate the actual route
         try:
+            logger.debug("Validating route: %r", route)
             cls.validate_next_route_url(route)
         except ValidationError as e:
             logger.error(e)
@@ -1108,11 +1114,13 @@ class NextRouteRegistry(object):
         # check whether the URL is valid
         url_domain = None
         try:
+            logger.debug("Validating URL: %r", url)
             url_domain = get_netloc(url)
         except Exception as e:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.exception(e)
         # check whether a url domain has been extracted
+        logger.debug("URL domain: %r", url_domain)
         if url_domain is None:
             raise ValidationError("Invalid URL: unable to detect domain")
         # check if the URL domain matches the main domain of the back-end app

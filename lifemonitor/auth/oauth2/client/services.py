@@ -23,6 +23,7 @@ from __future__ import annotations
 import logging
 
 from flask import current_app, session
+
 from lifemonitor import exceptions
 from lifemonitor.db import db, db_initialized
 
@@ -78,21 +79,86 @@ def config_oauth2_registry(app, providers=None):
     logger.debug("OAuth2 registry configured!")
 
 
-def merge_users(merge_from: User, merge_into: User, provider: str):
+def merge_users(merge_from: User, merge_into: User, provider: str = None):
     assert merge_into != merge_from
-    logger.debug("Trying to merge %r, %r, %r", merge_into, merge_from, provider)
-    for identity in list(merge_from.oauth_identity.values()):
-        identity.user = merge_into
-        db.session.add(identity)
-    # TODO: Move all oauth clients to the new user
-    for client in list(merge_from.clients):
-        client.user = merge_into
-        db.session.add(client)
-    # TODO: Check for other links to move to the new user
-    # e.g., tokens, workflows, tests, ....
-    db.session.delete(merge_from)
-    db.session.commit()
-    return merge_into
+    try:
+        # start a new transaction
+        with db.session.no_autoflush:
+            logger.debug("Trying to merge user %r into %r (provider: %r)", merge_from, merge_into, provider)
+            # make a copy of the workflow versions submitted by the "merge_from" user
+            workflow_versions = list(merge_from.workflow_versions)
+            # update the submitter of the workflow versions
+            for v in workflow_versions:
+                v.submitter = merge_into
+                db.session.add(v)
+                # update suites submitted by the "merge_from" user
+                for s in v.test_suites:
+                    if s.submitter == merge_from:
+                        s.submitter = merge_into
+                        db.session.add(s)
+                    # update test instances submitted by the "merge_from" user
+                    for i in s.test_instances:
+                        if i.submitter == merge_from:
+                            i.submitter = merge_into
+                            db.session.add(i)
+
+            # update all the remaining permissions
+            for permission in list(merge_from.permissions):
+                permission.user = merge_into
+                db.session.add(permission)
+
+            # move all the authorizations granted to the "merge_from" user to the "merge_into" user
+            for auth in list(merge_from.authorizations):
+                auth.user = merge_into
+                db.session.add(auth)
+
+            # move all the notification of the user "merge_from" to the user "merge_into"
+            merge_into_notification_ids = [un.notification.id for un in merge_into.notifications]
+            for user_notification in list(merge_from.notifications):
+                if user_notification.notification.id not in merge_into_notification_ids:
+                    user_notification.user = merge_into
+                    db.session.add(user_notification)
+
+            # move all the subscriptions of the user "merge_from" to the user "merge_into"
+            for subscription in list(merge_from.subscriptions):
+                subscription.user = merge_into
+                db.session.add(subscription)
+
+            # move all the api keys of the user "merge_from" to the user "merge_into"
+            for api_key in list(merge_from.api_keys):
+                api_key.user = merge_into
+                db.session.add(api_key)
+
+            # move all the oauth identities of the user "merge_from" to the user "merge_into"
+            for identity in list(merge_from.oauth_identity):
+                identity.user = merge_into
+                db.session.add(identity)
+
+            # move all the clients of the user "merge_from" to the user "merge_into"
+            for client in list(merge_from.clients):
+                client.user = merge_into
+                db.session.add(client)
+
+            # remove the "merge_from" user
+            db.session.delete(merge_from)
+
+            # commit the changes
+            db.session.add(merge_into)
+            db.session.commit()
+
+        # remove the "merge_from" user
+        db.session.delete(merge_from)
+
+        # flush the changes
+        db.session.flush()
+        # remove the "merge_from" user
+        return merge_into
+    except Exception as e:
+        logger.error("Unable to merge users: %r", e)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.exception(e)
+        db.session.rollback()
+        raise exceptions.LifeMonitorException(title="Unable to merge users") from e
 
 
 def save_current_user_identity(identity: OAuthIdentity):

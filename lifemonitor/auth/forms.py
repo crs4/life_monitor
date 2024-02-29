@@ -59,7 +59,10 @@ class LoginForm(FlaskForm):
         if not user:
             self.username.errors.append("Username not found")
             return None
-        if not user.verify_password(self.password.data):
+        if not user.has_password:
+            self.password.errors.append("The user has no password set")
+            return None
+        if not self.password.data or not user.verify_password(self.password.data):
             self.password.errors.append("Invalid password")
             return None
         return user

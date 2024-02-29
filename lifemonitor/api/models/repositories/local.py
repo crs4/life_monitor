@@ -301,13 +301,22 @@ class LocalGitWorkflowRepository(LocalWorkflowRepository):
         self._remote_repo_info = None
         try:
             self._remote_repo_info = RemoteGitRepoInfo.parse(self._git_repo.remotes.origin.url)
-        except git.exc.GitCommandError as e:
+        except (git.exc.GitCommandError, AttributeError) as e:
+            logger.warning("Unable to parse remote repository info: %s", e)
             if logger.isEnabledFor(logging.DEBUG):
                 logger.exception(e)
 
     @property
     def main_branch(self) -> str:
         return self._git_repo.active_branch.name
+
+    @property
+    def remotes(self) -> List[str]:
+        return [r.name for r in self._git_repo.remotes]
+
+    @property
+    def heads(self) -> List[str]:
+        return [h.name for h in self._git_repo.heads]
 
     @property
     def owner(self) -> str:

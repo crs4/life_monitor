@@ -504,6 +504,8 @@ def process_workflows_post(body, _registry=None, _submitter_id=None,
         return lm_exceptions.report_problem(403, "Forbidden", extra_info={"exception": str(e)},
                                             detail=messages.not_authorized_registry_access.format(registry.name)
                                             if registry else messages.not_authorized_workflow_access)
+    except lm_exceptions.ROCrateNotFoundException as e:
+        return lm_exceptions.report_problem(404, "RO-Crate not found", detail=str(e))
     except lm_exceptions.WorkflowVersionConflictException:
         return lm_exceptions.report_problem(409, "Workflow version conflict",
                                             detail=messages.workflow_version_conflict

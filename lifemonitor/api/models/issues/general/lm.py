@@ -22,10 +22,12 @@ from __future__ import annotations
 
 import logging
 
-from lifemonitor.utils import get_validation_schema_url
 from lifemonitor.api.models.issues import IssueMessage, WorkflowRepositoryIssue
+from lifemonitor.api.models.issues.general.repo_layout import \
+    GitRepositoryWithoutMainBranch
 from lifemonitor.api.models.repositories import WorkflowRepository
 from lifemonitor.schemas.validators import ValidationError, ValidationResult
+from lifemonitor.utils import get_validation_schema_url
 
 # set module level logger
 logger = logging.getLogger(__name__)
@@ -36,6 +38,7 @@ class MissingLMConfigFile(WorkflowRepositoryIssue):
     description = "No <code>lifemonitor.yaml</code> configuration file found on this repository.<br>"\
         "The <code>lifemonitor.yaml</code> should be placed on the root of this repository."
     labels = ['lifemonitor']
+    depends_on = [GitRepositoryWithoutMainBranch]
 
     def check(self, repo: WorkflowRepository) -> bool:
         if repo.config is None:
