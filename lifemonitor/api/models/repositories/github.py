@@ -210,6 +210,11 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
         return owner.login if owner else None
 
     @property
+    def owner_id(self) -> int:
+        owner = super().owner
+        return owner.id if owner else None
+
+    @property
     def license(self) -> Optional[str]:
         if not self._license:
             try:
