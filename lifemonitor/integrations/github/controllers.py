@@ -834,7 +834,7 @@ def handle_event():
         logger.debug(str(e))
 
     # check the author of the current pull_request
-    if event.pusher == event.application.bot:
+    if event.pusher_name == event.application.bot:
         logger.debug("Nothing to do: commit pushed by LifeMonitor[Bot]")
         return f"Push created by {event.application.bot}", 204
 
