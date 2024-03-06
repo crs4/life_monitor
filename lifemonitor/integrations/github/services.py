@@ -138,8 +138,7 @@ def register_repository_workflow(repository_reference: GithubRepositoryReference
         # set the workflow version name
         workflow_version = repository_reference.branch or repository_reference.tag
         # search user identity
-        identity: OAuthIdentity = hosting_service.server_credentials\
-            .find_identity_by_provider_user_id(str(repository_reference.owner_id))
+        identity: OAuthIdentity = repository_reference.event.sender
         repo_owner = identity.user
         logger.debug("Workflow Submitter: %r", repo_owner)
         # set the repo link
@@ -224,8 +223,7 @@ def delete_repository_workflow_version(repository_reference: GithubRepositoryRef
         # set the workflow version name
         workflow_version = repository_reference.branch or repository_reference.tag
         # search user identity
-        identity: OAuthIdentity = hosting_service.server_credentials\
-            .find_identity_by_provider_user_id(str(repository_reference.owner_id))
+        identity: OAuthIdentity = repository_reference.event.sender
         repo_owner = identity.user
         # set the repo link
         repo_link = f"{hosting_service.uri}/{repo.full_name}.git"
