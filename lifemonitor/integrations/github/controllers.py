@@ -249,12 +249,17 @@ def __notify_workflow_version_event__(repo_reference: GithubRepositoryReference,
         logger.debug("Notifications enabled: %r", notification_enabled)
         if notification_enabled:
             logger.debug(f"Setting notification for action '{action}' on repo '{repo.full_name}' (ref: {repo.ref})")
-            identity = OAuthIdentity.find_by_provider_user_id(str(repo.owner_id), "github")
-            if identity:
+            submitter = None
+            if isinstance(workflow_version, WorkflowVersion):
+                submitter = workflow_version.submitter
+            else:
+                sender = repo_reference.event.sender
+                submitter = sender.user if sender else None
+            if submitter:
                 version = workflow_version if isinstance(workflow_version, dict) else serializers.WorkflowVersionSchema(exclude=('meta', 'links')).dump(workflow_version)
                 repo_data = repo.raw_data
                 repo_data['ref'] = repo.ref
-                n = GithubWorkflowVersionNotification(workflow_version=version, repository=repo_data, action=action, users=[identity.user])
+                n = GithubWorkflowVersionNotification(workflow_version=version, repository=repo_data, action=action, users=[submitter])
                 n.save()
                 logger.debug(f"Setting notification for action '{action}' on repo '{repo.full_name}' (ref: {repo.ref})")
             else:

@@ -131,76 +131,90 @@ def register_repository_workflow(repository_reference: GithubRepositoryReference
     #
     registered_workflow = None
 
+    # set a reference to the Gihub hosting service instance
+    hosting_service: HostingService = repository_reference.hosting_service
+    logger.debug("Hosting service: %r", hosting_service)
+
+    # set the workflow version name
+    workflow_version = repository_reference.branch or repository_reference.tag
+
+    # search user identity
+    submitter = None
     try:
-        # set a reference to the Gihub hosting service instance
-        hosting_service: HostingService = repository_reference.hosting_service
-        logger.debug("Hosting service: %r", hosting_service)
-        # set the workflow version name
-        workflow_version = repository_reference.branch or repository_reference.tag
-        # search user identity
         identity: OAuthIdentity = repository_reference.event.sender
         submitter = identity.user
-        logger.debug("Workflow Submitter: %r", submitter)
-        # set the repo link
-        repo_link = f"{hosting_service.uri}/{repo.full_name}.git"
-        logger.debug("Workflow RepoLink: %s", repo_link)
-        # found and update the existing workflows associated with
-        workflow = github_registry.find_workflow(repo.full_name)
-        if workflow:
-            logger.debug("Updating workflow: %r", workflow)
-            current_wv = wv = workflow.versions.get(workflow_version, None)
-
-            # initialize registries map
-            registries_map = __get_registries_map__(workflow, registries=registries)
-
-            logger.debug("Created registries map: %r", registries_map)
-            # register or update the workflow version
-            if not wv:
-                logger.debug("Registering workflow version on worlflow: %r ....", workflow)
-                wv = lm.register_workflow(repo_link, submitter, workflow_version,
-                                          workflow_uuid=workflow.uuid,
-                                          name=repo.config.workflow_name, public=repo.config.public)
-                logger.debug("Registering workflow version on worlflow: %r .... DONE", workflow)
-            else:
-                logger.debug("Updating workflow version: %r...", wv)
-                wv = lm.update_workflow(wv.submitter, workflow.uuid, workflow_version,
-                                        name=repo.config.workflow_name,
-                                        rocrate_or_link=repo_link, public=repo.config.public)
-                logger.debug("Updating workflow version: %r... DONE", wv)
-
-            # register workflow on registries
-            logger.debug("(old,new) workflows: (%r, %r)", current_wv, wv)
-            if current_wv != wv:
-                register_workflow_on_registries(github_registry, submitter, repo, wv, registries_map)
-            else:
-                # register workflow on new registries if any
-                registries_list = [r for r in registries_map if r[0] not in wv.registry_workflow_versions] if registries_map else None
-                if registries_list:
-                    if current_wv != wv or len(registries_list) > 0:
-                        register_workflow_on_registries(github_registry, submitter, repo, wv, registries_list)
-                else:
-                    logger.warning("Skipped registration of workflow %r on registries %r", wv, registries_list)
-            # append to the list of registered workflows
-            registered_workflow = wv
-        # if no matches found, register a new workflow
-        else:
-            # register workflow version on LifeMonitor
-            wv = lm.register_workflow(repo_link, submitter, workflow_version,
-                                      name=repo.config.workflow_name, public=repo.config.public)
-            # register workflow on registries
-            register_workflow_on_registries(github_registry, submitter, repo, wv, registries_map=[(_, None, []) for _ in registries])
-            # append to the list of registered workflows
-            registered_workflow = wv
-
-        # register workflow version on github registry
-        if registered_workflow:
-            github_registry.add_workflow_version(registered_workflow, repo.full_name, repo.ref)
-            github_registry.save()
-
+        logger.debug("Found a Github identity for the sender %r --> %r, %r", repository_reference.event.sender, identity, submitter)
     except OAuthIdentityNotFoundException as e:
-        logger.warning("Github identity '%r' doesn't match with any LifeMonitor user identity", repository_reference.owner_id)
+        logger.warning("Github identity of the sender '%r' doesn't match with any LifeMonitor user identity", repository_reference.owner_id)
         if logger.isEnabledFor(logging.DEBUG):
             logger.exception(e)
+
+    # set the repo link
+    repo_link = f"{hosting_service.uri}/{repo.full_name}.git"
+    logger.debug("Workflow RepoLink: %s", repo_link)
+
+    # found and update the existing workflows associated with
+    workflow = github_registry.find_workflow(repo.full_name)
+    if workflow:
+        logger.debug("Found workflow associated with the repo: %r", workflow)
+
+        # fallback the submitter to the original submitter of the workflow
+        # (i.e., the user who registered the LifeMonitor Github app on the github repository)
+        if not submitter:
+            submitter = workflow.earliest_version.submitter
+
+        # look up the existing workflow version
+        current_wv = wv = workflow.versions.get(workflow_version, None)
+
+        # initialize registries map
+        registries_map = __get_registries_map__(workflow, registries=registries)
+
+        logger.debug("Created registries map: %r", registries_map)
+        # register or update the workflow version
+        if not wv:
+            logger.debug("Registering workflow version on worlflow: %r ....", workflow)
+            wv = lm.register_workflow(repo_link, submitter, workflow_version,
+                                      workflow_uuid=workflow.uuid,
+                                      name=repo.config.workflow_name, public=repo.config.public)
+            logger.debug("Registering workflow version on worlflow: %r .... DONE", workflow)
+        else:
+            logger.debug("Updating workflow version: %r...", wv)
+            wv = lm.update_workflow(wv.submitter, workflow.uuid, workflow_version,
+                                    name=repo.config.workflow_name,
+                                    rocrate_or_link=repo_link, public=repo.config.public)
+            logger.debug("Updating workflow version: %r... DONE", wv)
+
+        # register workflow on registries
+        logger.debug("(old,new) workflows: (%r, %r)", current_wv, wv)
+        if current_wv != wv:
+            register_workflow_on_registries(github_registry, submitter, repo, wv, registries_map)
+        else:
+            # register workflow on new registries if any
+            registries_list = [r for r in registries_map if r[0] not in wv.registry_workflow_versions] if registries_map else None
+            if registries_list:
+                if current_wv != wv or len(registries_list) > 0:
+                    register_workflow_on_registries(github_registry, submitter, repo, wv, registries_list)
+            else:
+                logger.warning("Skipped registration of workflow %r on registries %r", wv, registries_list)
+        # append to the list of registered workflows
+        registered_workflow = wv
+    # if no matches found, register a new workflow
+    elif submitter:
+        # register workflow version on LifeMonitor
+        wv = lm.register_workflow(repo_link, submitter, workflow_version,
+                                  name=repo.config.workflow_name, public=repo.config.public)
+        # register workflow on registries
+        register_workflow_on_registries(github_registry, submitter, repo, wv, registries_map=[(_, None, []) for _ in registries])
+        # append to the list of registered workflows
+        registered_workflow = wv
+    else:
+        logger.error("Unable to register workflow version '%r': "
+                     "unable to associate a LifeMonitor user to the repository submitter", workflow_version)
+
+    # register workflow version on github registry
+    if registered_workflow:
+        github_registry.add_workflow_version(registered_workflow, repo.full_name, repo.ref)
+        github_registry.save()
 
     return registered_workflow
 
@@ -214,67 +228,77 @@ def delete_repository_workflow_version(repository_reference: GithubRepositoryRef
     repo: GithubWorkflowRepository = repository_reference.repository
     logger.debug("Repository: %r", repo)
 
+    # set reference to the github workflow registry
+    github_registry: GithubWorkflowRegistry = repository_reference.event.installation.github_registry
+
+    # set a reference to the Github hosting service instance
+    hosting_service: HostingService = repository_reference.hosting_service
+    logger.debug("Hosting service: %r", hosting_service)
+
+    # set the workflow version name
+    workflow_version = repository_reference.branch or repository_reference.tag
+
+    # search user identity
+    submitter = None
     try:
-        # set reference to the github workflow registry
-        github_registry: GithubWorkflowRegistry = repository_reference.event.installation.github_registry
-        # set a reference to the Github hosting service instance
-        hosting_service: HostingService = repository_reference.hosting_service
-        logger.debug("Hosting service: %r", hosting_service)
-        # set the workflow version name
-        workflow_version = repository_reference.branch or repository_reference.tag
-        # search user identity
         identity: OAuthIdentity = repository_reference.event.sender
         submitter = identity.user
-        # set the repo link
-        repo_link = f"{hosting_service.uri}/{repo.full_name}.git"
-        logger.debug("RepoLink: %s", repo_link)
-
-        # Try to delete the workflow from registries only if it has only one version.
-        # Deletion of a single workflow version is not supported at the moment
-        # due to the limitation of the supported registry API (i.e., Seek)
-        w = github_registry.find_workflow(repo.full_name)
-        if not w:
-            logger.warning(f"No workflow associated with '{repo.full_name}' found")
-        else:
-            # try to find the workflow version
-            wv = lm.get_user_workflow_version(submitter, w.uuid, workflow_version)
-            if not wv:
-                logger.warning(f"Unable to find the version {workflow_version} of workflow {w.uuid}")
-                return None
-            else:
-                # serialize the workflow version object before deletion
-                wv = serializers.WorkflowVersionSchema(exclude=('meta', 'links')).dump(wv)
-
-            # normalize the list of registries
-            registries = __normalize_registry_identitiers__(registries, as_strings=True)
-            logger.debug("Normalized list of registries: %r", registries)
-
-            # initialize registries map
-            registry_workflows_map = __get_registries_map__(w, registries=registries)
-            logger.debug("List of registries for wf %r: %r", w, registry_workflows_map)
-
-            # filter workflows with only one version
-            filtered_registries = [_ for _ in registry_workflows_map if len(_[2]) == 1]
-            logger.debug("Filtered registry workflows: %r", filtered_registries)
-
-            # delete workflow from registries
-            logger.debug("Removing version '%r' of worlflow %r from registries %r....", workflow_version, w, filtered_registries)
-            delete_workflow_from_registries(github_registry, submitter, w, filtered_registries)
-            logger.debug("Removing version '%r' of worlflow %r from registries %r.... DONE", workflow_version, w, filtered_registries)
-
-            # delete workflow version from LifeMonitor
-            logger.debug("Removing version '%r' of worlflow %r from LifeMonitor....", workflow_version, w)
-
-            lm.deregister_user_workflow_version(w.uuid, workflow_version, submitter)
-            logger.debug("Removing version '%r' of worlflow %r from LifeMonitor.... DONE", workflow_version, w)
-
-            # return the deleted workflow version (serialized)
-            return wv
-
     except OAuthIdentityNotFoundException as e:
-        logger.warning("Github identity '%r' doesn't match with any LifeMonitor user identity", repository_reference.owner_id)
+        logger.warning("Github identity of the sender '%r' doesn't match with any LifeMonitor user identity", repository_reference.owner_id)
         if logger.isEnabledFor(logging.DEBUG):
             logger.exception(e)
+
+    # set the repo link
+    repo_link = f"{hosting_service.uri}/{repo.full_name}.git"
+    logger.debug("RepoLink: %s", repo_link)
+
+    # Try to delete the workflow from registries only if it has only one version.
+    # Deletion of a single workflow version is not supported at the moment
+    # due to the limitation of the supported registry API (i.e., Seek)
+    w = github_registry.find_workflow(repo.full_name)
+    if not w:
+        logger.warning(f"No workflow associated with '{repo.full_name}' found")
+    else:
+
+        # fallback the submitter to the original submitter of the workflow
+        # (i.e., the user who registered the LifeMonitor Github app on the github repository)
+        if not submitter:
+            submitter = w.earliest_version.submitter
+
+        # try to find the workflow version
+        wv = lm.get_user_workflow_version(submitter, w.uuid, workflow_version)
+        if not wv:
+            logger.warning(f"Unable to find the version {workflow_version} of workflow {w.uuid}")
+            return None
+        else:
+            # serialize the workflow version object before deletion
+            wv = serializers.WorkflowVersionSchema(exclude=('meta', 'links')).dump(wv)
+
+        # normalize the list of registries
+        registries = __normalize_registry_identitiers__(registries, as_strings=True)
+        logger.debug("Normalized list of registries: %r", registries)
+
+        # initialize registries map
+        registry_workflows_map = __get_registries_map__(w, registries=registries)
+        logger.debug("List of registries for wf %r: %r", w, registry_workflows_map)
+
+        # filter workflows with only one version
+        filtered_registries = [_ for _ in registry_workflows_map if len(_[2]) == 1]
+        logger.debug("Filtered registry workflows: %r", filtered_registries)
+
+        # delete workflow from registries
+        logger.debug("Removing version '%r' of worlflow %r from registries %r....", workflow_version, w, filtered_registries)
+        delete_workflow_from_registries(github_registry, submitter, w, filtered_registries)
+        logger.debug("Removing version '%r' of worlflow %r from registries %r.... DONE", workflow_version, w, filtered_registries)
+
+        # delete workflow version from LifeMonitor
+        logger.debug("Removing version '%r' of worlflow %r from LifeMonitor....", workflow_version, w)
+
+        lm.deregister_user_workflow_version(w.uuid, workflow_version, submitter)
+        logger.debug("Removing version '%r' of worlflow %r from LifeMonitor.... DONE", workflow_version, w)
+
+        # return the deleted workflow version (serialized)
+        return wv
 
     return None
 
