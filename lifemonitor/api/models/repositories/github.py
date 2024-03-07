@@ -206,8 +206,13 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
 
     @property
     def owner(self) -> str:
-        onwer = super().owner
-        return onwer.login if onwer else None
+        owner = super().owner
+        return owner.login if owner else None
+
+    @property
+    def owner_id(self) -> int:
+        owner = super().owner
+        return owner.id if owner else None
 
     @property
     def license(self) -> Optional[str]:

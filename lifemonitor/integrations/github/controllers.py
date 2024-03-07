@@ -41,9 +41,7 @@ from lifemonitor.api.models.repositories.github import GithubWorkflowRepository
 from lifemonitor.api.models.testsuites.testinstance import TestInstance
 from lifemonitor.api.models.wizards import QuestionStep, UpdateStep
 from lifemonitor.api.models.workflows import WorkflowVersion
-from lifemonitor.auth.models import User
-from lifemonitor.auth.oauth2.client.models import OAuthIdentity
-from lifemonitor.auth.services import authorized, current_user
+from lifemonitor.auth.services import User, authorized, current_user
 from lifemonitor.integrations.github import pull_requests
 from lifemonitor.integrations.github.app import LifeMonitorGithubApp
 from lifemonitor.integrations.github.events import (GithubEvent,
@@ -249,12 +247,17 @@ def __notify_workflow_version_event__(repo_reference: GithubRepositoryReference,
         logger.debug("Notifications enabled: %r", notification_enabled)
         if notification_enabled:
             logger.debug(f"Setting notification for action '{action}' on repo '{repo.full_name}' (ref: {repo.ref})")
-            identity = OAuthIdentity.find_by_provider_user_id(str(repo.owner.id), "github")
-            if identity:
+            submitter = None
+            if isinstance(workflow_version, WorkflowVersion):
+                submitter = workflow_version.submitter
+            else:
+                sender = repo_reference.event.sender
+                submitter = sender.user if sender else None
+            if submitter:
                 version = workflow_version if isinstance(workflow_version, dict) else serializers.WorkflowVersionSchema(exclude=('meta', 'links')).dump(workflow_version)
                 repo_data = repo.raw_data
                 repo_data['ref'] = repo.ref
-                n = GithubWorkflowVersionNotification(workflow_version=version, repository=repo_data, action=action, users=[identity.user])
+                n = GithubWorkflowVersionNotification(workflow_version=version, repository=repo_data, action=action, users=[submitter])
                 n.save()
                 logger.debug(f"Setting notification for action '{action}' on repo '{repo.full_name}' (ref: {repo.ref})")
             else:
@@ -834,7 +837,7 @@ def handle_event():
         logger.debug(str(e))
 
     # check the author of the current pull_request
-    if event.pusher == event.application.bot:
+    if event.pusher_name == event.application.bot:
         logger.debug("Nothing to do: commit pushed by LifeMonitor[Bot]")
         return f"Push created by {event.application.bot}", 204
 
