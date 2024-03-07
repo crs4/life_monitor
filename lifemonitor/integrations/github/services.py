@@ -217,7 +217,7 @@ def delete_repository_workflow_version(repository_reference: GithubRepositoryRef
     try:
         # set reference to the github workflow registry
         github_registry: GithubWorkflowRegistry = repository_reference.event.installation.github_registry
-        # set a reference to the Gihub hosting service instance
+        # set a reference to the Github hosting service instance
         hosting_service: HostingService = repository_reference.hosting_service
         logger.debug("Hosting service: %r", hosting_service)
         # set the workflow version name
