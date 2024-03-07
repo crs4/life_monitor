@@ -90,6 +90,10 @@ class Workflow(Resource):
         return None
 
     @hybrid_property
+    def earliest_version(self) -> WorkflowVersion:
+        return min(self.versions.values(), key=lambda v: v.created)
+
+    @hybrid_property
     def latest_version(self) -> WorkflowVersion:
         return max(self.versions.values(), key=lambda v: v.created)
 
