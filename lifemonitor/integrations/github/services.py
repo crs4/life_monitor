@@ -139,8 +139,8 @@ def register_repository_workflow(repository_reference: GithubRepositoryReference
         workflow_version = repository_reference.branch or repository_reference.tag
         # search user identity
         identity: OAuthIdentity = repository_reference.event.sender
-        repo_owner = identity.user
-        logger.debug("Workflow Submitter: %r", repo_owner)
+        submitter = identity.user
+        logger.debug("Workflow Submitter: %r", submitter)
         # set the repo link
         repo_link = f"{hosting_service.uri}/{repo.full_name}.git"
         logger.debug("Workflow RepoLink: %s", repo_link)
@@ -157,7 +157,7 @@ def register_repository_workflow(repository_reference: GithubRepositoryReference
             # register or update the workflow version
             if not wv:
                 logger.debug("Registering workflow version on worlflow: %r ....", workflow)
-                wv = lm.register_workflow(repo_link, repo_owner, workflow_version,
+                wv = lm.register_workflow(repo_link, submitter, workflow_version,
                                           workflow_uuid=workflow.uuid,
                                           name=repo.config.workflow_name, public=repo.config.public)
                 logger.debug("Registering workflow version on worlflow: %r .... DONE", workflow)
@@ -171,13 +171,13 @@ def register_repository_workflow(repository_reference: GithubRepositoryReference
             # register workflow on registries
             logger.debug("(old,new) workflows: (%r, %r)", current_wv, wv)
             if current_wv != wv:
-                register_workflow_on_registries(github_registry, repo_owner, repo, wv, registries_map)
+                register_workflow_on_registries(github_registry, submitter, repo, wv, registries_map)
             else:
                 # register workflow on new registries if any
                 registries_list = [r for r in registries_map if r[0] not in wv.registry_workflow_versions] if registries_map else None
                 if registries_list:
                     if current_wv != wv or len(registries_list) > 0:
-                        register_workflow_on_registries(github_registry, repo_owner, repo, wv, registries_list)
+                        register_workflow_on_registries(github_registry, submitter, repo, wv, registries_list)
                 else:
                     logger.warning("Skipped registration of workflow %r on registries %r", wv, registries_list)
             # append to the list of registered workflows
@@ -185,10 +185,10 @@ def register_repository_workflow(repository_reference: GithubRepositoryReference
         # if no matches found, register a new workflow
         else:
             # register workflow version on LifeMonitor
-            wv = lm.register_workflow(repo_link, repo_owner, workflow_version,
+            wv = lm.register_workflow(repo_link, submitter, workflow_version,
                                       name=repo.config.workflow_name, public=repo.config.public)
             # register workflow on registries
-            register_workflow_on_registries(github_registry, repo_owner, repo, wv, registries_map=[(_, None, []) for _ in registries])
+            register_workflow_on_registries(github_registry, submitter, repo, wv, registries_map=[(_, None, []) for _ in registries])
             # append to the list of registered workflows
             registered_workflow = wv
 
@@ -224,7 +224,7 @@ def delete_repository_workflow_version(repository_reference: GithubRepositoryRef
         workflow_version = repository_reference.branch or repository_reference.tag
         # search user identity
         identity: OAuthIdentity = repository_reference.event.sender
-        repo_owner = identity.user
+        submitter = identity.user
         # set the repo link
         repo_link = f"{hosting_service.uri}/{repo.full_name}.git"
         logger.debug("RepoLink: %s", repo_link)
@@ -237,7 +237,7 @@ def delete_repository_workflow_version(repository_reference: GithubRepositoryRef
             logger.warning(f"No workflow associated with '{repo.full_name}' found")
         else:
             # try to find the workflow version
-            wv = lm.get_user_workflow_version(repo_owner, w.uuid, workflow_version)
+            wv = lm.get_user_workflow_version(submitter, w.uuid, workflow_version)
             if not wv:
                 logger.warning(f"Unable to find the version {workflow_version} of workflow {w.uuid}")
                 return None
@@ -259,13 +259,13 @@ def delete_repository_workflow_version(repository_reference: GithubRepositoryRef
 
             # delete workflow from registries
             logger.debug("Removing version '%r' of worlflow %r from registries %r....", workflow_version, w, filtered_registries)
-            delete_workflow_from_registries(github_registry, repo_owner, w, filtered_registries)
+            delete_workflow_from_registries(github_registry, submitter, w, filtered_registries)
             logger.debug("Removing version '%r' of worlflow %r from registries %r.... DONE", workflow_version, w, filtered_registries)
 
             # delete workflow version from LifeMonitor
             logger.debug("Removing version '%r' of worlflow %r from LifeMonitor....", workflow_version, w)
 
-            lm.deregister_user_workflow_version(w.uuid, workflow_version, repo_owner)
+            lm.deregister_user_workflow_version(w.uuid, workflow_version, submitter)
             logger.debug("Removing version '%r' of worlflow %r from LifeMonitor.... DONE", workflow_version, w)
 
             # return the deleted workflow version (serialized)
