@@ -41,7 +41,7 @@ from lifemonitor.api.models.repositories.github import GithubWorkflowRepository
 from lifemonitor.api.models.testsuites.testinstance import TestInstance
 from lifemonitor.api.models.wizards import QuestionStep, UpdateStep
 from lifemonitor.api.models.workflows import WorkflowVersion
-from lifemonitor.auth.services import authorized, current_user
+from lifemonitor.auth.services import User, authorized, current_user
 from lifemonitor.integrations.github import pull_requests
 from lifemonitor.integrations.github.app import LifeMonitorGithubApp
 from lifemonitor.integrations.github.events import (GithubEvent,
