@@ -423,11 +423,17 @@ def create(event: GithubEvent):
     logger.warning("Is Tag: %r", repo_info.tag)
     logger.warning("Is Branch: %r", repo_info.branch)
 
+    # workflow submitter
+    submitter = services.identify_workflow_version_submitter(event.repository_reference)
+    if not submitter:
+        logger.warning("Unable to identify the submitter of the workflow version")
+        return
+
     if repo_info.branch:
         try:
             __check_for_issues_and_register__(repo_info,
-                                              event.sender.user.github_settings,
-                                              event.sender.user.registry_settings,
+                                              submitter.github_settings,
+                                              submitter.registry_settings,
                                               True)
         except Exception as e:
             logger.exception(e)
@@ -457,10 +463,16 @@ def delete(event: GithubEvent):
     logger.warning("Is Tag: %s", repo_info.tag)
     logger.warning("Is Branch: %s", repo_info.branch)
 
+    # workflow submitter
+    submitter = services.identify_workflow_version_submitter(event.repository_reference)
+    if not submitter:
+        logger.warning("Unable to identify the submitter of the workflow version")
+        return
+
     if repo_info.tag or repo_info.branch:
         try:
             workflow_version = services.delete_repository_workflow_version(repo_info,
-                                                                           registries=event.sender.user.registry_settings.registries)
+                                                                           registries=submitter.registry_settings.registries)
             if workflow_version:
                 __notify_workflow_version_event__(repo_info, workflow_version, action='deleted')
         except Exception as e:
@@ -490,12 +502,17 @@ def push(event: GithubEvent):
         logger.debug("Tree: %r", repo.trees_url)
         logger.debug("Commit: %r", repo.rev)
 
+        # workflow submitter
+        submitter = services.identify_workflow_version_submitter(event.repository_reference)
+        if not submitter:
+            logger.warning("Unable to identify the submitter of the workflow version")
+            return
+
         if not repo_info.ref or repo_info.deleted:
             logger.debug("Repo ref not defined or branch/tag deleted: %r", repo)
         else:
-            settings: GithubUserSettings = event.sender.user.github_settings
-            __check_for_issues_and_register__(repo_info, settings,
-                                              event.sender.user.registry_settings, True)
+            __check_for_issues_and_register__(repo_info, submitter.github_settings,
+                                              submitter.registry_settings, True)
 
         return "No content", 204
     except Exception as e:
