@@ -104,14 +104,44 @@ def __get_registries_map__(w: Workflow, registries: List[str]):
 
 
 def find_workflow_version(repository_reference: GithubRepositoryReference) -> Tuple[Workflow, WorkflowVersion]:
-    # found the existing workflow associated with repo
+    # get a reference to the github workflow registry for this installation
     github_registry: GithubWorkflowRegistry = repository_reference.event.installation.github_registry
+    # find the workflow
     workflow_version = None
     workflow = github_registry.find_workflow(repository_reference.repository.full_name)
     if workflow:
+        # get the workflow version (the one associated with the branch or tag of the repository)
         workflow_version = workflow.versions.get(repository_reference.branch or repository_reference.tag, None)
         logger.debug("Found workflow version: %r", workflow_version)
     return workflow, workflow_version
+
+
+def identify_workflow_version_submitter(repository_reference: GithubRepositoryReference) -> User:
+    """ Identify the submitter of the workflow version.
+    The submitter is the user who trigger a github event on the repository.
+    If the "sender" of the event is not a LifeMonitor user, the submitter is the user who triggered the event
+    for the registration of the first workflow version (e.g., the user who registered the LifeMonitor Github app on the github repository).
+    """
+    # search user identity
+    submitter = None
+    try:
+        identity: OAuthIdentity = repository_reference.event.sender
+        submitter = identity.user
+        logger.debug("Found a Github identity for the sender %r --> %r, %r", repository_reference.event.sender, identity, submitter)
+    except OAuthIdentityNotFoundException as e:
+        logger.warning("Github identity of the sender '%r' doesn't match with any LifeMonitor user identity", repository_reference.owner_id)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.exception(e)
+
+    # fallback the submitter to the original submitter of the workflow
+    # (i.e., the user who registered the LifeMonitor Github app on the github repository)
+    if not submitter:
+        # get the workflow
+        workflow, _ = find_workflow_version(repository_reference)
+        if workflow:
+            submitter = workflow.earliest_version.submitter
+
+    return submitter
 
 
 def register_repository_workflow(repository_reference: GithubRepositoryReference, registries: List[str] = None) -> WorkflowVersion:
@@ -139,15 +169,7 @@ def register_repository_workflow(repository_reference: GithubRepositoryReference
     workflow_version = repository_reference.branch or repository_reference.tag
 
     # search user identity
-    submitter = None
-    try:
-        identity: OAuthIdentity = repository_reference.event.sender
-        submitter = identity.user
-        logger.debug("Found a Github identity for the sender %r --> %r, %r", repository_reference.event.sender, identity, submitter)
-    except OAuthIdentityNotFoundException as e:
-        logger.warning("Github identity of the sender '%r' doesn't match with any LifeMonitor user identity", repository_reference.owner_id)
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.exception(e)
+    submitter = identify_workflow_version_submitter(repository_reference)
 
     # set the repo link
     repo_link = f"{hosting_service.uri}/{repo.full_name}.git"
@@ -157,11 +179,6 @@ def register_repository_workflow(repository_reference: GithubRepositoryReference
     workflow = github_registry.find_workflow(repo.full_name)
     if workflow:
         logger.debug("Found workflow associated with the repo: %r", workflow)
-
-        # fallback the submitter to the original submitter of the workflow
-        # (i.e., the user who registered the LifeMonitor Github app on the github repository)
-        if not submitter:
-            submitter = workflow.earliest_version.submitter
 
         # look up the existing workflow version
         current_wv = wv = workflow.versions.get(workflow_version, None)
@@ -239,14 +256,7 @@ def delete_repository_workflow_version(repository_reference: GithubRepositoryRef
     workflow_version = repository_reference.branch or repository_reference.tag
 
     # search user identity
-    submitter = None
-    try:
-        identity: OAuthIdentity = repository_reference.event.sender
-        submitter = identity.user
-    except OAuthIdentityNotFoundException as e:
-        logger.warning("Github identity of the sender '%r' doesn't match with any LifeMonitor user identity", repository_reference.owner_id)
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.exception(e)
+    submitter = identify_workflow_version_submitter(repository_reference)
 
     # set the repo link
     repo_link = f"{hosting_service.uri}/{repo.full_name}.git"
@@ -259,11 +269,6 @@ def delete_repository_workflow_version(repository_reference: GithubRepositoryRef
     if not w:
         logger.warning(f"No workflow associated with '{repo.full_name}' found")
     else:
-
-        # fallback the submitter to the original submitter of the workflow
-        # (i.e., the user who registered the LifeMonitor Github app on the github repository)
-        if not submitter:
-            submitter = w.earliest_version.submitter
 
         # try to find the workflow version
         wv = lm.get_user_workflow_version(submitter, w.uuid, workflow_version)
