@@ -101,6 +101,8 @@ Override static width settings.
     /* min-height: 800px;*/
     overflow-y: scroll;
     font-size: 15px;
+    max-width: 25%;  // must match the max-width of the body > div.row > div.section.col-sm-12
+    min-width: 140px;
 }
 
 .logo {
@@ -217,6 +219,10 @@ div.row.page-toc > div.toc-title {
 div.row.page-toc > div.col-12.toc-content {
     margin: 0;
     padding: 0;    
+}
+
+body > div.row > div.section.col-sm-12 {
+    max-width: 75%; // must match the max-width of .header
 }
 
 body > div.row > div.section.col-sm-12.ml-auto.col-md-9 > div > div.col-md-3.text-center > div.row.page-toc > div.col-12.toc-content{
