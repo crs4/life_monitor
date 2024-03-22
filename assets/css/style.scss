@@ -1,5 +1,5 @@
---- 
---- 
+---
+---
 
 @import "{{ site.theme }}";
 
@@ -112,7 +112,7 @@ Override static width settings.
 .footer {
     /* background: #003333;*/
     color: whitesmoke;
-    text-align: center;    
+    text-align: center;
     padding: 40px 0 10px;
     position: relative;
     bottom: 0px;
@@ -151,7 +151,7 @@ p img {
 
 .signin-button-container{
     position: -webkit-sticky;
-    position: sticky; 
+    position: sticky;
     top: 50px;
 }
 
@@ -189,7 +189,7 @@ p img {
 }
 
 .toc a:hover {
-    color: hsl(180, 63%, 33%);    
+    color: hsl(180, 63%, 33%);
 }
 
 div.page-toc {
@@ -205,20 +205,20 @@ div.page-toc {
     margin: 0;
     width: 100%;
     position: -webkit-sticky;
-    position: sticky; 
+    position: sticky;
     top: 120px;
 }
 
 div.row.page-toc > div.toc-title {
     font-size: 1.1em;
-    font-weight: bold;    
+    font-weight: bold;
     padding: 20px 18px 20px;
     text-align: center;
 }
 
 div.row.page-toc > div.col-12.toc-content {
     margin: 0;
-    padding: 0;    
+    padding: 0;
 }
 
 body > div.row > div.section.col-sm-12 {
@@ -234,7 +234,7 @@ body > div.row > div.section.col-sm-12.ml-auto.col-md-9 > div > div.col-md-3.tex
 
 div.row.page-toc > div.toc-content::-webkit-scrollbar {
     width: 0px;
-    background: transparent; /* make scrollbar transparent */ 
+    background: transparent; /* make scrollbar transparent */
 }
 
 // The outer-most ul generated for the TOC does not have a class assigned.
@@ -247,4 +247,3 @@ div.row.page-toc > div.col-12.toc-content > ul {
 ul.page-toc-item {
   padding-left: 20px;
 }
-
