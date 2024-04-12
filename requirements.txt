@@ -8,7 +8,7 @@ Bcrypt-Flask==1.0.2
 giturlparse~=0.10.0
 click-option-group~=0.5.5
 cryptography>=41.0.3
-dnspython==2.2.1
+dnspython==2.6.1
 flask-cors==3.0.10
 flask-marshmallow~=0.14.0
 flask-restful==0.3.9
