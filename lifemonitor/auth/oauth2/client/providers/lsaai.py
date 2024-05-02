@@ -69,7 +69,7 @@ class LsAAI:
         'api_base_url': 'https://login.aai.lifescience-ri.eu',
         'access_token_url': 'https://login.aai.lifescience-ri.eu/oidc/token',
         'authorize_url': 'https://login.aai.lifescience-ri.eu/oidc/authorize',
-        'client_kwargs': {'scope': 'openid profile email orcid eduperson_principal_name'},
+        'client_kwargs': {'scope': 'openid profile email'},
         'userinfo_endpoint': 'https://login.aai.lifescience-ri.eu/oidc/userinfo',
         'userinfo_compliance_fix': normalize_userinfo,
         'user_profile_html': 'https://profile.aai.lifescience-ri.eu/profile',
