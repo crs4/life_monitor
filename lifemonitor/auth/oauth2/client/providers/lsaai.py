@@ -65,15 +65,15 @@ class LsAAI:
         'client_id': current_app.config.get('LSAAI_CLIENT_ID', None),
         'client_secret': current_app.config.get('LSAAI_CLIENT_SECRET', None),
         'client_name': client_name,
-        'uri': 'https://proxy.aai.lifescience-ri.eu',
-        'api_base_url': 'https://proxy.aai.lifescience-ri.eu',
-        'access_token_url': 'https://proxy.aai.lifescience-ri.eu/OIDC/token',
-        'authorize_url': 'https://proxy.aai.lifescience-ri.eu/saml2sp/OIDC/authorization',
+        'uri': 'https://login.aai.lifescience-ri.eu',
+        'api_base_url': 'https://login.aai.lifescience-ri.eu',
+        'access_token_url': 'https://login.aai.lifescience-ri.eu/oidc/token',
+        'authorize_url': 'https://login.aai.lifescience-ri.eu/oidc/authorize',
         'client_kwargs': {'scope': 'openid profile email orcid eduperson_principal_name'},
-        'userinfo_endpoint': 'https://proxy.aai.lifescience-ri.eu/OIDC/userinfo',
+        'userinfo_endpoint': 'https://login.aai.lifescience-ri.eu/oidc/userinfo',
         'userinfo_compliance_fix': normalize_userinfo,
         'user_profile_html': 'https://profile.aai.lifescience-ri.eu/profile',
-        'server_metadata_url': 'https://proxy.aai.lifescience-ri.eu/.well-known/openid-configuration'
+        'server_metadata_url': 'https://login.aai.lifescience-ri.eu/oidc/.well-known/openid-configuration'
     }
 
     def __repr__(self) -> str:
