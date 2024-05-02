@@ -86,8 +86,15 @@ def create_blueprint(merge_identity_view):
             user_info = remote.userinfo(token=token)
             return _handle_authorize(remote, token, user_info)
         except OAuthError as e:
-            logger.debug(e)
-            return e.description, 401
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.exception(e)
+            raise exceptions.OAuthAuthorizationException(title="Authorization Error",
+                                                         detail=e.description)
+        except Exception as e:
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.exception(e)
+            raise exceptions.OAuthAuthorizationException(title="Authorization Error",
+                                                         detail="Unable to authorize the user")
 
     @blueprint.route('/login/<name>')
     @next_route_aware
