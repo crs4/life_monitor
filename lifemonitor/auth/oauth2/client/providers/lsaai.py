@@ -21,7 +21,7 @@
 import logging
 
 from flask import current_app
-
+from lifemonitor.exceptions import OAuthAuthorizationException
 from lifemonitor.auth.oauth2.client.models import OAuthIdentity
 
 # Config a module level logger
@@ -29,33 +29,18 @@ logger = logging.getLogger(__name__)
 
 
 def normalize_userinfo(client, data):
-    logger.debug("LSAAI Data: %r", data)
-    preferred_username = data.get('eduperson_principal_name')[0].replace('@lifescience-ri.eu', '') \
-        if 'eduperson_principal_namex' in data and len(data['eduperson_principal_name']) > 0 \
-        else data['name'].replace(' ', '')
-    params = {
-        'sub': str(data['sub']),
-        'name': data['name'],
-        'email': data.get('email'),
-        'preferred_username': preferred_username
-        # 'profile': data['html_url'],
-        # 'picture': data['avatar_url'],
-        # 'website': data.get('blog'),
-    }
-
-    # The email can be be None despite the scope being 'user:email'.
-    # That is because a user can choose to make his/her email private.
-    # If that is the case we get all the users emails regardless if private or note
-    # and use the one he/she has marked as `primary`
+    info = {}
     try:
-        if params.get('email') is None:
-            resp = client.get('user/emails')
-            resp.raise_for_status()
-            data = resp.json()
-            params["email"] = next(email['email'] for email in data if email['primary'])
-    except Exception as e:
-        logger.warning("Unable to get user email. Reason: %r", str(e))
-    return params
+        info["sub"] = data['sub']
+    except KeyError:
+        raise OAuthAuthorizationException(title="Unable to get user data",
+                                          description="the LS ID is required")
+    for key in ['name', 'email', 'preferred_username']:
+        info[key] = data.get(key, None)
+        if info[key] is None:
+            logger.warning("User %r has no %r", info["sub"], key)
+
+    return info
 
 
 class LsAAI:
@@ -65,15 +50,15 @@ class LsAAI:
         'client_id': current_app.config.get('LSAAI_CLIENT_ID', None),
         'client_secret': current_app.config.get('LSAAI_CLIENT_SECRET', None),
         'client_name': client_name,
-        'uri': 'https://proxy.aai.lifescience-ri.eu',
-        'api_base_url': 'https://proxy.aai.lifescience-ri.eu',
-        'access_token_url': 'https://proxy.aai.lifescience-ri.eu/OIDC/token',
-        'authorize_url': 'https://proxy.aai.lifescience-ri.eu/saml2sp/OIDC/authorization',
-        'client_kwargs': {'scope': 'openid profile email orcid eduperson_principal_name'},
-        'userinfo_endpoint': 'https://proxy.aai.lifescience-ri.eu/OIDC/userinfo',
+        'uri': 'https://login.aai.lifescience-ri.eu',
+        'api_base_url': 'https://login.aai.lifescience-ri.eu',
+        'access_token_url': 'https://login.aai.lifescience-ri.eu/oidc/token',
+        'authorize_url': 'https://login.aai.lifescience-ri.eu/oidc/authorize',
+        'client_kwargs': {'scope': 'openid profile email'},
+        'userinfo_endpoint': 'https://login.aai.lifescience-ri.eu/oidc/userinfo',
         'userinfo_compliance_fix': normalize_userinfo,
         'user_profile_html': 'https://profile.aai.lifescience-ri.eu/profile',
-        'server_metadata_url': 'https://proxy.aai.lifescience-ri.eu/.well-known/openid-configuration'
+        'server_metadata_url': 'https://login.aai.lifescience-ri.eu/oidc/.well-known/openid-configuration'
     }
 
     def __repr__(self) -> str:

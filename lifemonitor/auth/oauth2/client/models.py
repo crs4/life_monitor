@@ -126,6 +126,7 @@ class OAuthUserProfile:
 
     @staticmethod
     def from_dict(data: dict):
+        assert data, "User data from the OAuth Provider cannot be empty"
         profile = OAuthUserProfile()
         for k, v, in data.items():
             setattr(profile, k, v)

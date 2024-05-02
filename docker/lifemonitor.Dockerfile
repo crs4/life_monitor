@@ -94,6 +94,9 @@ COPY --chown=lm:lm lifemonitor /lm/lifemonitor
 COPY --chown=lm:lm migrations /lm/migrations
 COPY --chown=lm:lm cli /lm/cli
 
+# Ensure read access to source code to unprivileged users
+RUN find /lm/lifemonitor/ -type d -exec chmod a+r {} \;
+
 ##################################################################
 ## Node Stage
 ##################################################################

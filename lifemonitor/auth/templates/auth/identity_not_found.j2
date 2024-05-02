@@ -6,10 +6,10 @@
 {% block body %}
 
 <div class="login-box" style="height: auto;">
- 
+
   {{ macros.render_logo(class="login-logo", style="width: auto") }}
   
-  <div class="card card-primary card-outline shadow-lg p-1 mb-5 bg-white rounded">      
+  <div class="card card-primary card-outline shadow-lg p-1 mb-5 bg-white rounded">
 
     <div class="card-body login-card-body">
       {% if not identity %}
@@ -26,7 +26,11 @@
         </div>
         {{ macros.render_provider_logo(identity.provider) }}
         <h5 class="login-box-msg text-bold mt-4" style="font-weight: lighter; font-size: 1.6em;">
+          {% if identity.user_info.name or identity.user_info.preferred_username %}
           Hi, {{ identity.user_info.name or identity.user_info.preferred_username }}!
+          {% else %}
+          Hi, there!
+          {% endif %}
         </h5>
 
         <div class="text-center">
@@ -35,7 +39,7 @@
             If you already have an account, we strongly recommend 
             that you <span class="text-center text-bold">Sign In</span>
             with your existing credentials and link your new identity 
-            <a href="{{ url_for("auth.profile") }}">from the account configuration page</a>.            
+            <a href="{{ url_for("auth.profile") }}">from the account configuration page</a>.
           </p>
           <p class="text-bold">- OR -</p>
           <p class="p-1 pb-4">
@@ -43,18 +47,18 @@
             linked to your <b>{{ identity.provider.name }}</b> identity.
           </p>
         </div>
-      </div>      
+      </div>
       {% endif %}
 
       <form method="POST" action="{{action}}" >
         
         {{ form.hidden_tag() }}
 
-        <div class="text-center mb-3 row">            
+        <div class="text-center mb-3 row">
           <div class="col-6">
             <a href="{{ url_for("auth.login") }}" class="btn btn-block btn-secondary">
             Sign In
-            </a>          
+            </a>
           </div>
           <div class="col-6">
           <a href="{{ url_for("auth.register_identity") }}" class="btn btn-block btn-primary">
