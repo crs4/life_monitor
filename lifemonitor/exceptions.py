@@ -221,6 +221,14 @@ class IllegalStateException(LifeMonitorException):
                          detail=detail, status=status, **kwargs)
 
 
+class OAuthAuthorizationException(LifeMonitorException):
+
+    def __init__(self, detail=None, title="OAuth Authorization Exception",
+                 type="about:blank", status=401, **kwargs):
+        super().__init__(title=title,
+                         detail=detail, status=status, **kwargs)
+
+
 def handle_exception(e: Exception):
     """Return JSON instead of HTML for HTTP errors."""
     # start with the correct headers and status code from the error
