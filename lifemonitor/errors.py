@@ -78,6 +78,19 @@ def handle_400(e: Exception = None, description: str = None):
     )
 
 
+@blueprint.route("/401")
+def handle_401(e: Exception = None, description: str = None):
+    return __handle_error__(
+        {
+            "title": getattr(e, 'title', None) or "Unauthorized",
+            "code": "401",
+            "description": description if description
+            else str(e) if e and logger.isEnabledFor(logging.DEBUG)
+            else "Bad request",
+        }
+    )
+
+
 @blueprint.route("/404")
 def handle_404(e: Exception = None):
     resource = request.args.get("resource", None, type=str)
@@ -187,6 +200,7 @@ def register_api(app):
     logger.debug("Registering errors blueprint")
     app.register_blueprint(blueprint)
     app.register_error_handler(400, handle_400)
+    app.register_error_handler(401, handle_401)
     app.register_error_handler(404, handle_404)
     app.register_error_handler(429, handle_429)
     app.register_error_handler(500, handle_500)
