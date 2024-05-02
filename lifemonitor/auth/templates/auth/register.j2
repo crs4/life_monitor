@@ -26,7 +26,11 @@
         </div>
         {{ macros.render_provider_logo(identity.provider) }}
         <h5 class="login-box-msg text-bold mt-4" style="font-weight: lighter; font-size: 1.6em;">
+          {% if identity.user_info.name or identity.user_info.preferred_username %}
           Hi, {{ identity.user_info.name or identity.user_info.preferred_username }}!
+          {% else %}
+          Hi, there!
+          {% endif %}
         </h5>
       </div>            
       <div class="mt-4 small text-muted" style="font-weight: lighter;">
