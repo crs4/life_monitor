@@ -189,7 +189,7 @@ that they might be solved, thus extending the useful life of the workflow.</p>
 </div>
     <div class="app-desc">More information: <a href="https://openapi-generator.tech">https://openapi-generator.tech</a></div>
     <div class="app-desc">Contact Info: <a href="team@openapitools.org">team@openapitools.org</a></div>
-    <div class="app-desc">Version: 0.13.2</div>
+    <div class="app-desc">Version: 0.14.0</div>
     <div class="app-desc">BasePath:</div>
     <div class="license-info">All rights reserved</div>
     <div class="license-url">http://apache.org/licenses/LICENSE-2.0.html</div>
@@ -583,8 +583,17 @@ against the schema
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
     <pre class="example"><code>{
+  "identifier" : "148",
+  "registry" : {
+    "identifier" : "workflowhub_dev",
+    "name" : "WorkflowHub Dev",
+    "uuid" : "aa16c6a9-571f-4a62-976f-60ea514ad2c1",
+    "uri" : "https://dev.workflowhub.eu/"
+  },
+  "public" : false,
   "latest_version" : "1.0",
-  "versions" : [ "1.0", "1.0-dev" ]
+  "versions" : [ "1.0", "1.0-dev" ],
+  "name" : "COVID-19 Workflow"
 }</code></pre>
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
@@ -694,6 +703,7 @@ LifeMonitor by the current (authenticated) user.</div>
     <div class="example-data-content-type">Content-Type: application/json</div>
     <pre class="example"><code>{
   "items" : [ {
+    "public" : false,
     "versions" : [ {
       "uuid" : "21ac72ec-b9a5-49e0-b5a6-1322b8b54552",
       "version" : "1.0",
@@ -709,6 +719,8 @@ LifeMonitor by the current (authenticated) user.</div>
         "username" : "lm"
       }
     } ],
+    "name" : "COVID-19 Workflow",
+    "uuid" : "123e4567-e89b-12d3-a456-426614174000",
     "status" : {
       "latest_builds" : [ {
         "duration" : 2648,
@@ -747,6 +759,7 @@ LifeMonitor by the current (authenticated) user.</div>
       } ]
     }
   }, {
+    "public" : false,
     "versions" : [ {
       "uuid" : "21ac72ec-b9a5-49e0-b5a6-1322b8b54552",
       "version" : "1.0",
@@ -762,6 +775,8 @@ LifeMonitor by the current (authenticated) user.</div>
         "username" : "lm"
       }
     } ],
+    "name" : "COVID-19 Workflow",
+    "uuid" : "123e4567-e89b-12d3-a456-426614174000",
     "status" : {
       "latest_builds" : [ {
         "duration" : 2648,
@@ -1306,6 +1321,7 @@ OAuth2 clients can use this endpoint.</p>
     <div class="example-data-content-type">Content-Type: application/json</div>
     <pre class="example"><code>{
   "items" : [ {
+    "public" : false,
     "versions" : [ {
       "uuid" : "21ac72ec-b9a5-49e0-b5a6-1322b8b54552",
       "version" : "1.0",
@@ -1321,6 +1337,8 @@ OAuth2 clients can use this endpoint.</p>
         "username" : "lm"
       }
     } ],
+    "name" : "COVID-19 Workflow",
+    "uuid" : "123e4567-e89b-12d3-a456-426614174000",
     "status" : {
       "latest_builds" : [ {
         "duration" : 2648,
@@ -1359,6 +1377,7 @@ OAuth2 clients can use this endpoint.</p>
       } ]
     }
   }, {
+    "public" : false,
     "versions" : [ {
       "uuid" : "21ac72ec-b9a5-49e0-b5a6-1322b8b54552",
       "version" : "1.0",
@@ -1374,6 +1393,8 @@ OAuth2 clients can use this endpoint.</p>
         "username" : "lm"
       }
     } ],
+    "name" : "COVID-19 Workflow",
+    "uuid" : "123e4567-e89b-12d3-a456-426614174000",
     "status" : {
       "latest_builds" : [ {
         "duration" : 2648,
@@ -1604,6 +1625,7 @@ OAuth2 clients can use this endpoint.</p>
     <div class="example-data-content-type">Content-Type: application/json</div>
     <pre class="example"><code>{
   "items" : [ {
+    "public" : false,
     "versions" : [ {
       "uuid" : "21ac72ec-b9a5-49e0-b5a6-1322b8b54552",
       "version" : "1.0",
@@ -1619,6 +1641,8 @@ OAuth2 clients can use this endpoint.</p>
         "username" : "lm"
       }
     } ],
+    "name" : "COVID-19 Workflow",
+    "uuid" : "123e4567-e89b-12d3-a456-426614174000",
     "status" : {
       "latest_builds" : [ {
         "duration" : 2648,
@@ -1657,6 +1681,7 @@ OAuth2 clients can use this endpoint.</p>
       } ]
     }
   }, {
+    "public" : false,
     "versions" : [ {
       "uuid" : "21ac72ec-b9a5-49e0-b5a6-1322b8b54552",
       "version" : "1.0",
@@ -1672,6 +1697,8 @@ OAuth2 clients can use this endpoint.</p>
         "username" : "lm"
       }
     } ],
+    "name" : "COVID-19 Workflow",
+    "uuid" : "123e4567-e89b-12d3-a456-426614174000",
     "status" : {
       "latest_builds" : [ {
         "duration" : 2648,
@@ -4036,6 +4063,7 @@ through the service's API).</li>
     <div class="example-data-content-type">Content-Type: application/json</div>
     <pre class="example"><code>{
   "items" : [ {
+    "public" : false,
     "versions" : [ {
       "uuid" : "21ac72ec-b9a5-49e0-b5a6-1322b8b54552",
       "version" : "1.0",
@@ -4051,6 +4079,8 @@ through the service's API).</li>
         "username" : "lm"
       }
     } ],
+    "name" : "COVID-19 Workflow",
+    "uuid" : "123e4567-e89b-12d3-a456-426614174000",
     "status" : {
       "latest_builds" : [ {
         "duration" : 2648,
@@ -4089,6 +4119,7 @@ through the service's API).</li>
       } ]
     }
   }, {
+    "public" : false,
     "versions" : [ {
       "uuid" : "21ac72ec-b9a5-49e0-b5a6-1322b8b54552",
       "version" : "1.0",
@@ -4104,6 +4135,8 @@ through the service's API).</li>
         "username" : "lm"
       }
     } ],
+    "name" : "COVID-19 Workflow",
+    "uuid" : "123e4567-e89b-12d3-a456-426614174000",
     "status" : {
       "latest_builds" : [ {
         "duration" : 2648,
@@ -4503,6 +4536,7 @@ through the service's API).</li>
     <div class="example-data-content-type">Content-Type: application/json</div>
     <pre class="example"><code>{
   "items" : [ {
+    "public" : false,
     "versions" : [ {
       "uuid" : "21ac72ec-b9a5-49e0-b5a6-1322b8b54552",
       "version" : "1.0",
@@ -4518,6 +4552,8 @@ through the service's API).</li>
         "username" : "lm"
       }
     } ],
+    "name" : "COVID-19 Workflow",
+    "uuid" : "123e4567-e89b-12d3-a456-426614174000",
     "status" : {
       "latest_builds" : [ {
         "duration" : 2648,
@@ -4556,6 +4592,7 @@ through the service's API).</li>
       } ]
     }
   }, {
+    "public" : false,
     "versions" : [ {
       "uuid" : "21ac72ec-b9a5-49e0-b5a6-1322b8b54552",
       "version" : "1.0",
@@ -4571,6 +4608,8 @@ through the service's API).</li>
         "username" : "lm"
       }
     } ],
+    "name" : "COVID-19 Workflow",
+    "uuid" : "123e4567-e89b-12d3-a456-426614174000",
     "status" : {
       "latest_builds" : [ {
         "duration" : 2648,
@@ -4873,6 +4912,43 @@ through the service's API).</li>
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
     <pre class="example"><code>{
+  "public" : false,
+  "name" : "COVID-19 Workflow",
+  "registries" : [ {
+    "identifier" : "workflowhub_dev",
+    "name" : "WorkflowHub Dev",
+    "uuid" : "aa16c6a9-571f-4a62-976f-60ea514ad2c1",
+    "uri" : "https://dev.workflowhub.eu/"
+  }, {
+    "identifier" : "workflowhub_dev",
+    "name" : "WorkflowHub Dev",
+    "uuid" : "aa16c6a9-571f-4a62-976f-60ea514ad2c1",
+    "uri" : "https://dev.workflowhub.eu/"
+  } ],
+  "uuid" : "123e4567-e89b-12d3-a456-426614174000",
+  "version" : {
+    "submitter" : {
+      "id" : 501,
+      "username" : "lm"
+    },
+    "submitter_id" : "submitter_id",
+    "uuid" : "123e4567-e44b-12f3-a456-426614174123",
+    "version" : "1.0",
+    "is_latest" : true,
+    "ro_crate" : {
+      "links" : {
+        "download" : "https://api.lifemonitor.eu/ro_crates/11/download",
+        "origin" : "https://dev.workflowhub.eu/workflows/152/content_blobs/240/download"
+      }
+    },
+    "authors" : [ {
+      "name" : "Josiah Carberry",
+      "url" : "https://orcid.org/0000-0002-1825-0097"
+    }, {
+      "name" : "Josiah Carberry",
+      "url" : "https://orcid.org/0000-0002-1825-0097"
+    } ]
+  },
   "previous_versions" : [ {
     "uuid" : "21ac72ec-b9a5-49e0-b5a6-1322b8b54552",
     "version" : "0.1",
@@ -4995,6 +5071,8 @@ through the service's API).</li>
     <div class="example-data-content-type">Content-Type: application/json</div>
     <pre class="example"><code>{
   "reason" : "reason",
+  "public" : false,
+  "name" : "COVID-19 Workflow",
   "latest_builds" : [ {
     "duration" : 2648,
     "instance" : {
@@ -5030,6 +5108,7 @@ through the service's API).</li>
     "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
     "timestamp" : "1616427012"
   } ],
+  "uuid" : "123e4567-e89b-12d3-a456-426614174000",
   "version" : {
     "submitter" : {
       "id" : 501,
@@ -5402,6 +5481,8 @@ through the service's API).</li>
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
     <pre class="example"><code>{
+  "public" : false,
+  "name" : "COVID-19 Workflow",
   "registries" : [ {
     "identifier" : "workflowhub_dev",
     "name" : "WorkflowHub Dev",
@@ -5413,6 +5494,7 @@ through the service's API).</li>
     "uuid" : "aa16c6a9-571f-4a62-976f-60ea514ad2c1",
     "uri" : "https://dev.workflowhub.eu/"
   } ],
+  "uuid" : "123e4567-e89b-12d3-a456-426614174000",
   "version" : {
     "submitter" : {
       "id" : 501,
