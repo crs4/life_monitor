@@ -6,10 +6,10 @@
 {% block body %}
 
 <div class="login-box" style="height: auto;">
- 
+
   {{ macros.render_logo(class="login-logo", style="width: auto") }}
   
-  <div class="card card-primary card-outline shadow-lg p-1 mb-5 bg-white rounded">      
+  <div class="card card-primary card-outline shadow-lg p-1 mb-5 bg-white rounded">
 
     <div class="card-body login-card-body">
       {% if not identity %}
@@ -17,7 +17,7 @@
       {% else %}
       <div class="text-center">
         <div class="small text-muted m-2">
-         <div>
+        <div>
             Sign Up for <span style="font-style: italic; font-family: Baskerville,Baskerville Old Face,Hoefler Text,Garamond,Times New Roman,serif;">Life</span><span class="small" style="font-size: 75%; margin: 0 -1px 0 1px;">-</span><span style="font-weight: bold; font-family: Gill Sans,Gill Sans MT,Calibri,sans-serif;">Monitor</span>
           </div>
           <div class="m-n1">
@@ -32,7 +32,7 @@
           Hi, there!
           {% endif %}
         </h5>
-      </div>            
+      </div>
       <div class="mt-4 small text-muted" style="font-weight: lighter;">
         Choose a username for your LifeMonitor account:
       </div>
@@ -40,7 +40,7 @@
 
       <form method="POST" action="{{action}}" >
         {% if identity %}
-        {{ form.identity(value=identity.user_info.sub) | safe }}        
+        {{ form.identity(value=identity.user_info.sub) | safe }}
         {% endif %}
         {{ macros.render_custom_field(form.username, value=user.username if user else "") }}
         {% if not identity %}
@@ -49,24 +49,24 @@
         {% endif %}
         {{ form.hidden_tag() }}
 
-        <div class="text-center mb-3 row">            
+        <div class="text-center mb-3 row">
           <div class="col-6">
             <a href="{{ url_for("auth.login") }}" class="btn btn-block btn-secondary">
             Back
-            </a>          
+            </a>
           </div>
           <div class="col-6">
           <button type="submit"
               class="btn btn-block btn-primary">
             Register
-          </button>         
+          </button>
           </div>
         </div>
 
       </form>
 
       {% if not identity %}
-        <div class="social-auth-links text-center mb-3">        
+        <div class="social-auth-links text-center mb-3">
           <p class="text-bold">- OR -</p>
           {% for p in providers %}
             {% if p.client_name != 'lsaai' %}
@@ -96,7 +96,7 @@
           Rather than creating a new account, we strongly recommend 
           that you <a href="{{ url_for("auth.login") }}" class="text-center">Sign In</a>
           with your existing credentials and link your new identity 
-          <a href="{{ url_for("auth.profile") }}">from the account configuration page</a>        
+          <a href="{{ url_for("auth.profile") }}">from the account configuration page</a>
         </div>
       </p>
       {% endif %}
