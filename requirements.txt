@@ -44,7 +44,7 @@ pika~=1.2.0
 redis~=4.5.5
 requests~=2.31.0
 snakemake==6.13.1
-networkx~=3.1.0
+networkx~=3.3
 rich~=13.4.1
 rocrate==0.8.0
 SQLAlchemy==1.4.41
