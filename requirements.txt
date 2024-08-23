@@ -48,12 +48,12 @@ networkx~=3.3
 rich~=13.7.1
 rocrate==0.8.0
 SQLAlchemy==1.4.41
-wheel~=0.40.0
+wheel~=0.44.0
 Werkzeug~=2.2.3
 repo2rocrate~=0.1.2
 urllib3==1.26.19
 flask-socketio==5.3.4
 gevent-websocket==0.10.1
 eventlet==0.36.1
-uwsgi==2.0.22
+uwsgi==2.0.26
 watchdog==4.0.2
