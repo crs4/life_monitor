@@ -1,4 +1,4 @@
-Authlib~=0.15.4
+Authlib~=0.15.6
 apscheduler==3.10.1
 connexion[swagger-ui]~=2.14.2
 dramatiq[redis,watch]==1.14.2
