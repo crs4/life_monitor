@@ -41,9 +41,10 @@ export dramatiq_prom_db="${PROMETHEUS_MULTIPROC_DIR}"
 log "Starting task queue worker container"
 debug_log "PROMETHEUS_MULTIPROC_DIR = ${PROMETHEUS_MULTIPROC_DIR}"
 
-if [[ -n "${DEBUG:-}" ]]; then
+verbose=""
+if [[ -n "${VERBOSE:-}" ]]; then
   verbose='--verbose'
-  log "Debug Mode Enabled"
+  echo "Verbose Mode Enabled"
 fi
 
 if [[ ${FLASK_ENV} == "development" ]]; then
