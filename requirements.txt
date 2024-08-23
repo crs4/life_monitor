@@ -45,7 +45,7 @@ redis~=4.5.5
 requests~=2.31.0
 snakemake==6.13.1
 networkx~=3.3
-rich~=13.4.1
+rich~=13.7.1
 rocrate==0.8.0
 SQLAlchemy==1.4.41
 wheel~=0.40.0
