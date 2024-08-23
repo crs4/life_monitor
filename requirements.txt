@@ -30,7 +30,7 @@ nf-core~=2.5.0
 prometheus-flask-exporter~=0.22
 pygit2~=1.12.1
 psycopg2-binary~=2.9.6
-pyopenssl==23.2.0
+pyopenssl==24.2.1
 pytest-mock~=3.11.1
 pytest~=7.4.0
 pytest-rerunfailures~=12.0.0
