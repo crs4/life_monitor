@@ -78,15 +78,6 @@ project](https://www.eosc-life.eu/) and is developed by
   </a>
 </div>
 
-Hosting for LifeMonitor is provided by [CSC](https://www.csc.fi/en/).
-<div>
-  <a title="Hosting-CSC" href="https://www.csc.fi/en">
-    <img alt="Hosting by CSC"
-         width="200px"
-         src="images/csc.png" style="vertical-align: middle" />
-  </a>
-</div>
-
 ---
 <a name="hinsen2019">[1]</a> K. Hinsen, <em>Dealing with software collapse</em>.
 Computing in Science & Engineering 21 (3), 104-108 (2019).
