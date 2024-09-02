@@ -626,7 +626,8 @@ class LifeMonitor:
             raise ValueError("external_id and internal_id cannot be both None")
         if internal_id:
             return OAuthIdentity.find_by_user_id(internal_id, registry.name)
-        return OAuthIdentity.find_by_provider_user_id(external_id, registry.name)
+        assert registry, "The registry should be defined"
+        return OAuthIdentity.find_by_provider_user_id(external_id, registry.client_name)
 
     @staticmethod
     def add_workflow_registry(type, name,

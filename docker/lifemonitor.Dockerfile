@@ -1,4 +1,4 @@
-FROM python:3.10-slim-buster as base
+FROM python:3.10-slim-buster AS base
 
 # Install base requirements
 RUN apt-get update -q \
@@ -100,7 +100,7 @@ RUN find /lm/lifemonitor/ -type d -exec chmod a+r {} \;
 ##################################################################
 ## Node Stage
 ##################################################################
-FROM node:14.16.0-alpine3.12 as node
+FROM node:14.16.0-alpine3.12 AS node
 
 
 RUN mkdir -p /static && apk add --no-cache bash python3 make g++ \
@@ -119,7 +119,7 @@ RUN npm run production
 ##################################################################
 ## Target Stage
 ##################################################################
-FROM base as target
+FROM base AS target
 
 # Set software and build number
 ARG SW_VERSION

@@ -1,5 +1,3 @@
-version: "3.5"
-
 services:
   seek:
     image: crs4/lifemonitor-tests:seek

@@ -249,7 +249,9 @@ def registry_user_workflows_get(user_id, status=False, versions=False):
         workflows = lm.get_user_registry_workflows(identity.user, current_registry)
         logger.debug("registry_user_workflows_get. Got %s workflows (user: %s)", len(workflows), current_user)
         return serializers.ListOfWorkflows(workflow_status=status, workflow_versions=versions).dump(workflows)
-    except OAuthIdentityNotFoundException:
+    except OAuthIdentityNotFoundException as e:
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.exception(e)
         return lm_exceptions.report_problem(401, "Unauthorized",
                                             detail=messages.no_user_oauth_identity_on_registry
                                             .format(user_id, current_registry.name))
