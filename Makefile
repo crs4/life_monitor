@@ -185,7 +185,8 @@ permissions: certs
 		prometheus.dev.yml \
 		settings.conf \
 		tests/config/registries/seek/nginx.conf \
-		tests/config/registries/seek/doorkeeper.rb
+		tests/config/registries/seek/doorkeeper.rb \
+	&& mkdir -p /tmp/lifemonitor-logs
 
 
 aux_images: tests/config/registries/seek/seek.Dockerfile certs

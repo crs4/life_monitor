@@ -32,6 +32,7 @@ services:
       - "./certs:/certs:ro"
       - "./instance:/lm/instance:ro"
       - "./settings.conf:/lm/settings.conf:ro" # default settings
+      - "/tmp/lifemonitor-logs:/var/log/lm"
     ports:
       - "8000"
     networks:
