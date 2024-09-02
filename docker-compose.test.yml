@@ -1,5 +1,3 @@
-version: "3.5"
-
 services:
   lmtests:
     image: crs4/lifemonitor
