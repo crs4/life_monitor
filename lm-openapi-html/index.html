@@ -189,7 +189,7 @@ that they might be solved, thus extending the useful life of the workflow.</p>
 </div>
     <div class="app-desc">More information: <a href="https://openapi-generator.tech">https://openapi-generator.tech</a></div>
     <div class="app-desc">Contact Info: <a href="team@openapitools.org">team@openapitools.org</a></div>
-    <div class="app-desc">Version: 0.14.0</div>
+    <div class="app-desc">Version: 0.15.0</div>
     <div class="app-desc">BasePath:</div>
     <div class="license-info">All rights reserved</div>
     <div class="license-url">http://apache.org/licenses/LICENSE-2.0.html</div>
@@ -466,6 +466,7 @@ against the schema
     "registry" : {
       "identifier" : "workflowhub_dev",
       "name" : "WorkflowHub Dev",
+      "type" : "seek",
       "uuid" : "aa16c6a9-571f-4a62-976f-60ea514ad2c1",
       "uri" : "https://dev.workflowhub.eu/"
     },
@@ -476,6 +477,7 @@ against the schema
     "registry" : {
       "identifier" : "workflowhub_dev",
       "name" : "WorkflowHub Dev",
+      "type" : "seek",
       "uuid" : "aa16c6a9-571f-4a62-976f-60ea514ad2c1",
       "uri" : "https://dev.workflowhub.eu/"
     },
@@ -587,6 +589,7 @@ against the schema
   "registry" : {
     "identifier" : "workflowhub_dev",
     "name" : "WorkflowHub Dev",
+    "type" : "seek",
     "uuid" : "aa16c6a9-571f-4a62-976f-60ea514ad2c1",
     "uri" : "https://dev.workflowhub.eu/"
   },
@@ -722,6 +725,7 @@ LifeMonitor by the current (authenticated) user.</div>
     "name" : "COVID-19 Workflow",
     "uuid" : "123e4567-e89b-12d3-a456-426614174000",
     "status" : {
+      "aggregate_test_status" : "all_passing",
       "latest_builds" : [ {
         "duration" : 2648,
         "instance" : {
@@ -738,6 +742,7 @@ LifeMonitor by the current (authenticated) user.</div>
           "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
         },
         "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+        "status" : "passed",
         "timestamp" : "1616427012"
       }, {
         "duration" : 2648,
@@ -755,6 +760,7 @@ LifeMonitor by the current (authenticated) user.</div>
           "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
         },
         "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+        "status" : "passed",
         "timestamp" : "1616427012"
       } ]
     }
@@ -778,6 +784,7 @@ LifeMonitor by the current (authenticated) user.</div>
     "name" : "COVID-19 Workflow",
     "uuid" : "123e4567-e89b-12d3-a456-426614174000",
     "status" : {
+      "aggregate_test_status" : "all_passing",
       "latest_builds" : [ {
         "duration" : 2648,
         "instance" : {
@@ -794,6 +801,7 @@ LifeMonitor by the current (authenticated) user.</div>
           "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
         },
         "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+        "status" : "passed",
         "timestamp" : "1616427012"
       }, {
         "duration" : 2648,
@@ -811,6 +819,7 @@ LifeMonitor by the current (authenticated) user.</div>
           "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
         },
         "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+        "status" : "passed",
         "timestamp" : "1616427012"
       } ]
     }
@@ -998,11 +1007,13 @@ current (authenticated) user</div>
   "items" : [ {
     "identifier" : "workflowhub_dev",
     "name" : "WorkflowHub Dev",
+    "type" : "seek",
     "uuid" : "aa16c6a9-571f-4a62-976f-60ea514ad2c1",
     "uri" : "https://dev.workflowhub.eu/"
   }, {
     "identifier" : "workflowhub_dev",
     "name" : "WorkflowHub Dev",
+    "type" : "seek",
     "uuid" : "aa16c6a9-571f-4a62-976f-60ea514ad2c1",
     "uri" : "https://dev.workflowhub.eu/"
   } ]
@@ -1107,6 +1118,7 @@ current (authenticated) user</div>
     <pre class="example"><code>{
   "identifier" : "workflowhub_dev",
   "name" : "WorkflowHub Dev",
+  "type" : "seek",
   "uuid" : "aa16c6a9-571f-4a62-976f-60ea514ad2c1",
   "uri" : "https://dev.workflowhub.eu/"
 }</code></pre>
@@ -1340,6 +1352,7 @@ OAuth2 clients can use this endpoint.</p>
     "name" : "COVID-19 Workflow",
     "uuid" : "123e4567-e89b-12d3-a456-426614174000",
     "status" : {
+      "aggregate_test_status" : "all_passing",
       "latest_builds" : [ {
         "duration" : 2648,
         "instance" : {
@@ -1356,6 +1369,7 @@ OAuth2 clients can use this endpoint.</p>
           "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
         },
         "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+        "status" : "passed",
         "timestamp" : "1616427012"
       }, {
         "duration" : 2648,
@@ -1373,6 +1387,7 @@ OAuth2 clients can use this endpoint.</p>
           "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
         },
         "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+        "status" : "passed",
         "timestamp" : "1616427012"
       } ]
     }
@@ -1396,6 +1411,7 @@ OAuth2 clients can use this endpoint.</p>
     "name" : "COVID-19 Workflow",
     "uuid" : "123e4567-e89b-12d3-a456-426614174000",
     "status" : {
+      "aggregate_test_status" : "all_passing",
       "latest_builds" : [ {
         "duration" : 2648,
         "instance" : {
@@ -1412,6 +1428,7 @@ OAuth2 clients can use this endpoint.</p>
           "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
         },
         "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+        "status" : "passed",
         "timestamp" : "1616427012"
       }, {
         "duration" : 2648,
@@ -1429,6 +1446,7 @@ OAuth2 clients can use this endpoint.</p>
           "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
         },
         "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+        "status" : "passed",
         "timestamp" : "1616427012"
       } ]
     }
@@ -1644,6 +1662,7 @@ OAuth2 clients can use this endpoint.</p>
     "name" : "COVID-19 Workflow",
     "uuid" : "123e4567-e89b-12d3-a456-426614174000",
     "status" : {
+      "aggregate_test_status" : "all_passing",
       "latest_builds" : [ {
         "duration" : 2648,
         "instance" : {
@@ -1660,6 +1679,7 @@ OAuth2 clients can use this endpoint.</p>
           "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
         },
         "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+        "status" : "passed",
         "timestamp" : "1616427012"
       }, {
         "duration" : 2648,
@@ -1677,6 +1697,7 @@ OAuth2 clients can use this endpoint.</p>
           "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
         },
         "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+        "status" : "passed",
         "timestamp" : "1616427012"
       } ]
     }
@@ -1700,6 +1721,7 @@ OAuth2 clients can use this endpoint.</p>
     "name" : "COVID-19 Workflow",
     "uuid" : "123e4567-e89b-12d3-a456-426614174000",
     "status" : {
+      "aggregate_test_status" : "all_passing",
       "latest_builds" : [ {
         "duration" : 2648,
         "instance" : {
@@ -1716,6 +1738,7 @@ OAuth2 clients can use this endpoint.</p>
           "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
         },
         "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+        "status" : "passed",
         "timestamp" : "1616427012"
       }, {
         "duration" : 2648,
@@ -1733,6 +1756,7 @@ OAuth2 clients can use this endpoint.</p>
           "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
         },
         "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+        "status" : "passed",
         "timestamp" : "1616427012"
       } ]
     }
@@ -1916,6 +1940,7 @@ OAuth2 clients can use this endpoint.</p>
     <pre class="example"><code>{
   "identifier" : "workflowhub_dev",
   "name" : "WorkflowHub Dev",
+  "type" : "seek",
   "uuid" : "aa16c6a9-571f-4a62-976f-60ea514ad2c1",
   "uri" : "https://dev.workflowhub.eu/"
 }</code></pre>
@@ -2033,6 +2058,7 @@ OAuth2 clients can use this endpoint.</p>
     "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
   },
   "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+  "status" : "passed",
   "timestamp" : "1616427012"
 }</code></pre>
     <h3 class="field-label">Example data</h3>
@@ -2241,6 +2267,7 @@ OAuth2 clients can use this endpoint.</p>
       "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
     },
     "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+    "status" : "passed",
     "timestamp" : "1616427012"
   }, {
     "duration" : 2648,
@@ -2258,6 +2285,7 @@ OAuth2 clients can use this endpoint.</p>
       "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
     },
     "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+    "status" : "passed",
     "timestamp" : "1616427012"
   } ]
 }</code></pre>
@@ -2589,6 +2617,7 @@ OAuth2 clients can use this endpoint.</p>
     },
     "resource" : "github/seek4science/seek"
   } ],
+  "aggregate_test_status" : "all_passing",
   "name" : "Workflow Test Suite",
   "latest_builds" : [ {
     "duration" : 2648,
@@ -2606,6 +2635,7 @@ OAuth2 clients can use this endpoint.</p>
       "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
     },
     "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+    "status" : "passed",
     "timestamp" : "1616427012"
   }, {
     "duration" : 2648,
@@ -2623,6 +2653,7 @@ OAuth2 clients can use this endpoint.</p>
       "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
     },
     "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+    "status" : "passed",
     "timestamp" : "1616427012"
   } ],
   "definition" : {
@@ -2849,6 +2880,7 @@ OAuth2 clients can use this endpoint.</p>
     <div class="example-data-content-type">Content-Type: application/json</div>
     <pre class="example"><code>{
   "reason" : "reason",
+  "aggregate_test_status" : "all_passing",
   "latest_builds" : [ {
     "duration" : 2648,
     "instance" : {
@@ -2865,6 +2897,7 @@ OAuth2 clients can use this endpoint.</p>
       "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
     },
     "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+    "status" : "passed",
     "timestamp" : "1616427012"
   }, {
     "duration" : 2648,
@@ -2882,6 +2915,7 @@ OAuth2 clients can use this endpoint.</p>
       "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
     },
     "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+    "status" : "passed",
     "timestamp" : "1616427012"
   } ],
   "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c"
@@ -4082,6 +4116,7 @@ through the service's API).</li>
     "name" : "COVID-19 Workflow",
     "uuid" : "123e4567-e89b-12d3-a456-426614174000",
     "status" : {
+      "aggregate_test_status" : "all_passing",
       "latest_builds" : [ {
         "duration" : 2648,
         "instance" : {
@@ -4098,6 +4133,7 @@ through the service's API).</li>
           "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
         },
         "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+        "status" : "passed",
         "timestamp" : "1616427012"
       }, {
         "duration" : 2648,
@@ -4115,6 +4151,7 @@ through the service's API).</li>
           "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
         },
         "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+        "status" : "passed",
         "timestamp" : "1616427012"
       } ]
     }
@@ -4138,6 +4175,7 @@ through the service's API).</li>
     "name" : "COVID-19 Workflow",
     "uuid" : "123e4567-e89b-12d3-a456-426614174000",
     "status" : {
+      "aggregate_test_status" : "all_passing",
       "latest_builds" : [ {
         "duration" : 2648,
         "instance" : {
@@ -4154,6 +4192,7 @@ through the service's API).</li>
           "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
         },
         "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+        "status" : "passed",
         "timestamp" : "1616427012"
       }, {
         "duration" : 2648,
@@ -4171,6 +4210,7 @@ through the service's API).</li>
           "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
         },
         "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+        "status" : "passed",
         "timestamp" : "1616427012"
       } ]
     }
@@ -4555,6 +4595,7 @@ through the service's API).</li>
     "name" : "COVID-19 Workflow",
     "uuid" : "123e4567-e89b-12d3-a456-426614174000",
     "status" : {
+      "aggregate_test_status" : "all_passing",
       "latest_builds" : [ {
         "duration" : 2648,
         "instance" : {
@@ -4571,6 +4612,7 @@ through the service's API).</li>
           "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
         },
         "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+        "status" : "passed",
         "timestamp" : "1616427012"
       }, {
         "duration" : 2648,
@@ -4588,6 +4630,7 @@ through the service's API).</li>
           "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
         },
         "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+        "status" : "passed",
         "timestamp" : "1616427012"
       } ]
     }
@@ -4611,6 +4654,7 @@ through the service's API).</li>
     "name" : "COVID-19 Workflow",
     "uuid" : "123e4567-e89b-12d3-a456-426614174000",
     "status" : {
+      "aggregate_test_status" : "all_passing",
       "latest_builds" : [ {
         "duration" : 2648,
         "instance" : {
@@ -4627,6 +4671,7 @@ through the service's API).</li>
           "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
         },
         "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+        "status" : "passed",
         "timestamp" : "1616427012"
       }, {
         "duration" : 2648,
@@ -4644,6 +4689,7 @@ through the service's API).</li>
           "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
         },
         "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+        "status" : "passed",
         "timestamp" : "1616427012"
       } ]
     }
@@ -4917,11 +4963,13 @@ through the service's API).</li>
   "registries" : [ {
     "identifier" : "workflowhub_dev",
     "name" : "WorkflowHub Dev",
+    "type" : "seek",
     "uuid" : "aa16c6a9-571f-4a62-976f-60ea514ad2c1",
     "uri" : "https://dev.workflowhub.eu/"
   }, {
     "identifier" : "workflowhub_dev",
     "name" : "WorkflowHub Dev",
+    "type" : "seek",
     "uuid" : "aa16c6a9-571f-4a62-976f-60ea514ad2c1",
     "uri" : "https://dev.workflowhub.eu/"
   } ],
@@ -5072,6 +5120,7 @@ through the service's API).</li>
     <pre class="example"><code>{
   "reason" : "reason",
   "public" : false,
+  "aggregate_test_status" : "all_passing",
   "name" : "COVID-19 Workflow",
   "latest_builds" : [ {
     "duration" : 2648,
@@ -5089,6 +5138,7 @@ through the service's API).</li>
       "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
     },
     "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+    "status" : "passed",
     "timestamp" : "1616427012"
   }, {
     "duration" : 2648,
@@ -5106,6 +5156,7 @@ through the service's API).</li>
       "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
     },
     "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+    "status" : "passed",
     "timestamp" : "1616427012"
   } ],
   "uuid" : "123e4567-e89b-12d3-a456-426614174000",
@@ -5259,6 +5310,7 @@ through the service's API).</li>
       },
       "resource" : "github/seek4science/seek"
     } ],
+    "aggregate_test_status" : "all_passing",
     "name" : "Workflow Test Suite",
     "latest_builds" : [ {
       "duration" : 2648,
@@ -5276,6 +5328,7 @@ through the service's API).</li>
         "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
       },
       "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+      "status" : "passed",
       "timestamp" : "1616427012"
     }, {
       "duration" : 2648,
@@ -5293,6 +5346,7 @@ through the service's API).</li>
         "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
       },
       "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+      "status" : "passed",
       "timestamp" : "1616427012"
     } ],
     "definition" : {
@@ -5327,6 +5381,7 @@ through the service's API).</li>
       },
       "resource" : "github/seek4science/seek"
     } ],
+    "aggregate_test_status" : "all_passing",
     "name" : "Workflow Test Suite",
     "latest_builds" : [ {
       "duration" : 2648,
@@ -5344,6 +5399,7 @@ through the service's API).</li>
         "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
       },
       "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+      "status" : "passed",
       "timestamp" : "1616427012"
     }, {
       "duration" : 2648,
@@ -5361,6 +5417,7 @@ through the service's API).</li>
         "origin" : "https://github.com/crs4/life_monitor/actions/runs/968650807"
       },
       "suite_uuid" : "e3208b02-69b6-4e32-a3dc-b93967d30e2c",
+      "status" : "passed",
       "timestamp" : "1616427012"
     } ],
     "definition" : {
@@ -5486,11 +5543,13 @@ through the service's API).</li>
   "registries" : [ {
     "identifier" : "workflowhub_dev",
     "name" : "WorkflowHub Dev",
+    "type" : "seek",
     "uuid" : "aa16c6a9-571f-4a62-976f-60ea514ad2c1",
     "uri" : "https://dev.workflowhub.eu/"
   }, {
     "identifier" : "workflowhub_dev",
     "name" : "WorkflowHub Dev",
+    "type" : "seek",
     "uuid" : "aa16c6a9-571f-4a62-976f-60ea514ad2c1",
     "uri" : "https://dev.workflowhub.eu/"
   } ],
