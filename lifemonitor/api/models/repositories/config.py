@@ -150,7 +150,11 @@ class WorkflowRepositoryConfig(RepositoryFile):
         for rfs in self._get_refs_list():
             for r in rfs.get("update_registries", []):
                 if not registries.get(r, None):
-                    registries[r] = models.WorkflowRegistry.find_by_client_name(r)
+                    r_model = models.WorkflowRegistry.find_by_client_name(r)
+                    if r_model is None:
+                        logger.warning("Unable to find registry: %r", r)
+                    else:
+                        registries[r] = r_model
         return list(registries.values())
 
     def get_ref_registries(self, ref_type: str, tag: str) -> List[models.WorkflowRegistry]:

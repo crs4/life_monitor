@@ -288,7 +288,7 @@ worker:
     - name: github
       # image: *lifemonitorImage
     # - name: heartbeat
-      # image: *lifemonitorImage
+    #   image: *lifemonitorImage
     - name: notifications
       # image: *lifemonitorImage
     - name: builds
@@ -296,7 +296,7 @@ worker:
     - name: workflows
       # image: *lifemonitorImage
     # - name: metrics
-      # image: *lifemonitorImage
+    #   image: *lifemonitorImage
     - name: ws
       # image: *lifemonitorImage
 
