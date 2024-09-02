@@ -223,7 +223,8 @@ start-dev: images compose-files dev reset_compose permissions ## Start LifeMonit
 start-testing: compose-files aux_images ro_crates images reset_compose permissions ## Start LifeMonitor in a Testing environment
 	@printf "\n$(bold)Starting testing services...$(reset)\n" ; \
 	base=$$(if [[ -f "docker-compose.yml" ]]; then echo "-f docker-compose.yml"; fi) ; \
-	echo "$$($(docker_compose) $${base} \
+	echo "$$(USER_UID=$$(id -u) USER_GID=$$(id -g) \
+			$(docker_compose) $${base} \
 				-f docker-compose.extra.yml \
 				-f docker-compose.base.yml \
 				-f docker-compose.monitoring.yml \
