@@ -1,0 +1,63 @@
+version: "3.5"
+
+services:
+  db:
+    environment:
+      - "ALLOW_EMPTY_PASSWORD=yes"
+
+  console:
+    image: crs4/lifemonitor
+    restart: "unless-stopped"
+    depends_on:
+      - "db"
+      - "init"
+      - "redis"
+    entrypoint: /bin/bash
+    command: |
+      -c "sleep infinity"
+    user: "${USER_UID}:${USER_GID}"
+    env_file:
+      - settings.conf
+    environment:
+      - "FLASK_ENV=development"
+      - "TEMPLATES_AUTO_RELOAD=True"
+      - "HOME=/lm"
+      # Normally, OAuthLib will raise an InsecureTransportError if you attempt to use OAuth2 over HTTP,
+      # rather than HTTPS. Setting this environment variable will prevent this error from being raised.
+      # This is mostly useful for local testing, or automated tests. Never set this variable in production.
+      - "AUTHLIB_INSECURE_TRANSPORT=1"
+      # - "SERVER_NAME=lm:8000"
+    volumes:
+      - "./certs:/certs:ro"
+      - "./instance:/lm/instance:ro"
+      - "./settings.conf:/lm/settings.conf:ro" # default settings
+      - "./:/lm"
+      - "data_workflows:/var/data/lm"
+    ports:
+      - "8000"
+    networks:
+      - life_monitor
+
+  init:
+    user: "${USER_UID}:${USER_GID}"
+    environment:
+      - "FLASK_ENV=development"
+      # Normally, OAuthLib will raise an InsecureTransportError if you attempt to use OAuth2 over HTTP,
+      # rather than HTTPS. Setting this environment variable will prevent this error from being raised.
+      # This is mostly useful for local testing, or automated tests. Never set this variable in production.
+      - "AUTHLIB_INSECURE_TRANSPORT=1"
+      - "HOME=/lm"
+    volumes:
+      - "./:/lm"
+  
+  lm:
+    environment:
+      - "FLASK_ENV=maintenance"
+
+  ws_server:
+    environment:
+      - "FLASK_ENV=maintenance"
+  
+  worker:
+    environment:
+      - "FLASK_ENV=maintenance"
