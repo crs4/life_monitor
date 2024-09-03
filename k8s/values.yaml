@@ -108,6 +108,10 @@ proxy:
   # - name: development
   #   url: https://api.dev.lifemonitor.eu
 
+# Settings for the LifeMonitor Web Socket Server
+wss:
+  replicaCount: 1
+
 # Email settings
 mail:
   server: ""
