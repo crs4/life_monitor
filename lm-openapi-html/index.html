@@ -189,7 +189,7 @@ that they might be solved, thus extending the useful life of the workflow.</p>
 </div>
     <div class="app-desc">More information: <a href="https://openapi-generator.tech">https://openapi-generator.tech</a></div>
     <div class="app-desc">Contact Info: <a href="team@openapitools.org">team@openapitools.org</a></div>
-    <div class="app-desc">Version: 0.15.0</div>
+    <div class="app-desc">Version: 0.20.0</div>
     <div class="app-desc">BasePath:</div>
     <div class="license-info">All rights reserved</div>
     <div class="license-url">http://apache.org/licenses/LICENSE-2.0.html</div>
@@ -230,6 +230,11 @@ that they might be solved, thus extending the useful life of the workflow.</p>
   <li><a href="#registryWorkflowsPost"><code><span class="http-method">post</span> /registries/current/workflows</code></a></li>
   <li><a href="#workflowRegistriesGetCurrent"><code><span class="http-method">get</span> /registries/current</code></a></li>
   </ul>
+  <h4><a href="#Statistics">Statistics</a></h4>
+  <ul>
+  <li><a href="#statsWorkflowsGet"><code><span class="http-method">get</span> /stats/workflows</code></a></li>
+  <li><a href="#statsWorkflowsStatusGet"><code><span class="http-method">get</span> /stats/workflows/status</code></a></li>
+  </ul>
   <h4><a href="#TestInstances">TestInstances</a></h4>
   <ul>
   <li><a href="#instancesBuildsGetById"><code><span class="http-method">get</span> /instances/{instance_uuid}/builds/{build_id}</code></a></li>
@@ -262,6 +267,8 @@ that they might be solved, thus extending the useful life of the workflow.</p>
   </ul>
   <h4><a href="#Workflows">Workflows</a></h4>
   <ul>
+  <li><a href="#validateWorkflow"><code><span class="http-method">get</span> /workflows/{wf_uuid}/validate</code></a></li>
+  <li><a href="#validateWorkflowVersion"><code><span class="http-method">get</span> /workflows/{wf_uuid}/versions/{wf_version}/validate</code></a></li>
   <li><a href="#workflowsDelete"><code><span class="http-method">delete</span> /workflows/{wf_uuid}</code></a></li>
   <li><a href="#workflowsDeleteVersion"><code><span class="http-method">delete</span> /workflows/{wf_uuid}/versions/{wf_version}</code></a></li>
   <li><a href="#workflowsGet"><code><span class="http-method">get</span> /workflows</code></a></li>
@@ -688,9 +695,27 @@ LifeMonitor by the current (authenticated) user.</div>
     <div class="field-items">
       <div class="param">versions (optional)</div>
 
-      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include the list of versions of each workflow default: null </div><div class="param">status (optional)</div>
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include the list of versions of the workflow default: null </div><div class="param">status (optional)</div>
 
-      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include a summary of the workflow status default: null </div>
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include a summary of the workflow status default: null </div><div class="param">suites (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include the list of test suites associated with the workflow version default: null </div><div class="param">instances (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include the list of test instances associated with the workflow version default: null </div><div class="param">builds (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include the list of builds associated with the workflow version default: null </div><div class="param">builds_limit (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Maximum number of builds to include per instance default: 10 </div><div class="param">filter_by_string (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Filter workflows by a string contained in their <code>uuid</code> identifier or <code>name</code> default: null </div><div class="param">filter_by_status (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Filter workflows by their aggregated test status default: null </div><div class="param">page (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Page number for paginated results. First page is 1 default: 1 </div><div class="param">per_page (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Number of items per page for paginated results. If not provided, all items are returned default: null </div><div class="param">max_items (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Maximum number of items to retrieve. If not provided, all items are returned default: null </div>
     </div>  <!-- field-items -->
 
 
@@ -705,6 +730,12 @@ LifeMonitor by the current (authenticated) user.</div>
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
     <pre class="example"><code>{
+  "pagination" : {
+    "per_page" : 10,
+    "page" : 1,
+    "total_pages" : 10,
+    "total_items" : 100
+  },
   "items" : [ {
     "public" : false,
     "versions" : [ {
@@ -823,7 +854,21 @@ LifeMonitor by the current (authenticated) user.</div>
         "timestamp" : "1616427012"
       } ]
     }
-  } ]
+  } ],
+  "statistics" : {
+    "workflows_by_status" : {
+      "some_passing" : 500,
+      "not_available" : 0,
+      "all_failing" : 200,
+      "all_passing" : 800
+    },
+    "private_workflows" : 300,
+    "test_suites" : 500,
+    "public_workflows" : 1200,
+    "workflows" : 1500,
+    "test_instances" : 1200,
+    "workflow_versions" : 3500
+  }
 }</code></pre>
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
@@ -1315,9 +1360,29 @@ OAuth2 clients can use this endpoint.</p>
     <div class="field-items">
       <div class="param">versions (optional)</div>
 
-      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include the list of versions of each workflow default: null </div><div class="param">status (optional)</div>
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include the list of versions of the workflow default: null </div><div class="param">status (optional)</div>
 
-      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include a summary of the workflow status default: null </div>
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include a summary of the workflow status default: null </div><div class="param">stats (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include workflows statistics default: null </div><div class="param">suites (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include the list of test suites associated with the workflow version default: null </div><div class="param">instances (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include the list of test instances associated with the workflow version default: null </div><div class="param">builds (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include the list of builds associated with the workflow version default: null </div><div class="param">builds_limit (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Maximum number of builds to include per instance default: 10 </div><div class="param">filter_by_string (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Filter workflows by a string contained in their <code>uuid</code> identifier or <code>name</code> default: null </div><div class="param">filter_by_status (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Filter workflows by their aggregated test status default: null </div><div class="param">page (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Page number for paginated results. First page is 1 default: 1 </div><div class="param">per_page (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Number of items per page for paginated results. If not provided, all items are returned default: null </div><div class="param">max_items (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Maximum number of items to retrieve. If not provided, all items are returned default: null </div>
     </div>  <!-- field-items -->
 
 
@@ -1332,6 +1397,12 @@ OAuth2 clients can use this endpoint.</p>
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
     <pre class="example"><code>{
+  "pagination" : {
+    "per_page" : 10,
+    "page" : 1,
+    "total_pages" : 10,
+    "total_items" : 100
+  },
   "items" : [ {
     "public" : false,
     "versions" : [ {
@@ -1450,7 +1521,21 @@ OAuth2 clients can use this endpoint.</p>
         "timestamp" : "1616427012"
       } ]
     }
-  } ]
+  } ],
+  "statistics" : {
+    "workflows_by_status" : {
+      "some_passing" : 500,
+      "not_available" : 0,
+      "all_failing" : 200,
+      "all_passing" : 800
+    },
+    "private_workflows" : 300,
+    "test_suites" : 500,
+    "public_workflows" : 1200,
+    "workflows" : 1500,
+    "test_instances" : 1200,
+    "workflow_versions" : 3500
+  }
 }</code></pre>
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
@@ -1625,9 +1710,29 @@ OAuth2 clients can use this endpoint.</p>
     <div class="field-items">
       <div class="param">versions (optional)</div>
 
-      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include the list of versions of each workflow default: null </div><div class="param">status (optional)</div>
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include the list of versions of the workflow default: null </div><div class="param">status (optional)</div>
 
-      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include a summary of the workflow status default: null </div>
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include a summary of the workflow status default: null </div><div class="param">stats (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include workflows statistics default: null </div><div class="param">suites (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include the list of test suites associated with the workflow version default: null </div><div class="param">instances (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include the list of test instances associated with the workflow version default: null </div><div class="param">builds (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include the list of builds associated with the workflow version default: null </div><div class="param">builds_limit (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Maximum number of builds to include per instance default: 10 </div><div class="param">filter_by_string (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Filter workflows by a string contained in their <code>uuid</code> identifier or <code>name</code> default: null </div><div class="param">filter_by_status (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Filter workflows by their aggregated test status default: null </div><div class="param">page (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Page number for paginated results. First page is 1 default: 1 </div><div class="param">per_page (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Number of items per page for paginated results. If not provided, all items are returned default: null </div><div class="param">max_items (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Maximum number of items to retrieve. If not provided, all items are returned default: null </div>
     </div>  <!-- field-items -->
 
 
@@ -1642,6 +1747,12 @@ OAuth2 clients can use this endpoint.</p>
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
     <pre class="example"><code>{
+  "pagination" : {
+    "per_page" : 10,
+    "page" : 1,
+    "total_pages" : 10,
+    "total_items" : 100
+  },
   "items" : [ {
     "public" : false,
     "versions" : [ {
@@ -1760,7 +1871,21 @@ OAuth2 clients can use this endpoint.</p>
         "timestamp" : "1616427012"
       } ]
     }
-  } ]
+  } ],
+  "statistics" : {
+    "workflows_by_status" : {
+      "some_passing" : 500,
+      "not_available" : 0,
+      "all_failing" : 200,
+      "all_passing" : 800
+    },
+    "private_workflows" : 300,
+    "test_suites" : 500,
+    "public_workflows" : 1200,
+    "workflows" : 1500,
+    "test_instances" : 1200,
+    "workflow_versions" : 3500
+  }
 }</code></pre>
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
@@ -2007,6 +2132,129 @@ OAuth2 clients can use this endpoint.</p>
         <a href="#Error">Error</a>
     <h4 class="field-label">404</h4>
     Resource not found
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <h1><a name="Statistics">Statistics</a></h1>
+  <div class="method"><a name="statsWorkflowsGet"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /stats/workflows</code></pre></div>
+    <div class="method-summary">Report workflow statistics (<span class="nickname">statsWorkflowsGet</span>)</div>
+    <div class="method-notes">Get statistics about the workflows monitored
+by the LifeMonitor instance.</div>
+
+
+
+
+
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#workflows_stats">workflows_stats</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "workflows_by_status" : {
+    "some_passing" : 500,
+    "not_available" : 0,
+    "all_failing" : 200,
+    "all_passing" : 800
+  },
+  "private_workflows" : 300,
+  "test_suites" : 500,
+  "public_workflows" : 1200,
+  "workflows" : 1500,
+  "test_instances" : 1200,
+  "workflow_versions" : 3500
+}</code></pre>
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "instance" : "instance",
+  "extra_info" : "{}",
+  "detail" : "detail",
+  "type" : "about:blank",
+  "title" : "title",
+  "status" : 0
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    Statistics about the LifeMonitor instance
+        <a href="#workflows_stats">workflows_stats</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="statsWorkflowsStatusGet"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /stats/workflows/status</code></pre></div>
+    <div class="method-summary">Report workflow status statistics (<span class="nickname">statsWorkflowsStatusGet</span>)</div>
+    <div class="method-notes">Get statistics about the status of workflows monitored
+by the LifeMonitor instance.</div>
+
+
+
+
+
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#workflow_status_stats">workflow_status_stats</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "some_passing" : 500,
+  "not_available" : 0,
+  "all_failing" : 200,
+  "all_passing" : 800
+}</code></pre>
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "instance" : "instance",
+  "extra_info" : "{}",
+  "detail" : "detail",
+  "type" : "about:blank",
+  "title" : "title",
+  "status" : 0
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    Statistics about the LifeMonitor instance
+        <a href="#workflow_status_stats">workflow_status_stats</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
         <a href="#Error">Error</a>
   </div> <!-- method -->
   <hr/>
@@ -3494,7 +3742,7 @@ through the service's API).</li>
 
     <h3 class="field-label">Request body</h3>
     <div class="field-items">
-      <div class="param">string <a href="#string">string</a> (required)</div>
+      <div class="param">string array[<a href="#string">string</a>] (required)</div>
 
       <div class="param-desc"><span class="param-type">Body Parameter</span> &mdash;  </div>
 
@@ -3873,7 +4121,7 @@ through the service's API).</li>
 
     <h3 class="field-label">Request body</h3>
     <div class="field-items">
-      <div class="param">EventType <a href="#EventType">EventType</a> (required)</div>
+      <div class="param">EventType array[<a href="#EventType">EventType</a>] (required)</div>
 
       <div class="param-desc"><span class="param-type">Body Parameter</span> &mdash;  </div>
 
@@ -4079,9 +4327,29 @@ through the service's API).</li>
 
       <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include a summary of the workflow status default: null </div><div class="param">versions (optional)</div>
 
-      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include the list of versions of each workflow default: null </div><div class="param">subscriptions (optional)</div>
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include the list of versions of the workflow default: null </div><div class="param">subscriptions (optional)</div>
 
-      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include subscribed workflows default: null </div>
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include subscribed workflows default: null </div><div class="param">stats (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include workflows statistics default: null </div><div class="param">suites (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include the list of test suites associated with the workflow version default: null </div><div class="param">instances (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include the list of test instances associated with the workflow version default: null </div><div class="param">builds (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include the list of builds associated with the workflow version default: null </div><div class="param">builds_limit (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Maximum number of builds to include per instance default: 10 </div><div class="param">filter_by_string (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Filter workflows by a string contained in their <code>uuid</code> identifier or <code>name</code> default: null </div><div class="param">filter_by_status (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Filter workflows by their aggregated test status default: null </div><div class="param">page (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Page number for paginated results. First page is 1 default: 1 </div><div class="param">per_page (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Number of items per page for paginated results. If not provided, all items are returned default: null </div><div class="param">max_items (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Maximum number of items to retrieve. If not provided, all items are returned default: null </div>
     </div>  <!-- field-items -->
 
 
@@ -4096,6 +4364,12 @@ through the service's API).</li>
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
     <pre class="example"><code>{
+  "pagination" : {
+    "per_page" : 10,
+    "page" : 1,
+    "total_pages" : 10,
+    "total_items" : 100
+  },
   "items" : [ {
     "public" : false,
     "versions" : [ {
@@ -4214,7 +4488,21 @@ through the service's API).</li>
         "timestamp" : "1616427012"
       } ]
     }
-  } ]
+  } ],
+  "statistics" : {
+    "workflows_by_status" : {
+      "some_passing" : 500,
+      "not_available" : 0,
+      "all_failing" : 200,
+      "all_passing" : 800
+    },
+    "private_workflows" : 300,
+    "test_suites" : 500,
+    "public_workflows" : 1200,
+    "workflows" : 1500,
+    "test_instances" : 1200,
+    "workflow_versions" : 3500
+  }
 }</code></pre>
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
@@ -4363,6 +4651,198 @@ through the service's API).</li>
   </div> <!-- method -->
   <hr/>
   <h1><a name="Workflows">Workflows</a></h1>
+  <div class="method"><a name="validateWorkflow"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /workflows/{wf_uuid}/validate</code></pre></div>
+    <div class="method-summary">Validate the latest version of a workflow (<span class="nickname">validateWorkflow</span>)</div>
+    <div class="method-notes">Validate the latest version of the specified workflow</div>
+
+    <h3 class="field-label">Path parameters</h3>
+    <div class="field-items">
+      <div class="param">wf_uuid (required)</div>
+
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Universal unique identifier of the workflow default: null </div>
+    </div>  <!-- field-items -->
+
+
+
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">severity (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Severity level of the validation issues to retrieve.
+Possible values are: <code>REQUIRED</code>, <code>RECOMMENDED</code>, <code>OPTIONAL</code> default: REQUIRED </div>
+    </div>  <!-- field-items -->
+
+
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "instance" : "instance",
+  "extra_info" : "{}",
+  "detail" : "detail",
+  "type" : "about:blank",
+  "title" : "title",
+  "status" : 0
+}</code></pre>
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "instance" : "instance",
+  "extra_info" : "{}",
+  "detail" : "detail",
+  "type" : "about:blank",
+  "title" : "title",
+  "status" : 0
+}</code></pre>
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "instance" : "instance",
+  "extra_info" : "{}",
+  "detail" : "detail",
+  "type" : "about:blank",
+  "title" : "title",
+  "status" : 0
+}</code></pre>
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "instance" : "instance",
+  "extra_info" : "{}",
+  "detail" : "detail",
+  "type" : "about:blank",
+  "title" : "title",
+  "status" : 0
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    Validate the latest version of the specified workflow.
+        <a href="#"></a>
+    <h4 class="field-label">400</h4>
+    The request is malformed
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">403</h4>
+    Forbidden
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Resource not found
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="validateWorkflowVersion"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /workflows/{wf_uuid}/versions/{wf_version}/validate</code></pre></div>
+    <div class="method-summary">Validate a workflow version (<span class="nickname">validateWorkflowVersion</span>)</div>
+    <div class="method-notes">Validate the specified version of the specified workflow</div>
+
+    <h3 class="field-label">Path parameters</h3>
+    <div class="field-items">
+      <div class="param">wf_uuid (required)</div>
+
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Universal unique identifier of the workflow default: null </div><div class="param">wf_version (required)</div>
+
+      <div class="param-desc"><span class="param-type">Path Parameter</span> &mdash; Workflow version default: null </div>
+    </div>  <!-- field-items -->
+
+
+
+
+    <h3 class="field-label">Query parameters</h3>
+    <div class="field-items">
+      <div class="param">severity (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Severity level of the validation issues to retrieve.
+Possible values are: <code>REQUIRED</code>, <code>RECOMMENDED</code>, <code>OPTIONAL</code> default: REQUIRED </div>
+    </div>  <!-- field-items -->
+
+
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "instance" : "instance",
+  "extra_info" : "{}",
+  "detail" : "detail",
+  "type" : "about:blank",
+  "title" : "title",
+  "status" : 0
+}</code></pre>
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "instance" : "instance",
+  "extra_info" : "{}",
+  "detail" : "detail",
+  "type" : "about:blank",
+  "title" : "title",
+  "status" : 0
+}</code></pre>
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "instance" : "instance",
+  "extra_info" : "{}",
+  "detail" : "detail",
+  "type" : "about:blank",
+  "title" : "title",
+  "status" : 0
+}</code></pre>
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "instance" : "instance",
+  "extra_info" : "{}",
+  "detail" : "detail",
+  "type" : "about:blank",
+  "title" : "title",
+  "status" : 0
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    Validate the latest version of the specified workflow.
+        <a href="#"></a>
+    <h4 class="field-label">400</h4>
+    The request is malformed
+        <a href="#Error">Error</a>
+    <h4 class="field-label">401</h4>
+    Unauthorized
+        <a href="#Error">Error</a>
+    <h4 class="field-label">403</h4>
+    Forbidden
+        <a href="#Error">Error</a>
+    <h4 class="field-label">404</h4>
+    Resource not found
+        <a href="#Error">Error</a>
+  </div> <!-- method -->
+  <hr/>
   <div class="method"><a name="workflowsDelete"/>
     <div class="method-path">
     <a class="up" href="#__Methods">Up</a>
@@ -4558,9 +5038,29 @@ through the service's API).</li>
 
       <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include a summary of the workflow status default: null </div><div class="param">versions (optional)</div>
 
-      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include the list of versions of each workflow default: null </div><div class="param">subscriptions (optional)</div>
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include the list of versions of the workflow default: null </div><div class="param">subscriptions (optional)</div>
 
-      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include subscribed workflows default: null </div>
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include subscribed workflows default: null </div><div class="param">stats (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include workflows statistics default: null </div><div class="param">suites (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include the list of test suites associated with the workflow version default: null </div><div class="param">instances (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include the list of test instances associated with the workflow version default: null </div><div class="param">builds (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include the list of builds associated with the workflow version default: null </div><div class="param">builds_limit (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Maximum number of builds to include per instance default: 10 </div><div class="param">filter_by_string (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Filter workflows by a string contained in their <code>uuid</code> identifier or <code>name</code> default: null </div><div class="param">filter_by_status (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Filter workflows by their aggregated test status default: null </div><div class="param">page (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Page number for paginated results. First page is 1 default: 1 </div><div class="param">per_page (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Number of items per page for paginated results. If not provided, all items are returned default: null </div><div class="param">max_items (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Maximum number of items to retrieve. If not provided, all items are returned default: null </div>
     </div>  <!-- field-items -->
 
 
@@ -4575,6 +5075,12 @@ through the service's API).</li>
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
     <pre class="example"><code>{
+  "pagination" : {
+    "per_page" : 10,
+    "page" : 1,
+    "total_pages" : 10,
+    "total_items" : 100
+  },
   "items" : [ {
     "public" : false,
     "versions" : [ {
@@ -4693,7 +5199,21 @@ through the service's API).</li>
         "timestamp" : "1616427012"
       } ]
     }
-  } ]
+  } ],
+  "statistics" : {
+    "workflows_by_status" : {
+      "some_passing" : 500,
+      "not_available" : 0,
+      "all_failing" : 200,
+      "all_passing" : 800
+    },
+    "private_workflows" : 300,
+    "test_suites" : 500,
+    "public_workflows" : 1200,
+    "workflows" : 1500,
+    "test_instances" : 1200,
+    "workflow_versions" : 3500
+  }
 }</code></pre>
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
@@ -4943,7 +5463,17 @@ through the service's API).</li>
 
       <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include all versions of a workflow default: false </div><div class="param">ro_crate (optional)</div>
 
-      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include the RO-Crate metadata of the workflow default: false </div>
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include the RO-Crate metadata of the workflow default: false </div><div class="param">status (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include a summary of the workflow status default: null </div><div class="param">suites (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include the list of test suites associated with the workflow version default: null </div><div class="param">instances (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include the list of test instances associated with the workflow version default: null </div><div class="param">builds (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include the list of builds associated with the workflow version default: null </div><div class="param">builds_limit (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Maximum number of builds to include per instance default: 10 </div>
     </div>  <!-- field-items -->
 
 
@@ -5523,7 +6053,17 @@ through the service's API).</li>
     <div class="field-items">
       <div class="param">ro_crate (optional)</div>
 
-      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include the RO-Crate metadata of the workflow default: false </div>
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include the RO-Crate metadata of the workflow default: false </div><div class="param">status (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include a summary of the workflow status default: null </div><div class="param">suites (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include the list of test suites associated with the workflow version default: null </div><div class="param">instances (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include the list of test instances associated with the workflow version default: null </div><div class="param">builds (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; <code>true</code> to include the list of builds associated with the workflow version default: null </div><div class="param">builds_limit (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; Maximum number of builds to include per instance default: 10 </div>
     </div>  <!-- field-items -->
 
 
@@ -6190,6 +6730,7 @@ RO-Crate specifcation is available at https://www.researchobject.org/ro-crate/.
     <li><a href="#ListOfWorkflow_items_inner_allOf_status"><code>ListOfWorkflow_items_inner_allOf_status</code> - </a></li>
     <li><a href="#ManagedTestInstanceCreationData"><code>ManagedTestInstanceCreationData</code> - </a></li>
     <li><a href="#Notification"><code>Notification</code> - </a></li>
+    <li><a href="#Pagination"><code>Pagination</code> - </a></li>
     <li><a href="#ROCrate"><code>ROCrate</code> - </a></li>
     <li><a href="#ROCrateBase"><code>ROCrateBase</code> - </a></li>
     <li><a href="#ROCrateBase_links"><code>ROCrateBase_links</code> - </a></li>
@@ -6232,7 +6773,11 @@ RO-Crate specifcation is available at https://www.researchobject.org/ro-crate/.
     <li><a href="#suites_put_request"><code>suites_put_request</code> - </a></li>
     <li><a href="#user_workflows_post_request"><code>user_workflows_post_request</code> - </a></li>
     <li><a href="#validate_200_response"><code>validate_200_response</code> - </a></li>
+    <li><a href="#validate_200_response_oneOf"><code>validate_200_response_oneOf</code> - </a></li>
+    <li><a href="#validate_200_response_oneOf_1"><code>validate_200_response_oneOf_1</code> - </a></li>
+    <li><a href="#workflow_status_stats"><code>workflow_status_stats</code> - </a></li>
     <li><a href="#workflows_get_versions_by_id_200_response"><code>workflows_get_versions_by_id_200_response</code> - </a></li>
+    <li><a href="#workflows_stats"><code>workflows_stats</code> - </a></li>
     <li><a href="#workflows_version_put_request"><code>workflows_version_put_request</code> - </a></li>
   </ol>
 
@@ -6433,6 +6978,8 @@ information if dereferenced. </div>
     <div class='model-description'>List of workflows</div>
     <div class="field-items">
       <div class="param">items (optional)</div><div class="param-desc"><span class="param-type"><a href="#ListOfWorkflow_items_inner">array[ListOfWorkflow_items_inner]</a></span>  </div>
+<div class="param">pagination (optional)</div><div class="param-desc"><span class="param-type"><a href="#Pagination">Pagination</a></span>  </div>
+<div class="param">statistics (optional)</div><div class="param-desc"><span class="param-type"><a href="#workflows_stats">workflows_stats</a></span>  </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
@@ -6474,6 +7021,16 @@ from a Workflow RO-Crate </div>
 <div class="param">created </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A timestamp for the creation time of the notification </div>
 <div class="param">read (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A timestamp for the read time of the notification </div>
 <div class="param">emailed (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A timestamp for the time when the email was sent </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="Pagination"><code>Pagination</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">page </div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span> Current page number </div>
+<div class="param">per_page </div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span> Number of items per page </div>
+<div class="param">total_items </div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span> Total number of items </div>
+<div class="param">total_pages </div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span> Total number of pages </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
@@ -6564,7 +7121,7 @@ accessible to the user for download
  </div>
 <div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A name for the workflow. If not provided, the RO-Crate dataset name is used as default. </div>
 <div class="param">public (optional)</div><div class="param-desc"><span class="param-type"><a href="#boolean">Boolean</a></span> <code>true</code> if the workflow is <b>public</b>; false otherwise (default <code>false</code>). </div>
-<div class="param">version </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A string identifying the workflow version (e.g., 1.0) </div>
+<div class="param">version (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A string identifying the workflow version (e.g., 1.0) </div>
 <div class="param">uuid (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Universal unique identifier of the workflow. </div>
     </div>  <!-- field-items -->
   </div>
@@ -6592,7 +7149,7 @@ accessible to the user for download
       <div class="param">rocrate </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Base64 encoding of the RO-Crate archive format: base64</div>
 <div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A name for the workflow. If not provided, the RO-Crate dataset name is used as default. </div>
 <div class="param">public (optional)</div><div class="param-desc"><span class="param-type"><a href="#boolean">Boolean</a></span> <code>true</code> if the workflow is <b>public</b>; false otherwise (default <code>false</code>). </div>
-<div class="param">version </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A string identifying the workflow version (e.g., 1.0) </div>
+<div class="param">version (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A string identifying the workflow version (e.g., 1.0) </div>
 <div class="param">uuid (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Universal unique identifier of the workflow. </div>
     </div>  <!-- field-items -->
   </div>
@@ -6860,7 +7417,7 @@ If not provided, it will be auto-generated by the system. </div>
 <div class="param">rocrate </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Base64 encoding of the RO-Crate archive format: base64</div>
 <div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A name for the workflow. If not provided, the RO-Crate dataset name is used as default. </div>
 <div class="param">public (optional)</div><div class="param-desc"><span class="param-type"><a href="#boolean">Boolean</a></span> <code>true</code> if the workflow is <b>public</b>; false otherwise (default <code>false</code>). </div>
-<div class="param">version </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A string identifying the workflow version (e.g., 1.0) </div>
+<div class="param">version (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A string identifying the workflow version (e.g., 1.0) </div>
 <div class="param">roc_link </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Link to the workflow RO-Crate. Here LM will also accept a link
 to a GitHub repository containing the RO-Crate contents. </div>
 <div class="param">authorization (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> <p>An optional authorization header.</p>
@@ -6901,7 +7458,7 @@ accessible to the user for download
  </div>
 <div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A name for the workflow. If not provided, the RO-Crate dataset name is used as default. </div>
 <div class="param">public (optional)</div><div class="param-desc"><span class="param-type"><a href="#boolean">Boolean</a></span> <code>true</code> if the workflow is <b>public</b>; false otherwise (default <code>false</code>). </div>
-<div class="param">version </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A string identifying the workflow version (e.g., 1.0) </div>
+<div class="param">version (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A string identifying the workflow version (e.g., 1.0) </div>
 <div class="param">rocrate </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Base64 encoding of the RO-Crate archive format: base64</div>
     </div>  <!-- field-items -->
   </div>
@@ -6911,6 +7468,34 @@ accessible to the user for download
     <div class="field-items">
       <div class="param">valid </div><div class="param-desc"><span class="param-type"><a href="#boolean">Boolean</a></span> <code>true</code> if the config file is valid;
 <code>false</code> if the file is not valid </div>
+<div class="param">data </div><div class="param-desc"><span class="param-type"><a href="#">Object</a></span> Validated configuration, complete with default values. </div>
+<div class="param">message </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A short error message </div>
+<div class="param">error </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Detailed error description </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="validate_200_response_oneOf"><code>validate_200_response_oneOf</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">data </div><div class="param-desc"><span class="param-type"><a href="#">Object</a></span> Validated configuration, complete with default values. </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="validate_200_response_oneOf_1"><code>validate_200_response_oneOf_1</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">message </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> A short error message </div>
+<div class="param">error </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Detailed error description </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="workflow_status_stats"><code>workflow_status_stats</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">all_passing (optional)</div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span> Number of workflows with all tests passing </div>
+<div class="param">some_passing (optional)</div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span> Number of workflows with some tests passing </div>
+<div class="param">all_failing (optional)</div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span> Number of workflows with all tests failing </div>
+<div class="param">not_available (optional)</div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span> Number of workflows with unknown test status </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
@@ -6919,6 +7504,19 @@ accessible to the user for download
     <div class="field-items">
       <div class="param">versions (optional)</div><div class="param-desc"><span class="param-type"><a href="#WorkflowVersion">array[WorkflowVersion]</a></span>  </div>
 <div class="param">workflow (optional)</div><div class="param-desc"><span class="param-type"><a href="#Workflow">Workflow</a></span>  </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="workflows_stats"><code>workflows_stats</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'></div>
+    <div class="field-items">
+      <div class="param">workflows (optional)</div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span> Total number of workflows monitored </div>
+<div class="param">workflow_versions (optional)</div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span> Total number of workflow versions monitored </div>
+<div class="param">test_suites (optional)</div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span> Total number of test suites monitored </div>
+<div class="param">test_instances (optional)</div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span> Total number of test instances monitored </div>
+<div class="param">public_workflows (optional)</div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span> Total number of public workflows monitored </div>
+<div class="param">private_workflows (optional)</div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span> Total number of private workflows monitored </div>
+<div class="param">workflows_by_status (optional)</div><div class="param-desc"><span class="param-type"><a href="#">workflow_status_stats</a></span>  </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
