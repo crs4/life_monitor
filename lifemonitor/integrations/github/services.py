@@ -306,6 +306,9 @@ def register_repository_workflow(repository_reference: GithubRepositoryReference
     # set the workflow version name
     workflow_version = repository_reference.branch or repository_reference.tag
 
+    # install token for private repository access (when available)
+    repo_authorization = f"token {repo.auth_token}" if repo.auth_token else None
+
     # search user identity
     submitter = identify_workflow_version_submitter(repository_reference)
 
@@ -330,13 +333,15 @@ def register_repository_workflow(repository_reference: GithubRepositoryReference
             logger.debug("Registering workflow version on worlflow: %r ....", workflow)
             wv = lm.register_workflow(repo_link, submitter, workflow_version,
                                       workflow_uuid=workflow.uuid,
-                                      name=repo.config.workflow_name, public=repo.config.public)
+                                      name=repo.config.workflow_name, public=repo.config.public,
+                                      authorization=repo_authorization)
             logger.debug("Registering workflow version on worlflow: %r .... DONE", workflow)
         else:
             logger.debug("Updating workflow version: %r...", wv)
             wv = lm.update_workflow(wv.submitter, workflow.uuid, workflow_version,
                                     name=repo.config.workflow_name,
-                                    rocrate_or_link=repo_link, public=repo.config.public)
+                                    rocrate_or_link=repo_link, public=repo.config.public,
+                                    authorization=repo_authorization)
             logger.debug("Updating workflow version: %r... DONE", wv)
 
         # register workflow on registries
@@ -357,7 +362,8 @@ def register_repository_workflow(repository_reference: GithubRepositoryReference
     elif submitter:
         # register workflow version on LifeMonitor
         wv = lm.register_workflow(repo_link, submitter, workflow_version,
-                                  name=repo.config.workflow_name, public=repo.config.public)
+                                  name=repo.config.workflow_name, public=repo.config.public,
+                                  authorization=repo_authorization)
         # register workflow on registries
         register_workflow_on_registries(github_registry, submitter, repo, wv, registries_map=[(_, None, []) for _ in registries])
         # append to the list of registered workflows

@@ -29,13 +29,6 @@ from typing import Dict, List
 
 import jwt
 import requests
-from lifemonitor.api.models.repositories.github import (
-    GithubWorkflowRepository, InstallationGithubWorkflowRepository)
-from lifemonitor.auth.oauth2.client.models import (
-    OAuthIdentity, OAuthIdentityNotFoundException)
-from lifemonitor.exceptions import IllegalStateException, LifeMonitorException
-from lifemonitor.integrations.github.registry import GithubWorkflowRegistry
-
 from github import Github
 from github import GithubIntegration as GithubIntegrationBase
 from github import Installation
@@ -45,6 +38,12 @@ from github.PaginatedList import PaginatedList
 from github.Repository import Repository as GithubRepository
 from github.Requester import Requester
 
+from lifemonitor.api.models.repositories.github import \
+    InstallationGithubWorkflowRepository
+from lifemonitor.auth.oauth2.client.models import (
+    OAuthIdentity, OAuthIdentityNotFoundException)
+from lifemonitor.exceptions import IllegalStateException, LifeMonitorException
+from lifemonitor.integrations.github.registry import GithubWorkflowRegistry
 from lifemonitor.integrations.github.utils import CachedGithubRequester
 
 from .config import (DEFAULT_BASE_URL, DEFAULT_PER_PAGE, DEFAULT_TIMEOUT,
@@ -301,12 +300,15 @@ class LifeMonitorInstallation(Installation.Installation):
         assert isinstance(full_name_or_id, (str, int)), full_name_or_id
         url_base = "/repositories/" if isinstance(full_name_or_id, int) else "/repos/"
         url = f"{url_base}{full_name_or_id}"
+        auth_token = self.auth.token
         if lazy:
-            return GithubWorkflowRepository(
-                self._requester, {}, {"url": url}, completed=False, ref=ref, rev=rev
+            return InstallationGithubWorkflowRepository(
+                self._requester, {}, {"url": url}, completed=False,
+                ref=ref, rev=rev, auth_token=auth_token
             )
         headers, data = self._requester.requestJsonAndCheck("GET", url)
-        return InstallationGithubWorkflowRepository(self._requester, headers, data, completed=True, ref=ref, rev=rev)
+        return InstallationGithubWorkflowRepository(self._requester, headers, data, completed=True,
+                                                    ref=ref, rev=rev, auth_token=auth_token)
 
     def get_repos(self) -> List[InstallationGithubWorkflowRepository]:
         url_parameters = dict()

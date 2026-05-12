@@ -173,6 +173,7 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
                  attributes: Dict[str, Any], completed: bool,
                  ref: Optional[str] = None, rev: Optional[str] = None,
                  exclude: Optional[List[str]] = None,
+                 auth_token: Optional[str] = None,
                  local_path: Optional[str] = None, auto_cleanup: bool = True) -> None:
         super().__init__(requester, headers, attributes, completed)
         self._ref = ref
@@ -181,6 +182,7 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
         self._metadata = None
         self._local_repo: Optional[LocalWorkflowRepository] = None
         self._local_path = local_path
+        self._auth_token = auth_token
         self._config = None
         self._license = None
         self._exclude = exclude or []
@@ -236,6 +238,10 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
     @property
     def exclude(self) -> List[str]:
         return self._exclude
+
+    @property
+    def auth_token(self) -> Optional[str]:
+        return self._auth_token
 
     @property
     def _remote_parser(self) -> giturlparse.GitUrlParsed:
@@ -390,7 +396,8 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
     def clone(self, branch: str, local_path: Optional[str] = None) -> RepoCloneContextManager:
         assert isinstance(branch, str), branch
         assert local_path is None or isinstance(local_path, str), local_path
-        return RepoCloneContextManager(self.clone_url, repo_branch=branch, local_path=local_path)
+        return RepoCloneContextManager(self.clone_url, repo_branch=branch,
+                                       auth_token=self._auth_token, local_path=local_path)
 
     def write_zip(self, target_path: str):
         return self.local_repo.write_zip(target_path=target_path)
@@ -401,7 +408,8 @@ class InstallationGithubWorkflowRepository(GithubRepository, WorkflowRepository)
             local_path = self._local_path or tempfile.mkdtemp(dir=BaseConfig.BASE_TEMP_FOLDER)
             if not os.path.exists(local_path) or not LocalWorkflowRepository.is_git_repo(local_path):
                 logger.debug("Cloning %r", self.clone_url)
-                clone_repo(self.clone_url, ref=self.ref, target_path=local_path)
+                clone_repo(self.clone_url, ref=self.ref, target_path=local_path,
+                           auth_token=self._auth_token)
             else:
                 logger.debug("Skipping cloning of %r", self.clone_url)
             self._local_repo = LocalGitWorkflowRepository(local_path=local_path)
